@@ -62,6 +62,7 @@ class BaseReport(Report):
 
         # Common information to be filled (possibly)
         #self.data['command'] = "unset"
+        self.jinja['dependencies'] =  self.get_table_dependencies('sequana').to_html()
 
     def parse(self):
         """populate the :attr:`data` attribute used by the JINJA templates
@@ -90,22 +91,38 @@ class BaseReport(Report):
             self.jinja['config'] = fin.read()
 
 
+
 class SequanaReport(BaseReport):
-    def __init__(self, snakefile="Snakefile", configfile="config.yaml", **kargs):
+    def __init__(self, snakefile="Snakefile", configfile="config.yaml",
+                 stats="stats.txt", **kargs):
 
         super(SequanaReport, self).__init__(
             jinja_filename="main/index.html", 
             directory="report",  
             output_filename="index.html",
             **kargs)
+
         try:
             self.read_snakefile(snakefile)
         except:
             pass
+
         try:
             self.read_configfile(configfile)
         except:
             pass
+
+        try:
+            from sequana.snakemake import SnakeMakeStats
+            s = SnakeMakeStats(stats)
+            s.plot()
+            import pylab
+            output_file = "snakemake_stats.png"
+            pylab.savefig(self.directory + os.sep + output_file)
+            self.jinja['snakemake_stats'] = output_file
+        except:
+            print('snakemake stats.txt not found')
+
 
         self.jinja['title'] = "Sequana Report"
 

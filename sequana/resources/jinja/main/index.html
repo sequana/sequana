@@ -15,9 +15,8 @@
     <h2> 1 -  <a class="toc-backref" href="#id1">Input</a></h2>
     </div>
 
-
     <div class="section" id="Snakefile">
-        <h2> 1 -  <a class="toc-backref" href="#id1">Snakefile</a></h2>
+        <h2> 2 -  <a class="toc-backref" href="#id2">Snakefile</a></h2>
 
         <object data="dag.svg" type="image/svg+xml">
         <img src="dag.svg">
@@ -34,8 +33,23 @@
         <div class="slidingDivC">
         <pre><code class="yaml">{{ config }}</code></pre>
         </div>
-
     </div>
+
+    {% if snakemake_stats %}
+    <div class="section" id="stats">
+        <h2> 3 -  <a class="toc-backref" href="#id3">Runinng Stats</a></h2>
+        <img src="{{ snakemake_stats }}"></img>
+    </div>
+    {% endif %}
+
+    {% if dependencies %}
+    <div class="section" id="dependencies">
+        <h2> 3 -  <a class="toc-backref" href="#id4">Dependencies</a></h2>
+        {{ dependencies }}
+    </div>
+    {% endif %}
+
+
 
 {% endblock %}
 
