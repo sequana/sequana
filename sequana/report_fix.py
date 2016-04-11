@@ -18,7 +18,7 @@ def _get_template_path(name):
           template_path = easydev.get_shared_directory_path("sequana")
           template_path += os.sep + "templates"  + os.sep + name
           return template_path
-  
+
 
 
 class FixReport(BaseReport):
@@ -54,6 +54,9 @@ class FixReport(BaseReport):
 
     def parse(self):
         import json
+        from easydev import precision
+        import pandas as pd
+
         data = json.load(open(self.input_filename, "r"))
 
         for key, value in data.items():
@@ -62,21 +65,22 @@ class FixReport(BaseReport):
         x = data['R1_mapped']
         y = data['R1_unmapped']
 
+        # ad contamination inside jinja
         contamination = x / float(x+y) * 100
-
-        from easydev import precision
         self.jinja['contamination'] = precision(contamination, 3)
-        
 
-        import pandas as pd
+        # add HTML table 
         df = pd.DataFrame({
             'R1': [data['R1_mapped'], data['R1_unmapped']],
             'R2': [data['R2_mapped'], data['R2_unmapped']]})
         df.index = ['mapped', 'unmapped']
-        
-        
+
         h = HTMLTable(df)
         html = h.to_html(index=True)
+
+        html += "Unpaired: %s <hr>" % data['unpaired']
+        html += "duplicated: %s <hr>" % data['duplicated']
+
         self.jinja['stats'] = html
 
 

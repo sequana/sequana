@@ -1,0 +1,34 @@
+"""
+
+
+
+"""
+
+
+
+rule bwa_bam_to_fastq:
+    message: """
+    -- Extracting the fastq from the BAM/SAM files
+    -- information saved in {log}
+    """
+    input:
+        bam = "bwa_fix/contaminant.bam",
+        sam = "bwa_fix/contaminant.sam",
+    params:
+        wkdir = "bwa_fix",
+    output:
+        # 4 files are expected
+        "bwa_fix/contaminant_R1.mapped.fastq",
+        "bwa_fix/contaminant_R2.mapped.fastq",
+        "bwa_fix/contaminant_R1.unmapped.fastq",
+        "bwa_fix/contaminant_R2.unmapped.fastq",
+        "bwa_fix/fix_stats.json"
+    threads: 1
+    run:
+        from sequana.tools import bam_to_mapped_unmapped_fastq as bam2fastq
+        stats = bam2fastq(input["bam"])
+        import json
+        json.dump(stats, open("bwa_fix/fix_stats.json", "w"))
+
+
+

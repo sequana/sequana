@@ -6,14 +6,18 @@ except:
     version = __version__
 
 
+from .snaketools import modules
+from .snaketools import SequanaConfig
+from .snaketools import Module, ModuleNames
 
-
-
-from .snakemake import rules
-from .snakemake import ValidateConfig, modules
 from .phred import Quality
-from .bamtools import BAM, SAMFlags, BAMReport
-from .fastq import FastQ, FastQC
+
+from .bamtools import BAM, SAMFlags
+
+from .report_bam import BAMReport
+
+from .fastq import FastQ, FastQC, Identifier
+
 from .vcf_filter import VCF
 
 
@@ -23,7 +27,7 @@ def sequana_data(filename, where=None):
     import os
     import easydev
     sequana_path = easydev.get_package_location('sequana')
-    share = os.sep.join([sequana_path , "sequana", 'resources', 'data'])
+    share = os.sep.join([sequana_path , "sequana", 'resources'])
     # in the code one may use / or \ 
     if where:
         filename = os.sep.join([share, where, filename])

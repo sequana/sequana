@@ -1,0 +1,63 @@
+"""
+
+
+Takes fastq in fastq_sampling if possible, otherwise
+takes original data sets in fastq_raw
+
+Then, the code does::
+
+    bwa index reference
+    bwa mem -t {threads} -M reference fastq_files > output.sam
+    samtools view -bT reference output.sam -o output.bam
+"""
+
+import glob
+from sequana import snaketools as sm
+
+
+configfile: "config.yaml"
+
+
+
+bwa_fix_data = " ".join(glob.glob("fastq_sampling/*fastq*"))
+if len(bwa_fix_data) == 0:
+    bwa_fix_data = " ".join(glob.glob("fastq_raw/*fastq*"))
+
+
+# idea: bwa_fix_data is a string so input must use a split()
+# is that what we want ?
+
+
+rule bwa_fix:
+    message: """
+    -- Running bwa index and bwa mem
+    -- information saved in {log}
+    """
+    input:
+        contaminant = config['bwa_fix']['reference'],
+        data = bwa_fix_data.split()
+    params:
+        wkdir = "bwa_fix",
+        fastq = bwa_fix_data
+    output:
+        bam = "bwa_fix/contaminant.bam",
+        sam = "bwa_fix/contaminant.sam",
+    log: "logs/bwa_fix.log"
+    threads: 1
+    shell:
+        """
+        # a local copy of contaminant from input to bwa_contaminant
+        cp {input.contaminant} {params.wkdir}
+
+        # Create index
+        bwa index {params.wkdir}/{input.contaminant}
+
+        # Run bwa
+        bwa mem -t {threads} -M {params.wkdir}/{input.contaminant} {params.fastq} > {output.sam}
+
+        # Run samtools
+        # -b output BAM
+        # -T reference
+        samtools view -bT {params.wkdir}/{input.contaminant} {output.sam} -o {output.bam}
+        """
+

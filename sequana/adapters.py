@@ -1,15 +1,17 @@
+"""
 
+USed for adapter removal benchmarks. 
 
+May not be used on long term. 
 
+May be removed
 
-
+"""
 
 
 class AdapterRemoval(object):
     def __init__(self):
         pass
-
-
 
 
 def adapters_files_to_list(filename1, filename2):
@@ -22,7 +24,6 @@ def adapters_files_to_list(filename1, filename2):
     fh2.close()
 
     len(data1) == len(data2), "incompatible files. Must have same length"
-
 
     fh = open("adapters_list.fa", 'w')
     count = 0

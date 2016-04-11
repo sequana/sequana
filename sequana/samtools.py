@@ -97,11 +97,6 @@ class SAM(pysam.AlignmentFile):
         pylab.xlabel('MAPQ score')
         pylab.ylabel('Fraction of reads')
 
-    def __len__(self):
-        self.reset()
-        N = len([x for x in self])
-        self.reset()
-        return N
 
 
 

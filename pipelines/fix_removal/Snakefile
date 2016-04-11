@@ -17,7 +17,10 @@ configfile: "config.yaml"
 
 include: sm.rules['dag']
 include: sm.rules['cleanup']
-include: "Snakefile.fastq_sampling"
+include: sm.rules["fastq_sampling"]
+include: '/home/cokelaer/Work/github/sequana/sequana/rules/bwa_fix/Snakefile'
+include: '/home/cokelaer/Work/github/sequana/sequana/rules/fastqc/Snakefile'
+include: '/home/cokelaer/Work/github/sequana/sequana/rules/bwa_bam_to_fastq/Snakefile'
 
 sm.message(str(config))
 
@@ -25,82 +28,31 @@ workdir: "."
 
 ############# NOTHING to change here below
 fastq_sampling = expand(fastq_sampling_wc[0], dataset=fastq_sampling_wc[1])
+#fastqc_input = expand(fastqc_wc[0], dataset=fastqc_wc[1])
+
+
+
+expand("fastqc_results/{dataset}_fastqc.html", dataset=data_tags)
 
 
 rule all:
     input:
-        "report.html",
-        "dag.svg",
-        "bwa_contaminant/contaminant_R1.mapped.fastq",
-        "report/index.html", "report/bwa_fix.html"
+        "bwa_fix/contaminant_R1.mapped.fastq",
+        "bwa_fix/contaminant_R2.mapped.fastq",
+        "report/index.html", 
+        "report/bwa_fix.html",
     version: sequana.version
-
-
-rule bwa_fix:
-    message: """
-    -- Running bwa index and bwa mem
-    -- information saved in {log}
-    """
-    input:
-        contaminant = config['fix'],
-        data = fastq_sampling
-    params:
-        wkdir = "bwa_contaminant",
-        fastq = glob.glob("fastq_sampling/*fastq*")
-    output:
-        bam = "bwa_contaminant/contaminant.bam",
-        sam = "bwa_contaminant/contaminant.sam",
-    log: "logs/bwa_fix.log"
-    threads: 1
-    shell:
-        """
-        # a local copy of contaminant from input to bwa_contaminant
-        cp {input.contaminant} {params.wkdir}
-
-        # Create index
-        bwa index {params.wkdir}/{input.contaminant}
-
-        # Run bwa
-        bwa mem -t {threads} -M {params.wkdir}/{input.contaminant} {params.fastq} > {output.sam}
-
-        # Run samtools
-        # -b output BAM
-        # -T reference
-        samtools view -bT {params.wkdir}/{input.contaminant} {output.sam} -o {output.bam}
-        """
-
-rule bwa_bam_to_fastq:
-    message: """
-    -- Extracting the fastq from the BAM/SAM files
-    -- information saved in {log}
-    """
-    input:
-        bam = "bwa_contaminant/contaminant.bam",
-        sam = "bwa_contaminant/contaminant.sam",
-    params:
-        wkdir = "bwa_contaminant",
-    output:
-        # 4 files are expected
-        "bwa_contaminant/contaminant_R1.mapped.fastq",
-        "bwa_contaminant/contaminant_R2.mapped.fastq",
-        "bwa_contaminant/contaminant_R1.unmapped.fastq",
-        "bwa_contaminant/contaminant_R2.unmapped.fastq",
-        "bwa_contaminant/fix_stats.json"
-    threads: 1
-    run:
-        from sequana.tools import bam_to_mapped_unmapped_fastq as bam2fastq
-        stats = bam2fastq(input["bam"])
-        import json
-        json.dump(stats, open("bwa_contaminant/fix_stats.json", "w"))
 
 
 rule report:
     input:
-        dag = "dag.svg"
+        dag = "dag.svg", 
+        other = ["bwa_fix/fix_stats.json", "fastqc/fastqc.done"]
     output: "report/index.html", "report/bwa_fix.html"
     run:
         from sequana import report_main
         from sequana import report_fix
+        from sequana import report_fastqc
 
         # Main page
         s = report_main.SequanaReport()
@@ -108,7 +60,10 @@ rule report:
 
         # Fix page
         s = report_fix.FixReport(output_filename="bwa_fix.html")
-        s.input_filename = "bwa_contaminant/fix_stats.json"
+        s.input_filename = "bwa_fix/fix_stats.json"
+        s.create_report()
+
+        s = report_fastqc.FastQCReport()
         s.create_report()
 
         shell("cp Snakefile report/")

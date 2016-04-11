@@ -1,0 +1,28 @@
+// -- [35minclude fastq_sampling[39;49;00m
+// -- [35m-------->>>>fastq_sampling/{dataset}[39;49;00m
+// -- [35mInclude sequana.fastqc rule[39;49;00m
+// -- [35m{'fastq_sampling': {'wkdir': 'fastq_sampling', 'skip': False, 'N': 100000}, 'bwa_fix': {'reference': 'Coliphage_phiX174.fa'}, 'fastqc': {'directories': ['fastqc_raw'], 'extension': ['*.fastq.gz', '*.fastq']}, 'datadir': 'fastq_raw'}[39;49;00m
+digraph snakemake_dag {
+    graph[bgcolor=white, margin=0];
+    node[shape=box, style=rounded, fontname=sans,                 fontsize=10, penwidth=2];
+    edge[penwidth=2, color=grey];
+	0[label = "all", color = "0.05 0.6 0.85", style="rounded"];
+	1[label = "fastq_sampling\ndataset: Hm2_GTGAAA_L005_R1_001.fastq.gz", color = "0.00 0.6 0.85", style="rounded,dashed"];
+	2[label = "bwa_fix", color = "0.19 0.6 0.85", style="rounded"];
+	3[label = "report", color = "0.57 0.6 0.85", style="rounded"];
+	4[label = "fastq_sampling\ndataset: Hm2_GTGAAA_L005_R2_001.fastq.gz", color = "0.00 0.6 0.85", style="rounded,dashed"];
+	5[label = "fastqc", color = "0.24 0.6 0.85", style="rounded"];
+	6[label = "dag", color = "0.14 0.6 0.85", style="rounded,dashed"];
+	7[label = "bwa_bam_to_fastq", color = "0.38 0.6 0.85", style="rounded"];
+	3 -> 0
+	7 -> 0
+	1 -> 2
+	4 -> 2
+	5 -> 3
+	6 -> 3
+	7 -> 3
+	1 -> 5
+	4 -> 5
+	7 -> 5
+	2 -> 7
+}            

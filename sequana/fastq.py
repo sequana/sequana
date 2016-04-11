@@ -7,18 +7,21 @@ import zlib
 from itertools import islice
 import gzip
 import subprocess
+from functools import wraps
 
 import numpy as np
 import pandas as pd
 from easydev import do_profile, Progress
 import pylab
 
+import pysam
 try:
     from itertools import izip_longest
 except:
     from itertools import zip_longest as izip_longest
 
-# for filter fastq files. see below
+# for filter fastq files. see below in FastQ for the usage
+# we want to take 4 lines at a time (assuming there is no empty lines)
 def grouper(iterable):
     args = [iter(iterable)] * 4
     return izip_longest(*args)
@@ -26,79 +29,57 @@ def grouper(iterable):
 
 __all__ = ["Identifier", "FastQ", "FastQC"]
 
-class Read(object):
-    def __init__(self, data):
-        pass
-        # input could be a dictionary
-        self.identifier = 1
-        self.quality = 1
-        self.sequence = 1
-
 
 class Identifier(object):
     """Class to interpret Read's identifier
 
+    .. warning:: Implemented for Illumina 1.8+  and 1.4 . Other cases
+        will simply stored the identifier without interpretation
 
-    Should work for Illumina 1.8+ 
+    .. doctest::
 
-    .. warning::  Not tested for other cases
-
-    ::
-
-        >> ident = Identifier('@EAS139:136:FC706VJ:2:2104:15343:197393 1:Y:18:ATCACG')
+        >>> from sequana import Identifier
+        >>> ident = Identifier('@EAS139:136:FC706VJ:2:2104:15343:197393 1:Y:18:ATCACG')
         >>> ident.info['x_coordinate']
-        '15343',
+        '15343'
+
+    Currently, the following identifiers will be recognised automatically:
+
+    :Illumina_1_4: An example is ::
+
+          @HWUSI-EAS100R:6:73:941:1973#0/1
+
+    :Illumina_1_8: An example is::
+
+        @EAS139:136:FC706VJ:2:2104:15343:197393 1:Y:18:ATCACG
 
 
-    """
-    def __init__(self, identifier, version=None):
-        self.identifier = identifier
-        if version is None:
-            self.version = self._infer_version()
-        else:
-            self.version = version
-        self.info = self._interpret()
+    Other that could be implemented are NCBI ::
 
-    def _interpret(self):
-        if self.version == "Illumina_1.8+":
-            return self._interpret_illumina_1_8()
-        elif self.version == "Illumina_1.4+":
-            return self._interpret_illumina_1_8()
-        else:
-            return {'identifier': self.identifier[:]}
-
-    def _infer_version(self):
-        """
-
-    old illumina # is followed by 0 for no indexing but appear to use #NNNNNN for multiplex ID::
-
-            @HWUSI-EAS100R:6:73:941:1973#0/1
-
-        New Illumina (e.g., 1.8)::
-
-            @EAS139:136:FC706VJ:2:2104:15343:197393 1:Y:18:ATCACG
-
-
-        NCBI ::
-
-            @FSRRS4401BE7HA [length=395] [gc=36.46] [flows=800] [phred_min=0] \
+        @FSRRS4401BE7HA [length=395] [gc=36.46] [flows=800] [phred_min=0] \
                                            [phred_max=40] [trimmed_length=95]
 
-http://support.illumina.com/help/SequencingAnalysisWorkflow/Content/Vault/Informatics/Sequencing_Analysis/CASAVA/swSEQ_mCA_FASTQFiles.htm
+    Information can also be found here http://support.illumina.com/help/SequencingAnalysisWorkflow/Content/Vault/Informatics/Sequencing_Analysis/CASAVA/swSEQ_mCA_FASTQFiles.htm
+    """
+    def __init__(self, identifier, version="unknown"):
+        self.identifier = identifier[:]
 
-        """
-        if self.identifier.count(b':') == 4:
-            left, right = self.identifier.rsplit(b":", 1)
-            if right.count(b"#") == 1 and right.count(b"\\") == 1:
-                return "Illumina_1.4+"
-
-
-        if self.identifier.count(b" ") == 1:
-            left, right = self.identifier.split(b" ")
-            if left.count(b':') == 6 and right.count(b':') == 3:
-                return "Illumina_1.8+"
-
-        return "Custom or Unknown identifier"
+        if version == "Illumina_1.8+":
+            info = self._interpret_illumina_1_8()
+        elif version == "Illumina_1.4+":
+            info = self._interpret_illumina_1_4()
+        else:
+            try:
+                info = self._interpret_illumina_1_8()
+                version = "Illumina_1.8+"
+            except:
+                try:
+                    info = self._interpret_illumina_1_4()
+                    version = "Illumina_1.4+"
+                except:
+                    info = self.identifier[:]
+        self.info = info
+        self.version = version
 
     def _interpret_illumina_1_8(self):
         """
@@ -115,7 +96,7 @@ http://support.illumina.com/help/SequencingAnalysisWorkflow/Content/Vault/Inform
         identifier = identifier.replace(b' ', b':')
         items = identifier.split(b':')
         if len(items) != 11:
-            raise ValueError('Niumber of items in the identifier should be 11')
+            raise ValueError('Number of items in the identifier should be 11')
         res = {}
         res['identifier'] = self.identifier[:]
         res['instrument'] = items[0]
@@ -127,8 +108,9 @@ http://support.illumina.com/help/SequencingAnalysisWorkflow/Content/Vault/Inform
         res['y_coordinate'] = items[6]
         res['member_pair'] = items[7]
         res['filtered'] = items[8]
-        res['self._control_bits'] = items[9]
+        res['control_bits'] = items[9]
         res['index_sequence'] = items[10]
+        res['version'] = 'Illumina_1.8+'
         return res
 
     def _interpret_illumina_1_4(self):
@@ -138,17 +120,18 @@ http://support.illumina.com/help/SequencingAnalysisWorkflow/Content/Vault/Inform
         identifier = identifier.replace('/', ':')
         items = identifier.split(':')
 
-        if len(items) != 7:
-            raise ValueError('Number of items in the identifier should be 7')
         # ['@HWUSI-EAS100R', '6', '73', '941', '1973#0/1']
+        res = {}
         res['identifier'] = self.identifier[:]
         res['instrument_name'] = items[0]
         res['flowcell_lane'] = items[1]
         res['tile_number'] = items[2]
-        res['self._x_coordinate'] = items[3]
-        res['self._y_coordinate'] = items[4]
-        res['self._index'] = '#' + items[5]
-        res['self._member_pair'] = '/' + items[6]
+        res['x_coordinate'] = items[3]
+        res['y_coordinate'] = items[4]
+        res['index'] = '#' + items[5]
+        res['member_pair'] = items[6]
+        res['version'] = 'Illumina_1.4+'
+        return res
 
     def __str__(self):
         txt = ""
@@ -160,12 +143,14 @@ http://support.illumina.com/help/SequencingAnalysisWorkflow/Content/Vault/Inform
         return "Identifier (%s)" % self.version
 
 
-
 class FastQ(object):
     """Class to handle FastQ files
 
+    Some of the methods are based on pysam but a few are also
+    original to sequana. In general, input can be zipped ot not and
+    output can be zipped or not (based on the extension).
 
-    Nothing fancy but should be efficient. For example, extract the first 100k lines::
+    An example is the :meth:`extract_head` method::
 
         f = FastQ("")
         f.extract_head(100000, output='test.fastq')
@@ -175,7 +160,7 @@ class FastQ(object):
 
         zcat myreads.fastq.gz | head -100000 | gzip > test100k.fastq.gz
 
-    Counts the number of lines::
+    An efficient implementation to count the number of lines is also available::
 
         f.count_lines()
 
@@ -183,13 +168,13 @@ class FastQ(object):
 
         f.count_reads()
     """
+
     """
     Features to implement::
         - filter out short / long reads
         - filter out reads with NNN
         - filter out low quality end reads
         - cut poly A/T tails
-
         - dereplicate sequences
         - split multiplex
         - remove contaminants
@@ -203,7 +188,7 @@ class FastQ(object):
         self.verbose = verbose
         self._count_reads = None
         self._count_lines = None
-        
+
         # opens the file in read mode
         self.__enter__()
         # Can we identify the type of data ?
@@ -271,7 +256,7 @@ class FastQ(object):
         nlines = self.count_lines()
         if divmod(nlines, 4)[1] != 0:
             print("WARNING. number of lines not multiple of 4.")
-        return nlines / 4
+        return int(nlines / 4)
 
     def _count_reads_buf(self, block=1024*1024):
         # 0.12 seconds to read 3.4M lines, faster than wc command
@@ -373,24 +358,34 @@ class FastQ(object):
         return filename, tozip
 
     def select_random_reads(self, N, output_filename):
-        if output_filename.endswith(".gz"):
-            self._select_random_reads()
-        else:
-            self._select_random_reads_gz()
+        """Select random reads and save in a file
 
-    def _select_random_reads(self, N, output_filename):
-        pass
+        :param int N: number of random unique reads to select
+        :param str output_filename:
 
-    def _select_random_reads_gz(self, N, output_filename):
-        raise NotImplementedError
-        n_reads = self.count_reads()
-        if n_reads > self.count_reads():
-            # nothing to do except a copy
-            pass
-        else:
-            import random
-            for i in random.sample(xrange(N)):
-                pass
+
+        """
+        thisN = len(self)
+        if N > thisN:
+            N = thisN
+
+        fastq = pysam.FastxFile(self.filename)
+
+        # create random set of reads to pick up
+        cherries = list(range(thisN))
+        np.random.shuffle(cherries)
+        # cast to set for efficient iteration
+        cherries = set(cherries[0:N])
+
+        pb = Progress(thisN)
+        with open(output_filename, "w") as fh:
+            for i, read in enumerate(fastq):
+                if i in cherries:
+                    fh.write(read.__str__() + "\n")
+                else:
+                    pass
+                pb.animate(i+1)
+
 
     def split_lines(self, N=100000, gzip=True):
         if self.filename.endswith(".gz"):
@@ -479,7 +474,7 @@ class FastQ(object):
             outputs = [x + ".gz" for x in outputs]
         return outputs
 
-    def split_chunks(self, N=10):
+    def _split_chunks(self, N=10):
         # split per chunks of size N
         pass
 
@@ -489,6 +484,7 @@ class FastQ(object):
             raise ValueError(msg)
 
     # This could be part of easydev or other software
+    # we could also use a unix command but won't work on other platforms
     def _split_lines(self, N, gzip=True):
         # split input in N files
         # We will name them with reads number that is
@@ -561,7 +557,6 @@ class FastQ(object):
         """
         raise NotImplementedError
 
-
     def __iter__(self):
        return self
 
@@ -586,7 +581,7 @@ class FastQ(object):
 
     def next(self): # python 2
         # reads 4 lines
-        d = {}
+        d = {'quality':None, 'sequence': None, 'quality':None}
         try:
             """data = islice(self._fileobj, 4)
             d['identifier'] = next(data).strip()
@@ -612,6 +607,8 @@ class FastQ(object):
             if temp == b"":
                 raise StopIteration
         except KeyboardInterrupt:
+            # THis should allow developers to break an function that iterets
+            # through the read to run forever
             self._fileobj.close()
             self.__enter__()
         except:
@@ -625,14 +622,20 @@ class FastQ(object):
 
     def filter(self, identifiers_list=[], min_bp=None, max_bp=None,
         progressbar=True, output_filename='filtered.fastq', remove=True):
-        #7 seconds without identifiers to scan the file
+        """Filter reads
+
+        :param int min_bp: ignore reads with length short than min_bp
+        :param int max_bp: ignore reads with length above max_bp
+
+        """
+        # 7 seconds without identifiers to scan the file
         # on a 750000 reads
 
         if min_bp is None:
-            min_bp = 1e9
+            min_bp = 0
 
         if max_bp is None:
-            max_bp = -1
+            max_bp = 1e9
 
         # make sure we are at the beginning
         self.rewind()
@@ -647,72 +650,80 @@ class FastQ(object):
             for count, lines in enumerate(grouper(self._fileobj)):
                 identifier = lines[0].split()[0]
                 if lines[0].split()[0] in identifiers_list:
-                    filtered += 1 
+                    filtered += 1
                 else:
-                    buf += "%s%s+\n%s" % (lines[0], lines[1], lines[3])
+                    N = len(lines[1])
+                    if N <= max_bp and N >= min_bp:
+                        buf += "{}{}+\n{}".format(
+                            lines[0].decode("utf-8"),
+                            lines[1].decode("utf-8"),
+                            lines[3].decode("utf-8"))
                     if count % 100000 == 0:
                         fout.write(buf)
                         buf = ""
-                pb.animate(count+1)
+                if progressbar is True:
+                    pb.animate(count+1)
             fout.write(buf)
-            print(filtered)
             if filtered < len(identifiers_list):
                 print("\nWARNING: not all identifiers were found in the fastq file to " +
                       "be filtered.")
         if tozip is True: self._gzip(output_filename)
 
 
-class FastQMerger(object):
-    def __init__(self, filenames):
-        self.filenames = filenames
-
-    def save(self):
-        pass
-
 # a simple decorator to check whether the data was computed or not.
 # If not, compute it
 def run_info(f):
-    def wrapper(*args):
+    @wraps(f)
+    def wrapper(*args, **kargs):
         #args[0] is the self of the method
         try:
             args[0].gc_content
         except:
-            args[0].get_info()
-        return f(*args)
+            args[0]._get_info()
+        return f(*args, **kargs)
     return wrapper
+
 
 class FastQC(object):
     """Simple QC diagnostic
 
 
+    Similarly to some of the plots of FastQC tools, we scan the
+    FastQ and generates some diagnostic plots. The interest
+    is that we'll be able to create more advanced plots later on.
+
+    Here is an example of the boxplot quality across all bases:
+
     .. plot::
+        :include-source:
 
         from sequana import sequana_data
         from sequana import FastQC
-
-        filename  = sequana_data("reads.fastq")
+        filename  = sequana_data("test.fastq", "testing")
         qc = FastQC(filename)
-        qc.histogram_gc_content()
+        qc.boxplot_quality()
+
+    .. warning:: some plots will work for Illumina reads only right now
 
     """
     def __init__(self, filename, sample=500000):
-        """
+        """.. rubric:: constructor
 
         """
+        self.filename = filename
+        # This is 2/3 times faster than pysam.FastXFile + an iteration
         self.fastq = FastQ(filename)
+        self.N = len(self.fastq)
 
-        N = self.fastq.count_reads()
-        if N < sample:
-            self.sample = N
-        else:
-            self.sample = sample
+        self.sample = sample
 
         self.summary = {}
         self.fontsize = 16
 
-    def get_info(self):
-        from . import phred
-        N = self.fastq.count_reads()
+    def _get_info(self):
+        """Populates the data structures for plotting.
+
+        Will be called on request"""
         qualities = []
         mean_qualities = []
         sequences = []
@@ -727,37 +738,40 @@ class FastQC(object):
         pb = Progress(self.sample)
 
         # could use multiprocessing
-        for i, record in enumerate(self.fastq):
-            # keep track of min/max sequence length
-            N = len(record['sequence'])
-            if N < minimum:
-                minimum = N
-            if N > maximum:
-                maximum = N
-            self.nucleotides += N
+        fastq = pysam.FastxFile(self.filename)
+        if 1 == 1:
+            count = 0
+            for record in fastq:
+                # keep track of min/max sequence length
+                N = len(record.sequence)
+                if N < minimum:
+                    minimum = N
+                if N > maximum:
+                    maximum = N
+                self.nucleotides += N
 
-            quality = phred.Quality(record['quality']).quality
-            qualities.append(quality)
-            mean_qualities.append(pylab.mean(quality))
-            if i > self.sample:
-                break
-            identifier = Identifier(record['identifier'])
-            self.identifiers.append(identifier.info)
+                import numpy as np
 
-            sequence = record['sequence']
-            sequences.append(sequence)
+                quality = record.get_quality_array()
+                qualities.append(quality)
+                mean_qualities.append(np.mean(quality))
 
-            GC = sequence.count(b'G') + sequence.count(b'C')
-            self.gc_list.append(GC)
-            self.N_list.append(sequence.count(b'N'))
+                if count > self.sample:
+                    break
+                identifier = Identifier(record.name)
+                self.identifiers.append(identifier.info)
 
-            pb.animate(i+1)
+                sequence = record.sequence
+                sequences.append(sequence)
 
-        self.tiles = {}
-        self.tiles['x'] = [float(this['x_coordinate']) for this in self.identifiers]
-        self.tiles['y'] = [float(this['y_coordinate']) for this in self.identifiers]
-        self.tiles['tiles'] = [this['tile_number'] for this in self.identifiers]
+                GC = sequence.count('G') + sequence.count('C')
+                self.gc_list.append(GC)
+                self.N_list.append(sequence.count('N'))
 
+                count += 1
+                pb.animate(count)
+
+        # other data
         self.gc_content = sum(self.gc_list) / float(self.nucleotides)
         self.qualities = qualities
         self.mean_qualities = mean_qualities
@@ -765,15 +779,36 @@ class FastQC(object):
         self.maximum = maximum
         self.sequences = sequences
 
-        print('\nCreating tiles data')
-        import collections
-        d = collections.defaultdict(list)
-        for tile, seq in zip(self.tiles['tiles'], self.qualities):
-            d[tile].append(seq)
-        self.data_imqual = [pd.DataFrame(d[key]).mean().values for key in sorted(d.keys())]
+        try:
+            print('\nCreating tiles data')
+            self.tiles = {}
+            self.tiles['x'] = [float(this['x_coordinate']) for this in self.identifiers]
+            self.tiles['y'] = [float(this['y_coordinate']) for this in self.identifiers]
+            self.tiles['tiles'] = [this['tile_number'] for this in self.identifiers]
+            import collections
+            d = collections.defaultdict(list)
+            for tile, seq in zip(self.tiles['tiles'], self.qualities):
+                d[tile].append(seq)
+            self.data_imqual = [pd.DataFrame(d[key]).mean().values for key in sorted(d.keys())]
+        except:
+            print("Some data could not be extracted from identifiers. "
+            "Not all figure will be available. Illumina identifiers required")
 
     @run_info
     def imshow_qualities(self):
+        """Qualities
+
+        .. plot::
+            :include-source:
+
+            from sequana import sequana_data
+            from sequana import FastQC
+            filename  = sequana_data("test.fastq", "testing")
+            qc = FastQC(filename)
+            qc.imshow_qualities()
+            from pylab import tight_layout; tight_layout()
+
+        """
         from biokit.viz import Imshow
         im = Imshow(self.data_imqual)
         im.plot(xticks_on=False, yticks_on=False, origin='lower')
@@ -782,14 +817,42 @@ class FastQC(object):
         pylab.ylabel("tile number")
 
     @run_info
-    def boxplot_quality(self):
+    def boxplot_quality(self, hold=False, ax=None):
+        """Boxplot quality
+
+        Same plots as in FastQC that is average quality for all bases.
+        In addition a 1 sigma error enveloppe is shown (yellow).
+
+        Background separate zone of good, average and bad quality (arbitrary).
+
+
+        """
         df = pd.DataFrame(self.qualities)
         from biokit.viz.boxplot import Boxplot
         bx = Boxplot(df)
-        bx.plot()
+        try:
+            # new version of biokit
+            bx.plot(ax=ax)
+        except:
+            bx.plot()
+            
 
     @run_info
     def histogram_sequence_coordinates(self):
+        """Histogram of the sequence coordinates on the plate
+
+        .. plot::
+            :include-source:
+
+            from sequana import sequana_data
+            from sequana import FastQC
+            filename  = sequana_data("test.fastq", "testing")
+            qc = FastQC(filename)
+            qc.histogram_sequence_coordinates()
+
+        .. note:: in this data set all points have the same coordinates.
+
+        """
         # Distribution of the reads in x-y plane
         # less reads on the borders ?
         from biokit.viz.hist2d import Hist2D
@@ -797,23 +860,41 @@ class FastQC(object):
 
     @run_info
     def histogram_sequence_lengths(self):
+        """Histogram sequence lengths
+
+        .. plot::
+            :include-source:
+
+            from sequana import sequana_data
+            from sequana import FastQC
+            filename  = sequana_data("test.fastq", "testing")
+            qc = FastQC(filename)
+            qc.histogram_sequence_lengths()
+
+        """
         data = [len(x) for x in self.sequences]
-        bins = self._get_xbins()
-        pylab.hist(data, bins=bins)
-        pylab.grid()
+        bary, barx = np.histogram(data, bins=range(max(data)+1))
+
+        pylab.bar(barx[1:], pylab.log(bary))
+
+        pylab.xlim([1,max(data)+1])
+
+        pylab.grid(True)
         pylab.xlabel("position bp", fontsize=self.fontsize)
 
-    @run_info
-    def _get_xbins(self):
-        if self.maximum<40:
-            bins = list(range(1,41))
-        else:
-            bins = list(range(1,10)) + list(range(10,self.maximum + 1, 5))
-        return bins
 
     @run_info
     def histogram_gc_content(self):
         """Plot histogram of GC content
+
+        .. plot::
+            :include-source:
+
+            from sequana import sequana_data
+            from sequana import FastQC
+            filename  = sequana_data("test.fastq", "testing")
+            qc = FastQC(filename)
+            qc.histogram_gc_content()
 
         """
         pylab.hist(self.gc_list, bins=range(0, self.maximum))
@@ -822,3 +903,26 @@ class FastQC(object):
         pylab.xlabel("Mean GC content (\%)", fontsize=self.fontsize)
 
 
+
+class _FastQRandom(object):
+    """
+
+    Illumina 1.8
+    """
+    def __init__(self):
+
+        self.n_reads = 1000
+        self.quality = 38  # could also be a list of length n_bp
+        self.sigma_quality
+        self.n_bp = 101
+        self.acgt_proportion = [0.25,0.25,0.25,0.25]
+
+    def to_fastq(self):
+        reads = "%s\n%s\n+\n%s\n"
+        with open(output, "w") as fh:
+            for this in range(self.n_reads):
+                quality = 'BBBBBBBB'
+                seq =  "ACGTACGT"
+                qname = "@HISEQ:426:C5T65ACXX:5:2302:1943:2127"
+                comments = "random"
+                reads % (qname, seq, quality)

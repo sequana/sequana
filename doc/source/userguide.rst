@@ -28,6 +28,20 @@ Save this example in a file called Snakefile and type::
 
     snakemake
 
+If the analysis is successful, you can open the report in ::
+
+    report/index.html
+
+If you change the config file or wish to restart, you will need to force the
+analysis to overewrite existing files::
+
+    snakemake --forceall
+
+Or simply delete all files that have been created::
+
+    snakemake cleanup
+
+.. todo:: explain the cleanup module.
 
 
 Sequana Toolkit
@@ -40,7 +54,7 @@ FastQ, VCF). As an example, we will play here below with a smaple of BAM file:
     :include-source:
 
     from sequana import sequana_data, BAM
-    b = BAM(sequana_data("test.bam"))
+    b = BAM(sequana_data("test.bam", "testing"))
     b.plot_bar_mapq()
 
 
@@ -51,7 +65,7 @@ In snakemake, we provide also with different snakefile and standard formats,
 the ability to create or generate reports. Here is a BAM report file::
 
     from sequana import BAM, sequana_data, BAMReport
-    b = BAM(sequana_data("test.bam"))
+    b = BAM(sequana_data("test.bam", "testing"))
 
     r = BAMReport()
     r.set_data(b)

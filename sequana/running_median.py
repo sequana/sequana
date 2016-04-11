@@ -1,14 +1,27 @@
+"""Data analysis tool 
+
+
+.. autosummary:: 
+
+    RunningMedian
+
+
+"""
 # Code from ActiveState Code:
 # http://code.activestate.com/recipes/576930-efficient-running-median-using-an-indexable-skipli/
 # Adapted for python 3
 
 from random import random
 from math import log, ceil
+from collections import deque
+from itertools import islice
+
 
 class Node(object):
     __slots__ = 'value', 'next', 'width'
     def __init__(self, value, next, width):
         self.value, self.next, self.width = value, next, width
+
 
 class End(object):
     'Sentinel object that always compares greater than another object'
@@ -19,6 +32,7 @@ class End(object):
         return False
 
 NIL = Node(End(), [], [])               # Singleton terminator node
+
 
 class IndexableSkiplist:
     'Sorted collection supporting O(lg n) insertion, removal, and lookup by rank.'
@@ -94,8 +108,6 @@ class IndexableSkiplist:
             yield node.value
             node = node.next[0]
 
-from collections import deque
-from itertools import islice
 
 class RunningMedian:
     'Fast running median with O(lg n) updates where n is the window size'

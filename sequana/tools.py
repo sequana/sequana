@@ -17,8 +17,9 @@ def reverse_complement(seq):
     # use hastag but for now, do it manually
     return seq.translate(_translate)[::-1]
 
+
 def bam_to_mapped_unmapped_fastq(filename, mode='pe'):
-    """
+    """Create mapped and unmapped fastq files from a BAM file
 
     Given a BAM file, create FASTQ with R1/R2 reads mapped and unmapped.
     In the paired-end case, 4 files are created.
@@ -33,11 +34,14 @@ def bam_to_mapped_unmapped_fastq(filename, mode='pe'):
     keep the number of final reads equal to the initial number of reads
 
     If R1 is mapped or R2 is mapped then the reads are considered mapped. If
-    both R1 and R2 are unammped, then reads are unmapped.
+    both R1 and R2 are unmapped, then reads are unmapped.
 
-    Note about chimeric alginment. One is the representative and the other is
+    Note about chimeric alginment: one is the representative and the other is
     the supplementary. This flag is not used in this function. Note also that
     chimeric alignment have same QNAME and flag 4 and 8
+
+    .. todo:: comments is currently harcoded and should be removed. comments
+        from the fastq qname are not stored in BAM.
     """
     bam = BAM(filename)
 
@@ -47,6 +51,12 @@ def bam_to_mapped_unmapped_fastq(filename, mode='pe'):
         import collections
         stats = collections.defaultdict(int)
         unpaired = 0
+        stats['R1_unmapped'] = 0
+        stats['R2_unmapped'] = 0
+        stats['R1_mapped'] = 0
+        stats['R2_mapped'] = 0
+        stats['duplicated'] = 0
+        stats['unpaired'] = 0
 
         R1_mapped = open(newname + "_R1.mapped.fastq", "bw")
         R2_mapped = open(newname + "_R2.mapped.fastq", "bw")
@@ -55,6 +65,7 @@ def bam_to_mapped_unmapped_fastq(filename, mode='pe'):
 
         from easydev import Progress
         pb = Progress(len(bam))
+        bam.reset()
         for i, this in enumerate(bam):
             # check that this is paired indeed
             if this.is_paired is False:
@@ -69,7 +80,6 @@ def bam_to_mapped_unmapped_fastq(filename, mode='pe'):
                 # A secondary alignment occurs when a given read could align reasonably well to
                 # more than one place. One of the possible reported alignments is termed "primary"
                 # and the others will be marked as "secondary".
-
                 stats['secondary'] +=1 
             else:
                 # inpysam, seq is a string and qual a bytes....
@@ -80,7 +90,6 @@ def bam_to_mapped_unmapped_fastq(filename, mode='pe'):
                     txt += bytes(revcomp, "utf-8") + b"\n"
                     txt += b"+\n"
                     txt += bytes(this.qual[::-1], 'utf-8') + b"\n"
-
                 else:
                     txt = b"@" + bytes(this.qname, "utf-8") + b"\t%s\n"
                     txt += bytes(this.seq, "utf-8") + b"\n"
@@ -109,8 +118,8 @@ def bam_to_mapped_unmapped_fastq(filename, mode='pe'):
                 if this.is_duplicate:
                     stats['duplicated'] += 1
             pb.animate(i+1)
-        print('')
-        print("Number of entries in the BAM: %s" % str(i+1))
+
+        print("\nNumber of entries in the BAM: %s" % str(i+1))
         R1_mapped.close()
         R2_mapped.close()
         R1_unmapped.close()

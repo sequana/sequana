@@ -1,0 +1,22 @@
+
+requirements: ['Coliphage_phiX174']
+
+
+datadir: fastq_raw
+
+
+fastqc:
+    directories: ["fastqc_raw"]
+    extension:  ["*.fastq.gz", "*.fastq"]
+
+
+fastq_sampling:
+    skip: False
+    N: 100000
+
+
+# Name of the Fix to be found in bwa_fix rule
+bwa_fix:
+    reference: Coliphage_phiX174.fa
+
+

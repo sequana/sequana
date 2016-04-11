@@ -6,8 +6,8 @@ from setuptools import setup, find_packages
 import glob
 
 _MAJOR               = 0
-_MINOR               = 0
-_MICRO               = 4
+_MINOR               = 1
+_MICRO               = 0
 version              = '%d.%d.%d' % (_MAJOR, _MINOR, _MICRO)
 release              = '%d.%d' % (_MAJOR, _MINOR)
 
@@ -58,7 +58,7 @@ setup(
     # package installation
     packages = packages,
 
-    install_requires = ["easydev==0.9.17", "reports==0.1.5", "matplotlib", "pandas",
+    install_requires = ["easydev==0.9.18", "reports==0.1.5", "matplotlib", "pandas",
         "cutadapt==1.9.1", "pysam", "pyVCF"],
 
     # here below '': pattern means include that pattern in all packages
@@ -81,6 +81,7 @@ setup(
         'console_scripts':[
            'fastq_head=scripts.fastq_head:main',
            'fastq_count=scripts.fastq_count:main',
+           'sequana=scripts.sequana:main'
         ]
     },
 
