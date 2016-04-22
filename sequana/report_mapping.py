@@ -15,7 +15,7 @@ class MappingReport(BaseReport):
         super(MappingReport, self).__init__(
                 jinja_filename="mapping/index.html",
                 directory=directory,
-                output_filename="mapping.html", **kargs)
+                output_filename="report_mapping.html", **kargs)
         self.jinja['title'] = "Mapping Report"
         self.low_t = low_threshold
         self.high_t = high_threshold
@@ -31,18 +31,21 @@ class MappingReport(BaseReport):
                                             "zscore_hist.png")
 
         df = pd.DataFrame()
-        formatter = '<a target="_blank" alt={0} href="../{1}">{0}</a>'
+        formatter = '<a target="_blank" alt={0} href="{1}">{0}</a>'
         for i in range(0, len(self.mapping), 500000):
             name = "mapping_{0}".format(i)
             stop = i + 500000
             if stop > len(self.mapping):
                 stop = len(self.mapping)
             name = "{0}_{1}".format(name, stop)
+            link = name + ".html"
             r = SubMappingReport(start=i, stop=stop, 
-                    output_filename=name + ".html")
+                    output_filename=name + ".html",
+                    directory=self.directory)
             r.set_data(self.mapping)
             r.create_report()
-            link = self.directory + os.sep + name + ".html"
+            print(link)
+            print(self.directory)
             df = df.append({"name": formatter.format(name, link)}, 
                 ignore_index=True)
         html = HTMLTable(df)

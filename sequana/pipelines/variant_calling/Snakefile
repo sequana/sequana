@@ -29,7 +29,7 @@ include: sm.modules["bwa_mem"]
 if config["report_mapping"]["do"]:
     include: sm.modules["bed_genomecov"]
     include: sm.modules["report_mapping"]
-    final_output.append("report/mapping.html")
+    final_output.append(cfg.PROJECT + "/report/report_mapping.html")
 
 # Mark duplicates
 if config["mark_duplicates"]["do"]:

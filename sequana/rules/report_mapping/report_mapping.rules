@@ -1,22 +1,40 @@
+include: sm.modules['dag']     # Create DAG file
+
 rule report_mapping:
     input:
+        dag = "dag.svg",
         bed = cfg.PROJECT + "/genomecov/%s.bed" % cfg.PROJECT
     output:
-        "report/mapping.html"
+        cfg.PROJECT + "/report/report_mapping.html"
     params:
+        outdir = cfg.PROJECT +"/report",
         size = config["report_mapping"]["window_size"],
         high = config["report_mapping"]["high_threshold"],
         low = config["report_mapping"]["low_threshold"]
     run:
         from sequana import bedtools
         from sequana import report_mapping
+        from sequana import report_main
+        import os
 
-        mydata = bedtools.genomecov(input["bed"])
-        mydata.running_median(n=params["size"], circular=True)
+        s = report_main.SequanaReport(directory=params.outdir)
+        s.jinja['description'] = """
+
+        This is the output of variant calling pipeline. This pipeline search
+        variants and provide as an output a vcf file.
+
+        """
+        s.create_report()
+
+        mydata = bedtools.genomecov(input.bed)
+        mydata.running_median(n=params.size, circular=True)
         mydata.coverage_scaling()
         mydata.compute_zscore()
 
-        r = report_mapping.MappingReport(low_threshold=params["low"], 
-            high_threshold=params["high"])
+        r = report_mapping.MappingReport(low_threshold=params.low, 
+            high_threshold=params.high, directory=params.outdir)
         r.set_data(mydata)
         r.create_report()
+
+        shell("cp Snakefile %s/" % params.outdir)
+        shell("mv {input.dag} %s/" % params.outdir)
