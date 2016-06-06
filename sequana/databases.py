@@ -125,7 +125,7 @@ class ENADownload(object):
             results.update(result)
         return results
 
-    def download_fasta(self, filelist, output_dir=None):
+    def download_fasta(self, filelist, output_dir=None, from_ena=True):
         """
 
         :param filelist: a name to find on the ENA web server OR the
@@ -137,7 +137,7 @@ class ENADownload(object):
             should not happen if the list is properly defined. 
         """
         from bioservices import ENA
-        if filelist.endswith(".txt"):
+        if filelist.endswith(".txt") and from_ena is True:
             print("Downloading list from http://www.ebi.ac.uk/genomes/%s" % filelist)
             data = urlopen("http://www.ebi.ac.uk/genomes/%s" % filelist).readlines()
             identifiers = [x.strip().decode() for x in data]
@@ -147,11 +147,19 @@ class ENADownload(object):
                 "CM001285", "CM001286", "CM001287", "CM001288", "CM001289", 
                 "CM001290", "CM001291","CM001292",  "CM001293", "CM001294", 
                 "CM001295", "CM001296"]
-        else:
-            identifiers = [filelist]
+        elif isinstance(filelist, list):
+            pass
+        elif isinstance(filelist, str):
+            # could be a single identifier or a filename (assuming a single
+            # column)
+            if os.path.exists(filelist):
+                identifiers = [x for x in open(filelist).read().split()]
+                identifiers = [x.strip() for x in identifiers]
+            else:
+                identifiers = [filelist]
         self._identifiers = identifiers
 
-        self.results = self.ena_id_to_gi_number()
+        self.results = self.ena_id_to_gi_number(identifiers)
 
         # do not use caching things this could be huge data sets.
         ena = ENA()
@@ -184,16 +192,13 @@ class ENADownload(object):
 
             # Here, we will fetch info from NCBI every time. This is a pity but
             # no choice for now
-            try:
-                name  = header.strip(">").split(" ")[0]
-                db, id_, acc = name.split("|")
-                header = self.switch_header_to_gi(acc)
-            except Exception as err:
-                try:
-                    print("Skipping %s (not found in NCBI) " % acc)
-                except:
-                    print("Skipping %s " % header)
-                continue
+            name  = header.strip(">").split(" ")[0]
+            db, id_, acc = name.split("|")
+            header = self.switch_header_to_gi(acc)
+            # HEre we could have a try/except but better to fails since it
+            # indicates in general that something is wrong e.g. unknown
+            # identifier
+
             # Save to local file
             # WARNINGS: extension is .fa because kraken-build expects .fa files
             filename = "%s_%s.fa" % (db, acc.split(".")[0])
