@@ -38,6 +38,8 @@ from sequana import logger, Module
 
 
 logger.level = 'INFO'
+logger.name = __name__
+
 
 adapters_choice = ["Nextera", "Rubicon", "PCRFree", "TruSeq", "SMARTer", "Small"]
 

@@ -37,6 +37,7 @@ from easydev.console import purple
 
 from pylab import show, figure, savefig
 
+logger.name = __name__
 
 
 # http://stackoverflow.com/questions/18462610/argumentparser-epilog-and-description-formatting-in-conjunction-with-argumentdef
