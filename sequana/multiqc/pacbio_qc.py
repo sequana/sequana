@@ -36,8 +36,8 @@ class MultiqcModule(BaseMultiqcModule):
             #print( myfile['fn'] )      # Filename
             #print( myfile['root'] )    # Directory file was in
             name = myfile['s_name']
-            if name.startswith("summary_"):
-                name = name.replace("summary_", "")
+            if name.startswith("sequana_summary_pacbio_qc_"):
+                name = name.replace("sequana_summary_pacbio_qc_", "")
             self.sequana_data[name] = self.parse_logs(myfile["f"])
 
         info = "<ul>"
