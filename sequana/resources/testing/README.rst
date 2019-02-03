@@ -1,4 +1,15 @@
 
+
+test_pacbio_barcode_report.csv: file from smrtlink pacbio report after
+demultiplexing to test BarCode class
+
+test_laa_amplicon_analysis_summary_bc2*.csv: files from laa tool output to test
+laa.LAA class
+
+
+
+
+
 This file is the output of the barcode report from smrtlink v6.0:
 ./resources/testing/test_pacbio_barcode_report.csv
 
