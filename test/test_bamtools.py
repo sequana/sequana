@@ -30,6 +30,7 @@ def test_sam(tmpdir):
     assert s.is_sorted is True
     assert s.is_paired is True
     df = s.get_df_concordance(max_align=100)
+    s.hist_soft_clipping()
 
 
 def test_bam(tmpdir):
