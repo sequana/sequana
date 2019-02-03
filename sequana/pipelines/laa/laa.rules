@@ -1,0 +1,448 @@
+#import sequana
+#import glob
+from sequana import snaketools as sm
+from sequana import sequana_data 
+#from sequana import logger   # this makes snakemeke fail 
+#logger.__name__ = "laa pipeline"  
+
+sm.init("laa", globals())
+
+# This must be defined before the include
+configfile: "config.yaml"
+#__snakefile__ = srcdir(__snakefile__)
+__snakefile__ = "Snakefile"
+__snakefile__ = os.path.abspath(__snakefile__)
+
+
+M = sm.PipelineManagerGeneric("laa", config)
+
+# set reference alias
+reference = config["input"]["reference"]
+
+if len(M.ff) == 0:
+    logger.error("No files found.")
+    sys.exit(0)
+
+# CHECK the input type
+assert config['input']['data_type'] in ['lima.ccs.fastq', 'lima.ccs.bam', 'subreads.bam']
+
+# Check the reference validity
+assert reference.endswith('.fa') or reference.endswith('.fasta'), \
+    "Reference must be a FASTA file ending in .fa or .fasta"
+
+# Check the genbank validity
+assert config['snpeff']['reference'].endswith('.gbk')
+
+do_snpeff = config['snpeff']['do']
+do_kraken = config['kraken']['do']
+
+#if do_snpeff:
+#    assert config['snpeff']['reference'].endswith('.gbk')
+
+# identify the pattern
+
+data_type = config['input']['data_type']
+
+if data_type == "lima.ccs.fastq":
+    for filename in M.ff.all_extensions:
+        if "--" not in filename:
+            raise ValueError("input file format must be lima_output.lbcXX--lbcXX.ccs.fastq")
+        sample = filename.split("--")[0]
+        if sample.startswith("lbc") is False:
+            raise ValueError("input file format must be lima_output.lbcXX--lbcXX.ccs.fastq")
+    samples = [sample.split('--')[0][3:] for sample in M.ff.all_extensions]
+elif data_type == "lima.ccs.bam":
+    for filename in M.ff.all_extensions:
+        if "--" not in filename:
+            raise ValueError("input file format must be lima_output.lbcXX--lbcXX.ccs.bam")
+        sample = filename.split("--")[0]
+        if sample.startswith("lbc") is False:
+            raise ValueError("input file format must be lima_output.lbcXX--lbcXX.ccs.bam")
+    samples = [sample.split('--')[0][3:] for sample in M.ff.all_extensions]
+elif data_type == "lima.subreads.bam":
+    raise NotImplementedError
+else:
+    raise ValueError("Input file type must be one of lima.ccs.fastq, lima.ccs.bam, subreads.bam")
+
+
+M.samples = {tag:fl for tag, fl in zip(samples, M.ff.realpaths)}
+
+
+# Add Conda
+__conda__output = "inputs/requirements.txt"
+include: sm.modules['conda']   # Create requirements.txt(dependencies)
+
+
+__rawdata__input = M.getrawdata()
+
+
+expected_output = []
+
+
+
+
+laa = False
+if laa is True:
+    # Looks like the input is not a CCS file but a raw bam files after lima
+    # 6 mins on BC25 of project 812 so we use protected
+    rule laa:
+        input: PATH + "lima_output.lbc{sample}--lbc{sample}.bam"
+        output: protected("bc{sample}/amplicon_analysis_summary.csv"),
+        params:
+            directory="bc{sample}"
+        threads: 2
+        shell:
+            """
+            cd {params.directory}
+            laa --noPhasing --minLength 1000 -v --maxReads 2400  --numThreads={threads} {input}
+            """
+
+
+# PROJET 812
+BAMPATH = "/pasteur/projets/policy01/Biomics/PacBio/smrtlink/userdata/jobs_root/001/001336/tasks/barcoding.tasks.lima-0/"
+
+bam2ccs = False
+if bam2ccs:
+    rule bam2ccs:
+        input: BAMPATH + "lima_output.lbc{sample}--lbc{sample}.bam"
+        output: "bc{sample}/lima_output.lbc{sample}--lbc{sample}.ccs.bam"
+        params:
+            directory="bc{sample}"
+        threads: 8
+        shell:
+            """
+            #mkdir -p {params.directory}
+            #cd {params.directory}
+            ccs {input} {output} --numThreads {threads}
+            """
+
+ccs2fastq = False
+if ccs2fastq:
+    rule ccs2fastq:
+        input: "bc{sample}/lima_output.lbc{sample}--lbc{sample}.ccs.bam"
+        output: "bc{sample}/lima_output.lbc{sample}--lbc{sample}.ccs.fastq"
+        shell: 
+            """
+            bioconvert bam2fastq {input} {output} --force
+            """
+
+if do_snpeff:
+    __snpeff_add_locus_in_fasta__log = "common_logs/snpeff_add_locus_in_fasta.log"
+    __snpeff_add_locus_in_fasta__input = reference
+    __snpeff_add_locus_in_fasta__output = "reference/{0}".format(os.path.basename(reference))
+    include: sm.modules["snpeff_add_locus_in_fasta"]
+    reference = __snpeff_add_locus_in_fasta__output
+else:
+    # copy reference into ./reference
+    reference = "reference/" + config['reference']
+
+
+rule mapping:
+    input: 
+        __rawdata__input,
+        reference=reference
+    output: 
+        sorted_bam = M.getname("mapping", ".sorted.bam"),
+        bam = temp(M.getname("mapping", ".bam")),
+        sam = temp(M.getname("mapping", ".sam")),
+    params:
+        reference = reference
+    log:
+        M.getname("mapping", ".log")
+    threads: 4
+    shell:
+        """
+    minimap2 -x map-pb {input.reference} {input} -t {threads} -a 1> {output.sam} 2>{log}
+    bioconvert sam2bam {output.sam} {output.bam} --force
+    bamtools sort -in {output.bam} -out {output.sorted_bam}
+        """
+
+
+rule mapping_index:
+        input: M.getname("mapping", ".sorted.bam")
+        output: M.getname("mapping", ".sorted.bam.bai")
+        threads: 1
+        shell: "bamtools index -in {input}"
+
+
+__freebayes__input = M.getname("mapping", ".sorted.bam")
+__freebayes__reference = reference
+__freebayes__output = M.getname("freebayes", ".raw.vcf")
+__freebayes__log = M.getname("freebayes", ".freebayes.log")
+include: sm.modules["freebayes"]
+
+
+
+if do_snpeff:
+    __snpeff__input = __freebayes__output
+    __snpeff__output = M.getname("snpeff", ".variants.ann.vcf")
+    __snpeff__html = M.getname("snpeff", ".snpeff.html")
+    __snpeff__log = M.getname("snpeff", ".snpeff.log")
+    __snpeff__csv = M.getname("snpeff", ".snpeff.csv")
+    include: sm.modules["snpeff"]
+    __freebayes_vcf_filter__input = __snpeff__output
+else:
+    __freebayes_vcf_filter__input = __freebayes__output
+
+
+
+if config["freebayes_vcf_filter"]["do"]:
+    # __freebayes_vcf_filter__input defined above in the do_snpeff switch
+    __freebayes_vcf_filter__output = M.getname("freebayes", ".variants.filtered.vcf")
+    __freebayes_vcf_filter__csv = M.getname("freebayes", ".variants.filtered.csv")
+    __freebayes_vcf_filter__report_dir = "{sample}/report_variant"
+    __freebayes_vcf_filter__html =  "{sample}/report_variant/variant_calling.html"
+    include: sm.modules["freebayes_vcf_filter"]
+
+
+rule igv_bases:
+    input: M.getname("mapping", ".sorted.bam.bai")
+    output: M.getname("igvtools", ".bases.txt")
+    params:
+        reference = reference
+    log: M.getname("igvtools", ".coverage.log")
+    run:
+        input = input[0].replace(".bai", "")
+        cmd = "igvtools count {input} stdout {params.reference} -w 1 --bases 1> {output} 2>{log}"
+        shell(cmd)
+
+
+rule igv_count:
+    input: M.getname("mapping", ".sorted.bam.bai")
+    output: M.getname("igvtools", ".coverage.txt")
+    params:
+        reference = reference
+    log: M.getname("igvtools", ".coverage.log")
+    run:
+        input = input[0].replace(".bai", "")
+        cmd = "igvtools count {input} stdout {params.reference} -w 1 > {output} 2>{log}"
+        shell(cmd)
+
+
+rule coverage:
+    input: M.getname("igvtools", ".coverage.txt")
+    output: M.getname("images", ".coverage.png")
+    run:
+        from pylab import savefig, ylim, xlabel
+        import pandas as pd
+        df  = pd.read_csv(input[0], skiprows=2, sep="\t", index_col=0, header=None)
+        df.plot(legend=False)
+        ylim([0, max(ylim())])
+        xlabel("position", fontsize=16)
+        savefig(output[0], dpi=150)
+
+
+# TODO merge with sequana/rulegraph
+__rulegraph__input = __snakefile__
+__rulegraph__output="rulegraph/rulegraph.svg"
+__rulegraph__mapper = {
+    "kraken": "../kraken/kraken.html",
+}
+include: sm.modules['rulegraph']
+#expected_output.extend([__rulegraph__output])
+
+
+
+"""__rulegraph__output="rulegraph/rulegraph.svg"
+rule rulegraph:
+    input: __snakefile__
+    output:
+        svg = __rulegraph__output,
+        dot = temp("rg.dot"),
+        dot2 = temp("rg.ann.dot"),
+    run:
+        import os
+        cwd = os.getcwd()
+        from sequana import SequanaConfig, DOTParser
+        from subprocess import Popen
+        cmd = "snakemake -s {} --rulegraph --nolock ".format(input[0])
+        # There is an error message caught by the PIPE
+        with open("rg.dot", "w") as fl:
+            p = Popen(cmd.split(), stdout=fl, stderr=subprocess.PIPE)
+            p.wait()
+        d = DOTParser(cwd + os.sep + output.dot)
+        d.add_urls(mapper={
+            "sequana_kraken": "kraken.html",
+            "create_proportion_plot_kraken": "images/proportion_kraken.png",
+            "plot_ccs_histo": "images/plot_ccs_histo.png"
+        })
+        shell("dot -Tsvg {} -o {}".format(output.dot2, output.svg))
+"""
+
+
+if do_snpeff:
+    rule multiqc:
+        input: expand(M.getname("snpeff", ".snpeff.csv"), sample=samples)
+        output: "multiqc_report.html"
+        run:
+            from subprocess import Popen
+            cmd = "multiqc . -f -m snpeff"
+            process = Popen(cmd.split(), stderr=subprocess.PIPE, stdout=subprocess.PIPE)
+
+
+
+rule create_proportion_plot_kraken:
+    """
+
+    barcode_name,n_reads,percent_virus,percent_human,unclassified
+    bc25,8015,5985,305,537
+    bc26,5184,4920,118,125
+    bc27,6912,6792,109,4
+    bc28,5428,5240,134,16
+    bc29,7942,5878,72,1502
+    """
+    input: expand("{sample}/taxonomy/kraken/kraken.csv", sample=samples)
+    output:
+        image="images/proportion_kraken.png",
+        data="outputs/kraken_summary.json"
+    run:
+        from pylab import savefig, ylim, xlabel, ylabel
+        import pandas as pd
+        data = {}
+        for sample, filename in zip(samples, input):
+            assert sample in filename
+            df = pd.read_csv(filename)
+            data[sample] = df.groupby("kingdom")['percentage'].sum()
+        df = pd.DataFrame(data)
+        df.to_json(output.data)
+        df = df.sort_index()
+        df.T.plot(kind="bar", stacked=True)
+        xlabel("Sample", fontsize=16)
+        ylabel("Percentage", fontsize=16)
+        savefig(output.image, dpi=200)
+
+
+
+rule bases_plot:
+    run:
+        import pandas as pd
+        df = pd.read_csv("bases.txt", sep="\t", skiprows=3, header=None)
+        df.columns = ["Pos", "A", "C", "G", "T","N","DEL","INS"]
+        df = df.set_index('Pos')
+        df = df.divide(df.sum(axis=1), axis=0)
+        print(df[(df>0.2).sum(axis=1)>=2])
+
+
+rule build_fasta:
+    input: "bc{sample}/bases.txt"
+    output: "bc{sample}/consensus.fasta"
+    run:
+        import pandas as pd
+        df = pd.read_csv("bases.txt", sep="\t", skiprows=3, header=None)
+
+
+rule copy_genbank:
+    input: config["snpeff"]["reference"]
+    output: "reference"
+    shell: "cp {input} {output}"         
+#expected_output.append("reference/" + config["snpeff"]["reference"])
+
+
+if do_kraken:
+    rule sequana_kraken:
+        input: __rawdata__input
+        output: "{sample}/taxonomy/summary.html"
+        threads: 4 
+        log: M.getname("taxonomy", ".taxonomy.log")
+        run:
+            outdir = output[0].split("/",1)[0]
+            cmd = "sequana_taxonomy --file1 {} "
+            cmd += " --output-directory {}/taxonomy "
+            cmd += " --thread {} --databases "
+            cmd = cmd.format(input[0], outdir, threads)
+            for this in config['kraken']['databases']:
+                assert os.path.exists(this)
+                cmd += " {} ".format(this)
+            shell(cmd)
+
+
+rule plot_ccs_histo:
+    input: M.ff.realpaths
+    output: "images/plot_ccs_histo.png"
+    run:
+        from sequana import FastQ
+        data = [len(FastQ(filename)) for filename in input]
+        from pylab import plot, hist, savefig, xlabel
+        hist(data, bins=20)
+        xlabel("number of reads", fontsize=16)
+        savefig(output[0], dpi=150)
+
+
+expected_output = [
+    expand(M.getname("images", ".coverage.png"), sample=samples),
+    expand(M.getname("igvtools", ".bases.txt"), sample=samples),
+    expand(__freebayes__output, sample=samples),
+    "images/plot_ccs_histo.png",
+   "images/proportion_kraken.png",
+   "rulegraph/rulegraph.svg",
+   "outputs/kraken_summary.json",
+   "multiqc_report.html",
+   expand("{sample}/report_variant/variant_calling.html", sample=samples)
+    ]
+
+
+rule pipeline:
+    input:  expected_output
+
+
+localrules: conda
+
+
+onsuccess:
+
+    shell("rm -f igv.log")
+    from sequana.modules_report.summary import SummaryModule
+    from sequana.modules_report.kraken import KrakenModule
+
+
+    intro = """<p>Amplicon Analysis Summary. <br>
+      <br><b>Number of samples:</b> {}
+      </p>
+
+      <img src="images/plot_ccs_histo.png"></img>
+      <img src="images/proportion_kraken.png"></img>
+     """
+
+    if do_snpeff:
+        intro += """<p>
+        For a snpeff summary, please see this <a href="multiqc_report.html">multiqc report</html></p>
+        """
+        for sample in samples:
+            intro += """<a href="bc{}/snpeff.html">bc{}/snpeff.html</a><br>""".format(sample, sample)
+
+        for sample in samples:
+            intro += """<a href="bc{}/report_variant/variant_calling.html">bc{}/variant report</a><br>"""
+.format(
+                sample, sample)
+    else:
+        "<p>No SNPEFF report available (was not required). Please see variant reports instead</p>"
+
+    intro = intro.format(len(ff))
+
+    data = {"inputs":None, "outputs":None, "html":None, "snakefile": __snakefile__,
+          "config": "config.yaml", "stats": "stats.txt", "rulegraph": __rulegraph__output,
+          "requirements": "inputs/requirements.txt"}
+    s = SummaryModule(data, intro=intro)
+
+    from sequana.utils import config as conf
+    for sample in samples:
+        sample_summary = {}
+
+        conf.summary_sections = []
+        conf.output_dir = "{}".format(sample)
+
+        k = KrakenModule("bc" + sample + "/taxonomy/kraken")
+        sample_summary['kraken_json'] = json.loads(k._get_stats().to_json())
+        conf.summary_sections.append({
+            "name": "Kraken ",
+            "anchor'": "kraken",
+            "content": k._get_summary_section()
+        })
+
+
+    from sequana.snaketools import Makefile, OnSuccess
+    sm.OnSuccess()
+
+onerror:
+    print("An error occurred. See messages above.")
+

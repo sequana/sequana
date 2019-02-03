@@ -6,5 +6,5 @@
 - samtools
 - igvtools
 - freebayes
-- snpeff
 - kraken
+- snpEff
