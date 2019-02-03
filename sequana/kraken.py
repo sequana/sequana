@@ -31,7 +31,7 @@ logger.name = __name__
 
 
 __all__ = ['KrakenResults', "KrakenPipeline", "KrakenAnalysis",
-            "KrakenDownload", "KrakenHierarchical"]
+            "KrakenDownload", "KrakenHierarchical", "MultiKrakenResults"]
 
 
 class KrakenResults(object):
@@ -973,3 +973,62 @@ class KrakenDownload(object):
         # The annotations
         wget("https://github.com/sequana/data/raw/master/sequana_db1/annotations.csv",
             dir1 + os.sep + "annotations.csv")
+
+
+
+class MultiKrakenResults():
+
+    def __init__(self, filenames, sample_names=None):
+        self.filenames = filenames
+        if sample_names is None:
+            self.sample_names = list(range(1,len(filenames)+1))
+        else:
+            self.sample_names = sample_names
+
+    def get_df(self):
+        import pandas as pd
+        data = {}
+        for sample, filename in zip(self.sample_names, self.filenames):
+            df = pd.read_csv(filename)
+            df = df.groupby("kingdom")['percentage'].sum()
+            # if a taxon is obsolete, the kingdom is empty. 
+            # We will set the kingdom as Unclassified and raise a warning
+            # if the count is > 5%
+            if " " in df.index:
+                percent = df.loc[" "]
+                if percent > 5:
+                    logger.warning("Found {}% of taxons in obsolete category".format(percent))
+                if "Unclassified" in df.index:
+                    df.loc['Unclassified'] += df.loc[' ']
+                    df.drop(" ", inplace=True)
+                else:
+                    df.loc['Unclassified'] = df.loc[' ']
+                    df.drop(" ", inplace=True)
+            data[sample] = df
+
+        df = pd.DataFrame(data)
+        #df.to_json(output.data)
+        df = df.sort_index(ascending=False)
+        return df
+
+    def plot_stacked_hist(self, output_filename=None, dpi=200, kind="barh", 
+        fontsize=10, edgecolor="k", lw=1, width=1, ytick_fontsize=10):
+        df = self.get_df()
+        df.T.plot(kind=kind, stacked=True, edgecolor=edgecolor, lw=lw,
+            width=width)
+        ax = pylab.gca()
+        positions = pylab.yticks()
+        #ax.set_yticklabel(positions, labels, fontsize=ytick_fontsize)
+        pylab.xlabel("Percentage (%)", fontsize=fontsize)
+        pylab.ylabel("Sample index/name", fontsize=fontsize)
+        pylab.yticks(fontsize=ytick_fontsize)
+        pylab.legend(title="kingdom")
+        pylab.xlim([0, 100])
+
+        if output_filename:
+            pylab.savefig(output_filename, dpi=dpi)
+
+
+
+
+
