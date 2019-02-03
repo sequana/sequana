@@ -3,7 +3,7 @@
 """ MultiQC module to parse output from sequana"""
 import os
 import re
-
+from collections import OrderedDict
 # prevent boring warning (version 1.0)
 import logging
 logging.captureWarnings(True)
@@ -37,6 +37,7 @@ class MultiqcModule(BaseMultiqcModule):
             #print( myfile['root'] )    # Directory file was in
             name = myfile['s_name']
             if name.startswith("sequana_bamtools_stats_"):
+                #name = "bamtools.stats." + name.replace("sequana_bamtools_stats_", "")
                 name = name.replace("sequana_bamtools_stats_", "")
             self.sequana_data[name] = self.parse_logs(myfile["f"])
 
@@ -62,6 +63,7 @@ class MultiqcModule(BaseMultiqcModule):
         self.add_duplicates_section()
         self.add_forward_reverse_section()
         self.add_failed_QC()
+        self.add_mapped_vs_unmapped_chart()
 
     def parse_logs(self, log_dict):
         """Parse this kind of logs::
@@ -79,17 +81,47 @@ class MultiqcModule(BaseMultiqcModule):
             Paired-end reads:  0    (0%)
         """
         data = {}
-        for line in log_dict.split("\n"):
-            if line.strip() == "" or line.startswith("*") or "Stats for BAM" in line:
-                continue
-            key, value = line.split(":", 1)
-            data[key] = float(value.split()[0])
+        regexes = {
+            'total_reads': r"Total reads:\s*(\d+)",
+            'mapped_reads': r"Mapped reads:\s*(\d+)",
+            'mapped_reads_pct': r"Mapped reads:\s*\d+\s+\(([\d\.]+)%\)",
+            'forward_strand': r"Forward strand:\s*(\d+)",
+            'forward_strand_pct': r"Forward strand:\s*\d+\s+\(([\d\.]+)%\)",
+            'reverse_strand': r"Reverse strand:\s*(\d+)",
+            'reverse_strand_pct': r"Reverse strand:\s*\d+\s+\(([\d\.]+)%\)",
+            'failed_qc': r"Failed QC:\s*(\d+)",
+            'failed_qc_pct': r"Failed QC:\s*\d+\s+\(([\d\.]+)%\)",
+            'duplicates': r"Duplicates:\s*(\d+)",
+            'duplicates_pct': r"Duplicates:\s*\d+\s+\(([\d\.]+)%\)",
+            'paired_end': r"Paired-end reads:\s*(\d+)",
+            'paired_end_pct': r"Paired-end reads:\s*\d+\s+\(([\d\.]+)%\)",
+            'proper_pairs': r"'Proper-pairs'\s*(\d+)",
+            'proper_pairs_pct': r"'Proper-pairs'\s*\d+\s+\(([\d\.]+)%\)",
+            'both_mapped': r"Both pairs mapped:\s*(\d+)",
+            'both_mapped_pct': r"Both pairs mapped:\s*\d+\s+\(([\d\.]+)%\)",
+            'read_1': r"Read 1:\s*(\d+)",
+            'read_2': r"Read 2:\s*(\d+)",
+            'singletons': r"Singletons:\s*(\d+)",
+            'singletons_pct': r"Singletons:\s*\d+\s+\(([\d\.]+)%\)",
+        }
+
+        import re
+        for k, v in regexes.items():
+            res = re.findall(v, log_dict)
+            if len(res) == 0:
+                #logging.warning("Found no entries for {}".format(k))
+                data[k] = None
+            elif len(res) == 1:
+                data[k] = float(res[0])
+            else:
+                logging.warning("Found several entries for {}".format(k))
+                data[k] = None
         return data
 
     def add_failed_QC(self):
         data = {}
         for name in self.sequana_data.keys():
-            data[name] = {'failed_qc': self.sequana_data[name]["Failed QC"]}
+            data[name] = {'failed_qc_pct': self.sequana_data[name]["failed_qc_pct"]}
 
         pconfig = {
             "title": "Failed QC (%)",
@@ -99,19 +131,27 @@ class MultiqcModule(BaseMultiqcModule):
             "logswitch": False,
         }
 
+        total = sum([data[name]['failed_qc_pct'] for name in self.sequana_data.keys()])
+        if total == 0:
+            plot = None
+            description = "Failed QC (none found)." 
+        else:
+            plot = bargraph.plot(data, None, pconfig)
+            description = "Failed QC (%)." 
+
         self.add_section(
-            name = 'Failed QC',
+            name = 'Failed QC (%)',
             anchor = 'failed_qc',
             description = 'Failed QC',
             helptext = "",
-            plot = bargraph.plot(data, None, pconfig))
+            plot = plot)
 
     def add_forward_reverse_section(self):
         data = {}
         for name in self.sequana_data.keys():
-            forward = self.sequana_data[name]["Forward strand"]
-            reverse = self.sequana_data[name]["Reverse strand"]
-            data[name] = {'fwd_rev': forward}
+            forward = self.sequana_data[name]["forward_strand_pct"]
+            reverse = self.sequana_data[name]["reverse_strand_pct"]
+            data[name] = {'fwd': forward, "rev":reverse}
 
         pconfig = {
             "title": "Forward/reverse",
@@ -121,18 +161,21 @@ class MultiqcModule(BaseMultiqcModule):
             "logswitch": False,
         }
 
+        keys = OrderedDict()
+        keys['fwd'] = {'color': '#437bb1', 'name': 'Mapped'}
+        keys['rev'] = {'color': '#b1084c', 'name': 'Unmapped'}
+
         self.add_section(
             name = 'Forward/Reverse',
             anchor = 'fwd_rev',
             description = 'Forward reverse',
             helptext = "",
-            plot = bargraph.plot(data, None, pconfig))
-
+            plot = bargraph.plot(data, keys, pconfig))
 
     def add_total_read_section(self):
         data = {}
         for name in self.sequana_data.keys():
-            data[name] = {'total_read': self.sequana_data[name]["Total reads"]}
+            data[name] = {'total_read': self.sequana_data[name]["total_reads"]}
 
         pconfig = {
             "title": "Total reads",
@@ -151,12 +194,11 @@ class MultiqcModule(BaseMultiqcModule):
     def add_mapped_reads_section(self):
         data = {}
         for name in self.sequana_data.keys():
-            total = self.sequana_data[name]["Total reads"]
-            mapped_reads = self.sequana_data[name]["Mapped reads"]
-            data[name] = {'mapped_reads': 100 * mapped_reads / total}
+            mapped_reads = self.sequana_data[name]["mapped_reads_pct"]
+            data[name] = {'mapped_reads_pct': mapped_reads}
 
         pconfig = {
-            "title": "Mapped reads",
+            "title": "Mapped reads (%)",
             "percentages": False,
             "min": 0,
             "max": 100,
@@ -164,7 +206,7 @@ class MultiqcModule(BaseMultiqcModule):
         }
 
         self.add_section(
-            name = 'Mapped reads',
+            name = 'Mapped reads (%)',
             anchor = 'mapped reads',
             description = 'Total mapped reads found in the BAM file.',
             helptext = "",
@@ -173,38 +215,88 @@ class MultiqcModule(BaseMultiqcModule):
     def add_duplicates_section(self):
         data = {}
         for name in self.sequana_data.keys():
-            total = float(self.sequana_data[name]["Total reads"])
-            duplicates = float(self.sequana_data[name]["Duplicates"])
-            print(duplicates)
-            data[name] = {'duplicates': 100 * duplicates/total}
+            duplicates_pct = float(self.sequana_data[name]["duplicates_pct"])
+            data[name] = {'duplicates_pct': duplicates_pct}
 
         pconfig = {
-            "title": "Duplicates",
+            "title": "% Duplicates (%)",
+            "description": "% Duplicated Reads",
+            "suffix": "%",
+            "min": 0,
+            "max": 100,
+            "scale": "OrRd",
+            "logswitch": False,
+        }
+
+        total = sum([data[name]['duplicates_pct'] for name in self.sequana_data.keys()])
+        if total==0:
+            plot = None
+            description = "Duplicated reads (none found)." 
+        else:
+            plot = bargraph.plot(data, None, pconfig)
+            description = "Duplicated reads." 
+
+        self.add_section(
+            name = 'Duplicates (%)',
+            anchor = 'duplicates',
+            description = description,
+            helptext = "",
+            plot = plot)
+
+    def add_mapped_vs_unmapped_chart(self):
+        data = {}
+        for name in self.sequana_data.keys():
+            total = float(self.sequana_data[name]["total_reads"])
+            mapped = float(self.sequana_data[name]["mapped_reads"])
+            unmapped = total - mapped
+            data[name] = {
+                'reads_mapped': 100 * mapped/total,
+                'reads_unmapped': 100 * unmapped/total
+            }
+
+        pconfig = {
+            "title": "Mapped vs unmapped reads (%)",
             "percentages": True,
             "min": 0,
             "max": 100,
             "logswitch": False,
         }
 
+        keys = OrderedDict()
+        keys['reads_mapped'] = {'color': '#437bb1', 'name': 'Mapped'}
+        keys['reads_unmapped'] = {'color': '#b1084c', 'name': 'Unmapped'}
+
         self.add_section(
-            name = 'Duplicates',
-            anchor = 'duplicates',
-            description = 'Duplicated reads.',
-            helptext = "",
-            plot = bargraph.plot(data, None, pconfig))
+            name = "Mapped vs unmapped reads (%)",
+            anchor = "bamtools_stats_alignment",
+            description  = "Alignment metrics",
+            plot = bargraph.plot(data, keys, pconfig)
+        )
 
     def populate_columns(self):
         headers = {}
 
-        if any(['Total reads' in self.sequana_data[s] for s in self.sequana_data]):
-            headers['Total reads'] = {
+        if any(['total_reads' in self.sequana_data[s] for s in self.sequana_data]):
+            headers['total_reads'] = {
                 'title': 'Read count',
                 'description': 'read count',
                 'min': 0,
                 'scale': 'RdYlGn',
-                'format': '{:,0d}',
+                'format': '{0:.0f}',
                 'shared_key': 'count',
             }
+
+        if any(['total_reads' in self.sequana_data[s] for s in self.sequana_data]):
+            headers['mapped_reads_pct'] = {
+                'title': 'Mapped reads (%)',
+                'description': 'mapped reads (%)',
+                'min': 0,
+                'max': 100,
+                'scale': 'RdYlGn',
+                'format': '{0:.2f}',
+                'shared_key': 'count',
+            }
+
 
 
         if len(headers.keys()):
