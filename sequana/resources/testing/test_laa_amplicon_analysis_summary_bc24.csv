@@ -1,0 +1,4 @@
+BarcodeName,FastaName,CoarseCluster,Phase,TotalCoverage,SequenceLength,PredictedAccuracy,ConsensusConverged,NoiseSequence,IsDuplicate,DuplicateOf,IsChimera,ChimeraScore,ParentSequenceA,ParentSequenceB,CrossoverPosition
+24--24,Barcode24--24_Cluster0_Phase0_NumReads497,0,0,497,2958,1,1,0,0,N/A,0,-1,N/A,N/A,-1
+24--24,Barcode24--24_Cluster1_Phase0_NumReads496,1,0,496,3137,1,1,0,0,N/A,0,-1,N/A,N/A,-1
+24--24,Barcode24--24_Cluster2_Phase0_NumReads223,2,0,223,3242,1,1,0,0,N/A,0,-1,N/A,N/A,-1
