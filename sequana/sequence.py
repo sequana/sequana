@@ -637,6 +637,10 @@ class Repeats(object):
             _header for each sequence with the sequence name found in
             sequence header.
 
+
+        .. note:: known problems. Header with a > character (e.g. in the
+            comment) are left strip and only the comments is kept. Another issue
+            is for multi-fasta where one sequence is ignored (last or first ?)
         """
         # used to check everything is fine with the header/name
         self._fasta = FastA(filename_fasta)
