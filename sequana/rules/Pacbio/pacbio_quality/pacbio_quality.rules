@@ -35,6 +35,7 @@ rule pacbio_quality:
         GC_vs_len  = "{sample}/images/GC_vs_len_{sample}.png",
         summary    = __pacbio_quality__output_summary
     run:
+        from sequana import pacbio
         import pylab
         def setname(name):
             return name
