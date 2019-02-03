@@ -96,7 +96,7 @@ setup(
     exclude_package_data = {"": ["__pycache__"]},
     package_data = {
         '': ['Snakefile*', '*html', 'README.rst', "requirements*txt",
-             'config*.yaml', '*.css', "*.js", 
+             'config*.yaml', '*.css', "*.js",
              "snpEff.config*", "*.fa", "*.rules"],
         'sequana.rules' : ['*/*.rules', "*/*/*.rules"],
         'sequana.pipelines' : ['*/*'],
@@ -142,6 +142,8 @@ setup(
             "sequana_coverage=sequana.multiqc.coverage:MultiqcModule",
             "sequana_isoseq=sequana.multiqc.isoseq:MultiqcModule",
             "sequana_isoseq_qc=sequana.multiqc.isoseq_qc:MultiqcModule",
+            "sequana_bamtools_stats=sequana.multiqc.bamtools_stats:MultiqcModule",
+            "sequana_kraken=sequana.multiqc.kraken:MultiqcModule",
         ],
         'multiqc.hooks.v1': [
             'before_config = sequana.multiqc.config:load_config',
