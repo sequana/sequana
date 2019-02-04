@@ -65,7 +65,8 @@ fn_ignore_paths:
     - '*/path/to/*_files/'
 
 # Ignore files larger than this when searcing for logs (bytes)
-log_filesize_limit: 500000
+# fastqc files can be as large as 1Mb
+log_filesize_limit: 5000000
 
 # MultiQC skips a couple of debug messages when searching files as the
 # log can get very verbose otherwise. Re-enable here to help debugging.
