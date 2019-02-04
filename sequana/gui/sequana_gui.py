@@ -327,7 +327,7 @@ class SequanaGUI(QMainWindow, Tools):
 
     """
     _not_a_rule = {"requirements", "gatk_bin", "input_directory",
-                    "input_samples", "input_pattern", "ignore"}
+                    "input_pattern", "ignore"}
     _browser_keywords = {"reference"}
     _to_exclude = ["atac-seq", "compressor"]
 
@@ -1263,34 +1263,23 @@ class SequanaGUI(QMainWindow, Tools):
                 msg.exec_()
                 return
 
-            if self.ui.tabWidget.currentIndex() == 0:
-                filename = self.sequana_factory._sequana_directory_tab.get_filenames()
-                form_dict["input_directory"] = (filename)
+            filename = self.sequana_factory._sequana_directory_tab.get_filenames()
+            form_dict["input_directory"] = (filename)
 
-                # If pattern provided, the input_directory is reset but used in
-                # the pattern as the basename
-                pattern = self.sequana_factory._sequana_pattern_lineedit.text()
-                if len(pattern.strip()):
-                    form_dict["input_pattern"] = (filename)
-                    form_dict["input_pattern"] += os.sep + pattern.strip()
-                    form_dict["input_directory"] = ""
+            # If pattern provided, the input_directory is reset but used in
+            # the pattern as the basename
+            pattern = self.sequana_factory._sequana_pattern_lineedit.text()
+            if len(pattern.strip()):
+                form_dict["input_pattern"] = (filename)
+                form_dict["input_pattern"] += os.sep + pattern.strip()
+                form_dict["input_directory"] = ""
 
-                readtag = self.sequana_factory._sequana_readtag_lineedit.text()
-                if len(readtag.strip()):
-                    form_dict["input_readtag"] = readtag
-                else:
-                    form_dict["input_readtag"] = "_R[12]_"
-                form_dict["input_samples"] = {"file1":None, "file2":None}
+            readtag = self.sequana_factory._sequana_readtag_lineedit.text()
+            if len(readtag.strip()):
+                form_dict["input_readtag"] = readtag
+            else:
+                form_dict["input_readtag"] = "_R[12]_"
 
-            elif self.ui.tabWidget.currentIndex() == 1:
-                filename = self.sequana_factory._sequana_paired_tab.get_filenames()
-                form_dict["input_samples"] = (filename)
-
-                readtag = self.sequana_factory._sequana_readtag_lineedit.text()
-                if len(readtag.strip()):
-                    form_dict["input_readtag"] = readtag
-                else:
-                    form_dict["input_readtag"] = "_R[12]_"
         elif self.mode == "generic":
             # Here we save the undefined section in the form.
             if self._undefined_section in form_dict.keys():

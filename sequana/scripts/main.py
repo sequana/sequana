@@ -51,11 +51,10 @@ Input data must be provided with one of the following parameter:
      the path where to find the FastQ files. By default, extension are
      expected to be fastq.gz but one can use --extension to override this
      behaviour
-  2- For one sample, you can use --file1 and --file2 (paired sample)
-  3- A global pattern using --pattern  <PATTERN> where <PATTERN> should be
+  2- A global pattern using --pattern  <PATTERN> where <PATTERN> should be
      a correct regular expression with wildcards between quotes. For instance,
      "*.fastq.gz" or "/home/user/DATA/*/fastq.gz"
-  4- You may already have a valid configuration file. If so, use --config
+  3- You may already have a valid configuration file. If so, use --config
 """
 
 class Tools(object):
@@ -92,7 +91,6 @@ class Options(argparse.ArgumentParser):
 
             --input-directory <Location of the fastq.gz files>
             --input-pattern <A wildcard to retrieve fastq.gz files>
-            --file1 FILE1 --file2 FILE2
 
         Type
 
@@ -153,18 +151,11 @@ class Options(argparse.ArgumentParser):
             sequana --pipeline quality_control --input-directory .
                 --design SampleSheetUsed.csv  --adapters PCRFree
 
-        If you want to analyse a specific pair of files:
-
-            sequana --pipeline quality_control --file1 test_R1_.fastq.gz
-                --file2 test_R2_.fastq.gz
-                --design SampleSheetUsed.csv  --adapters PCRFree
-
         Note that files by default must contain _R1_ and _R2_ tag and must have
         a common sample name before _R1_ and _R2_ (like in the example above).
-        You can change the read tag with the option --readtag:
             
-            sequana --pipeline quality_control --file1 test_1.fastq.gz
-                --file2 test_2.fastq.gz --input-readtag "_[12].fastq.gz"
+            sequana --pipeline quality_control --input-pattern "test_*.fastq.gz"
+                 --input-readtag "_[12].fastq.gz"
                 --design SampleSheetUsed.csv  --adapters PCRFree
 
 
@@ -285,12 +276,6 @@ behavious, use this option."""
                           )
 
         group = self.add_argument_group("INPUT FILES")
-        group.add_argument("-1", "--file1", dest="file1", type=str,
-            help=""" Fills the *samples:file1* field in the config file. To be used
-                with --init option""")
-        group.add_argument("-2", "--file2", dest="file2", type=str,
-            help=""" Fills the *samples:file2* field in the config file. To be used
-                with --init option""")
         group.add_argument("--input-pattern", dest="pattern", type=str,
             default=None,
             help="""a pattern to find files. You can use wildcards e.g.
@@ -299,8 +284,7 @@ behavious, use this option."""
         group.add_argument("-i", "--input-directory", dest="input_directory", type=str,
             default=None,
             help="""Search for a pair (or single) of reads in the directory,
-                and fills automatically the project and file1/file2 fields in
-                the config file. To be used with --init option. If more than
+                and fills automatically the project. To be used with --init option. If more than
                 two files or not files ending in fastq.gz are found, an error
                 is raised.""")
         group.add_argument("-t", "--input-readtag", dest="input_readtag",
@@ -488,13 +472,6 @@ def main(args=None):
     Module("dag").check("warning")
     Module(options.pipeline).check("warning")
 
-    # If user provides file1 and/or file2, check the files exist
-    if options.file1 and os.path.exists(options.file1) is False:
-        raise ValueError("%s does not exist" % options.file1)
-
-    if options.file2 and os.path.exists(options.file2) is False:
-        raise ValueError("%s does not exist" % options.file2)
-
     if options.kraken and os.path.exists(options.kraken) is False:
         raise ValueError("%s does not exist" % options.kraken)
 
@@ -502,19 +479,15 @@ def main(args=None):
         raise ValueError("%s does not exist" % options.input_directory)
 
     # check valid combo of arguments
-    flag = int("%s%s%s%s%s" % (
+    flag = int("%s%s%s" % (
             int(bool(options.pattern)),
             int(bool(options.input_directory)),
-            int(bool(options.file1)),
-            int(bool(options.file2)),
             int(bool(options.config)),
             ), 2)
 
     # config file has flag 1, others have flag 2,4,8,16
     # config file alone : 1
     # --input-directory alone: 2
-    # --file1 alone: 4
-    # --file1 + --file2 : 2+4=6
     # --input-pattern alone: 16
     # none of those options redirect to input_directory=local
     if flag not in [0, 1, 2, 4, 6, 8, 16]:
@@ -530,8 +503,6 @@ def main(args=None):
             options.input_directory = "."
         options.input_directory = os.path.abspath(options.input_directory)
         data = options.input_directory + os.sep + "*" + options.extension
-        options.file1 = ""
-        options.file2 = ""
         options.pattern = ""
         if options.verbose:
             logger.info("Looking for sample files matching %s" % data)
@@ -540,19 +511,8 @@ def main(args=None):
         data = os.path.abspath(options.pattern)
         options.input_directory = ""
         options.extension = ""
-        options.file1 = ""
-        options.file2 = ""
     elif options.config:
         pass
-    elif options.file1:
-        data = [options.file1]
-        options.file1 = os.path.abspath(options.file1)
-        if options.file2:
-            data = [options.file2]
-            options.file2 = os.path.abspath(options.file2)
-        options.input_directory = ""
-        options.pattern = ""
-        options.extension = ""
 
     if options.extension == 'bam' or options.pattern.endswith('bam') or \
             options.pattern.endswith('bed'):
@@ -733,8 +693,6 @@ def sequana_init(options):
     cfg.config.input_directory = options.input_directory
     cfg.config.input_pattern = options.pattern
     cfg.config.input_extension = options.extension
-    cfg.config.input_samples.file1 = options.file1
-    cfg.config.input_samples.file2 = options.file2
     cfg.config.input_readtag = options.input_readtag
 
     # Dedicated section for quality control section

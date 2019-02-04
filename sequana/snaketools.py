@@ -557,13 +557,6 @@ class SequanaConfig(object):
         >>> sc.config.pattern == "*.fastq.gz"
         True
 
-    Input files should be stored into::
-
-        input_samples:
-            - file1: FILE1
-            - file2: FILE2
-
-    The second file may be optional.
 
 
     Empty strings in a config are interpreted as None but SequanaConfig will
@@ -586,7 +579,6 @@ class SequanaConfig(object):
         SEQUANA config files must have some specific fields::
 
             input_directory
-            input_samples...
         """
         # Create a dummy YAML code to hold data in case the input is a json
         # or a dictionary structure. We use a CommentedMap that works like
@@ -620,10 +612,9 @@ class SequanaConfig(object):
 
     def check_sequana_fields(self):
         requirements = ["input_directory",
-                        "input_samples",
                         "input_extension",
                         "input_pattern",
-                        "input_samples:file1", "input_samples:file2"]
+                        ]
         # converts to dictionary ?
         for this in requirements:
             this = this.split(":")[0]
@@ -853,9 +844,6 @@ class PipelineManager(object):
         - input_extension:  fastq.gz  # this is the default. could be also fq.gz
         - input_readtag: _R[12]_ # default
         - input_pattern:    # a_global_pattern e.g. H*fastq.gz
-        - input_samples:
-            - file1:
-            - file2:
 
     The manager can then easily access to the data with a :class:`FastQFactory`
     instance::
@@ -912,11 +900,6 @@ class PipelineManager(object):
         # otherwise, the input_pattern can be used
         elif cfg.config.input_pattern:
             glob_dir = cfg.config.input_pattern
-        # otherwise file1
-        elif cfg.config.input_samples['file1']:
-            glob_dir = [cfg.config.input_samples['file1']]
-            if cfg.config.input_samples['file2']:
-                glob_dir += [cfg.config.input_samples['file2']]
         # finally, if none were provided, this is an error
         else:
             self.error("No valid input provided in the config file")
@@ -997,8 +980,7 @@ class PipelineManager(object):
 
     def error(self, msg):
         msg += ("\nPlease check the content of your config file. You must have "
-                "input_directory set, or input_pattern, or input_samples:file1 "
-                "(and optionally input_samples:file2).")
+                "input_directory set, or input_pattern.")
         raise SequanaException(msg)
 
     def getname(self, rulename, suffix=None):
