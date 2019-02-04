@@ -40,6 +40,10 @@ class MultiqcModule(BaseMultiqcModule):
             name = parsed_data["s_name"]
             self.sequana_data[name] = parsed_data
 
+        if len(self.sequana_data) == 0:
+            log.debug("No samples found: sequana_isoseq")
+            raise UserWarning
+
         info = "<ul>"
         for this in sorted(self.sequana_data.keys()):
             info += '<li><a href="{}/summary.html">{}</a></li>'.format(this,this,this)
@@ -49,9 +53,6 @@ class MultiqcModule(BaseMultiqcModule):
         mname = '<a href="{}" target="_blank">{}</a> individual report pages:'.format(href, target)
         self.intro = '<p>{} {}</p>'.format( mname, info)
 
-        if len(self.sequana_data) == 0:
-            log.debug("Could not find any data in {}".format(config.analysis_dir))
-            raise UserWarning
 
         log.info("Found {} reports".format(len(self.sequana_data)))
 

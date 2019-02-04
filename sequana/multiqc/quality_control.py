@@ -35,7 +35,7 @@ class MultiqcModule(BaseMultiqcModule):
             self.data[name] = self.parse_logs(myfile["f"])
 
         if len(self.data) == 0:
-            log.debug("Could not find any data in {}".format(config.analysis_dir))
+            log.debug("No samples found: sequana_quality_control")
             raise UserWarning
 
         log.info("Found {} reports".format(len(self.data)))

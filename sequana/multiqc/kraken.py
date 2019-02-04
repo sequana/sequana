@@ -47,17 +47,16 @@ class MultiqcModule(BaseMultiqcModule):
         # Initialise the parent object
         super(MultiqcModule, self).__init__(
             name='Sequana/Kraken',    # name that appears at the top
-            anchor='sequana',  #
+            anchor='sequana_kraken',  #
             target='sequana',  # Name show that link to the following href
             href='http://github.com/sequana/sequana/',
-            info="pipeline multi summary")
+            info="sequana_kraken pipeline multi summary")
 
         self.sequana_data = {}
 
         # In theory only one file
         for myfile in self.find_log_files("sequana_kraken"):
-            print(myfile)
-            logging.info("Parsing {}".format(myfile))
+            #logging.info("Parsing {}".format(myfile))
             name = myfile['s_name']
             d = json.loads(myfile['f'])
             for k,v in d.items():
@@ -65,6 +64,11 @@ class MultiqcModule(BaseMultiqcModule):
                 U = v['Unclassified']
                 v['Classified'] = S-U
                 self.sequana_data[k] = v
+
+        if len(self.sequana_data) == 0:
+            log.debug("No samples found: sequana_kraken")
+            raise UserWarning
+
 
         """info = "<ul>"
         for this in sorted(self.sequana_data.keys()):
@@ -75,10 +79,6 @@ class MultiqcModule(BaseMultiqcModule):
         mname = '<a href="{}" target="_blank">{}</a> individual report pages:'.format(href, target)
         self.intro = '<p>{} {}</p>'.format( mname, info)
         """
-
-        if len(self.sequana_data) == 0:
-            log.debug("Could not find any data in {}".format(config.analysis_dir))
-            raise UserWarning
 
         log.info("Found {} reports".format(len(self.sequana_data)))
 

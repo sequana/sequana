@@ -52,7 +52,7 @@ class MultiqcModule(BaseMultiqcModule):
         """
 
         if len(self.sequana_data) == 0:
-            log.debug("Could not find any data in {}".format(config.analysis_dir))
+            log.debug("No samples found: sequana_bamtools_stats")
             raise UserWarning
 
         log.info("Found {} reports".format(len(self.sequana_data)))
