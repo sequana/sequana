@@ -57,7 +57,7 @@ extra_fn_clean_exts:
 # Ignore these files / directories / paths when searching for logs
 fn_ignore_files:
     - .DS_Store
-    - '*.html'    # need the HTML otherwise fastqc does not work
+    #- '*.html'    # need the HTML otherwise fastqc does not work
 
 fn_ignore_dirs:
     - .snakemake
