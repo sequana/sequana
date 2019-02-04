@@ -46,6 +46,7 @@ extra_fn_clean_exts:
     - _tophat
     - _star_aligned
     - _fastqc
+    
     #- type: remove
     #  pattern: '.sorted'
     #- type: regex
@@ -56,7 +57,7 @@ extra_fn_clean_exts:
 # Ignore these files / directories / paths when searching for logs
 fn_ignore_files:
     - .DS_Store
-    - '*.html'
+    - '*.html'    # need the HTML otherwise fastqc does not work
 
 fn_ignore_dirs:
     - .snakemake
@@ -92,7 +93,6 @@ sp:
         fn: '*Log.final.out'
     trimmomatic:
         contents: 'Trimmomatic'
-
     sequana_kraken:
         fn: "sequana_kraken_summary.json"
     sequana_bamtools_stats:
@@ -107,7 +107,6 @@ sp:
         fn: "sequana_summary_isoseq.json"
     sequana_isoseq_qc:
         fn: "sequana_summary_isoseq_qc.json"
-
 
 # Specify a custom logo to add to reports (uncomment to use)
 custom_logo: null         # '/path/to/logo.png'
@@ -129,3 +128,6 @@ table_columns_visible:
     FastQC:
         percent_fails: False
         total_sequences: True
+        percent_duplicates: False
+        percent_gc: True
+        avg_sequence_length: True
