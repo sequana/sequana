@@ -595,6 +595,8 @@ In ./sequana/multiqc directoty, add a file called pipeline_count.py
 
 - Take as example the already existing file such as pacbio_qc.py
 - update the sequana/multiqc/__init__.py to add the search pattern for your input (here summary_count*.json)
+- update the sequana/multiqc/config.py to add the search pattern for your input (here summary_count*.json). This way, you can use "multiqc ." and sequana modules will use the pattern stored in config.py
+- update the sequana/multiqc/multiqc_config.yaml to add the search pattern for your input (here summary_count*.json). This way, you can use a user define "multiqc . -c multiqc_config.yaml" 
 - In the setup.py, add the entry point following the example of pacbio_qc
 - In the ./test/multiqc add a test in test_multiqc.py
 
