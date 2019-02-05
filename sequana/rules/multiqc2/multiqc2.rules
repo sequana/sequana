@@ -32,8 +32,10 @@ rule multiqc2:
         indir = __multiqc2__indir,
         outdir   = __multiqc2__outdir,
         options = config['multiqc']['options'],
+        config = __multiqc2__config,
+        modules = __multiqc2__modules
     shell:
         """
-        multiqc {params.indir} -f {params.options} -o {params.outdir}  2> {log}
+        multiqc {params.indir} -f {params.options} {params.modules} -o {params.outdir} -c {params.config} 2> {log}
         """
 
