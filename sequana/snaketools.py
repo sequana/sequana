@@ -612,7 +612,6 @@ class SequanaConfig(object):
 
     def check_sequana_fields(self):
         requirements = ["input_directory",
-                        "input_extension",
                         "input_pattern",
                         ]
         # converts to dictionary ?
@@ -841,7 +840,6 @@ class PipelineManager(object):
     config file must have these fields::
 
         - input_directory:  #a_path
-        - input_extension:  fastq.gz  # this is the default. could be also fq.gz
         - input_readtag: _R[12]_ # default
         - input_pattern:    # a_global_pattern e.g. H*fastq.gz
 
@@ -891,12 +889,7 @@ class PipelineManager(object):
             if os.path.isdir(directory) is False:
                 self.error("The (%s) directory does not exist." % directory)
 
-            if "input_extension" in cfg.config.keys() and \
-                    cfg.config['input_extension'] not in (None, ""):
-                glob_dir = directory + os.sep + "*" + \
-                           cfg.config['input_extension']
-            else:
-                glob_dir = directory + os.sep + pattern
+            glob_dir = directory + os.sep + pattern
         # otherwise, the input_pattern can be used
         elif cfg.config.input_pattern:
             glob_dir = cfg.config.input_pattern
