@@ -692,7 +692,6 @@ def sequana_init(options):
     cfg = SequanaConfig(config_filename)
     cfg.config.input_directory = options.input_directory
     cfg.config.input_pattern = options.pattern
-    cfg.config.input_extension = options.extension
     cfg.config.input_readtag = options.input_readtag
 
     # Dedicated section for quality control section
