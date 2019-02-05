@@ -16,7 +16,7 @@
 
 ---
 # Title to use for the report.
-title: Sequana multi summary
+title: Sequana pipeline multiqc report
 
 # Prepend sample names with their directory. Useful if analysing the
 # sample samples with different parameters.
@@ -109,11 +109,12 @@ sp:
     sequana_isoseq_qc:
         fn: "sequana_summary_isoseq_qc.json"
 
+
 # Specify a custom logo to add to reports (uncomment to use)
 custom_logo: null         # '/path/to/logo.png'
 custom_logo_url: null     # 'https://www.example.com'
-custom_logo_title: null   # 'Our Institute Name'
-subtitle: null            # Grey text below title
+custom_logo_title: "Institut Pasteur, Biomics platform" 
+subtitle: ""            # Grey text below title
 intro_text: ""          # Set to False to remove, or your own text
 
 # Add generic information to the top of reports
@@ -122,7 +123,7 @@ report_header_info:
     #- Another field:: 'Loaded from <code>multiqc_config_example.yaml</code>'
     #- Something different:: 'You can put any key-value pairs here'
     - Want to know more?: 'See the <a href="http://sequana.readthedocs.io" target="_blank">Sequana documentation</a>'
-    - Citations:: 'If you used Sequanix, Sequana or Sequana_coverage tool, please see <a href="http://sequana.readthedocs.io">How to cite ?</a> section.'
+    - Citations:: 'If you used Sequanix, Sequana or Sequana_coverage tool, please see <a href="http://sequana.readthedocs.io">How to cite ?</a> section. In particular, if you use this report in a publication, please cite Sequana (see link here above). You may want to consider adding a note in the acknowledgement to thank bioinformaticians or bioanalysts for their feedbacks.'
 
 # Overwrite the defaults of which table columns are visible by default
 table_columns_visible:
