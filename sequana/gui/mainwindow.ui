@@ -493,7 +493,7 @@
                <enum>QTabWidget::Rounded</enum>
               </property>
               <property name="currentIndex">
-               <number>0</number>
+               <number>1</number>
               </property>
               <property name="documentMode">
                <bool>false</bool>
@@ -869,16 +869,6 @@
                          <number>0</number>
                         </property>
                        </layout>
-                      </item>
-                     </layout>
-                    </widget>
-                    <widget class="QWidget" name="tab_5">
-                     <attribute name="title">
-                      <string>b - Input sample(s)</string>
-                     </attribute>
-                     <layout class="QGridLayout" name="gridLayout_9">
-                      <item row="0" column="0">
-                       <layout class="QVBoxLayout" name="layout_sequana_input_files"/>
                       </item>
                      </layout>
                     </widget>

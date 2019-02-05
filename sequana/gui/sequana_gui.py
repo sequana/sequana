@@ -693,11 +693,11 @@ class SequanaGUI(QMainWindow, Tools):
         self.ui.layout_sequana_wkdir.addWidget(saf._directory_browser)
 
         # add widget for the input sample
-        self.ui.layout_sequana_input_files.addWidget(saf._sequana_paired_tab)
-        hlayout = QW.QHBoxLayout()
-        hlayout.addWidget(saf._sequana_readtag_label2)
-        hlayout.addWidget(saf._sequana_readtag_lineedit2)
-        self.ui.layout_sequana_input_files.addLayout(hlayout)
+        #self.ui.layout_sequana_input_files.addWidget(saf._sequana_paired_tab)
+        #hlayout = QW.QHBoxLayout()
+        #hlayout.addWidget(saf._sequana_readtag_label2)
+        #hlayout.addWidget(saf._sequana_readtag_lineedit2)
+        #self.ui.layout_sequana_input_files.addLayout(hlayout)
 
         # add widget for the input directory
         self.ui.layout_sequana_input_dir.addWidget(saf._sequana_directory_tab)
