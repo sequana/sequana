@@ -11,13 +11,13 @@ class FastQCPipeline(Pipeline):
         super(FastQCPipeline, self).__init__(wk)
         data = sequana_data("Hm2_GTGAAA_L005_R1_001.fastq.gz")
         input_directory = os.path.dirname(data)
-        self.input_pattern = input_directory + "/Hm*gz"
+        self.input_pattern = "Hm*gz"
         self.pipeline = "fastqc"
 
         self.output = "summary.html"
         cmd = [
-            "sequana", "--pipeline", self.pipeline,
-            "--input-pattern", '%s'% self.input_pattern,
+            "sequana", "--pipeline", self.pipeline, "--input-directory",
+input_directory, "--input-pattern", '%s'% self.input_pattern,
             "--working-directory", self.wk, "--force"]
 
         if "TRAVIS_PYTHON_VERSION" in os.environ:
@@ -27,7 +27,9 @@ class FastQCPipeline(Pipeline):
 
 
     def check(self):
-        assert os.path.exists(self.wk + "/summary.html")
+        assert os.path.exists(self.wk + "/index.html")
+        assert os.path.exists(self.wk + "/tree.html")
+        assert os.path.exists(self.wk + "/multiqc/multiqc_report.html")
 
 
 def test_fastqc():

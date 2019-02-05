@@ -14,12 +14,13 @@ class PacbioQCPipeline(Pipeline):
         # Define the data
         data = sequana_data("test_pacbio_subreads.bam")
         input_directory = os.path.dirname(data)
-        self.input_pattern = input_directory + "/test_pacbio_subreads.bam"
+        self.input_pattern = "test_pacbio_subreads.bam"
         self.pipeline = "pacbio_qc"
 
         # Define the project and config file
         cmd = ["sequana", "--pipeline", self.pipeline,
             "--input-pattern", '%s' % self.input_pattern,
+            "--input-directory", '%s' % input_directory,
             "--extension", "bam",
             "--working-directory", self.wk, "--force"]
 
@@ -28,14 +29,12 @@ class PacbioQCPipeline(Pipeline):
         subprocess.check_call(cmd)
 
         cfg = SequanaConfig(self.wk + "/config.yaml")
-        cfg._yaml_code["input_directory"] = ''
+        cfg._yaml_code["input_directory"] = input_directory
         cfg._yaml_code["input_readtag"] = "_R[12]_"
-        cfg._yaml_code['input_extension'] = "bam"
         cfg._yaml_code['input_pattern'] = self.input_pattern 
-        cfg._yaml_code['input_samples'] = "CommentedMap([('file1', None), ('file2', None)])"
         cfg.save(self.wk + '/config.yaml')
 
-        self.output = self.wk + "/test_pacbio_subreads//summary_test_pacbio_subreads.json"
+        self.output = self.wk + "/1/sequana_summary_pacbio_qc_1.json"
 
 
     def check(self):
