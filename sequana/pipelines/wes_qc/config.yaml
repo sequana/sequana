@@ -6,16 +6,11 @@
 # One of input_directory, input_pattern and input_samples must be provided
 # If input_directory provided, use it otherwise if input_pattern provided,
 # use it, otherwise use input_samples.
-# If input_extension provided, use it otherwise assume fastq.gz
 # ============================================================================
 #
 input_directory: "/mnt/atlas/my_cifs/quentin/Data_test_wes_qc/"
 input_readtag: "_[12]"
-input_extension: ""
 input_pattern: "*.gz"
-input_samples:
-    file1: ""
-    file2: ""
 
 ##############################################################################
 # Sequencing information section

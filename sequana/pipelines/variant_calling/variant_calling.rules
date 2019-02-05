@@ -71,8 +71,7 @@ else:
     __bwa_mem_ref__reference = reference
 
 # The pipeline can be started with sorted BAM files
-if config['input_extension'].endswith('bam') or \
-    config['input_pattern'].endswith('bam'):
+if config['input_pattern'].endswith('bam'):
     __bwa_mem_ref__fai = __bwa_mem_ref__reference + ".fai"
     __bwa_mem_ref__bam = __rawdata__input
 else:
