@@ -5,17 +5,12 @@
 # One of input_directory, input_pattern and input_samples must be provided
 # If input_directory provided, use it otherwise if input_pattern provided,
 # use it, otherwise use input_samples.
-# If input_extension provided, use it otherwise assume fastq.gz
 # ============================================================================
 
 
-input_directory: /home/cokelaer/Temp/1099/test/fastq_sampling
+input_directory: /home/cokelaer/Temp/test
 input_readtag: _R[12]_
-input_extension: ''
 input_pattern: '*.fastq.gz'
-input_samples:
-    file1: ''
-    file2: ''
 
 
 #################################################################
@@ -28,5 +23,14 @@ fastqc:
     do_group: true
     options: ''
 
+
+###################################################################
+#
+#
+# - options: any multiqc options accepted. Note that if you use --comments, 
+#   it will be appended to the existing --comments added inside sequana. 
+#   By default, -p (create pictures) and -f (for overwritting) are used. 
+# - indir: The input multiqc (default is local).
 multiqc:
-    options: ""
+    options: '-p -f '
+    indir: "."

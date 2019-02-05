@@ -7,8 +7,17 @@ Usage
 
 ::
 
-    sequana --pipeline fastqc --input-directory . --working-directory analysis 
+    sequana --pipeline fastqc -i . -o analysis
 
+This creates a directory **analysis**. You just need to execute the pipeline::
+
+    cd analysis
+    sh runme.sh
+
+
+If you are familiar with snakemake, you can retrieve the fastqc.rules and config.yaml files and then execute the pipeline::
+
+    snakemake -s fastqc.rules --cores 4 --stats stats.txt
 
 Or use :ref:`sequanix_tutorial` interface.
 
@@ -24,7 +33,7 @@ Details
 ~~~~~~~~~
 
 This pipeline runs fastqc in parallel on the input fastq files (paired or not)
-and then execute multiqc. A bried sequana summary report is also produced.
+and then execute multiqc. A brief sequana summary report is also produced.
 
 
 Rules and configuration details

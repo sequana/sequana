@@ -4,16 +4,20 @@ Author: Thomas Cokelaer
 Affiliation: Institut Pasteur @ 2019
 
 This pipeline is part of Sequana software (sequana.readthedocs.io)
+
+snakemake -s fastqc.rules --forceall --stats stats.txt --cores 4
+
+
 """
 import sequana
 from sequana import snaketools as sm
 from sequana import sequana_data
 
-sm.init("fastqc.rules", globals())
+#sm.init("fastqc.rules", globals())
 
 # This must be defined before the include
 configfile: "config.yaml"
-__snakefile__ = srcdir(__snakefile__)
+#__snakefile__ = srcdir(__snakefile__)
 
 # Generic include of some dynamic modules
 exec(open(sequana.modules["fastqc_dynamic"], "r").read())
@@ -21,74 +25,56 @@ exec(open(sequana.modules["fastqc_dynamic"], "r").read())
 # A convenient manager
 manager = sm.PipelineManager("fastqc", config)
 
+rule pipeline:
+    input: "multiqc/multiqc_report.html"
 
-# Starting of the pipeline
-__rawdata__input = manager.getrawdata()
-__data__input = __rawdata__input
 
 # FASTQC on input data set
-__fastqc_samples__input_fastq = __data__input
-__fastqc_samples__output_done = manager.getname("fastqc_samples", ".done")
-__fastqc_samples__wkdir       = manager.getwkdir("fastqc_samples")
-__fastqc_samples__log = "%s/fastqc_samples/fastqc.log" % manager.sample
+__fastqc_samples__input_fastq = manager.getrawdata()
+__fastqc_samples__output_done = "samples/{sample}/{sample}.done"
+__fastqc_samples__wkdir       = "samples/{sample}" # manager.getwkdir("fastqc_samples")
+__fastqc_samples__log = "samples/%s/fastqc.log" % manager.sample
 include: fastqc_dynamic("samples", manager)
 
 
-# Include the rulegraph for a HTML summary
-__rulegraph__input = __snakefile__
-__rulegraph__output = "rulegraph/rulegraph.svg"
-__rulegraph__mapper = {"multiqc2":"../multiqc/multiqc_report.html"}
-include: sm.modules['rulegraph']
-expected_output.extend([__rulegraph__output])
+__multiqc__output = "multiqc/multiqc_report.html"
+__multiqc__input = expand(__fastqc_samples__output_done, sample=manager.samples)
 
+comments = """<p><b>Number of samples:</b> {}    <br><b>Paired data:</b> {}<br><b>Browse files here:</b>
+<a href="../tree.html">tree</a>    </p>    """.format(
+    len(manager.samples.keys()) , manager.paired)
 
-# Include a multiqc once the fastqc is done. 
-# Save all in ./multiqc
-__multiqc2__input = expand(__fastqc_samples__output_done, sample=manager.samples)
-__multiqc2__output = "multiqc/multiqc_report.html"
-__multiqc2__indir = "."
-__multiqc2__outdir = "multiqc"
-__multiqc2__logs = "multiqc/multiqc.log"
-__multiqc2__config = sequana_data("multiqc_config.yaml", "../multiqc")
-include: sm.modules['multiqc2']
-expected_output.extend([__multiqc2__output])
-
-
-# Add Conda
-__conda__output = "inputs/requirements.txt"
-include: sm.modules['conda']   # Create requirements.txt(dependencies)
-expected_output.extend([__conda__output])
-
+rule multiqc:
+    input: __multiqc__input
+    output: __multiqc__output
+    params:
+        inputdir = config['multiqc']['indir'],
+        outdir="multiqc",
+        config=sequana_data("multiqc_config.yaml", "../multiqc"),
+        options = " --comment \"{}\" ".format(comments) + config["multiqc"]["options"] 
+    shell:
+        # We let multiqc search for all modules without specifying a
+        # -m fastqc option, which fails otherwise
+        """
+        multiqc {params.inputdir} -o {params.outdir} -c {params.config} {params.options} 2> multiqc/multiqc.log
+        """
 
 # Those rules takes a couple of seconds so no need for a cluster
-localrules: conda, rulegraph
+localrules: multiqc
 
-rule pipeline_fastqc:
-    input: expected_output
 
 onsuccess:
-    from sequana.modules_report.summary import SummaryModule
+    print("Please open the report index.html or {}".format(__multiqc__output))
+    shell("ln -f -s {} index.html".format(__multiqc__output))
+    shell("rm -f ./samples/*/*.done")
+    shell("rm -f ./samples/*/*.log")
+    shell("tree -H . -L 3 --noreport --charset utf-8  | grep -v multiqc |grep -v fastqc.zip > tree.html ")
+    print("A directory browser is stored in the file tree.html (Note the dot).")
+    print("You may want to delete the .snakemake directory, fastqc.rules and config.yaml files.")
+    print("To do so, you can use the Makefile by typing 'Makefile clean'")
 
-    intro = """<p>This page only summarizes the sequana fastqc pipeline outcome. <br>
-For the FastQC report (multiqc), please follow this link: <a href="multiqc/multiqc_report.html">multiqc report</a> or scroll the window here below.
-
-    <br><b>Number of samples:</b> {}
-    <br><b>Paired data:</b> {} 
-    </p>
-
-    <iframe src="multiqc/multiqc_report.html" width="95%" height="60%"></iframe>
-    """.format(len(manager.samples.keys()) , manager.paired)
-    data = {"inputs":None, "outputs":None, "html":None, "snakefile": __snakefile__, 
-        "config": "config.yaml", "stats": "stats.txt", "rulegraph": __rulegraph__output,
-        "requirements": "inputs/requirements.txt"}
-    SummaryModule(data, intro=intro)
-
-    # A Makefile for cleaning and creating bundle
-    from sequana.snaketools import Makefile
-    m = Makefile(["bundle", "remove_done"])
-    # requirements.txt and rulegraph copied in inputs/ thanks to SummaryModule call
-    m.text += "\nclean: remove_done\n\trm -rf rulegraph stats.txt config.yaml fastqc.rules"
-    m.save()
+    with open("Makefile", "w") as fout:
+        fout.write("bundle:\n\ttar cvfz fastqc.tar.gz *\n\nclean:\n\trm -rf stats.txt fastqc.rules config.yaml .snakemake")
 
 onerror:
     print("An error occurred. See message above.")
