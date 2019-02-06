@@ -888,8 +888,10 @@ class PipelineManager(object):
             directory = cfg.config.input_directory.strip()
             if os.path.isdir(directory) is False:
                 self.error("The (%s) directory does not exist." % directory)
-
-            glob_dir = directory + os.sep + pattern
+            if cfg.config.input_pattern:
+                glob_dir = directory + os.sep + cfg.config.input_pattern
+            else:
+                glob_dir = directory + os.sep + pattern
         # otherwise, the input_pattern can be used
         elif cfg.config.input_pattern:
             glob_dir = cfg.config.input_pattern
@@ -932,8 +934,7 @@ class PipelineManager(object):
             if R1 == R2:
                 self.paired = True
             else:
-                raise ValueError("Mix of paired and single-end data sets not "
-                                 "implemented yet")
+                raise ValueError("Mix of paired and single-end data sets {}".format(glob_dir))
 
         # Note, however, that another mode is the samples.file1/file2 . If
         # provided, filenames is not empty and superseeds
