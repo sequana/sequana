@@ -62,7 +62,7 @@ bwa_mem_ref:
 #
 snpeff:
     do: no
-    reference:
+    reference_file:
     options: "-no-downstream -no-upstream"
 
 ##############################################################################

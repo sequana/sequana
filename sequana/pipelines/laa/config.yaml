@@ -1,18 +1,21 @@
 
 
-input_pattern: "data/lima*.fastq"
+#input_pattern: "data/lima*.fastq"
 #input_pattern: "databam/*bam"
-input_directory: "."
+#input_directory: "."
+
+input_directory: "%(input_directory)s"
+input_pattern: "%(input_pattern)s"
 
 
 #
 #
 # data_type_choice__ = ["lima.ccs.fastq", "lima.ccs.bam", "subreads.bam"]
 input:
-    data_type: "lima.ccs.fastq"   # could be lima.ccs.fastq, lima.ccs.bam or subreads.bam
+    data_type_choice: "lima.ccs.fastq"   # could be lima.ccs.fastq, lima.ccs.bam or subreads.bam
     #data_type: "lima.ccs.bam"   # could be lima.ccs.fastq, lima.ccs.bam or subreads.bam
-    reference : "AB038249.fa"
-    smrtlink_report: "812_barcode_report.csv"
+    reference_file : 
+    smrtlink_report_file: 
 
 
 freebayes:
@@ -22,8 +25,9 @@ freebayes:
 
 snpeff:
     do: yes
-    reference: "AB038249.gbk"
-    options: "-no-downstream -no-upstream"
+    reference_file: 
+    options: -no-downstream -no-upstream
+
 
 kraken:
     do: yes
@@ -31,6 +35,7 @@ kraken:
         - /home/cokelaer/.config/sequana/kraken_human_only/
         - /home/cokelaer/.config/sequana/viruses_only/
         - /home/cokelaer/.config/sequana/kraken_bacteria_only/
+
 
 freebayes_vcf_filter:
     do: yes
@@ -41,6 +46,6 @@ freebayes_vcf_filter:
     reverse_depth: 3
     strand_ratio: 0.2
 
+
 phylogeny:
     do: true
-

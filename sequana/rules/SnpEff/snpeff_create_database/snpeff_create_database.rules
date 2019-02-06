@@ -16,7 +16,7 @@ rule snpeff_create_database:
         - http://snpeff.sourceforge.net/SnpEff_manual.html  
     """
     input:
-        ann = config["snpeff"]["reference"]
+        ann = config["snpeff"]["reference_file"]
     output:
         'snpEff.config'
     log:

@@ -63,7 +63,7 @@ if manager.config.fastqc.do_raw:
     expected_output.extend(expand(__fastqc_samples__output_done, sample=manager.samples))
 
 
-reference = config["bwa_mem_ref"]["reference"]
+reference = config["bwa_mem_ref"]["reference_file"]
 exec(open(sequana.modules["dynamic_copy"], "r").read())
 __copy_ref__input = reference
 __copy_ref__output = "reference/" + os.path.basename(reference)
@@ -137,7 +137,7 @@ if config["sequana_coverage"]["do"]:
     __sequana_coverage__bed = __samtools_depth__output
     __sequana_coverage__fasta = __bwa_mem_ref__reference
     if config['snpeff']['do']:
-        __sequana_coverage__gbk = config['snpeff']['reference']
+        __sequana_coverage__gbk = config['snpeff']['reference_file']
     else:
         __sequana_coverage__gbk = []
     __sequana_coverage__csv = manager.getname("sequana_coverage", ".csv")

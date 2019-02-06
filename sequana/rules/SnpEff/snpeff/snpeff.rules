@@ -30,7 +30,7 @@ rule snpeff:
     """
     input:
         vcf = __snpeff__input, 
-        ann = config["snpeff"]["reference"]
+        ann = config["snpeff"]["reference_file"]
     output:
         ann = __snpeff__output,
         html = __snpeff__html,
