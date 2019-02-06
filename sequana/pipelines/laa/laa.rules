@@ -57,6 +57,8 @@ if do_snpeff:
 
 data_type = config['input']['data_type_choice']
 
+ccs2fastq = False
+
 if data_type == "lima.ccs.fastq":
     for filename in M.ff.all_extensions:
         if "--" not in filename:
@@ -73,6 +75,7 @@ elif data_type == "lima.ccs.bam":
         if sample.startswith("lbc") is False:
             raise ValueError("input file format must be lima_output.lbcXX--lbcXX.ccs.bam")
     samples = [sample.split('--')[0][3:] for sample in M.ff.all_extensions]
+    ccs2fastq = True
 elif data_type == "lima.subreads.bam":
     raise NotImplementedError
 else:
@@ -170,7 +173,6 @@ if bam2ccs:
 
 # __mapping__input is made of a set of FASTQ
 
-ccs2fastq = False
 if ccs2fastq:
     __ccs2fastq__input = __rawdata__input
     __ccs2fastq__output = "fastq/{sample}/data.fastq"
