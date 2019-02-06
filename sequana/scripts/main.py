@@ -197,9 +197,6 @@ Issues: http://github.com/sequana/sequana
         group.add_argument("--redirection", dest="redirection",
             default=False, action="store_true")
 
-        group.add_argument("--issue", dest='issue',
-                          action="store_true", help="Open github issue page")
-
 
         group = self.add_argument_group("PIPELINES")
         group.add_argument("--pipeline", dest='pipeline', type=str,
@@ -387,9 +384,6 @@ The files are part of Sequana and can be found here:
             help="""If provided, no removal of adapters will be
                  performed. Trimming quality is still performed.
                  Value must be set in the config file or using --config-params""")
-        group.add_argument("--kraken", dest="kraken", type=str,
-            help=""" Fills the *kraken* field in the config file. To be used
-                with --init option""")
 
 def main(args=None):
     """Mostly checking the options provided by the user and then call
@@ -418,6 +412,7 @@ def main(args=None):
     sa = Tools(verbose=options.verbose)
     sa.purple("Welcome to Sequana standalone application")
 
+    options.issue = 0
     # Those options are mutually exclusive
     flag = int("%s%s%s%s%s%s" % (
             int(bool(options.issue)),
@@ -429,13 +424,9 @@ def main(args=None):
             ), 2)
     if flag not in [1,2,4,8,16,3,32]:
         logger.critical("You must use one of --pipeline, --info, "
-            "--show-pipelines, --issue, --version, --get-config")
+            "--show-pipelines, --version, --get-config")
         sys.exit(1)
 
-    # OPTIONS that gives info and exit
-    if options.issue:
-        onweb('https://github.com/sequana/sequana/issues')
-        return
 
     if options.version:
         sa.purple("Sequana version %s" % sequana.version)
@@ -472,51 +463,33 @@ def main(args=None):
     Module("dag").check("warning")
     Module(options.pipeline).check("warning")
 
-    if options.kraken and os.path.exists(options.kraken) is False:
-        raise ValueError("%s does not exist" % options.kraken)
 
     if options.input_directory and os.path.exists(options.input_directory) is False:
         raise ValueError("%s does not exist" % options.input_directory)
 
-    # check valid combo of arguments
-    flag = int("%s%s%s" % (
-            int(bool(options.pattern)),
-            int(bool(options.input_directory)),
-            int(bool(options.config)),
-            ), 2)
-
-    # config file has flag 1, others have flag 2,4,8,16
-    # config file alone : 1
-    # --input-directory alone: 2
-    # --input-pattern alone: 16
-    # none of those options redirect to input_directory=local
-    if flag not in [0, 1, 2, 4, 6, 8, 16]:
-        logger.critical(help_input + "\n\nUse --help for more information")
-        sys.exit(1)
 
     assert options.extension in ["fastq", "fq", "fastq.gz", "fq.gz", "bam"]
 
     # Note that we use abspath to make it more robust and easier to debug
     # If no options, we use input_directory and set it to "."
-    if flag == 0 or options.input_directory:
-        if flag == 0:
-            options.input_directory = "."
-        options.input_directory = os.path.abspath(options.input_directory)
-        data = options.input_directory + os.sep + "*" + options.extension
+
+    # by default equals "."
+
+    if options.pattern is None:
         options.pattern = ""
-        if options.verbose:
-            logger.info("Looking for sample files matching %s" % data)
-    elif options.pattern:
-        options.pattern = os.path.abspath(options.pattern)
-        data = os.path.abspath(options.pattern)
-        options.input_directory = ""
+
+    if options.extension is None:
         options.extension = ""
-    elif options.config:
-        pass
+
+    if options.input_directory:
+        options.input_directory = os.path.abspath(options.input_directory)
+        data = options.input_directory + os.sep + "*" + options.pattern
+    else:
+        data = options.pattern
+        options.input_directory = os.path.abspath(".")
 
     if options.extension == 'bam' or options.pattern.endswith('bam') or \
             options.pattern.endswith('bed'):
-
         ff = FileFactory(data)
     else:
         ff = FastQFactory(data, read_tag=options.input_readtag,
@@ -609,7 +582,7 @@ def copy_config_from_sequana(module, source="config.yaml",
         txt = "copied %s from sequana %s pipeline"
         logger.info(txt % (source, module.name))
     else:
-        logger.warning(user_config + "not found")
+        logger.warning(user_config + " not found")
 
 
 def sequana_init(options):
@@ -700,15 +673,11 @@ def sequana_init(options):
             shutil.copy(options.design, options.target_dir + os.sep )
             cfg.config['cutadapt'].design_file = os.path.basename(options.design)
 
-        if options.kraken:
-            cfg.config.kraken.database_directory = os.path.abspath(options.kraken)
-            cfg.config.kraken.do = True
-        else:
-            cfg.config.kraken.do = False
+        cfg.config.kraken.do = False
 
         cfg.config['cutadapt'].fwd = options.adapter_fwd
         cfg.config['cutadapt'].rev = options.adapter_rev
-        cfg.config['cutadapt'].adapter_type = options.adapters
+        cfg.config['cutadapt'].adapter_choice = options.adapters
         # Foir all pipeline using BWA
         if options.reference:
             cfg.config.bwa_mem.reference = os.path.abspath(options.reference)
@@ -792,7 +761,8 @@ def sequana_init(options):
     sa.purple("On a slurm cluster, you may type:")
     sa.purple("\n  srun --qos normal runme.sh\n")
     sa.green("In case of trouble, please post an issue on https://github.com/sequana/sequana/issue ")
-    sa.green("or type sequana --issue and fill a post with the error and the config file (NO DATA PLEASE)")
+    sa.green("and fill a post with the error and the config file (NO DATA PLEASE)")
+
 
     # Change permission
     try: #python 3

@@ -14,7 +14,16 @@
 #  documentation: http://sequana.readthedocs.io
 #
 ##############################################################################
-"""Merge Lanes """
+"""Merge Lanes. Be aware that this script works only on a SLURM cluster 
+
+A future version will be more generic.
+
+This only to be used by the biomics platform. You can of course contribute to
+the improvment of this script
+
+For biomics users, please see:
+https://github.com/biomics-pasteur-fr/bioinfo/wiki/NextSeq:-how-to-merge-fusion-lanes
+"""
 
 import glob
 import os
@@ -31,7 +40,7 @@ def get_sample_names():
     return names
 
 
-def is_paired(name):    
+def is_paired(name): 
     filenames = glob.glob("{}_L*/{}*fastq.gz".format(name, name))    
     R1 = sum([1 for filename in filenames if '_R1_' in filename])
     R2 = sum([1 for filename in filenames if '_R2_' in filename])
@@ -73,7 +82,7 @@ for name in get_sample_names():
         os.mkdir("fusion/{}".format(name))
 
 
-    # R1. Note the usqage of wrap using --wrap " your command"
+    # R1. Note the usage of wrap using --wrap " your command"
     sbatch_command = "sbatch -c {thread} --A biomics --qos biomics -p biomics"
     sbatch_command = "sbatch -c {thread} --qos fast"
 
