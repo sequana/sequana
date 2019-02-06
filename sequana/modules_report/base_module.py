@@ -151,7 +151,7 @@ class SequanaBaseModule(object):
             shutil.copy(filename, directory)
         except FileNotFoundError:
             msg = "{0} doesn't exist".format(filename)
-            raise FileNotFoundError 
+            raise FileNotFoundError (msg)
         return target_dir + os.sep + os.path.basename(filename)
 
     def add_float_right(self, content):
