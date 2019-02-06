@@ -25,11 +25,11 @@ rule bwa_index_%(name)s:
         fai = __bwa_mem_%(name)s__fai
     params:
         index = config["bwa_mem_%(name)s"]["index_algorithm"]
-    log:
-        __bwa_index_%(name)s__log
+    #log:
+    #    __bwa_index_%(name)s__log
     shell:
         """
-        bwa index -a {params.index} {input.reference} 2> {log}
+        bwa index -a {params.index} {input.reference} #2> {log}
         samtools faidx {input.reference}
         """
 
@@ -53,7 +53,6 @@ rule bwa_mem_%(name)s:
         - __bwa_mem_%(name)s__bam: Sorted BAM file.
 
     Log:
-        - __bwa_index_%(name)s__log: Log file of BWA index.
         - __bwa_mem_%(name)s__log: Log file of BWA mem.
 
     Required configuration:
