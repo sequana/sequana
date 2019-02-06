@@ -497,8 +497,6 @@ if do_smrtlink_report:
             bc.plot_subreads_histogram()
             savefile("barcoding_subreads_histogram.png")
 
-            shell('cp {input} ./inputs')
-
 
 localrules: conda, smrtlink, genbank
 
