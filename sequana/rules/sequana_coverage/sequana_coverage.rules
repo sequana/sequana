@@ -76,7 +76,7 @@ rule sequana_coverage:
             #output_roi = "{}/{}/rois.csv".format(
             #                    output_directory, chromosome.chrom_name)
             summary = results.get_summary()
-            print(output_json)
+            #print(output_json)
             summary.to_json(output_json)
 
         # FIXME the following lines should be in the for loop ?
