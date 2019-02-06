@@ -45,7 +45,7 @@ rule compute_idr:
                 --plot 2> {log}
 
             IDR_tr=$(awk -v p={params.thresh} 'BEGIN{{print -log(p)/log(10)}}')
-            awk 'BEGIN{{OFS="\t"}} {{ if ($12>=$IDR_tr) {{print $0}} }}' {output.idr} \
+            awk -v x=$IDR_tr 'BEGIN{{OFS="\t"}} $12>=x' {output.idr} \
              | sort | uniq | sort -k7n,7n  > {output.peak}
         else
             echo "ValueError: Peak files must contain at least 20 peaks post-merge" 2> {log}
