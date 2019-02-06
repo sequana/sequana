@@ -214,7 +214,7 @@ if config['freebayes']['do']:
                                   sample=manager.samples))
 
 # Create requirements.txt(dependencies)
-conda__output = "requirements.txt"
+__conda__output = "requirements.txt"
 include: sm.modules['conda'] 
 
 # Create rulegraph
