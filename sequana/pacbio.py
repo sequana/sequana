@@ -1095,16 +1095,17 @@ class Barcoding():
         self.df_not_barcoded = self.df[self.df['Barcode Index'] == 'None']
         self.df_barcoded = self.df[self.df['Barcode Index'] != 'None']
 
-    def plot_polymerase_per_barcode(self, fontsize=12):
+    def plot_polymerase_per_barcode(self, fontsize=12, unbarcoded=True):
         """Number Of Polymerase Reads Per Barcode"""
         PR = self.df_barcoded["Polymerase Reads"].sum()
         data = self.df_barcoded['Polymerase Reads'].sort_values(ascending=False).values
-        pylab.plot([int(x) for x in range(1, len(data)+1)], data)
+        pylab.plot([int(x) for x in range(1, len(data)+1)], data, label="barcodes")
         pylab.axhline(data.mean(), color="r", label="average")
 
         try:
-            unbar = self.df_not_barcoded['Polymerase Reads'].iloc[0]
-            pylab.axhline(unbar, color="k", ls="--",label="not barcoded")
+            if unbarcoded is True:
+                unbar = self.df_not_barcoded['Polymerase Reads'].iloc[0]
+                pylab.axhline(unbar, color="k", ls="--",label="not barcoded")
         except:
             pass
 
