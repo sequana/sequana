@@ -13,7 +13,6 @@ Example::
     sequana --pipeline denovo_assembly \
             --input-directory data/ \
             --input-readtag _[12].fastq \
-            --extention fastq.gz \
             --working-dir analysis
     cd analysis
     snakemake -s denovo_assembly.rules --stats stats.txt
