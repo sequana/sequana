@@ -339,6 +339,7 @@ or open a Python shell and type::
         str += "Config: %s\n" % self.config
         str += "Cluster config: %s\n" % self.cluster_config
         str += "Schema for config file: %s\n" % self.schema_config
+        str += "Multiqc config file: %s\n" % self.multiqc_config
         return str
 
     def __str__(self):
@@ -368,6 +369,13 @@ or open a Python shell and type::
         return filename
     schema_config = property(_get_schema_config,
                       doc="full path to the schema config file of the module")
+
+    def _get_multiqc_config(self):
+        filename = self._get_file("multiqc_config.yaml")
+        #if filename is None:
+        return filename
+    multiqc_config = property(_get_multiqc_config,
+                      doc="full path to the multiqc config file of the module")
 
     def _get_cluster_config(self):
         # The default config file for that module
