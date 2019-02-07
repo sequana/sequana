@@ -91,6 +91,7 @@ expected_output = [
     "rulegraph/rulegraph.svg",
     "multiqc_report.html",
     expand("{sample}/report_variant/variant_calling.html", sample=samples),
+    expand("{sample}/remapping/mapping.sorted.bam",sample=samples)
     ]
 
 
@@ -403,12 +404,32 @@ rule consensus:
         df = df.set_index('Pos')
         dd = df.apply(lambda x: x.idxmax(), axis=1)
         with open(output[0], "w") as fout:
-            data = "".join(dd).replace("DEL", "-")
+            data = "".join(dd).replace("DEL", "")
             sample = input[0].split("/")[0]
             fout.write(">{}\n{}\n".format(sample,data))
         #from collections import Counter
         #c = Counter({'A': 1504, 'C': 1010, 'DEL': 60, 'G': 1009, 'T': 1537})
 
+
+rule remapping:
+    input: 
+        reference="{sample}/consensus/consensus.fa", 
+        fastq=__mapping__input
+    output: 
+        sorted_bam = "{sample}/remapping/mapping.sorted.bam",
+        sorted_bam_index = "{sample}/remapping/mapping.sorted.bam.bai",
+        bam = temp("{sample}/remapping/mapping.bam"),
+        sam = temp("{sample}/remapping/mapping.sam")
+    threads: 4
+    log: "{sample}/mapping/mapping.log"
+    shell:
+        """
+        #bamtools index -in {input.reference}
+        minimap2 -x map-pb {input.reference} {input} -t {threads} -a 1> {output.sam} 2>{log}
+        bioconvert sam2bam {output.sam} {output.bam} --force
+        bamtools sort -in {output.bam} -out {output.sorted_bam}
+        bamtools index -in {output.sorted_bam}
+        """
 
 rule build_fasta:
     input: expand("{sample}/consensus/consensus.fa", sample=samples)
