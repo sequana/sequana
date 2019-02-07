@@ -28,6 +28,7 @@ before_install:
 
 install:
   - echo $TRAVIS_PYTHON_VERSION
+  - sudo apt-get install tree
   - conda create --yes --name testenv python=$TRAVIS_PYTHON_VERSION
   - source activate testenv
 
