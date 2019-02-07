@@ -160,6 +160,6 @@ fastq_screen:
 # - output-directory: Create report in the specified output directory
 #
 multiqc:
-    options: "-c multiqc_config.yaml -f -x *_init_* -x *left_kept_reads* -x *report_rnaseq* -e htseq -e slamdunk"
+    options: " -f -x *_init_* -x *left_kept_reads* -x *report_rnaseq* -e htseq -e slamdunk"
     output-directory: "multiqc"
-
+    config_file: "multiqc_config.yaml"
