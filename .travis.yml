@@ -44,8 +44,9 @@ install:
   - conda list 
 
 # # command to run tests, e.g. python setup.py test
+# !!! multithread does not always work on travis.
 script:
-  - pytest -v --durations=10  test/ --cov=sequana --cov-report term --timeout 300 -n 4
+  - pytest -v --durations=10  test/ --cov=sequana --cov-report term --timeout 300 -n 1
 
 after_success:
   coveralls
