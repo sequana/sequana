@@ -10,13 +10,19 @@ Changelog
 
     * added backspace2fusion code to merge lanes in Illumina raw data
     * added new pipeline called fastqc to simply run fastqc + multiqc in parallel
-    * added laa and barcode module
+    * added laa pacbio pipeline
+    * multiqc modules: bamtools_stats and kraken module for the laa pipeline
     * added test file and test for SIRVRerence class (partial fix of issue #504)
     * added Makefile class in snaketools to help building pipeline
+    * added MultiKrakenResults class
+    * sequanix and snaketools now handle the presence of a multiqc_config 
+      file in the pipeline module
 
 * BUGS:
 
     * in quality_control when using the design file in cutadapt rule
+    * Fix multiqc report for pacbio_qc pipeline
+
 
 * CHANGES:
 
