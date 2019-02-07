@@ -212,6 +212,12 @@ class SequanaFactory(BaseFactory):
             return module.cluster_config
     clusterconfigfile = property(_get_clusterconfigfile)
 
+    def _get_multiqcconfigfile(self):
+        if self.pipeline:
+            module = snaketools.Module(self.pipeline)
+            return module.multiqc_config
+    multiqcconfigfile = property(_get_multiqcconfigfile)
+
     def _get_schemafile(self):
         if self.pipeline:
             module = snaketools.Module(self.pipeline)
@@ -240,6 +246,8 @@ class SequanaFactory(BaseFactory):
             txt +=" - cluster config: %s\n" % self.clusterconfigfile
         if self.schemafile:
             txt +=" - schema config: %s" % self.schemafile
+        if self.multiqcconfigfile:
+            txt +=" - schema config: %s" % self.multiqcconfigfile
         return txt % (self.pipeline, in1, in2, self.directory)
 
 
@@ -257,6 +265,7 @@ class GenericFactory(BaseFactory):
         self._config_browser.clicked_connect(self._switch_off_run)
         self._snakefile_browser.clicked_connect(self._switch_off_run)
         self._schema = None
+        self._multiqcconfigfile = None
 
     def _return_none(self, this):
         if this is None or len(this) == 0:
@@ -275,6 +284,10 @@ class GenericFactory(BaseFactory):
     def _get_schemafile(self):
         return self._return_none(self._schema)
     schemafile = property(_get_schemafile)
+
+    def _get_multiqcconfigfile(self):
+        return self._return_none(self._multiqcconfigfile)
+    multiqcconfigfile = property(_get_multiqcconfigfile)
 
     def _get_config(self):
         filename = self._return_none(self._config_browser.get_filenames())
@@ -304,9 +317,9 @@ class GenericFactory(BaseFactory):
 
     def __repr__(self):
         txt = super(GenericFactory, self).__repr__()
-        txt += "\nsnakefile:%s\nconfigfile:%s\ndirectory:%s\nschema:%s"
+        txt += "\nsnakefile:%s\nconfigfile:%s\ndirectory:%s\nschema:%s\nmultiqcconfigfile:%s"
         return txt % (self.snakefile, self.configfile, self.directory,
-            self.schemafile)
+            self.schemafile, self.multiqcconfigfile)
 
 
 class SequanaGUI(QMainWindow, Tools):
@@ -1353,6 +1366,12 @@ class SequanaGUI(QMainWindow, Tools):
                 # place of the original version when launnching snakemake!
                 #self.snakemake_dialog.set()
                 self.snakemake_dialog.ui.snakemake_options_cluster_cluster__config_value.set_filenames(target)
+
+            # Save the multiqc_config file if provided in sequana pipeline
+            if self.mode == "sequana" and self.sequana_factory.multiqcconfigfile:
+                target = self.working_dir + os.sep + "multiqc_config.yaml"
+                shutil.copy(self.sequana_factory.multiqcconfigfile, target)
+
 
         else:
             self.critical("Config file not saved (no wkdir)")
