@@ -325,10 +325,12 @@ RNAseQC:
 #
 # - options: any options recognised by multiqc
 # - output-directory: Create report in the specified output directory
-#
+# - config_file: by default, we use sequana RNA-seq multiqc_config file. 
+#       If you want your own multiqc, fill this entry
 multiqc:
-    options: "-c multiqc_config.yaml -f -x *_init_* -x *left_kept_reads* -x *report_rnaseq* -e htseq -e slamdunk"
+    options: "-f -x *_init_* -x *left_kept_reads* -x *report_rnaseq* -e htseq -e slamdunk"
     output-directory: "multiqc"
+    config_file: "multiqc_config.yaml"
 
 #############################################################################
 #   Statistical analysis with SARTools for a simple experimental design
