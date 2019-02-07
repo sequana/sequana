@@ -68,7 +68,13 @@ onsuccess:
     shell("ln -f -s {} index.html".format(__multiqc__output))
     shell("rm -f ./samples/*/*.done")
     shell("rm -f ./samples/*/*.log")
-    shell("tree -H . -L 3 --noreport --charset utf-8  | grep -v multiqc |grep -v fastqc.zip > tree.html ")
+
+
+    from sequana.utils.tree import HTMLDirectory
+    hh = HTMLDirectory(".", pattern="fastqc.html")
+    with open("tree.html", "w") as fout:
+        fout.write(hh.get_html())
+
     print("A directory browser is stored in the file tree.html (Note the dot).")
     print("You may want to delete the .snakemake directory, fastqc.rules and config.yaml files.")
     print("To do so, you can use the Makefile by typing 'Makefile clean'")
