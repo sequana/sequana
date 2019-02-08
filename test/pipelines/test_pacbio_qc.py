@@ -5,8 +5,12 @@ import json
 import os
 import tempfile
 from .common import Pipeline
+import pytest
 
-
+skiptravis = pytest.mark.skipif("TRAVIS_PYTHON_VERSION" in os.environ,
+     reason="On travis")
+ 
+ 
 class PacbioQCPipeline(Pipeline):
 
     def __init__(self, wk=None):
@@ -43,6 +47,7 @@ class PacbioQCPipeline(Pipeline):
         assert "hist_gc" in data
 
 
+@skiptravis
 def test_pipeline():
     QC = PacbioQCPipeline()
     try:
