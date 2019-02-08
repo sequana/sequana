@@ -109,7 +109,6 @@ rule multiqc:
     run:
         from subprocess import Popen
         cmd = "multiqc . -f -m sequana_pacbio_qc -c {}".format(params.config)
-        print(cmd)
         process = Popen(cmd.split(), stderr=subprocess.PIPE, stdout=subprocess.PIPE)
         process.wait()
 
