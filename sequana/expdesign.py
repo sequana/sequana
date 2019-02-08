@@ -267,7 +267,7 @@ class ExpDesignIllumina(ExpDesignBase):
         self.data = data
         self.df = pd.read_csv(io.StringIO(data["Data"]))
 
-        ncols = [8, 10, 12]
+        ncols = [8, 9,10, 12]
         if self.df.shape[1] not in ncols:
             self.df = pd.read_csv(io.StringIO(data["Data"]), ";")
             if self.df.shape[1] not in ncols:
