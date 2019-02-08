@@ -20,6 +20,7 @@
 import pandas as pd
 from pylab import plot
 from sequana import logger
+import pylab
 
 
 class CNVnator(object):
@@ -42,14 +43,16 @@ class CNVnator(object):
         self.df['end'] = end.astype(int)
         self.df['name'] = name
 
-
     def plot(self, chr_name, x1=None, x2=None, Y=20):
 
         df = self.df.query("name == @chr_name")
         for _, item in df.iterrows():
             if item['type'] == "deletion":
-                plot([item.start, item.end], [-1,-1], "m-")
+                plot([item.start, item.end], [-1,-1], "r-", label="deletion")
             else:
-                plot([item.start, item.end], [Y, Y], "m-")
+                plot([item.start, item.end], [Y, Y], "b-", label="duplication")
+        pylab.legend()
 
+    def hist_event_size(self, bins=20):
+        self.df['size'].hist(ec="k", bins=bins, lw=1)
 
