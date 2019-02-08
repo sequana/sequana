@@ -9,7 +9,7 @@ skiptravis = pytest.mark.skipif("TRAVIS_PYTHON_VERSION" in os.environ,
     reason="On travis")
 
 
-@skiptravis
+#@skiptravis
 def run_kraken_taxon():
 
     def download():
