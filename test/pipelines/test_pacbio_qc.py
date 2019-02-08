@@ -47,8 +47,10 @@ def test_pipeline():
     QC = PacbioQCPipeline()
     try:
         QC.run()
-        #QC.check()
-        #QC.clean()
+        QC.check()
+        QC.clean()
+    except TimeoutError:
+        pass
     except:
         QC.clean()
         raise Exception
