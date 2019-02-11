@@ -39,15 +39,16 @@ install:
   - conda install --yes kraken bwa snpeff shustring krona sambamba
   - conda install --yes picard pigz cutadapt fastqc
   - conda install --yes freebayes --no-deps
-  #- conda install --yes pysam samtools --no-deps 
+  #- conda install --yes pysam samtools --no-deps
   #- conda install --yes python=$TRAVIS_PYTHON_VERSION --file requirements_pipelines.txt
   - pip install .
-  - conda list 
+  - conda list
 
 # # command to run tests, e.g. python setup.py test
-# !!! multithread does not always work on travis.
+# !!! multithread does not always work on travis so we set -n 1
 script:
-  - pytest -v --durations=10  test/ --cov=sequana --cov-report term --timeout 300 -n 1
+  - pytest -v --durations=10  test/ --cov=sequana --cov-report term --timeout 300 -n 1 --cov-config .coveragerc_travis
+
 
 after_success:
   coveralls
