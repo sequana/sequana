@@ -113,11 +113,6 @@ if do_snpeff:
     include: dynamic_copy("genbank", M)
     expected_output.append(__copy_genbank__output)
 
-#if do_snpeff or not, we must have the reference
-__copy_reference__input = config['input']['reference_file']
-__copy_reference__output = "reference/" + os.path.basename(__copy_reference__input)
-include: dynamic_copy("reference", M)
-expected_output.append(__copy_reference__output)
 
 
 if do_smrtlink_report:
@@ -205,7 +200,11 @@ if do_snpeff:
     reference = __snpeff_add_locus_in_fasta__output
 else:
     # copy reference into ./reference
-    reference = "reference/" + os.path.basename(reference)
+    __copy_reference__input = config['input']['reference_file']
+    __copy_reference__output = "reference/" + os.path.basename(__copy_reference__input)
+    include: dynamic_copy("reference", M)
+    expected_output.append(__copy_reference__output)
+    reference = __copy_reference__output
 
 
 rule mapping:
