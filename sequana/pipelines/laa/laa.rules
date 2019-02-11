@@ -50,8 +50,6 @@ else:
 
 
 
-if do_snpeff:
-    assert config['snpeff']['reference_file'].endswith('.gbk'), "genbank must end in .gbk"
 
 # identify the pattern
 
@@ -108,10 +106,18 @@ if do_kraken:
 
 
 if do_snpeff:
+    assert config['snpeff']['reference_file'].endswith('.gbk'), "genbank must end in .gbk"
+
     __copy_genbank__input = config['snpeff']['reference_file']
     __copy_genbank__output = "reference/" + os.path.basename(__copy_genbank__input)
     include: dynamic_copy("genbank", M)
     expected_output.append(__copy_genbank__output)
+
+#if do_snpeff or not, we must have the reference
+__copy_reference__input = config['input']['reference_file']
+__copy_reference__output = "reference/" + os.path.basename(__copy_reference__input)
+include: dynamic_copy("reference", M)
+expected_output.append(__copy_reference__output)
 
 
 if do_smrtlink_report:
@@ -199,7 +205,7 @@ if do_snpeff:
     reference = __snpeff_add_locus_in_fasta__output
 else:
     # copy reference into ./reference
-    reference = "reference/" + reference
+    reference = "reference/" + os.path.basename(reference)
 
 
 rule mapping:
@@ -208,7 +214,7 @@ rule mapping:
     # a dictionary with {sample} wildcards, otherwise a simple wildcard, which
     # is the output of ccs2fastq rule
     input:
-        __mapping__input,
+        fastq=__mapping__input,
         reference=reference
     output:
         sorted_bam = "{sample}/mapping/mapping.sorted.bam",
@@ -221,10 +227,11 @@ rule mapping:
     threads: 4
     shell:
         """
-    minimap2 -x map-pb {input.reference} {input} -t {threads} -a 1> {output.sam} 2>{log}
+    minimap2 -x map-pb {input.reference} {input.fastq} -t {threads} -a 1> {output.sam} 2>{log}
     bioconvert sam2bam {output.sam} {output.bam} --force
     bamtools sort -in {output.bam} -out {output.sorted_bam}
         """
+
 
 rule samtools_stats:
     input: "{sample}/mapping/mapping.sorted.bam"
@@ -354,24 +361,38 @@ rule rulegraph:
 
 
 if do_snpeff:
-    rule multiqc:
-        input:
-            expand("{sample}/snpeff/{sample}.snpeff.csv", sample=samples),
-            expand("{sample}/mapping/samtools_{sample}.txt", sample=samples),
-            expand("{sample}/mapping/sequana_bamtools_stats_{sample}.txt", sample=samples)
-        output: "multiqc_report.html"
-        params:
-            config=sequana_data("multiqc_config.yaml", "../multiqc")
-        run:
-            # we use a subprocess instead of using shell() to catch the
-            # recurrent errors due to matplotlib warning
-            # samtools multiqc module was buggy and not fitting our needs.
-            # bamtoools module was also not rendering properly. We implemented
-            # our own module within sequana.
-            from subprocess import Popen
-            cmd = "multiqc . -f -m snpeff -m sequana_bamtools_stats -m sequana_kraken -c {}".format(params.config)
-            process = Popen(cmd.split(), stderr=subprocess.PIPE, stdout=subprocess.PIPE)
-            process.wait()
+    __multiqc__input = (
+        expand("{sample}/snpeff/{sample}.snpeff.csv", sample=samples),
+        expand("{sample}/mapping/samtools_{sample}.txt", sample=samples),
+        expand("{sample}/mapping/sequana_bamtools_stats_{sample}.txt", sample=samples))
+else:
+    __multiqc__input = (
+        expand("{sample}/mapping/samtools_{sample}.txt", sample=samples),
+        expand("{sample}/mapping/sequana_bamtools_stats_{sample}.txt", sample=samples))
+
+rule multiqc:
+    input:
+        __multiqc__input
+    output: "multiqc_report.html"
+    params:
+        config=sequana_data("multiqc_config.yaml", "../multiqc")
+    run:
+        # we use a subprocess instead of using shell() to catch the
+        # recurrent errors due to matplotlib warning
+        # samtools multiqc module was buggy and not fitting our needs.
+        # bamtoools module was also not rendering properly. We implemented
+        # our own module within sequana.
+        modules = " -m sequana_bamtools_stats "
+        if do_kraken:
+            modules += " -m sequana_kraken "
+        if do_snpeff:
+            modules += " -m snpeff "
+        from subprocess import Popen
+        cmd = "multiqc . -f {} -c {}".format(modules, params.config)
+        process = Popen(cmd.split(), stderr=subprocess.PIPE, stdout=subprocess.PIPE)
+        process.wait()
+
+
 
 if do_kraken:
     rule create_proportion_plot_kraken:
@@ -425,7 +446,7 @@ rule remapping:
     shell:
         """
         #bamtools index -in {input.reference}
-        minimap2 -x map-pb {input.reference} {input} -t {threads} -a 1> {output.sam} 2>{log}
+        minimap2 -x map-pb {input.reference} {input.fastq} -t {threads} -a 1> {output.sam} 2>{log}
         bioconvert sam2bam {output.sam} {output.bam} --force
         bamtools sort -in {output.bam} -out {output.sorted_bam}
         bamtools index -in {output.sorted_bam}
@@ -520,8 +541,10 @@ if do_smrtlink_report:
             bc.plot_subreads_histogram()
             savefile("barcoding_subreads_histogram.png")
 
-
-localrules: conda, smrtlink, genbank
+if do_snpeff:
+    localrules: conda, smrtlink, genbank, reference
+else:
+    localrules: conda, smrtlink, reference
 
 
 onsuccess:
@@ -648,20 +671,21 @@ this <a href="multiqc_report.html">multiqc report.</a></p>
 
     s = SummaryModule(data, intro=intro)
 
-    from sequana.utils import config as conf
-    for sample in samples:
-        sample_summary = {}
+    if do_kraken:
+        from sequana.utils import config as conf
+        for sample in samples:
+            sample_summary = {}
 
-        conf.summary_sections = []
-        conf.output_dir = "{}".format(sample)
+            conf.summary_sections = []
+            conf.output_dir = "{}".format(sample)
 
-        k = KrakenModule( sample + "/taxonomy/kraken")
-        sample_summary['kraken_json'] = json.loads(k._get_stats().to_json())
-        conf.summary_sections.append({
-            "name": "Kraken ",
-            "anchor'": "kraken",
-            "content": k._get_summary_section()
-        })
+            k = KrakenModule( sample + "/taxonomy/kraken")
+            sample_summary['kraken_json'] = json.loads(k._get_stats().to_json())
+            conf.summary_sections.append({
+                "name": "Kraken ",
+                "anchor'": "kraken",
+                "content": k._get_summary_section()
+            })
 
 
     from sequana.snaketools import Makefile, OnSuccess
