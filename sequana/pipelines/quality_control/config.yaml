@@ -80,7 +80,7 @@ bwa_mem_phix:
 #
 # :Note: If design_file is provided, fwd and rev fields are ignored
 #
-# adapter_choice__ = ["", "Nextera", "NEBNext", "NEXTFlex48_DNA", "Rubicon", "TruSeq", "TruSeqCD_DNA", "NEXTFlex96_DNA"]
+# adapter_choice__ = ["", "Nextera", "NEBNext", "NEXTFlex48_DNA", "Rubicon", "TruSeq", "TruSeqCD_DNA", "NEXTFlex96_DNA", "TruSeqCD_alt_DNA"]
 # tool_choice__ = ["atropos", "cutadapt"]
 cutadapt:
     do: yes
