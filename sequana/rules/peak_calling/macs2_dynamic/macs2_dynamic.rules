@@ -34,6 +34,7 @@ rule macs2_%(name)s:
         gsize = config["peak_calling"]["genomeSize"],
         # options must contain both mode and full options
         options = __macs2_%(name)s__options,
+        pe_mode = __macs2_%(name)s__pe_mode,
         input = __macs2_%(name)s__input,
         prefix = __macs2_%(name)s__output_prefix,
         shift_file = __macs2_%(name)s__shift_file,
@@ -45,15 +46,24 @@ rule macs2_%(name)s:
     run:
         import os
         shift = ''.join({params.shift_file})
+        pe = ''.join({params.pe_mode})
         if shift is not "Empty":
             if os.path.exists(shift):
                 shift = shell("awk \'{{print $3}}\' {params.shift_file} | awk -F \',\' \'{{if ($1=={params.read_length}){{print $2}} \\
                 else {{print $1}} }}\' ")
-                shell("macs2 callpeak -t {input.bam} {params.input} -f BAM -g {params.gsize} -n {params.prefix} \\
-                {params.options} --extsize %%s 2> {log}".format(shift))
+                if pe is 'yes':
+                    shell("macs2 callpeak -t {input.bam} {params.input} -f BAMPE -g {params.gsize} -n {params.prefix} \\
+                    {params.options} --extsize %%s 2> {log}".format(shift))
+                else:
+                    shell("macs2 callpeak -t {input.bam} {params.input} -f BAM -g {params.gsize} -n {params.prefix} \\
+                    {params.options} --extsize %%s 2> {log}".format(shift))
         else :
-            shell("macs2 callpeak -t {input.bam} {params.input} -f BAM -g {params.gsize} -n {params.prefix} \\
-            {params.options} 2> {log}")
+            if pe is 'yes':
+                shell("macs2 callpeak -t {input.bam} {params.input} -f BAMPE -g {params.gsize} -n {params.prefix} \\
+                {params.options} 2> {log}")
+            else:
+                 shell("macs2 callpeak -t {input.bam} {params.input} -f BAM -g {params.gsize} -n {params.prefix} \\
+                {params.options} 2> {log}")
 
     '''
 
