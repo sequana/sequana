@@ -40,7 +40,7 @@ kraken:
 freebayes_vcf_filter:
     do: yes
     freebayes_score: 20
-    frequency: 0.7
+    frequency: 0.0
     min_depth: 10
     forward_depth: 3
     reverse_depth: 3

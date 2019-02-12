@@ -79,7 +79,6 @@ elif data_type == "lima.subreads.bam":
 else:
     raise ValueError("Input file type must be one of lima.ccs.fastq, lima.ccs.bam, subreads.bam")
 
-samples = sorted(samples)
 M.samples = {tag:fl for tag, fl in zip(samples, M.ff.realpaths)}
 
 
@@ -395,13 +394,13 @@ rule multiqc:
 
 if do_kraken:
     rule create_proportion_plot_kraken:
-        input: expand("{sample}/taxonomy/kraken/kraken.csv", sample=samples)
+        input: expand("{sample}/taxonomy/kraken/kraken.csv", sample=sorted(samples))
         output:
             image="images/proportion_kraken.png",
             data="outputs/sequana_kraken_summary.json"
         run:
             from sequana.kraken import MultiKrakenResults
-            k = MultiKrakenResults(input, sample_names=samples)
+            k = MultiKrakenResults(input, sample_names=sorted(samples))
             fontsize = 12
             if len(input) > 30:
                 fontsize = 10
@@ -452,7 +451,7 @@ rule remapping:
         """
 
 rule build_fasta:
-    input: expand("{sample}/consensus/consensus.fa", sample=samples)
+    input: expand("{sample}/consensus/consensus.fa", sample=sorted(samples))
     output: "outputs/allfasta.fa"
     shell: "cat {input} > {output}"
 
@@ -486,7 +485,7 @@ if do_kraken:
             cmd += " --thread {} --databases "
             cmd = cmd.format(input[0], outdir, threads)
             for this in config['kraken']['databases']:
-                assert os.path.exists(this)
+                assert os.path.exists(this), "databases {} does not exits".format(this)
                 cmd += " {} ".format(this)
             shell(cmd)
 
@@ -639,7 +638,7 @@ obtained after mapping of the reads on the reference. The Freebayes directory co
       <p>Proportion of reads in virus, bacteria, human and unclassified categories:</p>
       <img src="images/proportion_kraken.png"></img><br>
         """
-        for sample in samples:
+        for sample in sorted(samples):
             intro += """<a href="{}/taxonomy/summary.html">{}/kraken</a><br>""".format(sample, sample)
 
 
@@ -648,12 +647,12 @@ obtained after mapping of the reads on the reference. The Freebayes directory co
 SNPEff reports and variant calling reports. For a snpeff summary, please see
 this <a href="multiqc_report.html">multiqc report.</a></p>
         """
-        for sample in samples:
+        for sample in sorted(samples):
             intro += """<a href="{}/snpeff/snpeff.html">{}/snpeff.html</a><br>""".format(sample, sample)
         intro += "</div>"
 
         intro += "<div><h2>Variant reports</h2>"
-        for sample in samples:
+        for sample in sorted(samples):
             intro += """<a href="{}/report_variant/variant_calling.html">{}/variant report</a><br>""".format(sample, sample)
     else:
         intro +="""<p>No SNPEFF report available (was not required). Please see variant reports instead</p></div>"""
@@ -672,7 +671,7 @@ this <a href="multiqc_report.html">multiqc report.</a></p>
 
     if do_kraken:
         from sequana.utils import config as conf
-        for sample in samples:
+        for sample in sorted(samples):
             sample_summary = {}
 
             conf.summary_sections = []
