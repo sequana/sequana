@@ -426,7 +426,10 @@ if model in ["narrow", "broad"]:
         __macs2_rep__shift_file = "5-PhantomPeakQualTools/{{IP_REP}}_{}_sort_dedup{}_spp.out".format(ref, blacklist)
     else:
         __macs2_rep__shift_file = "Empty"
-
+    if manager.paired :
+        __macs2_rep__pe_mode = "yes"
+    else:
+        __macs2_rep__pe_mode = "no"
     __macs2_rep__input = "-c {}/{{INPUT}}_{}_sort_dedup{}.bam".format(blacklist_dir, ref, blacklist)
     __macs2_rep__log = "6-PeakCalling/{}/logs/{{IP_REP}}_vs_{{INPUT}}.o".format(model)
     __macs2_rep__output = "6-PeakCalling/{}/{{IP_REP}}_vs_{{INPUT}}_peaks.{}Peak".format(model, model)
@@ -449,7 +452,10 @@ if model in ["narrow", "broad"]:
         __macs2_spr__shift_file = "5-PhantomPeakQualTools/{{SPR}}_{}_sort_dedup{}_spp.out".format(ref, blacklist)
     else:
         __macs2_spr__shift_file = "Empty"
-
+    if manager.paired :
+        __macs2_spr__pe_mode = "yes"
+    else:
+        __macs2_spr__pe_mode = "no"
     __macs2_spr__input = "-c {}/{{INPUT}}_{}_sort_dedup{}.bam".format(blacklist_dir, ref, blacklist)
     __macs2_spr__log = "6-PeakCalling/{}/logs/{{SPR}}_vs_{{INPUT}}.o".format(model)
     __macs2_spr__output = "6-PeakCalling/{}/{{SPR}}_vs_{{INPUT}}_peaks.{}Peak".format(model, model)
@@ -473,7 +479,10 @@ if model in ["narrow", "broad"]:
         __macs2_ppr__shift_file = "5-PhantomPeakQualTools/{{PPR}}_{}_sort_dedup{}_spp.out".format(ref, blacklist)
     else:
         __macs2_ppr__shift_file = "Empty"
-
+    if manager.paired :
+        __macs2_ppr__pe_mode = "yes"
+    else:
+        __macs2_ppr__pe_mode = "no"
     __macs2_ppr__input = "-c {}/{{INPUT}}_{}_sort_dedup{}.bam".format(blacklist_dir, ref, blacklist)
     __macs2_ppr__log = "6-PeakCalling/{}/logs/{{PPR}}_vs_{{INPUT}}.o".format(model)
     __macs2_ppr__output = "6-PeakCalling/{}/{{PPR}}_vs_{{INPUT}}_peaks.{}Peak".format(model, model)
@@ -497,7 +506,10 @@ if model in ["narrow", "broad"]:
         __macs2_pool__shift_file = "5-PhantomPeakQualTools/{{POOL}}_{}_sort_dedup{}_spp.out".format(ref, blacklist)
     else:
         __macs2_pool__shift_file = "Empty"
-
+    if manager.paired :
+        __macs2_pool__pe_mode = "yes"
+    else:
+        __macs2_pool__pe_mode = "no"
     __macs2_pool__input = "-c {}/{{INPUT_POOL}}_{}_sort_dedup{}.bam".format(blacklist_dir, ref, blacklist)
     __macs2_pool__log = "6-PeakCalling/{}/logs/{{POOL}}_vs_{{INPUT_POOL}}.o".format(model)
     __macs2_pool__output = "6-PeakCalling/{}/{{POOL}}_vs_{{INPUT_POOL}}_peaks.{}Peak".format(model, model)
