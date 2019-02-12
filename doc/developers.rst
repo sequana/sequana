@@ -591,7 +591,7 @@ analysis. This means you want to retrieve
 automatically the file sequana_summary_count_SAMPLE.json. Note that they may be named
 differently; for instance, sample/sequana_summary.json
 
-In ./sequana/multiqc directoty, add a file called pipeline_count.py
+In ./sequana/multiqc directory, add a file called pipeline_count.py
 
 - Take as example the already existing file such as pacbio_qc.py
 - update the sequana/multiqc/__init__.py to add the search pattern for your input (here summary_count*.json)

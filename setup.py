@@ -8,7 +8,7 @@ import glob
 
 _MAJOR               = 0
 _MINOR               = 7
-_MICRO               = 1
+_MICRO               = 2
 version              = '%d.%d.%d' % (_MAJOR, _MINOR, _MICRO)
 release              = '%d.%d' % (_MAJOR, _MINOR)
 
@@ -144,6 +144,7 @@ setup(
             "sequana_isoseq_qc=sequana.multiqc.isoseq_qc:MultiqcModule",
             "sequana_bamtools_stats=sequana.multiqc.bamtools_stats:MultiqcModule",
             "sequana_kraken=sequana.multiqc.kraken:MultiqcModule",
+            "sequana_laa=sequana.multiqc.laa:MultiqcModule"
         ],
         'multiqc.hooks.v1': [
             'before_config = sequana.multiqc.config:load_config',

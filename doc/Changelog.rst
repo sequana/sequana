@@ -17,6 +17,7 @@ Changelog
     * added MultiKrakenResults class
     * sequanix and snaketools now handle the presence of a multiqc_config 
       file in the pipeline module
+    * add laa multiqc
 
 * BUGS:
 
