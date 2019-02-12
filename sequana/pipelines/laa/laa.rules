@@ -191,6 +191,20 @@ else:
     __sequana_kraken__input = __rawdata__input
 
 
+rule fastq_stats:
+    input: __mapping__input
+    output: "{sample}/sequana_laa_{sample}.json"
+    run:
+        import json
+        from sequana import FastQ
+        f = FastQ(input[0])
+        N = len(f)
+        data = {"sample": output[0].split("/", 1)[0], "ccs_reads": N}
+        with open(output[0], "w") as fout:
+            json.dump(data, fout, indent=True, sort_keys=True)
+
+
+
 if do_snpeff:
     __snpeff_add_locus_in_fasta__log = "common_logs/snpeff_add_locus_in_fasta.log"
     __snpeff_add_locus_in_fasta__input = reference
@@ -362,11 +376,13 @@ if do_snpeff:
     __multiqc__input = (
         expand("{sample}/snpeff/{sample}.snpeff.csv", sample=samples),
         expand("{sample}/mapping/samtools_{sample}.txt", sample=samples),
-        expand("{sample}/mapping/sequana_bamtools_stats_{sample}.txt", sample=samples))
+        expand("{sample}/mapping/sequana_bamtools_stats_{sample}.txt", sample=samples),
+        expand("{sample}/sequana_laa_{sample}.json", sample=samples))
 else:
     __multiqc__input = (
         expand("{sample}/mapping/samtools_{sample}.txt", sample=samples),
-        expand("{sample}/mapping/sequana_bamtools_stats_{sample}.txt", sample=samples))
+        expand("{sample}/mapping/sequana_bamtools_stats_{sample}.txt", sample=samples),
+        expand("{sample}/sequana_laa_{sample}.json", sampless=samples))
 
 rule multiqc:
     input:
@@ -380,7 +396,7 @@ rule multiqc:
         # samtools multiqc module was buggy and not fitting our needs.
         # bamtoools module was also not rendering properly. We implemented
         # our own module within sequana.
-        modules = " -m sequana_bamtools_stats "
+        modules = " -m sequana_bamtools_stats -m sequana_laa "
         if do_kraken:
             modules += " -m sequana_kraken "
         if do_snpeff:
