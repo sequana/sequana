@@ -8,6 +8,7 @@ def load_config():
         'sequana_isoseq_qc': {'fn': 'sequana_summary*.json'},
         'sequana_isoseq': {'fn': 'sequana_summary*.json'},
         'sequana_kraken': {'fn': 'sequana_kraken_summary.json'},
+        'sequana_laa': {'fn': 'sequana_laa_*.json'},
         'sequana_bamtools_stats': {'fn': 'sequana_bamtools_stats_*.txt'},
     }
     config.update_dict(config.sp, my_search_patterns)

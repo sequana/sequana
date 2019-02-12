@@ -56,7 +56,6 @@ class MultiqcModule(BaseMultiqcModule):
 
         # In theory only one file
         for myfile in self.find_log_files("sequana_kraken"):
-            #logging.info("Parsing {}".format(myfile))
             name = myfile['s_name']
             d = json.loads(myfile['f'])
             for k,v in d.items():
