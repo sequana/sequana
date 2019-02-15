@@ -750,11 +750,13 @@ class KrakenHierarchical(object):
         output_filename_unclassified = _pathto("unclassified_%d.fastq" % iteration)
         file_fastq_unclass = _pathto("unclassified_%d.fastq" % iteration)
 
+
+
         if iteration == 0:
             inputs = self.inputs
         else:
-            # previous results
             inputs = self._list_kraken_input[iteration-1]
+            
 
         # if this is the last iteration (even if iteration is zero), save
         # classified and unclassified in the final kraken results.
@@ -790,8 +792,11 @@ class KrakenHierarchical(object):
 
         # Iteration over the databases
         for iteration in range(len(self.databases)):
-            self._run_one_analysis(iteration)
-
+            status = self._run_one_analysis(iteration)
+            last_unclassified = self._list_kraken_input[-1]
+            stat = os.stat(last_unclassified)
+            if stat.st_size == 0:
+                break
         # concatenate all kraken output files
         file_output_final = self.output_directory + os.sep + "%s.out" % output_prefix
         with open(file_output_final, 'w') as outfile:
