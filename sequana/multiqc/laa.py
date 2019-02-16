@@ -30,7 +30,7 @@ class MultiqcModule(BaseMultiqcModule):
             anchor='sequana_laa',  #
             target='sequana',  # Name show that link to the following href
             href='http://github.com/sequana/sequana/',
-            info="sequana laa pipeline multi summary")
+            info="amplicon pipeline multi summary")
 
         self.sequana_data = {}
 
@@ -41,8 +41,6 @@ class MultiqcModule(BaseMultiqcModule):
             name = name.replace("sequana_laa_", "")
             self.sequana_data[name] = self.parse_logs(myfile["f"])
 
-        print(self.sequana_data)
-
         if len(self.sequana_data) == 0:
             log.debug("No samples found: sequana_laa")
             raise UserWarning
@@ -52,7 +50,7 @@ class MultiqcModule(BaseMultiqcModule):
 
         self.populate_columns()
         self.add_ccs_reads()
-
+        self.add_ccs_reads_hist()
 
     def parse_logs(self, log_dict):
         import json
@@ -77,11 +75,39 @@ class MultiqcModule(BaseMultiqcModule):
         }
 
         self.add_section(
-            name = 'taxonomy',
-            anchor = 'taxonomy',
-            description = 'The following barplots summarizes the kraken analysis for each sample. ',
+            name = 'CCS reads',
+            anchor = 'ccs_reads',
+            description = 'The following barplots summarizes the number of CCS reads.',
             helptext = "",
             plot = bargraph.plot(data, None, pconfig))
+
+    def add_ccs_reads_hist(self):
+        data = {}
+        #for name in self.sequana_data:
+        #    data = [item['ccs_reads'] for item in self.sequana_data.items()]
+
+        
+        data = [self.sequana_data[key]["ccs_reads"] for key in self.sequana_data.keys()]
+        from pylab import hist
+        Y, X, _ = hist(data, bins=20)
+
+        data = {}
+        data['sample'] = {x:y for x,y in zip(X, Y)}
+
+        pconfig = {
+            "title": "CCS reads ",
+            "percentages": False,
+            "min": 0,
+            #"max":100,
+            "format": '{0:.2f}'
+        }
+
+        self.add_section(
+            name = 'CCS reads histogram',
+            anchor = 'ccs_reads_hist',
+            description = 'CCS reads histogram.',
+            helptext = "",
+            plot = linegraph.plot(data, pconfig))
 
     def populate_columns(self):
         headers = {}
