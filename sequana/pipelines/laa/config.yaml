@@ -47,5 +47,13 @@ freebayes_vcf_filter:
     strand_ratio: 0.2
 
 
-phylogeny:
-    do: true
+raxml_mltree:
+    N: 20
+    options: ''
+
+
+raxml_bootstrap:
+    N: 2
+    options: ''
+
+

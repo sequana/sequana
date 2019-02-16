@@ -12,7 +12,6 @@ __snakefile__ = os.path.abspath(__snakefile__) + ".rules"
 # TEST to performed
 # set snpeff on True/False
 # set kraken on True/False   OK
-# set do_phylogeny on/off    OK
 # set do_vcf_filter on/off
 
 
@@ -38,7 +37,6 @@ assert reference.endswith('.fa') or reference.endswith('.fasta'), \
 
 do_snpeff = config['snpeff']['do']
 do_kraken = config['kraken']['do']
-do_phylogeny = config["phylogeny"]['do']
 
 smrtlink_file = config['input']['smrtlink_report_file']
 if smrtlink_file:
@@ -88,15 +86,13 @@ expected_output = [
     "rulegraph/rulegraph.svg",
     "multiqc_report.html",
     expand("{sample}/report_variant/variant_calling.html", sample=samples),
-    expand("{sample}/remapping/mapping.sorted.bam",sample=samples)
+    expand("{sample}/remapping/mapping.sorted.bam",sample=samples),
+    "outputs/mapping_consensus/mapping.sorted.bam"
     ]
 
 
-if config["phylogeny"]['do']:
-    __phylogeny__output = "outputs/clustalo_default-none-none-raxml_default/allfasta.fa.final_tree.png"
-    expected_output.append(__phylogeny__output)
-else: # we stop at the consensus step so we need to add it in  the expected output
-    expected_output.append("outputs/allfasta.fa")
+__phylogeny__output = "outputs/dendogram.png"
+expected_output.append(__phylogeny__output)
 
 
 # Do kraken analysis ?
@@ -218,6 +214,7 @@ else:
     include: dynamic_copy("reference", M)
     expected_output.append(__copy_reference__output)
     reference = __copy_reference__output
+
 
 
 rule mapping:
@@ -407,7 +404,6 @@ rule multiqc:
         process.wait()
 
 
-
 if do_kraken:
     rule create_proportion_plot_kraken:
         input: expand("{sample}/taxonomy/kraken/kraken.csv", sample=sorted(samples))
@@ -430,25 +426,253 @@ if do_kraken:
 
 
 rule consensus:
+    """
+
+
+    If coverage is null, igvtools skip the rows. For instance, if pos 3 and 4 
+    are not covered, you end up with this kind of results
+
+    pos A  C G T 
+    1   10 0 0 0
+    2   10 0 0 0
+    5   10 0 0 0
+    6   10 0 0 0
+
+    At position 3 and 4 there is no data to parse, so the consensus will not have those
+    entries.
+
+    Another issue is the mix of highly covered regions vs low covered regions.
+    For instance if the coverage is about 1000 and there is a region covered by 1 read only (coverage of 1X), this could be a chimera or artefact. We therefore set a minimal depth coverage below whihc data is removed.
+
+    pos A  C G T 
+    1   0 0 0 1000
+    2   0 0 0 1000
+    3   0 0 0 5
+    4   0 0 0 1000
+
+    becomes
+
+    pos A  C G T 
+    1   0 0 0 1000
+    2   0 0 0 1000
+    4   0 0 0 1000
+
+    At position 3 there is no data to parse, so the consensus will not have that position
+
+
+
+    """
     input: "{sample}/igvtools/bases.txt"
-    output: "{sample}/consensus/consensus.fa"
+    output: 
+        consensus="{sample}/consensus/consensus.fa",
+        population="{sample}/consensus/population.csv"
+    params: 
+        min_depth=10
     run:
         import pandas as pd
         df = pd.read_csv(input[0], sep="\t", skiprows=3, header=None)
         df.columns = ["Pos", "A", "C", "G", "T","N","DEL","INS"]
         df = df.set_index('Pos')
+
+        # if coverage is low, we reset everything to zero and then set N to a
+        # large value (1000)
+        indices = df[df.sum(axis=1)<params.min_depth].index
+        df.loc[indices] = 0
+        df.loc[indices, "N"] = 10000  # not important since we normalise afterwards
+
+        # First, we save the consensus ignoring the DELETIONs
         dd = df.apply(lambda x: x.idxmax(), axis=1)
-        with open(output[0], "w") as fout:
+        with open(output.consensus, "w") as fout:
             data = "".join(dd).replace("DEL", "")
             sample = input[0].split("/")[0]
             fout.write(">{}\n{}\n".format(sample,data))
-        #from collections import Counter
-        #c = Counter({'A': 1504, 'C': 1010, 'DEL': 60, 'G': 1009, 'T': 1537})
+
+        # Second, we identify the positions where there are several populations
+        df = df.divide(df.sum(axis=1), axis=0)
+        selection = df[(df>0.1).sum(axis=1)>1]
+        selection.to_csv(output.population)
+
+
+rule mafft:
+    """Aligning the sequences using MAFFT. 
+
+    """
+    input:
+        reference= reference,
+        fasta="outputs/allfasta.fa"
+    output:
+        aln="outputs/mafft/mafft.aln.fa"
+    threads: 2
+    shell:
+        """
+        mafft --thread {threads} --retree 1 --maxiterate 0 --add {input.fasta} \
+        --keeplength {input.reference} > {output.aln}
+        """
+
+
+rule raxml_mltree:
+    """Estimating trees with RAxML
+
+    -p seed for parsimony
+    -b turn on bootstrapping
+    -N number of bootstrap
+
+    First, we build 20 ML trees on distinct starting trees and also print 
+    the best likelihood in bestTree.T1::
+
+        raxmlHPC -m GTRGAMMA -p 12345 -N 20 -s aln.fa -n T1
+
+    This will generate 20 trees T1.RUN.X X=1..20 and one bestree.T1
+
+
+    reference: https://cme.h-its.org/exelixis/web/software/raxml/hands_on.html
+
+    """
+    input:
+        aln = "outputs/mafft/mafft.aln.fa"
+    output:
+        tree = "outputs/raxml/RAxML_bestTree.T1111",
+        log = "outputs/raxml/raxml_parcimony.log",
+    threads: 4
+    params:
+        N=config['raxml_mltree']['N'],
+        options=config['raxml_mltree']['options']
+    run:
+        # First, let us get a best likelihood tree from 20 ML trees
+        shell("mkdir -p outputs/raxml")
+        shell("rm -f outputs/raxml/*T1111*")
+
+        cmd = "raxmlHPC-PTHREADS -m GTRGAMMA -s {}".format(input.aln)
+        cmd += " -p 12345 "
+        cmd += " -T {} ".format(threads)
+        cmd += " -w {}".format(os.path.abspath("outputs/raxml"))
+        cmd += " -N {}".format(params.N)
+        cmd += " -n T1111 1>{}".format(output.log)
+
+        shell(cmd)
+
+
+rule raxml_bootstrap:
+    """
+    If we want to do bootstrapinp, we need to use the -b option (seed)::
+
+        raxmlHPC -m GTRGAMMA -p 12345 -b 12345 -N 100 -s aln.fa -n T2
+
+    the bootstrap replicate trees is printed to a file called RAxML_bootstrap.T2
+    """
+
+
+    input:
+        aln = "outputs/mafft/mafft.aln.fa"
+    output:
+        tree = "outputs/raxml/RAxML_bootstrap.T2222",
+        log = "outputs/raxml/raxml_bootstrap.log",
+    threads: 4
+    params:
+        N=config['raxml_bootstrap']['N'],
+        options=config['raxml_bootstrap']['options']
+    run:
+
+        shell("mkdir -p outputs/raxml")
+        shell("rm -f outputs/raxml/*T2222*")
+
+        cmd = "raxmlHPC-PTHREADS -m GTRGAMMA -s {}".format(input.aln)
+        cmd += " -p 12345 "
+        cmd += " -b 12345 "
+        cmd += " -T {} ".format(threads)
+        cmd += " -w {}".format(os.path.abspath("outputs/raxml"))
+        cmd += " -N {}".format(params.N)
+        cmd += " -n T2222 1>{}".format(output.log)
+        shell(cmd)
+
+
+rule raxml_bipartitions:
+    """we can now use them to draw bipartitions on the best ML tree as follows:
+
+        raxmlHPC -m GTRCAT -p 12345 -f b -t RAxML_bestTree.T1 -z RAxML_bootstrap.T2 -n T3
+
+    This call will produce to output files that can be visualized with Dendroscope:
+    RAxML_bipartitions.T15 (support values assigned to nodes) and RAxML_bipartitionsBranchLabels.T15 (support values assigned to branches of the tree). Note that, for unrooted trees the correct representation is actually the one with support values assigned to branches and not nodes of the tree!
+
+    """
+    input:
+        best="outputs/raxml/RAxML_bestTree.T1111",
+        boot="outputs/raxml/RAxML_bootstrap.T2222"
+    output:
+        parti="outputs/raxml/RAxML_bipartitions.T3333",
+        log = "outputs/raxml/raxml_partitions.log"
+    threads: 1
+    run:
+        # no need for threading
+        shell("mkdir -p outputs/raxml")
+        shell("rm -f outputs/raxml/*T3333*")
+
+        cmd = "raxmlHPC -m GTRCAT -f b "
+        cmd += " -p 12345 "
+        cmd += " -w {}".format(os.path.abspath("outputs/raxml"))
+        cmd += " -t {}".format(input.best)
+        cmd += " -z {}".format(input.boot)
+        cmd += " -n T3333 1>{} ".format(output.log)
+
+        shell(cmd)
+
+
+rule itol:
+    """
+        https://github.com/albertyw/itolapi
+
+    """
+    input:
+        best="outputs/raxml/RAxML_bestTree.T1111",
+        boot="outputs/raxml/RAxML_bootstrap.T2222"
+    output:
+        png="outputs/dendogram.png",
+        svg="outputs/dendogram.svg",
+        pdf="outputs/dendogram.pdf"
+    run:
+        shell("mkdir -p outputs/itol")
+        shell("cp {} {}".format(input.best, "outputs/itol/tree_of_life.tree.txt"))
+        from itolapi import Itol
+        itol = Itol()
+        # see info at https://itol.embl.de/help.cgi#batch
+        itol.add_file("outputs/itol/tree_of_life.tree.txt")
+        itol.params['treeName'] = "amplicon"
+        itol.upload()
+
+        export = itol.get_itol_export()
+        export.add_export_param_dict({"format": "png"})
+        export.export(output.png)
+        export.params['format'] = 'svg'
+        export.export(output.svg)
+        export.params['format'] = 'pdf'
+        export.export(output.pdf)
+
+
+rule mapping_consensus:
+    input: 
+        reference=reference,
+        consensus="outputs/allfasta.fa"
+    output:
+        sorted_bam = "outputs/mapping_consensus/mapping.sorted.bam",
+        sorted_bam_index = "outputs/mapping_consensus/mapping.sorted.bam.bai",
+        bam = temp("outputs/mapping_consensus/mapping.bam"),
+        sam = temp("outputs/mapping_consensus/mapping.sam")
+    threads: 4
+    log: "outputs/mapping_consensus/mapping.log"
+    shell:
+        """
+        minimap2 -x map-pb {input.reference} {input.consensus} -t {threads} -a 1> {output.sam} 2>{log}
+        bioconvert sam2bam {output.sam} {output.bam} --force
+        bamtools sort -in {output.bam} -out {output.sorted_bam}
+        bamtools index -in {output.sorted_bam}
+        """
 
 
 rule remapping:
+    """Remapp the consensus genomes onto the reference"""
+
     input: 
-        reference="{sample}/consensus/consensus.fa", 
+        reference="{sample}/consensus/consensus.fa",
         fastq=__mapping__input
     output: 
         sorted_bam = "{sample}/remapping/mapping.sorted.bam",
@@ -466,24 +690,12 @@ rule remapping:
         bamtools index -in {output.sorted_bam}
         """
 
+
 rule build_fasta:
     input: expand("{sample}/consensus/consensus.fa", sample=sorted(samples))
     output: "outputs/allfasta.fa"
     shell: "cat {input} > {output}"
 
-
-if do_phylogeny:
-    rule phylogeny:
-        "Computes a tree using (default) ClustalOmega and RAxML with  100 bootstraps"
-        input: "outputs/allfasta.fa"
-        output: __phylogeny__output
-        conda: "ete3.yaml"
-        shell:
-            """
-            ete3 build -w standard_raxml -a {input} -o outputs --nochecks --clearall
-            #does not work on my exmaple:
-            # ete3 build -w standard_phyml -a {input} -o outputs --nochecks --clearall;
-            """
 
 if do_kraken:
     rule sequana_kraken:
@@ -555,6 +767,7 @@ if do_smrtlink_report:
             bc.plot_subreads_histogram()
             savefile("barcoding_subreads_histogram.png")
 
+
 if do_snpeff:
     localrules: conda, smrtlink, genbank, reference
 else:
@@ -568,23 +781,26 @@ onsuccess:
     from sequana.modules_report.kraken import KrakenModule
 
 
-    intro = """<h2>Amplicon Analysis Summary.</h2> <br>
+    intro = """
+      <h2>Amplicon Analysis Summary.</h2> <br>
       <br><b>Number of samples:</b> {} </br>
-      <b> MultiQC report: </b> <a href="multiqc_report.html">multiqc report.</a><br>
+      <b> MultiQC report: </b> <a href="multiqc_report.html">multiqc report.</a> This multiqc report contains comparative analysis for the different analysis performed by the pipeline including the snpeff, raw reads information (e.g. number of CCS reads in each barcode), taxonomic analysis, variant calling (using freebayes) and some mapping statistics. 
 
-      The multiqc report here above summarizes the snpEff results as well as
-      taxonomic analysis (for QC) and variant calling (using freebayes). Here below you can find all individual links to HTML reports for each sample.
+Here below you can find all individual links to HTML reports for each sample for snpeff, kraken and freebayes analysis.
 
-    For a given sample, the tree structure looks like
 
 
  <h2>Directory Tree (for one sample, here named 25)</h2><p>
+
+  Each barcode (sample) is analysed and the corresponding results are stored in a 
+  tree structure similar to this one (summary):
+
  <a href=".">.</a><br>
  ├── <a href="./25/">25</a><br>
  │   ├── <a href="./25/consensus/">consensus</a><br>
  │   │   └── <a href="./25/consensus/consensus.fa">consensus.fa</a><br>
+ │   │   └── <a href="./25/consensus/consensus.fa">population.csv</a><br>
  │   ├── <a href="./25/freebayes/">freebayes</a><br>
- │   │   ├── <a href="./25/freebayes/variants.filtered.csv">variants.filtered.csv</a><br>
  │   │   ├── <a href="./25/freebayes/variants.filtered.vcf">variants.filtered.vcf</a><br>
  │   │   └── <a href="./25/freebayes/variants.raw.vcf">variants.raw.vcf</a><br>
  │   ├── <a href="./25/images/">images</a><br>
@@ -596,6 +812,9 @@ onsuccess:
  │   │   └── <a href="./25/mapping/sequana_bamtools_stats_25.txt">sequana_bamtools_stats_25.txt</a><br>
  │   ├── <a href="./25/report_variant/">report_variant</a><br>
  │   │   └── <a href="./25/report_variant/variant_calling.html">variant_calling.html</a><br>
+ │   ├── <a href="./25/remapping/">remapping</a><br>
+ │   │   ├── <a href="./25/remapping/mapping.sorted.bam">mapping.sorted.bam</a><br>
+ │   │   ├── <a href="./25/remapping/mapping.sorted.bam.bai">mapping.sorted.bam.bai</a><br>
  │   ├── <a href="./25/snpeff/">snpeff</a><br>
  │   │   ├── <a href="./25/snpeff/25.snpeff.csv">25.snpeff.csv</a><br>
  │   │   ├── <a href="./25/snpeff/25.snpeff.genes.txt">25.snpeff.genes.txt</a><br>
@@ -605,31 +824,64 @@ onsuccess:
  │   &nbsp;&nbsp;&nbsp; └── <a href="./25/taxonomy/summary.html">summary.html</a><br>
  <br><br>
 
-<p>In the example above (1 sample), the directory consensus contains the consensus.fa fasta file of the genome 
-obtained after mapping of the reads on the reference. The Freebayes directory contains the raw and filtered VCF files (SNPs, INDELS). The images directory contains an image showing the coverage along the reference. The mapping directory contains the mapped reads in BAM format that can be visualised in tools such as IGV. The samtools.Txt and bamtools_stats.txt contains useful information concerning the mapping quality. The report_variant directory contains a convenient HTML report for variant, which is produced with sequana tools. The taxonomy directory contains results about the taxonomic analysis based on kraken and sequana report. 
+<p>
+<ul>
+
+<li>The consensus directory contains a consensus.fa file created as follows. Based on the mapping.sorted.bam file to be found in ./mapping, we extract the nucleotides proportions (including deletions and insertions) -- using igvtool -- and keep at each position the nucleotide that is most present. If it is a deletion, it is ignored. Be aware that if a nucleotide is represented by two nucleotides is the same proportion (e.g.; 49/51%) then only one is kept (the one present in 51% of the case). Similarly, if there are 3 or 4 populations leading to a nucleotide supported by e.g. only 30% of the reads. To keep track of this information, we create a second file called <i>population.csv</i>. It contains all positions where there are at least 2 nuleotides supported by 10% of the reads.
+</li>
+
+<li>
+In the freebayes directory, we store the variants in VCF format, which were created by freebayes. We keep the raw data with all variants including non significant calls. We then stored a filtered versio in <i>variants.filtered.vcf</i>.
+</li>
+
+<li>The images directory contains an image showing the coverage along the reference. </li>
+
+<li>The mapping directory contains the mapped reads on the reference. It is a BAM file format and can be visualised in tools such as IGV. It contains the indexed file required by IGV. The reference is stored in the main directoy (see later) In this directory, we also store some files with statistics on the BAM file.
+</li>
+
+<li>The report_variant directory contains a convenient HTML report for variant, which is produced with sequana tools. It uses the filtered VCF file as input, which can be furthered introspect.
+</li>
+
+<li>The <i>remapping</i> directory contains the mapped reads in BAM format on the consensus.</li>
+
+<li>The report_variant directory contains a convenient HTML report for variant, which is produced with sequana tools. It uses the filtered VCF file as input, which can be furthered introspect.
+
+<li>
+The snpeff directory contains snpeff results and its HTML report.
+</li>
+
+<li>
+The taxonomy directory contains results about the taxonomic analysis based on kraken and sequana report.
+</li>
+
+
+</ul>
+
+<p>
+
+
+
 </p>
 
  <h2>Common directory Tree </h2><p>
+
+The common directory contains final results or files required to redo the analysis.
+
 
 <p>
  ├── <a href="./multiqc_report.html">multiqc_report.html</a><br>
  ├── <a href="./outputs/">outputs</a><br>
  │   ├── <a href="./outputs/allfasta.fa">allfasta.fa</a><br>
- │   ├── <a href="./outputs/clustalo_default-none-none-raxml_default/">clustalo_default-none-none-raxml_default</a><br>
- │   │   ├── <a href="./outputs/clustalo_default-none-none-raxml_default/allfasta.fa.final_tree.fa">allfasta.fa.final_tree.fa</a><br>
- │   │   ├── <a href="./outputs/clustalo_default-none-none-raxml_default/allfasta.fa.final_tree.nw">allfasta.fa.final_tree.nw</a><br>
- │   │   ├── <a href="./outputs/clustalo_default-none-none-raxml_default/allfasta.fa.final_tree.nwx">allfasta.fa.final_tree.nwx</a><br>
- │   │   ├── <a href="./outputs/clustalo_default-none-none-raxml_default/allfasta.fa.final_tree.png">allfasta.fa.final_tree.png</a><br>
- │   │   ├── <a href="./outputs/clustalo_default-none-none-raxml_default/allfasta.fa.final_tree.png.svg">allfasta.fa.final_tree.png.svg</a><br>
- │   │   ├── <a href="./outputs/clustalo_default-none-none-raxml_default/allfasta.fa.final_tree.used_alg.fa">allfasta.fa.final_tree.used_alg.fa</a><br>
- │   │   ├── <a href="./outputs/clustalo_default-none-none-raxml_default/command_lines">command_lines</a><br>
+ │   ├── <a href="./outputs/dendogram.png">dendogram</a><br>
+ │   ├── <a href="./outputs/raxml/">raxml </a><br>
+ │   ├── <a href="./outputs/itol/">itol</a><br>
  │   ├── <a href="./outputs/sequana_kraken_summary.json">sequana_kraken_summary.json</a><br>
  ├── <a href="./reference/">reference</a><br>
  │   ├── <a href="./reference/AB038249.fa">AB038249.fa</a><br>
  │   └── <a href="./reference/AB038249.gbk">AB038249.gbk</a><br>
  ├── <a href="./summary.html">summary.html</a><br>
 </p>
-<p>At the root directory level you can find a multiqc report in HTML format, a directory called outputs that contains the concatentation of all consensus genome together with a phylogenetic analyses. The reference used is stored in ./reference with the genbank if provided. Finally, you can find this summary HTML page.</p>
+<p>At the root directory level you can find a multiqc report in HTML format, a directory called outputs that contains the concatentation of all consensus genome together (allfasta.fa) with a phylogenetic analyses stored in raxml firectory. The reference used is stored in ./reference with the genbank if provided. Finally, you can find this summary HTML page (summary.html).</p>
 
 
       </p>
@@ -673,8 +925,7 @@ this <a href="multiqc_report.html">multiqc report.</a></p>
     else:
         intro +="""<p>No SNPEFF report available (was not required). Please see variant reports instead</p></div>"""
 
-    if do_phylogeny:
-        intro += "<div><h2>Phylogeny</h2><img src={}></img></div>".format(__phylogeny__output)
+    intro += "<div><h2>Phylogeny</h2><img src={}></img></div>".format(__phylogeny__output)
 
 
     intro = intro.format(len(M.ff))
