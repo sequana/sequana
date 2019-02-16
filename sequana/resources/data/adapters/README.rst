@@ -1,3 +1,18 @@
+Validated on real data
+----------------------
+
+**Feb 2019**
+
+TruSeqCD double indexing for Hiseq
+TruSeqCD double indexing for Iseq100 on 3 indices only
+
+Those 2 are different. See illumina specs
+
+
+
+
+--------------------------------------------------------------
+
 NEXTERA OK
 PCRFree renamed into NEXTFlex48_DNA
 TruSeqCD_DNA --> NEW
