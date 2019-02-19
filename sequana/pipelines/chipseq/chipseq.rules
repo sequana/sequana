@@ -413,9 +413,10 @@ if model in ["narrow", "broad"]:
     # Peak Calling on replicates
     if model in ["narrow"]:
         # add corresponding options
-        __macs2_rep__options = "" + config["peak_calling"]['options']
+        __macs2_rep__options = "-p {} ".format(config["peak_calling"]['cutoff']) + config["peak_calling"]['options']
     else:
-        __macs2_rep__options = "--broad " + config["peak_calling"]['options']
+        __macs2_rep__options = "-p {} --broad --broad-cutoff {} ".format(config["peak_calling"]['cutoff'],
+                            config["peak_calling"]['cutoff']) + config["peak_calling"]['options']
 
     __macs2_rep__input_bam = "{}/{{IP_REP}}_{}_sort_dedup{}.bam".format(blacklist_dir, ref, blacklist)
     __macs2_rep__input_done = ["{}/{{INPUT}}_{}_sort_dedup{}.bam".format(blacklist_dir, ref, blacklist)]
@@ -427,7 +428,7 @@ if model in ["narrow", "broad"]:
     else:
         __macs2_rep__shift_file = "Empty"
     if manager.paired :
-        __macs2_rep__pe_mode = "yes"
+        __macs2_rep__pe_mode = "no"
     else:
         __macs2_rep__pe_mode = "no"
     __macs2_rep__input = "-c {}/{{INPUT}}_{}_sort_dedup{}.bam".format(blacklist_dir, ref, blacklist)
@@ -440,9 +441,10 @@ if model in ["narrow", "broad"]:
     # Peak Calling on SPR
     if model in ["narrow"]:
         # add corresponding options
-        __macs2_spr__options = "" + config["peak_calling"]['options']
+        __macs2_spr__options = "-p {} ".format(config["peak_calling"]['cutoff']) + config["peak_calling"]['options']
     else:
-        __macs2_spr__options = "--broad " + config["peak_calling"]['options']
+        __macs2_spr__options = "-p {} --broad --broad-cutoff {} ".format(config["peak_calling"]['cutoff'],
+                            config["peak_calling"]['cutoff']) + config["peak_calling"]['options']
 
     __macs2_spr__input_bam = "{}/{{SPR}}_{}_sort_dedup{}.bam".format(blacklist_dir, ref, blacklist)
     __macs2_spr__input_done = ["{}/{{INPUT}}_{}_sort_dedup{}.bam".format(blacklist_dir, ref, blacklist)]
@@ -453,7 +455,7 @@ if model in ["narrow", "broad"]:
     else:
         __macs2_spr__shift_file = "Empty"
     if manager.paired :
-        __macs2_spr__pe_mode = "yes"
+        __macs2_spr__pe_mode = "no"
     else:
         __macs2_spr__pe_mode = "no"
     __macs2_spr__input = "-c {}/{{INPUT}}_{}_sort_dedup{}.bam".format(blacklist_dir, ref, blacklist)
@@ -466,9 +468,10 @@ if model in ["narrow", "broad"]:
     # Peak Calling on PPR
     if model in ["narrow"]:
         # add corresponding options
-        __macs2_ppr__options = "" + config["peak_calling"]['options']
+        __macs2_ppr__options = "-p {} ".format(config["peak_calling"]['cutoff']) + config["peak_calling"]['options']
     else:
-        __macs2_ppr__options = "--broad " + config["peak_calling"]['options']
+        __macs2_ppr__options = "-p {} --broad --broad-cutoff {} ".format(config["peak_calling"]['cutoff'],
+                            config["peak_calling"]['cutoff']) + config["peak_calling"]['options']
 
     __macs2_ppr__input_bam = "{}/{{PPR}}_{}_sort_dedup{}.bam".format(blacklist_dir, ref, blacklist)
     __macs2_ppr__input_done = ["{}/{{INPUT}}_{}_sort_dedup{}.bam".format(blacklist_dir, ref, blacklist)]
@@ -480,7 +483,7 @@ if model in ["narrow", "broad"]:
     else:
         __macs2_ppr__shift_file = "Empty"
     if manager.paired :
-        __macs2_ppr__pe_mode = "yes"
+        __macs2_ppr__pe_mode = "no"
     else:
         __macs2_ppr__pe_mode = "no"
     __macs2_ppr__input = "-c {}/{{INPUT}}_{}_sort_dedup{}.bam".format(blacklist_dir, ref, blacklist)
@@ -493,9 +496,10 @@ if model in ["narrow", "broad"]:
     # Peak Calling on Pool files
     if model in ["narrow"]:
         # add corresponding options
-        __macs2_pool__options = "" + config["peak_calling"]['options']
+        __macs2_pool__options = "-p {} ".format(config["peak_calling"]['cutoff']) + config["peak_calling"]['options']
     else:
-        __macs2_pool__options = "--broad " + config["peak_calling"]['options']
+        __macs2_pool__options = "-p {} --broad --broad-cutoff {} ".format(config["peak_calling"]['cutoff'],
+                            config["peak_calling"]['cutoff']) + config["peak_calling"]['options']
 
     __macs2_pool__input_bam = "{}/{{POOL}}_{}_sort_dedup{}.bam".format(blacklist_dir, ref, blacklist)
     __macs2_pool__input_done = ["{}/{{INPUT_POOL}}_{}_sort_dedup{}.bam".format(blacklist_dir, ref, blacklist)]
@@ -507,7 +511,7 @@ if model in ["narrow", "broad"]:
     else:
         __macs2_pool__shift_file = "Empty"
     if manager.paired :
-        __macs2_pool__pe_mode = "yes"
+        __macs2_pool__pe_mode = "no"
     else:
         __macs2_pool__pe_mode = "no"
     __macs2_pool__input = "-c {}/{{INPUT_POOL}}_{}_sort_dedup{}.bam".format(blacklist_dir, ref, blacklist)
@@ -521,6 +525,11 @@ if model in ["narrow", "broad"]:
 else:
     raise ValueError("Invalid choice of model for peak calling. Use either narrow or broad, or set no-model to yes")
 
+#compute MACS2 metrics
+## TODO nb pics REP en rouge si moins de 100,000 dans le multiqc
+
+
+
 # Compute IDR
 __compute_idr__input1 = "6-PeakCalling/{}/{{IP_IDR}}_{{CASE}}1_vs_{{INPUT}}_peaks.{}Peak".format(model, model)
 __compute_idr__input2 = "6-PeakCalling/{}/{{IP_IDR}}_{{CASE}}2_vs_{{INPUT}}_peaks.{}Peak".format(model, model)
@@ -532,16 +541,26 @@ include: sm.modules["compute_idr"]
 expected_output.extend(expand(__compute_idr__output, zip, IP_IDR=REP_IDR, CASE=CASE, INPUT=IN_IDR))
 
 
-# Select IDR peaks
-__select_peaks__input_rep = "7-IDR/{{IP_IDR}}_{}1vs{}2_{{INPUT}}_ref_{}_idr{}.{}Peak".format(rep_flag, rep_flag, model, config["compute_idr"]["thresh"], model)
-__select_peaks__input_ppr = "7-IDR/{{IP_IDR}}_{}1vs{}2_{{INPUT}}_ref_{}_idr{}.{}Peak".format("PPR", "PPR", model, config["compute_idr"]["thresh"], model)
-__select_peaks__input_pool = "6-PeakCalling/{}/{{IP_IDR}}_PPRPool_vs_{{INPUT}}_peaks.{}Peak".format(model, model)
-__select_peaks__logs = "7-IDR/logs/{IP_IDR}_selected_peaks.o"
-__select_peaks__output = "7-IDR/{{IP_IDR}}_vs_{{INPUT}}_select.{}Peak".format(model)
-include: sm.modules["select_peaks"]
-expected_output.extend(expand(__select_peaks__output, zip, IP_IDR=IP_REP, INPUT=IP_REP_DUP))
+
+if model in ["narrow"]:
+    # Select IDR peaks
+    __select_peaks__input_rep = "7-IDR/{{IP_IDR}}_{}1vs{}2_{{INPUT}}_ref_{}_idr{}.{}Peak".format(rep_flag, rep_flag, model, config["compute_idr"]["thresh"], model)
+    __select_peaks__input_ppr = "7-IDR/{{IP_IDR}}_{}1vs{}2_{{INPUT}}_ref_{}_idr{}.{}Peak".format("PPR", "PPR", model, config["compute_idr"]["thresh"], model)
+    __select_peaks__input_pool = "6-PeakCalling/{}/{{IP_IDR}}_PPRPool_vs_{{INPUT}}_peaks.{}Peak".format(model, model)
+    __select_peaks__logs = "7-IDR/logs/{IP_IDR}_selected_peaks.o"
+    __select_peaks__output = "7-IDR/{{IP_IDR}}_vs_{{INPUT}}_select.{}Peak".format(model)
+    include: sm.modules["select_peaks"]
+    expected_output.extend(expand(__select_peaks__output, zip, IP_IDR=IP_REP, INPUT=IP_REP_DUP))
 
 
+if model in ["broad"]:
+    __intersectionApproach__input_rep = expand("6-PeakCalling/%s/{{IP_IDR}}_{CASE}_vs_{{INPUT}}_peaks.%sPeak" % (model, model), CASE=rep)
+    __intersectionApproach__input_pool = "6-PeakCalling/{}/{{IP_IDR}}_PPRPool_vs_{{INPUT}}_peaks.{}Peak".format(model, model)
+    __intersectionApproach__logs = "7-IDR/logs/{IP_IDR}_selected_peaks.o"
+    __intersectionApproach__output = "7-IDR/{{IP_IDR}}_vs_{{INPUT}}_BROAD-IA_0.5.{}Peak".format(model)
+    include: sm.modules["intersectionApproach"]
+    expected_output.extend(expand(__intersectionApproach__output, zip, IP_IDR=IP_REP, INPUT=IP_REP_DUP))
+    __select_peaks__output = __intersectionApproach__output
 
 
 #Compute peak metrics
