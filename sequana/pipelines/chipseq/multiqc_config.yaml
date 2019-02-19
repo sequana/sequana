@@ -106,34 +106,6 @@ table_cond_formatting_rules:
             - ne: 1.0
         fail:
             - ne: 1.0
-    Replicats:
-        bleu:
-            - gt: 20000
-        lbue:
-            - lt: 20000
-        fail:
-            - lt: 5000
-    PPR:
-        bleu:
-            - gt: 20000
-        lbue:
-            - lt: 20000
-        fail:
-            - lt: 5000
-    SPR1:
-        bleu:
-            - gt: 20000
-        lbue:
-            - lt: 20000
-        fail:
-            - lt: 5000
-    SPR2:
-        bleu:
-            - gt: 20000
-        lbue:
-            - lt: 20000
-        fail:
-            - lt: 5000
     mqc-generalstats-phantompeakqualtools-NSC:
         pass:
             - gt: 1.05
