@@ -34,10 +34,18 @@ rule compute_idr:
     shell:
         """
         set +o pipefail
+
         nb_peak1=$(wc -l {input.input1} | cut -d' ' -f1)
         nb_peak2=$(wc -l {input.input2} | cut -d' ' -f1)
         if [[ $nb_peak1 > 20 ]] || [[ $nb_peak2 > 20 ]] ; then
-            idr --samples {input.input1} {input.input2} \
+
+            #create temporary file for file1 and file2
+            file1=$(mktemp)
+            file2=$(mktemp)
+            sort -k 7nr,7nr {input.input1} | head -100000 > $file1
+            sort -k 7nr,7nr {input.input2} | head -100000 > $file2
+
+            idr --samples $file1 $file2 \
                 --input-file-type {params.mode} \
                 --output-file {output.idr} \
                 --rank {params.rank} \
