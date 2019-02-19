@@ -7,9 +7,9 @@ rule bed_to_gff:
     log:
         __bed_to_gff__logs
     output:
-        __bed_to_gff__output
+        temp(__bed_to_gff__output)
     shell:
         """
-        awk '{{print $1"\tSequana\tpeak\t"$2"\t"$3"\t.\t.\t.\tgene_id \"$1"_"$2"_"$3}}' {input} > {output} 2> {log}
+        awk '{{print $1"\tSequachip\tpeak\t"$2"\t"$3"\t.\t.\t.\tgene_id \"$1"_"$2"_"$3}}' {input} > {output} 2> {log}
 
         """
