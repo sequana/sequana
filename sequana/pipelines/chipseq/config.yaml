@@ -219,6 +219,7 @@ peak_calling:
     no_model: no             ## may be yes
     force_shift: no           ## may be yes
     options: "--keep-dup 2500 "
+    cutoff: "0.01"
     genomeSize: mm
     readLength: 50
 
