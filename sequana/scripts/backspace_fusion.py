@@ -67,11 +67,13 @@ class BackSpace(Common):
     This script works at the sampleID level. You must be in the project
     directory.
     """
-    def __init__(self, pattern="*/*fastq.gz", outdir="fusion", threads=4):
+    def __init__(self, pattern="*/*fastq.gz", outdir="fusion", threads=4,
+                 queue="common"):
         super(BackSpace, self).__init__(pattern)
         self._outdir = None
         self.outdir = outdir
         self.threads = threads
+        self.queue = queue
 
     def _set_outdir(self, outdir):
         self._outdir = outdir
@@ -141,8 +143,10 @@ class BackSpace(Common):
                 os.mkdir("{}/{}".format(self.outdir, name))
 
             # R1. Note the usage of wrap using --wrap " your command"
-            sbatch_command = "sbatch -c {thread} --A biomics --qos biomics -p biomics"
-            sbatch_command = "sbatch -c {thread} --qos fast"
+            if self.queue == "biomics":
+                sbatch_command = "sbatch -c {thread} --A biomics --qos biomics -p biomics"
+            elif self.queue == "common":
+                sbatch_command = "sbatch -c {thread} --qos fast"
 
             # R1 case and R2 if needed
             READS = ['R1']
@@ -158,10 +162,9 @@ class BackSpace(Common):
                 if which("sbatch") is not None:
                     cmd = sbatch_command.format(**{'thread': self.threads}) + ' script.sh'
                 else:
-                    cmd = "sh script.sh" 
+                    cmd = "sh script.sh"
                 from subprocess import STDOUT
                 process = subprocess.check_output(cmd.split())
-                print(process)
                 #proc = process.split()[-1]
                 processes.append(process)
 
@@ -198,12 +201,11 @@ class Options(argparse.ArgumentParser):
             default="*/*fastq*gz",
             help="Where to store the new fastq files")
         self.add_argument("--threads", dest="threads", type=str,
-            defaut=4,
+            default=4,
             help="number of threads per job (pigz)")
-        #self.add_argument("--force", dest="force",
-        #self.add_argument("--force", dest="force",
-        #    default=False,
-        #    action="store_true", help="""overwrite files""")
+        self.add_argument("--queue", dest="queue", type=str,
+            default="common",
+            help="queue to use on the cluster")
 
 
 def main(args=None):
@@ -219,7 +221,8 @@ def main(args=None):
         options = user_options.parse_args(args[1:])
 
 
-    c = BackSpace(pattern=options.pattern, outdir=options.outdir)
+    c = BackSpace(pattern=options.pattern, outdir=options.outdir,
+            queue=options.queue)
     c.run()
 
 
