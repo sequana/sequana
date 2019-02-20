@@ -7,7 +7,8 @@ rule spikes_counting:
         __spikes_counting__input: bam file
 
     Required output:
-        __spikes_counting__output: bam file
+        __spikes_counting__output: matrix file
+        __spikes_counting__output_json: tabulated file for multiqc
 
 
     """
@@ -18,7 +19,7 @@ rule spikes_counting:
         json = __spikes_counting__output_json,
     log:
         __spikes_counting__log
-    shell:
+    run:
         """
         samtools flagstat {input} > {output.tab} 2> {log}
         """
