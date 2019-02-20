@@ -556,8 +556,8 @@ if model in ["narrow"]:
 if model in ["broad"]:
     __intersectionApproach__input_rep = expand("6-PeakCalling/%s/{{IP_IDR}}_{CASE}_vs_{{INPUT}}_peaks.%sPeak" % (model, model), CASE=rep)
     __intersectionApproach__input_pool = "6-PeakCalling/{}/{{IP_IDR}}_PPRPool_vs_{{INPUT}}_peaks.{}Peak".format(model, model)
-    __intersectionApproach__logs = "7-IDR/logs/{IP_IDR}_selected_peaks.o"
-    __intersectionApproach__output = "7-IDR/{{IP_IDR}}_vs_{{INPUT}}_BROAD-IA_0.5.{}Peak".format(model)
+    __intersectionApproach__logs = "7-IDR/logs/{IP_IDR}_BROAD-IA_peaks.o"
+    __intersectionApproach__output = "7-IDR/{{IP_IDR}}_vs_{{INPUT}}_BROAD-IA.{}Peak".format(model)
     include: sm.modules["intersectionApproach"]
     expected_output.extend(expand(__intersectionApproach__output, zip, IP_IDR=IP_REP, INPUT=IP_REP_DUP))
     __select_peaks__output = __intersectionApproach__output
