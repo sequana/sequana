@@ -8,6 +8,8 @@ Changelog
 
 * NEWS:
 
+    * added a new module to upload/export phylogenetic tree on itol website.
+      Used in the laa pipeline
     * added backspace2fusion code to merge lanes in Illumina raw data
     * added new pipeline called fastqc to simply run fastqc + multiqc in parallel
     * added laa pacbio pipeline
