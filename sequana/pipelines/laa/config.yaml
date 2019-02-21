@@ -18,6 +18,10 @@ input:
     smrtlink_report_file: 
 
 
+
+# for populations, and ploidy of 1, a population SNP found in a population
+# will have a score of 0. Here setting to 2 is a trick. Alternative is
+# to set freebayes scores to 0
 freebayes:
     ploidy: 1
     options: ""
@@ -37,9 +41,11 @@ kraken:
         - /home/cokelaer/.config/sequana/kraken_bacteria_only/
 
 
+# We set freebayes_score to zero by default. See note above in the freebayes
+# section
 freebayes_vcf_filter:
     do: yes
-    freebayes_score: 20
+    freebayes_score: 0   
     frequency: 0.0
     min_depth: 10
     forward_depth: 3

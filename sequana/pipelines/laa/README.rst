@@ -23,7 +23,14 @@ Requirements
 Details
 ~~~~~~~~~
 
-coming soon
+This pipeline takes as input CCS reads from a pacbio amplicon analysis. It maps
+the reads on a reference that must be provided. A consensus is created from the
+coverage (using IGVtools). From the refernce, freebayes is called to obtain VCF
+files. Snpeff is used for annotation given a genbank to be provided by the user.
+Kraken is used for a quick taxonomy on the input CCS reads. The consensus
+obtained are used to build a phylogentic tree based on mafft and raxml. The
+output is sent to itol website to retrieve a phylogenetic tree image. Finally,
+various HTML reports are created including a multiqc report.
 
 
 Rules and configuration details

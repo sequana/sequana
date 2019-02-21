@@ -87,7 +87,8 @@ expected_output = [
     "multiqc_report.html",
     expand("{sample}/report_variant/variant_calling.html", sample=samples),
     expand("{sample}/remapping/mapping.sorted.bam",sample=samples),
-    "outputs/mapping_consensus/mapping.sorted.bam"
+    "outputs/mapping_consensus/mapping.sorted.bam",
+    "outputs/raxml/RAxML_bipartitions.T3333",
     ]
 
 
@@ -418,7 +419,7 @@ if do_kraken:
                 fontsize = 10
             elif len(input)> 50:
                 fontsize = 8
-            k.plot_stacked_hist(output.image, dpi=200, fontsize=fontsize)
+            k.plot_stacked_hist(output.image, dpi=200, ytick_fontsize=fontsize)
 
             import json
             with open(output.data, "w") as fout:
@@ -566,7 +567,7 @@ rule raxml_bootstrap:
         aln = "outputs/mafft/mafft.aln.fa"
     output:
         tree = "outputs/raxml/RAxML_bootstrap.T2222",
-        log = "outputs/raxml/raxml_bootstrap.log",
+        #log = "outputs/raxml/raxml_bootstrap.log",
     threads: 4
     params:
         N=config['raxml_bootstrap']['N'],
@@ -582,7 +583,7 @@ rule raxml_bootstrap:
         cmd += " -T {} ".format(threads)
         cmd += " -w {}".format(os.path.abspath("outputs/raxml"))
         cmd += " -N {}".format(params.N)
-        cmd += " -n T2222 1>{}".format(output.log)
+        cmd += " -n T2222 " # 1>{}".format(output.log)
         shell(cmd)
 
 
@@ -600,7 +601,7 @@ rule raxml_bipartitions:
         boot="outputs/raxml/RAxML_bootstrap.T2222"
     output:
         parti="outputs/raxml/RAxML_bipartitions.T3333",
-        log = "outputs/raxml/raxml_partitions.log"
+        #log = "outputs/raxml/raxml_partitions.log"
     threads: 1
     run:
         # no need for threading
@@ -612,7 +613,7 @@ rule raxml_bipartitions:
         cmd += " -w {}".format(os.path.abspath("outputs/raxml"))
         cmd += " -t {}".format(input.best)
         cmd += " -z {}".format(input.boot)
-        cmd += " -n T3333 1>{} ".format(output.log)
+        cmd += " -n T3333 "  # 1>{} ".format(output.log)
 
         shell(cmd)
 
@@ -632,20 +633,23 @@ rule itol:
     run:
         shell("mkdir -p outputs/itol")
         shell("cp {} {}".format(input.best, "outputs/itol/tree_of_life.tree.txt"))
-        from itolapi import Itol
-        itol = Itol()
-        # see info at https://itol.embl.de/help.cgi#batch
-        itol.add_file("outputs/itol/tree_of_life.tree.txt")
+
+        from sequana import ITOL
+        
+        itol = ITOL("outputs/itol/tree_of_life.tree.txt")
         itol.params['treeName'] = "amplicon"
         itol.upload()
 
-        export = itol.get_itol_export()
-        export.add_export_param_dict({"format": "png"})
-        export.export(output.png)
-        export.params['format'] = 'svg'
-        export.export(output.svg)
-        export.params['format'] = 'pdf'
-        export.export(output.pdf)
+        itol.params['display_mode'] = 2
+        itol.params['ignore_branch_length'] = 1
+        itol.params['line_width'] = 5
+        itol.params['bootstrap_display'] = 1
+        itol.params['bootstrap_type'] = 4
+        itol.params['bootstrap_label_size'] = 32
+
+        itol.export(output.png)
+        itol.export(output.svg)
+        itol.export(output.pdf)
 
 
 rule mapping_consensus:
@@ -769,9 +773,9 @@ if do_smrtlink_report:
 
 
 if do_snpeff:
-    localrules: conda, smrtlink, genbank, reference
+    localrules: conda, smrtlink, genbank, reference, itol
 else:
-    localrules: conda, smrtlink, reference
+    localrules: conda, smrtlink, reference, itol
 
 
 onsuccess:
