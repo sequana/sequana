@@ -59,7 +59,7 @@ class ITOL():
             "display_mode": 2,  # rotation
             "ignore_branch_length": 1,
             "line_width": 5,
-
+            "datasets_visible": "0,1",
             'bootstrap_display': 1,
             'bootstrap_type': 2,
             'bootstrap_label_size': 32
