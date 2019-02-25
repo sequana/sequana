@@ -47,11 +47,14 @@ rule bcl2fastq:
         cmd += " --output-dir {}".format(os.path.abspath(params.outdir))
 
         if cfg['ignore_missing_controls']:
-            cmd += " --ignore-missing-controls"
+            cmd += " --ignore-missing-controls "
         if cfg['ignore_missing_bcls']:
-            cmd += " --ignore-missing-bcls"
+            cmd += " --ignore-missing-bcls "
         if cfg['no_bgzf_compression']:
-            cmd += " --no-bgzf-compression"
+            cmd += " --no-bgzf-compression "
+
+        if cfg['nextseq_do_lane_fusion']:
+            cmd += " --no-lane-splitting "
 
         cmd += cfg['options']
 

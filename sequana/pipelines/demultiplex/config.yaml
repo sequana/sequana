@@ -3,12 +3,10 @@
 #
 # :Parameters:
 #
-# - do:    if unchecked, this rule is ignored
-# - database_directory: select a directory with a kraken database
-#   Please see sequana documentation for details
-#
 #   intensities are expected to be found in input_directory/Data/Intensities
 #   Base call data are to be found in input_directory/Data/Intensities/BaseCalls
+#
+#
 
 input_directory: "%(input_directory)s"
 
@@ -22,6 +20,5 @@ bcl2fastq:
     ignore_missing_controls: true
     ignore_missing_bcls: true
     no_bgzf_compression: true
-    #intensities_directory: "Data/Intensities"
-    #runfolder_directory: 
     options: ""
+    nextseq_do_lane_fusion: False
