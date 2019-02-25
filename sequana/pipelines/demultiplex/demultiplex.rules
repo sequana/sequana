@@ -1,0 +1,59 @@
+"""Phix removal pipeline
+
+Author: Thomas Cokelaer
+Affiliation: Institut Pasteur @ 2018
+
+This pipeline is part of Sequana software (sequana.readthedocs.io)
+
+
+
+bcl2fastq version 2.20
+
+http://emea.support.illumina.com/downloads/bcl2fastq-conversion-software-v2-20.html?langsel=/fr/
+"""
+import os
+
+# This must be defined before the include 
+configfile: "config.yaml"
+
+# an alias
+cfg = config['bcl2fastq']
+
+
+if os.path.exists(cfg['sample_sheet_file']) is False:
+    raise IOError("{} does not exist".format(cfg['sample_sheet_file']))
+
+
+rule all:
+    input: cfg['output_directory'] + "/Stats/DemultiplexingStats.xml"
+
+
+rule bcl2fastq:
+    input:
+    output: cfg['output_directory'] + "/Stats/DemultiplexingStats.xml"
+    params:
+        indir= config['input_directory'],
+        outdir= cfg['output_directory'],
+        sample_sheet=cfg['sample_sheet_file'],
+        barcode_mismatch=cfg['barcode_mismatch']
+    threads: cfg['threads']
+    run:
+
+        cmd = "bcl2fastq -p {threads} --barcode-mismatches {params.barcode_mismatch}"
+        #cmd += " --input-dir {}/Data/Intensities/BaseCalls".format(params.indir)
+        cmd += " --runfolder-dir {}".format(params.indir)
+        cmd += " --intensities-dir {}/Data/Intensities".format(params.indir)
+        cmd += " --sample-sheet {}".format(params.sample_sheet)
+        cmd += " --output-dir {}".format(os.path.abspath(params.outdir))
+
+        if cfg['ignore_missing_controls']:
+            cmd += " --ignore-missing-controls"
+        if cfg['ignore_missing_bcls']:
+            cmd += " --ignore-missing-bcls"
+        if cfg['no_bgzf_compression']:
+            cmd += " --no-bgzf-compression"
+
+        cmd += cfg['options']
+
+        shell(cmd)
+
