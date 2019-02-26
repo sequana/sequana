@@ -41,6 +41,7 @@ install:
   - conda install --yes freebayes --no-deps
   #- conda install --yes pysam samtools --no-deps
   #- conda install --yes python=$TRAVIS_PYTHON_VERSION --file requirements_pipelines.txt
+  - pip install itolapi
   - pip install .
   - conda list
 
