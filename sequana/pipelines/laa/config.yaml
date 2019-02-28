@@ -23,6 +23,7 @@ input:
 # will have a score of 0. Here setting to 2 is a trick. Alternative is
 # to set freebayes scores to 0
 freebayes:
+    do: yes
     ploidy: 1
     options: ""
 

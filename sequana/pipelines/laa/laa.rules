@@ -37,6 +37,11 @@ assert reference.endswith('.fa') or reference.endswith('.fasta'), \
 
 do_snpeff = config['snpeff']['do']
 do_kraken = config['kraken']['do']
+do_freebayes = config["freebayes"]["do"]
+do_freebayes_vcf_filter =  config["freebayes_vcf_filter"]["do"]
+
+
+
 
 smrtlink_file = config['input']['smrtlink_report_file']
 if smrtlink_file:
@@ -85,11 +90,15 @@ expected_output = [
     "images/plot_ccs_histo.png",
     "rulegraph/rulegraph.svg",
     "multiqc_report.html",
-    expand("{sample}/report_variant/variant_calling.html", sample=samples),
     expand("{sample}/remapping/mapping.sorted.bam",sample=samples),
     "outputs/mapping_consensus/mapping.sorted.bam",
     "outputs/raxml/RAxML_bipartitions.T3333",
     ]
+
+if do_freebayes_vcf_filter:
+    expected_output.append(
+        expand("{sample}/report_variant/variant_calling.html", sample=samples)
+    )
 
 
 __phylogeny__output = "outputs/dendogram.png"
@@ -264,14 +273,15 @@ rule mapping_index:
         shell: "bamtools index -in {input}"
 
 
-__freebayes__input = "{sample}/mapping/mapping.sorted.bam"
-__freebayes__reference = reference
-__freebayes__output = "{sample}/freebayes/variants.raw.vcf"
-__freebayes__log = "{sample}/freebayes/freebayes.log"
-include: sm.modules["freebayes"]
+if do_freebayes:
+    __freebayes__input = "{sample}/mapping/mapping.sorted.bam"
+    __freebayes__reference = reference
+    __freebayes__output = "{sample}/freebayes/variants.raw.vcf"
+    __freebayes__log = "{sample}/freebayes/freebayes.log"
+    include: sm.modules["freebayes"]
 
 
-if do_snpeff:
+if do_freebayes and do_snpeff:
     __snpeff__input = __freebayes__output
     __snpeff__output = "{sample}/snpeff/variants.ann.vcf"
     __snpeff__html =   "{sample}/snpeff/snpeff.html"
@@ -281,12 +291,12 @@ if do_snpeff:
     __snpeff__csv =    "{sample}/snpeff/{sample}.snpeff.csv"
     include: sm.modules["snpeff"]
     __freebayes_vcf_filter__input = __snpeff__output
-else:
+elif do_freebayes:
     __freebayes_vcf_filter__input = __freebayes__output
 
 
 
-if config["freebayes_vcf_filter"]["do"]:
+if do_freebayes and do_freebayes_vcf_filter:
     # __freebayes_vcf_filter__input defined above in the do_snpeff switch
     __freebayes_vcf_filter__output = "{sample}/freebayes/variants.filtered.vcf"
     __freebayes_vcf_filter__csv = "{sample}/freebayes/variants.filtered.csv"
@@ -380,7 +390,7 @@ else:
     __multiqc__input = (
         expand("{sample}/mapping/samtools_{sample}.txt", sample=samples),
         expand("{sample}/mapping/sequana_bamtools_stats_{sample}.txt", sample=samples),
-        expand("{sample}/sequana_laa_{sample}.json", sampless=samples))
+        expand("{sample}/sequana_laa_{sample}.json", sample=samples))
 
 rule multiqc:
     input:
@@ -425,6 +435,13 @@ if do_kraken:
             with open(output.data, "w") as fout:
                 json.dump(k.get_df().to_dict(), fout, indent=True, sort_keys=True)
 
+if do_freebayes:
+    __consensus__input_bases = "{sample}/igvtools/bases.txt"
+    __consensus__input_freebayes = "{sample}/freebayes/variants.raw.vcf"
+else:
+    __consensus__input_bases = "{sample}/igvtools/bases.txt"
+    __consensus__input_freebayes = None
+
 
 rule consensus:
     """
@@ -463,34 +480,24 @@ rule consensus:
 
 
     """
-    input: "{sample}/igvtools/bases.txt"
-    output: 
-        consensus="{sample}/consensus/consensus.fa",
-        population="{sample}/consensus/population.csv"
-    params: 
-        min_depth=10
+    input:
+        bases = __consensus__input_bases,
+        freebayes = __consensus__input_freebayes
+    output:
+        consensus = "{sample}/consensus/consensus.fa",
+        population = "{sample}/consensus/population.csv"
+    params:
+        min_depth = 10
     run:
-        import pandas as pd
-        df = pd.read_csv(input[0], sep="\t", skiprows=3, header=None)
-        df.columns = ["Pos", "A", "C", "G", "T","N","DEL","INS"]
-        df = df.set_index('Pos')
+        from sequana.laa import Consensus
+        c = Consensus(input.bases, input.freebayes)
+        c.min_depth = params.min_depth
 
-        # if coverage is low, we reset everything to zero and then set N to a
-        # large value (1000)
-        indices = df[df.sum(axis=1)<params.min_depth].index
-        df.loc[indices] = 0
-        df.loc[indices, "N"] = 10000  # not important since we normalise afterwards
+        # save the consensus including deletion if identified in the VCF file
+        c.save_consensus(output.consensus)
 
-        # First, we save the consensus ignoring the DELETIONs
-        dd = df.apply(lambda x: x.idxmax(), axis=1)
-        with open(output.consensus, "w") as fout:
-            data = "".join(dd).replace("DEL", "")
-            sample = input[0].split("/")[0]
-            fout.write(">{}\n{}\n".format(sample,data))
-
-        # Second, we identify the positions where there are several populations
-        df = df.divide(df.sum(axis=1), axis=0)
-        selection = df[(df>0.1).sum(axis=1)>1]
+        # save list of SNPs with at least 2 different nucleotides
+        selection = c.get_population(threashold=0.1, Npop=2)
         selection.to_csv(output.population)
 
 
