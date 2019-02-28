@@ -494,7 +494,8 @@ rule consensus:
         c.min_depth = params.min_depth
 
         # save the consensus including deletion if identified in the VCF file
-        c.save_consensus(output.consensus)
+        sample_name = input[0].split("/")[0]
+        c.save_consensus(output.consensus, sample_name)
 
         # save list of SNPs with at least 2 different nucleotides
         selection = c.get_population(threashold=0.1, Npop=2)
