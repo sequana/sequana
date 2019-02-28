@@ -17,12 +17,147 @@
 "LAA tools (pacbio)"
 import glob
 
+from sequana.freebayes_vcf_filter import VCF_freebayes, Variant
 from sequana import BAM
 from sequana import logger
 logger.name = __name__
 
 import pandas as pd
 import pylab
+
+
+
+class Consensus():
+
+    def __init__(self, bases, freebayes=None):
+        self.filename_bases = bases
+        self.min_depth = 10
+        self.min_score = 1
+
+        if freebayes is not None:
+            v = VCF_freebayes(freebayes)
+            self.variants = [Variant(x) for x in v if x]
+        else:
+            self.variants = []
+
+    def identify_deletions(self):
+
+        deletions = []
+        for variant in self.variants:
+            alt = variant.resume["alternative"]
+            ref = variant.resume["reference"]
+            pos = variant.resume['position']
+            dp  = variant.resume['depth']
+            score = variant.resume['freebayes_score']
+
+            # filter out bad scores and bad depth
+            if score < self.min_score:
+                continue
+            if dp < self.min_depth:
+                continue
+
+            # we need at least 2 bases for an insertion
+            if len(alt) <1:
+                continue
+
+            # we need an alternate > than reference for an insertion
+            if len(alt)<=len(ref):
+                continue
+
+            deletions.append(variant)
+        return deletions
+
+    def get_bases(self):
+        df = pd.read_csv(self.filename_bases, sep="\t", skiprows=3, header=None)
+        df.columns = ["Pos", "A", "C", "G", "T", "N", "DEL", "INS"]
+        df = df.set_index("Pos")
+
+        # Low coverage values should be taken care of. 
+        # If below min_depth, we set everything to zero and consider the base as
+        # an N. 
+        indices = df[df.sum(axis=1)<self.min_depth].index
+        df.loc[indices] = 0
+        df.loc[indices, "N"] = 10000 # not important since we normalise later
+        return df
+
+    def insert_alternate(self, df, ref, alt, pos):
+        """replace reference with alternate at position pos"""
+        pass
+        
+
+
+    def run(self):
+        cols = ["A", "C", "G", "T", "N", "DEL"] 
+        df = self.get_bases()
+        deletions = self.identify_deletions()
+
+        # consensus without deletions
+        dd = df.apply(lambda x: x.idxmax(), axis=1)
+
+        # check that deletions are consistent with the data
+        for d in deletions:
+            pos = int(d.resume["position"])
+            ref = d.resume["reference"]
+            # compare the reference of the deletions with the consensus
+            if "".join(dd.loc[pos:pos+len(ref)-1]) != ref:
+                logger.warning("reference string {} not found in consensus at position {}".format(ref, pos))
+
+    
+        # Now, we insert the deletions removing the reference and then adding
+        # the alternate
+        # We aware that some deletions may overlap 
+        for d in deletions:
+            pos = int(d.resume["position"])
+            ref = d.resume["reference"]
+            alt = d.resume["alternative"]
+
+            # the data up to the position of the reference/alternate SNP
+            # indices may not start at zero so we use loc instead of iloc
+            dfA = df.loc[0:pos-1]
+
+            # the alternate data needs a dummy dataframe. The indices are 
+            # e.g. 0,1,2,3,4,5 and 
+            # We reset the indices to start at the dfA last position and
+            # to be constant. For instance a dataframe dfB of 3 rows to be
+            # appended aftre position 1500 will have the indices 1500,1500,1500
+            # This garantee that the following dataframe dfC has indices > to
+            # those of dfB while allowing the next iteration to use the same
+            # consistance indices when searching for the next deletions
+            dfB = df.iloc[0:len(alt)].copy()
+            dfB.index = [pos] *  len(dfB)
+            dfB *= 0
+            for i, nucleotide in enumerate(alt):
+                dfB.iloc[i][nucleotide] = 10000 
+
+            # the rest of the data
+            dfC = df.loc[pos+len(ref):]
+
+            # !! do no reset indices !!! so that inserted dfB is still sorted
+            # and next accession with iloc/loc are still correctin the next
+            # iteration
+            df = dfA.append(dfB).append(dfC)#.reset_index(drop = True)
+
+        # now we can reset the indices
+        df.reset_index(drop=True, inplace=True)
+
+        dd = df.apply(lambda x: x.idxmax(), axis=1)
+        return dd
+
+    def save_consensus(self, output, identifier):
+
+        dd = self.run()
+        with open(output, "w") as fout:
+             data = "".join(dd).replace("DEL", "")
+             sample = identifier
+             fout.write(">{}\n{}\n".format(sample,data))
+
+    def get_population(self, threshold=0.1, Npop=2):
+        df = self.get_bases()
+        cols = ["A", "C", "G", "T", "N", "DEL"]
+        df = df.divide(df[cols].sum(axis=1), axis=0)
+        selection = df[(df[cols]>threshold).sum(axis=1)>=2]
+        return selection
+
 
 
 
