@@ -124,7 +124,7 @@ if do_smrtlink_report:
     expected_output.append("images/barcoding_subreads_histogram.png")
 
     __copy_smrtlink__input = smrtlink_file
-    __copy_smrtlink__output = "inputs" + os.path.basename(__copy_smrtlink__input)
+    __copy_smrtlink__output = "inputs/" + os.path.basename(__copy_smrtlink__input)
     include: dynamic_copy("smrtlink", M)
     expected_output.append(__copy_smrtlink__output)
 

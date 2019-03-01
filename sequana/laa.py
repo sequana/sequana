@@ -80,12 +80,6 @@ class Consensus():
         df.loc[indices, "N"] = 10000 # not important since we normalise later
         return df
 
-    def insert_alternate(self, df, ref, alt, pos):
-        """replace reference with alternate at position pos"""
-        pass
-        
-
-
     def run(self):
         cols = ["A", "C", "G", "T", "N", "DEL"] 
         df = self.get_bases()

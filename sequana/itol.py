@@ -63,6 +63,7 @@ class ITOL():
             'bootstrap_display': 1,
             'bootstrap_type': 2,
             'bootstrap_label_size': 32
+
         }
 
     def upload(self):
