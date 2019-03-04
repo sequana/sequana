@@ -25,12 +25,15 @@ if os.path.exists(cfg['sample_sheet_file']) is False:
 
 
 rule all:
-    input: cfg['output_directory'] + "/Stats/DemultiplexingStats.xml"
+    input: 
+        cfg['output_directory'] + "/Stats/Stats.json",
+        cfg['output_directory'] + "/Stats/summary.txt"
 
 
 rule bcl2fastq:
     input:
-    output: cfg['output_directory'] + "/Stats/DemultiplexingStats.xml"
+    output: 
+        cfg['output_directory'] + "/Stats/Stats.json",
     params:
         indir= config['input_directory'],
         outdir= cfg['output_directory'],
@@ -59,4 +62,28 @@ rule bcl2fastq:
         cmd += cfg['options']
 
         shell(cmd)
+
+
+rule stats:
+    input: cfg['output_directory'] + "/Stats/Stats.json"
+    output: cfg['output_directory'] + "Stats/summary.txt"
+    run:
+        import json
+        with open(input[0]) as fh:
+            data = json.load(fh)
+
+        with open(output[0], "w") as fh:
+            fh.write("%4s %32s %16s\n" % ("Lane", "Sample", 'NumberReads'))
+            for i,lane in enumerate(data["ConversionResults"]):
+                total = 0
+                for this in lane['DemuxResults']:
+                    fh.write("%4s %32s %16s\n" %(i+1, this['SampleId'], this['NumberReads']))
+                    total += this['NumberReads']
+                fh.write("%4s %32s %16s\n" % (i+1, "Total", total))
+                try:
+                    fh.write("%4s %32s %16s\n" % (i+1, "Undetermined", lane['Undetermined']['NumberReads']))
+                except:
+                    pass
+
+
 
