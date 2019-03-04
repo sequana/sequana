@@ -229,15 +229,15 @@ peak_calling:
 #
 # :Parameters:
 #
-# - mode:
-# - rank:
-# - thresh:
+# - mode: narrowPeak,broadPeak,bed,gff
+# - rank: Which column to use to rank peaks. Options: signal.value p.value q.value columnIndex
+# - thresh: Report statistics for peaks with a global idr below this value but return all peaks with an idr below --idr. Default: 0.05
 #
 # mode_choice__ = ['narrowPeak', 'broadPeak', 'bed', 'gff']
 #
 compute_idr:
     mode_choice: 'narrowPeak'
-    rank: 'p.value'
+    rank: 'signal.value'
     thresh: 0.05
 
 #############################################################################
