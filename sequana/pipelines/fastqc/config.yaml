@@ -22,6 +22,7 @@ input_pattern: '*.fastq.gz'
 fastqc:
     do_group: true
     options: ''
+    threads: 4
 
 
 ###################################################################
