@@ -7,7 +7,8 @@ This pipeline is part of Sequana software (sequana.readthedocs.io)
 
 
 
-bcl2fastq version 2.20
+module load bcl2fastq/2.20.0
+
 
 http://emea.support.illumina.com/downloads/bcl2fastq-conversion-software-v2-20.html?langsel=/fr/
 """
@@ -66,7 +67,7 @@ rule bcl2fastq:
 
 rule stats:
     input: cfg['output_directory'] + "/Stats/Stats.json"
-    output: cfg['output_directory'] + "Stats/summary.txt"
+    output: cfg['output_directory'] + "/Stats/summary.txt"
     run:
         import json
         with open(input[0]) as fh:
