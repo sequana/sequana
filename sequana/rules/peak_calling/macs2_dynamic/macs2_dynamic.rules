@@ -42,33 +42,32 @@ rule macs2_%(name)s:
     log:
         __macs2_%(name)s__log
     conda:
-        "macs2.yaml"
+        "envs/macs2.yaml"
     output:
         __macs2_%(name)s__output
-    run:
-        import os
-        inputFile = ''.join({params.input})
-        if 'NA' in inputFile:
-            inputFile = ''
-        shift = ''.join({params.shift_file})
-        pe = ''.join({params.pe_mode})
-        if shift is not "Empty":
-            if os.path.exists(shift):
-                shift = shell("awk \'{{print $3}}\' {params.shift_file} | awk -F \',\' \'{{if ($1=={params.read_length}){{print $2}} \\
-                else {{print $1}} }}\' ")
-                if pe is 'yes':
-                    shell("macs2 callpeak -t {input.bam} %%s -f BAMPE -g {params.gsize} -n {params.prefix} \\
-                    {params.options} --extsize %%s 2> {log}".format(shift, inputFile))
-                else:
-                    shell("macs2 callpeak -t {input.bam} %%s -f BAM -g {params.gsize} -n {params.prefix} \\
-                    {params.options} --extsize %%s 2> {log}".format(shift, inputFile))
-        else :
-            if pe is 'yes':
-                shell("macs2 callpeak -t {input.bam} %%s -f BAMPE -g {params.gsize} -n {params.prefix} \\
-                {params.options} 2> {log}".format(inputFile))
-            else:
-                 shell("macs2 callpeak -t {input.bam} %%s -f BAM -g {params.gsize} -n {params.prefix} \\
-                {params.options} 2> {log}".format(inputFile))
+    shell:
+        """
+        set +o pipefail
+
+        if [[ "{params.input}" == "NA" ]] ; then input="" ; else input="{params.input}" ; fi
+
+        if [[ {params.shift_file} != "Empty" ]] ; then
+            if [[ -e {params.shift_file} ]] ; then
+                shift=$(awk \'{{print $3}}\' {params.shift_file} | awk -F \',\' \'{{if ($1=={params.read_length}){{print $2}}  else {{print $1}} }}\')
+                if [[ {params.pe_mode} == "yes" ]] ; then
+                    macs2 callpeak -t {input.bam} ${{input}} -f BAMPE -g {params.gsize} -n {params.prefix} {params.options} --extsize ${{shift}} 2> {log}
+                else
+                    macs2 callpeak -t {input.bam} ${{input}} -f BAM -g {params.gsize} -n {params.prefix} {params.options} --extsize ${{shift}} 2> {log}
+                fi
+            fi
+        else
+            if [[ {params.pe_mode} == "yes" ]] ; then
+                macs2 callpeak -t {input.bam} ${{input}} -f BAMPE -g {params.gsize} -n {params.prefix} {params.options} 2> {log}
+            else
+                macs2 callpeak -t {input.bam} ${{input}} -f BAM -g {params.gsize} -n {params.prefix} {params.options} 2> {log}
+            fi
+        fi
+        """
 
     '''
 
