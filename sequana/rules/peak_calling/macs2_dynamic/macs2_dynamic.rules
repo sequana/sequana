@@ -41,6 +41,8 @@ rule macs2_%(name)s:
         read_length = config["peak_calling"]["readLength"]
     log:
         __macs2_%(name)s__log
+    conda:
+        "macs2.yaml"
     output:
         __macs2_%(name)s__output
     run:
