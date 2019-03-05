@@ -29,11 +29,12 @@ rule metrics_peaks:
     run:
         import pandas as pd
         import os.path
+        from collections import OrderedDict
 
         inputs = [os.path.realpath(f) for f in input['inputs']]
         output = os.path.realpath(output[0])
         #initialize dict for store all metrics
-        d = {'Cond': [], 'Replicates': [], 'PPR': [], 'SPR1': [], 'SPR2': [], 'RR': [], 'SCR': [], 'Score': []}
+        d = OrderedDict({'Cond': [], 'Replicates': [], 'PPR': [], 'SPR1': [], 'SPR2': [], 'RR': [], 'SCR': [], 'Score': []})
         nb_rep = nb_ppr = nb_spr1 = nb_spr2 = 0
         for mark in marks:
             for cond in conds:
