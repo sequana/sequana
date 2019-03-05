@@ -23,9 +23,9 @@ from itolapi import Itol
 
 class ITOL():
     """
-  
+
     Tree with branch lengths::
- 
+
        (A:0.1,(B:0.1,C:0.1)));
 
     Tree with bootstrap and branch lengths::
@@ -53,18 +53,25 @@ class ITOL():
         self.itol = Itol()
         assert tree.endswith(".tree.txt"), "Your input tree must end in .tree.txt"
         self.itol.add_file(tree)
+        self._datasets = 0
         self.status = None
 
+        # datasets_visible should not be used if there is no datasets.
+        #
         self.params = {
             "display_mode": 2,  # rotation
             "ignore_branch_length": 1,
             "line_width": 5,
-            "datasets_visible": "0,1",
+            #"datasets_visible": "0,1",
             'bootstrap_display': 1,
             'bootstrap_type': 2,
             'bootstrap_label_size': 32
-
         }
+
+    def add_file(self, filename):
+        self.itol.add_file(filename)
+        N = len(self.itol.files) - 1   # remove the input tree file
+        self.params['datasets_visible'] = ",".join([str(x) for x in range(0, N)])
 
     def upload(self):
         self.status = self.itol.upload()
