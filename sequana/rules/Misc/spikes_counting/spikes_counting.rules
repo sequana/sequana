@@ -13,13 +13,37 @@ rule spikes_counting:
 
     """
     input:
-        __spikes_counting__input
+        inputs = __spikes_counting__input
     output:
         tab = __spikes_counting__output,
         json = __spikes_counting__output_json,
     log:
         __spikes_counting__log
     run:
-        """
-        samtools flagstat {input} > {output.tab} 2> {log}
-        """
+        import pysam
+        import pandas as pd
+        import os.path
+        from collections import OrderedDict
+
+        inputs = [os.path.realpath(f) for f in input['inputs']]
+        output = os.path.realpath(output[0])
+        d = OrderedDict()
+        for file in inputs:
+            name = (os.path.basename(file)).split("_sp")[0]
+            samfile = pysam.AlignmentFile(file, "rb")
+            nb_reads = samfile.mapped
+            try:
+                percent = "{0:.2f}".format((samfile.mapped * 100) / (samfile.mapped + samfile.unmapped))
+            except ZeroDivisionError:
+                percent = 0
+            d[name] = [nb_reads, percent]
+
+        #format dataframe
+        df = pd.DataFrame(data=d)
+        df = df.transpose()
+        df.reset_index(inplace=True)
+
+        # write dataframe in output file
+        with open(output.json, 'w') as f:
+                f.write("# plot_type: 'table'\n")
+        df.to_csv(output.json, mode='a',sep="\t", index=False, header=['Sample', 'Nb mapped reads', 'percent'])

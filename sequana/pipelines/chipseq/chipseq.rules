@@ -314,13 +314,18 @@ if manager.config.design.spike:
     include: bowtie2_mapping_dynamic("spike", manager)
     expected_output.extend(expand(__bowtie2_mapping_spike__sort, sample=manager.samples))
 
+    #todo include markduplicate on spikes
+
     # counting on spikes
     __spikes_counting__input = expand("2-Mapping/{sample}_spike.bam", sample=manager.samples)
     __spikes_counting__output = "2-Mapping/ALL_count_on_spike.mtx"
-    __spikes_counting__output_json = "2-Mapping/ALL_count_on_spike.json"
+    __spikes_counting__output_json = "Count_on_spike_mqc.out"
     __spikes_counting__log = "2-Mapping/logs/spike_counting.o"
     include: sm.modules["spikes_counting"]
     expected_output.extend([__spikes_counting__output_json])
+
+
+
 
 # Mark duplicates
 if manager.config.mark_duplicates.do:
@@ -527,7 +532,16 @@ else:
 
 #compute MACS2 metrics
 ## TODO nb pics REP en rouge si moins de 100,000 dans le multiqc
-
+macs2_rep = []
+macs2_rep.extend(expand("6-PeakCalling/{}/{{IP_REP}}_vs_{{INPUT}}_peaks.{}Peak".format(model, model), zip, IP_REP=IP_ALL, INPUT=INPUT))
+__stats_peakCalling_input = macs2_rep
+__stats_peakCalling_csv = "statsPeakCalling_mqc.out"
+__stats_peakCalling__marks = marks
+__stats_peakCalling__conds = conds
+__stats_peakCalling__rep = rep_flag
+__stats_peakCalling_log = "6-PeakCalling/{}/statsPeakCalling.out".format(model)
+include: sm.modules["stats_peakCalling"]
+expected_output.extend([__stats_peakCalling_csv])
 
 
 # Compute IDR
