@@ -536,7 +536,7 @@ __compute_idr__input2 = "6-PeakCalling/{}/{{IP_IDR}}_{{CASE}}2_vs_{{INPUT}}_peak
 __compute_idr__output = "7-IDR/{{IP_IDR}}_{{CASE}}1vs{{CASE}}2_{{INPUT}}_ref_{}_idr.txt".format(model)
 __compute_idr__output_peak = "7-IDR/{{IP_IDR}}_{{CASE}}1vs{{CASE}}2_{{INPUT}}_ref_{}_idr{}.{}Peak".format(
     model, config["compute_idr"]["thresh"], model)
-__compute_idr__log = "7-IDR/logs/{IP_IDR}_{CASE}1vs{CASE}2_%s_idr.o" % model
+__compute_idr__log = "7-IDR/logs/{IP_IDR}_{CASE}1vs{CASE}2_{{INPUT}}_%s_idr.o" % model
 include: sm.modules["compute_idr"]
 expected_output.extend(expand(__compute_idr__output, zip, IP_IDR=REP_IDR, CASE=CASE, INPUT=IN_IDR))
 
@@ -547,7 +547,7 @@ if model in ["narrow"]:
     __select_peaks__input_rep = "7-IDR/{{IP_IDR}}_{}1vs{}2_{{INPUT}}_ref_{}_idr{}.{}Peak".format(rep_flag, rep_flag, model, config["compute_idr"]["thresh"], model)
     __select_peaks__input_ppr = "7-IDR/{{IP_IDR}}_{}1vs{}2_{{INPUT}}_ref_{}_idr{}.{}Peak".format("PPR", "PPR", model, config["compute_idr"]["thresh"], model)
     __select_peaks__input_pool = "6-PeakCalling/{}/{{IP_IDR}}_PPRPool_vs_{{INPUT}}_peaks.{}Peak".format(model, model)
-    __select_peaks__logs = "7-IDR/logs/{IP_IDR}_selected_peaks.o"
+    __select_peaks__logs = "7-IDR/logs/{IP_IDR}_vs_{INPUT}_selected_peaks.o"
     __select_peaks__output = "7-IDR/{{IP_IDR}}_vs_{{INPUT}}_select.{}Peak".format(model)
     include: sm.modules["select_peaks"]
     expected_output.extend(expand(__select_peaks__output, zip, IP_IDR=IP_REP, INPUT=IP_REP_DUP))
@@ -556,7 +556,7 @@ if model in ["narrow"]:
 if model in ["broad"]:
     __intersectionApproach__input_rep = expand("6-PeakCalling/%s/{{IP_IDR}}_{CASE}_vs_{{INPUT}}_peaks.%sPeak" % (model, model), CASE=rep)
     __intersectionApproach__input_pool = "6-PeakCalling/{}/{{IP_IDR}}_PPRPool_vs_{{INPUT}}_peaks.{}Peak".format(model, model)
-    __intersectionApproach__logs = "7-IDR/logs/{IP_IDR}_BROAD-IA_peaks.o"
+    __intersectionApproach__logs = "7-IDR/logs/{IP_IDR}_vs_{INPUT}_BROAD-IA_peaks.o"
     __intersectionApproach__output = "7-IDR/{{IP_IDR}}_vs_{{INPUT}}_BROAD-IA.{}Peak".format(model)
     include: sm.modules["intersectionApproach"]
     expected_output.extend(expand(__intersectionApproach__output, zip, IP_IDR=IP_REP, INPUT=IP_REP_DUP))
