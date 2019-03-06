@@ -42,7 +42,7 @@ rule macs2_%(name)s:
     log:
         __macs2_%(name)s__log
     conda:
-        "envs/macs2.yaml"
+        "../../envs/macs2.yaml"
     output:
         __macs2_%(name)s__output
     shell:
