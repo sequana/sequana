@@ -44,4 +44,4 @@ rule stats_peakCalling:
         # write dataframe in output file
         with open(output, 'w') as f:
                 f.write("# plot_type: 'table'\n")
-        df.to_csv(output, mode='a',sep="\t", index=False, header=['Sample', 'Nb peaks'])
+        df.to_csv(output, mode='a',sep="\t", index=False, header=['Sample', 'Peaks'])
