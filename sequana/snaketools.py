@@ -1424,7 +1424,7 @@ class FastQFactory(FileFactory):
         read_tag = self.read_tag.replace("[12]", r)
         candidates = [realpath for basename, realpath in
                       zip(self.basenames, self.realpaths)
-                      if read_tag in basename and basename.startswith(tag)]
+                      if read_tag in basename and basename.startswith(tag + "_")]
 
         if len(candidates) == 0 and r == "2":
             # assuming there is no R2
