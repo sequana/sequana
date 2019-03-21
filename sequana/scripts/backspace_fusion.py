@@ -89,7 +89,7 @@ class BackSpace(Common):
 
         print("Number of samples: {}".format(len(self.sampleIDs)))
         print(self.sampleIDs)
-        print()
+        
 
     def _set_outdir(self, outdir):
         self._outdir = outdir
@@ -105,11 +105,11 @@ class BackSpace(Common):
             print("Creating ./{} directory".format(self.outdir))
             os.mkdir(self.outdir)
 
-    def is_paired(self, name):
-        #filenames = glob.glob("{}_L*/{}*fastq.gz".format(name, name))
-        filenames = self.filenames
+    def is_paired(self, sampleID):
+        filenames = [x for x in self.filenames if x.startswith(sampleID + "_L00")]
         R1 = sum([1 for filename in filenames if '_R1_' in filename])
         R2 = sum([1 for filename in filenames if '_R2_' in filename])
+        
 
         if R1 == self.Nlanes and R2 == self.Nlanes:
             return True
@@ -133,13 +133,15 @@ class BackSpace(Common):
         assert len(set(names)) == self.Nlanes, msg
         params['name'] = sampleID
         params['outdir'] = self.outdir
-        params['filenames'] = " ".join(names)
+
+        # IMPORTANT TO SORT the filenames so that L1 follows L2 for R1 and R2
+        # files
+        params['filenames'] = " ".join(sorted(names))
 
         output = "{outdir}/{sampleID}/{name}_{RX}_001.fastq".format(**params)
 
         if os.path.exists(output + ".gz"):
             raise IOError("{} exists already".format(output))
-        print(output)
         # Here, we should get 4 files with identical NAME (prefix), which should
         # be used for the output.
         #53_S53_L001_R2_001.fastq.gz
@@ -177,14 +179,16 @@ class BackSpace(Common):
  
             for RX in READS:
                 print("  fusionning {} ({} case)".format(name, RX))
-                with open('script.sh', 'w') as fin:
+                script_name = "{}_script.sh".format(name)
+                with open(script_name, 'w') as fin:
                     cmd = self.get_pigz_cmd(name, RX)
                     fin.write(cmd)
+
                 from shutil import which
                 if which("sbatch") is not None:
-                    cmd = sbatch_command.format(**{'thread': self.threads}) + ' script.sh'
+                    cmd = sbatch_command.format(**{'thread': self.threads}) + " " + script_name
                 else:
-                    cmd = "sh script.sh"
+                    cmd = "sh {}".format(script_name)
                 from subprocess import STDOUT
                 process = subprocess.check_output(cmd.split())
                 #proc = process.split()[-1]
