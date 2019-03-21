@@ -29,28 +29,39 @@ import os
 import subprocess
 from subprocess import PIPE
 import argparse
-
+import re
 
 
 class Common():
-    def __init__(self, pattern):
+    def __init__(self, pattern, lanes):
         """
 
         :param pattern: example */*fastq.gz
+        :param lanes: lanes to keep (and fusion)
 
         """
+        # sanity checks.
+        assert len(lanes)>=2, "to fusion lanes, you need at least 2!"
+        assert min(lanes)>0, "lanes must be positive numbers"
+        assert len(set(lanes)) == len(lanes), "lanes number must be unique"
+        assert max(lanes)<=8, "lanes must be < 8 "
+
         self.pattern = pattern
+        self.lanes = ["L00{}".format(lane) for lane in lanes]
+        self.Nlanes = len(lanes)
         self.discover_files()
 
-    def discover_files(self, pattern=None):
+    def discover_files(self ):
         """Extract unique sample names"""
-        if pattern:
-            self.filenames = glob.glob(pattern)
-        else:
-            self.filenames = glob.glob(self.pattern)
+        self.filenames = glob.glob(self.pattern)
 
         if len(self.filenames) == 0:
             ValueError("No files found. Are you in the correct path ? ")
+
+        lanes = str(self.lanes).replace(" ","")
+        self.filenames =[x for x in self.filenames if re.search("_L00{}_".format(lanes), x)] 
+
+        print(self.filenames)
 
         self.sampleIDs = sorted(list(set([x.split("_L00")[0] for x in self.filenames])))
 
@@ -69,20 +80,12 @@ class BackSpace(Common):
     """
     def __init__(self, pattern="*/*fastq.gz", outdir="fusion", threads=4,
                  queue=None, lanes=[]):
-        super(BackSpace, self).__init__(pattern)
+        super(BackSpace, self).__init__(pattern, lanes)
 
-        # sanity checks.
-        assert len(lanes)>=2, "to fusion lanes, you need at least 2!"
-        assert min(lanes)>0, "lanes must be positive numbers"
-        assert len(set(lanes)) == len(lanes), "lanes number must be unique"
-
-        
         self._outdir = None
         self.outdir = outdir
         self.threads = threads
         self.queue = queue
-        self.lanes = lanes
-        self.Nlanes = len(lanes)
 
         print("Number of samples: {}".format(len(self.sampleIDs)))
         print(self.sampleIDs)
@@ -104,10 +107,9 @@ class BackSpace(Common):
 
     def is_paired(self, name):
         #filenames = glob.glob("{}_L*/{}*fastq.gz".format(name, name))
-        filenames = glob.glob(self.pattern)
+        filenames = self.filenames
         R1 = sum([1 for filename in filenames if '_R1_' in filename])
         R2 = sum([1 for filename in filenames if '_R2_' in filename])
-
 
         if R1 == self.Nlanes and R2 == self.Nlanes:
             return True
@@ -116,7 +118,7 @@ class BackSpace(Common):
         else:
             msg = "Sample {} issue. Found {} R1 and {} R2. "
             msg += "Expected {} and {} for paired data and {} and 0 for single read"
-            msg = msg.format(name, R1, R2,self.Nlanes, self.Nlanes, self.Nlanes)
+            msg = msg.format(name, R1, R2, self.Nlanes, self.Nlanes, self.Nlanes)
             raise ValueError(msg)
 
     def get_pigz_cmd(self, sampleID, RX):
@@ -134,6 +136,9 @@ class BackSpace(Common):
         params['filenames'] = " ".join(names)
 
         output = "{outdir}/{sampleID}/{name}_{RX}_001.fastq".format(**params)
+
+        if os.path.exists(output + ".gz"):
+            raise IOError("{} exists already".format(output))
         print(output)
         # Here, we should get 4 files with identical NAME (prefix), which should
         # be used for the output.
