@@ -32,7 +32,7 @@ import argparse
 import re
 
 
-class Common():
+class Common(object):
     def __init__(self, pattern, lanes):
         """
 
