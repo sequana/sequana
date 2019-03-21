@@ -45,14 +45,14 @@ class Common():
     def discover_files(self, pattern=None):
         """Extract unique sample names"""
         if pattern:
-            filenames = glob.glob(pattern)
+            self.filenames = glob.glob(pattern)
         else:
-            filenames = glob.glob(self.pattern)
+            self.filenames = glob.glob(self.pattern)
 
-        if len(filenames) == 0:
+        if len(self.filenames) == 0:
             ValueError("No files found. Are you in the correct path ? ")
 
-        self.sampleIDs = sorted(list(set([x.split("_L00")[0] for x in filenames])))
+        self.sampleIDs = sorted(list(set([x.split("_L00")[0] for x in self.filenames])))
 
 
 class BackSpace(Common):
@@ -68,12 +68,25 @@ class BackSpace(Common):
     directory.
     """
     def __init__(self, pattern="*/*fastq.gz", outdir="fusion", threads=4,
-                 queue="common"):
+                 queue=None, lanes=[]):
         super(BackSpace, self).__init__(pattern)
+
+        # sanity checks.
+        assert len(lanes)>=2, "to fusion lanes, you need at least 2!"
+        assert min(lanes)>0, "lanes must be positive numbers"
+        assert len(set(lanes)) == len(lanes), "lanes number must be unique"
+
+        
         self._outdir = None
         self.outdir = outdir
         self.threads = threads
         self.queue = queue
+        self.lanes = lanes
+        self.Nlanes = len(lanes)
+
+        print("Number of samples: {}".format(len(self.sampleIDs)))
+        print(self.sampleIDs)
+        print()
 
     def _set_outdir(self, outdir):
         self._outdir = outdir
@@ -89,47 +102,51 @@ class BackSpace(Common):
             print("Creating ./{} directory".format(self.outdir))
             os.mkdir(self.outdir)
 
-    def is_paired(self, name): 
-        #filenames = glob.glob("{}_L*/{}*fastq.gz".format(name, name))    
-        filenames = glob.glob("{}*/*fastq.gz".format(name))    
+    def is_paired(self, name):
+        #filenames = glob.glob("{}_L*/{}*fastq.gz".format(name, name))
+        filenames = glob.glob(self.pattern)
         R1 = sum([1 for filename in filenames if '_R1_' in filename])
         R2 = sum([1 for filename in filenames if '_R2_' in filename])
 
-        if R1 == 4 and R2 == 4:
+
+        if R1 == self.Nlanes and R2 == self.Nlanes:
             return True
-        elif R1 == 4 and R2 == 0:
+        elif R1 == self.Nlanes and R2 == 0:
             return False
         else:
-            raise ValueError("Sample {} issue. Found {} R1 and {} R2. Expected 4 and 4 for paired data and 4 and 0 for single read".format(name, R1, R2))
+            msg = "Sample {} issue. Found {} R1 and {} R2. "
+            msg += "Expected {} and {} for paired data and {} and 0 for single read"
+            msg = msg.format(name, R1, R2,self.Nlanes, self.Nlanes, self.Nlanes)
+            raise ValueError(msg)
 
     def get_pigz_cmd(self, sampleID, RX):
         assert RX in ['R1', 'R2']
         params = {"thread": self.threads, "sampleID": sampleID, "RX": RX}
 
-        names = [x.split("/")[-1].split("_L00")[0] for x in 
-                    glob.glob(sampleID + "*/*"+RX+"*")]
+
+        names = [x for x in self.filenames if x.startswith(sampleID) and RX in x]
+
         print("  Found {} files for sample {} ({})".format(len(names), sampleID, RX))
-        assert len(set(names)) == 1, "Non unique sample names {}".format(names)
-        params['name'] = names[0]
+        msg = "For sample ID {}, found non unique sample names {} ?".format(sampleID, names)
+        assert len(set(names)) == self.Nlanes, msg
+        params['name'] = sampleID
         params['outdir'] = self.outdir
+        params['filenames'] = " ".join(names)
 
-        output = "{outdir}/{sampleID}/{name}_{RX}_.fastq".format(**params)
-
+        output = "{outdir}/{sampleID}/{name}_{RX}_001.fastq".format(**params)
+        print(output)
         # Here, we should get 4 files with identical NAME (prefix), which should
         # be used for the output.
         #53_S53_L001_R2_001.fastq.gz
 
         cmd = "#!/bin/sh"
-        cmd += "\nunpigz -p {thread} -c {sampleID}*/*_{RX}_*fastq.gz > " + output
+        cmd += "\nunpigz -p {thread} -c {filenames} > " + output
         cmd += "\npigz --force -p {thread} " + output
         cmd  = cmd.format(**params)
         return cmd
 
     def run(self):
         import os
-        print("Number of samples: {}".format(len(self.sampleIDs)))
-        print(self.sampleIDs)
-        print()
 
         processes = []
         for name in self.sampleIDs:
@@ -179,15 +196,23 @@ class BackSpace(Common):
 
 class Options(argparse.ArgumentParser):
     def __init__(self, prog="backspace_fusion"):
-        usage = """%s 
+        usage = """%s
 
-        backspace_fusion 
+        sequana_lane_fusion
 
         This searches for data stored in this format:
 
             <sampleID_1>/*fastq.gz
             <sampleID_2>/*fastq.gz
             <sampleID_3>/*fastq.gz
+
+        or::
+
+            sampleID_L001_.fastq.gz
+            sampleID_L002_.fastq.gz
+
+
+        sequana_lane_fusion --lanes 1,2,3,4
 
         """.format(prog)
         super(Options, self).__init__(usage=usage, prog=prog,
@@ -203,9 +228,14 @@ class Options(argparse.ArgumentParser):
         self.add_argument("--threads", dest="threads", type=str,
             default=4,
             help="number of threads per job (pigz)")
+        self.add_argument("--use-grid", dest="use_grid", 
+            action="store_true")
+
         self.add_argument("--queue", dest="queue", type=str,
             default="common",
             help="queue to use on the cluster")
+        self.add_argument("--lanes", dest="lanes", nargs="+", 
+            type=int, required=True)
 
 
 def main(args=None):
@@ -220,9 +250,12 @@ def main(args=None):
     else:
         options = user_options.parse_args(args[1:])
 
+    print(options)
 
+    if options.use_grid is False:
+        options.queue = None
     c = BackSpace(pattern=options.pattern, outdir=options.outdir,
-            queue=options.queue)
+            queue=options.queue, lanes=options.lanes)
     c.run()
 
 
