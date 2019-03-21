@@ -168,7 +168,7 @@ class BackSpace(Common):
 
             # R1. Note the usage of wrap using --wrap " your command"
             if self.queue == "biomics":
-                sbatch_command = "sbatch -c {thread} --A biomics --qos biomics -p biomics"
+                sbatch_command = "sbatch -c {thread} -A biomics --qos biomics -p biomics"
             elif self.queue == "common":
                 sbatch_command = "sbatch -c {thread} --qos fast"
 
