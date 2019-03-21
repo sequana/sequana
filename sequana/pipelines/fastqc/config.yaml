@@ -13,7 +13,7 @@ input_readtag: _R[12]_
 input_pattern: '*.fastq.gz'
 
 
-#################################################################
+##############################################################################
 # FastQC section
 #
 # :Parameters:
@@ -25,7 +25,7 @@ fastqc:
     threads: 4
 
 
-###################################################################
+##############################################################################
 #
 #
 # - options: any multiqc options accepted. Note that if you use --comments, 
@@ -35,3 +35,8 @@ fastqc:
 multiqc:
     options: '-p -f '
     indir: "."
+
+##############################################################################
+#
+onsuccess:
+    toclean: " slurm*out fastqc.rules config.yaml .snakemake stats.txt "

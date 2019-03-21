@@ -80,7 +80,8 @@ onsuccess:
     print("To do so, you can use the Makefile by typing 'Makefile clean'")
 
     with open("Makefile", "w") as fout:
-        fout.write("bundle:\n\ttar cvfz fastqc.tar.gz *\n\nclean:\n\trm -rf stats.txt fastqc.rules config.yaml .snakemake")
+        toclean = config["onsuccess"]['toclean']
+        fout.write("bundle:\n\ttar cvfz fastqc.tar.gz *\n\nclean:\n\trm -rf {}".format(toclean))
 
 onerror:
     print("An error occurred. See message above.")
