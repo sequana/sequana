@@ -12,7 +12,7 @@ Usage
 Requirements
 ~~~~~~~~~~~~~~~~~~
 
-This pipeline is used with bcl2fastq 2.20.0
+This pipeline is to be used with bcl2fastq 2.20.0
 
 .. include:: ../sequana/pipelines/demultiplex/requirements.txt
 
