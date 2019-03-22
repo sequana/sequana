@@ -931,11 +931,12 @@ this <a href="multiqc_report.html">multiqc report.</a></p>
             intro += """<a href="{}/snpeff/snpeff.html">{}/snpeff.html</a><br>""".format(sample, sample)
         intro += "</div>"
 
-        intro += "<div><h2>Variant reports</h2>"
-        for sample in sorted(samples):
-            intro += """<a href="{}/report_variant/variant_calling.html">{}/variant report</a><br>""".format(sample, sample)
     else:
         intro +="""<p>No SNPEFF report available (was not required). Please see variant reports instead</p></div>"""
+
+    intro += "<div><h2>Variant reports</h2>"
+    for sample in sorted(samples):
+        intro += """<a href="{}/report_variant/variant_calling.html">{}/variant report</a><br>""".format(sample, sample)
 
     intro += "<div><h2>Phylogeny</h2><img src={}></img></div>".format(__phylogeny__output)
 
