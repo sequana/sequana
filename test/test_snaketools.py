@@ -262,11 +262,17 @@ def test_onsuccess(tmpdir):
     directory = tmpdir.mkdir("onsuccess")
     p1 = directory.join("Makefile")
     p2 = directory.join("cleanup.py")
-
     onsuc = snaketools.OnSuccess()
     onsuc.makefile_filename = p1
     onsuc.makefile_cleanup = p2
 
+
+def test_onsuccess_cleaner():
+    fh = tempfile.TemporaryDirectory()
+    onsucc = snaketools.OnSuccessCleaner()
+    onsucc.makefile_filename = fh.name + os.sep + "Makefile"
+    onsucc.add_bundle()
+    onsucc.add_makefile()
 
 
 def test_build_dynamic_rule():
