@@ -32,7 +32,7 @@ rule all:
 
 rule bcl2fastq:
     input:
-    output: 
+    output:
         cfg['output_directory'] + "/Stats/Stats.json",
     params:
         indir= config['input_directory'],
@@ -59,31 +59,30 @@ rule bcl2fastq:
         if cfg['nextseq_do_lane_fusion']:
             cmd += " --no-lane-splitting "
 
+        if cfg['write_fastq_reverse_complement']:
+            cmd += " --write-fastq-reverse-complement"
+
         cmd += cfg['options']
 
         shell(cmd)
 
 
-rule stats:
+rule status:
     input: cfg['output_directory'] + "/Stats/Stats.json"
-    output: cfg['output_directory'] + "/Stats/summary.txt"
+    output:
+        summary=cfg['output_directory'] + "/Stats/summary.txt",
+        barplot=cfg['output_directory'] + "summary.png"
     run:
-        import json
-        with open(input[0]) as fh:
-            data = json.load(fh)
-
-        with open(output[0], "w") as fh:
-            fh.write("%4s %32s %16s\n" % ("Lane", "Sample", 'NumberReads'))
-            for i,lane in enumerate(data["ConversionResults"]):
-                total = 0
-                for this in lane['DemuxResults']:
-                    fh.write("%4s %32s %16s\n" %(i+1, this['SampleId'], this['NumberReads']))
-                    total += this['NumberReads']
-                fh.write("%4s %32s %16s\n" % (i+1, "Total", total))
-                try:
-                    fh.write("%4s %32s %16s\n" % (i+1, "Undetermined", lane['Undetermined']['NumberReads']))
-                except:
-                    pass
+        from sequana.demultiplex import StatsFile
+        s = StatsFile(input[0])
+        s.barplot_summary(filename=output.barplot)
+        # save summary at the end because barplot output is not set.
+        s.to_summary_reads(output.summary)
 
 
-
+onsuccess:
+    from sequana.snaketools import OnSuccessCleaner
+    sc = OnSuccessCleaner()
+    sc.files_to_remove.append("demultiplex.rules")
+    sc.add_makefile()
+    print("Once done, please clean up the directory using\n'make clean'")

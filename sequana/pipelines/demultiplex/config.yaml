@@ -22,3 +22,4 @@ bcl2fastq:
     no_bgzf_compression: true
     options: ""
     nextseq_do_lane_fusion: False
+    write_fastq_reverse_complement: False
