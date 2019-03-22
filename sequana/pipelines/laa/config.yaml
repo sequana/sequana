@@ -22,6 +22,10 @@ input:
 # for populations, and ploidy of 1, a population SNP found in a population
 # will have a score of 0. Here setting to 2 is a trick. Alternative is
 # to set freebayes scores to 0
+# Useful options: 
+# --min-alternate-count set to 1 (default is 2) shows deletions not shown
+# otherwise in project B1962
+# --noindels clean up the final VCF with only SNPs.
 freebayes:
     do: yes
     ploidy: 1
