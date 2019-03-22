@@ -71,7 +71,7 @@ rule status:
     input: cfg['output_directory'] + "/Stats/Stats.json"
     output:
         summary=cfg['output_directory'] + "/Stats/summary.txt",
-        barplot=cfg['output_directory'] + "summary.png"
+        barplot=cfg['output_directory'] + "/summary.png"
     run:
         from sequana.demultiplex import StatsFile
         s = StatsFile(input[0])
@@ -86,3 +86,4 @@ onsuccess:
     sc.files_to_remove.append("demultiplex.rules")
     sc.add_makefile()
     print("Once done, please clean up the directory using\n'make clean'")
+    
