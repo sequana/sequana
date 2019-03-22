@@ -81,6 +81,9 @@ class Consensus():
         return df
 
     def run(self):
+
+        # To normalise one need to ignore the insertions since there
+        # are already included in the ACGT nucleotides
         cols = ["A", "C", "G", "T", "N", "DEL"] 
         df = self.get_bases()
         deletions = self.identify_deletions()
