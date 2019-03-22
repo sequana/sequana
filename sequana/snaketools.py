@@ -1629,6 +1629,36 @@ print("done")
     """.format(self.cleanup_filename, additional_dir))
 
 
+class OnSuccessCleaner(object):
+    """Used in demultiplex pipeline to cleanup final results"""
+    def __init__(self):
+        self.makefile_filename = "Makefile"
+        self.files_to_remove = ["config.yaml"]
+        self.directories_to_remove = [".snakemake"]
+        self.bundle = False
+
+    def add_bundle(self, input="*", output="bundle.tar.gz"):
+        self.bundle = True
+        self.bundle_input = input
+        self.bundle_output = output
+
+    def add_makefile(self):
+        makefile = 'all:\n\techo "sequana demultiplexing cleanup"\n'
+        if self.bundle:
+            makefile += "bundle:\n\ttar cvfz {} {}\n".format(
+                self.bundle_output, self.bundle_input)
+        makefile += "clean: clean_files clean_directories\n"
+
+        files = self.files_to_remove + [self.makefile_filename]
+        makefile += "clean_files:\n\trm -f {}\n".format(" ".join(files))
+
+        dirs = self.directories_to_remove
+        makefile += "clean_directories:\n\trm -rf {}\n".format(" ".join(dirs))
+
+        with open(self.makefile_filename, "w") as fh:
+            fh.write(makefile)
+
+
 def get_pipeline_statistics():
     """Get basic statistics about the pipelines
 
