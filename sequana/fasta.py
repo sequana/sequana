@@ -170,10 +170,9 @@ class FastA(object):
     def get_stats(self):
         from pylab import mean
         stats = {}
-        stats["N"] = 2
+        stats["N"] = len(self.sequences)
         stats["mean_length"] = mean(self.lengths)
         return stats
-
 
     def reverse_and_save(self, filename):
         with open(filename, "w") as fout:
