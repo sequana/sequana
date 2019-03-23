@@ -18,16 +18,18 @@
 import os
 import sys
 import argparse
+import glob
+from subprocess import STDOUT
+import subprocess
+
+from easydev.console import purple
 
 from sequana.scripts.tools import SequanaOptions
 from sequana.bamtools import SAM
 from sequana import FastQ
-from easydev.console import purple
 from sequana import logger
 logger.name = "sequana.substractor"
 
-from subprocess import STDOUT
-import subprocess
 
 class CustomFormatter(argparse.ArgumentDefaultsHelpFormatter,
                       argparse.RawDescriptionHelpFormatter):
@@ -79,11 +81,12 @@ class Substractor(object):
     def __init__(self, infile, references, outdir, threads=4):
         self.infile = infile
         self.references = references
+
         self.outdir = outdir
         self.threads = threads
 
         if os.path.exists(outdir):
-            logging.info("using {} for output".format(outdir))
+            logger.info("using {} for output".format(outdir))
         else:
             os.mkdir(outdir)
 
@@ -212,6 +215,13 @@ def main(args=None):
         references.append(options.reference)
     if options.references:
         references = options.references
+    options.references = references
+
+    references = []
+    # expand globs if any
+    for ref in options.references:
+        references.extend(glob.glob(ref))
+
     logger.info("{} references provided: {}".format(
         len(references), ",".join(references)))
 
