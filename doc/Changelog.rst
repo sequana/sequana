@@ -8,6 +8,7 @@ Changelog
 
 * NEWS:
 
+    * New script: substractor
     * added a new module to upload/export phylogenetic tree on itol website.
       Used in the laa pipeline
     * added backspace2fusion code to merge lanes in Illumina raw data

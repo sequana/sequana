@@ -130,6 +130,7 @@ setup(
            'sequana_report=sequana.scripts.reports:main',
            'sequana_vcf_filter=sequana.scripts.vcf_filter:main', # june 2018
            'sequana_bam_splitter=sequana.scripts.bam_splitter:main', # aug 2018
+           'sequana_substractor=sequana.scripts.substractor:main', # march 2019
         ],
         'sequana.module':[
             'sequana_coverage=sequana.modules_report.coverage:CoverageModule',
