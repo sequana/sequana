@@ -227,6 +227,11 @@ class FastQ(object):
         except:
             self.data_format = "unknown"
 
+
+    def get_lengths(self):
+        return [len(x["sequence"]) for x in self]
+
+
     def _get_count_reads(self):
         if self._count_reads is None:
             self._count_reads = self.count_reads()
@@ -683,7 +688,6 @@ class FastQ(object):
         cmd = "bioconvert fastq2fasta {} {}".format(self.filename, output_filename)
         if force is True:
             cmd += " --force "
-
 
     def filter(self, identifiers_list=[], min_bp=None, max_bp=None,
         progressbar=True, output_filename='filtered.fastq', remove=True):
