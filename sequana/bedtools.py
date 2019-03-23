@@ -29,13 +29,13 @@ from sequana.lazy import numpy as np
 from sequana.lazy import pylab
 from pylab import mean as pymean
 
-from sequana import logger
 from sequana.tools import gc_content, genbank_features_parser
 from sequana.errors import SequanaException
 from sequana.summary import Summary
 
 from easydev import do_profile, TempFile, Progress
 
+from sequana import logger
 logger.name = __name__
 
 __all__ = ["GenomeCov", "ChromosomeCov", "DoubleThresholds"]
@@ -387,6 +387,11 @@ class GenomeCov(object):
             contigs = chunk[0].unique()
             for contig in contigs:
                 if contig not in self.chrom_names:
+                    # if all contig names are integer, pandas converts them 
+                    # to numpy int64 but those are not serialisable later when 
+                    # saving the json summary file hence the conversion.
+                    try:contig = int(contig)
+                    except:pass
                     self.chrom_names.append(contig)
 
             # group by names (unordered)
@@ -524,9 +529,12 @@ class GenomeCov(object):
 
     def hist(self, logx=True, logy=True, fignum=1, N=25, lw=2, **kwargs):
         for chrom in self.chr_list:
-            chrom.plot_hist_coverage(logx=logx, logy=logy, fignum=fignum, N=N,
-                histtype='step', hold=True, lw=lw, **kwargs)
-            pylab.legend()
+            try:
+                chrom.plot_hist_coverage(logx=logx, logy=logy, fignum=fignum, N=N,
+                    histtype='step', hold=True, lw=lw, **kwargs)
+                pylab.legend()
+            except:
+                logger.warning("histogram failed")
 
     def to_csv(self, output_filename, **kwargs):
         """ Write all data in a csv.
