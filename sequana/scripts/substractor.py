@@ -82,8 +82,10 @@ class Substractor(object):
         self.outdir = outdir
         self.threads = threads
 
-        try: os.mkdir(options.outdir)
-        except: pass
+        if os.path.exists(outdir):
+            logging.info("using {} for output".format(outdir))
+        else:
+            os.mkdir(outdir)
 
         # this may be used later on for other mapper or methodology
         self.mapper_cmd = "minimap2 -x map-pb -t {} {} {} -a > {}"
@@ -104,7 +106,10 @@ class Substractor(object):
 
             # we only accept reference ending in .fa or .fasta
             assert reference.endswith(".fa") or reference.endswith(".fasta")
-            outfile = reference.replace(".fa", "").replace(".fasta", "")
+
+            # keep only the basename
+            outfile = os.path.basename(reference)
+            outfile = outfile.replace(".fa", "").replace(".fasta", "")
             tag = outfile[0:8]
             outfile = "{}/mapping_{}.sam".format(self.outdir, tag)
 
@@ -207,15 +212,12 @@ def main(args=None):
         references.append(options.reference)
     if options.references:
         references = options.references
-    logger.info("{} references provided: ".format(
+    logger.info("{} references provided: {}".format(
         len(references), ",".join(references)))
-
 
     # call the entire machinery here
     sub = Substractor(options.input, references, options.outdir, options.threads)
     sub.run(options.outfile)
-
-
 
 
 if __name__ == "__main__":
