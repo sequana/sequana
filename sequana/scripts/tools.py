@@ -16,8 +16,6 @@
 ##############################################################################
 
 
-
-
 class SequanaOptions(object):
     # assuming an ArgumentParser structure
     def add_version(self, this):
@@ -29,6 +27,10 @@ class SequanaOptions(object):
     def add_quiet(self, this):
         this.add_argument("--quiet", dest='verbose',
             action="store_false", help="set verbosity off")
+    def add_threads(self, this):
+        this.add_argument("--threads", dest='threads', type=int,
+            default=4, help="threading")
+
     def add_cluster(self, this):
         this.add_argument("--snakemake-cluster", dest="cluster", 
             type=str,
