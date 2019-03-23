@@ -16,9 +16,7 @@
 #  documentation: http://sequana.readthedocs.io
 #
 ##############################################################################
-
-
-
+"""Sniffer"""
 from sequana.bamtools import is_bam, is_sam, is_cram
 from sequana.fastq import is_fastq
 from sequana.fasta import is_fasta
