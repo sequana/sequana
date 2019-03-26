@@ -70,6 +70,9 @@ another file\n""" % prog
         self.add_argument("--output-directory", dest='outdir', type=str,
                             default="sequana_substractor",
                             required=False, help="input fastq gzipped or not")
+        self.add_argument("--mapper", dest='mapper', type=str,
+                            default="minimap2", choices=["bwa", "minimap2"],
+                            required=False, help="mapper minimap2 or bwa")
 
         self.add_threads(self)
         self.add_version(self)
@@ -78,7 +81,7 @@ another file\n""" % prog
 
 
 class Substractor(object):
-    def __init__(self, infile, references, outdir, threads=4):
+    def __init__(self, infile, references, outdir, mapper, threads=4):
         self.infile = infile
         self.references = references
 
@@ -91,7 +94,10 @@ class Substractor(object):
             os.mkdir(outdir)
 
         # this may be used later on for other mapper or methodology
-        self.mapper_cmd = "minimap2 -x map-pb -t {} {} {} -a > {}"
+        if mapper == "minimap2":
+            self.mapper_cmd = "minimap2 -x map-pb -t {} {} {} -a > {}"
+        elif mapper =="bwa" :
+            self.mapper_cmd = "bwa mem -M -t {} {} {} > {}"
  
         f = FastQ(self.infile)
         self.L = len(f)
@@ -226,7 +232,8 @@ def main(args=None):
         len(references), ",".join(references)))
 
     # call the entire machinery here
-    sub = Substractor(options.input, references, options.outdir, options.threads)
+    sub = Substractor(options.input, references, options.outdir, 
+        options.mapper, options.threads)
     sub.run(options.outfile)
 
 
