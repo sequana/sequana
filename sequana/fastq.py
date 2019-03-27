@@ -690,8 +690,8 @@ class FastQ(object):
             cmd += " --force "
 
     def filter(self, identifiers_list=[], min_bp=None, max_bp=None,
-        progressbar=True, output_filename='filtered.fastq', remove=True):
-        """Filter reads
+        progressbar=True, output_filename='filtered.fastq'):
+        """Save reads in a new file if there are not in the identifier_list
 
         :param int min_bp: ignore reads with length shorter than min_bp
         :param int max_bp: ignore reads with length above max_bp
@@ -715,10 +715,11 @@ class FastQ(object):
             pb = Progress(self.n_reads)
             buf = ""
             filtered = 0
+            saved = 0 
 
             for count, lines in enumerate(grouper(self._fileobj)):
                 identifier = lines[0].split()[0]
-                if lines[0].split()[0] in identifiers_list:
+                if lines[0].split()[0].decode() in identifiers_list:
                     filtered += 1
                 else:
                     N = len(lines[1])
@@ -727,6 +728,9 @@ class FastQ(object):
                             lines[0].decode("utf-8"),
                             lines[1].decode("utf-8"),
                             lines[3].decode("utf-8"))
+                        saved += 1
+                    else:
+                        filtered += 1
                     if count % 100000 == 0:
                         fout.write(buf)
                         buf = ""
@@ -736,7 +740,12 @@ class FastQ(object):
             if filtered < len(identifiers_list):
                 print("\nWARNING: not all identifiers were found in the fastq file to " +
                       "be filtered.")
-        if tozip is True: self._gzip(output_filename)
+        logger.info("\n{} reads were filtered out and {} saved in {}".format(
+            filtered, saved, output_filename))
+
+        if tozip is True: 
+            logger.info("Compressing file")
+            self._gzip(output_filename)
 
     def to_kmer_content(self, k=7):
         """Return a Series with kmer count across all reads
