@@ -13,6 +13,7 @@ module load bcl2fastq/2.20.0
 http://emea.support.illumina.com/downloads/bcl2fastq-conversion-software-v2-20.html?langsel=/fr/
 """
 import os
+import json
 
 # This must be defined before the include 
 configfile: "config.yaml"
@@ -27,7 +28,23 @@ if os.path.exists(cfg['sample_sheet_file']) is False:
 
 rule all:
     input:
-        cfg['output_directory'] + "/Stats/summary.txt"
+        cfg['output_directory'] + "/Stats/summary.txt",
+        cfg['output_directory'] + "/Stats/undetermined_barcodes.csv",
+        
+
+
+rule plot_unknown_barcodes:
+    input: cfg['output_directory'] + "Stats/Stats.json"
+    output: 
+        csv="undetermined_barcodes.csv", 
+        png="barcodes.png"
+    run:
+        from sequana.demultiplex import StatsFile
+        s = StatsFile(input[0])
+        df = s.plot_unknown_barcodes()
+        from pylab import savefig
+        savefig(output.png, dpi=200)
+        df.to_csv(output.csv)
 
 
 rule bcl2fastq:

@@ -119,22 +119,24 @@ class StatsFile(object):
             pylab.savefig(filename, dpi=200)
         return df
 
+    def plot_unknown_barcodes(self, N=20):
+        ub = self.data['UnknownBarcodes']
+        df = pd.DataFrame({x['Lane']:x['Barcodes'] for x in ub})
+        S = df.sum(axis=1).sort_values(ascending=False).index[0:N]
+        data = df.loc[S][::-1]
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        from matplotlib import rcParams
+        rcParams['axes.axisbelow'] = True
+        pylab.figure(figsize=(10,8))
+        ax = pylab.gca()
+        data.plot(kind="barh", width=1, ec="k", ax=ax)
+        rcParams['axes.axisbelow'] = False
+        pylab.xlabel("Number of reads", fontsize=12)
+        pylab.ylabel("Frequency (%)", fontsize=12)  
+        pylab.grid(True)
+        pylab.legend(["Lane {}".format(x) for x in range(1, len(df)+1)])
+        try:
+            pylab.tight_layout()
+        except:
+            pass
+        return data
