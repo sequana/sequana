@@ -77,17 +77,20 @@ class BUSCO(object):
             from sequana import BUSCO, sequana_data
             b = BUSCO(sequana_data("test_busco_full_table.tsv"))
             b.scatter_plot()
+
+
+        Missing are not show since there is no information about contig .
         """
         if hold is False:
             pylab.clf()
         colors = ["green", "orange", "red", "blue"]
         markers = ['o', 's', 'x', 'o']
-        for i, this in enumerate(["Complete", "Fragmented", "Missing",  "Duplicated"]):
-            mask = self.df.Status == "Complete"
+        for i, this in enumerate(["Complete", "Fragmented", "Duplicated"]):
+            mask = self.df.Status == this
             if sum(mask)>0:
                 self.df[mask].plot(x="Length", y="Score", kind="scatter", 
-                    color=colors[i],
-                    marker=markers[i], label="Complete")
+                    color=colors[i], ax=pylab.gca(),
+                    marker=markers[i], label=this)
 
         pylab.legend()
         pylab.grid()
