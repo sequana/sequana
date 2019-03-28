@@ -117,10 +117,11 @@ setup(
         'console_scripts':[
            'sequana_gui=sequana.gui.sequana_gui:main',
            'sequanix=sequana.gui.sequana_gui:main',
-           'fastq_head=sequana.scripts.fastq_head:main',
-           'fastq_count=sequana.scripts.fastq_count:main',
+           #'fastq_head=sequana.scripts.fastq_head:main',
+           #'fastq_count=sequana.scripts.fastq_count:main',
            'sequana_fastq_head=sequana.scripts.fastq_head:main',
            'sequana_fastq_count=sequana.scripts.fastq_count:main',
+           'sequana_fastq_summary=sequana.scripts.fastq_summary:main',
            'sequana=sequana.scripts.main:main',
            'sequana_taxonomy=sequana.scripts.taxonomy:main',
            'sequana_coverage=sequana.scripts.coverage:main',
