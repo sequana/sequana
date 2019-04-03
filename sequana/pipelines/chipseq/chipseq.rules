@@ -26,7 +26,7 @@ exec(open(sequana.modules["bowtie2_index_dynamic"], "r").read())
 exec(open(sequana.modules["dynamic_unpigz"], "r").read())
 exec(open(sequana.modules["macs2_dynamic"], "r").read())
 exec(open(sequana.modules["preIDR_dynamic"], "r").read())
-exec(open(sequana.modules["mark_duplicate_dynamic"], "r").read())
+exec(open(sequana.modules["mark_duplicates_dynamic"], "r").read())
 
 manager = sm.PipelineManager("chipseq", config)
 
@@ -187,7 +187,7 @@ wildcard_constraints:
     MARK = "[A-Za-z-_0-9]+"
 
 #reorder rules :
-ruleorder: mark_duplicates > spp > preIDR_input > preIDR_PPR > preIDR_SPR > macs2_rep > compute_idr
+ruleorder: mark_duplicates_ref > spp > preIDR_input > preIDR_PPR > preIDR_SPR > macs2_rep > compute_idr
 
 if manager.config.fastqc.do:
     # FASTQC on input data set
@@ -318,7 +318,7 @@ if manager.config.design.spike:
     __mark_duplicates_spike__input = __bowtie2_mapping_spike__sort
     __mark_duplicates_spike__output = "3-Deduplication/{sample}_spike_sort_dedup.bam"
     __mark_duplicates_spike__metrics = "3-Deduplication/{sample}_spike_sort_dedup.txt"
-    __mark_duplicates_spike__log_std = "3-Deduplication/logs/{sample}_spike_sort_dedup.o".
+    __mark_duplicates_spike__log_std = "3-Deduplication/logs/{sample}_spike_sort_dedup.o"
     __mark_duplicates_spike__log_err = "3-Deduplication/logs/{sample}_spike_sort_dedup.e"
     include: mark_duplicates_dynamic("spike", manager)
     expected_output.extend(expand(__mark_duplicates_spike__output, sample=manager.samples))
@@ -352,7 +352,7 @@ else:
 if manager.config.remove_blacklist.do:
     blacklist = "_NoBlacklist"
     blacklist_dir = "4-NoBlacklist"
-    __remove_blacklist__input = __mark_duplicates__output
+    __remove_blacklist__input = __mark_duplicates_ref__output
     __remove_blacklist__output = "4-NoBlacklist/{{sample}}_{}_sort_dedup{}.bam".format(ref, blacklist)
     __remove_blacklist__log_std = "4-NoBlacklist/logs/{{sample}}_{}_sort_dedup{}.o".format(ref, blacklist)
     __remove_blacklist__log_err = "4-NoBlacklist/logs/{{sample}}_{}_sort_dedup{}.e".format(ref, blacklist)
