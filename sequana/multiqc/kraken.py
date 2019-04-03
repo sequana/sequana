@@ -59,6 +59,7 @@ class MultiqcModule(BaseMultiqcModule):
             name = myfile['s_name']
             d = json.loads(myfile['f'])
             for k,v in d.items():
+                # check for None and NAN
                 S = sum(list(v.values()))
                 U = v['Unclassified']
                 v['Classified'] = S-U
