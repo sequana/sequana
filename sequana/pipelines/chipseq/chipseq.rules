@@ -11,7 +11,7 @@ from sequana import snaketools as sm
 import pandas as pd
 from fnmatch import fnmatch
 from re import sub
-from itertools import repeat
+from itertools import repeat, chain, product
 
 sm.init("chipseq.rules", globals())
 
@@ -59,14 +59,15 @@ INPUT = []
 for row in design.itertuples(index=True, name='Pandas'):
     for file in manager.ff.filenames:
         mark = getattr(row, "INPUT_NAME")
-        if fnmatch(file, mark+"*1_*"):
-            i = 1
-            name = sub(manager.ff.read_tag, '', file)
-            INPUT.append(name)
-            if getattr(row, "NB_IP") > 1 :
-                while i < getattr(row, "NB_IP"):
-                    INPUT.append(name)
-                    i += 1
+        if not pd.isna(mark):
+            if fnmatch(file, mark+"*1_*"):
+                i = 1
+                name = sub(manager.ff.read_tag, '', file)
+                INPUT.append(name)
+                if getattr(row, "NB_IP") > 1 :
+                    while i < getattr(row, "NB_IP"):
+                        INPUT.append(name)
+                        i += 1
 
 #get list of IP files
 IP_ALL = []
@@ -90,6 +91,14 @@ spr = ['SPR1.1', 'SPR1.2', 'SPR2.1', 'SPR2.2']
 marks = [ x.strip() for x in (manager.config.design.marks).split(",")]
 conds = [ x.strip() for x in (manager.config.design.condition).split(",")]
 
+# Select mark for statistical analysis if there is more than one condition (with min 2 rep) for each mark
+MARK_OK =[]
+for row in design.itertuples(index=True, name='Pandas'):
+    for mark in marks:
+        if mark in getattr(row, "IP_NAME"):
+            if set(conds).issubset(getattr(row, "IP_NAME")) and getattr(row, "NB_IP") > 1:
+                MARK_OK.append(mark)
+
 #built list of MARK_COND_REP from config.yaml and check correspondance between design, config and fastq files
 
 if len(conds) > 1 :
@@ -108,15 +117,25 @@ if len(conds) > 1 :
                                  "file and fastq filenames: %s not found %s times in %s" % (getattr(row, "IP_NAME"),
                                                                                              getattr(row, "NB_IP"),manager.ff.tags))
 else :
+    #todo what we do ??!!
     pass
 
-# From the design file, we get only IP with more than one replicate
+
+# From the design file, we get only IP with more than one replicate and at least one INPUT
 IP_REP = [] # all IP passing IDR
 IP_REP_DUP = [] # corresponding INPUT
+IP_NO_INPUT = [] # all IP with replicates but without INPUT
+INPUT_NA = [] # corresponding INPUT (list of NA according to number of IP)
+IP_NA = [] # all IP without replicates and without INPUT
 for row in design.itertuples(index=True, name='Pandas'):
-    if getattr(row, "NB_IP") > 1:
+    if getattr(row, "NB_IP") > 1 and getattr(row, "NB_INPUT") >= 1:
         IP_REP_DUP.append(getattr(row, "INPUT_NAME")+"_"+rep_flag+"1")
         IP_REP.append(getattr(row, "IP_NAME"))
+    if getattr(row, "NB_IP") > 1 and getattr(row, "NB_INPUT") < 1:
+        IP_NO_INPUT.append(getattr(row, "IP_NAME"))
+        INPUT_NA.append('NA')
+    if getattr(row, "NB_IP") == 1 and getattr(row, "NB_INPUT") < 1:
+        IP_NA.append(getattr(row, "IP_NAME"))
 
 # We get only INPUT with more than one replicate that are linked to an IP with multiple replicates
 INPUT_REP = []
@@ -162,7 +181,8 @@ for row in design.itertuples(index=True, name='Pandas'):
     if getattr(row, "NB_IP") > 1 and getattr(row, "NB_INPUT") > 1 :
         PPR_POOL.append(getattr(row, "IP_NAME") + "_PPRPool")
         INPUT_POOL.append(getattr(row, "INPUT_NAME") + "_Pool")
-    elif getattr(row, "NB_IP") > 1 and getattr(row, "NB_INPUT") < 2 :
+    #elif getattr(row, "NB_IP") > 1 and getattr(row, "NB_INPUT") < 2 :
+    elif getattr(row, "NB_IP") > 1 and getattr(row, "NB_INPUT") == 1 :
         PPR_POOL.append(getattr(row, "IP_NAME") + "_PPRPool")
         INPUT_POOL.append(getattr(row, "INPUT_NAME")+ "_Rep1")
 
@@ -534,6 +554,35 @@ if model in ["narrow", "broad"]:
     expected_output.extend(expand(__macs2_pool__output, zip, POOL=PPR_POOL, INPUT_POOL=INPUT_POOL))
     include: macs2_dynamic("pool")
 
+    # Peak Calling on IP file without INPUT
+    if model in ["narrow"]:
+        # add corresponding options
+        __macs2_no_ctl__options = "-p {} ".format(config["peak_calling"]['cutoff']) + config["peak_calling"]['options']
+    else:
+        __macs2_no_ctl__options = "-p {} --broad --broad-cutoff {} ".format(config["peak_calling"]['cutoff'],
+                                                                          config["peak_calling"]['cutoff']) + \
+                                config["peak_calling"]['options']
+
+    __macs2_no_ctl__input_bam = "{}/{{IP_NA}}_{}_sort_dedup{}.bam".format(blacklist_dir, ref, blacklist)
+    __macs2_no_ctl__input_done = ["{}/{{IP_NA}}_{}_sort_dedup{}.bam".format(blacklist_dir, ref, blacklist)]
+
+    if manager.config.peak_calling.no_model:
+        __macs2_no_ctl__options += " --nomodel "
+        __macs2_no_ctl__input_done += ["5-PhantomPeakQualTools/{{IP_NA}}_{}_sort_dedup{}_spp.out".format(ref, blacklist)]
+        __macs2_no_ctl__shift_file = "5-PhantomPeakQualTools/{{IP_NA}}_{}_sort_dedup{}_spp.out".format(ref, blacklist)
+    else:
+        __macs2_no_ctl__shift_file = "Empty"
+    if manager.paired:
+        __macs2_no_ctl__pe_mode = "no"
+    else:
+        __macs2_no_ctl__pe_mode = "no"
+    __macs2_no_ctl__input = "NA"
+    __macs2_no_ctl__log = "6-PeakCalling/{}/logs/{{IP_NA}}.o".format(model)
+    __macs2_no_ctl__output = "6-PeakCalling/{}/{{IP_NA}}_peaks.{}Peak".format(model, model)
+    __macs2_no_ctl__output_prefix = "6-PeakCalling/{}/{{IP_NA}}".format(model)
+    #expected_output.extend(expand(__macs2_no_ctl__output, IP_NA=IP_NA))
+    #include: macs2_dynamic("no_ctl")
+
 
 else:
     raise ValueError("Invalid choice of model for peak calling. Use either narrow or broad, or set no-model to yes")
@@ -598,58 +647,63 @@ __metrics_peaks__output = "metrics_peaks_mqc.out"
 include: sm.modules["metrics_peaks"]
 expected_output.extend([__metrics_peaks__output])
 
+if len(conds) > 1 :
+    def getPeakFilesByMark(wildcards):
+        ALL_IP = expand(__select_peaks__output, zip, IP_IDR=IP_REP, INPUT=IP_REP_DUP)
+        IP_dict = {}
+        for mark in marks:
+            IP_dict[mark] = []
+            for file in ALL_IP:
+                if mark in file:
+                    IP_dict[mark].append(file)
 
-def getPeakFilesByMark(wildcards):
-    ALL_IP = expand(__select_peaks__output, zip, IP_IDR=IP_REP, INPUT=IP_REP_DUP)
-    IP_dict = {}
-    for mark in marks:
-        IP_dict[mark] = []
-        for file in ALL_IP:
-            if mark in file:
-                IP_dict[mark].append(file)
-
-    return IP_dict[wildcards["MARK"]]
-
-
-
-# get union from all detected peak among all conditions for each mark
-# TODO test with 3 conditions using a different way to call all cond in the output name
-__union_peaks__input = getPeakFilesByMark
-__union_peaks__logs = "7-IDR/logs/{MARK}_Optimal_selected_peaks.o"
-__union_peaks__output = "7-IDR/{{MARK}}_{}u{}_{}.optimal.{}Peak_overlap.bed".format(conds[0], conds[1], ref, model)
-include: sm.modules["union_peaks"]
-expected_output.extend(expand(__union_peaks__output, MARK=marks))
+        return IP_dict[wildcards["MARK"]]
 
 
-# get GFF from peak files
-__bed_to_gff__input = "7-IDR/{{MARK}}_{}u{}_{}.optimal.{}Peak_overlap.bed".format(conds[0], conds[1], ref, model)
-__bed_to_gff__logs = "7-IDR/logs/{MARK}_Optimal_bed2gff.o"
-__bed_to_gff__output = "7-IDR/{{MARK}}_{}u{}_{}.optimal.{}Peak_overlap.gff".format(conds[0], conds[1], ref, model)
-include: sm.modules["bed_to_gff"]
-expected_output.extend(expand(__bed_to_gff__output,  MARK=marks))
+
+    # get union from all detected peak among all conditions for each mark
+    __union_peaks__input = getPeakFilesByMark
+    __union_peaks__logs = "7-IDR/logs/{MARK}_Optimal_selected_peaks.o"
+    if len(conds) == 2 :
+        __union_peaks__output = "7-IDR/{{MARK}}_{}u{}_{}.optimal.{}Peak_overlap.bed".format(conds[0], conds[1], ref, model)
+    elif len(conds) == 3 :
+        __union_peaks__output = "7-IDR/{{MARK}}_{}u{}u{}_{}.optimal.{}Peak_overlap.bed".format(conds[0], conds[1], conds[2], ref, model)
+    else :
+       __union_peaks__output = "7-IDR/{{MARK}}_all_conds_{}.optimal.{}Peak_overlap.bed".format(ref, model)
+
+    include: sm.modules["union_peaks"]
+    expected_output.extend(expand(__union_peaks__output, MARK=MARK_OK))
 
 
-def getBAMFilesByMark(wildcards):
-    ALL_BAM = expand(__macs2_rep__input_bam, IP_REP=IP_ALL)
-    BAM_dict = {}
-    for mark in marks:
-        BAM_dict[mark] = []
-        for file in ALL_BAM:
-            if mark in file:
-                BAM_dict[mark].append(file)
-
-    return BAM_dict[wildcards["MARK"]]
+    # get GFF from peak files
+    __bed_to_gff__input = "7-IDR/{{MARK}}_{}u{}_{}.optimal.{}Peak_overlap.bed".format(conds[0], conds[1], ref, model)
+    __bed_to_gff__logs = "7-IDR/logs/{MARK}_Optimal_bed2gff.o"
+    __bed_to_gff__output = "7-IDR/{{MARK}}_{}u{}_{}.optimal.{}Peak_overlap.gff".format(conds[0], conds[1], ref, model)
+    include: sm.modules["bed_to_gff"]
+    expected_output.extend(expand(__bed_to_gff__output,  MARK=MARK_OK))
 
 
-# feature Count on peaks
-__feature_counts__input = getBAMFilesByMark
-__feature_counts__output_count = "7-IDR/{{MARK}}_Matrix_Optimal_{}Peak.mtx".format(model)
-__feature_counts__gff = "7-IDR/{{MARK}}_{}u{}_{}.optimal.{}Peak_overlap.gff".format(conds[0], conds[1], ref, model)
-__feature_counts__log = "6-PeakCalling/%s/logs/{MARK}_counts.o" % model
-__feature_counts__options = "-t peak -g gene_id"
-__feature_counts__threads = 4
-include: sm.modules["feature_counts"]
-expected_output.extend(expand(__feature_counts__output_count,  MARK=marks))
+    def getBAMFilesByMark(wildcards):
+        ALL_BAM = expand(__macs2_rep__input_bam, IP_REP=IP_ALL)
+        BAM_dict = {}
+        for mark in marks:
+            BAM_dict[mark] = []
+            for file in ALL_BAM:
+                if mark in file:
+                    BAM_dict[mark].append(file)
+
+        return BAM_dict[wildcards["MARK"]]
+
+
+    # feature Count on peaks
+    __feature_counts__input = getBAMFilesByMark
+    __feature_counts__output_count = "7-IDR/{{MARK}}_Matrix_Optimal_{}Peak.mtx".format(model)
+    __feature_counts__gff = "7-IDR/{{MARK}}_{}u{}_{}.optimal.{}Peak_overlap.gff".format(conds[0], conds[1], ref, model)
+    __feature_counts__log = "6-PeakCalling/%s/logs/{MARK}_counts.o" % model
+    __feature_counts__options = "-t peak -g gene_id"
+    __feature_counts__threads = 4
+    include: sm.modules["feature_counts"]
+    expected_output.extend(expand(__feature_counts__output_count,  MARK=MARK_OK))
 
 
 
