@@ -26,7 +26,7 @@ exec(open(sequana.modules["bowtie2_index_dynamic"], "r").read())
 exec(open(sequana.modules["dynamic_unpigz"], "r").read())
 exec(open(sequana.modules["macs2_dynamic"], "r").read())
 exec(open(sequana.modules["preIDR_dynamic"], "r").read())
-
+exec(open(sequana.modules["mark_duplicate_dynamic"], "r").read())
 
 manager = sm.PipelineManager("chipseq", config)
 
@@ -314,10 +314,18 @@ if manager.config.design.spike:
     include: bowtie2_mapping_dynamic("spike", manager)
     expected_output.extend(expand(__bowtie2_mapping_spike__sort, sample=manager.samples))
 
-    #todo include markduplicate on spikes
+    # markduplicate on spikes
+    __mark_duplicates_spike__input = __bowtie2_mapping_spike__sort
+    __mark_duplicates_spike__output = "3-Deduplication/{sample}_spike_sort_dedup.bam"
+    __mark_duplicates_spike__metrics = "3-Deduplication/{sample}_spike_sort_dedup.txt"
+    __mark_duplicates_spike__log_std = "3-Deduplication/logs/{sample}_spike_sort_dedup.o".
+    __mark_duplicates_spike__log_err = "3-Deduplication/logs/{sample}_spike_sort_dedup.e"
+    include: mark_duplicates_dynamic("spike", manager)
+    expected_output.extend(expand(__mark_duplicates_spike__output, sample=manager.samples))
+
 
     # counting on spikes
-    __spikes_counting__input = expand("2-Mapping/{sample}_spike.bam", sample=manager.samples)
+    __spikes_counting__input = expand("3-Deduplication/{sample}_spike_sort_dedup.bam", sample=manager.samples)
     __spikes_counting__output = "2-Mapping/ALL_count_on_spike.mtx"
     __spikes_counting__output_json = "Count_on_spike_mqc.out"
     __spikes_counting__log = "2-Mapping/logs/spike_counting.o"
@@ -329,13 +337,13 @@ if manager.config.design.spike:
 
 # Mark duplicates
 if manager.config.mark_duplicates.do:
-    __mark_duplicates__input = __bowtie2_mapping_ref__sort
-    __mark_duplicates__output = "3-Deduplication/{{sample}}_{}_sort_dedup.bam".format(ref)
-    __mark_duplicates__metrics = "3-Deduplication/{{sample}}_{}_sort_dedup.txt".format(ref)
-    __mark_duplicates__log_std = "3-Deduplication/logs/{{sample}}_{}_sort_dedup.o".format(ref)
-    __mark_duplicates__log_err = "3-Deduplication/logs/{{sample}}_{}_sort_dedup.e".format(ref)
-    include: sm.modules["mark_duplicates"]
-    expected_output.extend(expand(__mark_duplicates__output, sample=manager.samples))
+    __mark_duplicates_ref__input = __bowtie2_mapping_ref__sort
+    __mark_duplicates_ref__output = "3-Deduplication/{{sample}}_{}_sort_dedup.bam".format(ref)
+    __mark_duplicates_ref__metrics = "3-Deduplication/{{sample}}_{}_sort_dedup.txt".format(ref)
+    __mark_duplicates_ref__log_std = "3-Deduplication/logs/{{sample}}_{}_sort_dedup.o".format(ref)
+    __mark_duplicates_ref__log_err = "3-Deduplication/logs/{{sample}}_{}_sort_dedup.e".format(ref)
+    include: mark_duplicates_dynamic("ref", manager)
+    expected_output.extend(expand(__mark_duplicates_ref__output, sample=manager.samples))
 else:
     __mark_duplicates__output = __bowtie2_mapping_ref__sort
 
