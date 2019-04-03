@@ -22,22 +22,23 @@ configfile: "config.yaml"
 cfg = config['bcl2fastq']
 
 
-if os.path.exists(cfg['sample_sheet_file']) is False:
-    raise IOError("{} does not exist".format(cfg['sample_sheet_file']))
+if cfg["sample_sheet_file"].strip() != "":
+    if os.path.exists(cfg['sample_sheet_file']) is False:
+        raise IOError("Sample sheet {} does not exist".format(cfg['sample_sheet_file']))
 
 
 rule all:
     input:
         cfg['output_directory'] + "/Stats/summary.txt",
-        cfg['output_directory'] + "/Stats/undetermined_barcodes.csv",
+        cfg['output_directory'] + "/undetermined_barcodes.csv",
+        cfg['output_directory'] + "/barcodes.png",
         
 
-
 rule plot_unknown_barcodes:
-    input: cfg['output_directory'] + "Stats/Stats.json"
+    input: cfg['output_directory'] + "/Stats/Stats.json"
     output: 
-        csv="undetermined_barcodes.csv", 
-        png="barcodes.png"
+        csv=cfg['output_directory'] + "/undetermined_barcodes.csv", 
+        png=cfg['output_directory'] + "/barcodes.png" 
     run:
         from sequana.demultiplex import StatsFile
         s = StatsFile(input[0])
@@ -63,7 +64,8 @@ rule bcl2fastq:
         #cmd += " --input-dir {}/Data/Intensities/BaseCalls".format(params.indir)
         cmd += " --runfolder-dir {}".format(params.indir)
         cmd += " --intensities-dir {}/Data/Intensities".format(params.indir)
-        cmd += " --sample-sheet {}".format(params.sample_sheet)
+        if params.sample_sheet.strip()!= "":
+            cmd += " --sample-sheet {}".format(params.sample_sheet)
         cmd += " --output-dir {}".format(os.path.abspath(params.outdir))
 
         if cfg['ignore_missing_controls']:
