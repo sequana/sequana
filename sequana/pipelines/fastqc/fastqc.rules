@@ -79,9 +79,11 @@ onsuccess:
     print("You may want to delete the .snakemake directory, fastqc.rules and config.yaml files.")
     print("To do so, you can use the Makefile by typing 'Makefile clean'")
 
-    with open("Makefile", "w") as fout:
-        toclean = config["onsuccess"]['toclean']
-        fout.write("bundle:\n\ttar cvfz fastqc.tar.gz *\n\nclean:\n\trm -rf {}".format(toclean))
+    from sequana.snaketools import OnSuccessCleaner
+    sc = OnSuccessCleaner()
+    sc.files_to_remove.append("fastqc.rules")
+    sc.add_makefile()
+    print("Once done, please clean up the directory using\n'make clean'")
 
 onerror:
     print("An error occurred. See message above.")
