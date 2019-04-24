@@ -24,6 +24,7 @@ the improvment of this script
 For biomics users, please see:
 https://github.com/biomics-pasteur-fr/bioinfo/wiki/NextSeq:-how-to-merge-fusion-lanes
 """
+import sys
 import glob
 import os
 import subprocess
