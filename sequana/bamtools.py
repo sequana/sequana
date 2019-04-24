@@ -167,6 +167,34 @@ class SAMBAMbase():
         return self._N
 
     @_reset
+    def get_df(self, max_align=-1):
+        flags = []
+        starts = []
+        ends = []
+        mapqs = []
+        refnames = []
+        querynames = []
+        querylengths = []
+        for i, a in enumerate(self._data):
+            flags.append(a.flag)
+            starts.append(a.reference_start)
+            ends.append(a.reference_end)
+            mapqs.append(a.mapq)
+            refnames.append(a.reference_name)
+            querynames.append(a.query_name)
+            querylengths.append(a.query_length)
+        df = pd.DataFrame({
+                "flag": flags,
+                "rstart": starts,
+                "rend": ends,
+                "mapqs": mapqs,
+                "rname": refnames,
+                "qname": querynames,
+                "qlen": querylengths
+            })
+        return df
+
+    @_reset
     def get_df_concordance(self, max_align=-1):
         """This methods returns a dataframe with Insert, Deletion, Match,
         Substitution, read length, concordance (see below for a definition)
@@ -549,7 +577,6 @@ class SAMBAMbase():
                 if flag & samflag != 0:
                     samflags_count[samflag] += count
         return samflags_count
-
 
     def plot_bar_mapq(self, fontsize=16, filename=None, ):
         """Plots bar plots of the MAPQ (quality) of alignments
