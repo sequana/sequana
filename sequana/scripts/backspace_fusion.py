@@ -110,7 +110,6 @@ class BackSpace(Common):
         filenames = [x for x in self.filenames if x.startswith(sampleID + "_L00")]
         R1 = sum([1 for filename in filenames if '_R1_' in filename])
         R2 = sum([1 for filename in filenames if '_R2_' in filename])
-        
 
         if R1 == self.Nlanes and R2 == self.Nlanes:
             return True
@@ -234,7 +233,7 @@ class Options(argparse.ArgumentParser):
             help="Where to store the new fastq files")
         self.add_argument("--pattern", dest="pattern", type=str,
             default="*/*fastq*gz",
-            help="Where to store the new fastq files")
+            help="pattern for the input fastq files. Use quotes if wildcards are used")
         self.add_argument("--threads", dest="threads", type=str,
             default=4,
             help="number of threads per job (pigz)")
@@ -242,7 +241,7 @@ class Options(argparse.ArgumentParser):
             action="store_true")
 
         self.add_argument("--queue", dest="queue", type=str,
-            default="common",
+            default="common", choices=["biomics", "common"]
             help="queue to use on the cluster")
         self.add_argument("--lanes", dest="lanes", nargs="+", 
             type=int, required=True)
