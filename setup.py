@@ -122,6 +122,7 @@ setup(
            'sequana_fastq_head=sequana.scripts.fastq_head:main',
            'sequana_fastq_count=sequana.scripts.fastq_count:main',
            'sequana_fastq_summary=sequana.scripts.fastq_summary:main',
+           'sequana_fastq_merge=sequana.scripts.backspace_fusion:main',
            'sequana=sequana.scripts.main:main',
            'sequana_taxonomy=sequana.scripts.taxonomy:main',
            'sequana_coverage=sequana.scripts.coverage:main',
