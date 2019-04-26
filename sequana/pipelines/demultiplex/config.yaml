@@ -25,5 +25,5 @@ bcl2fastq:
     write_fastq_reverse_complement: False
 
 onsuccess:
-    toclean: " slurm*out demultiplex.rules config.yaml .snakemake stats.txt "
+    toclean: " slurm*out demultiplex.rules config.yaml stats.txt "
 
