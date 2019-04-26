@@ -1650,6 +1650,9 @@ class OnSuccessCleaner(object):
         makefile += "clean: clean_files clean_directories\n"
 
         files = self.files_to_remove + [self.makefile_filename]
+        # in case commas are added in the config file
+        files = [x.replace(",", "") for x in files]
+        
         makefile += "clean_files:\n\trm -f {}\n".format(" ".join(files))
 
         dirs = self.directories_to_remove
