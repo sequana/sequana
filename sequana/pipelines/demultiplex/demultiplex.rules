@@ -75,7 +75,7 @@ rule bcl2fastq:
         if cfg['no_bgzf_compression']:
             cmd += " --no-bgzf-compression "
 
-        if cfg['nextseq_do_lane_fusion']:
+        if cfg['do_lane_fusion']:
             cmd += " --no-lane-splitting "
 
         if cfg['write_fastq_reverse_complement']:

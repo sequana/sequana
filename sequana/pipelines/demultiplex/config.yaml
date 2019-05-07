@@ -6,6 +6,7 @@
 #   intensities are expected to be found in input_directory/Data/Intensities
 #   Base call data are to be found in input_directory/Data/Intensities/BaseCalls
 #
+#   if nextseq_do_lane_fusion is set to True, merged all   
 #
 
 input_directory: "%(input_directory)s"
@@ -21,7 +22,7 @@ bcl2fastq:
     ignore_missing_bcls: true
     no_bgzf_compression: true
     options: ""
-    nextseq_do_lane_fusion: False
+    do_lane_fusion: False
     write_fastq_reverse_complement: False
 
 onsuccess:
