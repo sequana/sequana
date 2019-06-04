@@ -65,7 +65,7 @@ def test_standalone_generic(qtbot, tmpdir, module):
 
 
 def test_standalone_generic_with_config(qtbot, tmpdir, module):
-    # Standalone for generic case given a wkdir and snakefile (no config)
+    # Standalone for generic case given a wkdir and snakefile
     wkdir = TemporaryDirectory()
     args = Namespace(wkdir=wkdir.name,
                 snakefile=module.snakefile, configfile=module.config)

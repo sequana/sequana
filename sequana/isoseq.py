@@ -40,7 +40,7 @@ class IsoSeqQC(object):
     Use get_isoseq_files on smrtlink to get the proper files
 
     iso = IsoSeqQC()
-    iso.hist_read_length_consensus_isoform() # histo CCS 
+    iso.hist_read_length_consensus_isoform() # histo CCS
     iso.stats() # "CCS" key is equivalent to summary metrics in CCS report
 
 
@@ -367,7 +367,7 @@ class PacbioIsoSeqMappedIsoforms(object):
         pylab.xlabel("Mapping quality", fontsize=fontsize)
 
     def plot_sirv_by_group(self, title, shift=5, plot=False, mapq_min=-1):
-        aa = self.df.query('reference_name!=-1').copy()
+        aa = self.df.query("reference_name not in [-1, '-1']").copy()
         if len(aa) == 0:
             return pd.Series(), self.df
 
@@ -383,35 +383,59 @@ class PacbioIsoSeqMappedIsoforms(object):
         return mapped, self.df
 
 
-class SirvReference():
+class SIRVReference():
     """
+
+    See https://www.lexogen.com/sirvs/downloads/ to download one of the XLSX
+    file
+
+    ::
+
+        ss = isoseq.SirvReference()
+        ss.from_excel("SIRV_Set2.xls")
+        ss.to_fasta("temp.fasta")
+
 
     """
     def __init__(self):
         pass
 
-    def from_excel(self, filename):
+    def from_excel(self, filename, nrows=100):
         """
         skip 4 empty rows. next two are a header split on two lines
 
         """
+        # header is split on two rows, so we need to skip it 
         df = pd.read_excel(filename,  skiprows=4, header=None)
         assert df.iloc[1, 4] == "c" # this column will be used
         assert df.iloc[0, 2] == "SIRV ID"
         assert df.iloc[0, 1] == "SIRV gene"
         assert df.iloc[1, 23] == "length (nt)"
-        assert df.iloc[1, 26] == "Sequence"
-        assert df.iloc[1, 29] == "Sequence"
-        # filter out useless columns and drop header
-        df = df.iloc[2:, [1,2,4,23,26,29]]
+        assert df.iloc[1, 25] == "pA length (nt)"
+        assert df.iloc[1, 26] == "Sequence" # with polyA
+        assert df.iloc[1, 29] == "Sequence" # without polyA !! 
+        # in excel this last column is actually an equation based on the
+        # sequence with polyA and may be empty when using from_excel method.
+
+        # filter out useless columns and first two lines
+        df = df.iloc[2:, [2,4,23,25,26, 29]]
+        # drop useless rows !! keep this statement after the first filtering
+        df = df[df.iloc[:,0].isnull() == False]
+
         # drop header
         df.reset_index(inplace=True, drop=True)
 
-        print(df.size)
-        print(df.ndim)
-        self.df1 = df
-        df.columns = ["sirv_gene", "sirv_id", "annotation", "length", 
-                      "sequence_with_polya", "sequence"]
+
+        df.columns = ["sirv_id", "annotation", "length",
+                      "length_polyA", "sequence_with_polya", "sequence"]
+
+        # remove and replace sequence column using sequence_with_poly and
+        # removing the polyA
+        #df.drop("sequence", inplace=True)
+        seq = [a[0:-b] for a,b in zip(df.sequence_with_polya, df.length_polyA)]
+        df['sequence'] = seq
+
+
         self.df = df
 
     def to_fasta(self, filename):
@@ -419,8 +443,6 @@ class SirvReference():
         with open(filename, "w") as fout:
             for _, this in data.iterrows():
                 fout.write(">{}\n{}\n".format(this.sirv_id, this.sequence))
-
-
 
 
 class SIRV(object):
@@ -558,7 +580,7 @@ class PacbioIsoSeqMultipleIsoforms(object):
 
         df = pd.DataFrame(index=sirv_names, columns=self.labels)
         for i, data in enumerate(self.rawdata):
-            aa = data.query("reference_name!=-1").copy()
+            aa = data.query("reference_name not in [-1, '-1']").copy()
             sirv_detected = aa.groupby("reference_name").count()['mapq']
             df[self.labels[i]] = sirv_detected
         return df
@@ -580,7 +602,7 @@ def get_stats(pattern, mode):
         b = isoseq.PacbioIsoSeqMappedIsoforms(filename)
         N = Summary(filename.split("/")[0]+"/sequana_summary_isoseq.json").data["hq_isoform"]['N']
         data[0].append(N)
-        data[1].append(len(b.df.query("reference_name!=-1")))
+        data[1].append(len(b.df.query("reference_name not in [-1, '-1']")))
         print("scanned {}".format(filename))
     return data
 
@@ -588,6 +610,11 @@ def get_stats(pattern, mode):
 
 
 class GeneCoverage():
+    """
+
+    - column 12 should be the percentage of gene coverage
+    
+    """
     def __init__(self, filename):
         self.filename = filename
         self.df = pd.read_csv(filename, header=None, sep="\t")
@@ -595,23 +622,49 @@ class GeneCoverage():
 
     def __str__(self):
         icol = self.coverage_column
-        L = len(self.df)
+        L = float(len(self.df))
         S0 = sum(self.df[icol]==0)
         S2 = sum(self.df[icol]==1)
         S1 = L - S0 - S2
         S90 = sum(self.df[icol]>0.9)
+        S50 = sum(self.df[icol]>0.5)
+        S99 = sum(self.df[icol]>0.99)
         txt = "Number of genes: {}\n".format(len(self.df))
-        txt += "Fully detected genes: {} ({:.2}%)\n".format(S2, S2/L*100)
+        txt += "Fully detected genes: {} ({:.2f}%)\n".format(S2, S2/L*100)
         txt += "Partially detected genes: {} ({:.2f}%)\n".format(S1, S1/L*100)
+        txt += "Detected genes (99% covered): {} ({:.2f}%)\n".format(S99, S99/L*100)
         txt += "Detected genes (90% covered): {} ({:.2f}%)\n".format(S90, S90/L*100)
+        txt += "Detected genes (50% covered): {} ({:.2f}%)\n".format(S50, S50/L*100)
         txt += "Undetected genes: {} ({:.2f}%)\n".format(S0, S0/L*100)
         return txt
 
+    def plot(self, X=[0,0.1,0.2,0.3,.4,.5,.6,.7,.8,.9,.95,.99,.999,1],
+            fontsize=16, label=None):
+        """plot percentage of genes covered (y axis) as a function of percentage
+        of genes covered at least by X percent (x-axis). 
 
+        """
+        icol = self.coverage_column
+        N = float(len(self.df))
+        X = np.array(X) 
+        Y = np.array([sum(self.df[icol]>x)/N*100 for x in X])
+        if label is None:
+            pylab.plot(X*100, Y, "o-")
+        else:
+            pylab.plot(X*100, Y, "o-", label=label)
+        pylab.xlabel("Gene coverage (%)", fontsize=fontsize)
+        pylab.ylabel("Percentage of genes covered", fontsize=fontsize)
+        for this in [25,50,75]:
+            pylab.axhline(this, color="r", alpha=0.5, ls="--")
+            pylab.axvline(this, color="r", alpha=0.5, ls="--")
 
-
-
-
+    def get_percentage_genes_covered_at_this_fraction(self, this):
+        assert this<=1 and this>=0
+        icol = self.coverage_column
+        X = pylab.linspace(0, 1, 101)
+        N = float(len(self.df))
+        Y = np.array([sum(self.df[icol]>x)/N*100 for x in X])
+        return np.interp(this, X, Y)
 
 
 

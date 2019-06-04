@@ -26,6 +26,7 @@ import subprocess as sp
 from sequana.resources import snpeff
 from sequana import FastA
 from sequana import logger
+logger.name = __name__
 
 
 class SnpEff(object):
@@ -140,7 +141,8 @@ class SnpEff(object):
         args_ann = ["snpEff", "-formatEff"]
         if html_output is not None:
             args_ann += ["-s", html_output]
-        args_ann += [options, self.ref_name, '-v', vcf_filename]
+        args_ann += options.split()
+        args_ann += [self.ref_name, '-v', vcf_filename]
 
         # Launch snpEff
         if self.log_file:

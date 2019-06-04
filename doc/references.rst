@@ -83,6 +83,15 @@ Kmer module
     :members:
     :undoc-members:
 
+ITOL module
+-----------
+
+.. automodule:: sequana.itol
+    :members: 
+    :undoc-members:
+
+
+
 IOTools module
 ----------------
 .. automodule:: sequana.iotools

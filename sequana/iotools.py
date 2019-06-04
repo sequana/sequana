@@ -17,7 +17,7 @@
 import re
 
 from sequana import logger
-
+logger.name = __name__
 import ruamel.yaml
 
 __all__ = ["YamlDocParser"]

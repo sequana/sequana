@@ -17,7 +17,7 @@ rule snpeff_add_locus_in_fasta:
     """
     input:
         fasta = __snpeff_add_locus_in_fasta__input,
-        ann = config["snpeff"]["reference"]
+        ann = config["snpeff"]["reference_file"]
     output:
         fasta = __snpeff_add_locus_in_fasta__output
     log:

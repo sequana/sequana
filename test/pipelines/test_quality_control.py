@@ -11,13 +11,14 @@ class QualityPipeline(Pipeline):
         super(QualityPipeline, self).__init__(wk)
         data = sequana_data("Hm2_GTGAAA_L005_R1_001.fastq.gz")
         input_directory = os.path.dirname(data)
-        self.input_pattern = input_directory + "/Hm*gz"
+        self.input_pattern = "Hm*gz"
         self.pipeline = "quality_control"
 
         self.output = self.wk + "/Hm2_GTGAAA_L005/report_qc_Hm2_GTGAAA_L005/summary.json"
         cmd = [
             "sequana", "--pipeline", self.pipeline,
             "--input-pattern", '%s'% self.input_pattern,
+            "--input-directory", '%s'% input_directory,
             "--working-directory", self.wk,
             "--adapters", "Nextera", "--force"]
 

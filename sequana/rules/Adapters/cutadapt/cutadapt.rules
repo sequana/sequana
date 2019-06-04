@@ -54,7 +54,7 @@ rule cutadapt:
         mode = __cutadapt__mode,
         wkdir = __cutadapt__wkdir,
         design = __cutadapt__design,
-        design_adapter = __cutadapt__design_adapter,
+        design_adapter = __cutadapt__design_adapter,  # TODO this is the adapter kit. to rename
         sample = __cutadapt__sample,
     threads:
         config['cutadapt']['threads']
@@ -62,25 +62,39 @@ rule cutadapt:
     run:
         executable = config['cutadapt']['tool_choice'] # could be cutadapt or atropos
 
+        # Fill the fwd and revcomp variables depending on the config file
         if config['cutadapt']['design_file']:
             from sequana import FindAdaptersFromDesign
-            # FIXME how important is this that the sample name contains a _
-            # character ?
-            sample = params.sample.split("_")[0]
-            fa = FindAdaptersFromDesign(params.design, params.design_adapter)
-            fwd, rev = fa.save_adapters_to_fasta(sample, output_dir=params.wkdir)
+            # sample names are e.g. SAMPLE1_CACGAT and therefore we should split
+            # the real sample name from the index. Unfortunately, users may
+            # call their sample name "SAMPLE1_MYNAME_CAGCGT. How do we know
+            # that the index CAGCCT is not part of the name ? How do we know
+            # how many underscores the users used in its sample name ? There is
+            # no way to know ... so we will try by trial and error
+            underscores = params.sample.count("_")
+            for i, trial in enumerate(range(underscores+1)):
+                sample = params.sample.rsplit("_", i)[0]
+                #print("{} {}".format(sample, i), flush=True)
+                try:
+                    fa = FindAdaptersFromDesign(params.design, params.design_adapter)
+                    fwd, revcomp = fa.save_adapters_to_fasta(sample, output_dir=params.wkdir)
+                    break # we succeed to find the correct name
+                except ValueError:
+                    pass
             fwd = "file:%s" % fwd
-            rev = "file:%s" % rev
+            revcomp = "file:%s" % revcomp
         elif params.design_adapter:
             from sequana.adapters import get_sequana_adapters
             fwd = "file:%s" % get_sequana_adapters(params.design_adapter, "fwd")
-            rev = "file:%s" % get_sequana_adapters(params.design_adapter, "rev")
+            revcomp = "file:%s" % get_sequana_adapters(params.design_adapter, "revcomp")
         else:
             fwd = params.fwd
-            rev = params.rev
+            revcomp = params.rev
 
 
         # For atropos, output must be txt AND json for the module to work.
+        #
+        # Paired data
         if len(input.fastq) == 2:
             if executable == "atropos":
                 cmd = "%s trim -p {output.fastq[1]}" % executable
@@ -102,8 +116,8 @@ rule cutadapt:
             else:
                 cmd += " -{params.mode} XXXX "
 
-            if rev:
-                cmd += " -%s %s " % (mode2, rev)
+            if revcomp:
+                cmd += " -%s %s " % (mode2, revcomp)
             else:
                 cmd += " -%s XXXX " % mode2
 

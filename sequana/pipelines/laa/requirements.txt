@@ -1,0 +1,10 @@
+- laa
+- pigz
+- ccs
+- minimap2
+- bamtools
+- samtools
+- igvtools
+- freebayes
+- kraken
+- snpEff

@@ -28,6 +28,17 @@ logger.name = __name__
 __all__ = ["FastA"]
 
 
+def is_fasta(filename):
+    with open(filename, "r") as fin:
+        try:
+            line = fin.readline()
+            assert line.startswith(">")
+            line = fin.readline()
+            return True
+        except:
+            return False
+
+
 # cannot inherit from FastxFile (no object in the API ?)
 class FastA(object):
     """Class to handle FastA files. Cannot be compressed
@@ -156,6 +167,18 @@ class FastA(object):
                 pb.animate(i+1)
         return cherries
 
+    def get_stats(self):
+        from pylab import mean
+        stats = {}
+        stats["N"] = len(self.sequences)
+        stats["mean_length"] = mean(self.lengths)
+        return stats
+
+    def reverse_and_save(self, filename):
+        with open(filename, "w") as fout:
+            for read in self:
+                fout.write(">{}\t{}\n{}\n".format(read.name, read.comment,
+                    read.sequence[::-1]))
 
 
 

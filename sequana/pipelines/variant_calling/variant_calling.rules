@@ -54,7 +54,6 @@ __report_dir__ = 'report_vc_{0}'.format(manager.sample)
 reference = config["bwa_mem_ref"]["reference"]
 # Add locus in FASTA file for snpEff
 if config["snpeff"]["do"]:
-    from sequana.snpeff import SnpEff
     __snpeff_add_locus_in_fasta__log = "common_logs/snpeff_add_locus_in_fasta.log"
     __snpeff_add_locus_in_fasta__input = reference
     __snpeff_add_locus_in_fasta__output = "reference/{0}".format(
@@ -72,8 +71,7 @@ else:
     __bwa_mem_ref__reference = reference
 
 # The pipeline can be started with sorted BAM files
-if config['input_extension'].endswith('bam') or \
-    config['input_pattern'].endswith('bam'):
+if config['input_pattern'].endswith('bam'):
     __bwa_mem_ref__fai = __bwa_mem_ref__reference + ".fai"
     __bwa_mem_ref__bam = __rawdata__input
 else:
@@ -139,7 +137,7 @@ if config["sequana_coverage"]["do"]:
     __sequana_coverage__bed = __samtools_depth__output
     __sequana_coverage__fasta = __bwa_mem_ref__reference
     if config['snpeff']['do']:
-        __sequana_coverage__gbk = config['snpeff']['reference']
+        __sequana_coverage__gbk = config['snpeff']['reference_file']
     else:
         __sequana_coverage__gbk = []
     __sequana_coverage__csv = manager.getname("sequana_coverage", ".csv")
@@ -173,6 +171,7 @@ if config["snpeff"]["do"]:
     __snpeff__output = manager.getname("snpeff", ".ann.vcf")
     __snpeff__html = manager.getname("snpeff", ".snpeff.html")
     __snpeff__log = manager.getlogdir("snpeff")
+    __snpeff__csv = manager.getname("snpeff", "snpeff.csv")
     include: sm.modules["snpeff"]
     __freebayes_vcf_filter__input = __snpeff__output
 else:
@@ -211,7 +210,7 @@ if config['joint_freebayes']['do']:
         __snpeff_joint__log = 'joint_calling/logs/snpeff_joint.log'
         __snpeff_joint__output = 'joint_calling/joint_calling.ann.vcf'
         __snpeff_joint__html = 'joint_calling/snpeff_joint.html'
-        __snpeff_joint__gbk = config['snpeff']['reference']
+        __snpeff_joint__gbk = config['snpeff']['reference_file']
         __snpeff_joint__options = config['snpeff']['options']
         exec(open(sequana.modules["snpeff_dynamic"], "r").read())
         include: snpeff_dynamic('joint', manager)
@@ -231,7 +230,9 @@ if config['joint_freebayes']['do']:
 ##############################################################################
 
 # Create requirements.txt(dependencies)
+__conda__output = "requirements.txt"
 include: sm.modules["conda"] 
+expected_output.append([__conda__output])
 
 # Create rulegraph
 __rulegraph__input = __snakefile__

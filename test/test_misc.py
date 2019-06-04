@@ -1,5 +1,10 @@
 from sequana.misc import *
+from math import pi, sqrt
 
+
+def test_normpdf():
+    sigma = 2
+    assert sqrt(2*pi)*sigma * normpdf(0, 0, sigma) == 1
 
 def test_textwrap():
     res = textwrap("test1test2", width=5, indent=0)

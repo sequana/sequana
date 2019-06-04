@@ -57,11 +57,34 @@ remove such as PCRFree, Nextera, TruSeq, etc. Note, however, that this removes
 all adapters. It is useless and may take more time than expected. Instead, you
 can provide an *experimental design* file that associate each sample with
 its adapter. See the reference for more information :class:`~sequana.expdesign.ExpDesignAdapter`
-Typically, you will provide a file such as::
+Typically, you will provide a Sample Sheet (generated with IEM tool from
+Illumina), which looks like::
 
-    SampleID, Index1_Seq
-    Hm2, GTGAAA
-    Hm3, CGATGT
+    [Header]
+    IEMFileVersion,4
+    Investigator Name,lauma
+    Experiment Name,181207_PE-MPdbl_300v3_std
+    Date,12/6/2018
+    Workflow,GenerateFASTQ
+    Application,FASTQ Only
+    Assay,Nextera XT
+    Description,
+    Chemistry,Amplicon
+
+    [Reads]
+    300
+    300
+
+    [Settings]
+    ReverseComplement,0
+    Adapter,CTGTCTCTTATACACATCT
+
+    [Data]
+    Sample_ID,Sample_Name,Sample_Plate,Sample_Well,I7_Index_ID,index,I5_Index_ID,index2,Sample_Project,Description
+    AL_LB_C_1,AL_LB_C_1,TP-third,A01,N701,TAAGGCGA,S517,GCGTAAGA,,
+    AL_LB_C_2,AL_LB_C_2,TP-third,A02,N702,CGTACTAG,S517,GCGTAAGA,,
+    AL_LB_C_3,AL_LB_C_3,TP-third,A03,N703,AGGCAGAA,S517,GCGTAAGA,,
+    AL_LB_C_4,AL_LB_C_4,TP-third,A04,N704,TCCTGAGC,S517,GCGTAAGA,,
 
 
 

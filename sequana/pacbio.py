@@ -33,7 +33,7 @@ logger.name == __name__
 from sequana.summary import Summary
 
 
-__all__ = ["PacbiobMappedBAM", "PacbioSubreads", "PBSim", "BAMSimul"]
+__all__ = ["PacbioMappedBAM", "PacbioSubreads", "PBSim", "BAMSimul", "Barcoding"]
 
 
 # from pbcore.io import openAlignmentFile
@@ -156,9 +156,9 @@ class PacbioBAMBase(object):
         .. plot::
             :include-source:
 
-            from sequana.pacbio import PacbioBAM
+            from sequana.pacbio import PacbioSubreads
             from sequana import sequana_data
-            b = PacbioBAM(sequana_data("test_pacbio_subreads.bam"))
+            b = PacbioSubreads(sequana_data("test_pacbio_subreads.bam"))
             b.hist_GC()
 
         """
@@ -198,9 +198,9 @@ class PacbioBAMBase(object):
         .. plot::
             :include-source:
 
-            from sequana.pacbio import PacbioBAM
+            from sequana.pacbio import PacbioSubreads
             from sequana import sequana_data
-            b = PacbioBAM(sequana_data("test_pacbio_subreads.bam"))
+            b = PacbioSubreads(sequana_data("test_pacbio_subreads.bam"))
             b.plot_GC_read_len(bins=[10, 10])
 
         """
@@ -239,9 +239,9 @@ class PacbioBAMBase(object):
         .. plot::
             :include-source:
 
-            from sequana.pacbio import PacbioBAM
+            from sequana.pacbio import PacbioSubreads
             from sequana import sequana_data
-            b = PacbioBAM(sequana_data("test_pacbio_subreads.bam"))
+            b = PacbioSubreads(sequana_data("test_pacbio_subreads.bam"))
             b.hist_read_length()
 
         """
@@ -469,7 +469,7 @@ class PacbioSubreads(PacbioBAMBase):
         if read_lengths is None:
             self.reset()
             read_lengths = [read.query_length for i, read in enumerate(self.data)]
-        
+
         N = len(read_lengths)
 
         if expected_coverage and reference_length:
@@ -536,9 +536,9 @@ class PacbioSubreads(PacbioBAMBase):
         .. plot::
             :include-source:
 
-            from sequana.pacbio import PacbioBAM
+            from sequana.pacbio import PacbioSubreads
             from sequana import sequana_data
-            b = PacbioBAM(sequana_data("test_pacbio_subreads.bam"))
+            b = PacbioSubreads(sequana_data("test_pacbio_subreads.bam"))
             b.hist_snr()
 
         """
@@ -597,9 +597,9 @@ class PacbioSubreads(PacbioBAMBase):
         .. plot::
             :include-source:
 
-            from sequana.pacbio import PacbioBAM
+            from sequana.pacbio import PacbioSubreads
             from sequana import sequana_data
-            b = PacbioBAM(sequana_data("test_pacbio_subreads.bam"))
+            b = PacbioSubreads(sequana_data("test_pacbio_subreads.bam"))
             b.hist_nb_passes()
         """
         max_nb_pass = self.df.nb_passes.max()
@@ -779,10 +779,11 @@ class PacbioMappedBAM(PacbioBAMBase):
         data = []
         self.reset()
         count = 0
+
         for align in self.data:
             mapq = align.mapq
             length = align.rlen
-            if self.method == "blasr":
+            if self.method in ["blasr", "minimap2"]:
                 this = Cigar(align.cigarstring).stats()
                 S, D, I, M = this[4] , this[2] , this[1], this[0]
                 concordance = 1 - (D+I+S)/(D + I + M + S)
@@ -793,7 +794,7 @@ class PacbioMappedBAM(PacbioBAMBase):
                 if total:concordance = 1- (error)/(total)
                 else:concordance = 0
             data.append([mapq, length, concordance])
-            if count % 10000 == 0: 
+            if count % 10000 == 0:
                 logger.info("%s" % count)
             count+=1
         return data
@@ -826,12 +827,16 @@ class PacbioMappedBAM(PacbioBAMBase):
         from sequana import Cigar
         self._concordance = []
         self.reset()
-        if self.method == "blasr":
+        count = 0
+        if self.method in ["blasr", "minimap2"]:
             for align in self.data:
                 if align.cigarstring:
-                    this = Cigar(align.cigarstring).stats()
-                    S, D, I, M = this[4] , this[2] , this[1], this[0]
+                    this = Cigar(align.cigarstring).as_dict()
+                    S, D, I, M = this["S"] , this["D"] , this["I"], this["M"]
                     self._concordance.append((1- (D+I+S)/(D+I+M+S)))
+                count += 1
+                if count %1000 ==0 : print(count)
+                if count == 10000: break
         elif self.method == "bwa":
             for align in self.data:
                 if align.cigarstring:
@@ -1066,7 +1071,7 @@ class PBSim(object):
         pylab.plot(vec)
         pylab.subplot(212)
 
-        pylab.hist(vec[burn:], bins=bins,normed=1)
+        pylab.hist(vec[burn:], bins=bins, normed=1)
         pylab.plot(x,y,'r-')
         pylab.ylabel('Frequency')
         pylab.xlabel('x')
@@ -1077,10 +1082,124 @@ class PBSim(object):
 
 
 
+class Barcoding():
+    """
+
+    Read as input a file created by smrtlink that stores statistics about each
+    barcode. This is a simple CSV file with one line per barcode<
 
 
+    """
+    def __init__(self, filename):
+        self.df = pd.read_csv(filename)
+        self.df_not_barcoded = self.df[self.df['Barcode Index'] == 'None']
+        self.df_barcoded = self.df[self.df['Barcode Index'] != 'None']
 
+    def plot_polymerase_per_barcode(self, fontsize=12, unbarcoded=True):
+        """Number Of Polymerase Reads Per Barcode"""
+        PR = self.df_barcoded["Polymerase Reads"].sum()
+        data = self.df_barcoded['Polymerase Reads'].sort_values(ascending=False).values
+        pylab.plot([int(x) for x in range(1, len(data)+1)], data, label="barcodes")
+        pylab.axhline(data.mean(), color="r", label="average")
 
+        try:
+            if unbarcoded is True:
+                unbar = self.df_not_barcoded['Polymerase Reads'].iloc[0]
+                pylab.axhline(unbar, color="k", ls="--",label="not barcoded")
+        except:
+            pass
 
+        pylab.xlabel("Barcode Rank Order", fontsize=fontsize)
+        pylab.ylabel("Counts of Reads", fontsize=fontsize)
+        pylab.title("Total Polymerase count: {}".format(PR))
+        pylab.legend()
+        pylab.ylim(ymin=0)
+        try:pylab.tight_layout()
+        except:pass
 
+    def hist_polymerase_per_barcode(self, bins=10, fontsize=12):
+        """histogram of number of polymerase per barcode
+
+        Cumulative histogram gives total number of polymerase reads
+
+        """
+        PR = self.df_barcoded["Polymerase Reads"].sum()
+        self.df_barcoded['Polymerase Reads'].hist(bins=bins, ec="k", rwidth=0.8)
+        pylab.title("Total Polymerase count: {}".format(PR))
+        pylab.xlabel("Number of Polymerase Reads", fontsize=fontsize)
+        pylab.ylabel("Number of Barcoded Samples", fontsize=fontsize)
+        try:pylab.tight_layout()
+        except:pass
+
+    def hist_mean_polymerase_read_length(self, bins=10, fontsize=12):
+        self.df_barcoded['Mean Read Length'].hist(bins=bins, ec="k", rwidth=0.8)
+        pylab.xlabel("Mean Polymerase Read Length", fontsize=fontsize)
+        pylab.ylabel("Number of Barcoded Samples", fontsize=fontsize)
+        try:pylab.tight_layout()
+        except:pass
+
+    def plot_subreads_histogram(self, bins=10, fontsize=12):
+        self.df_barcoded['Subreads'].hist(bins=bins, ec="k", rwidth=0.8)
+        pylab.xlabel("Number of subreads", fontsize=fontsize)
+        pylab.ylabel("Number of Barcoded Samples", fontsize=fontsize)
+        try:pylab.tight_layout()
+        except:pass
+
+    def hist_quality_per_barcode(self, bins=10, fontsize=12):
+        self.df_barcoded['Mean Barcode Quality'].hist(bins=bins, ec="k", rwidth=0.8)
+        pylab.xlabel("Mean Barcode Quality", fontsize=fontsize)
+        pylab.ylabel("Number of Barcoded Samples", fontsize=fontsize)
+        try:pylab.tight_layout()
+        except:pass
+
+    def __str__(self):
+        PR = self.df_barcoded['Polymerase Reads']
+        MRL = self.df_barcoded['Mean Read Length']
+        PR_NOBC = self.df_not_barcoded['Polymerase Reads'].values[0]
+
+        txt = "{} unique barcodes\n".format(len(self.df_barcoded))
+        txt += "{} barcoded PR reads\n".format(PR.sum())
+        txt += "{} unbarcoded PR Reads\n".format(PR_NOBC)
+        txt += "{} total PR reads\n".format(int(PR.sum()+PR_NOBC))
+        txt += "{} mean PR Reads per bar code\n".format(int(PR.mean()))
+        txt += "{} max PR reads per barcode\n".format(PR.max())
+        txt += "{} min PR reads per barcode\n".format(PR.min())
+
+        PASSES = self.df_barcoded['Subreads'].sum() / self.df_barcoded['Polymerase Reads'].sum()
+        txt += "{} min number of passes\n".format(int(PASSES))
+
+        M = int((PR * MRL).sum()/PR.sum())
+        txt += "{} Mean read length\n".format(M)
+
+        txt += "{} Mean Longest Subread Length\n".format(
+            int(self.df_barcoded['Longest Subread Length'].mean()))
+        return txt
+
+    def plot_and_save_all(self, dpi=100, directory="."):
+
+        def savefile(filename):
+            outname = directory + os.sep +filename
+            pylab.savefig(outname, dpi=dpi)
+
+        pylab.clf()
+        self.hist_polymerase_per_barcode()
+        savefile("barcoding_hist_polymerase_per_barcode.png")
+
+        pylab.clf()
+        self.hist_quality_per_barcode()
+        savefile("barcoding_hist_quality_per_barcode.png")
+
+        pylab.clf()
+        self.hist_mean_polymerase_read_length()
+        savefile("barcoding_hist_mean_polymerase_read_length.png")
+
+        pylab.clf()
+        self.plot_polymerase_per_barcode()
+        savefile("barcoding_polymerase_per_barcode.png")
+
+        pylab.clf()
+        self.plot_subreads_histogram()
+        savefile("barcoding_subreads_histogram.png")
+
+        print(self)
 

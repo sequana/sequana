@@ -32,3 +32,10 @@ RNAseq
 ========
 
 - data/KO_ATCACG_R1_test.fastq.gz : a small sample of 500 reads for testing
+
+SIRV 
+=======
+
+The SIRV.fa file is used for testing but can also be used for ISOSEQ analysis to
+identify spikes that were possibly injected. This file is made of 68 spikes (Lot 001603 ) 
+from lexogen.

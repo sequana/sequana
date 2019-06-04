@@ -37,6 +37,7 @@ from easydev.console import purple
 
 from pylab import show, figure, savefig
 
+logger.name = __name__
 
 
 # http://stackoverflow.com/questions/18462610/argumentparser-epilog-and-description-formatting-in-conjunction-with-argumentdef
@@ -417,8 +418,11 @@ def run_analysis(chrom, options, feature_dict):
 
     # Create directory and save ROIs
     directory = options.output_directory
+
     directory += os.sep + "coverage_reports"
-    directory += os.sep + chrom.chrom_name
+
+
+    directory += "{}{}".format(os.sep, chrom.chrom_name)
     mkdirs(directory)
     ROIs.df.to_csv("{}/rois.csv".format(directory))
 

@@ -18,6 +18,10 @@
 import time
 import os
 import json
+from sequana import logger
+logger.name = __name__
+
+
 
 __all__ = ["Summary"]
 

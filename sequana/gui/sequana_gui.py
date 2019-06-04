@@ -212,6 +212,12 @@ class SequanaFactory(BaseFactory):
             return module.cluster_config
     clusterconfigfile = property(_get_clusterconfigfile)
 
+    def _get_multiqcconfigfile(self):
+        if self.pipeline:
+            module = snaketools.Module(self.pipeline)
+            return module.multiqc_config
+    multiqcconfigfile = property(_get_multiqcconfigfile)
+
     def _get_schemafile(self):
         if self.pipeline:
             module = snaketools.Module(self.pipeline)
@@ -240,6 +246,8 @@ class SequanaFactory(BaseFactory):
             txt +=" - cluster config: %s\n" % self.clusterconfigfile
         if self.schemafile:
             txt +=" - schema config: %s" % self.schemafile
+        if self.multiqcconfigfile:
+            txt +=" - schema config: %s" % self.multiqcconfigfile
         return txt % (self.pipeline, in1, in2, self.directory)
 
 
@@ -257,6 +265,7 @@ class GenericFactory(BaseFactory):
         self._config_browser.clicked_connect(self._switch_off_run)
         self._snakefile_browser.clicked_connect(self._switch_off_run)
         self._schema = None
+        self._multiqcconfigfile = None
 
     def _return_none(self, this):
         if this is None or len(this) == 0:
@@ -275,6 +284,10 @@ class GenericFactory(BaseFactory):
     def _get_schemafile(self):
         return self._return_none(self._schema)
     schemafile = property(_get_schemafile)
+
+    def _get_multiqcconfigfile(self):
+        return self._return_none(self._multiqcconfigfile)
+    multiqcconfigfile = property(_get_multiqcconfigfile)
 
     def _get_config(self):
         filename = self._return_none(self._config_browser.get_filenames())
@@ -304,9 +317,9 @@ class GenericFactory(BaseFactory):
 
     def __repr__(self):
         txt = super(GenericFactory, self).__repr__()
-        txt += "\nsnakefile:%s\nconfigfile:%s\ndirectory:%s\nschema:%s"
+        txt += "\nsnakefile:%s\nconfigfile:%s\ndirectory:%s\nschema:%s\nmultiqcconfigfile:%s"
         return txt % (self.snakefile, self.configfile, self.directory,
-            self.schemafile)
+            self.schemafile, self.multiqcconfigfile)
 
 
 class SequanaGUI(QMainWindow, Tools):
@@ -327,7 +340,7 @@ class SequanaGUI(QMainWindow, Tools):
 
     """
     _not_a_rule = {"requirements", "gatk_bin", "input_directory",
-                    "input_samples", "input_pattern", "ignore"}
+                    "input_pattern", "ignore"}
     _browser_keywords = {"reference"}
     _to_exclude = ["atac-seq", "compressor"]
 
@@ -497,7 +510,8 @@ class SequanaGUI(QMainWindow, Tools):
             ))
         colorlog.getLogger().addHandler(self.logTextBox)
         # You can control the logging level
-        colorlog.getLogger().setLevel(colorlog.logging.logging.INFO)
+        #colorlog.getLogger().setLevel(colorlog.logging.logging.INFO)
+        self.set_level()
         self.ui.layout_logger.addWidget(self.logTextBox.widget)
 
         # Connectors to actions related to the menu bar
@@ -692,11 +706,11 @@ class SequanaGUI(QMainWindow, Tools):
         self.ui.layout_sequana_wkdir.addWidget(saf._directory_browser)
 
         # add widget for the input sample
-        self.ui.layout_sequana_input_files.addWidget(saf._sequana_paired_tab)
-        hlayout = QW.QHBoxLayout()
-        hlayout.addWidget(saf._sequana_readtag_label2)
-        hlayout.addWidget(saf._sequana_readtag_lineedit2)
-        self.ui.layout_sequana_input_files.addLayout(hlayout)
+        #self.ui.layout_sequana_input_files.addWidget(saf._sequana_paired_tab)
+        #hlayout = QW.QHBoxLayout()
+        #hlayout.addWidget(saf._sequana_readtag_label2)
+        #hlayout.addWidget(saf._sequana_readtag_lineedit2)
+        #self.ui.layout_sequana_input_files.addLayout(hlayout)
 
         # add widget for the input directory
         self.ui.layout_sequana_input_dir.addWidget(saf._sequana_directory_tab)
@@ -712,7 +726,7 @@ class SequanaGUI(QMainWindow, Tools):
 
     @QtCore.pyqtSlot(str)
     def _update_sequana(self, index):
-        """ Change options form when user change the pipeline."""
+        """ Change options form when user changes the pipeline."""
         if self.ui.choice_button.findText(index) == 0:
             self.clear_form()
             self.rule_list = []
@@ -751,9 +765,8 @@ class SequanaGUI(QMainWindow, Tools):
         self.ui.cancel_push_button.clicked.connect(
             self.generic_factory._config_browser.set_empty_path)
 
-
     # ---------------------------------------------------------------------
-    # Fotter connectors
+    # Footer connectors
     # ---------------------------------------------------------------------
 
     def connect_footer_buttons(self):
@@ -1020,13 +1033,11 @@ class SequanaGUI(QMainWindow, Tools):
         # Start process
         # If an argument contains spaces, we should use quotes. However,
         # with PyQt quotes must be escaped
-        #print(snakemake_args)
 
         args = []
         for this in snakemake_args:
             if re.search(r"\s", this) is True:
                 args.append("\"%s\"" % this)
-                #print(this)
             else:
                 args.append(this)
         snakemake_args = args
@@ -1068,16 +1079,16 @@ class SequanaGUI(QMainWindow, Tools):
         # For each section, we create a widget (RuleForm). For isntance, first,
         # one is accessible as follows: gui.form.itemAt(0).widget()
 
-        #print(self.configfile)
         docparser = YamlDocParser(self.configfile)
-
+        import ruamel.yaml.comments
         for count, rule in enumerate(rules_list):
             self.debug("Scanning rule %s" % rule)
             # Check if this is a dictionnary
             contains = self.config._yaml_code[rule]
 
             # If this is a section/dictionary, create a section
-            if isinstance(contains, dict) and (
+
+            if isinstance(contains, (ruamel.yaml.comments.CommentedMap, dict)) and (
                     rule not in SequanaGUI._not_a_rule):
                 # Get the docstring from the Yaml section/rule
                 docstring = docparser._block2docstring(rule)
@@ -1090,6 +1101,7 @@ class SequanaGUI(QMainWindow, Tools):
                 option = dialog.preferences_options_general_addbrowser_value.text()
                 option = option.strip()
                 option = option.replace(";", " ").replace(",", " ")
+
                 if len(option):
                     keywords = option.split()
                 else:
@@ -1103,7 +1115,6 @@ class SequanaGUI(QMainWindow, Tools):
 
                 # Try to interpret it with sphinx
                 from sequana.misc import rest2html
-
                 try:
                     self.debug("parsing docstring of %s" % rule)
                     comments = rest2html(docstring).decode()
@@ -1265,34 +1276,23 @@ class SequanaGUI(QMainWindow, Tools):
                 msg.exec_()
                 return
 
-            if self.ui.tabWidget.currentIndex() == 0:
-                filename = self.sequana_factory._sequana_directory_tab.get_filenames()
-                form_dict["input_directory"] = (filename)
+            filename = self.sequana_factory._sequana_directory_tab.get_filenames()
+            form_dict["input_directory"] = (filename)
 
-                # If pattern provided, the input_directory is reset but used in
-                # the pattern as the basename
-                pattern = self.sequana_factory._sequana_pattern_lineedit.text()
-                if len(pattern.strip()):
-                    form_dict["input_pattern"] = (filename)
-                    form_dict["input_pattern"] += os.sep + pattern.strip()
-                    form_dict["input_directory"] = ""
+            # If pattern provided, the input_directory is reset but used in
+            # the pattern as the basename
+            pattern = self.sequana_factory._sequana_pattern_lineedit.text()
+            if len(pattern.strip()):
+                form_dict["input_pattern"] = (filename)
+                form_dict["input_pattern"] += os.sep + pattern.strip()
+                form_dict["input_directory"] = ""
 
-                readtag = self.sequana_factory._sequana_readtag_lineedit.text()
-                if len(readtag.strip()):
-                    form_dict["input_readtag"] = readtag
-                else:
-                    form_dict["input_readtag"] = "_R[12]_"
-                form_dict["input_samples"] = {"file1":None, "file2":None}
+            readtag = self.sequana_factory._sequana_readtag_lineedit.text()
+            if len(readtag.strip()):
+                form_dict["input_readtag"] = readtag
+            else:
+                form_dict["input_readtag"] = "_R[12]_"
 
-            elif self.ui.tabWidget.currentIndex() == 1:
-                filename = self.sequana_factory._sequana_paired_tab.get_filenames()
-                form_dict["input_samples"] = (filename)
-
-                readtag = self.sequana_factory._sequana_readtag_lineedit.text()
-                if len(readtag.strip()):
-                    form_dict["input_readtag"] = readtag
-                else:
-                    form_dict["input_readtag"] = "_R[12]_"
         elif self.mode == "generic":
             # Here we save the undefined section in the form.
             if self._undefined_section in form_dict.keys():
@@ -1367,6 +1367,12 @@ class SequanaGUI(QMainWindow, Tools):
                 #self.snakemake_dialog.set()
                 self.snakemake_dialog.ui.snakemake_options_cluster_cluster__config_value.set_filenames(target)
 
+            # Save the multiqc_config file if provided in sequana pipeline
+            if self.mode == "sequana" and self.sequana_factory.multiqcconfigfile:
+                target = self.working_dir + os.sep + "multiqc_config.yaml"
+                shutil.copy(self.sequana_factory.multiqcconfigfile, target)
+
+
         else:
             self.critical("Config file not saved (no wkdir)")
             msg = WarningMessage("You must set a working directory", self)
@@ -1432,7 +1438,7 @@ class SequanaGUI(QMainWindow, Tools):
                 except Exception as err:
                     print(err)
                     error_msg = "<b>CRITICAL: INVALID CONFIGURATION FILE</b>\n"
-                    error_msg += "<pre>" + err.msg + "</pre>"
+                    error_msg += "<pre>" + str(err) + "</pre>"
                     self.critical(error_msg)
                     self.switch_off()
                     msg = WarningMessage(error_msg, self)
@@ -1620,7 +1626,11 @@ class SequanaGUI(QMainWindow, Tools):
             if value in ['None', None, '', '""', "''"]:
                 return None
             else:
-                return value
+                # this tries to convert to a list #issue #515 
+                try:
+                    return eval(value)
+                except:
+                    return value
 
         widgets = (layout.itemAt(i).widget() for i in range(layout.count()))
         form_dict = {w.get_name(): _cleaner(w.get_value()) if w.is_option()

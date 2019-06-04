@@ -68,8 +68,10 @@ class VCF(object):
         vcf = VCFBase(filename, verbose=False, **kwargs)
 
         if vcf.version == "4.1":
+            logger.info("Reading VCF v 4.1")
             self.vcf = VCF_mpileup_4dot1(filename, **kwargs)
         elif vcf.version == "4.2" and vcf.source.startswith("freeBayes"):
+            logger.info("Reading VCF v 4.2 (freebayes)")
             from sequana.freebayes_vcf_filter import VCF_freebayes
             self.vcf = VCF_freebayes(filename, **kwargs)
         else:

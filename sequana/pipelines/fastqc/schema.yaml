@@ -1,0 +1,30 @@
+# Schema validator for the quality_control
+# author: Thomas Cokelaer
+
+type: map
+mapping:
+    "input_directory":
+        type: str
+        required: False
+    "input_readtag":
+        type: str
+        required: False
+    "input_pattern":
+        type: str
+        required: False
+    "fastqc":
+        type: map
+        mapping:
+            "do_group":
+                type: bool
+            "options":
+                type: str
+                required: False
+
+    "multiqc":
+        type: map
+        mapping:
+            "options": 
+                type: str
+            "indir": 
+                type: str

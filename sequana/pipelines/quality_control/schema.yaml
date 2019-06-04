@@ -9,21 +9,9 @@ mapping:
     "input_readtag":
         type: str
         required: False
-    "input_extension":
-        type: str
-        required: False
     "input_pattern":
         type: str
         required: False
-    "input_samples":
-        type: map
-        mapping:
-            "file1":
-                type: str
-                required: False
-            "file2":
-                type: str
-                required: False
 
     "bwa_mem_phix":
         type: map
@@ -106,7 +94,9 @@ mapping:
                 required: True
             "adapter_choice":
                 type: str
-                enum: ["", "Nextera", "NEBNext", "PCRFree", "Rubicon", "TruSeq"]
+                # if we set this, the pipeline is not dynamic anymore, we need
+                # to add manually the adapters. We comment this for now.
+                #enum: ["", "Nextera", "NEBNext", "PCRFree", "Rubicon", "TruSeq", "TruSeqCD"]
                 required: False
             "design_file":
                 type: str

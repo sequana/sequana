@@ -11,6 +11,7 @@ try:
     #   {'conversion_function': conversion_function})
     #E   TypeError: add_edge() takes 3 positional arguments but 4 were given
     from sequana.multiqc import pacbio_qc, quality_control, coverage
+    from sequana.multiqc import bamtools_stats, kraken
 
     def test_pacbio():
         # When calling multiqc on the command line, it scans the directory
@@ -21,7 +22,7 @@ try:
         # directory. Because we populate the report.files ourself, we can put
         # whatever name except it the MultiqcModule expects a specific name
 
-        report.files = {"sequana/pacbio_qc":
+        report.files = {"sequana_pacbio_qc":
             [{'filesize': 5913, 'fn': sequana_data('summary_pacbio_qc1.json'), 'root': '.'},
              {'filesize': 5731, 'fn': sequana_data('summary_pacbio_qc2.json'), 'root': '.'},
              {'filesize': 5820, 'fn': sequana_data('summary_pacbio_qc3.json'), 'root': '.'}]
@@ -29,18 +30,35 @@ try:
         pacbio_qc.MultiqcModule()
 
     def test_quality_control():
-        report.files = {"sequana/quality_control":
+        report.files = {"sequana_quality_control":
             [ { 'fn': sequana_data('summary_qc.json'), 'root': '.'}]
         }
         quality_control.MultiqcModule()
 
 
     def test_coverage():
-        report.files = {"sequana/coverage":
+        report.files = {"sequana_coverage":
             [ { 'fn': sequana_data('summary_coverage1.json'), 'root': '.'},
               { 'fn': sequana_data('summary_coverage1.json'), 'root': '.'}]
         }
         coverage.MultiqcModule()
+
+    def test_sequana_bamtools():
+        report.files = {"sequana_bamtools_stats":
+            [ { 'fn': sequana_data('summary_bamtools_stats.txt'), 'root': '.'},
+              { 'fn': sequana_data('summary_bamtools_stats.txt'), 'root': '.'}]
+        }
+        bamtools_stats.MultiqcModule()
+
+    def test_kraken():
+        report.files = {"sequana_kraken":
+            [ { 'fn': sequana_data('summary_kraken.json'), 'root': '.'},
+
+            ]
+        }
+        kraken.MultiqcModule()
+
+
 
 except TypeError:
     pass

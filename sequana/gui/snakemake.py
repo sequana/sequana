@@ -69,7 +69,11 @@ class SnakemakeDialog(QW.QDialog):
         names = [this.replace("_value", "") for this in names]
 
         options = []
-        snakemake_version = StrictVersion(snakemake.version.__version__)
+        # for difference versions of snakemake
+        try:
+            snakemake_version = StrictVersion(snakemake.version.__version__)
+        except:
+            snakemake_version = StrictVersion(snakemake.__version__)
         for name, widget in zip(names, widgets):
             # This option is valid for snakemake above 3.10
             if name == "restart-times" and snakemake_version < StrictVersion("3.10"):

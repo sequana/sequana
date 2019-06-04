@@ -7,12 +7,11 @@ rule conda:
 
 
     """
-    input:
-    output: "requirements.txt"
+    output: __conda__output
     run:
         from easydev import shellcmd
         try:
-            res = shellcmd("conda list --export > %s" % output[0])
+            res = shellcmd("conda list --export > {}".format(output[0]))
         except: #conda not installed ?
             with open(output[0], "w") as fh:
                 fh.write("conda was not found on your system.")

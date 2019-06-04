@@ -21,6 +21,9 @@ def multiqc_sequana_config():
         'sequana/isoseq_qc': {
             'fn': 'sequana_summary_isoseq_qc.json',
         },
+        'sequana/laa': {
+            'fn': 'sequana_laa*.json',
+        },
     }
     config.update_dict(config.sp, sequana_search_patterns)
     #config.fn_clean_exts.append({'type': 'regex', 'pattern': 'summary_*.*'})

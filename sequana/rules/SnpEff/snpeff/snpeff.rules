@@ -30,10 +30,11 @@ rule snpeff:
     """
     input:
         vcf = __snpeff__input, 
-        ann = config["snpeff"]["reference"]
+        ann = config["snpeff"]["reference_file"]
     output:
         ann = __snpeff__output,
-        html = __snpeff__html
+        html = __snpeff__html,
+        csv  = __snpeff__csv
     log:
         log = __snpeff__log
     params:
@@ -41,7 +42,12 @@ rule snpeff:
     run:
         from sequana import SnpEff
 
+        if output['csv']:
+            options = params['options'] + " -csvStats {}".format(output['csv'])
+        else:
+            options = params['options']
+
         mydata = SnpEff(reference=input['ann'], log=log['log'])
         mydata.launch_snpeff(input['vcf'], output['ann'],
                              html_output=output['html'],
-                             options=params['options'])
+                             options=options)

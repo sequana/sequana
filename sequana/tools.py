@@ -35,6 +35,10 @@ from easydev import precision
 from easydev.misc import cmd_exists
 import subprocess
 
+from sequana import logger
+logger.name = __name__
+
+
 __all__ = ['StatsBAM2Mapped', 'bam_to_mapped_unmapped_fastq', "GZLineCounter"]
 
 
@@ -79,6 +83,7 @@ class StatsBAM2Mapped(DataContainer):
     def to_html(self):
         data = self.data
 
+        # TODO hardcoded word phix here ?
         html = "Reads with Phix: %s %%<br>" % precision(data['contamination'], 3)
 
         # add HTML table

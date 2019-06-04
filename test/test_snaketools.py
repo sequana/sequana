@@ -171,18 +171,18 @@ def test_pipeline_manager():
     cfg = SequanaConfig(config)
     cfg.cleanup() # remove templates
     file1 = sequana_data("Hm2_GTGAAA_L005_R1_001.fastq.gz")
-    file2 = sequana_data("Hm2_GTGAAA_L005_R2_001.fastq.gz")
-    cfg.config.input_samples['file1'] = file1
-    cfg.config.input_samples['file2'] = file2
-    pm = snaketools.PipelineManager("custome", cfg)
-    assert pm.paired == True
+    cfg.config.input_directory, cfg.config.input_pattern = os.path.split(file1)
+    #file2 = sequana_data("Hm2_GTGAAA_L005_R2_001.fastq.gz")
+    pm = snaketools.PipelineManager("custom", cfg)
+    assert pm.paired == False
 
     cfg = SequanaConfig(config)
     cfg.cleanup() # remove templates
-    file1 = sequana_data("Hm2_GTGAAA_L005_R1_001.fastq.gz")
-    cfg.config.input_samples['file1'] = file1
-    pm = snaketools.PipelineManager("custome", cfg)
-    assert pm.paired == False
+    cfg.config.input_directory, cfg.config.input_pattern = os.path.split(file1)
+    cfg.config.input_pattern = "Hm*gz"
+    #file1 = sequana_data("Hm2_GTGAAA_L005_R1_001.fastq.gz")
+    pm = snaketools.PipelineManager("custom", cfg)
+    assert pm.paired == True
 
     pm.getlogdir("fastqc")
     pm.getwkdir("fastqc")
@@ -262,11 +262,17 @@ def test_onsuccess(tmpdir):
     directory = tmpdir.mkdir("onsuccess")
     p1 = directory.join("Makefile")
     p2 = directory.join("cleanup.py")
-
     onsuc = snaketools.OnSuccess()
     onsuc.makefile_filename = p1
     onsuc.makefile_cleanup = p2
 
+
+def test_onsuccess_cleaner():
+    fh = tempfile.TemporaryDirectory()
+    onsucc = snaketools.OnSuccessCleaner()
+    onsucc.makefile_filename = fh.name + os.sep + "Makefile"
+    onsucc.add_bundle()
+    onsucc.add_makefile()
 
 
 def test_build_dynamic_rule():

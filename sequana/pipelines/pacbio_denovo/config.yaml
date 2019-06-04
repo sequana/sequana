@@ -6,16 +6,12 @@
 # If input_directory provided, use it otherwise if input_pattern provided
 # use it, otherwise use input_samples.
 #
-# If input_directory set, use input_extension if provided (otherwise use *.fastq.gz)
-# input_extension should be without * . EG ".fasta" or ".bam"
 # ============================================================================
 
 
 input_directory: 
-input_extension:
 input_readtag:
 input_pattern: "*.fasta"
-input_samples: 
 
 
 #############################################################################

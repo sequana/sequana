@@ -28,6 +28,9 @@ from sequana.databases import ENADownload
 from easydev import execute, TempFile, Progress, md5, DevTools
 
 from sequana.lazy import pandas as pd
+from sequana import logger
+logger.name = __name__
+
 
 
 __all__ = ["KrakenBuilder"]
@@ -382,7 +385,7 @@ class KrakenBuilder():
         pb = Progress(N)
         for i, chunk in enumerate(data):
             chunk.set_index(0, inplace=True)
-            chunk = chunk.ix[local_gis].dropna()
+            chunk = chunk.loc[local_gis].dropna()
 
             # keep the GI and Taxon
             found_gis.extend([int(x) for x in list(chunk.index)])
@@ -498,7 +501,7 @@ class NCBITaxonReader(object):
     def get_scientific_name(self, taxon):
         """Return scientific name of a given Taxon"""
         # Takes 2 minutes to scan all taxons
-        return self._subdf.ix[taxon].values[0]
+        return self._subdf.loc[taxon].values[0]
 
     def get_taxon_from_scientific_name(self, scname):
         """Return taxon corresponding to a scientific name
@@ -517,7 +520,7 @@ class NCBITaxonReader(object):
         taxons = [1]
         df = self._df_nodes_taxon
         while True:
-            res = df.ix[taxon]
+            res = df.loc[taxon]
             taxons.append(taxon)
             taxon = res['parent_taxon']
             # hopefully there is always a family link to 0 or 1
