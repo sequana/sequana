@@ -100,7 +100,7 @@ rule status:
 
 
 onsuccess:
-    shell("chmod -R w+g .")
+    shell("chmod -R g+w .")
     from sequana.snaketools import OnSuccessCleaner
     sc = OnSuccessCleaner()
     sc.files_to_remove.append("demultiplex.rules")
