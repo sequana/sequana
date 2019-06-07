@@ -180,7 +180,8 @@ class SAMBAMbase():
             starts.append(a.reference_start)
             ends.append(a.reference_end)
             mapqs.append(a.mapq)
-            refnames.append(a.reference_name)
+            try:refnames.append(a.reference_name)
+            except:refnames.append(-1)
             querynames.append(a.query_name)
             querylengths.append(a.query_length)
         df = pd.DataFrame({
