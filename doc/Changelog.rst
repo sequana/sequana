@@ -8,7 +8,9 @@ Changelog
 
 * NEWS:
 
-    * New script: substractor
+
+    * New script: sequana_fastq_summary included in fastqc pipeline
+    * New script: sequana_substractor to remove reads that mapped against a reference(s)
     * added a new module to upload/export phylogenetic tree on itol website.
       Used in the laa pipeline
     * added backspace2fusion code to merge lanes in Illumina raw data
