@@ -241,7 +241,7 @@ class Options(argparse.ArgumentParser):
             action="store_true")
 
         self.add_argument("--queue", dest="queue", type=str,
-            default="common", choices=["biomics", "common"]
+            default="common", choices=["biomics", "common"],
             help="queue to use on the cluster")
         self.add_argument("--lanes", dest="lanes", nargs="+", 
             type=int, required=True)
