@@ -73,7 +73,7 @@ another file\n""" % prog
 
 
 def sniff(filename):
-    logger.info("Sniffing file")
+    logger.info("Sniffing file {}".format(filename))
     from sequana import BAM, SAM, CRAM
     from sequana.sniffer import sniffer
     datatype = sniffer(filename)
