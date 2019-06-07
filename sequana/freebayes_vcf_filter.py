@@ -244,6 +244,10 @@ class VCF_freebayes(vcf.Reader):
         self._reader.seek(self._start_index)
         self.reader = (line.strip() for line in self._reader if line.strip())
 
+    def get_variants(self):
+        variants = [Variant(v) for v in self]
+        return variants
+
     def filter_vcf(self, filter_dict=None):
         """ Filter variants in the VCF file.
 
