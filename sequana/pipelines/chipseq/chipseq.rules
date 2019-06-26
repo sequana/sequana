@@ -347,8 +347,8 @@ if manager.config.design.spike:
     # counting on spikes
     __spikes_counting__input = expand("3-Deduplication/{sample}_spike_sort_dedup.bam", sample=manager.samples)
     __spikes_counting__output = "2-Mapping/ALL_count_on_spike.mtx"
-    __spikes_counting__output_json = "Count_on_spike_mqc.out"
-    __spikes_counting__log = "2-Mapping/logs/spike_counting.o"
+    __spikes_counting__output_json = "Spikes_metrics_mqc.out"
+    __spikes_counting__log = "2-Mapping/logs/Spikes_metrics.o"
     include: sm.modules["spikes_counting"]
     expected_output.extend([__spikes_counting__output_json])
 
@@ -592,11 +592,11 @@ else:
 macs2_rep = []
 macs2_rep.extend(expand("6-PeakCalling/{}/{{IP_REP}}_vs_{{INPUT}}_peaks.{}Peak".format(model, model), zip, IP_REP=IP_ALL, INPUT=INPUT))
 __stats_peakCalling_input = macs2_rep
-__stats_peakCalling_csv = "statsPeakCalling_mqc.out"
+__stats_peakCalling_csv = "Peaks_metrics_mqc.out"
 __stats_peakCalling__marks = marks
 __stats_peakCalling__conds = conds
 __stats_peakCalling__rep = rep_flag
-__stats_peakCalling_log = "6-PeakCalling/{}/statsPeakCalling.out".format(model)
+__stats_peakCalling_log = "6-PeakCalling/{}/Peaks_metrics.out".format(model)
 include: sm.modules["stats_peakCalling"]
 expected_output.extend([__stats_peakCalling_csv])
 
@@ -642,8 +642,8 @@ __metrics_peaks__input = idr_peaks
 __metrics_peaks__marks = marks
 __metrics_peaks__conds = conds
 __metrics_peaks__rep = rep_flag
-__metrics_peaks__logs = "7-IDR/logs/peak_metrics.out"
-__metrics_peaks__output = "metrics_peaks_mqc.out"
+__metrics_peaks__logs = "7-IDR/logs/IDR_metrics.out"
+__metrics_peaks__output = "IDR_metrics_mqc.out"
 include: sm.modules["metrics_peaks"]
 expected_output.extend([__metrics_peaks__output])
 
