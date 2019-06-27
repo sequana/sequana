@@ -1,6 +1,7 @@
 from sequana import databases
 import os
 import glob
+import pytest
 
 
 def test_eutils():

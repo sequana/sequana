@@ -3,18 +3,90 @@ Changelog
 
 .. contents::
 
-2017
+0.7.2
+----------
+
+* NEWS:
+
+
+    * New script: sequana_fastq_summary included in fastqc pipeline
+    * New script: sequana_substractor to remove reads that mapped against a reference(s)
+    * added a new module to upload/export phylogenetic tree on itol website.
+      Used in the laa pipeline
+    * added backspace2fusion code to merge lanes in Illumina raw data
+    * added new pipeline called fastqc to simply run fastqc + multiqc in parallel
+    * added laa pacbio pipeline
+    * multiqc modules: bamtools_stats and kraken module for the laa pipeline
+    * added test file and test for SIRVRerence class (partial fix of issue #504)
+    * added Makefile class in snaketools to help building pipeline
+    * added MultiKrakenResults class
+    * sequanix and snaketools now handle the presence of a multiqc_config 
+      file in the pipeline module
+    * add laa multiqc
+
+* BUGS:
+
+    * in quality_control when using the design file in cutadapt rule
+    * Fix multiqc report for pacbio_qc pipeline
+
+
+* CHANGES:
+
+    * adapters added: TruSeqCD, TruSeqUD, etc
+    * adapters removed: rubicon
+    * remove clean_ngs rule and code related to this software, not used in sequana
+
+* CHANGES for developers:
+
+    * adapters are now named NAME_fwd.fa instead of adapters_NAME_fwd. This
+      should not affect the user interface. Also, the index sequence stored in the
+      adapter files are now identical in the forward/reverse/revcomp versions
+      to simplify the code. We also added a script in ./resources/data/adapters
+      to create the rev and revcomp version automatically.
+    * add missing xlrd dependencies in requirements
+
+
+0.7.1
+---------
+
+* NEWS:
+
+    * added metropolis hastings module
+    * added a sniffer module for BAM/SAM/CRAM
+    * added a SMA/CRAM reader
+
+* CHANGES:
+
+    * refactoring of bamtools. added SAM and CRAM classes. remove the
+      plot_acgt_content method. Instead of inheriting from pysam.Alignement, 
+      we store the data as an attribute.
+
+* FIXES:
+
+    * cutadapt rules and expdesign can now handle sample names with several
+      underscores
+    * Issue 515: sequanix should now be able to handle list in YAML files
+    * Issues 520: level info in sequanix was always set to INFO at start time
+    * Issue 519: fix issues in sequanix due to different API in new ruamel.yaml version
+    * Issue #522: fix bam_splitter tool
+
+
+0.7.0
 ------
 
 * BUGS:
 
     * add /1 and /2 in quality control pipeline https://github.com/sequana/sequana/issues/508
+    * Fix test failure due to freebayes version 1 and 1.2 https://github.com/sequana/sequana/issues/512
+    * Fix reading of SampleSheet for MiSeq: https://github.com/sequana/sequana/issues/511
+    * Add Exp Design checked in quality control pipeline: https://github.com/sequana/sequana/issues/500
 
 * CHANGES:
 
     * sequana_vcf_filter: finalised version with INDEL removal, filters on DP4
       and AF1 fields
     * rename PacbioBAM into PacbioSubreads
+
 
 0.6.5
 ~~~~~~~~~~~

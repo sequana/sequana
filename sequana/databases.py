@@ -30,6 +30,7 @@ except:
 from easydev import AttrDict, execute, Progress
 
 from sequana import logger
+logger.name = __name__
 
 
 class EUtilsTools(object):

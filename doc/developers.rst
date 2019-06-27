@@ -52,7 +52,7 @@ Create a Snakefile rule
 A possible code that implements the **count** rule is the following Snakefile:
 
 .. literalinclude:: Snakefile
-    :lines: 3-20
+    :lines: 3-17
     :linenos:
     :language: python
     :emphasize-lines: 4
@@ -591,10 +591,12 @@ analysis. This means you want to retrieve
 automatically the file sequana_summary_count_SAMPLE.json. Note that they may be named
 differently; for instance, sample/sequana_summary.json
 
-In ./sequana/multiqc directoty, add a file called pipeline_count.py
+In ./sequana/multiqc directory, add a file called pipeline_count.py
 
 - Take as example the already existing file such as pacbio_qc.py
 - update the sequana/multiqc/__init__.py to add the search pattern for your input (here summary_count*.json)
+- update the sequana/multiqc/config.py to add the search pattern for your input (here summary_count*.json). This way, you can use "multiqc ." and sequana modules will use the pattern stored in config.py
+- update the sequana/multiqc/multiqc_config.yaml to add the search pattern for your input (here summary_count*.json). This way, you can use a user define "multiqc . -c multiqc_config.yaml" 
 - In the setup.py, add the entry point following the example of pacbio_qc
 - In the ./test/multiqc add a test in test_multiqc.py
 

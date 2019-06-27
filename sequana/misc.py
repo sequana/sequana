@@ -22,10 +22,23 @@ import glob
 import numpy as np
 import platform
 
+from sequana import logger
+logger.name = __name__
+
+
 from docutils import core
 from docutils.writers.html4css1 import Writer,HTMLTranslator
 
-__all__ = ['textwrap', 'rest2html', 'wget', 'findpos', 'on_cluster']
+__all__ = ['textwrap', 'rest2html', 'wget', 'findpos', 'on_cluster', "normpdf"]
+
+
+def normpdf(x, mu, sigma):
+    """Return the normal pdf evaluated at *x*; args provides *mu*, *sigma*"
+
+    .. note:: same as scipy.stats.norm but implemented to avoid scipy dependency
+    """
+
+    return 1./(np.sqrt(2*np.pi)*sigma)*np.exp(-0.5 * (1./sigma*(x - mu))**2)
 
 def textwrap(text, width=80, indent=0):
     """Wrap a string with 80 characters

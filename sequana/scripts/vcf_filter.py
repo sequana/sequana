@@ -19,8 +19,13 @@ from sequana.vcf_filter import VCF
 
 import sys
 import argparse
+
+from sequana.scripts.tools import SequanaOptions
+
 from sequana import logger
 from easydev.console import purple
+
+
 
 class CustomFormatter(argparse.ArgumentDefaultsHelpFormatter,
                       argparse.RawDescriptionHelpFormatter):
@@ -36,7 +41,7 @@ Issues: http://github.com/sequana/sequana
         """)
 
 
-class Options(argparse.ArgumentParser):
+class Options(argparse.ArgumentParser, SequanaOptions):
     def  __init__(self, prog="sequana_vcf_filter"):
         usage = """%s Only for VCF using mpileup version 4.1 for now\n""" % prog
         usage += """usage2: %s vcf_filter""" % prog
@@ -135,15 +140,22 @@ class Options(argparse.ArgumentParser):
         self.add_argument('--level', dest="level",
             default="INFO", choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"])
 
+        self.add_version(self)
+
 
 def main(args=None):
     if args is None:
         args = sys.argv[:]
 
+
     print("Welcome to sequana_vcf_filter")
     user_options = Options(prog="sequana_vcf_filter")
 
-    if len(args) == 1 or "--help" in args:
+    if "--version" in args:
+        import sequana
+        print(sequana.version)
+        sys.exit()
+    elif len(args) == 1 or "--help" in args:
         user_options.parse_args(["prog", "--help"])
     elif len(args) == 2:
         class SimpleOpt():
@@ -153,11 +165,16 @@ def main(args=None):
     else:
         options = user_options.parse_args(args[1:])
 
+
     # set the level
     logger.level = options.level
 
     vcf = VCF(options.input_filename)
-    vcf.vcf.filter_dict['QUAL'] =  options.quality
+    try:
+        vcf.vcf.filter_dict['QUAL'] =  options.quality
+    except:
+        vcf.vcf.filter_dict = {}
+        vcf.vcf.filter_dict['QUAL'] =  options.quality
 
     vcf.vcf.apply_indel_filter = options.apply_indel_filter
     vcf.vcf.apply_dp4_filter = options.apply_dp4_filter
@@ -168,9 +185,6 @@ def main(args=None):
     vcf.vcf.minimum_af1 = options.minimum_af1
     vcf.vcf.filter_dict['INFO'] = {}
     vcf.vcf.filter_dict['QUAL'] =  options.quality
-
-
-
 
 
     for this in options.filter:

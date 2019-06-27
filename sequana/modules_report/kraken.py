@@ -59,7 +59,7 @@ class KrakenModule(SequanaBaseModule):
     def _get_summary_section(self):
 
         df = self._get_stats()
-        if len(df) == 1 and df.ix[0]['taxon'] == -1:
+        if len(df) == 1 and df.iloc[0]['taxon'] == -1:
             pngimage = sequana_data("no_data.jpg")
             extra = "<p> no reads could be identified with the given the database(s)."
         else:
@@ -97,7 +97,7 @@ Besides, be aware that closely related species may not be classified precisely.
                 [urlena + this for this in df['ena']])
         datatable.datatable.datatable_options = {
             'scrollX': '300px',
-            'pageLength': 15,
+            'pageLength': 30,
             'scrollCollapse': 'true',
             'dom': 'irtpB',
             "paging": "false",

@@ -46,5 +46,5 @@ intersphinx_mapping = {}
 """)
 
         # srcdir, confdir, outdir, doctreedir, buildername
-        app = Sphinx(tmpdir, tmpdir, tmpdir, tmpdir, "html")
+        app = Sphinx(tmpdir, tmpdir, tmpdir+"/temp", tmpdir, "html")
         app.build()

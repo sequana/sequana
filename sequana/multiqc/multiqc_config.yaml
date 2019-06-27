@@ -16,7 +16,7 @@
 
 ---
 # Title to use for the report.
-title: Sequana multi summary
+title: Sequana pipeline multiqc report
 
 # Prepend sample names with their directory. Useful if analysing the
 # sample samples with different parameters.
@@ -46,6 +46,7 @@ extra_fn_clean_exts:
     - _tophat
     - _star_aligned
     - _fastqc
+    
     #- type: remove
     #  pattern: '.sorted'
     #- type: regex
@@ -56,15 +57,16 @@ extra_fn_clean_exts:
 # Ignore these files / directories / paths when searching for logs
 fn_ignore_files:
     - .DS_Store
-    - '*.html'
+    #- '*.html'    # need the HTML otherwise fastqc does not work
 
 fn_ignore_dirs:
-    - annoying_dirname
+    - .snakemake
 fn_ignore_paths:
     - '*/path/to/*_files/'
 
 # Ignore files larger than this when searcing for logs (bytes)
-log_filesize_limit: 500000
+# fastqc files can be as large as 1Mb
+log_filesize_limit: 5000000
 
 # MultiQC skips a couple of debug messages when searching files as the
 # log can get very verbose otherwise. Re-enable here to help debugging.
@@ -92,23 +94,29 @@ sp:
         fn: '*Log.final.out'
     trimmomatic:
         contents: 'Trimmomatic'
-    sequana/pacbio_qc:
-        fn: "summary_*.json"
-    sequana/quality_control:
+    sequana_kraken:
+        fn: "sequana_kraken_summary.json"
+    sequana_bamtools_stats:
+        fn: "sequana_bamtools_stats*.txt"
+    sequana_pacbio_qc:
+        fn: "sequana_summary_pacbio_qc*.json"
+    sequana_quality_control:
         fn: "summary.json"
-    sequana/coverage:
+    sequana_coverage:
         fn: "sequana_summary_coverage.json"
-    sequana/isoseq:
+    sequana_isoseq:
         fn: "sequana_summary_isoseq.json"
-    sequana/isoseq_qc:
+    sequana_isoseq_qc:
         fn: "sequana_summary_isoseq_qc.json"
+    sequana_laa:
+        fn: "sequana_laa_*.json"
 
 
 # Specify a custom logo to add to reports (uncomment to use)
 custom_logo: null         # '/path/to/logo.png'
 custom_logo_url: null     # 'https://www.example.com'
-custom_logo_title: null   # 'Our Institute Name'
-subtitle: null            # Grey text below title
+custom_logo_title: "Institut Pasteur, Biomics platform" 
+subtitle: ""            # Grey text below title
 intro_text: ""          # Set to False to remove, or your own text
 
 # Add generic information to the top of reports
@@ -117,10 +125,13 @@ report_header_info:
     #- Another field:: 'Loaded from <code>multiqc_config_example.yaml</code>'
     #- Something different:: 'You can put any key-value pairs here'
     - Want to know more?: 'See the <a href="http://sequana.readthedocs.io" target="_blank">Sequana documentation</a>'
-    - Citations:: 'If you used Sequanix, Sequana or Sequana_coverage tool, please see <a href="http://sequana.readthedocs.io">How to cite ?</a> section.'
+    - Citations:: 'If you used Sequanix, Sequana or Sequana_coverage tool, please see <a href="http://sequana.readthedocs.io">How to cite ?</a> section. In particular, if you use this report in a publication, please cite Sequana (see link here above). You may want to consider adding a note in the acknowledgement to thank bioinformaticians or bioanalysts for their feedbacks.'
 
 # Overwrite the defaults of which table columns are visible by default
 table_columns_visible:
     FastQC:
         percent_fails: False
         total_sequences: True
+        percent_duplicates: False
+        percent_gc: True
+        avg_sequence_length: True

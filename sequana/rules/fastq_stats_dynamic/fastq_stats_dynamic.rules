@@ -32,7 +32,7 @@ rule fastq_stats_%(name)s:
         done    = touch(__fastq_stats_%(name)s__output_done)
     params:
         wkdir = __fastq_stats_%(name)s__wkdir,
-    threads: 4
+    threads: 1
     run:
         from sequana import FastQC, sequana_data
         import pylab

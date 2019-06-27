@@ -151,7 +151,7 @@ class SequanaBaseModule(object):
             shutil.copy(filename, directory)
         except FileNotFoundError:
             msg = "{0} doesn't exist".format(filename)
-            raise FileNotFoundError 
+            raise FileNotFoundError (msg)
         return target_dir + os.sep + os.path.basename(filename)
 
     def add_float_right(self, content):
@@ -201,13 +201,16 @@ class SequanaBaseModule(object):
         buf = io.BytesIO()
         # add buffer as output of the plot function
         kwargs = dict({input_arg: buf}, **kwargs)
-        plot_function(**kwargs)
-        html = '<img '
-        if style:
-            html += 'style="{0}"'.format(style)
-        html += 'src="data:image/png;base64,{0}"/>'.format(
-            base64.b64encode(buf.getvalue()).decode('utf-8'))
-        buf.close()
+        try:
+            plot_function(**kwargs)
+            html = '<img '
+            if style:
+                html += 'style="{0}"'.format(style)
+            html += 'src="data:image/png;base64,{0}"/>'.format(
+                base64.b64encode(buf.getvalue()).decode('utf-8'))
+            buf.close()
+        except:
+            html = "image not created"
         return html
 
     def create_combobox(self, path_list, html_id, newtab=True):

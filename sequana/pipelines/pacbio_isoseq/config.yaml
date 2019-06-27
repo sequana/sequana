@@ -6,18 +6,12 @@
 # One of input_directory, input_pattern and input_samples must be provided
 # If input_directory provided, use it otherwise if input_pattern provided,
 # use it, otherwise use input_samples.
-# If input_extension provided, use it otherwise assume fastq.gz
 # ============================================================================
 input_directory: "%(input_directory)s"
 input_readtag: "%(input_readtag)s"
 input_pattern: "%(input_pattern)s"
-input_extension: "%(input_extension)s"
 # =========================================== Sections for the users
 
-# list of your input file
-input_samples:
-    file1: "%(file1)s"
-    file2: "%(file2)s"
 
 # if files are required for a pipeline and are within sequana or should
 # be downloaded before the pipeline provide them in this section

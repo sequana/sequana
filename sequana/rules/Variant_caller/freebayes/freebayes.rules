@@ -31,7 +31,7 @@ rule freebayes:
     """
     input:
         bam = __freebayes__input,
-        ref = __freebayes__reference        
+        ref = __freebayes__reference
     output:
         vcf = __freebayes__output
     log:

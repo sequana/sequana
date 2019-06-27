@@ -1,3 +1,4 @@
+import os
 from sequana.scripts import main
 from sequana import sequana_data
 import pytest
@@ -48,14 +49,6 @@ def test_info(mocker):
     with patch('easydev.onweb', func ):
         main.main([prog, '--info', "quality_control"])
 
-# This mock does not work somehow, it opens the web page... is it in conflict
-# with the test_info ?
-def _test_issue(mocker):
-    def func(*args, **kwargs):
-        pass
-    with patch('easydev.onweb', func ):
-        main.main([prog, '--issue'])
-
 def test_show_pipelines():
     main.main([prog, '--show-pipelines'])
 
@@ -71,46 +64,36 @@ def test_input(tmpdir):
     name = directory.__str__()
 
     file1 = sequana_data('Hm2_GTGAAA_L005_R1_001.fastq.gz', 'data')
+    pathdata, basename = os.path.split(file1)
     file2 = sequana_data('Hm2_GTGAAA_L005_R2_001.fastq.gz', 'data')
-    main.main([prog, "--pipeline", "quality_control", "--file1", 
-              file1, "--file2", file2, "--no-adapters" , "--force",
+    pattern = "Hm2_GTGAAA_L005*"
+
+    main.main([prog, "--pipeline", "quality_control", "--input-directory",
+              pathdata, "--input-pattern", pattern, "--no-adapters" , "--force",
               "--working-directory", name])
 
+def test_missing_adapters():
+    file1 = sequana_data('Hm2_GTGAAA_L005_R1_001.fastq.gz', 'data')
+    pathdata, basename = os.path.split(file1)
     try:
-        main.main([prog, "--pipeline", "quality_control", "--file1", 
-              file1+"dummy", "--no-adapters" , "--force",
-              "--working-directory", name])
+        main.main([prog, "--pipeline", "quality_control", "--input-pattern",
+            "Hm*gz", "--input-directory", pathdata])
         assert False
-    except ValueError:
-        assert True
-    try:
-        main.main([prog, "--pipeline", "quality_control", "--file1", 
-              file1, "--no-adapters" , "--force", "--file2",
-              file2+"duly","--working-directory", name])
-        assert False
-    except ValueError:
-        assert True
-    try:
-        main.main([prog, "--pipeline", "quality_control", "--file1", 
-              file1, "--no-adapters" , "--force", "--file2",
-              file2,"--working-directory", name, "--kraken", "dummy"])
-        assert False
-    except ValueError:
-        assert True
-    try:
-        main.main([prog, "--pipeline", "quality_control", "--file1", 
-              file1, "--no-adapters" , "--force", "--file2",
-              file2,"--working-directory", name, "--kraken", "dummy"])
-        assert False
-    except ValueError:
+    except:
         assert True
 
+    try:
+        main.main([prog, "--pipeline", "quality_control", "--input-pattern", file1,
+            "--adapters", "dummy" "--working-directory", name, "--force"])
+        assert False
+    except:
+        assert True
 
 def test_without_cluster_config(tmpdir):
     directory = tmpdir.mkdir("analysis1")
     name = directory.__str__()
     file1 = sequana_data('Hm2_GTGAAA_L005_R1_001.fastq.gz', 'data')
-    main.main([prog, "--pipeline", "rnaseq", "--file1", file1, "--snakemake-cluster", 
+    main.main([prog, "--pipeline", "rnaseq", "--input-pattern", file1, "--snakemake-cluster", 
         '"sbatch --mem={cluster.ram}"', "--ignore-cluster-config", "--force",
         "--working-directory", name, "--no-adapters"])
     with open("%s/runme.sh" %  name) as fh: 
@@ -121,7 +104,7 @@ def _test_with_cluster_config(tmpdir):
     directory = tmpdir.mkdir("analysis2")
     name = directory.__str__()
     file1 = sequana_data('Hm2_GTGAAA_L005_R1_001.fastq.gz', 'data')
-    main.main([prog, "--pipeline", "rnaseq", "--file1", file1, "--snakemake-cluster", 
+    main.main([prog, "--pipeline", "rnaseq", "--input-pattern", file1, "--snakemake-cluster", 
         '"sbatch --mem={cluster.ram}"',"--force",
         "--working-directory", name])
     with open("%s/runme.sh" %  name) as fh: 
@@ -141,14 +124,37 @@ def test_config_params(tmpdir):
     directory = tmpdir.mkdir("analysis3")
     name = directory.__str__()
     file1 = sequana_data('Hm2_GTGAAA_L005_R1_001.fastq.gz', 'data')
-    main.main([prog, "--pipeline", "quality_control", "--force",  "--file1", file1,
+    main.main([prog, "--pipeline", "quality_control", "--force", "--input-pattern", file1,
         "--no-adapters",  "--config-params",  "bwa_mem_phix:threads:4" ,
         "--working-directory", name])
 
     try:
-        main.main([prog, "--pipeline", "quality_control", "--force",  "--file1", file1,
+        main.main([prog, "--pipeline", "quality_control", "--force",  "--pattern", file1,
             "--no-adapters",  "--config-params",  "bwa_mem_phix",
             "--working-directory", name])
         assert False
     except:
         assert True
+
+
+def test_adapters(tmpdir):
+    directory = tmpdir.mkdir("analysis3")
+    name = directory.__str__()
+    file1 = sequana_data('Hm2_GTGAAA_L005_R1_001.fastq.gz', 'data')
+    main.main([prog, "--pipeline", "quality_control", "--input-pattern", file1,
+        "--adapters", "Nextera", "--working-directory", name, "--force"])
+
+    main.main([prog, "--pipeline", "quality_control", "--input-pattern", file1,
+        "--adapter-fwd", "ACGTACGT", "--adapter-rev", "ACGTACGT",
+        "--working-directory", name, "--force"])
+
+    main.main([prog, "--pipeline", "quality_control", "--input-pattern", file1,
+        "--adapters", "universal", "--working-directory", name, "--force"])
+
+
+
+
+
+
+
+

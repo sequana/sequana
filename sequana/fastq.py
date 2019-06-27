@@ -8,7 +8,6 @@ import subprocess
 from functools import wraps
 from collections import Counter, defaultdict
 
-
 from sequana.lazy import numpy as np
 from sequana.lazy import pandas as pd
 from sequana.lazy import pylab
@@ -25,6 +24,11 @@ try:
 except:
     from itertools import zip_longest as izip_longest
 
+
+from sequana import logger
+logger.name == __name__
+
+
 # for filter fastq files. see below in FastQ for the usage
 # we want to take 4 lines at a time (assuming there is no empty lines)
 def grouper(iterable):
@@ -32,7 +36,21 @@ def grouper(iterable):
     return izip_longest(*args)
 
 
-__all__ = ["Identifier", "FastQ", "FastQC"]
+__all__ = ["Identifier", "FastQ", "FastQC", "is_fastq"]
+
+
+def is_fastq(filename):
+    with open(filename, "r") as fin:
+        try:
+            line = fin.readline()
+            assert line.startswith("@")
+            line = fin.readline()
+            line = fin.readline()
+            assert line.startswith("+") and len(line.strip()) == 1
+            line = fin.readline()
+            return True
+        except:
+            return False
 
 
 class Identifier(object):
@@ -209,6 +227,11 @@ class FastQ(object):
         except:
             self.data_format = "unknown"
 
+
+    def get_lengths(self):
+        return [len(x["sequence"]) for x in self]
+
+
     def _get_count_reads(self):
         if self._count_reads is None:
             self._count_reads = self.count_reads()
@@ -336,7 +359,7 @@ class FastQ(object):
         # as fast as zcat file.fastq.gz | head -200000 > out.fasta
 
         # this is to supress the header
-        d = zlib.decompressobj(16 + zlib.MAX_WBITS)
+        decoder = zlib.decompressobj(16 + zlib.MAX_WBITS)
 
         # will we gzip the output file ?
         output_filename, tozip = self._istozip(output_filename)
@@ -347,13 +370,19 @@ class FastQ(object):
 
             with open(output_filename, "wb") as fout:
                 while buf:
-                    outstr = d.decompress(buf)
+                    outstr = decoder.decompress(buf)
+                    if len(outstr) == 0:
+                        msg = "Error while decompressing the zip file. may need"+\
+                              "to dezip/rezip the data. known issue in extract_head"
+                        logger.error(msg)
+                        raise ValueError(msg)
                     this_count = outstr.count(b"\n")
-
                     if count + this_count > N:
                         # there will be too many lines, we need to select a subset
                         missing = N - count
-                        outstr = outstr.strip().split(b"\n")
+                        #outstr = outstr.strip().split(b"\n")
+                        #Fix https://github.com/sequana/sequana/issues/536
+                        outstr = outstr.split(b"\n")
                         outstr = b"\n".join(outstr[0:missing]) + b"\n"
                         fout.write(outstr)
                         break
@@ -656,38 +685,13 @@ class FastQ(object):
         """
 
         """
-        raise NotImplementedError
-        """
-        #twice as slow as a tool such as seqtk and final fasta number not correct...
-        # this is to supress the header
-        d = zlib.decompressobj(16 + zlib.MAX_WBITS)
-
-        # will we gzip the output file ?
-        output_filename, tozip = self._istozip(output_filename)
-
-        with open(self.filename, 'rb') as fin:
-            buf = fin.read(CHUNKSIZE)
-
-            count = 0
-            with open(output_filename, "wb") as fout:
-                while buf:
-                    outstr = d.decompress(buf)
-                    lines = outstr.strip().split(b"\n")
-                    for line in lines:
-                        if count%4 == 0:
-                            fout.write(b">"+line[1:]+b"\n")
-                        elif count%4==1:
-                            fout.write(line+b"\n")
-                        count += 1
-
-                    buf = fin.read(CHUNKSIZE)
-
-        if tozip is True: self._gzip(output_filename)
-        """
+        cmd = "bioconvert fastq2fasta {} {}".format(self.filename, output_filename)
+        if force is True:
+            cmd += " --force "
 
     def filter(self, identifiers_list=[], min_bp=None, max_bp=None,
-        progressbar=True, output_filename='filtered.fastq', remove=True):
-        """Filter reads
+        progressbar=True, output_filename='filtered.fastq'):
+        """Save reads in a new file if there are not in the identifier_list
 
         :param int min_bp: ignore reads with length shorter than min_bp
         :param int max_bp: ignore reads with length above max_bp
@@ -711,10 +715,11 @@ class FastQ(object):
             pb = Progress(self.n_reads)
             buf = ""
             filtered = 0
+            saved = 0 
 
             for count, lines in enumerate(grouper(self._fileobj)):
                 identifier = lines[0].split()[0]
-                if lines[0].split()[0] in identifiers_list:
+                if lines[0].split()[0].decode() in identifiers_list:
                     filtered += 1
                 else:
                     N = len(lines[1])
@@ -723,6 +728,9 @@ class FastQ(object):
                             lines[0].decode("utf-8"),
                             lines[1].decode("utf-8"),
                             lines[3].decode("utf-8"))
+                        saved += 1
+                    else:
+                        filtered += 1
                     if count % 100000 == 0:
                         fout.write(buf)
                         buf = ""
@@ -732,7 +740,12 @@ class FastQ(object):
             if filtered < len(identifiers_list):
                 print("\nWARNING: not all identifiers were found in the fastq file to " +
                       "be filtered.")
-        if tozip is True: self._gzip(output_filename)
+        logger.info("\n{} reads were filtered out and {} saved in {}".format(
+            filtered, saved, output_filename))
+
+        if tozip is True: 
+            logger.info("Compressing file")
+            self._gzip(output_filename)
 
     def to_kmer_content(self, k=7):
         """Return a Series with kmer count across all reads
@@ -784,7 +797,11 @@ class FastQ(object):
     def stats(self):
         self.rewind()
         data = [len(read['sequence']) for read in self]
-        return {"mean_read_length": pylab.mean(data), "N": len(data)}
+        S = sum(data)
+        N = float(len(data))
+        return {"mean_read_length": S/N,
+                "N": int(N),
+                "sum_read_length": S}
 
     def __eq__(self, other):
         if id(other) == id(self):

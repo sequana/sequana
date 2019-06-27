@@ -27,9 +27,11 @@ from sequana.misc import wget
 from sequana import sequana_config_path
 from sequana import logger
 
+logger.name = __name__
+
 
 __all__ = ['KrakenResults', "KrakenPipeline", "KrakenAnalysis",
-            "KrakenDownload", "KrakenHierarchical"]
+            "KrakenDownload", "KrakenHierarchical", "MultiKrakenResults"]
 
 
 class KrakenResults(object):
@@ -98,7 +100,7 @@ class KrakenResults(object):
                     # Note that we add the name as well here
                     ranks = ['kingdom', 'phylum', 'class', 'order',
                             'family', 'genus', 'species', 'name']
-                    return [(self.df.ix[x][rank], rank) for rank in ranks]
+                    return [(self.df.loc[x][rank], rank) for rank in ranks]
             self.tax = Taxonomy()
 
         if filename:
@@ -246,9 +248,9 @@ class KrakenResults(object):
         df['count'] = self.taxons.values
         df.reset_index(inplace=True)
         newrow = len(df)
-        df.ix[newrow] = "Unclassified"
-        df.ix[newrow, 'count'] = self.unclassified
-        df.ix[newrow, 'index'] = -1
+        df.loc[newrow] = "Unclassified"
+        df.loc[newrow, 'count'] = self.unclassified
+        df.loc[newrow, 'index'] = -1
         df.rename(columns={"index":"taxon"}, inplace=True)
         df["percentage"] = df["count"] / df["count"].sum() * 100
 
@@ -258,7 +260,7 @@ class KrakenResults(object):
             annotations = pd.read_csv(filename)
             annotations.set_index("taxon", inplace=True)
 
-            df2 = annotations.ix[df.taxon][['ena', 'gi', 'description']]
+            df2 = annotations.loc[df.taxon][['ena', 'gi', 'description']]
             # There are duplicates sohow. let us keep the first one for now
             df2 = df2.reset_index().drop_duplicates(subset="taxon",
                 keep="first").set_index("taxon")
@@ -307,7 +309,7 @@ class KrakenResults(object):
 
         # classified reads as root  (1)
         """try:
-            logger.warning("Removing taxon 1 (%s values) " % self.taxons.ix[1])
+            logger.warning("Removing taxon 1 (%s values) " % self.taxons.iloc[1])
             logger.info("Found %s taxons " % len(taxon_to_find))
             taxon_to_find.pop(taxon_to_find.index(1))
         except:
@@ -395,18 +397,18 @@ class KrakenResults(object):
             return None
 
         df = self.get_taxonomy_biokit(list(self.taxons.index))
-        df.ix[-1] = ["Unclassified"] * 8
+        df.iloc[-1] = ["Unclassified"] * 8
         data = self.taxons.copy()
-        data.ix[-1] = self.unclassified
+        data.iloc[-1] = self.unclassified
 
         data = data/data.sum()*100
         assert threshold > 0 and threshold < 100
         others = data[data<threshold].sum()
         data = data[data>threshold]
-        names = df.ix[data.index]['name']
+        names = df.loc[data.index]['name']
 
         data.index = names.values
-        data.ix['others'] = others
+        data.loc['others'] = others
         try:
             data.sort_values(inplace=True)
         except:
@@ -748,11 +750,13 @@ class KrakenHierarchical(object):
         output_filename_unclassified = _pathto("unclassified_%d.fastq" % iteration)
         file_fastq_unclass = _pathto("unclassified_%d.fastq" % iteration)
 
+
+
         if iteration == 0:
             inputs = self.inputs
         else:
-            # previous results
             inputs = self._list_kraken_input[iteration-1]
+            
 
         # if this is the last iteration (even if iteration is zero), save
         # classified and unclassified in the final kraken results.
@@ -788,8 +792,11 @@ class KrakenHierarchical(object):
 
         # Iteration over the databases
         for iteration in range(len(self.databases)):
-            self._run_one_analysis(iteration)
-
+            status = self._run_one_analysis(iteration)
+            last_unclassified = self._list_kraken_input[-1]
+            stat = os.stat(last_unclassified)
+            if stat.st_size == 0:
+                break
         # concatenate all kraken output files
         file_output_final = self.output_directory + os.sep + "%s.out" % output_prefix
         with open(file_output_final, 'w') as outfile:
@@ -971,3 +978,62 @@ class KrakenDownload(object):
         # The annotations
         wget("https://github.com/sequana/data/raw/master/sequana_db1/annotations.csv",
             dir1 + os.sep + "annotations.csv")
+
+
+
+class MultiKrakenResults():
+
+    def __init__(self, filenames, sample_names=None):
+        self.filenames = filenames
+        if sample_names is None:
+            self.sample_names = list(range(1,len(filenames)+1))
+        else:
+            self.sample_names = sample_names
+
+    def get_df(self):
+        import pandas as pd
+        data = {}
+        for sample, filename in zip(self.sample_names, self.filenames):
+            df = pd.read_csv(filename)
+            df = df.groupby("kingdom")['percentage'].sum()
+            # if a taxon is obsolete, the kingdom is empty. 
+            # We will set the kingdom as Unclassified and raise a warning
+            # if the count is > 5%
+            if " " in df.index:
+                percent = df.loc[" "]
+                if percent > 5:
+                    logger.warning("Found {}% of taxons in obsolete category".format(percent))
+                if "Unclassified" in df.index:
+                    df.loc['Unclassified'] += df.loc[' ']
+                    df.drop(" ", inplace=True)
+                else:
+                    df.loc['Unclassified'] = df.loc[' ']
+                    df.drop(" ", inplace=True)
+            data[sample] = df
+
+        df = pd.DataFrame(data)
+        #df.to_json(output.data)
+        df = df.sort_index(ascending=False)
+        return df
+
+    def plot_stacked_hist(self, output_filename=None, dpi=200, kind="barh", 
+        fontsize=10, edgecolor="k", lw=1, width=1, ytick_fontsize=10):
+        df = self.get_df()
+        df.T.plot(kind=kind, stacked=True, edgecolor=edgecolor, lw=lw,
+            width=width)
+        ax = pylab.gca()
+        positions = pylab.yticks()
+        #ax.set_yticklabel(positions, labels, fontsize=ytick_fontsize)
+        pylab.xlabel("Percentage (%)", fontsize=fontsize)
+        pylab.ylabel("Sample index/name", fontsize=fontsize)
+        pylab.yticks(fontsize=ytick_fontsize)
+        pylab.legend(title="kingdom")
+        pylab.xlim([0, 100])
+
+        if output_filename:
+            pylab.savefig(output_filename, dpi=dpi)
+
+
+
+
+

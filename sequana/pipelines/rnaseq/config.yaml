@@ -6,18 +6,12 @@
 # One of input_directory, input_pattern and input_samples must be provided
 # If input_directory provided, use it otherwise if input_pattern provided,
 # use it, otherwise use input_samples.
-# If input_extension provided, use it otherwise assume fastq.gz
 # ============================================================================
 input_directory: "%(input_directory)s"
 input_readtag: "%(input_readtag)s"
 input_pattern: "%(input_pattern)s"
-input_extension: "%(input_extension)s"
 # =========================================== Sections for the users
 
-# list of your input file
-input_samples:
-    file1: "%(file1)s"
-    file2: "%(file2)s"
 
 # if files are required for a pipeline and are within sequana or should
 # be downloaded before the pipeline provide them in this section
@@ -331,10 +325,12 @@ RNAseQC:
 #
 # - options: any options recognised by multiqc
 # - output-directory: Create report in the specified output directory
-#
+# - config_file: by default, we use sequana RNA-seq multiqc_config file. 
+#       If you want your own multiqc, fill this entry
 multiqc:
-    options: "-c multiqc_config.yaml -f -x *_init_* -x *left_kept_reads* -x *report_rnaseq* -e htseq -e slamdunk"
+    options: "-f -x *_init_* -x *left_kept_reads* -x *report_rnaseq* -e htseq -e slamdunk"
     output-directory: "multiqc"
+    config_file: "multiqc_config.yaml"
 
 #############################################################################
 #   Statistical analysis with SARTools for a simple experimental design

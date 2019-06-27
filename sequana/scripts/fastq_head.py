@@ -21,6 +21,9 @@ from sequana.fastq import FastQ
 
 from optparse import OptionParser
 import argparse
+from sequana import logger
+
+logger.name = __name__
 
 
 class Options(argparse.ArgumentParser):

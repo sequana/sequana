@@ -1,0 +1,110 @@
+"""Phix removal pipeline
+
+Author: Thomas Cokelaer
+Affiliation: Institut Pasteur @ 2018
+
+This pipeline is part of Sequana software (sequana.readthedocs.io)
+
+
+
+module load bcl2fastq/2.20.0
+
+
+http://emea.support.illumina.com/downloads/bcl2fastq-conversion-software-v2-20.html?langsel=/fr/
+"""
+import os
+import json
+
+# This must be defined before the include 
+configfile: "config.yaml"
+
+# an alias
+cfg = config['bcl2fastq']
+
+
+if cfg["sample_sheet_file"].strip() != "":
+    if os.path.exists(cfg['sample_sheet_file']) is False:
+        raise IOError("Sample sheet {} does not exist".format(cfg['sample_sheet_file']))
+
+
+rule all:
+    input:
+        cfg['output_directory'] + "/Stats/summary.txt",
+        cfg['output_directory'] + "/undetermined_barcodes.csv",
+        cfg['output_directory'] + "/barcodes.png",
+        
+
+rule plot_unknown_barcodes:
+    input: cfg['output_directory'] + "/Stats/Stats.json"
+    output: 
+        csv=cfg['output_directory'] + "/undetermined_barcodes.csv", 
+        png=cfg['output_directory'] + "/barcodes.png" 
+    run:
+        from sequana.demultiplex import StatsFile
+        s = StatsFile(input[0])
+        df = s.plot_unknown_barcodes()
+        from pylab import savefig
+        savefig(output.png, dpi=200)
+        df.to_csv(output.csv)
+
+
+rule bcl2fastq:
+    input:
+    output:
+        cfg['output_directory'] + "/Stats/Stats.json",
+    params:
+        indir= config['input_directory'],
+        outdir= cfg['output_directory'],
+        sample_sheet=cfg['sample_sheet_file'],
+        barcode_mismatch=cfg['barcode_mismatch']
+    threads: cfg['threads']
+    run:
+
+        cmd = "bcl2fastq -p {threads} --barcode-mismatches {params.barcode_mismatch}"
+        #cmd += " --input-dir {}/Data/Intensities/BaseCalls".format(params.indir)
+        cmd += " --runfolder-dir {}".format(params.indir)
+        cmd += " --intensities-dir {}/Data/Intensities".format(params.indir)
+        if params.sample_sheet.strip()!= "":
+            cmd += " --sample-sheet {}".format(params.sample_sheet)
+        cmd += " --output-dir {}".format(os.path.abspath(params.outdir))
+
+        if cfg['ignore_missing_controls']:
+            cmd += " --ignore-missing-controls "
+        if cfg['ignore_missing_bcls']:
+            cmd += " --ignore-missing-bcls "
+        if cfg['no_bgzf_compression']:
+            cmd += " --no-bgzf-compression "
+
+        if cfg['do_lane_fusion']:
+            cmd += " --no-lane-splitting "
+
+        if cfg['write_fastq_reverse_complement']:
+            cmd += " --write-fastq-reverse-complement"
+
+        cmd += cfg['options']
+
+        shell(cmd)
+
+
+rule status:
+    input: cfg['output_directory'] + "/Stats/Stats.json"
+    output:
+        summary=cfg['output_directory'] + "/Stats/summary.txt",
+        barplot=cfg['output_directory'] + "/summary.png"
+    run:
+        from sequana.demultiplex import StatsFile
+        s = StatsFile(input[0])
+        s.barplot_summary(filename=output.barplot)
+        # save summary at the end because barplot output is not set.
+        s.to_summary_reads(output.summary)
+
+
+onsuccess:
+    shell("chmod -R g+w .")
+    from sequana.snaketools import OnSuccessCleaner
+    sc = OnSuccessCleaner()
+    sc.files_to_remove.append("demultiplex.rules")
+    toremove = config["onsuccess"]["toclean"]
+    sc.files_to_remove.append(toremove)
+    sc.add_makefile()
+    print("Once done, please clean up the directory using\n'make clean'")

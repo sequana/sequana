@@ -9,21 +9,9 @@ mapping:
     "input_readtag":
         type: str
         required: False
-    "input_extension":
-        type: str
-        required: False
     "input_pattern":
         type: str
         required: False
-    "input_samples":
-        type: map
-        mapping:
-            "file1":
-                type: str
-                required: False
-            "file2":
-                type: str
-                required: False
 
     "coverage":
         type: map

@@ -10,6 +10,9 @@ Measles virus. For testing purposes, you can download :download:`R1
 :download:`R2 <../sequana/resources/data/Hm2_GTGAAA_L005_R2_001.fastq.gz>`)
 files that contain only 1500 reads. Copy them in a local directory.
 
+Those files are from an HiSeq2500 run. The adapters are PCRFree. There is
+only one sample for which the index is GTGAAA. You should have 10% of adapters.
+
 
 Quality pipeline
 ---------------------

@@ -26,6 +26,9 @@ from PyQt5.QtSvg import QSvgWidget
 
 from sequana.gui.file_browser import FileBrowser
 
+from sequana import logger
+logger.name = __name__
+
 
 __all__ = ["Ruleform", "GeneralOption", "BooleanOption",
 "TextOption", "NumberOption", "FileBrowserOption", "SVGDialog"]
@@ -64,6 +67,7 @@ class Ruleform(QW.QGroupBox):
         self.layout.setSpacing(2)
         self.setAutoFillBackground(True)
 
+
         rules = list(self.rule_dict.keys())
         rules.sort()
         if "do" in rules:
@@ -75,6 +79,7 @@ class Ruleform(QW.QGroupBox):
             value = self.rule_dict[rule]
 
             if option.endswith("_directory"):
+                logger.debug("adding directory widget")
                 option_widget = FileBrowserOption(option, value,
                                                   directory=True)
             elif option.endswith("_file"):
@@ -100,6 +105,8 @@ class Ruleform(QW.QGroupBox):
             elif generic is True:
                 value = str(value)
                 option_widget = TextOption(option, value)
+            elif isinstance(value, (list)):
+                option_widget = ListOption(option, value)
             else:
                 try:
                     option_widget = NumberOption(option, value)
@@ -221,6 +228,29 @@ class BooleanOption(GeneralOption):
 
     def connect(self, task):
         self.check_box.clicked.connect(task)
+
+
+# allows us to read list objects in YAML files
+class ListOption(GeneralOption):
+    def __init__(self, option, value):
+        super().__init__(option)
+        self.text = QW.QLineEdit(str(value))  # only diff with TextOption 
+
+        self.layout.addWidget(self.text)
+
+    def get_value(self):
+        if not self.text.text():
+            return "[]"             #only diff with TextOption
+        return self.text.text()
+
+    def set_value(self, text):
+        self.text.setText(text)
+
+    def set_enable(self, switch_bool):
+        self.text.setEnabled(switch_bool)
+
+    def connect(self, task):
+        self.text.textChanged.connect(task)
 
 
 class TextOption(GeneralOption):

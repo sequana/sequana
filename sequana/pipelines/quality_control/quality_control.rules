@@ -19,7 +19,6 @@ configfile: "config.yaml"
 __snakefile__ = srcdir(__snakefile__)
 
 
-
 # Generic include of some dynamic modules
 exec(open(sequana.modules["bwa_mem_dynamic"], "r").read())
 exec(open(sequana.modules["fastqc_dynamic"], "r").read())
@@ -28,18 +27,28 @@ exec(open(sequana.modules["fastq_stats_dynamic"], "r").read())
 # A convenient manager
 manager = sm.PipelineManager("quality_control", config)
 
-
 # Sanity checks ============================================================
 
 
 if manager.config.cutadapt.design_file:
     try:
-        sequana.expdesign.ExpDesignAdapter(manager.config.cutadapt.design_file)
+        sequana.expdesign.ExpDesignAdapter(manager.config.cutadapt.design_file, verbose=False)
     except Exception as err:
         from sequana import logger
         logger.__name__ = "quality control"
         logger.error("Quality control error. Incorrect design file")
         raise ValueError(err)
+
+    try:
+        from sequana import FindAdaptersFromDesign
+        ff = FindAdaptersFromDesign(manager.config.cutadapt.design_file, 
+                manager.config.cutadapt.adapter_choice)
+        ff.check()
+    except Exception as err:
+        from sequana import logger
+        logger.__name__ = "quality control"
+        logger.error("Quality control error. Incorrect design file")
+        raise err
 
 
 

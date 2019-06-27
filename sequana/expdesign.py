@@ -47,8 +47,9 @@ import shlex
 import io
 
 from sequana.lazy import pandas as pd
-import colorlog
-logger = colorlog.getLogger(__name__)
+from sequana import logger
+
+logger.name = __name__
 
 
 __all__ = ["ExpDesignAdapter", "ExpDesignMiSeq", "ExpDesignHiSeq",
@@ -148,6 +149,7 @@ class ExpDesignBase(object):
         self.filename = filename
         self.adapter_type = "unset"
         self.name = "ExpDesignBase"
+        self.instrument = "undefined"
 
     def check(self):
         """Check the presence of the Sample_ID column"""
@@ -162,7 +164,8 @@ class ExpDesignBase(object):
 
     def __repr__(self):
         txt = "%s: %s entries\n" % (self.name, len(self.df))
-        txt += "adapter type: %s " % (self.adapter_type)
+        txt += "adapter type: %s\n" % (self.adapter_type)
+        txt += "Instrument Type: %s " % (self.instrument)
         return txt
 
 
@@ -196,7 +199,7 @@ class ExpDesignHiSeq(ExpDesignBase):
 
     This is a format that may change in the future.
 
-    The SampleID is convert into Sample_ID, "Index Seq". Note that "Index Seq"
+    The SampleID is converted into Sample_ID, "Index Seq". Note that "Index Seq"
     may be empty, or filled with an index sequence, or 2 index sequences
     separated by a "-" sign.
 
@@ -235,7 +238,128 @@ class ExpDesignHiSeq(ExpDesignBase):
         self.check()
 
 
-class ExpDesignMiSeq(ExpDesignBase):
+class ExpDesignIllumina(ExpDesignBase):
+    def __init__(self, filename):
+        super(ExpDesignIllumina, self).__init__(filename)
+
+    def scanner(self):
+        data = {}
+        # shlex removes all white lines and split by return carriage
+        # strip is also applied
+        rawdata = shlex.split(open(self.filename, "r"))
+        for line in rawdata:
+            # sometimes, IEM will store the ;;; at the end
+            # so we can get [HEADER];;;;;;;;;;;
+            if line.startswith('[') and "]" in line:
+                line = line.strip(";").strip(",").strip()
+                currentkey = line.replace("[", "").replace("]", "")
+                data[currentkey] = []
+            else:
+                data[currentkey].append(line)
+
+        for key in data.keys():
+            data[key] = "\n".join(data[key])
+
+        for this in ["Header", "Reads", "Settings", "Data"]:
+            if this not in data.keys():
+                logger.warning("%s not found in the DesignExpMiSeq file" % this)
+
+        self.data = data
+        self.df = pd.read_csv(io.StringIO(data["Data"]))
+
+        ncols = [8, 9,10, 12]
+        if self.df.shape[1] not in ncols:
+            self.df = pd.read_csv(io.StringIO(data["Data"]), ";")
+            if self.df.shape[1] not in ncols:
+                logger.warning("Data section must have 10 or 12 columns. Check the samplesheet")
+
+        # Fixes https://github.com/sequana/sequana/issues/507
+        self.df["Sample_ID"] = self.df["Sample_ID"].astype(str)
+
+        self.df.rename(columns={"I7_Index_ID":"Index1_ID", "index":"Index1_Seq",
+            "I5_Index_ID": "Index2_ID", "index2":"Index2_Seq"},
+                       inplace=True)
+
+    def to_demultiplex(self, filename, FCID, double_indexing=True):
+
+        # FCID,Lane,SampleID,SampleRef,Index Seq,Description,Control,Recipe,Operator,Project
+        # HYVN3BCXY,1,177-SQDC,170629_C-dHumieres,CTCTCTAC-GCGTAAGA,,N,V2.0,PF1,170629_C-dHumieres
+
+        if "Lane" not in self.df.columns:
+            self.df['Lane'] = 1
+
+        if double_indexing is False:
+            raise NotImplementedError
+
+        with open(filename, "w") as fout:
+            fout.write("FCID,Lane,SampleID,SampleRef,Index Seq,Description,Control,Recipe,Operator,Project\n")
+            for this in self.df.iterrows():
+                data = this[1]
+                txt = "{},{},{},{},{}-{},,N,,PF1,{}\n".format(
+                        FCID,
+                        data.Lane,
+                        data.Sample_ID,
+                        data.Sample_Project,
+                        data.Index1_Seq,
+                        data.Index2_Seq, 
+                        data.Sample_Project)
+                fout.write(txt)
+
+
+
+class ExpDesignHiSeq2500(ExpDesignIllumina):
+    def __init__(self, filename):
+        super(ExpDesignHiSeq2500, self).__init__(filename)
+        self.name = "ExpDesignHiSeq2500"
+
+        self.scanner()
+
+
+        # The name of the Index_ID is not standard....
+        # Depends on the experimentalist because a prefix may be added.
+        # One known prefix is NF. We agreed that future prefix must end with an
+        # underscore so that it can be removed. Since ID may contain letters
+        # (e.g.S501), it would be impossible otherwise to split the prefix from
+        # the index.
+        self.df["Index1_ID"] = self.df["Index1_ID"].apply(
+                lambda x: x.replace("NF", ""))
+        self.df["Index1_ID"] = self.df["Index1_ID"].apply(
+                lambda x: x.split("_",1)[-1])
+        try:
+            self.df["Index1_ID"] = self.df["Index1_ID"].astype(int)
+        except:
+            pass
+
+        if "Index2_ID" in self.df.columns:
+            self.df["Index2_ID"] = self.df["Index2_ID"].apply(
+                lambda x: x.replace("NF", ""))
+            self.df["Index2_ID"] = self.df["Index2_ID"].apply(
+                lambda x: x.split("_",1)[-1])
+            try:
+                self.df["Index2_ID"] = self.df["Index2_ID"].astype(int)
+            except:
+                pass
+
+        # Figure out the type of adapters if possible
+        try:
+            header = self.data['Header']
+            assay = [x for x in header.split('\n') if x.startswith("Assay")]
+            assay = assay[0]
+            items = assay.split(',')
+            if items[0] == "Assay":
+                self.adapter_type = assay.split(",")[1]
+            elif items[0] == "Instrument Type":
+                self.instrument = assay.split(",")[1]
+            else:
+                items = assay.split(';')
+                self.adapter_type = assay.split(";")[1]
+        except:
+            pass
+
+        self.check()
+
+
+class ExpDesignMiSeq(ExpDesignIllumina):
     """Dedicated experimental design format from Illumina MiSeq sequencers
 
     This MiSeq design format has the following format::
@@ -275,43 +399,12 @@ class ExpDesignMiSeq(ExpDesignBase):
 
     """
     def __init__(self, filename):
-        super(ExpDesignMiSeq, self).__init__(filename)
+        super(ExpDesignIllumina, self).__init__(filename)
         self.name = "ExpDesignMiSeq"
 
-        data = {}
-        # shlex removes all white lines and split by return carriage
-        # strip is also applied
-        rawdata = shlex.split(open(filename, "r"))
-        for line in rawdata:
-            # sometimes, IEM will store the ;;; at the end
-            # so we can get [HEADER];;;;;;;;;;;
-            if line.startswith('[') and "]" in line:
-                line = line.strip(";").strip(",").strip()
-                currentkey = line.replace("[", "").replace("]", "")
-                data[currentkey] = []
-            else:
-                data[currentkey].append(line)
+        self.scanner()
 
-        for key in data.keys():
-            data[key] = "\n".join(data[key])
 
-        for this in ["Header", "Reads", "Settings", "Data"]:
-            if this not in data.keys():
-                logger.warning("%s not found in the DesignExpMiSeq file" % this)
-
-        self.data = data
-        self.df = pd.read_csv(io.StringIO(data["Data"]))
-        if self.df.shape[1] not in [8, 10]:
-            self.df = pd.read_csv(io.StringIO(data["Data"]), ";")
-            if self.df.shape[1] not in [8, 10]:
-                logger.warning("Data section must have 8 or 10 columns. Check the samplesheet")
-
-        # Fixes https://github.com/sequana/sequana/issues/507
-        self.df["Sample_ID"] = self.df["Sample_ID"].astype(str)
-
-        self.df.rename(columns={"I7_Index_ID":"Index1_ID", "index":"Index1_Seq",
-            "I5_Index_ID": "Index2_ID", "index2":"Index2_Seq"},
-                       inplace=True)
 
         # The name of the Index_ID is not standard....
         # Depends on the experimentalist because a prefix may be added.

@@ -27,6 +27,9 @@
 """
 from bisect import bisect_left, insort
 import numpy as np
+from sequana import logger
+logger.name = __name__
+
 
 # blist seems to be unstable on older systems/platforms so we use list by
 # default for now. Be aware that on recent systems blist exhibits a log(W)

@@ -53,7 +53,6 @@ rule bwa_mem_%(name)s:
         - __bwa_mem_%(name)s__bam: Sorted BAM file.
 
     Log:
-        - __bwa_index_%(name)s__log: Log file of BWA index.
         - __bwa_mem_%(name)s__log: Log file of BWA mem.
 
     Required configuration:

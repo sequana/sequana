@@ -589,6 +589,12 @@ class DNA(Sequence):
         pylab.legend(loc=1)
         pylab.title("Number of ORF and CDS by frame")
 
+    def entropy(self, sequence):
+        # https://www.sciencedirect.com/science/article/pii/S0022519397904938?via%3Dihub
+        pi = [x.count(l)/float(len(x)) for l in 'ACGT']
+        pi = [x for x in pi if x!=0]
+        return -sum(pi*log(pi))
+
 
 class RNA(Sequence):
     """Simple RNA class
@@ -619,7 +625,8 @@ class Repeats(object):
         rr.hist_length_repeats()
 
     .. note:: Works with shustring package from Bioconda (April 2017)
-    .. todo:: use a specific sequence (right now it is the first one)
+    .. todo:: use a specific sequence (first one by default). Others can be
+        selected by name
 
     """
     def __init__(self, filename_fasta, merge=False, name=None):
@@ -636,6 +643,10 @@ class Repeats(object):
             _header for each sequence with the sequence name found in
             sequence header.
 
+
+        .. note:: known problems. Header with a > character (e.g. in the
+            comment) are left strip and only the comments is kept. Another issue
+            is for multi-fasta where one sequence is ignored (last or first ?)
         """
         # used to check everything is fine with the header/name
         self._fasta = FastA(filename_fasta)
@@ -651,6 +662,7 @@ class Repeats(object):
         self._filename_fasta                  = filename_fasta
         self._previous_thr                    = None
         self._list_len_repeats                = None
+        self._contig_names                    = None
         if not isinstance(merge, bool):
             raise TypeError("do_merge must be boolean")
         self._do_merge                        = merge
@@ -677,6 +689,12 @@ class Repeats(object):
         self._df_shustring = None
     header = property(_get_header, _set_header)
 
+    def _get_names(self):
+        if self._contig_names is None:
+            self._contig_names = self._fasta.names
+        return self._contig_names
+    names = property(_get_names)
+
     def _get_shustrings_length(self):
         """Return dataframe with shortest unique substring length at each position
         shortest unique substrings are unique in the sequence and its complement
@@ -701,7 +719,7 @@ class Repeats(object):
                 #df=pd.concat([df, line])
             task_shus.wait()
 
-            # convert to dataframe
+            # convert to dataframe 
             df = pd.DataFrame(list_df[2:len(list_df)])
             self._df_shustring = df.astype(int)
             self._df_shustring.columns = ["position","shustring_length"]

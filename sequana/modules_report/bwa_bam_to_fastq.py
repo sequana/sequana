@@ -70,7 +70,7 @@ class BWABAMtoFastQModule(SequanaBaseModule):
         datatable = DataTable(df, "bwa_bam")
         datatable.datatable.datatable_options = {
              'scrollX': '300px',
-             'pageLength': 15,
+             'pageLength': 30,
              'scrollCollapse': 'true',
              'dom': 'irtpB',
              "paging": "false",

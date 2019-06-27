@@ -301,7 +301,7 @@ if manager.config.feature_counts.do:
 
 # Add Read group on BAM files
 __add_read_group__input = __mapping_output
-__add_read_group__output = manager.getname("add_read_group/", ".bam")
+__add_read_group__output = manager.getname("add_read_group", ".bam")
 __add_read_group__log_err = "%s/logs/AddOrReplaceReadGroups/stderr.logs" % manager.sample
 __add_read_group__log_std ="%s/logs/AddOrReplaceReadGroups/stdout.logs" % manager.sample
 __add_read_group__rg = "ID=%s LB=%s PL=%s PU=%s SM=%s" % (
@@ -357,6 +357,11 @@ __multiqc__input = expected_output
 __multiqc__input_dir = "."
 __multiqc__logs = "multiqc/multiqc.log"
 __multiqc__output = config['multiqc']['output-directory'] + "/multiqc_report.html"
+
+# Hack while waiting for a more general multiqc rules
+if config['multiqc']['config_file']:
+    config['multiqc']['options'] += " -c " + config['multiqc']['config_file']
+
 include: sm.modules["multiqc"]
 expected_output = [__multiqc__output]
 
