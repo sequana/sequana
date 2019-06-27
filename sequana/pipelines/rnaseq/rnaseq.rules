@@ -20,6 +20,9 @@ exec(open(sequana.modules["bowtie1_mapping_dynamic"], "r").read())
 exec(open(sequana.modules["bowtie1_index_dynamic"], "r").read())
 exec(open(sequana.modules["fastqc_dynamic"], "r").read())
 exec(open(sequana.modules["dynamic_unpigz"], "r").read())
+exec(open(sequana.modules["mark_duplicates_dynamic"], "r").read())
+
+
 
 manager = sm.PipelineManager("rnaseq", config)
 
@@ -313,13 +316,14 @@ include: sm.modules["add_read_group"]
 
 # Mark duplicates
 if config["mark_duplicates"]["do"]:
-    __mark_duplicates__input = __add_read_group__output
-    __mark_duplicates__output = manager.getname("mark_duplicates", ".bam")
-    __mark_duplicates__metrics = manager.getname("mark_duplicates", ".metrics")
-    __mark_duplicates__log_std = "%s/logs/mark_duplicates/stdout.logs" % manager.sample
-    __mark_duplicates__log_err =  "%s/logs/mark_duplicates/stderr.logs" % manager.sample
-    include: sm.modules["mark_duplicates"]
-    expected_output.extend(expand(__mark_duplicates__output, sample=manager.samples))
+    __mark_duplicates_ref__input = __add_read_group__output
+    __mark_duplicates_ref__output = manager.getname("mark_duplicates", ".bam")
+    __mark_duplicates_ref__metrics = manager.getname("mark_duplicates", ".metrics")
+    __mark_duplicates_ref__log_std = "%s/logs/mark_duplicates/stdout.logs" % manager.sample
+    __mark_duplicates_ref__log_err =  "%s/logs/mark_duplicates/stderr.logs" % manager.sample
+    include: mark_duplicates_dynamic("ref", manager)
+    expected_output.extend(expand(__mark_duplicates_ref__output, sample=manager.samples))
+
 
 
 if config["RNAseQC"]["do"]:
