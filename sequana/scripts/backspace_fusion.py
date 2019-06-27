@@ -221,7 +221,7 @@ class Options(argparse.ArgumentParser):
             sampleID_L002_.fastq.gz
 
 
-        sequana_lane_fusion --lanes 1,2,3,4
+        sequana_lane_fusion --lanes 1 2 3 4
 
         """.format(prog)
         super(Options, self).__init__(usage=usage, prog=prog,
@@ -241,7 +241,7 @@ class Options(argparse.ArgumentParser):
             action="store_true")
 
         self.add_argument("--queue", dest="queue", type=str,
-            default="common", choices=["biomics", "common"]
+            default="common", choices=["biomics", "common"],
             help="queue to use on the cluster")
         self.add_argument("--lanes", dest="lanes", nargs="+", 
             type=int, required=True)

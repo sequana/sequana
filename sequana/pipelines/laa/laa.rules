@@ -306,6 +306,10 @@ if do_freebayes and do_freebayes_vcf_filter:
 
 
 rule igv_bases:
+    # an alternative but that gives only the consensus
+    # samtools mpileup -R -B -f ../../reference/CCR5_whole_locus.fasta
+    # mapping.sorted.bam > out
+    #
     input: "{sample}/mapping/mapping.sorted.bam.bai"
     output: "{sample}/igvtools/bases.txt"
     params:

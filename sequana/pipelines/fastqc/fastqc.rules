@@ -68,6 +68,7 @@ onsuccess:
     shell("ln -f -s {} index.html".format(__multiqc__output))
     shell("rm -f ./samples/*/*.done")
     shell("rm -f ./samples/*/*.log")
+    shell("chmod -R g+w .")
 
 
     from sequana.utils.tree import HTMLDirectory
