@@ -20,7 +20,7 @@ Requirements
 
 .. include:: ../sequana/pipelines/chipseq/requirements.txt
 
-.. image:: https://raw.githubusercontent.com/sequana/sequana/master/sequana/pipelines/chipseq/dag.png
+.. image:: https://raw.githubusercontent.com/sequana/sequana/develop/sequana/pipelines/chipseq/dag.png
 
 
 Details
