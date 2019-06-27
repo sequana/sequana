@@ -27,8 +27,8 @@ before_install:
     - conda config --add channels conda-forge
     - conda config --add channels bioconda
     # This help testing code with pylab
-    - "export DISPLAY=:99.0"
-    - "sh -e /etc/init.d/xvfb start"
+    #- "export DISPLAY=:99.0"
+    #- "sh -e /etc/init.d/xvfb start"
 
 install:
   - echo $TRAVIS_PYTHON_VERSION
