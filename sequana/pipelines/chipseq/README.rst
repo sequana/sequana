@@ -44,9 +44,6 @@ Here is a documented configuration file :download:`../sequana/pipelines/chipseq/
 Each rule used in the pipeline may have a section in the configuration file.
 Here are the rules and their developer and user documentation.
 
-Here is a documented configuration file :download:`../sequana/pipelines/chipseq/config.yaml` to be used with the pipeline.
-Each rule used in the pipeline may have a section in the configuration file.
-Here are the rules and their developer and user documentation.
 
 
 FastQC
@@ -66,7 +63,7 @@ Cutadapt is used to trim and filter sequences.
 Mapping with bowtie2
 ^^^^^^^^^^^^^^^^^^^^^
 
-Bowtie2 is used to aligned read against reference genome (and spike-in genome is needed)
+Bowtie2 is used to aligned read against reference genome (and spike-in genome if needed)
 
 .. warning:: with paired-end data use `--dovetail --no-mixed --no-discordant` parameters
 
@@ -93,7 +90,7 @@ Peak Calling
 
 MACS2 is used to call peak on IP Bam files.
 
-.. warning:: For paired-end reads, it is very recommended to put --keep-dup 2500
+.. warning:: For paired-end reads, it is very recommended to put `--keep-dup 2500`
 
 .. snakemakerule::  macs2_dynamic
 
@@ -101,7 +98,7 @@ MACS2 is used to call peak on IP Bam files.
 
 IDR step
 ^^^^^^^^^
-According to encode guidelines (https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3431496/), reproducible peaks are selected
+According to ENCODE guidelines (https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3431496/), reproducible peaks are selected
 using IDR pipeline.
 
 
