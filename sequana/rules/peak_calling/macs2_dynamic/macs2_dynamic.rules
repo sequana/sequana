@@ -1,0 +1,75 @@
+def macs2_dynamic(name):
+
+    metadata = {'name':name}
+
+    macs2_code = '''
+rule macs2_%(name)s:
+    """
+    macs2 peak caller https://github.com/taoliu/MACS. Main MACS2 Function to Call peaks from alignment results.
+
+    Required input:
+        __macs2_%(name)s__input_bam: bam file
+        __macs2_%(name)s__input_done: any file required by macs2 (ex: INPUT bam file, output of spp rule, etc..)
+
+    Required output:
+        __macs2_%(name)s__output: peak file
+
+    Required configuration:
+        .. code-block:: yaml
+
+            macs2:
+                mode: narrow or broad
+                gsize: mappable size of your genome. See MACS2 documentation
+                options:  ""   #options for macs2 you want use
+                no-model: yes or no
+                force_shift: yes or no
+                readLength: 50 # in order to compute the best shift with PPQT when force_shift is set
+
+    """
+
+    input:
+        bam = __macs2_%(name)s__input_bam,
+        done = __macs2_%(name)s__input_done
+    params:
+        gsize = config["peak_calling"]["genomeSize"],
+        # options must contain both mode and full options
+        options = __macs2_%(name)s__options,
+        pe_mode = __macs2_%(name)s__pe_mode,
+        input = __macs2_%(name)s__input,
+        prefix = __macs2_%(name)s__output_prefix,
+        shift_file = __macs2_%(name)s__shift_file,
+        read_length = config["peak_calling"]["readLength"]
+    log:
+        __macs2_%(name)s__log
+    conda:
+        "../../envs/macs2.yaml"
+    output:
+        __macs2_%(name)s__output
+    shell:
+        """
+        set +o pipefail
+
+        if [[ "{params.input}" == "NA" ]] ; then input="" ; else input="{params.input}" ; fi
+
+        if [[ {params.shift_file} != "Empty" ]] ; then
+            if [[ -e {params.shift_file} ]] ; then
+                shift=$(awk \'{{print $3}}\' {params.shift_file} | awk -F \',\' \'{{if ($1=={params.read_length}){{print $2}}  else {{print $1}} }}\')
+                if [[ {params.pe_mode} == "yes" ]] ; then
+                    macs2 callpeak -t {input.bam} ${{input}} -f BAMPE -g {params.gsize} -n {params.prefix} {params.options} --extsize ${{shift}} 2> {log}
+                else
+                    macs2 callpeak -t {input.bam} ${{input}} -f BAM -g {params.gsize} -n {params.prefix} {params.options} --extsize ${{shift}} 2> {log}
+                fi
+            fi
+        else
+            if [[ {params.pe_mode} == "yes" ]] ; then
+                macs2 callpeak -t {input.bam} ${{input}} -f BAMPE -g {params.gsize} -n {params.prefix} {params.options} 2> {log}
+            else
+                macs2 callpeak -t {input.bam} ${{input}} -f BAM -g {params.gsize} -n {params.prefix} {params.options} 2> {log}
+            fi
+        fi
+        """
+
+    '''
+
+    from sequana.snaketools import build_dynamic_rule
+    return build_dynamic_rule(macs2_code % metadata, manager.pipeline_dir)

@@ -1,0 +1,211 @@
+#######################################
+# Example MultiQC Configuration File
+#######################################
+
+# This file can be saved either in the MultiQC installation
+# directory, or as ~/.multiqc_config.yaml
+
+# Configuration settings are taken from the following locations, in order:
+# - Hardcoded in MultiQC (multiqc/utils/config.py)
+# - <installation_dir>/multiqc_config.yaml
+# - ~/.multiqc_config.yaml
+# - Command line options
+
+# Note that all of the values below are set to the MultiQC defaults.
+# It's recommended that you delete any that you don't need.
+
+
+#------------------------------------------------------------------------------
+#        TO CHANGE
+#-------------------------------------------------------------------------------
+
+# Title to use for the report.
+title: "Sequachip"
+subtitle: "test of epigenomics"           # Grey text below title
+intro_text: "MultiQC reports summarise analysis results produced from ChIP-seq pipeline, part of sequana"          # Set your own text
+
+# Add generic information to the top of reports
+report_header_info:
+#- Example Config:: 'This is arbitrary'
+#- Another field:: 'Loaded from <code>multiqc_config_example.yaml</code>'
+    - Contact E-mail: '<login>@example.com'
+    - Application Type: 'ChIP-seq'
+    - Project Type: 'Differential peak expression'
+    - Sequencing Platform: 'HiSeq 2500 High Output V4'
+    - Sequencing Setup: 'SR65'
+    - Library type : 'Illumina TruSeq'
+
+#-------------------------------------------------------------------------------
+
+
+# Specify a custom logo to add to reports (uncomment to use)
+#custom_logo: '         # '/path/to/logo.png'
+#custom_logo_url: ''    # 'https://www.example.com'
+#custom_logo_title: ''  # 'Our Institute Name'
+
+custom_data:
+    metrics_peaks:
+        id: 'metrics_peaks'
+        section_name: 'Peaks metrics'
+        plot_type: 'table'
+        pconfig:
+            namespace: 'metrics_peaks'
+        headers:
+            cond:
+                title: 'Condition'
+                description: 'Condition'
+                format: '{:,.0f}'
+            Replicats:
+                title: '# peaks'
+                description: 'Total number of peaks passed IDR in replicates'
+                format: '{:,.0f}'
+            PPR:
+                title: 'PPR'
+                description: 'Total number of peaks passed IDR in pseudo-replicates'
+                format: '{:,.0f}'
+            SPR1:
+                title: 'SPR1'
+                description: 'Total number of peaks passed IDR in self pseudo-replicates 1'
+                format: '{:,.0f}'
+            SPR2:
+                title: 'SPR2'
+                description: 'Total number of peaks passed IDR in self pseudo-replicates 1'
+                format: '{:,.0f}'
+            RR:
+                title: 'RR'
+                description: 'Rescue ratio'
+                format: '{:,.0f}'
+            SCR:
+                title: 'SCR'
+                description: 'Self-consistency ratio'
+                format: '{:,.0f}'
+            Score:
+                title: 'Score'
+                description: 'blabla'
+                format: '{:,.0f}'
+
+table_cond_formatting_rules:
+    RR:
+        pass:
+            - lt: 2.0
+        warn:
+            - gt: 1.8
+        fail:
+            - gt: 2.0
+    SCR:
+        pass:
+            - lt: 2.0
+        warn:
+            - gt: 1.8
+        fail:
+            - gt: 2.0
+    Score:
+        pass:
+            - eq: 1.0
+        warn:
+            - ne: 1.0
+        fail:
+            - ne: 1.0
+    mqc-generalstats-phantompeakqualtools-NSC:
+        pass:
+            - gt: 1.05
+        warn:
+            - lt: 1.05
+        fail:
+            - lt: 0.9
+    mqc-generalstats-phantompeakqualtools-RSC:
+        pass:
+            - gt: 0.8
+        warn:
+            - lt: 0.8
+        fail:
+            - lt: 0.5
+
+top_modules:
+    - 'fastqc'
+    - 'cutadapt'
+    - 'bowtie2'
+    - 'picard'
+    - 'phantompeakqualtools'
+    - 'metrics_peaks'
+    - 'feature_counts'
+
+section_comments:
+    featurecounts: 'Rajouter des help à chaque outil !'
+
+
+# Prepend sample names with their directory. Useful if analysing the
+# sample samples with different parameters.
+prepend_dirs: False
+
+# Default output filenames
+output_fn_name: multiqc_report.html
+data_dir_name: multiqc_data
+
+# Whether to create the parsed data directory in addition to the report
+make_data_dir: True
+
+# Cleaning options for sample names. Typically, sample names are detected
+# from an input filename. If any of these strings are found, they and any
+# text to their right will be discarded.
+# For example - file1.fq.gz_trimmed.bam_deduplicated_fastqc.zip
+# would be cleaned to 'file1'
+# Two options here - fn_clean_exts will replace the defaults,
+# extra_fn_clean_exts will append to the defaults
+extra_fn_clean_exts:
+    - .gz
+    - .fastq
+    - _R1_.cutadapt
+    - type: remove
+      pattern: '.sorted'
+    - type: regex
+      pattern: '^Sample_\d+'
+
+
+# Ignore these files / directories / paths when searching for logs
+fn_ignore_files:
+    - .DS_Store
+fn_ignore_dirs:
+    - annoying_dirname
+fn_ignore_paths:
+    - '*/path/to/*_files/'
+
+# Ignore files larger than this when searcing for logs (bytes)
+log_filesize_limit: 5000000
+
+# MultiQC skips a couple of debug messages when searching files as the
+# log can get very verbose otherwise. Re-enable here to help debugging.
+report_readerrors: False
+report_imgskips: False
+
+# Opt-out of remotely checking that you're running the latest version
+no_version_check: False
+
+# How to plot graphs. Different templates can override these settings, but
+# the default template can use interactive plots (Javascript using HighCharts)
+# or flat plots (images, using MatPlotLib). With interactive plots, the report
+# can prevent automatically rendering all graphs if there are lots of samples
+# to prevent the browser being locked up when the report opens.
+plots_force_flat: False          # Try to use only flat image graphs
+plots_force_interactive: False   # Try to use only interactive javascript graphs
+plots_flat_numseries: 100        # If neither of the above, use flat if > this number of datasets
+num_datasets_plot_limit: 50      # If interactive, don't plot on load if > this number of datasets
+max_table_rows: 500              # Swap tables for a beeswarm plot above this
+
+# Overwrite module filename search patterns. See multiqc/utils/search_patterns.yaml
+# for the defaults. Remove a default by setting it to null.
+sp:
+    cutadapt:
+        fn: '*trim.txt'
+    phantompeakqualtools/out:
+        fn: '*_spp.out'
+    picard/markdups:
+        fn: '*_dedup.txt'
+    metrics_peaks:
+        fn: 'metrics_peaks_mqc.out'
+
+# Overwrite the defaults of which table columns are visible by default
+table_columns_visible:
+    FastQC:
+        percent_fails: False
+        total_sequences: True

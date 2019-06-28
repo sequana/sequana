@@ -1,0 +1,41 @@
+{
+    "__default__" :
+    {
+        "ram" : "10G"
+    },
+
+	"bowtie2_mapping" :
+	{
+		"ram" : "50G"
+	},
+
+	"bowtie2_index" :
+	{
+		"ram" : "60G"
+	},
+	"mark_duplicates" :
+	{
+		"ram" : "60G"
+	},
+	"spp" :
+	{
+		"ram" : "20G"
+	},
+	"preIDR_PPR" :
+	{
+		"ram" : "30G"
+	},
+	"preIDR_SPR" :
+	{
+		"ram" : "30G"
+	},
+	"preIDR_input" :
+	{
+		"ram" : "30G"
+	},
+
+	"bamCoverage" :
+	{
+		"ram" : "20G"
+	}
+}

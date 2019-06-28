@@ -1,0 +1,30 @@
+rule spp:
+    """
+    This rule computes informative enrichment and quality measures for ChIP-seq/DNase-seq/FAIRE-seq/MNase-seq data.
+    It can also be used to obtain robust estimates of the predominant fragment length or characteristic tag shift
+    values in these assays.
+    It uses Phantom Peak Qual Tools from https://github.com/kundajelab/phantompeakqualtools
+
+    Required input:
+        __spp__input: bam file
+
+    Required output:
+        __spp__output_pdf: pdf output file
+        __spp__metrics: metrics output in txt format
+
+    """
+    input:
+        __spp__input
+    output:
+        pdf = __spp__output_pdf,
+        metrics = __spp__metrics
+    log:
+        out = __spp__log_std,
+        err = __spp__log_err
+    run:
+        from sequana import sequana_data
+
+        # get R script path
+        spp_script = sequana_data("run_spp.R", where="scripts")
+
+        shell("Rscript %s -c={input} -odir=. -savp={output.pdf} -out={output.metrics} > {log.out} 2> {log.err}" % (spp_script))

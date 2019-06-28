@@ -1,12 +1,18 @@
-rule mark_duplicates:
-    """ 
+def mark_duplicates_dynamic(name, manager):
+
+    metadata = {'name':name}
+
+    mark_duplicates_code = '''
+
+rule mark_duplicates_%(name)s:
+    """
     Mark reads duplicated. Thus, variant caller is aware of duplicated reads.
 
     Required input:
-        __mark_duplicates__input: bam file
+        __mark_duplicates_%(name)s__input: bam file
 
     Required output:
-        __mark_duplicates__output: bam file
+        __mark_duplicates_%(name)s__output: bam file
 
     Required configuration:
         .. code-block:: yaml
@@ -16,13 +22,13 @@ rule mark_duplicates:
                 tmpdir:  # temporary directory
     """
     input:
-        __mark_duplicates__input
+        __mark_duplicates_%(name)s__input
     output:
-        bam = __mark_duplicates__output,
-        metrics = __mark_duplicates__metrics
+        bam = __mark_duplicates_%(name)s__output,
+        metrics = __mark_duplicates_%(name)s__metrics
     log:
-        out = __mark_duplicates__log_std,
-        err = __mark_duplicates__log_err
+        out = __mark_duplicates_%(name)s__log_std,
+        err = __mark_duplicates_%(name)s__log_err
     params:
         remove = config["mark_duplicates"]["remove"],
         tmpdir = config["mark_duplicates"]["tmpdir"]
@@ -35,3 +41,8 @@ rule mark_duplicates:
             TMP_DIR={params.tmpdir} && samtools index {output.bam}) \
             > {log.out} 2> {log.err}
         """
+    '''
+
+
+    from sequana.snaketools import build_dynamic_rule
+    return build_dynamic_rule(mark_duplicates_code % metadata, manager.pipeline_dir)

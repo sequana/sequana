@@ -6,12 +6,18 @@
 # One of input_directory, input_pattern and input_samples must be provided
 # If input_directory provided, use it otherwise if input_pattern provided,
 # use it, otherwise use input_samples.
+# If input_extension provided, use it otherwise assume fastq.gz
 # ============================================================================
 input_directory: "%(input_directory)s"
 input_readtag: "%(input_readtag)s"
 input_pattern: "%(input_pattern)s"
+input_extension: "%(input_extension)s"
 # =========================================== Sections for the users
 
+# list of your input file
+input_samples:
+    file1: "%(file1)s"
+    file2: "%(file2)s"
 
 # if files are required for a pipeline and are within sequana or should
 # be downloaded before the pipeline provide them in this section
@@ -19,7 +25,6 @@ input_pattern: "%(input_pattern)s"
 # using the front dashes
 requirements:
     - Institut_Pasteur.png
-
 
 
 
@@ -38,6 +43,28 @@ sequencing:
     instrument: "Hiseq2500"
     flowcell: "H35CTBCXY"
 
+##################################################################
+# Design information. These informations will be used during the
+# peak calling step
+#
+# :Parameters:
+#
+# - design_file: Path to a design file in tabulated format. See documentation
+# - spike: set to 'yes' if you have spikes in your data. Possible values: {yes, no}
+# - marks: list of different marks (comma-separated)
+# - condition: list of different conditions (comma-separated). If not ?
+# - replicates: How the replicate is writed in the files (REP or Rep or rep ?)
+
+design:
+    design_file: /path/to/your/design_file.txt
+    marks: Mark1, Mark2
+    condition: Cond1, Cond2
+    replicates: Rep
+    spike: yes
+    spike_genome_file: /path/to/your/directory/Genomes/spike_genome/spike_genome.fa
+
+
+
 #############################################################################
 # Indexing section: if checked, all index for bowtie (1&2), star, etc... will be produced in dir
 #
@@ -47,27 +74,27 @@ sequencing:
 # - dir: directory where all indexed are written
 # - name: name of prefix use in all mapping rules
 # - fasta: path to Reference Genome in fasta format
-# - gff: path to GFF annotation file. Be carefull: chromosome names must me concordant with Fasta file
-# - rRNA_fasta: path to fasta file for ribosomal RNA if provided
-# - rRNA_feature: if rRNA_fasta not provided, ribosomal RNA will be extract from GFF using this feature
+
+
 #
 genome:
   do: yes
   genome_directory: /path/to/your/directory
   name: "hg19" #path to index name
   fasta_file: /path/to/your/directory/Genomes/hg19/hg19.fa
-  gff_file: /path/to/your/directory/Genomes/hg19/hg19.gff
-  rRNA_file:
-  rRNA_feature: "rRNA"
+
+
 
 #################################################################
 # FastQC section
 #
 # :Parameters:
 #
+# - do: if unchecked, this rule is ignored
 # - options: string with any valid FastQC options
 #
 fastqc:
+    do: yes
     options: "--nogroup"
 
 
@@ -109,7 +136,7 @@ fastqc:
 #
 #   ref: http://cutadapt.readthedocs.io/
 # adapter_choice__ = ["", "PCRFree", "Rubicon", "Nextera", "TruSeq"]
-# tool_choice__ = ["atropos", "cutadapt", "clean_ngs"]
+# tool_choice__ = ["atropos", "cutadapt"]
 cutadapt:
     do: yes
     tool_choice: cutadapt
@@ -117,85 +144,12 @@ cutadapt:
     design_file:
     fwd:
     rev:
-    m: 20                       # {"strict_min": 0}
+    m: 25                       # {"strict_min": 0}
     mode: "b"                   # {"values": ["b","g","a"]}
-    options: "-O 6 --trim-n"
+    options: "-O 6 --trim-n --max-n 1"
     quality: 30                 # {"range": [0,40]}
     threads: 4
 
-
-#############################################################################
-# fastq_screen used to align reads against genomes file contain in conf file with bowtie2
-#
-# :Parameters:
-#
-# - do: if unchecked, this rule is ignored
-# - conf: the name of the configuration file
-# - pf2_report: allows to plot a specific PF2 report
-#
-fastq_screen:
-    do: no
-    conf: "fastq_screen.conf"
-    options: "--subset 200000  --aligner bowtie2"
-    pf2_report: no
-
-
-#################################################################
-# For taxonomy. Used in quality_control pipeline
-#
-# :Parameters:
-#
-# - do:    if unchecked, this rule is ignored
-# - database_directory: select a directory with a kraken database
-#   Please see sequana documentation for details
-#
-kraken:
-    do: False
-    database_directory:  "%(kraken_database_directory)s"
-    threads: 4
-
-
-#############################################################################
-# bowtie1_mapping_rna used to align reads against ribosomal RNA
-#
-# :Parameters:
-#
-# - do: if unchecked, this rule is ignored
-# - options: any options recognised by bowtie1 tool
-# - threads: number of threads to be used
-#
-bowtie1_mapping_rna:
-    do: yes
-    options: ""
-    threads: 4
-
-#############################################################################
-# star_mapping used to align reads against genome file
-#
-# :Parameters:
-#
-# - do: if unchecked, this rule is ignored
-# - options: any options recognised by rna-star tool
-# - threads: number of threads to be used
-#
-star_mapping:
-    do: no
-    options: "--outFilterMismatchNoverLmax 0.05 --seedSearchStartLmax 20"
-    threads: 4
-
-#############################################################################
-# bowtie1_mapping_ref used to align reads against genome file
-#
-# :Parameters:
-#
-# - do: if unchecked, this rule is ignored
-# - options: any options recognised by bowtie1 tool
-# - threads: number of threads to be used
-#
-bowtie1_mapping_ref:
-    do: yes
-    options: "--chunkmbs 400 -m 1 "
-    threads: 4
 
 #############################################################################
 # bowtie2_mapping used to align reads against genome file
@@ -207,25 +161,102 @@ bowtie1_mapping_ref:
 # - threads: number of threads to be used
 #
 bowtie2_mapping:
-    do: no
+    do: yes
     #options: "--dovetail --no-mixed --no-discordant " for paired-end data
     options: ""
     threads: 4
 
 
 #############################################################################
-# feature_counts used to count reads against features
+# mark duplicates (picard-tools) allows to mark PCR duplicate in BAM files
 #
 # :Parameters:
 #
-# - do: if unchecked, this rule is ignored
-# - options: any options recognised by feature_counts tool
-# - threads: number of threads to be used
+# - do: if unchecked, this rule is ignored. Mandatory for RNA-SeQC tool.
+# - remove: If true do not write duplicates to the output file instead of writing them with
+#            appropriate flags set.  Default value: true. Have to be True
+# - tmpdir: write tempory file on this directory (default /tmp/, but could be "/local/scratch/")
 #
-feature_counts:
+mark_duplicates:
     do: yes
-    options: "-t gene -g ID -s 1 " ## if exon/CDS is used, put -O option
-    threads: 2
+    remove: 'True' ## Have to be True
+    tmpdir: "/tmp/"
+    threads: 4
+
+
+#############################################################################
+# remove blacklist
+#
+# :Parameters:
+#
+# - do: if unchecked, this rule is ignored.
+# - blacklist_file: path to BED file containing all blacklisted regions
+#
+remove_blacklist:
+    do: yes
+    blacklist_file: /path/to/your/directory/Genomes/hg19/hg19_blacklist.bed
+    threads: 1
+
+
+
+#############################################################################
+# peak calling blabla
+#
+# :Parameters:
+#
+# - model: model used by MACS2. Could be 'narrow' or 'broad'.
+# - no-model: use --no-model option. See MACS2 documentation. Possible values: {yes, no}
+# - force_shift: Possible values: {yes, no}
+# - options: any option recognized by MACS2. For paired-end reads, it is very recommended
+# to put --keep-dup 2500
+# - genomeSize: It's the mappable genome size or effective genome size which is defined as the genome size which can
+# be sequenced. Because of the repetitive features on the chromsomes, the actual mappable genome size will be smaller
+# than the original size, about 90% or 70% of the genome size. The default hs -- 2.7e9 is recommended for UCSC human
+# hg18 assembly.
+# - readLength: in order to compute the best shift with PPQT when force_shift is set
+#
+# tool_choice__ = ["narrow", "broad"]
+#
+peak_calling:
+    model_choice: 'narrow'    ## may be broad
+    no_model: no             ## may be yes
+    force_shift: no           ## may be yes
+    options: "--keep-dup 2500 "
+    cutoff: "0.01"
+    genomeSize: mm
+    readLength: 50
+
+
+#############################################################################
+# Compute IDR on replicates, pseudo-replicates and pooled replicates
+#
+# :Parameters:
+#
+# - mode: narrowPeak,broadPeak,bed,gff
+# - rank: Which column to use to rank peaks. Options: signal.value p.value q.value columnIndex
+# - thresh: Report statistics for peaks with a global idr below this value but return all peaks with an idr below --idr. Default: 0.05
+#
+# mode_choice__ = ['narrowPeak', 'broadPeak', 'bed', 'gff']
+#
+compute_idr:
+    mode_choice: 'narrowPeak'
+    rank: 'signal.value'
+    thresh: 0.05
+
+#############################################################################
+# Compute differential analysis
+#
+# :Parameters:
+#
+# - mode:
+# - rank:
+# - thresh:
+#
+# mode_choice__ = ['narrowPeak', 'broadPeak', 'bed', 'gff']
+#
+statistical_analysis:
+    do: no
+
 
 
 #############################################################################
@@ -279,45 +310,6 @@ coverage:
 
 
 #############################################################################
-# mark_duplicates (picard-tools) allows to mark PCR duplicate in BAM files
-#
-# :Parameters:
-#
-# - do: if unchecked, this rule is ignored. Mandatory for RNA-SeQC tool.
-# - remove: If true do not write duplicates to the output file instead of writing them with
-#            appropriate flags set.  Default value: false. This option can be set to 'null' to clear
-#            the default value. Possible values: {true, false}
-# - tmpdir: write tempory file on this directory (default TMP_DIR=/tmp/, but could be "TMP_DIR=/local/scratch/")
-#
-mark_duplicates:
-    do: no
-    remove: 'False' ## may be True
-    tmpdir: "/tmp/"
-    threads: 4
-
-
-
-#############################################################################
-# RNA-SeQC allows to compute a series of quality control metrics for RNA-seq data
-#
-# :Parameters:
-#
-# - do: if unchecked, this rule is ignored
-# - ref: Reference Genome in fasta format
-# - gtf: GTF File defining transcripts (must end in '.gtf')
-# - BWArRNA: Use an on the fly BWA alignment for estimating
-#            rRNA content. The value should be the rRNA
-#            reference fasta.
-# - options: any options recognised by RNA-seQC tool
-
-RNAseQC:
-     do: no
-     gtf_file: /path/to/your/directory/annotation/gtf/hg19.gtf
-     BWArRNA_file: /path/to/your/directory/human_rRNA/human_all_rRNA.fasta
-     options: ""
-
-
-#############################################################################
 #   MultiQC aggregates results from bioinformatics analyses across many
 #   samples into a single report.
 #
@@ -325,51 +317,7 @@ RNAseQC:
 #
 # - options: any options recognised by multiqc
 # - output-directory: Create report in the specified output directory
-# - config_file: by default, we use sequana RNA-seq multiqc_config file. 
-#       If you want your own multiqc, fill this entry
-multiqc:
-    options: "-f -x *_init_* -x *left_kept_reads* -x *report_rnaseq* -e htseq -e slamdunk"
-    output-directory: "multiqc"
-    config_file: "multiqc_config.yaml"
-
-#############################################################################
-#   Statistical analysis with SARTools for a simple experimental design
-#   see https://github.com/PF2-pasteur-fr/SARTools
 #
-# :Parameters:
-#  Required parameters:
-# - design: path to design file
-# - projectName: name of the project (No spaces allowed)
-# - author: author of the statistical analysis/report
-# - rawDir: path to the directory containing raw counts files
-# - featuresToRemove: NULL if no feature to remove
-#  Optional parameters:
-# - varInt: factor of interest
-# - condRef: reference biological condition
-# - batch: blocking factor: NULL (default) or "batch" for example
-# - fitType: mean-variance relationship: "parametric" (default) or "local"
-# - cooksCutoff: TRUE/FALSE to perform the outliers detection (default is TRUE)
-# - independentFiltering: TRUE/FALSE to perform independent filtering (default is TRUE)
-# - alpha: threshold of statistical significance
-# - pAdjustMethod: p-value adjustment method: "BH" (default) or "BY"
-# - typeTrans: transformation for PCA/clustering: "VST" or "rlog"
-# - locfunc: "median" (default) or "shorth" to estimate the size factors
-
-
-SARTools:
-  do: no
-  design: "path/to/file"
-  projectName: "RNAseq"
-  author: "NAME"
-  rawDir: "featureCounts/"
-  featuresToRemove: "NULL"
-  varInt: "group"
-  condRef: "WT"
-  batch: "NULL"
-  fitType: "parametric"
-  cooksCutoff: "TRUE"
-  independentFiltering: "TRUE"
-  alpha: "0.05"
-  pAdjustMethod: "BH"
-  typeTrans: "VST"
-  locfunc: "median"
+multiqc:
+    options: "-c multiqc_config.yaml -f  -e macs2 -x 3-Deduplication/*spikes* -x 2-Mapping/*_spike*"
+    output-directory: "multiqc"
