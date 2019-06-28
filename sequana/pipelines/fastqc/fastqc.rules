@@ -83,6 +83,8 @@ onsuccess:
     from sequana.snaketools import OnSuccessCleaner
     sc = OnSuccessCleaner()
     sc.files_to_remove.append("fastqc.rules")
+    toremove = config["onsuccess"]["toclean"]
+    sc.files_to_remove.append(toremove)
     sc.add_makefile()
     print("Once done, please clean up the directory using\n'make clean'")
 
