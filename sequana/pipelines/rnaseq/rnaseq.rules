@@ -299,7 +299,7 @@ if manager.config.feature_counts.do:
 	__feature_counts__log = manager.getname("feature_counts", ".logs")
     __feature_counts__threads = config["feature_counts"]["threads"]
 	include: sm.modules["feature_counts"]
-	expected_output.extend(expand(__feature_counts__output_gene_count, sample=manager.samples))
+	expected_output.extend(expand(__feature_counts__output_count, sample=manager.samples))
 
 
 # Add Read group on BAM files
