@@ -1,4 +1,9 @@
 language: python
+dist: xenial
+services:
+    - xvfb
+
+
 cache:
   directories:
     #- $HOME/.cache/pip
@@ -11,7 +16,6 @@ matrix:
     - python: 3.6
 
 before_install:
-
     - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
     - chmod +x miniconda.sh
     - ./miniconda.sh -b
@@ -23,12 +27,11 @@ before_install:
     - conda config --add channels conda-forge
     - conda config --add channels bioconda
     # This help testing code with pylab
-    - "export DISPLAY=:99.0"
-    - "sh -e /etc/init.d/xvfb start"
+    #- "export DISPLAY=:99.0"
+    #- "sh -e /etc/init.d/xvfb start"
 
 install:
   - echo $TRAVIS_PYTHON_VERSION
-  - sudo apt-get install tree
   - conda create --yes --name testenv python=$TRAVIS_PYTHON_VERSION
   - source activate testenv
 
@@ -39,17 +42,14 @@ install:
   - conda install --yes kraken bwa snpeff shustring krona sambamba
   - conda install --yes picard pigz cutadapt fastqc
   - conda install --yes freebayes --no-deps
-  #- conda install --yes pysam samtools --no-deps
+  #- conda install --yes pysam samtools --no-deps 
   #- conda install --yes python=$TRAVIS_PYTHON_VERSION --file requirements_pipelines.txt
-  - pip install itolapi
   - pip install .
-  - conda list
+  - conda list 
 
 # # command to run tests, e.g. python setup.py test
-# !!! multithread does not always work on travis so we set -n 1
 script:
-  - pytest -v --durations=10  test/ --cov=sequana --cov-report term --timeout 300 -n 1 --cov-config .coveragerc_travis
-
+  - pytest -v --durations=10  test/ --cov=sequana --cov-report term --timeout 300 -n 4
 
 after_success:
   coveralls
