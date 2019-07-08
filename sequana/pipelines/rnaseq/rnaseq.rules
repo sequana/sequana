@@ -297,7 +297,7 @@ if manager.config.feature_counts.do:
 	__feature_counts__gff = config["genome"]["gff_file"]
     __feature_counts__options = config['feature_counts']["options"]
 	__feature_counts__log = manager.getname("feature_counts", ".logs")
-    __feature_counts__threads = config["genome"]["threads"]
+    __feature_counts__threads = config["feature_counts"]["threads"]
 	include: sm.modules["feature_counts"]
 	expected_output.extend(expand(__feature_counts__output_gene_count, sample=manager.samples))
 
@@ -327,11 +327,11 @@ if config["mark_duplicates"]["do"]:
 
 
 if config["RNAseQC"]["do"]:
-    __reorderSam__input = __mark_duplicates__output
+    __reorderSam__input = __mark_duplicates_ref__output
     __reorderSam__logs = manager.getname("reorderSam", ".logs")
     __reorderSam__output = manager.getname("reorderSam", "_reorder.bam")
     include: sm.modules["reorderSam"]
-    __RNAseQC__input_bam = expand(__mark_duplicates__output, sample=manager.samples)
+    __RNAseQC__input_bam = expand(__mark_duplicates_ref__output, sample=manager.samples)
     __RNAseQC__logs = "RNAseQC/RNAseQC.log"
     __RNAseQC__output = "RNAseQC"
     __RNAseQC__conf = "RNAseQC/sample_index.txt"
