@@ -588,7 +588,6 @@ else:
     raise ValueError("Invalid choice of model for peak calling. Use either narrow or broad, or set no-model to yes")
 
 #compute MACS2 metrics
-## TODO nb pics REP en rouge si moins de 100,000 dans le multiqc
 macs2_rep = []
 macs2_rep.extend(expand("6-PeakCalling/{}/{{IP_REP}}_vs_{{INPUT}}_peaks.{}Peak".format(model, model), zip, IP_REP=IP_ALL, INPUT=INPUT))
 __stats_peakCalling_input = macs2_rep
@@ -618,8 +617,8 @@ if model in ["narrow"]:
     __select_peaks__input_rep = "7-IDR/{{IP_IDR}}_{}1vs{}2_{{INPUT}}_ref_{}_idr{}.{}Peak".format(rep_flag, rep_flag, model, config["compute_idr"]["thresh"], model)
     __select_peaks__input_ppr = "7-IDR/{{IP_IDR}}_{}1vs{}2_{{INPUT}}_ref_{}_idr{}.{}Peak".format("PPR", "PPR", model, config["compute_idr"]["thresh"], model)
     __select_peaks__input_pool = "6-PeakCalling/{}/{{IP_IDR}}_PPRPool_vs_{{INPUT}}_peaks.{}Peak".format(model, model)
-    __select_peaks__logs = "7-IDR/logs/{IP_IDR}_vs_{INPUT}_selected_peaks.o"
-    __select_peaks__output = "7-IDR/{{IP_IDR}}_vs_{{INPUT}}_select.{}Peak".format(model)
+    __select_peaks__logs = "8-ReproduciblePeaks/logs/{IP_IDR}_vs_{INPUT}_selected_peaks.o"
+    __select_peaks__output = "8-ReproduciblePeaks/{{IP_IDR}}_vs_{{INPUT}}_select.{}Peak".format(model)
     include: sm.modules["select_peaks"]
     expected_output.extend(expand(__select_peaks__output, zip, IP_IDR=IP_REP, INPUT=IP_REP_DUP))
 
@@ -627,8 +626,8 @@ if model in ["narrow"]:
 if model in ["broad"]:
     __intersectionApproach__input_rep = expand("6-PeakCalling/%s/{{IP_IDR}}_{CASE}_vs_{{INPUT}}_peaks.%sPeak" % (model, model), CASE=rep)
     __intersectionApproach__input_pool = "6-PeakCalling/{}/{{IP_IDR}}_PPRPool_vs_{{INPUT}}_peaks.{}Peak".format(model, model)
-    __intersectionApproach__logs = "7-IDR/logs/{IP_IDR}_vs_{INPUT}_BROAD-IA_peaks.o"
-    __intersectionApproach__output = "7-IDR/{{IP_IDR}}_vs_{{INPUT}}_BROAD-IA.{}Peak".format(model)
+    __intersectionApproach__logs = "8-ReproduciblePeaks/logs/{IP_IDR}_vs_{INPUT}_BROAD-IA_peaks.o"
+    __intersectionApproach__output = "8-ReproduciblePeaks/{{IP_IDR}}_vs_{{INPUT}}_BROAD-IA.{}Peak".format(model)
     include: sm.modules["intersectionApproach"]
     expected_output.extend(expand(__intersectionApproach__output, zip, IP_IDR=IP_REP, INPUT=IP_REP_DUP))
     __select_peaks__output = __intersectionApproach__output
@@ -663,22 +662,22 @@ if len(conds) > 1 :
 
     # get union from all detected peak among all conditions for each mark
     __union_peaks__input = getPeakFilesByMark
-    __union_peaks__logs = "7-IDR/logs/{MARK}_Optimal_selected_peaks.o"
+    __union_peaks__logs = "9-CountMatrix/logs/{MARK}_Optimal_selected_peaks.o"
     if len(conds) == 2 :
-        __union_peaks__output = "7-IDR/{{MARK}}_{}u{}_{}.optimal.{}Peak_overlap.bed".format(conds[0], conds[1], ref, model)
+        __union_peaks__output = "9-CountMatrix/{{MARK}}_{}u{}_{}.optimal.{}Peak_overlap.bed".format(conds[0], conds[1], ref, model)
     elif len(conds) == 3 :
-        __union_peaks__output = "7-IDR/{{MARK}}_{}u{}u{}_{}.optimal.{}Peak_overlap.bed".format(conds[0], conds[1], conds[2], ref, model)
+        __union_peaks__output = "9-CountMatrix/{{MARK}}_{}u{}u{}_{}.optimal.{}Peak_overlap.bed".format(conds[0], conds[1], conds[2], ref, model)
     else :
-       __union_peaks__output = "7-IDR/{{MARK}}_all_conds_{}.optimal.{}Peak_overlap.bed".format(ref, model)
+       __union_peaks__output = "9-CountMatrix/{{MARK}}_all_conds_{}.optimal.{}Peak_overlap.bed".format(ref, model)
 
     include: sm.modules["union_peaks"]
     expected_output.extend(expand(__union_peaks__output, MARK=MARK_OK))
 
 
     # get GFF from peak files
-    __bed_to_gff__input = "7-IDR/{{MARK}}_{}u{}_{}.optimal.{}Peak_overlap.bed".format(conds[0], conds[1], ref, model)
-    __bed_to_gff__logs = "7-IDR/logs/{MARK}_Optimal_bed2gff.o"
-    __bed_to_gff__output = "7-IDR/{{MARK}}_{}u{}_{}.optimal.{}Peak_overlap.gff".format(conds[0], conds[1], ref, model)
+    __bed_to_gff__input = "9-CountMatrix/{{MARK}}_{}u{}_{}.optimal.{}Peak_overlap.bed".format(conds[0], conds[1], ref, model)
+    __bed_to_gff__logs = "9-CountMatrix/logs/{MARK}_Optimal_bed2gff.o"
+    __bed_to_gff__output = "9-CountMatrix/{{MARK}}_{}u{}_{}.optimal.{}Peak_overlap.gff".format(conds[0], conds[1], ref, model)
     include: sm.modules["bed_to_gff"]
     expected_output.extend(expand(__bed_to_gff__output,  MARK=MARK_OK))
 
@@ -697,9 +696,9 @@ if len(conds) > 1 :
 
     # feature Count on peaks
     __feature_counts__input = getBAMFilesByMark
-    __feature_counts__output_count = "7-IDR/{{MARK}}_Matrix_Optimal_{}Peak.mtx".format(model)
-    __feature_counts__gff = "7-IDR/{{MARK}}_{}u{}_{}.optimal.{}Peak_overlap.gff".format(conds[0], conds[1], ref, model)
-    __feature_counts__log = "6-PeakCalling/%s/logs/{MARK}_counts.o" % model
+    __feature_counts__output_count = "9-CountMatrix/{{MARK}}_Matrix_Optimal_{}Peak.mtx".format(model)
+    __feature_counts__gff = "9-CountMatrix/{{MARK}}_{}u{}_{}.optimal.{}Peak_overlap.gff".format(conds[0], conds[1], ref, model)
+    __feature_counts__log = "9-CountMatrix/logs/{MARK}_counts.o"
     __feature_counts__options = "-t peak -g gene_id"
     __feature_counts__threads = 4
     include: sm.modules["feature_counts"]

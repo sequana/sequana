@@ -52,7 +52,7 @@ sequencing:
 # - design_file: Path to a design file in tabulated format. See documentation
 # - spike: set to 'yes' if you have spikes in your data. Possible values: {yes, no}
 # - marks: list of different marks (comma-separated)
-# - condition: list of different conditions (comma-separated). If not ?
+# - condition: list of different conditions (comma-separated). NB: cond1 must be the reference condition
 # - replicates: How the replicate is writed in the files (REP or Rep or rep ?)
 
 design:
