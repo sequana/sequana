@@ -184,13 +184,13 @@ for row in design.itertuples(index=True, name='Pandas'):
     #elif getattr(row, "NB_IP") > 1 and getattr(row, "NB_INPUT") < 2 :
     elif getattr(row, "NB_IP") > 1 and getattr(row, "NB_INPUT") == 1 :
         PPR_POOL.append(getattr(row, "IP_NAME") + "_PPRPool")
-        INPUT_POOL.append(getattr(row, "INPUT_NAME")+ "_Rep1")
+        INPUT_POOL.append(getattr(row, "INPUT_NAME")+ "_" + rep_flag + "1")
 
 # all files passing PhantomPeakQualTool if no-model is chosen
 ALL = IP_ALL + IP_SPR + IP_PPR + PPR_POOL
 
 # get files for IDR
-CASE = ["Rep", "PPR", "SPR1.", "SPR2."]*len(IP_REP)
+CASE = [rep_flag, "PPR", "SPR1.", "SPR2."]*len(IP_REP)
 REP_IDR = list(chain(*zip(*repeat(IP_REP,4))))
 IN_IDR = list(chain(*zip(*repeat(IP_REP_DUP,4))))
 
