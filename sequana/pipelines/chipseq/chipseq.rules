@@ -81,7 +81,7 @@ for mark in design['IP_NAME']:
 # get REP names
 #get list with replicates names for all IP
 rep_flag = manager.config.design.replicates
-rep = ['Rep1', 'Rep2']
+rep = [rep_flag+'1', rep_flag+'2']
 # deduce from rep the list for SPR & PPR
 ppr = ['PPR1', 'PPR2', 'PPRPool']
 spr = ['SPR1.1', 'SPR1.2', 'SPR2.1', 'SPR2.2']
