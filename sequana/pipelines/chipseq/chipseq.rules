@@ -96,7 +96,7 @@ MARK_OK =[]
 for row in design.itertuples(index=True, name='Pandas'):
     for mark in marks:
         if mark in getattr(row, "IP_NAME"):
-            if set(conds).issubset(getattr(row, "IP_NAME")) and getattr(row, "NB_IP") > 1:
+            if (getattr(row, "IP_NAME")).endswith(tuple(conds)) and getattr(row, "NB_IP") > 1:
                 MARK_OK.append(mark)
 
 #built list of MARK_COND_REP from config.yaml and check correspondance between design, config and fastq files
@@ -712,8 +712,8 @@ __multiqc__input = expected_output
 __multiqc__input_dir = "."
 __multiqc__logs = "multiqc/multiqc.log"
 __multiqc__output = config['multiqc']['output-directory'] + "/multiqc_report.html"
-#include: sm.modules["multiqc"]
-#expected_output = [__multiqc__output]
+include: sm.modules["multiqc"]
+expected_output = [__multiqc__output]
 
 # Include rule graph for each sample
 __rulegraph__input = __snakefile__
