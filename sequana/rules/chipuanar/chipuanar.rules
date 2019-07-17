@@ -34,8 +34,7 @@ rule chipuanar:
     log:
         __chipuanar__log
     run:
-        import os.path
-        import os.chdir
+        import os
         from sequana import sequana_data
         import linecache
 
