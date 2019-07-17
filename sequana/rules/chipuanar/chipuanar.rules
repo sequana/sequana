@@ -37,14 +37,14 @@ rule chipuanar:
         from sequana import sequana_data
         import linecache
 
-        output = os.path.realpath(output.report)
-        output_dir  = os.path.realpath(output.outdir)
+        output = os.path.realpath(output[0])
+        output_dir  = os.path.realpath(output[1])
 
         # Sed on matrix to get MARK_COND_REP as sample names
-        if 'NoBlacklist' in open(input).read():
-            shell("sed -i 's/4-NoBlacklist\///g' %s && sed -i 's/_%s_sort_dedup_NoBlacklist.bam//g'" % (input, params.genome))
+        if 'NoBlacklist' in open(input[0]).read():
+            shell("sed -i 's/4-NoBlacklist\///g' %s && sed -i 's/_%s_sort_dedup_NoBlacklist.bam//g'" % (input[0], params.genome))
         else:
-            shell("sed -i 's/3-Deduplication\///g' %s && sed -i 's/_%s_sort_dedup.bam//g'" % (input, params.genome))
+            shell("sed -i 's/3-Deduplication\///g' %s && sed -i 's/_%s_sort_dedup.bam//g'" % (input[0], params.genome))
 
         # get cond and rep vectors
         samples = (linecache.getline(file, 2)).rstrip().split('\t')[6:]
@@ -56,7 +56,7 @@ rule chipuanar:
 
         # Write the R config file
         with open(output_dir+"/config.r", "w") as out:
-            out.write("file <- '%s'" %  (input))
+            out.write("file <- '%s'" %  (input[0]))
             out.write("Conditions <- c(%s)" %  (conds))
             out.write("Replicates <- c(%s)" %  (rep))
             out.write("method <- '%s'" %  (params.method))

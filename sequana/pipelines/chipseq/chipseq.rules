@@ -635,8 +635,8 @@ if model in ["broad"]:
 
 #Compute peak metrics
 idr_peaks = []
-idr_peaks.extend(expand("7-IDR/{{IP_IDR}}_{{CASE}}1vs{{CASE}}2_{{INPUT}}_ref_{}_idr{}.{}Peak".format(
-                        model, config["compute_idr"]["thresh"], model), zip, IP_IDR=REP_IDR, CASE=CASE, INPUT=IN_IDR))
+idr_peaks.extend(expand("7-IDR/{{IP_IDR}}_{{CASE}}1vs{{CASE}}2_{{INPUT}}_{}_{}_idr{}.{}Peak".format(
+                        ref,model, config["compute_idr"]["thresh"], model), zip, IP_IDR=REP_IDR, CASE=CASE, INPUT=IN_IDR))
 __metrics_peaks__input = idr_peaks
 __metrics_peaks__marks = marks
 __metrics_peaks__conds = conds
@@ -705,20 +705,21 @@ if len(conds) > 1 and manager.config.statistical_analysis.do:
     expected_output.extend(expand(__feature_counts__output_count,  MARK=MARK_OK))
 
 
-    method = manager.statistical_analysis.method
-    norm = manager.statistical_analysis.normalisation
+    method = manager.config.statistical_analysis.method
+    norm = manager.config.statistical_analysis.normalisation
     # run statistical analysis
     __chipuanar__input = __feature_counts__output_count
     __chipuanar__conds = conds
     __chipuanar__rep = rep
     __chipuanar__method = method
     __chipuanar__norm = norm
-    __chipuanar__spikes = manager.statistical_analysis.spikes
-    __chipuanar__padj = manager.statistical_analysis.pAdjustMethod
-    __chipuanar__alpha = manager.statistical_analysis.alpha
-    __chipuanar__batch = manager.statistical_analysis.batch
+    __chipuanar__spikes = manager.config.statistical_analysis.spikes
+    __chipuanar__padj = manager.config.statistical_analysis.pAdjustMethod
+    __chipuanar__alpha = manager.config.statistical_analysis.alpha
+    __chipuanar__batch = manager.config.statistical_analysis.batch
     __chipuanar__report = "10-DifferentialAnalysis/{}_{}/{{MARK}}_Stat_report_{}_{}.html".format(method, norm, method, norm)
-    __chipuanar__output_dir = "10-DifferentialAnalysis/{}_{}".format(method, norm)
+    __chipuanar__output_dir = "10-DifferentialAnalysis/{{MARK}}_{}_{}".format(method, norm)
+    __chipuanar__log = "10-DifferentialAnalysis/logs/{}_{}_std.o".format(method, norm)
     __chipuanar__genome = ref
     include: sm.modules["chipuanar"]
     expected_output.extend(expand(__chipuanar__report,  MARK=MARK_OK))
