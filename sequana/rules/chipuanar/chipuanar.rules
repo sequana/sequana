@@ -35,6 +35,7 @@ rule chipuanar:
         __chipuanar__log
     run:
         import os.path
+        import os.chdir
         from sequana import sequana_data
         import linecache
 
@@ -57,18 +58,19 @@ rule chipuanar:
 
         # Write the R config file
         with open(output[2], "w") as out:
-            out.write("file <- '%s'" %  (input[0]))
-            out.write("Conditions <- c(%s)" %  (conds))
-            out.write("Replicates <- c(%s)" %  (rep))
-            out.write("method <- '%s'" %  (params.method))
-            out.write("normalisation <- '%s'" %  (params.norm))
-            out.write("spikes <- c(%s)" %  (params.spikes))
-            out.write("pAdjustMethod <- '%s'" %  (params.padj))
-            out.write("alpha <- '%s'" %  (params.alpha))
-            out.write("batch <- '%s'" %  (params.batch))
+            out.write("file <- '%s'\n" %  (input[0]))
+            out.write("Conditions <- c(%s)\n" %  (conds))
+            out.write("Replicates <- c(%s)\n" %  (rep))
+            out.write("method <- '%s'\n" %  (params.method))
+            out.write("normalisation <- '%s'\n" %  (params.norm))
+            out.write("spikes <- c(%s)\n" %  (params.spikes))
+            out.write("pAdjustMethod <- '%s'\n" %  (params.padj))
+            out.write("alpha <- '%s'\n" %  (params.alpha))
+            out.write("batch <- '%s'\n" %  (params.batch))
 
 
         # load the Rmarkdown
+        os.chdir(output_dir)
         chipuanar_script = sequana_data("Report_ChIPuanaR.Rmd", where="scripts")
         shell("cp %s . " % (chipuanar_script))
         shell("""Rscript -e "rmarkdown::render(input='%s', output_file='%s', run_pandoc=TRUE, clean=TRUE)" """ % (chipuanar_script, output))
