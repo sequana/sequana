@@ -23,7 +23,7 @@ library(kableExtra)
 library(ChIPuanaR)
 
 ### INPUTS
-source("config.r")
+source("config.R")
 print(ls())
 print(file)
 data <- read.table(file = file, header=T)
