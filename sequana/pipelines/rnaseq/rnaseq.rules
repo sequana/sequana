@@ -287,19 +287,20 @@ else :
     include: sm.modules["igvtools"]
     #expected_output.extend(expand(__igvtools__output, sample=manager.samples))
 
+
 # Feature counts from subread suite
 if manager.config.star_mapping.do:
     __feature_counts__input = __star_mapping__sort
 else :
     __feature_counts__input = __mapping_output
 if manager.config.feature_counts.do:
-	__feature_counts__output_count = manager.getname("feature_counts", "_feature.out")
-	__feature_counts__gff = config["genome"]["gff_file"]
+    __feature_counts__output_count = manager.getname("feature_counts", "_feature.out")
+    __feature_counts__gff = config["genome"]["gff_file"]
     __feature_counts__options = config['feature_counts']["options"]
-	__feature_counts__log = manager.getname("feature_counts", ".logs")
+    __feature_counts__log = manager.getname("feature_counts", ".logs")
     __feature_counts__threads = config["feature_counts"]["threads"]
-	include: sm.modules["feature_counts"]
-	expected_output.extend(expand(__feature_counts__output_count, sample=manager.samples))
+    include: sm.modules["feature_counts"]
+    expected_output.extend(expand(__feature_counts__output_count, sample=manager.samples))
 
 
 # Add Read group on BAM files

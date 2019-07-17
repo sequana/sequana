@@ -272,7 +272,7 @@ if manager.config.cutadapt.do:
 
 __prefix_name__ = os.path.join(config["genome"]["genome_directory"], config["genome"]["name"])
 
-if manager.config.genome.do:
+if manager.config.genome.index:
     # indexing for bowtie2
     __bowtie2_index_ref__fasta = config["genome"]["fasta_file"]
     __bowtie2_index_ref__output_done = __prefix_name__ + ".1.bt2"
@@ -603,10 +603,10 @@ expected_output.extend([__stats_peakCalling_csv])
 # Compute IDR
 __compute_idr__input1 = "6-PeakCalling/{}/{{IP_IDR}}_{{CASE}}1_vs_{{INPUT}}_peaks.{}Peak".format(model, model)
 __compute_idr__input2 = "6-PeakCalling/{}/{{IP_IDR}}_{{CASE}}2_vs_{{INPUT}}_peaks.{}Peak".format(model, model)
-__compute_idr__output = "7-IDR/{{IP_IDR}}_{{CASE}}1vs{{CASE}}2_{{INPUT}}_ref_{}_idr.txt".format(model)
-__compute_idr__output_peak = "7-IDR/{{IP_IDR}}_{{CASE}}1vs{{CASE}}2_{{INPUT}}_ref_{}_idr{}.{}Peak".format(
-    model, config["compute_idr"]["thresh"], model)
-__compute_idr__log = "7-IDR/logs/{IP_IDR}_{CASE}1vs{CASE}2_{{INPUT}}_%s_idr.o" % model
+__compute_idr__output = "7-IDR/{{IP_IDR}}_{{CASE}}1vs{{CASE}}2_{{INPUT}}_{}_{}_idr.txt".format(ref, model)
+__compute_idr__output_peak = "7-IDR/{{IP_IDR}}_{{CASE}}1vs{{CASE}}2_{{INPUT}}_{}_{}_idr{}.{}Peak".format(
+    ref, model, config["compute_idr"]["thresh"], model)
+__compute_idr__log = "7-IDR/logs/{IP_IDR}_{CASE}1vs{CASE}2_{INPUT}_%s_idr.o" % model
 include: sm.modules["compute_idr"]
 expected_output.extend(expand(__compute_idr__output, zip, IP_IDR=REP_IDR, CASE=CASE, INPUT=IN_IDR))
 
@@ -614,8 +614,8 @@ expected_output.extend(expand(__compute_idr__output, zip, IP_IDR=REP_IDR, CASE=C
 
 if model in ["narrow"]:
     # Select IDR peaks
-    __select_peaks__input_rep = "7-IDR/{{IP_IDR}}_{}1vs{}2_{{INPUT}}_ref_{}_idr{}.{}Peak".format(rep_flag, rep_flag, model, config["compute_idr"]["thresh"], model)
-    __select_peaks__input_ppr = "7-IDR/{{IP_IDR}}_{}1vs{}2_{{INPUT}}_ref_{}_idr{}.{}Peak".format("PPR", "PPR", model, config["compute_idr"]["thresh"], model)
+    __select_peaks__input_rep = "7-IDR/{{IP_IDR}}_{}1vs{}2_{{INPUT}}_{}_{}_idr{}.{}Peak".format(rep_flag, rep_flag, ref, model, config["compute_idr"]["thresh"], model)
+    __select_peaks__input_ppr = "7-IDR/{{IP_IDR}}_{}1vs{}2_{{INPUT}}_{}_{}_idr{}.{}Peak".format("PPR", "PPR", ref, model, config["compute_idr"]["thresh"], model)
     __select_peaks__input_pool = "6-PeakCalling/{}/{{IP_IDR}}_PPRPool_vs_{{INPUT}}_peaks.{}Peak".format(model, model)
     __select_peaks__logs = "8-ReproduciblePeaks/logs/{IP_IDR}_vs_{INPUT}_selected_peaks.o"
     __select_peaks__output = "8-ReproduciblePeaks/{{IP_IDR}}_vs_{{INPUT}}_select.{}Peak".format(model)
@@ -646,7 +646,7 @@ __metrics_peaks__output = "IDR_metrics_mqc.out"
 include: sm.modules["metrics_peaks"]
 expected_output.extend([__metrics_peaks__output])
 
-if len(conds) > 1 :
+if len(conds) > 1 and manager.config.statistical_analysis.do::
     def getPeakFilesByMark(wildcards):
         ALL_IP = expand(__select_peaks__output, zip, IP_IDR=IP_REP, INPUT=IP_REP_DUP)
         IP_dict = {}
@@ -705,12 +705,31 @@ if len(conds) > 1 :
     expected_output.extend(expand(__feature_counts__output_count,  MARK=MARK_OK))
 
 
+    method = manager.statistical_analysis.method
+    norm = manager.statistical_analysis.normalisation
+    # run statistical analysis
+    __chipuanar__input = __feature_counts__output_count
+    __chipuanar__conds = conds
+    __chipuanar__rep = rep
+    __chipuanar__method = method
+    __chipuanar__norm = norm
+    __chipuanar__spikes = manager.statistical_analysis.spikes
+    __chipuanar__padj = manager.statistical_analysis.pAdjustMethod
+    __chipuanar__alpha = manager.statistical_analysis.alpha
+    __chipuanar__batch = manager.statistical_analysis.batch
+    __chipuanar__report = "10-DifferentialAnalysis/{}_{}/{{MARK}}_Stat_report_{}_{}.html".format(method, norm, method, norm)
+    __chipuanar__output_dir = "10-DifferentialAnalysis/{}_{}".format(method, norm)
+    __chipuanar__genome = ref
+    include: sm.modules["chipuanar"]
+    expected_output.extend(expand(__chipuanar__report,  MARK=MARK_OK))
+
+
 
 # !Reset expected_output variable after multiqc
 # Multiqc rule
 __multiqc__input = expected_output
 __multiqc__input_dir = "."
-__multiqc__logs = "multiqc/multiqc.log"
+__multiqc__logs = "11-Multiqc/multiqc.log"
 __multiqc__output = config['multiqc']['output-directory'] + "/multiqc_report.html"
 include: sm.modules["multiqc"]
 expected_output = [__multiqc__output]

@@ -1,0 +1,77 @@
+rule chipuanar:
+    """
+    Use chipuanar to compute differential expressed peaks for each mark
+
+    Required input:
+        __chipuanar__input: matrix count
+
+    Required output:
+        __chipuanar__conds: conditions for each file
+        __chipuanar__rep: replicate name for each file
+        __chipuanar__norm:
+        __chipuanar__spikes:
+        _chipuanar__padj:
+        __chipuanar__alpha:
+        __chipuanar__batch:
+
+    """
+    input:
+        inputs = __chipuanar__input
+    params:
+        conds = __chipuanar__conds,
+        rep = __chipuanar__rep,
+        method = __chipuanar__method,
+        norm = __chipuanar__norm,
+        spikes = __chipuanar__spikes,
+        padj = __chipuanar__padj,
+        alpha = __chipuanar__alpha,
+        batch = __chipuanar__batch,
+        genome = __chipuanar__genome
+    output:
+        report = __chipuanar__report,
+        outdir = __chipuanar__output_dir
+    log:
+        __chipuanar__log
+    run:
+        import os.path
+        from sequana import sequana_data
+
+        output = os.path.realpath(output.report)
+        output_dir  = os.path.realpath(output.outdir)
+
+        # Sed on matrix to get MARK_COND_REP as sample names
+        shell("sed -i 's/4-NoBlacklist\///g' %s && " % (input, params.genome))
+
+        # get cond and rep vectors
+
+
+
+        # Write the R config file
+        with open(output_dir+"/config.r", "w") as out:
+            out.write("file <- '%s'" %  (input))
+            out.write("Conditions <- c(%s)" %  (conds))
+            out.write("Replicates <- c(%s)" %  (rep))
+            out.write("method <- '%s'" %  (params.method))
+            out.write("normalisation <- '%s'" %  (params.norm))
+            out.write("spikes <- c(%s)" %  (params.spikes))
+            out.write("pAdjustMethod <- '%s'" %  (params.padj))
+            out.write("alpha <- '%s'" %  (params.alpha))
+            out.write("batch <- '%s'" %  (params.batch))
+
+
+        # load the Rmarkdown
+        chipuanar_script = sequana_data("Report_ChIPuanaR.Rmd", where="scripts")
+
+        shell("""Rscript -e "rmarkdown::render(input='%s', output_file='%s', run_pandoc=TRUE, clean=TRUE)" """ % (chipuanar_script, output))
+
+
+
+    file <- "~/Documents/Pasteur/Projets/ChIPuana/chipuana_rtest/K4Me3_MOUSE_CuU_narrow_IDR0.05_Matrix_Optimal_Peak.mtx"
+    Conditions <- c("C","C","U","U")
+    Replicates <- c("Rep1", "Rep2","Rep1", "Rep2")
+    method <- "Limma" #Limma
+    normalisation <- "scale" #"scale"
+    spikes <- c(12,15254,14,14)
+    pAdjustMethod <- "BH"
+    alpha <- 0.05
+    batch <- NULL

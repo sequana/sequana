@@ -51,7 +51,7 @@ sequencing:
 #
 # - design_file: Path to a design file in tabulated format. See documentation
 # - spike: set to 'yes' if you have spikes in your data. Possible values: {yes, no}
-# - marks: list of different marks (comma-separated)
+# - marks: list of different marks of transcription factors (comma-separated)
 # - condition: list of different conditions (comma-separated). NB: cond1 must be the reference condition
 # - replicates: How the replicate is writed in the files (REP or Rep or rep ?)
 
@@ -60,7 +60,7 @@ design:
     marks: Mark1, Mark2
     condition: Cond1, Cond2
     replicates: Rep
-    spike: yes
+    spike: no
     spike_genome_file: /path/to/your/directory/Genomes/spike_genome/spike_genome.fa
 
 
@@ -70,7 +70,7 @@ design:
 #
 # :Parameters:
 #
-# - do: if unchecked, this rule is ignored
+# - index: if checked, this rule will process all index files. Please unchecked if you have already index files
 # - dir: directory where all indexed are written
 # - name: name of prefix use in all mapping rules
 # - fasta: path to Reference Genome in fasta format
@@ -78,7 +78,7 @@ design:
 
 #
 genome:
-  do: yes
+  index: yes
   genome_directory: /path/to/your/directory
   name: "hg19" #path to index name
   fasta_file: /path/to/your/directory/Genomes/hg19/hg19.fa
@@ -248,15 +248,22 @@ compute_idr:
 #
 # :Parameters:
 #
-# - mode:
-# - rank:
-# - thresh:
+# - method:
+# - normalization:
+# - spikes:
+# - pAdjustMethod:
+# - alpha:
+# - batch:
 #
-# mode_choice__ = ['narrowPeak', 'broadPeak', 'bed', 'gff']
-#
+
 statistical_analysis:
     do: no
-
+    method: "Limma" #Limma
+    normalisation: "scale" #"scale"
+    spikes: NULL
+    pAdjustMethod: "BH"
+    alpha: 0.05
+    batch: NULL
 
 
 #############################################################################
@@ -320,4 +327,4 @@ coverage:
 #
 multiqc:
     options: "-c multiqc_config.yaml -f  -e macs2 -x 3-Deduplication/*spikes* -x 2-Mapping/*_spike*"
-    output-directory: "multiqc"
+    output-directory: "11-Multiqc"
