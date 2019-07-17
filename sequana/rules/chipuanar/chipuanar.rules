@@ -39,6 +39,7 @@ rule chipuanar:
 
         output = os.path.realpath(output[0])
         output_dir  = os.path.realpath(output[1])
+        print(output_dir)
 
         # Sed on matrix to get MARK_COND_REP as sample names
         if 'NoBlacklist' in open(input[0]).read():
