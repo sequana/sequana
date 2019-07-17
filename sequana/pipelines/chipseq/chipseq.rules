@@ -646,7 +646,7 @@ __metrics_peaks__output = "IDR_metrics_mqc.out"
 include: sm.modules["metrics_peaks"]
 expected_output.extend([__metrics_peaks__output])
 
-if len(conds) > 1 and manager.config.statistical_analysis.do::
+if len(conds) > 1 and manager.config.statistical_analysis.do:
     def getPeakFilesByMark(wildcards):
         ALL_IP = expand(__select_peaks__output, zip, IP_IDR=IP_REP, INPUT=IP_REP_DUP)
         IP_dict = {}
