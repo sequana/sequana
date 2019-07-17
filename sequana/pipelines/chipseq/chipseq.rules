@@ -717,7 +717,7 @@ if len(conds) > 1 and manager.config.statistical_analysis.do:
     __chipuanar__padj = manager.config.statistical_analysis.pAdjustMethod
     __chipuanar__alpha = manager.config.statistical_analysis.alpha
     __chipuanar__batch = manager.config.statistical_analysis.batch
-    __chipuanar__report = "10-DifferentialAnalysis/{}_{}/{{MARK}}_Stat_report_{}_{}.html".format(method, norm, method, norm)
+    __chipuanar__report = "10-DifferentialAnalysis/{{MARK}}_{}_{}/{{MARK}}_Stat_report_{}_{}.html".format(method, norm, method, norm)
     __chipuanar__output_dir = "10-DifferentialAnalysis/{{MARK}}_{}_{}".format(method, norm)
     __chipuanar__log = "10-DifferentialAnalysis/logs/{}_{}_std.o".format(method, norm)
     __chipuanar__genome = ref
