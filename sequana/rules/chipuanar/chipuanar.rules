@@ -38,8 +38,6 @@ rule chipuanar:
         from sequana import sequana_data
         import linecache
 
-        output = os.path.realpath(output[0])
-        output_dir  = os.path.realpath(output[1])
 
         # Sed on matrix to get MARK_COND_REP as sample names
         if 'NoBlacklist' in open(input[0]).read():
@@ -55,7 +53,7 @@ rule chipuanar:
             conds.append(sample.split("_")[1])
             rep.append(sample.split("_")[2])
 
-        os.makedirs(output_dir)
+        os.makedirs(output[1])
         # Write the R config file
         with open(output[2], "w") as out:
             out.write("file <- '%s'\n" %  (input[0]))
@@ -70,7 +68,7 @@ rule chipuanar:
 
 
         # load the Rmarkdown
-        os.chdir(output_dir)
+        os.chdir(output[1])
         chipuanar_script = sequana_data("Report_ChIPuanaR.Rmd", where="scripts")
         shell("cp %s . " % (chipuanar_script))
         shell("""Rscript -e "rmarkdown::render(input='%s', output_file='%s', run_pandoc=TRUE, clean=TRUE)" """ % (chipuanar_script, output))
