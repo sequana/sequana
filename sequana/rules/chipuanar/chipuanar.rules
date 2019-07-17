@@ -35,15 +35,24 @@ rule chipuanar:
     run:
         import os.path
         from sequana import sequana_data
+        import linecache
 
         output = os.path.realpath(output.report)
         output_dir  = os.path.realpath(output.outdir)
 
         # Sed on matrix to get MARK_COND_REP as sample names
-        shell("sed -i 's/4-NoBlacklist\///g' %s && " % (input, params.genome))
+        if 'NoBlacklist' in open(input).read():
+            shell("sed -i 's/4-NoBlacklist\///g' %s && sed -i 's/_%s_sort_dedup_NoBlacklist.bam//g'" % (input, params.genome))
+        else:
+            shell("sed -i 's/3-Deduplication\///g' %s && sed -i 's/_%s_sort_dedup.bam//g'" % (input, params.genome))
 
         # get cond and rep vectors
-
+        samples = (linecache.getline(file, 2)).rstrip().split('\t')[6:]
+        conds = []
+        rep = []
+        for sample in samples:
+            conds.append(sample.split("_")[1])
+            rep.append(sample.split("_")[2])
 
 
         # Write the R config file
@@ -61,17 +70,7 @@ rule chipuanar:
 
         # load the Rmarkdown
         chipuanar_script = sequana_data("Report_ChIPuanaR.Rmd", where="scripts")
-
+        shell("cp %s . " % (chipuanar_script))
         shell("""Rscript -e "rmarkdown::render(input='%s', output_file='%s', run_pandoc=TRUE, clean=TRUE)" """ % (chipuanar_script, output))
 
 
-
-    file <- "~/Documents/Pasteur/Projets/ChIPuana/chipuana_rtest/K4Me3_MOUSE_CuU_narrow_IDR0.05_Matrix_Optimal_Peak.mtx"
-    Conditions <- c("C","C","U","U")
-    Replicates <- c("Rep1", "Rep2","Rep1", "Rep2")
-    method <- "Limma" #Limma
-    normalisation <- "scale" #"scale"
-    spikes <- c(12,15254,14,14)
-    pAdjustMethod <- "BH"
-    alpha <- 0.05
-    batch <- NULL
