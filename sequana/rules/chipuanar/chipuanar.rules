@@ -54,7 +54,6 @@ rule chipuanar:
             conds.append(sample.split("_")[1])
             rep.append(sample.split("_")[2])
 
-
         # Write the R config file
         with open(output_dir+"/config.r", "w") as out:
             out.write("file <- '%s'" %  (input))
