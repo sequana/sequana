@@ -720,6 +720,7 @@ if len(conds) > 1 and manager.config.statistical_analysis.do:
     __chipuanar__report = "10-DifferentialAnalysis/{{MARK}}_{}_{}/{{MARK}}_Stat_report_{}_{}.html".format(method, norm, method, norm)
     __chipuanar__output_dir = "10-DifferentialAnalysis/{{MARK}}_{}_{}".format(method, norm)
     __chipuanar__log = "10-DifferentialAnalysis/logs/{}_{}_std.o".format(method, norm)
+    __chipuanar__config_r = "10-DifferentialAnalysis/{{MARK}}_{}_{}/config.R".format(method, norm)
     __chipuanar__genome = ref
     include: sm.modules["chipuanar"]
     expected_output.extend(expand(__chipuanar__report,  MARK=MARK_OK))

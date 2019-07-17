@@ -29,7 +29,8 @@ rule chipuanar:
         genome = __chipuanar__genome
     output:
         report = __chipuanar__report,
-        outdir = __chipuanar__output_dir
+        outdir = __chipuanar__output_dir,
+        config = __chipuanar__config_r
     log:
         __chipuanar__log
     run:
@@ -39,7 +40,6 @@ rule chipuanar:
 
         output = os.path.realpath(output[0])
         output_dir  = os.path.realpath(output[1])
-        print(output_dir)
 
         # Sed on matrix to get MARK_COND_REP as sample names
         if 'NoBlacklist' in open(input[0]).read():
@@ -56,7 +56,7 @@ rule chipuanar:
             rep.append(sample.split("_")[2])
 
         # Write the R config file
-        with open(output_dir+"/config.r", "w") as out:
+        with open(output[2], "w") as out:
             out.write("file <- '%s'" %  (input[0]))
             out.write("Conditions <- c(%s)" %  (conds))
             out.write("Replicates <- c(%s)" %  (rep))
