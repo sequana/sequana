@@ -55,6 +55,7 @@ rule chipuanar:
             conds.append(sample.split("_")[1])
             rep.append(sample.split("_")[2])
 
+        os.makedirs(output_dir)
         # Write the R config file
         with open(output[2], "w") as out:
             out.write("file <- '%s'\n" %  (input[0]))
