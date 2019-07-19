@@ -232,14 +232,12 @@ peak_calling:
 #
 # :Parameters:
 #
-# - mode: narrowPeak,broadPeak,bed,gff
 # - rank: Which column to use to rank peaks. Options: signal.value p.value q.value columnIndex
 # - thresh: Report statistics for peaks with a global idr below this value but return all peaks with an idr below --idr. Default: 0.05
 #
 # mode_choice__ = ['narrowPeak', 'broadPeak', 'bed', 'gff']
 #
 compute_idr:
-    mode_choice: 'narrowPeak'
     rank: 'signal.value'
     thresh: 0.05
 
@@ -328,3 +326,4 @@ coverage:
 multiqc:
     options: "-c multiqc_config.yaml -f  -e macs2 -x 3-Deduplication/*spikes* -x 2-Mapping/*_spike*"
     output-directory: "11-Multiqc"
+    config_file: "multiqc_config.yaml"

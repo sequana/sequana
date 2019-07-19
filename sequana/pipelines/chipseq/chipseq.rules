@@ -43,7 +43,7 @@ design = pd.read_csv(__design__, header=0, sep='\t')
 REQUIREMENTS IN DESIGN:
  - all files in one directory
  - fullname of files must be :
-        MARK_COND_REP_READ-TAD.fastq.gz
+        MARK_COND_REP_READ-TAG.fastq.gz
  - name on design must be:
         MARK_COND
 
@@ -601,6 +601,10 @@ expected_output.extend([__stats_peakCalling_csv])
 
 
 # Compute IDR
+if model in ["narrow"]:
+    __compute_idr__mode = "narrowPeak"
+else :
+    __compute_idr__mode = "broadPeak"
 __compute_idr__input1 = "6-PeakCalling/{}/{{IP_IDR}}_{{CASE}}1_vs_{{INPUT}}_peaks.{}Peak".format(model, model)
 __compute_idr__input2 = "6-PeakCalling/{}/{{IP_IDR}}_{{CASE}}2_vs_{{INPUT}}_peaks.{}Peak".format(model, model)
 __compute_idr__output = "7-IDR/{{IP_IDR}}_{{CASE}}1vs{{CASE}}2_{{INPUT}}_{}_{}_idr.txt".format(ref, model)

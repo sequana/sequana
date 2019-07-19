@@ -28,7 +28,7 @@ rule compute_idr:
     log:
         __compute_idr__log
     params:
-        mode = config["compute_idr"]["mode_choice"],
+        mode = __compute_idr__mode,
         rank = config["compute_idr"]["rank"],
         thresh = config["compute_idr"]["thresh"]
     shell:
@@ -37,7 +37,7 @@ rule compute_idr:
 
         nb_peak1=$(wc -l {input.input1} | cut -d' ' -f1)
         nb_peak2=$(wc -l {input.input2} | cut -d' ' -f1)
-        if [[ $nb_peak1 > 20 ]] || [[ $nb_peak2 > 20 ]] ; then
+        if [[ $nb_peak1 -gt 20 || $nb_peak2 -gt 20 ]] ; then
 
             #create temporary file for file1 and file2
             file1=$(mktemp)
