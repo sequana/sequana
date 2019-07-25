@@ -24,14 +24,33 @@ configfile: "config.yaml"
 # A convenient manager
 manager = sm.PipelineManager("revcomp", config)
 
+
 rule pipeline:
-    input: __revcomp__output
+    input: expand('{sample}.rc.fastq.gz', sample=manager.samples)
+
 
 ## Revcomp rule
 __revcomp__input = manager.getrawdata()
-__revcomp__logs = "fastqc_rc/logs/%s.logs" % manager.sample
-__revcomp__output = "fastqc_rc/%s.rc.fastq.gz" % manager.sample
-include: sm.modules["revcomp"]
+__revcomp__logs = "logs/{sample}.logs"
+__revcomp__output = "{sample}.rc.fastq.gz"
+
+rule revcomp:
+    """
+    use seqtk to reverse complement fastq files
+    """
+
+    input:
+        __revcomp__input
+    log:
+        __revcomp__logs
+    output:
+        __revcomp__output
+    threads: 4
+    shell:
+        """
+        seqtk seq -r  {input}  | pigz -p {threads} -fk - --stdout > {output}  2> {log}
+        """
+
 
 onsuccess:
 
