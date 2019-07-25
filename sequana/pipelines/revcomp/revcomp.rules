@@ -1,0 +1,45 @@
+"""Multi fastqc pipeline
+
+Author: Rachel Legendre
+Affiliation: Institut Pasteur @ 2019
+
+This pipeline is part of Sequana software (sequana.readthedocs.io)
+
+snakemake -s revcomp.rules --forceall --stats stats.txt --cores 4
+
+
+"""
+import sequana
+from sequana import snaketools as sm
+from sequana import sequana_data
+
+#sm.init("fastqc.rules", globals())
+
+# This must be defined before the include
+configfile: "config.yaml"
+#__snakefile__ = srcdir(__snakefile__)
+
+
+
+# A convenient manager
+manager = sm.PipelineManager("revcomp", config)
+
+rule pipeline:
+    input: __revcomp__output
+
+## Revcomp rule
+__revcomp__input = manager.getrawdata()
+__revcomp__logs = "fastqc_rc/logs/%s.logs" % manager.sample
+__revcomp__output = "fastqc_rc/%s.rc.fastq.gz" % manager.sample
+include: sm.modules["revcomp"]
+
+onsuccess:
+
+    from sequana.snaketools import OnSuccessCleaner
+    sc = OnSuccessCleaner()
+    sc.files_to_remove.append("revcomp.rules")
+    sc.add_makefile()
+    print("Once done, please clean up the directory using\n'make clean'")
+
+onerror:
+    print("An error occurred. See message above.")
