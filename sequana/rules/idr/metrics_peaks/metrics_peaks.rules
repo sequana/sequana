@@ -34,7 +34,15 @@ rule metrics_peaks:
         inputs = [os.path.realpath(f) for f in input['inputs']]
         output = os.path.realpath(output[0])
         #initialize dict for store all metrics
-        d = OrderedDict({'Cond': [], 'Replicates': [], 'PPR': [], 'SPR1': [], 'SPR2': [], 'RR': [], 'SCR': [], 'Score': []})
+        d = OrderedDict()
+        d['Cond'] = []
+        d['Replicates'] = []
+        d['PPR'] = []
+        d['SPR1'] = []
+        d['SPR2'] = []
+        d['RR'] = []
+        d['SCR'] = []
+        d['Score'] = []
         nb_rep = nb_ppr = nb_spr1 = nb_spr2 = 0
         for mark in marks:
             for cond in conds:
@@ -42,7 +50,8 @@ rule metrics_peaks:
                 d['Cond'].append(mark+"_"+cond)
                 for file in inputs:
                     if sample in file:
-                        if 'vs'+params.rep in file:
+                        #if 'vs'+params.rep in file:
+                        if 'vsRep' in file:
                             nb_rep = sum(1 for line in open(file))
                             d['Replicates'].append(nb_rep)
                         if 'vsPPR' in file:
@@ -56,11 +65,11 @@ rule metrics_peaks:
                             d['SPR2'].append(nb_spr2)
                 #catch illegal division by zero
                 try:
-                    scr = round(max(nb_spr1,nb_spr2)/min(nb_spr1,nb_spr2))
+                    scr = round(max(nb_spr1,nb_spr2)/min(nb_spr1,nb_spr2), 2)
                 except ZeroDivisionError:
                     scr = 0
                 try:
-                    rr = round(max(nb_rep,nb_ppr)/min(nb_rep,nb_ppr))
+                    rr = round(max(nb_rep,nb_ppr)/min(nb_rep,nb_ppr), 2)
                 except ZeroDivisionError:
                     rr = 0
                 d['SCR'].append(scr)
@@ -75,7 +84,7 @@ rule metrics_peaks:
 
 
         # create dataframe from dictionary
-        df = pd.DataFrame(data=d)
+        df = pd.DataFrame(data=d, columns=d.keys())
 
         # write dataframe in output file
         with open(output, 'w') as f:

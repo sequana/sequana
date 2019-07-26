@@ -43,7 +43,7 @@ design = pd.read_csv(__design__, header=0, sep='\t')
 REQUIREMENTS IN DESIGN:
  - all files in one directory
  - fullname of files must be :
-        MARK_COND_REP_READ-TAD.fastq.gz
+        MARK_COND_REP_READ-TAG.fastq.gz
  - name on design must be:
         MARK_COND
 
@@ -81,7 +81,7 @@ for mark in design['IP_NAME']:
 # get REP names
 #get list with replicates names for all IP
 rep_flag = manager.config.design.replicates
-rep = ['Rep1', 'Rep2']
+rep = [rep_flag+'1', rep_flag+'2']
 # deduce from rep the list for SPR & PPR
 ppr = ['PPR1', 'PPR2', 'PPRPool']
 spr = ['SPR1.1', 'SPR1.2', 'SPR2.1', 'SPR2.2']
@@ -96,7 +96,7 @@ MARK_OK =[]
 for row in design.itertuples(index=True, name='Pandas'):
     for mark in marks:
         if mark in getattr(row, "IP_NAME"):
-            if set(conds).issubset(getattr(row, "IP_NAME")) and getattr(row, "NB_IP") > 1:
+            if (getattr(row, "IP_NAME")).endswith(tuple(conds)) and getattr(row, "NB_IP") > 1:
                 MARK_OK.append(mark)
 
 #built list of MARK_COND_REP from config.yaml and check correspondance between design, config and fastq files
@@ -184,13 +184,13 @@ for row in design.itertuples(index=True, name='Pandas'):
     #elif getattr(row, "NB_IP") > 1 and getattr(row, "NB_INPUT") < 2 :
     elif getattr(row, "NB_IP") > 1 and getattr(row, "NB_INPUT") == 1 :
         PPR_POOL.append(getattr(row, "IP_NAME") + "_PPRPool")
-        INPUT_POOL.append(getattr(row, "INPUT_NAME")+ "_Rep1")
+        INPUT_POOL.append(getattr(row, "INPUT_NAME")+ "_" + rep_flag + "1")
 
 # all files passing PhantomPeakQualTool if no-model is chosen
 ALL = IP_ALL + IP_SPR + IP_PPR + PPR_POOL
 
 # get files for IDR
-CASE = ["Rep", "PPR", "SPR1.", "SPR2."]*len(IP_REP)
+CASE = [rep_flag, "PPR", "SPR1.", "SPR2."]*len(IP_REP)
 REP_IDR = list(chain(*zip(*repeat(IP_REP,4))))
 IN_IDR = list(chain(*zip(*repeat(IP_REP_DUP,4))))
 
@@ -272,7 +272,7 @@ if manager.config.cutadapt.do:
 
 __prefix_name__ = os.path.join(config["genome"]["genome_directory"], config["genome"]["name"])
 
-if manager.config.genome.do:
+if manager.config.genome.index:
     # indexing for bowtie2
     __bowtie2_index_ref__fasta = config["genome"]["fasta_file"]
     __bowtie2_index_ref__output_done = __prefix_name__ + ".1.bt2"
@@ -588,7 +588,6 @@ else:
     raise ValueError("Invalid choice of model for peak calling. Use either narrow or broad, or set no-model to yes")
 
 #compute MACS2 metrics
-## TODO nb pics REP en rouge si moins de 100,000 dans le multiqc
 macs2_rep = []
 macs2_rep.extend(expand("6-PeakCalling/{}/{{IP_REP}}_vs_{{INPUT}}_peaks.{}Peak".format(model, model), zip, IP_REP=IP_ALL, INPUT=INPUT))
 __stats_peakCalling_input = macs2_rep
@@ -602,12 +601,16 @@ expected_output.extend([__stats_peakCalling_csv])
 
 
 # Compute IDR
+if model in ["narrow"]:
+    __compute_idr__mode = "narrowPeak"
+else :
+    __compute_idr__mode = "broadPeak"
 __compute_idr__input1 = "6-PeakCalling/{}/{{IP_IDR}}_{{CASE}}1_vs_{{INPUT}}_peaks.{}Peak".format(model, model)
 __compute_idr__input2 = "6-PeakCalling/{}/{{IP_IDR}}_{{CASE}}2_vs_{{INPUT}}_peaks.{}Peak".format(model, model)
-__compute_idr__output = "7-IDR/{{IP_IDR}}_{{CASE}}1vs{{CASE}}2_{{INPUT}}_ref_{}_idr.txt".format(model)
-__compute_idr__output_peak = "7-IDR/{{IP_IDR}}_{{CASE}}1vs{{CASE}}2_{{INPUT}}_ref_{}_idr{}.{}Peak".format(
-    model, config["compute_idr"]["thresh"], model)
-__compute_idr__log = "7-IDR/logs/{IP_IDR}_{CASE}1vs{CASE}2_{{INPUT}}_%s_idr.o" % model
+__compute_idr__output = "7-IDR/{{IP_IDR}}_{{CASE}}1vs{{CASE}}2_{{INPUT}}_{}_{}_idr.txt".format(ref, model)
+__compute_idr__output_peak = "7-IDR/{{IP_IDR}}_{{CASE}}1vs{{CASE}}2_{{INPUT}}_{}_{}_idr{}.{}Peak".format(
+    ref, model, config["compute_idr"]["thresh"], model)
+__compute_idr__log = "7-IDR/logs/{IP_IDR}_{CASE}1vs{CASE}2_{INPUT}_%s_idr.o" % model
 include: sm.modules["compute_idr"]
 expected_output.extend(expand(__compute_idr__output, zip, IP_IDR=REP_IDR, CASE=CASE, INPUT=IN_IDR))
 
@@ -615,11 +618,11 @@ expected_output.extend(expand(__compute_idr__output, zip, IP_IDR=REP_IDR, CASE=C
 
 if model in ["narrow"]:
     # Select IDR peaks
-    __select_peaks__input_rep = "7-IDR/{{IP_IDR}}_{}1vs{}2_{{INPUT}}_ref_{}_idr{}.{}Peak".format(rep_flag, rep_flag, model, config["compute_idr"]["thresh"], model)
-    __select_peaks__input_ppr = "7-IDR/{{IP_IDR}}_{}1vs{}2_{{INPUT}}_ref_{}_idr{}.{}Peak".format("PPR", "PPR", model, config["compute_idr"]["thresh"], model)
+    __select_peaks__input_rep = "7-IDR/{{IP_IDR}}_{}1vs{}2_{{INPUT}}_{}_{}_idr{}.{}Peak".format(rep_flag, rep_flag, ref, model, config["compute_idr"]["thresh"], model)
+    __select_peaks__input_ppr = "7-IDR/{{IP_IDR}}_{}1vs{}2_{{INPUT}}_{}_{}_idr{}.{}Peak".format("PPR", "PPR", ref, model, config["compute_idr"]["thresh"], model)
     __select_peaks__input_pool = "6-PeakCalling/{}/{{IP_IDR}}_PPRPool_vs_{{INPUT}}_peaks.{}Peak".format(model, model)
-    __select_peaks__logs = "7-IDR/logs/{IP_IDR}_vs_{INPUT}_selected_peaks.o"
-    __select_peaks__output = "7-IDR/{{IP_IDR}}_vs_{{INPUT}}_select.{}Peak".format(model)
+    __select_peaks__logs = "8-ReproduciblePeaks/logs/{IP_IDR}_vs_{INPUT}_selected_peaks.o"
+    __select_peaks__output = "8-ReproduciblePeaks/{{IP_IDR}}_vs_{{INPUT}}_select.{}Peak".format(model)
     include: sm.modules["select_peaks"]
     expected_output.extend(expand(__select_peaks__output, zip, IP_IDR=IP_REP, INPUT=IP_REP_DUP))
 
@@ -627,8 +630,8 @@ if model in ["narrow"]:
 if model in ["broad"]:
     __intersectionApproach__input_rep = expand("6-PeakCalling/%s/{{IP_IDR}}_{CASE}_vs_{{INPUT}}_peaks.%sPeak" % (model, model), CASE=rep)
     __intersectionApproach__input_pool = "6-PeakCalling/{}/{{IP_IDR}}_PPRPool_vs_{{INPUT}}_peaks.{}Peak".format(model, model)
-    __intersectionApproach__logs = "7-IDR/logs/{IP_IDR}_vs_{INPUT}_BROAD-IA_peaks.o"
-    __intersectionApproach__output = "7-IDR/{{IP_IDR}}_vs_{{INPUT}}_BROAD-IA.{}Peak".format(model)
+    __intersectionApproach__logs = "8-ReproduciblePeaks/logs/{IP_IDR}_vs_{INPUT}_BROAD-IA_peaks.o"
+    __intersectionApproach__output = "8-ReproduciblePeaks/{{IP_IDR}}_vs_{{INPUT}}_BROAD-IA.{}Peak".format(model)
     include: sm.modules["intersectionApproach"]
     expected_output.extend(expand(__intersectionApproach__output, zip, IP_IDR=IP_REP, INPUT=IP_REP_DUP))
     __select_peaks__output = __intersectionApproach__output
@@ -636,8 +639,8 @@ if model in ["broad"]:
 
 #Compute peak metrics
 idr_peaks = []
-idr_peaks.extend(expand("7-IDR/{{IP_IDR}}_{{CASE}}1vs{{CASE}}2_{{INPUT}}_ref_{}_idr{}.{}Peak".format(
-                        model, config["compute_idr"]["thresh"], model), zip, IP_IDR=REP_IDR, CASE=CASE, INPUT=IN_IDR))
+idr_peaks.extend(expand("7-IDR/{{IP_IDR}}_{{CASE}}1vs{{CASE}}2_{{INPUT}}_{}_{}_idr{}.{}Peak".format(
+                        ref,model, config["compute_idr"]["thresh"], model), zip, IP_IDR=REP_IDR, CASE=CASE, INPUT=IN_IDR))
 __metrics_peaks__input = idr_peaks
 __metrics_peaks__marks = marks
 __metrics_peaks__conds = conds
@@ -647,7 +650,7 @@ __metrics_peaks__output = "IDR_metrics_mqc.out"
 include: sm.modules["metrics_peaks"]
 expected_output.extend([__metrics_peaks__output])
 
-if len(conds) > 1 :
+if len(conds) > 1 and manager.config.statistical_analysis.do:
     def getPeakFilesByMark(wildcards):
         ALL_IP = expand(__select_peaks__output, zip, IP_IDR=IP_REP, INPUT=IP_REP_DUP)
         IP_dict = {}
@@ -663,22 +666,22 @@ if len(conds) > 1 :
 
     # get union from all detected peak among all conditions for each mark
     __union_peaks__input = getPeakFilesByMark
-    __union_peaks__logs = "7-IDR/logs/{MARK}_Optimal_selected_peaks.o"
+    __union_peaks__logs = "9-CountMatrix/logs/{MARK}_Optimal_selected_peaks.o"
     if len(conds) == 2 :
-        __union_peaks__output = "7-IDR/{{MARK}}_{}u{}_{}.optimal.{}Peak_overlap.bed".format(conds[0], conds[1], ref, model)
+        __union_peaks__output = "9-CountMatrix/{{MARK}}_{}u{}_{}.optimal.{}Peak_overlap.bed".format(conds[0], conds[1], ref, model)
     elif len(conds) == 3 :
-        __union_peaks__output = "7-IDR/{{MARK}}_{}u{}u{}_{}.optimal.{}Peak_overlap.bed".format(conds[0], conds[1], conds[2], ref, model)
+        __union_peaks__output = "9-CountMatrix/{{MARK}}_{}u{}u{}_{}.optimal.{}Peak_overlap.bed".format(conds[0], conds[1], conds[2], ref, model)
     else :
-       __union_peaks__output = "7-IDR/{{MARK}}_all_conds_{}.optimal.{}Peak_overlap.bed".format(ref, model)
+       __union_peaks__output = "9-CountMatrix/{{MARK}}_all_conds_{}.optimal.{}Peak_overlap.bed".format(ref, model)
 
     include: sm.modules["union_peaks"]
     expected_output.extend(expand(__union_peaks__output, MARK=MARK_OK))
 
 
     # get GFF from peak files
-    __bed_to_gff__input = "7-IDR/{{MARK}}_{}u{}_{}.optimal.{}Peak_overlap.bed".format(conds[0], conds[1], ref, model)
-    __bed_to_gff__logs = "7-IDR/logs/{MARK}_Optimal_bed2gff.o"
-    __bed_to_gff__output = "7-IDR/{{MARK}}_{}u{}_{}.optimal.{}Peak_overlap.gff".format(conds[0], conds[1], ref, model)
+    __bed_to_gff__input = "9-CountMatrix/{{MARK}}_{}u{}_{}.optimal.{}Peak_overlap.bed".format(conds[0], conds[1], ref, model)
+    __bed_to_gff__logs = "9-CountMatrix/logs/{MARK}_Optimal_bed2gff.o"
+    __bed_to_gff__output = "9-CountMatrix/{{MARK}}_{}u{}_{}.optimal.{}Peak_overlap.gff".format(conds[0], conds[1], ref, model)
     include: sm.modules["bed_to_gff"]
     expected_output.extend(expand(__bed_to_gff__output,  MARK=MARK_OK))
 
@@ -697,13 +700,34 @@ if len(conds) > 1 :
 
     # feature Count on peaks
     __feature_counts__input = getBAMFilesByMark
-    __feature_counts__output_count = "7-IDR/{{MARK}}_Matrix_Optimal_{}Peak.mtx".format(model)
-    __feature_counts__gff = "7-IDR/{{MARK}}_{}u{}_{}.optimal.{}Peak_overlap.gff".format(conds[0], conds[1], ref, model)
-    __feature_counts__log = "6-PeakCalling/%s/logs/{MARK}_counts.o" % model
+    __feature_counts__output_count = "9-CountMatrix/{{MARK}}_Matrix_Optimal_{}Peak.mtx".format(model)
+    __feature_counts__gff = "9-CountMatrix/{{MARK}}_{}u{}_{}.optimal.{}Peak_overlap.gff".format(conds[0], conds[1], ref, model)
+    __feature_counts__log = "9-CountMatrix/logs/{MARK}_counts.o"
     __feature_counts__options = "-t peak -g gene_id"
     __feature_counts__threads = 4
     include: sm.modules["feature_counts"]
     expected_output.extend(expand(__feature_counts__output_count,  MARK=MARK_OK))
+
+
+    method = manager.config.statistical_analysis.method
+    norm = manager.config.statistical_analysis.normalisation
+    # run statistical analysis
+    __chipuanar__input = __feature_counts__output_count
+    __chipuanar__conds = conds
+    __chipuanar__rep = rep
+    __chipuanar__method = method
+    __chipuanar__norm = norm
+    __chipuanar__spikes = manager.config.statistical_analysis.spikes
+    __chipuanar__padj = manager.config.statistical_analysis.pAdjustMethod
+    __chipuanar__alpha = manager.config.statistical_analysis.alpha
+    __chipuanar__batch = manager.config.statistical_analysis.batch
+    __chipuanar__report = "10-DifferentialAnalysis/{{MARK}}_{}_{}/{{MARK}}_Stat_report_{}_{}.html".format(method, norm, method, norm)
+    __chipuanar__output_dir = "10-DifferentialAnalysis/{{MARK}}_{}_{}".format(method, norm)
+    __chipuanar__log = "10-DifferentialAnalysis/logs/{}_{}_std.o".format(method, norm)
+    __chipuanar__config_r = "10-DifferentialAnalysis/{{MARK}}_{}_{}/config.R".format(method, norm)
+    __chipuanar__genome = ref
+    include: sm.modules["chipuanar"]
+    expected_output.extend(expand(__chipuanar__report,  MARK=MARK_OK))
 
 
 
@@ -711,10 +735,10 @@ if len(conds) > 1 :
 # Multiqc rule
 __multiqc__input = expected_output
 __multiqc__input_dir = "."
-__multiqc__logs = "multiqc/multiqc.log"
+__multiqc__logs = "11-Multiqc/multiqc.log"
 __multiqc__output = config['multiqc']['output-directory'] + "/multiqc_report.html"
-#include: sm.modules["multiqc"]
-#expected_output = [__multiqc__output]
+include: sm.modules["multiqc"]
+expected_output = [__multiqc__output]
 
 # Include rule graph for each sample
 __rulegraph__input = __snakefile__

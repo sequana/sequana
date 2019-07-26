@@ -23,15 +23,15 @@
 	},
 	"preIDR_PPR" :
 	{
-		"ram" : "30G"
+		"ram" : "40G"
 	},
 	"preIDR_SPR" :
 	{
-		"ram" : "30G"
+		"ram" : "40G"
 	},
 	"preIDR_input" :
 	{
-		"ram" : "30G"
+		"ram" : "40G"
 	},
 
 	"bamCoverage" :
