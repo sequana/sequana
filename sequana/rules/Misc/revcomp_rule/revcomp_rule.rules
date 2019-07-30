@@ -1,0 +1,20 @@
+rule revcomp_rule:
+    """
+    use seqtk to reverse complement fastq files
+    """
+
+    input:
+        __revcomp__input
+    log:
+        __revcomp__logs
+    output:
+        __revcomp__output
+    threads: 4
+    shell:
+        """
+        seqtk seq -r  {input}  | pigz -p {threads} -fk - --stdout > {output}  2> {log}
+        """
+
+
+
+
