@@ -441,6 +441,9 @@ else :
 
 # Peak calling
 model = manager.config.peak_calling.model_choice
+model_dir = model
+if manager.config.peak_calling.no_model:
+    model_dir += "-nomodel"
 if model in ["narrow", "broad"]:
 
     # Peak Calling on replicates
@@ -465,9 +468,9 @@ if model in ["narrow", "broad"]:
     else:
         __macs2_rep__pe_mode = "no"
     __macs2_rep__input = "-c {}/{{INPUT}}_{}_sort_dedup{}.bam".format(blacklist_dir, ref, blacklist)
-    __macs2_rep__log = "6-PeakCalling/{}/logs/{{IP_REP}}_vs_{{INPUT}}.o".format(model)
-    __macs2_rep__output = "6-PeakCalling/{}/{{IP_REP}}_vs_{{INPUT}}_peaks.{}Peak".format(model, model)
-    __macs2_rep__output_prefix = "6-PeakCalling/{}/{{IP_REP}}_vs_{{INPUT}}".format(model)
+    __macs2_rep__log = "6-PeakCalling/{}/logs/{{IP_REP}}_vs_{{INPUT}}.o".format(model_dir)
+    __macs2_rep__output = "6-PeakCalling/{}/{{IP_REP}}_vs_{{INPUT}}_peaks.{}Peak".format(model_dir, model)
+    __macs2_rep__output_prefix = "6-PeakCalling/{}/{{IP_REP}}_vs_{{INPUT}}".format(model_dir)
     expected_output.extend(expand(__macs2_rep__output, zip, IP_REP=IP_ALL, INPUT=INPUT))
     include: macs2_dynamic("rep")
 
@@ -492,9 +495,9 @@ if model in ["narrow", "broad"]:
     else:
         __macs2_spr__pe_mode = "no"
     __macs2_spr__input = "-c {}/{{INPUT}}_{}_sort_dedup{}.bam".format(blacklist_dir, ref, blacklist)
-    __macs2_spr__log = "6-PeakCalling/{}/logs/{{SPR}}_vs_{{INPUT}}.o".format(model)
-    __macs2_spr__output = "6-PeakCalling/{}/{{SPR}}_vs_{{INPUT}}_peaks.{}Peak".format(model, model)
-    __macs2_spr__output_prefix = "6-PeakCalling/{}/{{SPR}}_vs_{{INPUT}}".format(model)
+    __macs2_spr__log = "6-PeakCalling/{}/logs/{{SPR}}_vs_{{INPUT}}.o".format(model_dir)
+    __macs2_spr__output = "6-PeakCalling/{}/{{SPR}}_vs_{{INPUT}}_peaks.{}Peak".format(model_dir, model)
+    __macs2_spr__output_prefix = "6-PeakCalling/{}/{{SPR}}_vs_{{INPUT}}".format(model_dir)
     expected_output.extend(expand(__macs2_spr__output, zip, SPR=IP_SPR, INPUT=INPUT_SPR))
     include: macs2_dynamic("spr")
 
@@ -520,9 +523,9 @@ if model in ["narrow", "broad"]:
     else:
         __macs2_ppr__pe_mode = "no"
     __macs2_ppr__input = "-c {}/{{INPUT}}_{}_sort_dedup{}.bam".format(blacklist_dir, ref, blacklist)
-    __macs2_ppr__log = "6-PeakCalling/{}/logs/{{PPR}}_vs_{{INPUT}}.o".format(model)
-    __macs2_ppr__output = "6-PeakCalling/{}/{{PPR}}_vs_{{INPUT}}_peaks.{}Peak".format(model, model)
-    __macs2_ppr__output_prefix = "6-PeakCalling/{}/{{PPR}}_vs_{{INPUT}}".format(model)
+    __macs2_ppr__log = "6-PeakCalling/{}/logs/{{PPR}}_vs_{{INPUT}}.o".format(model_dir)
+    __macs2_ppr__output = "6-PeakCalling/{}/{{PPR}}_vs_{{INPUT}}_peaks.{}Peak".format(model_dir, model)
+    __macs2_ppr__output_prefix = "6-PeakCalling/{}/{{PPR}}_vs_{{INPUT}}".format(model_dir)
     expected_output.extend(expand(__macs2_ppr__output, zip, PPR=IP_PPR, INPUT=INPUT_PPR))
     include: macs2_dynamic("ppr")
 
@@ -548,9 +551,9 @@ if model in ["narrow", "broad"]:
     else:
         __macs2_pool__pe_mode = "no"
     __macs2_pool__input = "-c {}/{{INPUT_POOL}}_{}_sort_dedup{}.bam".format(blacklist_dir, ref, blacklist)
-    __macs2_pool__log = "6-PeakCalling/{}/logs/{{POOL}}_vs_{{INPUT_POOL}}.o".format(model)
-    __macs2_pool__output = "6-PeakCalling/{}/{{POOL}}_vs_{{INPUT_POOL}}_peaks.{}Peak".format(model, model)
-    __macs2_pool__output_prefix = "6-PeakCalling/{}/{{POOL}}_vs_{{INPUT_POOL}}".format(model)
+    __macs2_pool__log = "6-PeakCalling/{}/logs/{{POOL}}_vs_{{INPUT_POOL}}.o".format(model_dir)
+    __macs2_pool__output = "6-PeakCalling/{}/{{POOL}}_vs_{{INPUT_POOL}}_peaks.{}Peak".format(model_dir, model)
+    __macs2_pool__output_prefix = "6-PeakCalling/{}/{{POOL}}_vs_{{INPUT_POOL}}".format(model_dir)
     expected_output.extend(expand(__macs2_pool__output, zip, POOL=PPR_POOL, INPUT_POOL=INPUT_POOL))
     include: macs2_dynamic("pool")
 
@@ -577,9 +580,9 @@ if model in ["narrow", "broad"]:
     else:
         __macs2_no_ctl__pe_mode = "no"
     __macs2_no_ctl__input = "NA"
-    __macs2_no_ctl__log = "6-PeakCalling/{}/logs/{{IP_NA}}.o".format(model)
-    __macs2_no_ctl__output = "6-PeakCalling/{}/{{IP_NA}}_peaks.{}Peak".format(model, model)
-    __macs2_no_ctl__output_prefix = "6-PeakCalling/{}/{{IP_NA}}".format(model)
+    __macs2_no_ctl__log = "6-PeakCalling/{}/logs/{{IP_NA}}.o".format(model_dir)
+    __macs2_no_ctl__output = "6-PeakCalling/{}/{{IP_NA}}_peaks.{}Peak".format(model_dir, model)
+    __macs2_no_ctl__output_prefix = "6-PeakCalling/{}/{{IP_NA}}".format(model_dir)
     #expected_output.extend(expand(__macs2_no_ctl__output, IP_NA=IP_NA))
     #include: macs2_dynamic("no_ctl")
 
@@ -589,13 +592,13 @@ else:
 
 #compute MACS2 metrics
 macs2_rep = []
-macs2_rep.extend(expand("6-PeakCalling/{}/{{IP_REP}}_vs_{{INPUT}}_peaks.{}Peak".format(model, model), zip, IP_REP=IP_ALL, INPUT=INPUT))
+macs2_rep.extend(expand("6-PeakCalling/{}/{{IP_REP}}_vs_{{INPUT}}_peaks.{}Peak".format(model_dir, model), zip, IP_REP=IP_ALL, INPUT=INPUT))
 __stats_peakCalling_input = macs2_rep
 __stats_peakCalling_csv = "Peaks_metrics_mqc.out"
 __stats_peakCalling__marks = marks
 __stats_peakCalling__conds = conds
 __stats_peakCalling__rep = rep_flag
-__stats_peakCalling_log = "6-PeakCalling/{}/Peaks_metrics.out".format(model)
+__stats_peakCalling_log = "6-PeakCalling/{}/Peaks_metrics.out".format(model_dir)
 include: sm.modules["stats_peakCalling"]
 expected_output.extend([__stats_peakCalling_csv])
 
@@ -605,10 +608,10 @@ if model in ["narrow"]:
     __compute_idr__mode = "narrowPeak"
 else :
     __compute_idr__mode = "broadPeak"
-__compute_idr__input1 = "6-PeakCalling/{}/{{IP_IDR}}_{{CASE}}1_vs_{{INPUT}}_peaks.{}Peak".format(model, model)
-__compute_idr__input2 = "6-PeakCalling/{}/{{IP_IDR}}_{{CASE}}2_vs_{{INPUT}}_peaks.{}Peak".format(model, model)
-__compute_idr__output = "7-IDR/{{IP_IDR}}_{{CASE}}1vs{{CASE}}2_{{INPUT}}_{}_{}_idr.txt".format(ref, model)
-__compute_idr__output_peak = "7-IDR/{{IP_IDR}}_{{CASE}}1vs{{CASE}}2_{{INPUT}}_{}_{}_idr{}.{}Peak".format(
+__compute_idr__input1 = "6-PeakCalling/{}/{{IP_IDR}}_{{CASE}}1_vs_{{INPUT}}_peaks.{}Peak".format(model_dir, model)
+__compute_idr__input2 = "6-PeakCalling/{}/{{IP_IDR}}_{{CASE}}2_vs_{{INPUT}}_peaks.{}Peak".format(model_dir, model)
+__compute_idr__output = "7-IDR/{}/{{IP_IDR}}_{{CASE}}1vs{{CASE}}2_{{INPUT}}_{}_{}_idr.txt".format(model_dir, ref, model)
+__compute_idr__output_peak = "7-IDR/{}/{{IP_IDR}}_{{CASE}}1vs{{CASE}}2_{{INPUT}}_{}_{}_idr{}.{}Peak".format(model_dir,
     ref, model, config["compute_idr"]["thresh"], model)
 __compute_idr__log = "7-IDR/logs/{IP_IDR}_{CASE}1vs{CASE}2_{INPUT}_%s_idr.o" % model
 include: sm.modules["compute_idr"]
@@ -618,9 +621,9 @@ expected_output.extend(expand(__compute_idr__output, zip, IP_IDR=REP_IDR, CASE=C
 
 if model in ["narrow"]:
     # Select IDR peaks
-    __select_peaks__input_rep = "7-IDR/{{IP_IDR}}_{}1vs{}2_{{INPUT}}_{}_{}_idr{}.{}Peak".format(rep_flag, rep_flag, ref, model, config["compute_idr"]["thresh"], model)
-    __select_peaks__input_ppr = "7-IDR/{{IP_IDR}}_{}1vs{}2_{{INPUT}}_{}_{}_idr{}.{}Peak".format("PPR", "PPR", ref, model, config["compute_idr"]["thresh"], model)
-    __select_peaks__input_pool = "6-PeakCalling/{}/{{IP_IDR}}_PPRPool_vs_{{INPUT}}_peaks.{}Peak".format(model, model)
+    __select_peaks__input_rep = "7-IDR/{}/{{IP_IDR}}_{}1vs{}2_{{INPUT}}_{}_{}_idr{}.{}Peak".format(model_dir, rep_flag, rep_flag, ref, model, config["compute_idr"]["thresh"], model)
+    __select_peaks__input_ppr = "7-IDR/{}/{{IP_IDR}}_{}1vs{}2_{{INPUT}}_{}_{}_idr{}.{}Peak".format(model_dir, "PPR", "PPR", ref, model, config["compute_idr"]["thresh"], model)
+    __select_peaks__input_pool = "6-PeakCalling/{}/{{IP_IDR}}_PPRPool_vs_{{INPUT}}_peaks.{}Peak".format(model_dir, model)
     __select_peaks__logs = "8-ReproduciblePeaks/logs/{IP_IDR}_vs_{INPUT}_selected_peaks.o"
     __select_peaks__output = "8-ReproduciblePeaks/{{IP_IDR}}_vs_{{INPUT}}_select.{}Peak".format(model)
     include: sm.modules["select_peaks"]
@@ -628,10 +631,10 @@ if model in ["narrow"]:
 
 
 if model in ["broad"]:
-    __intersectionApproach__input_rep = expand("6-PeakCalling/%s/{{IP_IDR}}_{CASE}_vs_{{INPUT}}_peaks.%sPeak" % (model, model), CASE=rep)
-    __intersectionApproach__input_pool = "6-PeakCalling/{}/{{IP_IDR}}_PPRPool_vs_{{INPUT}}_peaks.{}Peak".format(model, model)
+    __intersectionApproach__input_rep = expand("6-PeakCalling/%s/{{IP_IDR}}_{CASE}_vs_{{INPUT}}_peaks.%sPeak" % (model_dir, model), CASE=rep)
+    __intersectionApproach__input_pool = "6-PeakCalling/{}/{{IP_IDR}}_PPRPool_vs_{{INPUT}}_peaks.{}Peak".format(model_dir, model)
     __intersectionApproach__logs = "8-ReproduciblePeaks/logs/{IP_IDR}_vs_{INPUT}_BROAD-IA_peaks.o"
-    __intersectionApproach__output = "8-ReproduciblePeaks/{{IP_IDR}}_vs_{{INPUT}}_BROAD-IA.{}Peak".format(model)
+    __intersectionApproach__output = "8-ReproduciblePeaks/{}/{{IP_IDR}}_vs_{{INPUT}}_BROAD-IA.{}Peak".format(model_dir, model)
     include: sm.modules["intersectionApproach"]
     expected_output.extend(expand(__intersectionApproach__output, zip, IP_IDR=IP_REP, INPUT=IP_REP_DUP))
     __select_peaks__output = __intersectionApproach__output
@@ -639,7 +642,7 @@ if model in ["broad"]:
 
 #Compute peak metrics
 idr_peaks = []
-idr_peaks.extend(expand("7-IDR/{{IP_IDR}}_{{CASE}}1vs{{CASE}}2_{{INPUT}}_{}_{}_idr{}.{}Peak".format(
+idr_peaks.extend(expand("7-IDR/{}/{{IP_IDR}}_{{CASE}}1vs{{CASE}}2_{{INPUT}}_{}_{}_idr{}.{}Peak".format(model_dir,
                         ref,model, config["compute_idr"]["thresh"], model), zip, IP_IDR=REP_IDR, CASE=CASE, INPUT=IN_IDR))
 __metrics_peaks__input = idr_peaks
 __metrics_peaks__marks = marks
