@@ -497,6 +497,15 @@ class GZLineCounter(object):
         return i
 
 
+def entropy(x):
+    letters = set(x)
+    from pylab import log
+    pi = [x.count(l)/float(len(x)) for l in letters]
+    pi = [x for x in pi if x!=0]
+    return -sum(pi*log(pi))
+
+
+
 
 class PairedFastQ(object):
 
