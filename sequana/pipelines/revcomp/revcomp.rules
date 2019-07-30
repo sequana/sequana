@@ -20,13 +20,19 @@ configfile: "config.yaml"
 #__snakefile__ = srcdir(__snakefile__)
 
 
-
 # A convenient manager
-manager = sm.PipelineManager("revcomp", config)
+#
+def sample_func(filename):
+    import os
+    filename = os.path.basename(filename)
+    filename = filename.split(".", 1)[0]
+    return filename
 
+
+manager = sm.PipelineManagerGeneric("revcomp", config, sample_func)
 
 rule pipeline:
-    input: expand('{sample}.rc.fastq.gz', sample=manager.samples)
+    input: expand('{sample}.rc.fastq.gz', sample=list(manager.samples.keys()))
 
 
 ## Revcomp rule
@@ -34,22 +40,8 @@ __revcomp__input = manager.getrawdata()
 __revcomp__logs = "logs/{sample}.logs"
 __revcomp__output = "{sample}.rc.fastq.gz"
 
-rule revcomp:
-    """
-    use seqtk to reverse complement fastq files
-    """
 
-    input:
-        __revcomp__input
-    log:
-        __revcomp__logs
-    output:
-        __revcomp__output
-    threads: 4
-    shell:
-        """
-        seqtk seq -r  {input}  | pigz -p {threads} -fk - --stdout > {output}  2> {log}
-        """
+include: sm.modules['revcomp_rule']
 
 
 onsuccess:
