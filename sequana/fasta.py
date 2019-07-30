@@ -180,5 +180,8 @@ class FastA(object):
                 fout.write(">{}\t{}\n{}\n".format(read.name, read.comment,
                     read.sequence[::-1]))
 
-
+    def save_ctg_to_fasta(self, ctgname, outname):
+        index = self.names.index(ctgname)
+        with open("{}.fa".format(outname), "w") as fout:
+            fout.write(">{}\n{}".format(outname, self.sequences[index]))
 
