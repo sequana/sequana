@@ -221,7 +221,7 @@ class Options(argparse.ArgumentParser):
             sampleID_L002_.fastq.gz
 
 
-        sequana_lane_fusion --lanes 1 2 3 4
+        sequana_lane_fusion --lanes 1 2 3 4 --output-directory  L1234
 
         """.format(prog)
         super(Options, self).__init__(usage=usage, prog=prog,

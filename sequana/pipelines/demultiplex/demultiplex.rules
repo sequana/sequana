@@ -36,9 +36,9 @@ rule all:
 
 rule plot_unknown_barcodes:
     input: cfg['output_directory'] + "/Stats/Stats.json"
-    output: 
-        csv=cfg['output_directory'] + "/undetermined_barcodes.csv", 
-        png=cfg['output_directory'] + "/barcodes.png" 
+    output:
+        csv=cfg['output_directory'] + "/undetermined_barcodes.csv",
+        png=cfg['output_directory'] + "/barcodes.png"
     run:
         from sequana.demultiplex import StatsFile
         s = StatsFile(input[0])
