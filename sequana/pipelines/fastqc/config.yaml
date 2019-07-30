@@ -39,4 +39,4 @@ multiqc:
 ##############################################################################
 #
 onsuccess:
-    toclean: " slurm*out fastqc.rules config.yaml .snakemake stats.txt "
+    toclean: " slurm*out fastqc.rules config.yaml stats.txt "
