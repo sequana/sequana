@@ -95,7 +95,7 @@ conds = [ x.strip() for x in (manager.config.design.condition).split(",")]
 MARK_OK =[]
 for row in design.itertuples(index=True, name='Pandas'):
     for mark in marks:
-        if mark in getattr(row, "IP_NAME"):
+        if mark is getattr(row, "IP_NAME").split("_")[0]:
             if (getattr(row, "IP_NAME")).endswith(tuple(conds)) and getattr(row, "NB_IP") > 1:
                 MARK_OK.append(mark)
 
