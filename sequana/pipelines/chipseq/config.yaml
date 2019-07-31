@@ -220,9 +220,8 @@ remove_blacklist:
 peak_calling:
     model_choice: 'narrow'    ## may be broad
     no_model: no             ## may be yes
-    force_shift: no           ## may be yes
     options: "--keep-dup 2500 "
-    cutoff: "0.01"
+    cutoff: "0.1"
     genomeSize: mm
     readLength: 50
 
