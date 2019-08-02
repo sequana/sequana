@@ -613,7 +613,7 @@ __compute_idr__input2 = "6-PeakCalling/{}/{{IP_IDR}}_{{CASE}}2_vs_{{INPUT}}_peak
 __compute_idr__output = "7-IDR/{}/{{IP_IDR}}_{{CASE}}1vs{{CASE}}2_{{INPUT}}_{}_{}_idr.txt".format(model_dir, ref, model)
 __compute_idr__output_peak = "7-IDR/{}/{{IP_IDR}}_{{CASE}}1vs{{CASE}}2_{{INPUT}}_{}_{}_idr{}.{}Peak".format(model_dir,
     ref, model, config["compute_idr"]["thresh"], model)
-__compute_idr__log = "7-IDR/logs/{IP_IDR}_{CASE}1vs{CASE}2_{INPUT}_%s_idr.o" % model
+__compute_idr__log = "7-IDR/%s/logs/{IP_IDR}_{CASE}1vs{CASE}2_{INPUT}_%s_idr.o" % (model_dir,model)
 include: sm.modules["compute_idr"]
 expected_output.extend(expand(__compute_idr__output, zip, IP_IDR=REP_IDR, CASE=CASE, INPUT=IN_IDR))
 
