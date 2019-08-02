@@ -619,7 +619,7 @@ expected_output.extend(expand(__compute_idr__output, zip, IP_IDR=REP_IDR, CASE=C
 
 
 
-if model in ["narrow"]:
+if model in ["narrow"] and not manager.config.compute_idr.intersectionApproach:
     # Select IDR peaks
     __select_peaks__input_rep = "7-IDR/{}/{{IP_IDR}}_{}1vs{}2_{{INPUT}}_{}_{}_idr{}.{}Peak".format(model_dir, rep_flag, rep_flag, ref, model, config["compute_idr"]["thresh"], model)
     __select_peaks__input_ppr = "7-IDR/{}/{{IP_IDR}}_{}1vs{}2_{{INPUT}}_{}_{}_idr{}.{}Peak".format(model_dir, "PPR", "PPR", ref, model, config["compute_idr"]["thresh"], model)
@@ -630,7 +630,7 @@ if model in ["narrow"]:
     expected_output.extend(expand(__select_peaks__output, zip, IP_IDR=IP_REP, INPUT=IP_REP_DUP))
 
 
-if model in ["broad"]:
+if model in ["broad"] or manager.config.compute_idr.intersectionApproach:
     __intersectionApproach__input_rep = expand("6-PeakCalling/%s/{{IP_IDR}}_{CASE}_vs_{{INPUT}}_peaks.%sPeak" % (model_dir, model), CASE=rep)
     __intersectionApproach__input_pool = "6-PeakCalling/{}/{{IP_IDR}}_PPRPool_vs_{{INPUT}}_peaks.{}Peak".format(model_dir, model)
     __intersectionApproach__logs = "8-ReproduciblePeaks/%s/logs/{IP_IDR}_vs_{INPUT}_BROAD-IA_peaks.o" % model_dir
