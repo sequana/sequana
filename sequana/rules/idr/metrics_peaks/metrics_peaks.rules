@@ -50,8 +50,8 @@ rule metrics_peaks:
                 d['Cond'].append(mark+"_"+cond)
                 for file in inputs:
                     if sample in file:
-                        #if 'vs'+params.rep in file:
-                        if 'vsRep' in file:
+                        if 'vs'+params.rep in file:
+                        #if 'vsRep' in file:
                             nb_rep = sum(1 for line in open(file))
                             d['Replicates'].append(nb_rep)
                         if 'vsPPR' in file:
