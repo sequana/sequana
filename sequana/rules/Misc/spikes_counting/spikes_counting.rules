@@ -46,4 +46,4 @@ rule spikes_counting:
         # write dataframe in output file
         with open(output[1], 'w') as f:
                 f.write("# plot_type: 'table'\n")
-        df.to_csv(output.json, mode='a',sep="\t", index=False, header=['Spike', 'MappedReads', 'Percent'])
+        df.to_csv(output[1], mode='a',sep="\t", index=False, header=['Spike', 'MappedReads', 'Percent'])
