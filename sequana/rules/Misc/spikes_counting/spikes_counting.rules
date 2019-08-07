@@ -16,7 +16,7 @@ rule spikes_counting:
         inputs = __spikes_counting__input
     output:
         tab = __spikes_counting__output,
-        json = __spikes_counting__output_json,
+        json = __spikes_counting__output_json
     log:
         __spikes_counting__log
     run:
