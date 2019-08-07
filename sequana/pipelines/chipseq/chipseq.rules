@@ -306,6 +306,7 @@ if manager.config.bowtie2_mapping.do:
     __bowtie2_mapping_ref__bam = "2-Mapping/{{sample}}_{}.bam".format(ref)
     __bowtie2_mapping_ref__logs_err = "2-Mapping/logs/{{sample}}_{}_mapping.e".format(ref)
     __bowtie2_mapping_ref__logs_out = "2-Mapping/logs/{{sample}}_{}_mapping.o".format(ref)
+    __bowtie2_mapping_ref__options = config["bowtie2_mapping"]["options"]
     __bowtie2_mapping_ref__prefix_index = __bowtie2_index_ref__output_prefix
     include: bowtie2_mapping_dynamic("ref", manager)
     expected_output.extend(expand(__bowtie2_mapping_ref__sort, sample=manager.samples))
@@ -330,6 +331,7 @@ if manager.config.design.spike:
     __bowtie2_mapping_spike__bam = "2-Mapping/{sample}_spike.bam"
     __bowtie2_mapping_spike__logs_err = "2-Mapping/logs/{sample}_spike_mapping.e"
     __bowtie2_mapping_spike__logs_out = "2-Mapping/logs/{sample}_spike_mapping.o"
+    __bowtie2_mapping_spike__options = manager.config.bowtie2_mapping.options+" --no-unal"
     __bowtie2_mapping_spike__prefix_index = __bowtie2_index_spike__output_prefix
     include: bowtie2_mapping_dynamic("spike", manager)
     expected_output.extend(expand(__bowtie2_mapping_spike__sort, sample=manager.samples))

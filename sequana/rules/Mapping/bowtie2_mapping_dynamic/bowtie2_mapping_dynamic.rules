@@ -35,8 +35,8 @@ rule bowtie2_mapping_%(name)s:
         err = __bowtie2_mapping_%(name)s__logs_err,
         out = __bowtie2_mapping_%(name)s__logs_out
     params:
-        prefix_index =__bowtie2_mapping_%(name)s__prefix_index,
-        options = config["bowtie2_mapping"]["options"]
+        prefix_index = __bowtie2_mapping_%(name)s__prefix_index,
+        options = __bowtie2_mapping_%(name)s__options
     threads:
         config["bowtie2_mapping"]["threads"]
     run:
