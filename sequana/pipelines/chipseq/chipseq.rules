@@ -650,7 +650,7 @@ __metrics_peaks__input = idr_peaks
 __metrics_peaks__marks = marks
 __metrics_peaks__conds = conds
 __metrics_peaks__rep = rep_flag
-__metrics_peaks__logs = "7-IDR/logs/IDR_metrics.out"
+__metrics_peaks__logs = "7-IDR/{}/logs/IDR_metrics.out".format(model_dir)
 __metrics_peaks__output = "IDR_metrics_mqc.out"
 include: sm.modules["metrics_peaks"]
 expected_output.extend([__metrics_peaks__output])
