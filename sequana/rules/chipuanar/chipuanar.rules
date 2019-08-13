@@ -26,8 +26,7 @@ rule chipuanar:
         padj = __chipuanar__padj,
         alpha = __chipuanar__alpha,
         batch = __chipuanar__batch,
-        genome = __chipuanar__genome,
-        outdir = __chipuanar__output_dir
+        genome = __chipuanar__genome
     output:
         report = __chipuanar__report,
         config = __chipuanar__config_r
@@ -53,10 +52,6 @@ rule chipuanar:
             conds.append(sample.split("_")[1])
             rep.append(sample.split("_")[2])
 
-        try:
-            os.mkdir(params.outdir)
-        except:
-            raise
 
         # Write the R config file
         with open(output[1], "w") as out:
