@@ -27,9 +27,11 @@ rule chipuanar:
         alpha = __chipuanar__alpha,
         batch = __chipuanar__batch,
         genome = __chipuanar__genome
+
     output:
         report = __chipuanar__report,
-        config = __chipuanar__config_r
+        config = __chipuanar__config_r,
+        outdir = __chipuanar__output_dir
     log:
         __chipuanar__log
     run:
@@ -51,7 +53,6 @@ rule chipuanar:
         for sample in samples:
             conds.append(sample.split("_")[1])
             rep.append(sample.split("_")[2])
-
 
         # Write the R config file
         with open(output[1], "w") as out:
