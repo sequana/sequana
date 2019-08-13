@@ -26,12 +26,13 @@ rule chipuanar:
         padj = __chipuanar__padj,
         alpha = __chipuanar__alpha,
         batch = __chipuanar__batch,
-        genome = __chipuanar__genome
+        genome = __chipuanar__genome,
+        outdir = __chipuanar__output_dir
 
     output:
         report = __chipuanar__report,
-        config = __chipuanar__config_r,
-        outdir = __chipuanar__output_dir
+        config = __chipuanar__config_r
+
     run:
         import os
         from sequana import sequana_data

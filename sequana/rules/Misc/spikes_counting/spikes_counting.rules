@@ -24,6 +24,9 @@ rule spikes_counting:
         import pandas as pd
         import os.path
         from collections import OrderedDict
+        import warnings
+        warnings.filterwarnings('ignore')
+
 
         inputs = [os.path.realpath(f) for f in input['inputs']]
         output = os.path.realpath(output[0])
