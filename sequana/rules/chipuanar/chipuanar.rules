@@ -69,7 +69,6 @@ rule chipuanar:
 
         # load the Rmarkdown
         chipuanar_script = sequana_data("Report_ChIPuanaR.Rmd", where="scripts")
-        shell("cp %s . " % (chipuanar_script))
-        shell("""Rscript -e "rmarkdown::render(input='%s', output_file='%s', run_pandoc=TRUE, clean=TRUE)" """ % (chipuanar_script, output))
+        shell("""Rscript -e "rmarkdown::render(input='%s', output_file='%s', run_pandoc=TRUE, clean=TRUE)" """ % (chipuanar_script, output[0]))
 
 
