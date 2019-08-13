@@ -40,6 +40,8 @@ rule chipuanar:
         import warnings
         warnings.filterwarnings('ignore')
 
+        #get current dir
+        cwd = os.getcwd()
         # Sed on matrix to get MARK_COND_REP as sample names
         if 'NoBlacklist' in open(input[0]).read():
             shell("sed -i 's/4-NoBlacklist\///g' %s && sed -i 's/_%s_sort_dedup_NoBlacklist.bam//g' %s" % (input[0], params.genome, input[0]))
@@ -79,5 +81,6 @@ rule chipuanar:
         chipuanar_script = sequana_data("Report_ChIPuanaR.Rmd", where="scripts")
         shell("cp %s . " % (chipuanar_script))
         shell("""Rscript -e "rmarkdown::render(input='%s', output_file='%s', run_pandoc=TRUE, clean=TRUE)" """ % ("Report_ChIPuanaR.Rmd", outfile))
+        os.chdir(cwd)
 
 
