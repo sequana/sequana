@@ -163,7 +163,7 @@ cutadapt:
 bowtie2_mapping:
     do: yes
     #options: "--dovetail --no-mixed --no-discordant " for paired-end data
-    options: ""
+    options: "--very-sensitive "
     threads: 4
 
 
