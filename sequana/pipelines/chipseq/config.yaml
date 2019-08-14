@@ -239,6 +239,8 @@ compute_idr:
     rank: 'signal.value'
     thresh: 0.05
     intersectionApproach: no
+
+
 #############################################################################
 # Compute differential analysis
 #
@@ -246,7 +248,7 @@ compute_idr:
 #
 # - method:
 # - normalization:
-# - spikes:
+# - spikes: True or False. If you have spikes, you can run ChIPuanaR with or without spikes normalization in order to compare.
 # - pAdjustMethod:
 # - alpha:
 # - batch:
@@ -256,7 +258,7 @@ statistical_analysis:
     do: no
     method: "Limma" #Limma
     normalisation: "scale" #"scale"
-    spikes: NULL
+    spikes: no
     pAdjustMethod: "BH"
     alpha: 0.05
     batch: NULL

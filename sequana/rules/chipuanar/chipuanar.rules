@@ -37,8 +37,7 @@ rule chipuanar:
         import os
         from sequana import sequana_data
         import linecache
-        import warnings
-        warnings.filterwarnings('ignore')
+        from pandas import read_json
 
         #get current dir
         cwd = os.getcwd()
@@ -55,7 +54,14 @@ rule chipuanar:
         for sample in samples:
             conds.append(sample.split("_")[1])
             rep.append(sample.split("_")[2])
-	
+
+	    #if spikes, read json file
+        df = read_json(params.spikes)
+        spikes = []
+        for sample in samples:
+            spikes.append(df.loc[:,sample][0])
+        sp = '\",\"'.join(str(s) for s in spikes)
+
         # Write the R config file
         with open(output.config, "w") as out:
             out.write("file <- '%s'\n" %  (os.path.realpath(input[0])))
@@ -64,7 +70,7 @@ rule chipuanar:
             out.write("method <- '%s'\n" %  (params.method))
             out.write("normalisation <- '%s'\n" %  (params.norm))
             if params.spikes:
-                out.write("spikes <- c(%s)\n" %  ('\"'+('\",\"').join(params.spikes)+'\"'))
+                out.write("spikes <- c(%s)\n" %  ('\"'+sp+'\"'))
             else:
                 out.write("spikes <- NULL\n")
             out.write("pAdjustMethod <- '%s'\n" %  (params.padj))
