@@ -348,7 +348,7 @@ if manager.config.design.spike:
 
     # counting on spikes
     __spikes_counting__input = expand("3-Deduplication/{sample}_spike_sort_dedup.bam", sample=manager.samples)
-    __spikes_counting__output_json = "3-Deduplication/ALL_count_on_spike.mtx"
+    __spikes_counting__output_json = "9-CountMatrix/Spikes_count.json"
     __spikes_counting__output = "Spikes_metrics_mqc.out"
     __spikes_counting__log = "3-Deduplication/logs/Spikes_metrics.o"
     include: sm.modules["spikes_counting"]
