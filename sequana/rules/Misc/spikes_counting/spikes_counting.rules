@@ -45,7 +45,7 @@ rule spikes_counting:
         df = pd.DataFrame(data=d)
         df2 = df.drop([1])
         # write the dataframe in json format for chipuanar
-        df2.to_csv(output.json)
+        df2.to_json(output.json)
 
 
         df = df.transpose()
