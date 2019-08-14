@@ -16,7 +16,7 @@ rule chipuanar:
 
     """
     input:
-        inputs = __chipuanar__input,
+        bam = __chipuanar__input,
         done = __chipuanar__input_done
     params:
         conds = __chipuanar__conds,
@@ -43,13 +43,13 @@ rule chipuanar:
         #get current dir
         cwd = os.getcwd()
         # Sed on matrix to get MARK_COND_REP as sample names
-        if 'NoBlacklist' in open(input[0]).read():
+        if 'NoBlacklist' in open(input.bam).read():
             shell("sed -i 's/4-NoBlacklist\///g' %s && sed -i 's/_%s_sort_dedup_NoBlacklist.bam//g' %s" % (input[0], params.genome, input[0]))
-        elif 'Deduplication' in open(input[0]).read():
+        elif 'Deduplication' in open(input.bam).read():
             shell("sed -i 's/3-Deduplication\///g' %s && sed -i 's/_%s_sort_dedup.bam//g' %s " % (input[0], params.genome, input[0]))
 
         # get cond and rep vectors
-        samples = (linecache.getline(input[0], 2)).rstrip().split('\t')[6:]
+        samples = (linecache.getline(input.bam, 2)).rstrip().split('\t')[6:]
         conds = []
         rep = []
         for sample in samples:
