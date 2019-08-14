@@ -23,7 +23,7 @@ library(kableExtra)
 library(ChIPuana)
 
 ### INPUTS
-source("../chipuana_rtest/config.R")
+source("config.R")
 data <- read.table(file = file, header=T)
 counts <- as.matrix(data[,-c(1:6)])
 rownames(counts) <- data[,1]
