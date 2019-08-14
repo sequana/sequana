@@ -24,6 +24,7 @@ exec(open(sequana.modules["fastqc_dynamic"], "r").read())
 exec(open(sequana.modules["bowtie2_mapping_dynamic"], "r").read())
 exec(open(sequana.modules["bowtie2_index_dynamic"], "r").read())
 exec(open(sequana.modules["dynamic_unpigz"], "r").read())
+exec(open(sequana.modules["dynamic_copy"], "r").read())
 exec(open(sequana.modules["macs2_dynamic"], "r").read())
 exec(open(sequana.modules["preIDR_dynamic"], "r").read())
 exec(open(sequana.modules["mark_duplicates_dynamic"], "r").read())
@@ -762,6 +763,12 @@ __multiqc__logs = "11-Multiqc/multiqc.log"
 __multiqc__output = config['multiqc']['output-directory'] + "/%s/multiqc_report.html" % (model_dir)
 include: sm.modules["multiqc"]
 expected_output = [__multiqc__output]
+
+# copy IDR metrics in the corresponding multiQC output when you are in exploratory mode
+__copy_metrics__input = __metrics_peaks__output
+__copy_metrics__output = config['multiqc']['output-directory'] + "/%s/%s_IDR_metrics.txt" % (model_dir, model_dir)
+include: dynamic_unpigz("metrics", manager)
+expected_output.extend([__copy_metrics__output])
 
 # Include rule graph for each sample
 __rulegraph__input = __snakefile__
