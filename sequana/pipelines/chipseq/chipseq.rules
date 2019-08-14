@@ -331,7 +331,7 @@ if manager.config.design.spike:
     __bowtie2_mapping_spike__bam = "2-Mapping/{sample}_spike.bam"
     __bowtie2_mapping_spike__logs_err = "2-Mapping/logs/{sample}_spike_mapping.e"
     __bowtie2_mapping_spike__logs_out = "2-Mapping/logs/{sample}_spike_mapping.o"
-    __bowtie2_mapping_spike__options = manager.config.bowtie2_mapping.options+" --no-unal"
+    __bowtie2_mapping_spike__options = manager.config.bowtie2_mapping.options
     __bowtie2_mapping_spike__prefix_index = __bowtie2_index_spike__output_prefix
     include: bowtie2_mapping_dynamic("spike", manager)
     expected_output.extend(expand(__bowtie2_mapping_spike__sort, sample=manager.samples))
@@ -655,7 +655,7 @@ __metrics_peaks__output = "IDR_metrics_mqc.out"
 include: sm.modules["metrics_peaks"]
 expected_output.extend([__metrics_peaks__output])
 
-if len(conds) > 1 and manager.config.statistical_analysis.do:
+if len(conds) > 1 and manager.config.differential_analysis.do:
     def getPeakFilesByMark(wildcards):
         ALL_IP = expand(__select_peaks__output, zip, IP_IDR=IP_REP, INPUT=IP_REP_DUP)
         IP_dict = {}
@@ -684,9 +684,17 @@ if len(conds) > 1 and manager.config.statistical_analysis.do:
 
 
     # get GFF from peak files
-    __bed_to_gff__input = "9-CountMatrix/{{MARK}}_{}u{}_{}.optimal.{}Peak_overlap.bed".format(conds[0], conds[1], ref, model)
+    if len(conds) == 2 :
+        __bed_to_gff__input = "9-CountMatrix/{{MARK}}_{}u{}_{}.optimal.{}Peak_overlap.bed".format(conds[0], conds[1], ref, model)
+        __bed_to_gff__output = "9-CountMatrix/{{MARK}}_{}u{}_{}.optimal.{}Peak_overlap.gff".format(conds[0], conds[1], ref, model)
+    elif len(conds) == 3 :
+        __bed_to_gff__input = "9-CountMatrix/{{MARK}}_{}u{}u{}_{}.optimal.{}Peak_overlap.bed".format(conds[0], conds[1], conds[2],  ref, model)
+        __bed_to_gff__output = "9-CountMatrix/{{MARK}}_{}u{}u{}_{}.optimal.{}Peak_overlap.gff".format(conds[0], conds[1], conds[2], ref, model)
+    else :
+        __bed_to_gff__input = "9-CountMatrix/{{MARK}}_all_conds_{}.optimal.{}Peak_overlap.bed".format(ref, model)
+        __bed_to_gff__output = "9-CountMatrix/{{MARK}}_all_conds_{}.optimal.{}Peak_overlap.gff".format(ref, model)
+
     __bed_to_gff__logs = "9-CountMatrix/logs/{MARK}_Optimal_bed2gff.o"
-    __bed_to_gff__output = "9-CountMatrix/{{MARK}}_{}u{}_{}.optimal.{}Peak_overlap.gff".format(conds[0], conds[1], ref, model)
     include: sm.modules["bed_to_gff"]
     expected_output.extend(expand(__bed_to_gff__output,  MARK=MARK_OK))
 
@@ -706,7 +714,12 @@ if len(conds) > 1 and manager.config.statistical_analysis.do:
     # feature Count on peaks
     __feature_counts__input = getBAMFilesByMark
     __feature_counts__output_count = "9-CountMatrix/{{MARK}}_Matrix_Optimal_{}Peak.mtx".format(model)
-    __feature_counts__gff = "9-CountMatrix/{{MARK}}_{}u{}_{}.optimal.{}Peak_overlap.gff".format(conds[0], conds[1], ref, model)
+    if len(conds) == 2 :
+        __feature_counts__gff = "9-CountMatrix/{{MARK}}_{}u{}_{}.optimal.{}Peak_overlap.gff".format(conds[0], conds[1], ref, model)
+    elif len(conds) == 3 :
+        __feature_counts__gff = "9-CountMatrix/{{MARK}}_{}u{}u{}_{}.optimal.{}Peak_overlap.gff".format(conds[0], conds[1], conds[2], ref, model)
+    else :
+        __feature_counts__gff = "9-CountMatrix/{{MARK}}_all_conds_{}.optimal.{}Peak_overlap.gff".format(ref, model)
     __feature_counts__log = "9-CountMatrix/logs/{MARK}_counts.o"
     __feature_counts__options = "-t peak -g gene_id"
     __feature_counts__threads = 4
@@ -714,23 +727,23 @@ if len(conds) > 1 and manager.config.statistical_analysis.do:
     expected_output.extend(expand(__feature_counts__output_count,  MARK=MARK_OK))
 
 
-    method = manager.config.statistical_analysis.method
-    norm = manager.config.statistical_analysis.normalisation
-    # run statistical analysis
+    method = manager.config.differential_analysis.method
+    norm = manager.config.differential_analysis.normalisation
+    # run differential analysis
     __chipuanar__input = __feature_counts__output_count
     __chipuanar__conds = conds
     __chipuanar__rep = rep
     __chipuanar__method = method
     __chipuanar__norm = norm
-    if manager.config.statistical_analysis.spikes and manager.config.design.spike :
+    if manager.config.differential_analysis.spikes and manager.config.design.spike :
         __chipuanar__spikes = __spikes_counting__output_json
         __chipuanar__input_done = __spikes_counting__output_json
     else:
         __chipuanar__spikes = ""
         __chipuanar__input_done = __feature_counts__output_count
-    __chipuanar__padj = manager.config.statistical_analysis.pAdjustMethod
-    __chipuanar__alpha = manager.config.statistical_analysis.alpha
-    __chipuanar__batch = manager.config.statistical_analysis.batch
+    __chipuanar__padj = manager.config.differential_analysis.pAdjustMethod
+    __chipuanar__alpha = manager.config.differential_analysis.alpha
+    __chipuanar__batch = manager.config.differential_analysis.batch
     __chipuanar__report = "10-DifferentialAnalysis/{{MARK}}_{}_{}/{{MARK}}_Stat_report_{}_{}.html".format(method, norm, method, norm)
     __chipuanar__output_dir = "10-DifferentialAnalysis/{{MARK}}_{}_{}".format(method, norm)
     __chipuanar__config_r = "10-DifferentialAnalysis/{{MARK}}_{}_{}/config.R".format(method, norm)
@@ -746,7 +759,7 @@ if len(conds) > 1 and manager.config.statistical_analysis.do:
 __multiqc__input = expected_output
 __multiqc__input_dir = "."
 __multiqc__logs = "11-Multiqc/multiqc.log"
-__multiqc__output = config['multiqc']['output-directory'] + "/multiqc_report.html"
+__multiqc__output = config['multiqc']['output-directory'] + "/%s/multiqc_report.html" % (model_dir)
 include: sm.modules["multiqc"]
 expected_output = [__multiqc__output]
 
