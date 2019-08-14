@@ -770,10 +770,18 @@ include: sm.modules["multiqc"]
 expected_output = [__multiqc__output]
 
 # copy IDR metrics in the corresponding multiQC output when you are in exploratory mode
-__copy_metrics__input = __metrics_peaks__output
-__copy_metrics__output = config['multiqc']['output-directory'] + "/%s/%s_IDR_metrics.txt" % (model_dir, model_dir)
-include: dynamic_copy("metrics", manager)
-expected_output.extend([__copy_metrics__output])
+__copy_idr__input = __metrics_peaks__output
+__copy_idr__output = config['multiqc']['output-directory'] + "/%s/%s_IDR_metrics.txt" % (model_dir, model_dir)
+include: dynamic_copy("idr", manager)
+expected_output.extend([__copy_idr__output])
+
+# copy Peaks metrics in the corresponding multiQC output when you are in exploratory mode
+__copy_peak__input = __stats_peakCalling_csv
+__copy_peak__output = config['multiqc']['output-directory'] + "/%s/%s_peaks_metrics.txt" % (model_dir, model_dir)
+include: dynamic_copy("peak", manager)
+expected_output.extend([__copy_peak__output])
+
+
 
 # Include rule graph for each sample
 __rulegraph__input = __snakefile__
