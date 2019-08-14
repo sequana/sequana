@@ -16,7 +16,8 @@ rule chipuanar:
 
     """
     input:
-        inputs = __chipuanar__input
+        inputs = __chipuanar__input,
+        done = __chipuanar__input_done
     params:
         conds = __chipuanar__conds,
         rep = __chipuanar__rep,
@@ -56,7 +57,7 @@ rule chipuanar:
             rep.append(sample.split("_")[2])
 
 	    #if spikes, read json file
-        if params.spikes:
+        if os.path.isfile(params.spikes):
             df = read_json(params.spikes)
             spikes = []
             for sample in samples:
@@ -70,7 +71,7 @@ rule chipuanar:
             out.write("Replicates <- c(%s)\n" %  ('\"'+('\",\"').join(rep)+'\"'))
             out.write("method <- '%s'\n" %  (params.method))
             out.write("normalisation <- '%s'\n" %  (params.norm))
-            if params.spikes:
+            if os.path.isfile(params.spikes):
                 out.write("spikes <- c(%s)\n" %  ('\"'+sp+'\"'))
             else:
                 out.write("spikes <- NULL\n")

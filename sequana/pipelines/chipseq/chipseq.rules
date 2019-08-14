@@ -724,8 +724,10 @@ if len(conds) > 1 and manager.config.statistical_analysis.do:
     __chipuanar__norm = norm
     if manager.config.statistical_analysis.spikes and manager.config.design.spike :
         __chipuanar__spikes = __spikes_counting__output_json
+        __chipuanar__input_done = __spikes_counting__output_json
     else:
         __chipuanar__spikes = ""
+        __chipuanar__input_done = __feature_counts__output_count
     __chipuanar__padj = manager.config.statistical_analysis.pAdjustMethod
     __chipuanar__alpha = manager.config.statistical_analysis.alpha
     __chipuanar__batch = manager.config.statistical_analysis.batch
