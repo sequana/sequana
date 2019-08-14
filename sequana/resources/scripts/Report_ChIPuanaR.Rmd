@@ -20,7 +20,7 @@ Site....
 # Package
 library(knitr)
 library(kableExtra)
-library(ChIPuana)
+library(ChIPuanaR)
 
 ### INPUTS
 source("config.R")
