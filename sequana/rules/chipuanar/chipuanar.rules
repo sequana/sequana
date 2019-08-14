@@ -72,7 +72,7 @@ rule chipuanar:
             out.write("method <- '%s'\n" %  (params.method))
             out.write("normalisation <- '%s'\n" %  (params.norm))
             if os.path.isfile(params.spikes):
-                out.write("spikes <- c(%s)\n" %  (sp)
+                out.write("spikes <- c(%s)\n" %  (sp))
             else:
                 out.write("spikes <- NULL\n")
             out.write("pAdjustMethod <- '%s'\n" %  (params.padj))
