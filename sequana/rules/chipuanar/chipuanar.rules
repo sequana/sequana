@@ -16,7 +16,7 @@ rule chipuanar:
 
     """
     input:
-        bam = __chipuanar__input,
+        matrix = __chipuanar__input,
         done = __chipuanar__input_done
     params:
         conds = __chipuanar__conds,
@@ -43,13 +43,13 @@ rule chipuanar:
         #get current dir
         cwd = os.getcwd()
         # Sed on matrix to get MARK_COND_REP as sample names
-        if 'NoBlacklist' in open(input.bam).read():
-            shell("sed -i 's/4-NoBlacklist\///g' %s && sed -i 's/_%s_sort_dedup_NoBlacklist.bam//g' %s" % (input[0], params.genome, input[0]))
-        elif 'Deduplication' in open(input.bam).read():
-            shell("sed -i 's/3-Deduplication\///g' %s && sed -i 's/_%s_sort_dedup.bam//g' %s " % (input[0], params.genome, input[0]))
+        if 'NoBlacklist' in open(input.matrix).read():
+            shell("sed -i 's/4-NoBlacklist\///g' %s && sed -i 's/_%s_sort_dedup_NoBlacklist.bam//g' %s" % (input.matrix, params.genome, input.matrix))
+        elif 'Deduplication' in open(input.matrix).read():
+            shell("sed -i 's/3-Deduplication\///g' %s && sed -i 's/_%s_sort_dedup.bam//g' %s " % (input.matrix, params.genome, input.matrix))
 
         # get cond and rep vectors
-        samples = (linecache.getline(input.bam, 2)).rstrip().split('\t')[6:]
+        samples = (linecache.getline(input.matrix, 2)).rstrip().split('\t')[6:]
         conds = []
         rep = []
         for sample in samples:
@@ -66,7 +66,7 @@ rule chipuanar:
 
         # Write the R config file
         with open(output.config, "w") as out:
-            out.write("file <- '%s'\n" %  (os.path.realpath(input[0])))
+            out.write("file <- '%s'\n" %  (os.path.realpath(input.matrix)))
             out.write("Conditions <- c(%s)\n" %  ('\"'+('\",\"').join(conds)+'\"'))
             out.write("Replicates <- c(%s)\n" %  ('\"'+('\",\"').join(rep)+'\"'))
             out.write("method <- '%s'\n" %  (params.method))
