@@ -283,7 +283,7 @@ Parameter values used for this analysis are:
 - Replicates: `r Replicates`
 - Method: `r method`
 - Normalisation: `r ifelse(is.null(spikes),normalisation,"Spike-in")`
-- Spikes: `r ifelse(is.null(batch),"NULL",spikes)`
+- Spikes: `r ifelse(is.null(spikes),"NULL",spikes)`
 - batch: `r ifelse(is.null(batch),"NULL",batch)`
 - alpha: `r alpha`
 - pAdjustMethod: `r pAdjustMethod`
