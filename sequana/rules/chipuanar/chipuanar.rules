@@ -56,11 +56,12 @@ rule chipuanar:
             rep.append(sample.split("_")[2])
 
 	    #if spikes, read json file
-        df = read_json(params.spikes)
-        spikes = []
-        for sample in samples:
-            spikes.append(df.loc[:,sample][0])
-        sp = '\",\"'.join(str(s) for s in spikes)
+        if params.spikes:
+            df = read_json(params.spikes)
+            spikes = []
+            for sample in samples:
+                spikes.append(df.loc[:,sample][0])
+            sp = '\",\"'.join(str(s) for s in spikes)
 
         # Write the R config file
         with open(output.config, "w") as out:
