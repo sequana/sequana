@@ -254,7 +254,7 @@ compute_idr:
 # - batch:
 #
 
-statistical_analysis:
+differential_analysis:
     do: no
     method: "Limma" #Limma
     normalisation: "scale" #"scale"
