@@ -29,7 +29,6 @@ rule spikes_counting:
 
 
         inputs = [os.path.realpath(f) for f in input['inputs']]
-        output = os.path.realpath(output[0])
         d = OrderedDict()
         for file in inputs:
             name = (os.path.basename(file)).split("_sp")[0]
