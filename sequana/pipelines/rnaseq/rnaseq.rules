@@ -377,15 +377,17 @@ if config["SARTools"]["do"]:
 
 
 # !Reset expected_output variable after multiqc
+# Hack while waiting for a more general multiqc rules
+if config['multiqc']['config_file']:
+    config['multiqc']['options'] += " -c " + config['multiqc']['config_file']
+
 # Multiqc rule
 __multiqc__input = expected_output
 __multiqc__input_dir = "."
 __multiqc__logs = "multiqc/multiqc.log"
 __multiqc__output = config['multiqc']['output-directory'] + "/multiqc_report.html"
-
-# Hack while waiting for a more general multiqc rules
-if config['multiqc']['config_file']:
-    config['multiqc']['options'] += " -c " + config['multiqc']['config_file']
+__multiqc__options = config['multiqc']['options']
+__multiqc__output_dir = config['multiqc']['output-directory']
 
 include: sm.modules["multiqc"]
 expected_output = [__multiqc__output]
