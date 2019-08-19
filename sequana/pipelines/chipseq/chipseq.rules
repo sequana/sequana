@@ -745,9 +745,9 @@ if len(conds) > 1 and manager.config.differential_analysis.do:
     __chipuanar__padj = manager.config.differential_analysis.pAdjustMethod
     __chipuanar__alpha = manager.config.differential_analysis.alpha
     __chipuanar__batch = manager.config.differential_analysis.batch
-    __chipuanar__report = "10-DifferentialAnalysis/{{MARK}}_{}_{}/{{MARK}}_Stat_report_{}_{}.html".format(method, norm, method, norm)
-    __chipuanar__output_dir = "10-DifferentialAnalysis/{{MARK}}_{}_{}".format(method, norm)
-    __chipuanar__config_r = "10-DifferentialAnalysis/{{MARK}}_{}_{}/config.R".format(method, norm)
+    __chipuanar__report = "10-DifferentialAnalysis/{{MARK}}_{}_{}_{}/{{MARK}}_Stat_report_{}_{}.html".format(model_dir, method, norm, method, norm)
+    __chipuanar__output_dir = "10-DifferentialAnalysis/{{MARK}}_{}_{}_{}".format(model_dir, method, norm)
+    __chipuanar__config_r = "10-DifferentialAnalysis/{{MARK}}_{}_{}_{}/config.R".format(model_dir, method, norm)
     __chipuanar__genome = ref
     include: sm.modules["chipuanar"]
     expected_output.extend(expand(__chipuanar__report,  MARK=MARK_OK))
