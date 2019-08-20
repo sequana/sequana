@@ -46,7 +46,7 @@ install:
   #- conda install --yes python=$TRAVIS_PYTHON_VERSION --file requirements_pipelines.txt
   #
   # not yet in the requirements because not on conda
-  - pip install itolap 
+  - pip install itolapi 
   - pip install .
   - conda list 
 
