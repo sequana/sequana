@@ -24,32 +24,25 @@ library(ChIPuanaR)
 
 ### INPUTS
 source("config.R")
-print(ls())
-print(file)
 data <- read.table(file = file, header=T)
 counts <- as.matrix(data[,-c(1:6)])
 rownames(counts) <- data[,1]
-print("chargement")
 ```
 
 ```{r echo=FALSE, results="asis", results="hide"}
 ############### LIMMA ########################################
-print(0)
 if (method=="Limma") {
   library(limma)
   if (is.null(spikes)){
     # Diferential analysis
     resAnDif <- run.Limma(counts = counts, conditions = Conditions,
                           normalize.method = normalisation, pAdjustMethod = pAdjustMethod, outfile = FALSE)
-    print(1)
   } else {
     # Diferential analysis
-    print("avant 2")
     resAnDif <- run.Limma(counts = counts, conditions = Conditions, 
                           normalize.method = "none", pAdjustMethod = pAdjustMethod, spikes = spikes, outfile = FALSE)
-    print(2)
     # Normalisation factor
-    sf <- spikes
+    sf <- as.data.frame(spikes/max(spikes))
     colnames(sf) <- "Size factor"
   }
   
@@ -69,7 +62,7 @@ if (method=="Limma") {
       resAnDif <- run.DESeq2(counts = counts, conditions = Conditions,
                              pAdjustMethod = pAdjustMethod, batch = batch, spikes = spikes)
       # Normalisation factor
-      sf <- as.data.frame(spikes)
+      sf <- as.data.frame(spikes/max(spikes))
       colnames(sf) <- "Size factor"
     }
 }
@@ -290,7 +283,7 @@ Parameter values used for this analysis are:
 - Replicates: `r Replicates`
 - Method: `r method`
 - Normalisation: `r ifelse(is.null(spikes),normalisation,"Spike-in")`
-- Spikes: `r ifelse(is.null(batch),"NULL",spikes)`
+- Spikes: `r ifelse(is.null(spikes),"NULL",spikes)`
 - batch: `r ifelse(is.null(batch),"NULL",batch)`
 - alpha: `r alpha`
 - pAdjustMethod: `r pAdjustMethod`

@@ -1,5 +1,5 @@
 # ============================================================================
-# Config file for RNA-seq
+# Config file for ChIP-seq
 #
 # ==================[ Sections for the users ]================================
 #
@@ -163,7 +163,7 @@ cutadapt:
 bowtie2_mapping:
     do: yes
     #options: "--dovetail --no-mixed --no-discordant " for paired-end data
-    options: ""
+    options: "--very-sensitive "
     threads: 4
 
 
@@ -206,23 +206,21 @@ remove_blacklist:
 #
 # - model: model used by MACS2. Could be 'narrow' or 'broad'.
 # - no-model: use --no-model option. See MACS2 documentation. Possible values: {yes, no}
-# - force_shift: Possible values: {yes, no}
 # - options: any option recognized by MACS2. For paired-end reads, it is very recommended
 # to put --keep-dup 2500
 # - genomeSize: It's the mappable genome size or effective genome size which is defined as the genome size which can
 # be sequenced. Because of the repetitive features on the chromsomes, the actual mappable genome size will be smaller
 # than the original size, about 90% or 70% of the genome size. The default hs -- 2.7e9 is recommended for UCSC human
 # hg18 assembly.
-# - readLength: in order to compute the best shift with PPQT when force_shift is set
+# - readLength: in order to compute the best shift with PPQT when no_model is set
 #
 # tool_choice__ = ["narrow", "broad"]
 #
 peak_calling:
     model_choice: 'narrow'    ## may be broad
     no_model: no             ## may be yes
-    force_shift: no           ## may be yes
     options: "--keep-dup 2500 "
-    cutoff: "0.01"
+    cutoff: "0.1"
     genomeSize: mm
     readLength: 50
 
@@ -234,12 +232,14 @@ peak_calling:
 #
 # - rank: Which column to use to rank peaks. Options: signal.value p.value q.value columnIndex
 # - thresh: Report statistics for peaks with a global idr below this value but return all peaks with an idr below --idr. Default: 0.05
+# - intersectionApproach: set to yes if you want to use intersection approach with narrow peaks when replicates are not closed enough
 #
-# mode_choice__ = ['narrowPeak', 'broadPeak', 'bed', 'gff']
 #
 compute_idr:
     rank: 'signal.value'
     thresh: 0.05
+    intersectionApproach: no
+
 
 #############################################################################
 # Compute differential analysis
@@ -248,17 +248,17 @@ compute_idr:
 #
 # - method:
 # - normalization:
-# - spikes:
+# - spikes: True or False. If you have spikes, you can run ChIPuanaR with or without spikes normalization in order to compare.
 # - pAdjustMethod:
 # - alpha:
 # - batch:
 #
 
-statistical_analysis:
+differential_analysis:
     do: no
     method: "Limma" #Limma
     normalisation: "scale" #"scale"
-    spikes: NULL
+    spikes: no
     pAdjustMethod: "BH"
     alpha: 0.05
     batch: NULL
@@ -324,6 +324,6 @@ coverage:
 # - output-directory: Create report in the specified output directory
 #
 multiqc:
-    options: "-c multiqc_config.yaml -f  -e macs2 -x 3-Deduplication/*spikes* -x 2-Mapping/*_spike*"
+    options: " -f  -e macs2 -x 3-Deduplication/*spikes* -x 2-Mapping/*_spike*"
     output-directory: "11-Multiqc"
     config_file: "multiqc_config.yaml"

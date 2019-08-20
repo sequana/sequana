@@ -11,7 +11,7 @@ Example::
 
    sequana --pipeline chipseq -i data/ -o analysis --no-adapter -t "_R[12]"
    cd analysis
-   sbatch snakemake -s chipseq.rules --stats stats.txt -p -j 12 --nolock --cluster-config cluster_config.json --cluster "sbatch --mem={cluster.ram} --cpus-per-task={threads}"
+   sbatch snakemake -s chipseq.rules --stats stats.txt -p -j 50 --nolock --cluster-config cluster_config.json --cluster "sbatch --mem={cluster.ram} --cpus-per-task={threads}" --latency-wait 60
 
 Or use :ref:`sequanix_tutorial` interface.
 

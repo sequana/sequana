@@ -24,6 +24,7 @@ exec(open(sequana.modules["fastqc_dynamic"], "r").read())
 exec(open(sequana.modules["bowtie2_mapping_dynamic"], "r").read())
 exec(open(sequana.modules["bowtie2_index_dynamic"], "r").read())
 exec(open(sequana.modules["dynamic_unpigz"], "r").read())
+exec(open(sequana.modules["dynamic_copy"], "r").read())
 exec(open(sequana.modules["macs2_dynamic"], "r").read())
 exec(open(sequana.modules["preIDR_dynamic"], "r").read())
 exec(open(sequana.modules["mark_duplicates_dynamic"], "r").read())
@@ -95,7 +96,7 @@ conds = [ x.strip() for x in (manager.config.design.condition).split(",")]
 MARK_OK =[]
 for row in design.itertuples(index=True, name='Pandas'):
     for mark in marks:
-        if mark is getattr(row, "IP_NAME").split("_")[0]:
+        if mark == getattr(row, "IP_NAME").split("_")[0]:
             if (getattr(row, "IP_NAME")).endswith(tuple(conds)) and getattr(row, "NB_IP") > 1:
                 MARK_OK.append(mark)
 
@@ -306,6 +307,7 @@ if manager.config.bowtie2_mapping.do:
     __bowtie2_mapping_ref__bam = "2-Mapping/{{sample}}_{}.bam".format(ref)
     __bowtie2_mapping_ref__logs_err = "2-Mapping/logs/{{sample}}_{}_mapping.e".format(ref)
     __bowtie2_mapping_ref__logs_out = "2-Mapping/logs/{{sample}}_{}_mapping.o".format(ref)
+    __bowtie2_mapping_ref__options = config["bowtie2_mapping"]["options"]
     __bowtie2_mapping_ref__prefix_index = __bowtie2_index_ref__output_prefix
     include: bowtie2_mapping_dynamic("ref", manager)
     expected_output.extend(expand(__bowtie2_mapping_ref__sort, sample=manager.samples))
@@ -330,6 +332,7 @@ if manager.config.design.spike:
     __bowtie2_mapping_spike__bam = "2-Mapping/{sample}_spike.bam"
     __bowtie2_mapping_spike__logs_err = "2-Mapping/logs/{sample}_spike_mapping.e"
     __bowtie2_mapping_spike__logs_out = "2-Mapping/logs/{sample}_spike_mapping.o"
+    __bowtie2_mapping_spike__options = manager.config.bowtie2_mapping.options
     __bowtie2_mapping_spike__prefix_index = __bowtie2_index_spike__output_prefix
     include: bowtie2_mapping_dynamic("spike", manager)
     expected_output.extend(expand(__bowtie2_mapping_spike__sort, sample=manager.samples))
@@ -346,9 +349,9 @@ if manager.config.design.spike:
 
     # counting on spikes
     __spikes_counting__input = expand("3-Deduplication/{sample}_spike_sort_dedup.bam", sample=manager.samples)
-    __spikes_counting__output = "2-Mapping/ALL_count_on_spike.mtx"
-    __spikes_counting__output_json = "Spikes_metrics_mqc.out"
-    __spikes_counting__log = "2-Mapping/logs/Spikes_metrics.o"
+    __spikes_counting__output_json = "9-CountMatrix/Spikes_count.json"
+    __spikes_counting__output = "Spikes_metrics_mqc.out"
+    __spikes_counting__log = "3-Deduplication/logs/Spikes_metrics.o"
     include: sm.modules["spikes_counting"]
     expected_output.extend([__spikes_counting__output_json])
 
@@ -441,6 +444,9 @@ else :
 
 # Peak calling
 model = manager.config.peak_calling.model_choice
+model_dir = model
+if manager.config.peak_calling.no_model:
+    model_dir += "-nomodel"
 if model in ["narrow", "broad"]:
 
     # Peak Calling on replicates
@@ -465,9 +471,9 @@ if model in ["narrow", "broad"]:
     else:
         __macs2_rep__pe_mode = "no"
     __macs2_rep__input = "-c {}/{{INPUT}}_{}_sort_dedup{}.bam".format(blacklist_dir, ref, blacklist)
-    __macs2_rep__log = "6-PeakCalling/{}/logs/{{IP_REP}}_vs_{{INPUT}}.o".format(model)
-    __macs2_rep__output = "6-PeakCalling/{}/{{IP_REP}}_vs_{{INPUT}}_peaks.{}Peak".format(model, model)
-    __macs2_rep__output_prefix = "6-PeakCalling/{}/{{IP_REP}}_vs_{{INPUT}}".format(model)
+    __macs2_rep__log = "6-PeakCalling/{}/logs/{{IP_REP}}_vs_{{INPUT}}.o".format(model_dir)
+    __macs2_rep__output = "6-PeakCalling/{}/{{IP_REP}}_vs_{{INPUT}}_peaks.{}Peak".format(model_dir, model)
+    __macs2_rep__output_prefix = "6-PeakCalling/{}/{{IP_REP}}_vs_{{INPUT}}".format(model_dir)
     expected_output.extend(expand(__macs2_rep__output, zip, IP_REP=IP_ALL, INPUT=INPUT))
     include: macs2_dynamic("rep")
 
@@ -492,9 +498,9 @@ if model in ["narrow", "broad"]:
     else:
         __macs2_spr__pe_mode = "no"
     __macs2_spr__input = "-c {}/{{INPUT}}_{}_sort_dedup{}.bam".format(blacklist_dir, ref, blacklist)
-    __macs2_spr__log = "6-PeakCalling/{}/logs/{{SPR}}_vs_{{INPUT}}.o".format(model)
-    __macs2_spr__output = "6-PeakCalling/{}/{{SPR}}_vs_{{INPUT}}_peaks.{}Peak".format(model, model)
-    __macs2_spr__output_prefix = "6-PeakCalling/{}/{{SPR}}_vs_{{INPUT}}".format(model)
+    __macs2_spr__log = "6-PeakCalling/{}/logs/{{SPR}}_vs_{{INPUT}}.o".format(model_dir)
+    __macs2_spr__output = "6-PeakCalling/{}/{{SPR}}_vs_{{INPUT}}_peaks.{}Peak".format(model_dir, model)
+    __macs2_spr__output_prefix = "6-PeakCalling/{}/{{SPR}}_vs_{{INPUT}}".format(model_dir)
     expected_output.extend(expand(__macs2_spr__output, zip, SPR=IP_SPR, INPUT=INPUT_SPR))
     include: macs2_dynamic("spr")
 
@@ -520,9 +526,9 @@ if model in ["narrow", "broad"]:
     else:
         __macs2_ppr__pe_mode = "no"
     __macs2_ppr__input = "-c {}/{{INPUT}}_{}_sort_dedup{}.bam".format(blacklist_dir, ref, blacklist)
-    __macs2_ppr__log = "6-PeakCalling/{}/logs/{{PPR}}_vs_{{INPUT}}.o".format(model)
-    __macs2_ppr__output = "6-PeakCalling/{}/{{PPR}}_vs_{{INPUT}}_peaks.{}Peak".format(model, model)
-    __macs2_ppr__output_prefix = "6-PeakCalling/{}/{{PPR}}_vs_{{INPUT}}".format(model)
+    __macs2_ppr__log = "6-PeakCalling/{}/logs/{{PPR}}_vs_{{INPUT}}.o".format(model_dir)
+    __macs2_ppr__output = "6-PeakCalling/{}/{{PPR}}_vs_{{INPUT}}_peaks.{}Peak".format(model_dir, model)
+    __macs2_ppr__output_prefix = "6-PeakCalling/{}/{{PPR}}_vs_{{INPUT}}".format(model_dir)
     expected_output.extend(expand(__macs2_ppr__output, zip, PPR=IP_PPR, INPUT=INPUT_PPR))
     include: macs2_dynamic("ppr")
 
@@ -548,9 +554,9 @@ if model in ["narrow", "broad"]:
     else:
         __macs2_pool__pe_mode = "no"
     __macs2_pool__input = "-c {}/{{INPUT_POOL}}_{}_sort_dedup{}.bam".format(blacklist_dir, ref, blacklist)
-    __macs2_pool__log = "6-PeakCalling/{}/logs/{{POOL}}_vs_{{INPUT_POOL}}.o".format(model)
-    __macs2_pool__output = "6-PeakCalling/{}/{{POOL}}_vs_{{INPUT_POOL}}_peaks.{}Peak".format(model, model)
-    __macs2_pool__output_prefix = "6-PeakCalling/{}/{{POOL}}_vs_{{INPUT_POOL}}".format(model)
+    __macs2_pool__log = "6-PeakCalling/{}/logs/{{POOL}}_vs_{{INPUT_POOL}}.o".format(model_dir)
+    __macs2_pool__output = "6-PeakCalling/{}/{{POOL}}_vs_{{INPUT_POOL}}_peaks.{}Peak".format(model_dir, model)
+    __macs2_pool__output_prefix = "6-PeakCalling/{}/{{POOL}}_vs_{{INPUT_POOL}}".format(model_dir)
     expected_output.extend(expand(__macs2_pool__output, zip, POOL=PPR_POOL, INPUT_POOL=INPUT_POOL))
     include: macs2_dynamic("pool")
 
@@ -577,9 +583,9 @@ if model in ["narrow", "broad"]:
     else:
         __macs2_no_ctl__pe_mode = "no"
     __macs2_no_ctl__input = "NA"
-    __macs2_no_ctl__log = "6-PeakCalling/{}/logs/{{IP_NA}}.o".format(model)
-    __macs2_no_ctl__output = "6-PeakCalling/{}/{{IP_NA}}_peaks.{}Peak".format(model, model)
-    __macs2_no_ctl__output_prefix = "6-PeakCalling/{}/{{IP_NA}}".format(model)
+    __macs2_no_ctl__log = "6-PeakCalling/{}/logs/{{IP_NA}}.o".format(model_dir)
+    __macs2_no_ctl__output = "6-PeakCalling/{}/{{IP_NA}}_peaks.{}Peak".format(model_dir, model)
+    __macs2_no_ctl__output_prefix = "6-PeakCalling/{}/{{IP_NA}}".format(model_dir)
     #expected_output.extend(expand(__macs2_no_ctl__output, IP_NA=IP_NA))
     #include: macs2_dynamic("no_ctl")
 
@@ -589,13 +595,13 @@ else:
 
 #compute MACS2 metrics
 macs2_rep = []
-macs2_rep.extend(expand("6-PeakCalling/{}/{{IP_REP}}_vs_{{INPUT}}_peaks.{}Peak".format(model, model), zip, IP_REP=IP_ALL, INPUT=INPUT))
+macs2_rep.extend(expand("6-PeakCalling/{}/{{IP_REP}}_vs_{{INPUT}}_peaks.{}Peak".format(model_dir, model), zip, IP_REP=IP_ALL, INPUT=INPUT))
 __stats_peakCalling_input = macs2_rep
 __stats_peakCalling_csv = "Peaks_metrics_mqc.out"
 __stats_peakCalling__marks = marks
 __stats_peakCalling__conds = conds
 __stats_peakCalling__rep = rep_flag
-__stats_peakCalling_log = "6-PeakCalling/{}/Peaks_metrics.out".format(model)
+__stats_peakCalling_log = "6-PeakCalling/{}/Peaks_metrics.out".format(model_dir)
 include: sm.modules["stats_peakCalling"]
 expected_output.extend([__stats_peakCalling_csv])
 
@@ -605,33 +611,33 @@ if model in ["narrow"]:
     __compute_idr__mode = "narrowPeak"
 else :
     __compute_idr__mode = "broadPeak"
-__compute_idr__input1 = "6-PeakCalling/{}/{{IP_IDR}}_{{CASE}}1_vs_{{INPUT}}_peaks.{}Peak".format(model, model)
-__compute_idr__input2 = "6-PeakCalling/{}/{{IP_IDR}}_{{CASE}}2_vs_{{INPUT}}_peaks.{}Peak".format(model, model)
-__compute_idr__output = "7-IDR/{{IP_IDR}}_{{CASE}}1vs{{CASE}}2_{{INPUT}}_{}_{}_idr.txt".format(ref, model)
-__compute_idr__output_peak = "7-IDR/{{IP_IDR}}_{{CASE}}1vs{{CASE}}2_{{INPUT}}_{}_{}_idr{}.{}Peak".format(
+__compute_idr__input1 = "6-PeakCalling/{}/{{IP_IDR}}_{{CASE}}1_vs_{{INPUT}}_peaks.{}Peak".format(model_dir, model)
+__compute_idr__input2 = "6-PeakCalling/{}/{{IP_IDR}}_{{CASE}}2_vs_{{INPUT}}_peaks.{}Peak".format(model_dir, model)
+__compute_idr__output = "7-IDR/{}/{{IP_IDR}}_{{CASE}}1vs{{CASE}}2_{{INPUT}}_{}_{}_idr.txt".format(model_dir, ref, model)
+__compute_idr__output_peak = "7-IDR/{}/{{IP_IDR}}_{{CASE}}1vs{{CASE}}2_{{INPUT}}_{}_{}_idr{}.{}Peak".format(model_dir,
     ref, model, config["compute_idr"]["thresh"], model)
-__compute_idr__log = "7-IDR/logs/{IP_IDR}_{CASE}1vs{CASE}2_{INPUT}_%s_idr.o" % model
+__compute_idr__log = "7-IDR/%s/logs/{IP_IDR}_{CASE}1vs{CASE}2_{INPUT}_%s_idr.o" % (model_dir,model)
 include: sm.modules["compute_idr"]
 expected_output.extend(expand(__compute_idr__output, zip, IP_IDR=REP_IDR, CASE=CASE, INPUT=IN_IDR))
 
 
 
-if model in ["narrow"]:
+if model in ["narrow"] and not manager.config.compute_idr.intersectionApproach:
     # Select IDR peaks
-    __select_peaks__input_rep = "7-IDR/{{IP_IDR}}_{}1vs{}2_{{INPUT}}_{}_{}_idr{}.{}Peak".format(rep_flag, rep_flag, ref, model, config["compute_idr"]["thresh"], model)
-    __select_peaks__input_ppr = "7-IDR/{{IP_IDR}}_{}1vs{}2_{{INPUT}}_{}_{}_idr{}.{}Peak".format("PPR", "PPR", ref, model, config["compute_idr"]["thresh"], model)
-    __select_peaks__input_pool = "6-PeakCalling/{}/{{IP_IDR}}_PPRPool_vs_{{INPUT}}_peaks.{}Peak".format(model, model)
-    __select_peaks__logs = "8-ReproduciblePeaks/logs/{IP_IDR}_vs_{INPUT}_selected_peaks.o"
-    __select_peaks__output = "8-ReproduciblePeaks/{{IP_IDR}}_vs_{{INPUT}}_select.{}Peak".format(model)
+    __select_peaks__input_rep = "7-IDR/{}/{{IP_IDR}}_{}1vs{}2_{{INPUT}}_{}_{}_idr{}.{}Peak".format(model_dir, rep_flag, rep_flag, ref, model, config["compute_idr"]["thresh"], model)
+    __select_peaks__input_ppr = "7-IDR/{}/{{IP_IDR}}_{}1vs{}2_{{INPUT}}_{}_{}_idr{}.{}Peak".format(model_dir, "PPR", "PPR", ref, model, config["compute_idr"]["thresh"], model)
+    __select_peaks__input_pool = "6-PeakCalling/{}/{{IP_IDR}}_PPRPool_vs_{{INPUT}}_peaks.{}Peak".format(model_dir, model)
+    __select_peaks__logs = "8-ReproduciblePeaks/%s/logs/{IP_IDR}_vs_{INPUT}_selected_peaks.o" % model_dir
+    __select_peaks__output = "8-ReproduciblePeaks/{}/{{IP_IDR}}_vs_{{INPUT}}_select.{}Peak".format(model_dir, model)
     include: sm.modules["select_peaks"]
     expected_output.extend(expand(__select_peaks__output, zip, IP_IDR=IP_REP, INPUT=IP_REP_DUP))
 
 
-if model in ["broad"]:
-    __intersectionApproach__input_rep = expand("6-PeakCalling/%s/{{IP_IDR}}_{CASE}_vs_{{INPUT}}_peaks.%sPeak" % (model, model), CASE=rep)
-    __intersectionApproach__input_pool = "6-PeakCalling/{}/{{IP_IDR}}_PPRPool_vs_{{INPUT}}_peaks.{}Peak".format(model, model)
-    __intersectionApproach__logs = "8-ReproduciblePeaks/logs/{IP_IDR}_vs_{INPUT}_BROAD-IA_peaks.o"
-    __intersectionApproach__output = "8-ReproduciblePeaks/{{IP_IDR}}_vs_{{INPUT}}_BROAD-IA.{}Peak".format(model)
+if model in ["broad"] or manager.config.compute_idr.intersectionApproach:
+    __intersectionApproach__input_rep = expand("6-PeakCalling/%s/{{IP_IDR}}_{CASE}_vs_{{INPUT}}_peaks.%sPeak" % (model_dir, model), CASE=rep)
+    __intersectionApproach__input_pool = "6-PeakCalling/{}/{{IP_IDR}}_PPRPool_vs_{{INPUT}}_peaks.{}Peak".format(model_dir, model)
+    __intersectionApproach__logs = "8-ReproduciblePeaks/%s/logs/{IP_IDR}_vs_{INPUT}_BROAD-IA_peaks.o" % model_dir
+    __intersectionApproach__output = "8-ReproduciblePeaks/{}/{{IP_IDR}}_vs_{{INPUT}}_BROAD-IA.{}Peak".format(model_dir, model)
     include: sm.modules["intersectionApproach"]
     expected_output.extend(expand(__intersectionApproach__output, zip, IP_IDR=IP_REP, INPUT=IP_REP_DUP))
     __select_peaks__output = __intersectionApproach__output
@@ -639,18 +645,18 @@ if model in ["broad"]:
 
 #Compute peak metrics
 idr_peaks = []
-idr_peaks.extend(expand("7-IDR/{{IP_IDR}}_{{CASE}}1vs{{CASE}}2_{{INPUT}}_{}_{}_idr{}.{}Peak".format(
+idr_peaks.extend(expand("7-IDR/{}/{{IP_IDR}}_{{CASE}}1vs{{CASE}}2_{{INPUT}}_{}_{}_idr{}.{}Peak".format(model_dir,
                         ref,model, config["compute_idr"]["thresh"], model), zip, IP_IDR=REP_IDR, CASE=CASE, INPUT=IN_IDR))
 __metrics_peaks__input = idr_peaks
 __metrics_peaks__marks = marks
 __metrics_peaks__conds = conds
 __metrics_peaks__rep = rep_flag
-__metrics_peaks__logs = "7-IDR/logs/IDR_metrics.out"
+__metrics_peaks__logs = "7-IDR/{}/logs/IDR_metrics.out".format(model_dir)
 __metrics_peaks__output = "IDR_metrics_mqc.out"
 include: sm.modules["metrics_peaks"]
 expected_output.extend([__metrics_peaks__output])
 
-if len(conds) > 1 and manager.config.statistical_analysis.do:
+if len(conds) > 1 and manager.config.differential_analysis.do:
     def getPeakFilesByMark(wildcards):
         ALL_IP = expand(__select_peaks__output, zip, IP_IDR=IP_REP, INPUT=IP_REP_DUP)
         IP_dict = {}
@@ -679,9 +685,17 @@ if len(conds) > 1 and manager.config.statistical_analysis.do:
 
 
     # get GFF from peak files
-    __bed_to_gff__input = "9-CountMatrix/{{MARK}}_{}u{}_{}.optimal.{}Peak_overlap.bed".format(conds[0], conds[1], ref, model)
+    if len(conds) == 2 :
+        __bed_to_gff__input = "9-CountMatrix/{{MARK}}_{}u{}_{}.optimal.{}Peak_overlap.bed".format(conds[0], conds[1], ref, model)
+        __bed_to_gff__output = "9-CountMatrix/{{MARK}}_{}u{}_{}.optimal.{}Peak_overlap.gff".format(conds[0], conds[1], ref, model)
+    elif len(conds) == 3 :
+        __bed_to_gff__input = "9-CountMatrix/{{MARK}}_{}u{}u{}_{}.optimal.{}Peak_overlap.bed".format(conds[0], conds[1], conds[2],  ref, model)
+        __bed_to_gff__output = "9-CountMatrix/{{MARK}}_{}u{}u{}_{}.optimal.{}Peak_overlap.gff".format(conds[0], conds[1], conds[2], ref, model)
+    else :
+        __bed_to_gff__input = "9-CountMatrix/{{MARK}}_all_conds_{}.optimal.{}Peak_overlap.bed".format(ref, model)
+        __bed_to_gff__output = "9-CountMatrix/{{MARK}}_all_conds_{}.optimal.{}Peak_overlap.gff".format(ref, model)
+
     __bed_to_gff__logs = "9-CountMatrix/logs/{MARK}_Optimal_bed2gff.o"
-    __bed_to_gff__output = "9-CountMatrix/{{MARK}}_{}u{}_{}.optimal.{}Peak_overlap.gff".format(conds[0], conds[1], ref, model)
     include: sm.modules["bed_to_gff"]
     expected_output.extend(expand(__bed_to_gff__output,  MARK=MARK_OK))
 
@@ -701,7 +715,12 @@ if len(conds) > 1 and manager.config.statistical_analysis.do:
     # feature Count on peaks
     __feature_counts__input = getBAMFilesByMark
     __feature_counts__output_count = "9-CountMatrix/{{MARK}}_Matrix_Optimal_{}Peak.mtx".format(model)
-    __feature_counts__gff = "9-CountMatrix/{{MARK}}_{}u{}_{}.optimal.{}Peak_overlap.gff".format(conds[0], conds[1], ref, model)
+    if len(conds) == 2 :
+        __feature_counts__gff = "9-CountMatrix/{{MARK}}_{}u{}_{}.optimal.{}Peak_overlap.gff".format(conds[0], conds[1], ref, model)
+    elif len(conds) == 3 :
+        __feature_counts__gff = "9-CountMatrix/{{MARK}}_{}u{}u{}_{}.optimal.{}Peak_overlap.gff".format(conds[0], conds[1], conds[2], ref, model)
+    else :
+        __feature_counts__gff = "9-CountMatrix/{{MARK}}_all_conds_{}.optimal.{}Peak_overlap.gff".format(ref, model)
     __feature_counts__log = "9-CountMatrix/logs/{MARK}_counts.o"
     __feature_counts__options = "-t peak -g gene_id"
     __feature_counts__threads = 4
@@ -709,36 +728,60 @@ if len(conds) > 1 and manager.config.statistical_analysis.do:
     expected_output.extend(expand(__feature_counts__output_count,  MARK=MARK_OK))
 
 
-    method = manager.config.statistical_analysis.method
-    norm = manager.config.statistical_analysis.normalisation
-    # run statistical analysis
+    method = manager.config.differential_analysis.method
+    norm = manager.config.differential_analysis.normalisation
+    # run differential analysis
     __chipuanar__input = __feature_counts__output_count
     __chipuanar__conds = conds
     __chipuanar__rep = rep
     __chipuanar__method = method
     __chipuanar__norm = norm
-    __chipuanar__spikes = manager.config.statistical_analysis.spikes
-    __chipuanar__padj = manager.config.statistical_analysis.pAdjustMethod
-    __chipuanar__alpha = manager.config.statistical_analysis.alpha
-    __chipuanar__batch = manager.config.statistical_analysis.batch
-    __chipuanar__report = "10-DifferentialAnalysis/{{MARK}}_{}_{}/{{MARK}}_Stat_report_{}_{}.html".format(method, norm, method, norm)
-    __chipuanar__output_dir = "10-DifferentialAnalysis/{{MARK}}_{}_{}".format(method, norm)
-    __chipuanar__log = "10-DifferentialAnalysis/logs/{}_{}_std.o".format(method, norm)
-    __chipuanar__config_r = "10-DifferentialAnalysis/{{MARK}}_{}_{}/config.R".format(method, norm)
+    if manager.config.differential_analysis.spikes and manager.config.design.spike :
+        __chipuanar__spikes = __spikes_counting__output_json
+        __chipuanar__input_done = __spikes_counting__output_json
+    else:
+        __chipuanar__spikes = ""
+        __chipuanar__input_done = __feature_counts__output_count
+    __chipuanar__padj = manager.config.differential_analysis.pAdjustMethod
+    __chipuanar__alpha = manager.config.differential_analysis.alpha
+    __chipuanar__batch = manager.config.differential_analysis.batch
+    __chipuanar__report = "10-DifferentialAnalysis/{{MARK}}_{}_{}_{}/{{MARK}}_Stat_report_{}_{}.html".format(model_dir, method, norm, method, norm)
+    __chipuanar__output_dir = "10-DifferentialAnalysis/{{MARK}}_{}_{}_{}".format(model_dir, method, norm)
+    __chipuanar__config_r = "10-DifferentialAnalysis/{{MARK}}_{}_{}_{}/config.R".format(model_dir, method, norm)
     __chipuanar__genome = ref
     include: sm.modules["chipuanar"]
     expected_output.extend(expand(__chipuanar__report,  MARK=MARK_OK))
 
 
 
+
 # !Reset expected_output variable after multiqc
+# Hack while waiting for a more general multiqc rules
+if config['multiqc']['config_file']:
+    config['multiqc']['options'] += " -c " + config['multiqc']['config_file']
 # Multiqc rule
 __multiqc__input = expected_output
 __multiqc__input_dir = "."
 __multiqc__logs = "11-Multiqc/multiqc.log"
-__multiqc__output = config['multiqc']['output-directory'] + "/multiqc_report.html"
+__multiqc__output = config['multiqc']['output-directory'] + "/%s/multiqc_report.html" % (model_dir)
+__multiqc__options = config['multiqc']['options']
+__multiqc__output_dir = config['multiqc']['output-directory'] + "/%s" % (model_dir)
 include: sm.modules["multiqc"]
 expected_output = [__multiqc__output]
+
+# copy IDR metrics in the corresponding multiQC output when you are in exploratory mode
+__copy_idr__input = __metrics_peaks__output
+__copy_idr__output = config['multiqc']['output-directory'] + "/%s/%s_IDR_metrics.txt" % (model_dir, model_dir)
+include: dynamic_copy("idr", manager)
+expected_output.extend([__copy_idr__output])
+
+# copy Peaks metrics in the corresponding multiQC output when you are in exploratory mode
+__copy_peak__input = __stats_peakCalling_csv
+__copy_peak__output = config['multiqc']['output-directory'] + "/%s/%s_peaks_metrics.txt" % (model_dir, model_dir)
+include: dynamic_copy("peak", manager)
+expected_output.extend([__copy_peak__output])
+
+
 
 # Include rule graph for each sample
 __rulegraph__input = __snakefile__
