@@ -44,45 +44,70 @@ report_header_info:
 #custom_logo_title: ''  # 'Our Institute Name'
 
 custom_data:
-    metrics_peaks:
-        id: 'metrics_peaks'
-        section_name: 'Peaks metrics'
+    idr_metrics:
+        id: 'idr_metrics'
+        section_name: 'IDR metrics'
         plot_type: 'table'
         pconfig:
-            namespace: 'metrics_peaks'
+            namespace: 'IDR Metrics'
         headers:
             cond:
                 title: 'Condition'
                 description: 'Condition'
-                format: '{:,.0f}'
-            Replicats:
+            Replicates:
                 title: '# peaks'
                 description: 'Total number of peaks passed IDR in replicates'
-                format: '{:,.0f}'
             PPR:
                 title: 'PPR'
                 description: 'Total number of peaks passed IDR in pseudo-replicates'
-                format: '{:,.0f}'
             SPR1:
                 title: 'SPR1'
                 description: 'Total number of peaks passed IDR in self pseudo-replicates 1'
-                format: '{:,.0f}'
             SPR2:
                 title: 'SPR2'
                 description: 'Total number of peaks passed IDR in self pseudo-replicates 1'
-                format: '{:,.0f}'
             RR:
                 title: 'RR'
-                description: 'Rescue ratio'
+                description: 'The rescue ratio measures consistency between datasets when the replicates within a single experiment are not comparable.'
                 format: '{:,.0f}'
             SCR:
                 title: 'SCR'
-                description: 'Self-consistency ratio'
+                description: 'The self-consistency ratio measures consistency within a single dataset'
                 format: '{:,.0f}'
             Score:
                 title: 'Score'
-                description: 'blabla'
+                description: 'If RR and SCR are ideal, score is equal to 1. If score is -1, results are concerning.'
                 format: '{:,.0f}'
+    peaks_metrics:
+        id: 'Peaks metrics'
+        section_name: 'Peaks metrics'
+        plot_type: 'table'
+        pconfig:
+            namespace: 'Number of peaks with MACS2'
+        headers:
+            Sample:
+                title: 'Sample name'
+                description: 'Sample Name'
+            Peaks:
+                title: 'Number of peaks'
+                description: 'Number of peaks'
+
+    spikes_metrics:
+        id: 'Spikes metrics'
+        section_name: 'Spikes metrics'
+        plot_type: 'table'
+        pconfig:
+            namespace: 'Spikes metrics'
+        headers:
+            Spike:
+                title: 'Sample Name'
+                description: 'Sample Name'
+            MappedReads:
+                title: 'Mapped Reads'
+                description: 'Number of mapped reads'
+            Percent:
+                title: 'Percent'
+                description: 'Percent'
 
 table_cond_formatting_rules:
     RR:
@@ -95,8 +120,6 @@ table_cond_formatting_rules:
     SCR:
         pass:
             - lt: 2.0
-        warn:
-            - gt: 1.8
         fail:
             - gt: 2.0
     Score:
@@ -127,11 +150,15 @@ top_modules:
     - 'bowtie2'
     - 'picard'
     - 'phantompeakqualtools'
-    - 'metrics_peaks'
+    - 'peaks_metrics'
+    - 'idr_metrics'
+    - 'spikes_metrics'
     - 'feature_counts'
 
 section_comments:
-    featurecounts: 'Rajouter des help à chaque outil !'
+    idr_metrics: 'Statistics about Irreproducible Discovery Rate (IDR) (see https://www.encodeproject.org/data-standards/terms/#concordance for more information) '
+
+
 
 
 # Prepend sample names with their directory. Useful if analysing the
@@ -155,11 +182,15 @@ make_data_dir: True
 extra_fn_clean_exts:
     - .gz
     - .fastq
-    - _R1_.cutadapt
+    - _trim
+    - _mapping.e
+    - _sort
+    - _sort_dedup_NoBlacklist
     - type: remove
       pattern: '.sorted'
     - type: regex
       pattern: '^Sample_\d+'
+
 
 
 # Ignore these files / directories / paths when searching for logs
@@ -201,8 +232,13 @@ sp:
         fn: '*_spp.out'
     picard/markdups:
         fn: '*_dedup.txt'
-    metrics_peaks:
-        fn: 'metrics_peaks_mqc.out'
+    idr_metrics:
+        fn: 'IDR_metrics_mqc.out'
+    peaks_metrics:
+        fn: 'Peaks_metrics_mqc.out'
+    spikes_metrics:
+        fn: 'Spikes_metrics_mqc.out'
+
 
 # Overwrite the defaults of which table columns are visible by default
 table_columns_visible:

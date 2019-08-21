@@ -785,7 +785,7 @@ expected_output.extend([__copy_peak__output])
 
 # Include rule graph for each sample
 __rulegraph__input = __snakefile__
-__rulegraph__output = "rulegraph/rulegraph.svg"
+__rulegraph__output = "rulegraph/%s_rulegraph.svg" % (model_dir)
 __rulegraph__mapper = {"fastqc_samples": "fastqc_samples/"}
 include: sm.modules['rulegraph']
 expected_output.extend([__rulegraph__output])
