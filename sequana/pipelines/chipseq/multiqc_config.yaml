@@ -186,6 +186,7 @@ extra_fn_clean_exts:
     - _mapping.e
     - _sort
     - _sort_dedup_NoBlacklist
+    - _sort_dedup
     - type: remove
       pattern: '.sorted'
     - type: regex
