@@ -3,6 +3,16 @@ Changelog
 
 .. contents::
 
+0.8.0
+------
+
+This is an unstable release made to includes lots of new features and pipelines
+ (chip-seq, atac-seq, demultiplexing, fastqc, laa) and bug fixes made on the
+develop branch into the master. 
+
+
+
+
 0.7.2
 ----------
 
