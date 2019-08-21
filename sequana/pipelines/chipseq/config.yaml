@@ -220,7 +220,7 @@ peak_calling:
     model_choice: 'narrow'    ## may be broad
     no_model: no             ## may be yes
     options: "--keep-dup 2500 "
-    cutoff: "0.1"
+    cutoff: 0.1
     genomeSize: mm
     readLength: 50
 

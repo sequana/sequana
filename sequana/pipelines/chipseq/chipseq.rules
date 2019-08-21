@@ -130,13 +130,17 @@ INPUT_NA = [] # corresponding INPUT (list of NA according to number of IP)
 IP_NA = [] # all IP without replicates and without INPUT
 for row in design.itertuples(index=True, name='Pandas'):
     if getattr(row, "NB_IP") > 1 and getattr(row, "NB_INPUT") >= 1:
+        IP_REP_DUP.append(getattr(row, "INPUT_NAME")+"_Pool")
+        IP_REP.append(getattr(row, "IP_NAME"))
+    elif getattr(row, "NB_IP") > 1 and getattr(row, "NB_INPUT") == 1:
         IP_REP_DUP.append(getattr(row, "INPUT_NAME")+"_"+rep_flag+"1")
         IP_REP.append(getattr(row, "IP_NAME"))
-    if getattr(row, "NB_IP") > 1 and getattr(row, "NB_INPUT") < 1:
+    elif getattr(row, "NB_IP") > 1 and getattr(row, "NB_INPUT") < 1:
         IP_NO_INPUT.append(getattr(row, "IP_NAME"))
         INPUT_NA.append('NA')
-    if getattr(row, "NB_IP") == 1 and getattr(row, "NB_INPUT") < 1:
+    elif getattr(row, "NB_IP") == 1 and getattr(row, "NB_INPUT") < 1:
         IP_NA.append(getattr(row, "IP_NAME"))
+
 
 # We get only INPUT with more than one replicate that are linked to an IP with multiple replicates
 INPUT_REP = []
@@ -785,7 +789,7 @@ expected_output.extend([__copy_peak__output])
 
 # Include rule graph for each sample
 __rulegraph__input = __snakefile__
-__rulegraph__output = "rulegraph/rulegraph.svg"
+__rulegraph__output = "rulegraph/%s_rulegraph.svg" % (model_dir)
 __rulegraph__mapper = {"fastqc_samples": "fastqc_samples/"}
 include: sm.modules['rulegraph']
 expected_output.extend([__rulegraph__output])
