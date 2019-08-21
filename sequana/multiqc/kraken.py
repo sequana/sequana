@@ -58,11 +58,13 @@ class MultiqcModule(BaseMultiqcModule):
         for myfile in self.find_log_files("sequana_kraken"):
             name = myfile['s_name']
             d = json.loads(myfile['f'])
+
+
             for k,v in d.items():
                 # check for None and NAN
                 S = sum(list(v.values()))
                 U = v['Unclassified']
-                v['Classified'] = S-U
+                v['Classified'] = S - U
                 self.sequana_data[k] = v
 
         if len(self.sequana_data) == 0:
@@ -88,14 +90,21 @@ class MultiqcModule(BaseMultiqcModule):
     def add_classified_vs_unclassified(self):
         pass
 
+    def _set_nan_to_zero(self, x):
+        try:
+            x + 0
+            return x
+        except:
+            return 0
+
     def add_kraken(self):
         data = {}
         for name in self.sequana_data.keys():
             data[name] = {
-                'viruses': self.sequana_data[name]['Viruses'],
-                'bacteria': self.sequana_data[name]['Bacteria'],
-                'unclassified': self.sequana_data[name]['Unclassified'],
-                'metazoa': self.sequana_data[name]['Metazoa']
+                'viruses': self._set_nan_to_zero(self.sequana_data[name]['Viruses']),
+                'bacteria': self._set_nan_to_zero(self.sequana_data[name]['Bacteria']),
+                'unclassified': self._set_nan_to_zero(self.sequana_data[name]['Unclassified']),
+                'metazoa': self._set_nan_to_zero(self.sequana_data[name]['Metazoa'])
             }
 
         pconfig = {

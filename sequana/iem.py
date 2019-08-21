@@ -89,6 +89,7 @@ class IEM():
     def __init__(self, filename):
         logger.warning("Not finalised use with care")
         self.filename = filename
+        self.scanner()
 
     def _line_cleaner(self, line):
         # We can get rid of EOL and spaces
@@ -110,6 +111,7 @@ class IEM():
 
     def scanner(self):
 
+
         current_section = None
         data = collections.defaultdict(list)
         with open(self.filename, "r") as fin:
@@ -123,13 +125,23 @@ class IEM():
                 else:
                     data[current_section] += [line]
 
-
         if "Header" not in data.keys():
             logger.warning("Input file must contain [Header]")
 
         if "Data" not in data.keys():
             logger.warning("Input file must contain [Data]")
         self.data = data
+
+    def _get_df(self):
+        import pandas as pd
+        import io
+        df = pd.read_csv(io.StringIO("\n".join(self.data['Data'])))
+        assert len(df.columns)> 1, "Invalid sample sheet in the Data section"
+        return df
+    df = property(_get_df)
+
+    def validate(self):
+        raise NotImplementedError
 
     def _get_settings(self):
         data = {}
@@ -138,6 +150,14 @@ class IEM():
             data[key] = value
         return data
     settings = property(_get_settings)
+
+    def _get_header(self):
+        data = {}
+        for line in self.data['Header']:
+            key, value = line.split(",")
+            data[key] = value
+        return data
+    header =  property(_get_header)
 
     def _get_name(self):
         if len(self.data['Name']) == 1:
