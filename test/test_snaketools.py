@@ -37,7 +37,7 @@ def test_snakemake_stats():
 
 def test_module():
     # a rule without README
-    m = snaketools.Module('mark_duplicates')
+    m = snaketools.Module('mark_duplicates_dynamic')
     m.description
     print(m)
     m.path
