@@ -266,7 +266,7 @@ if manager.config.bowtie2_mapping_ref.do:
     __bowtie2_mapping_ref__index_done = __bowtie2_index_ref__output_done
     __bowtie2_mapping_ref__sort = manager.getname("bowtie2_mapping_ref", ".sorted.bam")
     __bowtie2_mapping_ref__bam = manager.getname("bowtie2_mapping_ref", ".bam")
-    __bowtie2_mapping_ref__logs_err = manager.getname("bowtie2_mapping_ref", ".err"
+    __bowtie2_mapping_ref__logs_err = manager.getname("bowtie2_mapping_ref", ".err")
     __bowtie2_mapping_ref__logs_out = manager.getname("bowtie2_mapping_ref", ".out")
     __bowtie2_mapping_ref__options = config["bowtie2_mapping"]["options"]
     __bowtie2_mapping_ref__prefix_index = __bowtie2_index__
@@ -378,15 +378,16 @@ if config["SARTools"]["do"]:
 
 # !Reset expected_output variable after multiqc
 # Hack while waiting for a more general multiqc rules
-if config['multiqc']['config_file']:
-    config['multiqc']['options'] += " -c " + config['multiqc']['config_file']
 
 # Multiqc rule
 __multiqc__input = expected_output
 __multiqc__input_dir = "."
 __multiqc__logs = "multiqc/multiqc.log"
 __multiqc__output = config['multiqc']['output-directory'] + "/multiqc_report.html"
-__multiqc__options = config['multiqc']['options']
+if config['multiqc']['config_file']:
+    __multiqc__options = " -c " + config['multiqc']['config_file'] + config['multiqc']['options']
+else :
+    __multiqc__options = config['multiqc']['options']
 __multiqc__output_dir = config['multiqc']['output-directory']
 
 include: sm.modules["multiqc"]
