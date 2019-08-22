@@ -126,7 +126,6 @@ class StatsFile(object):
 
         total = df.query("name!='Undetermined'")
         total = total.groupby("lane").sum().reset_index()
-        print(total)
         total["name"] = "Determined"
 
         df = pd.concat([under, total])

@@ -568,10 +568,10 @@ class PacbioSubreads(PacbioBAMBase):
 
         bins = pylab.linspace(0, maxSNR, bins)
 
-        pylab.hist(self._df.loc[:,'snr_A'].clip_upper(maxSNR), alpha=alpha, label="A", bins=bins)
-        pylab.hist(self._df.loc[:,'snr_C'].clip_upper(maxSNR), alpha=alpha, label="C", bins=bins)
-        pylab.hist(self._df.loc[:,'snr_G'].clip_upper(maxSNR), alpha=alpha, label="G", bins=bins)
-        pylab.hist(self._df.loc[:,'snr_T'].clip_upper(maxSNR), alpha=alpha, label="T", bins=bins)
+        pylab.hist(self._df.loc[:,'snr_A'].clip(upper=maxSNR), alpha=alpha, label="A", bins=bins)
+        pylab.hist(self._df.loc[:,'snr_C'].clip(upper=maxSNR), alpha=alpha, label="C", bins=bins)
+        pylab.hist(self._df.loc[:,'snr_G'].clip(upper=maxSNR), alpha=alpha, label="G", bins=bins)
+        pylab.hist(self._df.loc[:,'snr_T'].clip(upper=maxSNR), alpha=alpha, label="T", bins=bins)
         pylab.legend()
         pylab.xlabel(xlabel, fontsize=fontsize)
         pylab.ylabel(ylabel, fontsize=fontsize)
@@ -1071,7 +1071,7 @@ class PBSim(object):
         pylab.plot(vec)
         pylab.subplot(212)
 
-        pylab.hist(vec[burn:], bins=bins, normed=1)
+        pylab.hist(vec[burn:], bins=bins, density=1)
         pylab.plot(x,y,'r-')
         pylab.ylabel('Frequency')
         pylab.xlabel('x')
