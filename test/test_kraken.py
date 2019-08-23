@@ -51,17 +51,17 @@ def test_kraken_results():
 
     df = k.plot(kind='barh')
 
-    df = k.get_taxonomy_biokit(11234)
+    df = k.get_taxonomy_db(11234)
     assert 11234 in df.index
 
-    df = k.get_taxonomy_biokit("11234")
+    df = k.get_taxonomy_db("11234")
     assert 11234 in df.index
 
 
-    df = k.get_taxonomy_biokit([11234])
+    df = k.get_taxonomy_db([11234])
     assert 11234 in df.index
 
-    df = k.get_taxonomy_biokit(["11234"])
+    df = k.get_taxonomy_db(["11234"])
     assert 11234 in df.index
 
 

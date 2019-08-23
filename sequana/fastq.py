@@ -979,7 +979,8 @@ class FastQC(object):
             d[tile].append(seq)
         self.data_imqual = [pd.DataFrame(d[key]).mean().values for key in sorted(d.keys())]
 
-        from biokit.viz import Imshow
+        from sequana.viz import Imshow
+
         im = Imshow(self.data_imqual)
         im.plot(xticks_on=False, yticks_on=False, origin='lower')
         pylab.title("Quality per tile", fontsize=self.fontsize)
@@ -1008,12 +1009,11 @@ class FastQC(object):
         Background separate zone of good, average and bad quality (arbitrary).
 
         """
+        from sequana.viz import Boxplot
         qualities = self._get_qualities()
         df = pd.DataFrame(qualities)
-        from biokit.viz.boxplot import Boxplot
         bx = Boxplot(df)
         try:
-            # new version of biokit
             bx.plot(ax=ax)
         except:
             bx.plot()
@@ -1048,7 +1048,7 @@ class FastQC(object):
         tiles = self._get_tile_info()
         # Distribution of the reads in x-y plane
         # less reads on the borders ?
-        from biokit.viz.hist2d import Hist2D
+        from sequana.viz import Hist2D
         Hist2D(tiles['x'], tiles['y']).plot()
 
     @run_info

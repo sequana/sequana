@@ -19,6 +19,6 @@ rule spades_get_fastq:
         import shutil
 
         with open(params["yaml"], 'r') as fp:
-            fyml = yaml.load(fp)[0]
+            fyml = yaml.load(fp, Loader=yaml.FullLoader)[0]
         shutil.copy(fyml["left reads"][0], output["fastq"][0])
         shutil.copy(fyml["right reads"][0], output["fastq"][1])
