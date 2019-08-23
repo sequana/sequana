@@ -56,7 +56,7 @@ rule chipuanar:
             conds.append(sample.split("_")[1])
             rep.append(sample.split("_")[2])
 
-	    #if spikes, read json file
+        #if spikes, read json file
         if os.path.isfile(params.spikes):
             df = read_json(params.spikes)
             spikes = []
@@ -86,9 +86,10 @@ rule chipuanar:
         # load the Rmarkdown
         os.chdir(params.outdir)
         outfile = os.path.basename(output.report)
-        chipuanar_script = sequana_data("Report_ChIPuanaR.Rmd", where="scripts")
-        shell("cp %s . " % (chipuanar_script))
-        shell("""Rscript -e "rmarkdown::render(input='%s', output_file='%s', run_pandoc=TRUE, clean=TRUE)" """ % ("Report_ChIPuanaR.Rmd", outfile))
+        #chipuanar_script = sequana_data("Report_ChIPuanaR.Rmd", where="scripts")
+        #shell("cp %s . " % (chipuanar_script))
+        #shell("""Rscript -e "rmarkdown::render(input='%s', output_file='%s', run_pandoc=TRUE, clean=TRUE)" """ % ("Report_ChIPuanaR.Rmd", outfile))
+        shell("""Rscript -e "rmarkdown::render(input=system.file("Report_ChIPuanaR.Rmd", package="ChIPuanaR"), output_file='%s', run_pandoc=TRUE, clean=TRUE)" """ % (outfile))
         os.chdir(cwd)
 
 
