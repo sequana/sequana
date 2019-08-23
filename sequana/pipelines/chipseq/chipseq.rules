@@ -253,8 +253,8 @@ if manager.config.cutadapt.do:
         __cutadapt__fwd = manager.config.cutadapt.fwd
         __cutadapt__rev = manager.config.cutadapt.rev
 
-        __cutadapt__design = manager.config.cutadapt.design_file
-        __cutadapt__design_adapter = manager.config['cutadapt']['adapter_choice']
+        __cutadapt__design = ""
+        __cutadapt__design_adapter = ""
         __cutadapt__options = manager.config.cutadapt.options
         __cutadapt__mode = manager.config.cutadapt.mode
         __cutadapt__log = "1-Trimming/logs/{sample}_trim.txt"
