@@ -52,7 +52,8 @@ class Taxonomy(object):
         import ftplib
         output_filename = 'taxonomy.dat'
         self.name = output_filename
-        self.filename = self.sequana_config_path + os.sep + self.name
+        from sequana import sequana_config_path
+        self.filename = sequana_config_path + os.sep + self.name
         if os.path.exists(self.filename) and overwrite is False:
             return
 
