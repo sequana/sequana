@@ -154,6 +154,12 @@ This may be solved by re-installation qt using the main anaconda channel
 
     conda install --override-channels -c anaconda qt
 
+and possibly::
+
+    pip install PyQtWebEngine
+
+If we believe this issue: https://github.com/conda-forge/pyqt-feedstock/issues/19
+
 
 libselinux
 ~~~~~~~~~~~~~~~~~

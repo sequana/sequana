@@ -605,7 +605,7 @@ class SequanaConfig(object):
                     import yaml
                     with open(data, "r") as fh:
                         self._yaml_code =  yaml.load(json.dumps(
-                            json.loads(fh.read())))
+                            json.loads(fh.read())), Loader=yaml.FullLoader)
                 config = load_configfile(data)
             else:
                 raise IOError("input string must be an existing file (%s)" % data)
