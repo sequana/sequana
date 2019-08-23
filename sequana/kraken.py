@@ -88,7 +88,7 @@ class KrakenResults(object):
         on_rtd = os.environ.get("READTHEDOCS", None) == "True"
 
         if on_rtd is False:
-            from biokit import Taxonomy
+            from sequana.taxonomy import Taxonomy
             self.tax = Taxonomy(verbose=True)
             self.tax._load_flat_file() # make sure it is available locally
         else:
@@ -108,7 +108,7 @@ class KrakenResults(object):
             self._parse_data()
             self._data_created = False
 
-    def get_taxonomy_biokit(self, ids):
+    def get_taxonomy_db(self, ids):
         """Retrieve taxons given a list of taxons
 
         :param list ids: list of taxons as strings or integers. Could also
@@ -129,7 +129,7 @@ class KrakenResults(object):
         if len(ids) == 0:
             return pd.DataFrame()
 
-        logger.info('Retrieving taxon using biokit.Taxonomy')
+        logger.info('Retrieving taxon using sequana.Taxonomy')
 
         if isinstance(ids, list) is False:
             ids = [ids]
@@ -244,7 +244,7 @@ class KrakenResults(object):
         # line 14500
         # >gi|331784|gb|K01711.1|MEANPCG[331784] Measles virus (strain Edmonston), complete genome
 
-        df = self.get_taxonomy_biokit([int(x) for x in self.taxons.index])
+        df = self.get_taxonomy_db([int(x) for x in self.taxons.index])
         df['count'] = self.taxons.values
         df.reset_index(inplace=True)
         newrow = len(df)
@@ -320,7 +320,7 @@ class KrakenResults(object):
             return False
 
         if mode != "adapters":
-            df = self.get_taxonomy_biokit(taxon_to_find)
+            df = self.get_taxonomy_db(taxon_to_find)
             self.lineage = [";".join(this) for this in df[df.columns[0:-1]].values]
             self.scnames = list(df['name'].values)  # do we need a cast ?
         else:
@@ -396,7 +396,7 @@ class KrakenResults(object):
         if len(self.taxons.index) == 0:
             return None
 
-        df = self.get_taxonomy_biokit(list(self.taxons.index))
+        df = self.get_taxonomy_db(list(self.taxons.index))
         df.iloc[-1] = ["Unclassified"] * 8
         data = self.taxons.copy()
         data.iloc[-1] = self.unclassified

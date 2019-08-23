@@ -116,7 +116,7 @@ the head / master where you start sequanix/sequana, then you will need to
 download the DB yourself manually. To do so, open an IPython or Python shell and
 type::
 
-    from biokit import Taxonomy
+    from sequana.taxonomy import Taxonomy
     tax = Taxonomy(verbose=True)
     tax._load_flat_file()
 

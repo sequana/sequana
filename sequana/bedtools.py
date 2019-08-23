@@ -22,7 +22,7 @@ import ast
 import os
 import sys
 
-from biokit.stats import mixture
+from sequana import mixture
 
 from sequana.lazy import pandas as pd
 from sequana.lazy import numpy as np
@@ -1065,7 +1065,7 @@ class ChromosomeCov(object):
 
         """
         # here for lazy import
-        from biokit.stats import mixture
+        from sequana import mixture
         # normalize coverage
         self._coverage_scaling()
 
@@ -1533,7 +1533,7 @@ class ChromosomeCov(object):
         import warnings
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
-            from biokit import Hist2D
+            from sequana.viz import Hist2D
             h2 = Hist2D(data)
 
             try:

@@ -25,7 +25,6 @@ scipy = LazyImport('scipy')
 scipy_stats = LazyImport('scipy.stats')
 pandas = LazyImport('pandas')
 vcf = LazyImport("vcf")
-biokit = LazyImport("biokit")
 
 def enabled():
     "Returns ``True`` if LazyImports are globally enabled"

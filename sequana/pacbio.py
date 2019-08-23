@@ -24,7 +24,6 @@ import random
 from sequana.lazy import pylab
 from sequana.lazy import numpy as np
 from sequana.lazy import pandas as pd
-from sequana.lazy import biokit
 import pysam
 
 from sequana import logger
@@ -204,14 +203,16 @@ class PacbioBAMBase(object):
             b.plot_GC_read_len(bins=[10, 10])
 
         """
+        from sequana.viz import Hist2D
         mean_len =  np.mean(self.df.loc[:,'read_length'])
         mean_GC =  np.mean(self.df.loc[:,'GC_content'])
 
         if hold is False:
             pylab.clf()
 
+
         data = self.df.loc[:,['read_length','GC_content']].dropna()
-        h = biokit.viz.hist2d.Hist2D(data)
+        h = Hist2D(data)
         res = h.plot(bins=bins, contour=False, norm='log', Nlevels=6, cmap=cmap)
         pylab.xlabel("Read length", fontsize=fontsize)
         pylab.ylabel("GC %", fontsize=fontsize)

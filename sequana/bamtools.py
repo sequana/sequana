@@ -682,10 +682,9 @@ class SAMBAMbase():
         """
         qualities = self._get_qualities(max_sample)
         df = pd.DataFrame(qualities)
-        from biokit.viz.boxplot import Boxplot
+        from sequana.viz.boxplot import Boxplot
         bx = Boxplot(df)
         try:
-            # new version of biokit
             bx.plot(ax=ax)
         except:
             bx.plot()
