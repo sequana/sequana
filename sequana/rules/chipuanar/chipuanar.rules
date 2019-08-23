@@ -89,7 +89,7 @@ rule chipuanar:
         #chipuanar_script = sequana_data("Report_ChIPuanaR.Rmd", where="scripts")
         #shell("cp %s . " % (chipuanar_script))
         #shell("""Rscript -e "rmarkdown::render(input='%s', output_file='%s', run_pandoc=TRUE, clean=TRUE)" """ % ("Report_ChIPuanaR.Rmd", outfile))
-        shell("""Rscript -e "rmarkdown::render(input=system.file("Report_ChIPuanaR.Rmd", package="ChIPuanaR"), output_file='%s', run_pandoc=TRUE, clean=TRUE)" """ % (outfile))
+        shell("""Rscript -e "rmarkdown::render(input=system.file('Report_ChIPuanaR.Rmd', package='ChIPuanaR'), output_file='%s', run_pandoc=TRUE, clean=TRUE)" """ % (outfile))
         os.chdir(cwd)
 
 
