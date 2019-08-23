@@ -112,9 +112,6 @@ fastqc:
 #
 # :Parameters:
 #
-# - adapter_type: can only be one of PCRFree, Nextera, Rubicon, TruSeq.
-#   Only used if design_file is provided.
-# - design_file: a valid CSV file with mapping of index and sample name
 # - fwd: a string or file (prefixed with *file:*)
 # - m: 20 means discard trimmed reads that are shorter than 20.
 #         must be > 0
@@ -135,13 +132,10 @@ fastqc:
 # :Note: If design_file is provided, fwd and rev are ignored
 #
 #   ref: http://cutadapt.readthedocs.io/
-# adapter_choice__ = ["", "PCRFree", "Rubicon", "Nextera", "TruSeq"]
 # tool_choice__ = ["atropos", "cutadapt"]
 cutadapt:
     do: yes
     tool_choice: cutadapt
-    adapter_choice:
-    design_file:
     fwd:
     rev:
     m: 25                       # {"strict_min": 0}
