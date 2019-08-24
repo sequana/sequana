@@ -16,4 +16,5 @@ pysam
 ruamel.yaml
 qtconsole
 snakemake
+scipy
 xlrd
