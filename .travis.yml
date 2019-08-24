@@ -43,6 +43,7 @@ install:
   - conda install --yes picard pigz cutadapt fastqc
   - conda install --yes freebayes --no-deps
   - conda install --yes pysam samtools --no-deps
+  - conda install --yes bedtools --no-deps
   #- conda install --yes python=$TRAVIS_PYTHON_VERSION --file requirements_pipelines.txt
   #
   # not yet in the requirements because not on conda
