@@ -6,8 +6,7 @@ bowtie2
 bwa
 cutadapt
 dsrc
-fastq-screen
-fastqc==0.11.5
+fastqc
 freebayes
 khmer
 kraken==1.1
@@ -16,11 +15,11 @@ shustring
 picard
 pigz
 pbzip2==1.1.13
-prokka
 samtools
 sambamba
 snpeff
 spades
 star
 subread
-multiqc==1.0
+busco==3.0.2
+canu

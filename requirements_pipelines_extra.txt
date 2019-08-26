@@ -1,2 +1,2 @@
-busco==3.0.2
-canu
+prokka
+fastq-screen
