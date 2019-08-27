@@ -26,6 +26,9 @@ before_install:
     - conda config --add channels defaults
     - conda config --add channels conda-forge
     - conda config --add channels bioconda
+    # aug 2019. under py3.5 solving environement takes forever
+    # this fixes the issue https://github.com/conda/conda/issues/8197
+    #- conda config --set channel_priority_strict
     # This help testing code with pylab
     #- "export DISPLAY=:99.0"
     #- "sh -e /etc/init.d/xvfb start"
@@ -39,7 +42,7 @@ install:
   - conda install --yes --file requirements_dev.txt
   # ideally, we should use requirements_pipelines but this lead to stall on
   # travis because of many dependencies. For testing, we only need those ones
-  - conda install --yes kraken bwa snpeff shustring krona sambamba
+  - cionda install --yes kraken==1.0 bwa snpeff shustring krona sambamba
   - conda install --yes picard pigz cutadapt fastqc
   - conda install --yes freebayes --no-deps
   - conda install --yes pysam samtools --no-deps
@@ -47,9 +50,9 @@ install:
   #- conda install --yes python=$TRAVIS_PYTHON_VERSION --file requirements_pipelines.txt
   #
   # not yet in the requirements because not on conda
-  - pip install itolapi 
+  - pip install itolapi
   - pip install .
-  - conda list 
+  - conda list
 
 # # command to run tests, e.g. python setup.py test
 script:
