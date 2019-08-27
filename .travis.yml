@@ -28,7 +28,7 @@ before_install:
     - conda config --add channels conda-forge
     # aug 2019. under py3.5 solving environement takes forever
     # this fixes the issue https://github.com/conda/conda/issues/8197
-    - conda config --set channel_priority_strict
+    - conda config --set channel_priority strict
     # This help testing code with pylab
     #- "export DISPLAY=:99.0"
     #- "sh -e /etc/init.d/xvfb start"
