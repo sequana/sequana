@@ -1,2 +1,2 @@
 prokka
-fastq-screen
+kraken

@@ -7,9 +7,9 @@ bwa
 cutadapt
 dsrc
 fastqc
+fastq-screen
 freebayes
 khmer
-kraken==1.1
 krona
 shustring
 picard
