@@ -42,7 +42,7 @@ install:
   - conda install --yes --file requirements_dev.txt
   # ideally, we should use requirements_pipelines but this lead to stall on
   # travis because of many dependencies. For testing, we only need those ones
-  - cionda install --yes kraken==1.0 bwa snpeff shustring krona sambamba
+  - conda install --yes kraken==1.0 bwa snpeff shustring krona sambamba
   - conda install --yes picard pigz cutadapt fastqc
   - conda install --yes freebayes --no-deps
   - conda install --yes pysam samtools --no-deps
