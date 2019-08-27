@@ -643,7 +643,7 @@ class KrakenAnalysis(object):
             command += " %(file2)s --paired"
         command += " -db %(database)s "
         command += " --threads %(thread)s --output %(kraken_output)s "
-        command += " --out-fmt legacy"
+        #command += " --out-fmt legacy"
 
         if output_filename_unclassified:
             command +=  " --unclassified-out %(output_filename_unclassified)s "
