@@ -637,7 +637,7 @@ class KrakenAnalysis(object):
         if self.paired:
             params["file2"] = self.fastq[1]
 
-        command = "kraken%(file1)s "
+        command = "kraken %(file1)s "
 
         if self.paired:
             command += " %(file2)s --paired"
