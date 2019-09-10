@@ -128,8 +128,7 @@ class StatsFile(object):
         total = total.groupby("lane").sum().reset_index()
         total["name"] = "Determined"
 
-        # fix deprecating warning by adding sort=True aug2019
-        df = pd.concat([under, total], sort=True)
+        df = pd.concat([under, total])
 
         df = df.pivot(index="lane", columns="name", values="count")
         df = df[["Determined", "Undetermined"]]

@@ -637,12 +637,13 @@ class KrakenAnalysis(object):
         if self.paired:
             params["file2"] = self.fastq[1]
 
-        command = "kraken -db %(database)s %(file1)s "
+        command = "kraken %(file1)s "
 
         if self.paired:
             command += " %(file2)s --paired"
+        command += " -db %(database)s "
         command += " --threads %(thread)s --output %(kraken_output)s "
-        command += " --out-fmt legacy"
+        #command += " --out-fmt legacy"
 
         if output_filename_unclassified:
             command +=  " --unclassified-out %(output_filename_unclassified)s "

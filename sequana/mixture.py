@@ -302,6 +302,7 @@ class EM(Fitting):
 
         self.mus = []
 
+        import scipy.stats as ss
         while not converged:
         # Compute the responsibility func. and new parameters
             for k in range(0, self.k):
