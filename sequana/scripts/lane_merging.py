@@ -62,10 +62,11 @@ class Common(object):
         lanes = str(self.lanes).replace(" ","")
         self.filenames =[x for x in self.filenames if re.search("_L00{}_".format(lanes), x)] 
 
-        print(self.filenames)
+        #print(self.filenames)
 
         self.sampleIDs = sorted(list(set([x.split("_L00")[0] for x in self.filenames])))
 
+        assert len(self.sampleIDs) == len(set(self.sampleIDs))
 
 class BackSpace(Common):
     """
@@ -76,8 +77,9 @@ class BackSpace(Common):
         <Projet>/<sampleID>/<name>_R1_.fastq.gz
         <Projet>/<sampleID>/<name>_R2_.fastq.gz
 
-    This script works at the sampleID level. You must be in the project
-    directory.
+    This script works at the sampleID level. Even though there are found
+    in subsirectories, at the end we store everything in a flat structure.
+
     """
     def __init__(self, pattern="*/*fastq.gz", outdir="fusion", threads=4,
                  queue=None, lanes=[]):
@@ -124,21 +126,21 @@ class BackSpace(Common):
     def get_pigz_cmd(self, sampleID, RX):
         assert RX in ['R1', 'R2']
         params = {"thread": self.threads, "sampleID": sampleID, "RX": RX}
-
+        print(params)
 
         names = [x for x in self.filenames if x.startswith(sampleID) and RX in x]
 
         print("  Found {} files for sample {} ({})".format(len(names), sampleID, RX))
         msg = "For sample ID {}, found non unique sample names {} ?".format(sampleID, names)
         assert len(set(names)) == self.Nlanes, msg
-        params['name'] = sampleID
+        params['name'] = sampleID.split("/")[-1]
         params['outdir'] = self.outdir
 
         # IMPORTANT TO SORT the filenames so that L1 follows L2 for R1 and R2
         # files
         params['filenames'] = " ".join(sorted(names))
 
-        output = "{outdir}/{sampleID}/{name}_{RX}_001.fastq".format(**params)
+        output = "{outdir}/{name}_{RX}_001.fastq".format(**params)
 
         if os.path.exists(output + ".gz"):
             raise IOError("{} exists already".format(output))
@@ -161,17 +163,21 @@ class BackSpace(Common):
 
             # create output directory
             import os
-            if os.path.exists("{}/{}".format(self.outdir, name)):
-                pass
-            else:
-                os.mkdir("{}/{}".format(self.outdir, name))
+            #if os.path.exists("{}/{}".format(self.outdir, name)):
+            #    pass
+            #else:
+            #    os.mkdir("{}/{}".format(self.outdir, name))
 
             # R1. Note the usage of wrap using --wrap " your command"
             if self.queue == "biomics":
                 sbatch_command = "sbatch -c {thread} -A biomics --qos biomics -p biomics"
             elif self.queue == "common":
                 sbatch_command = "sbatch -c {thread} --qos fast"
+            else:
+                sbatch_command = "sbatch -c {thread} "
+                sbatch_command += " -A {} --qos {} -p {} ".format(self.queue, self.queue, self.queue)
 
+            print(sbatch_command)
             # R1 case and R2 if needed
             READS = ['R1']
             if self.is_paired(name) is True:
@@ -184,15 +190,18 @@ class BackSpace(Common):
                     cmd = self.get_pigz_cmd(name, RX)
                     fin.write(cmd)
 
+                print(cmd)
                 from shutil import which
                 if which("sbatch") is not None:
                     cmd = sbatch_command.format(**{'thread': self.threads}) + " " + script_name
                 else:
                     cmd = "sh {}".format(script_name)
+                print(cmd)
                 from subprocess import STDOUT
                 process = subprocess.check_output(cmd.split())
                 #proc = process.split()[-1]
                 processes.append(process)
+
 
         if len(processes):
             print("Wait for those process to be over; type 'squeue | grep <your login>")
@@ -221,7 +230,7 @@ class Options(argparse.ArgumentParser):
             sampleID_L002_.fastq.gz
 
 
-        sequana_lane_fusion --lanes 1 2 3 4 --output-directory  L1234
+        sequana_lane_fusion --lanes 1 2 3 4
 
         """.format(prog)
         super(Options, self).__init__(usage=usage, prog=prog,
@@ -237,12 +246,11 @@ class Options(argparse.ArgumentParser):
         self.add_argument("--threads", dest="threads", type=str,
             default=4,
             help="number of threads per job (pigz)")
-        self.add_argument("--use-grid", dest="use_grid", 
-            action="store_true")
 
         self.add_argument("--queue", dest="queue", type=str,
             default="common", choices=["biomics", "common"],
             help="queue to use on the cluster")
+
         self.add_argument("--lanes", dest="lanes", nargs="+", 
             type=int, required=True)
 
@@ -259,10 +267,6 @@ def main(args=None):
     else:
         options = user_options.parse_args(args[1:])
 
-    print(options)
-
-    if options.use_grid is False:
-        options.queue = None
     c = BackSpace(pattern=options.pattern, outdir=options.outdir,
             queue=options.queue, lanes=options.lanes)
     c.run()
