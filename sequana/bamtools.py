@@ -42,7 +42,6 @@ from sequana.lazy import pylab
 
 import pysam
 from sequana import jsontool, logger
-
 logger.name = __name__
 """
 #http://www.acgt.me/blog/2014/12/16/understanding-mapq-scores-in-sam-files-does-37-42#
@@ -226,6 +225,7 @@ class SAMBAMbase():
             try:
                 NM.append([x[1] for x in a.tags if x[0] == "NM"][0])
             except:
+                #FIXME why -1 and not 0
                 NM.append(-1)
 
             flags.append(a.flag)
