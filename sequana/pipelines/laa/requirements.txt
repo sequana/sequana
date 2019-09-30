@@ -8,3 +8,7 @@
 - freebayes
 - kraken
 - snpEff
+- mafft
+- raxmlHPC
+- igvtools
+
