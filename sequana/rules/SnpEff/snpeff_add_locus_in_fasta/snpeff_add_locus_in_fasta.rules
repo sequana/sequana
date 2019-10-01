@@ -25,8 +25,8 @@ rule snpeff_add_locus_in_fasta:
     run:
         from sequana import SnpEff
         if input['ann'].endswith(".gbk"):
-            snpeff = SnpEff(reference=input['ann'], log=log['log'])
+            snpeff = SnpEff(input['ann'], log=log['log'])
         elif input['ann'].endswith("gff") or input['ann'].endswith('gff3'):
-            snpeff = SnpEff(reference=input['ann'], log=log['log'], fastafile=input['fasta'])
+            snpeff = SnpEff(input['ann'], log=log['log'], fastafile=input['fasta'])
 
         snpeff.add_locus_in_fasta(input['fasta'], output['fasta'])
