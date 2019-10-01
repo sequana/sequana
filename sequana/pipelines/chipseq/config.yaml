@@ -240,13 +240,17 @@ compute_idr:
 #
 # :Parameters:
 #
-# - method:
-# - normalization:
+# - method: could be "Limma" or "DEseq2"
+# - normalization: could be "geometrical", "spikes", "scale", "quantile", "cyclycloess"
 # - spikes: True or False. If you have spikes, you can run ChIPuanaR with or without spikes normalization in order to compare.
-# - pAdjustMethod:
-# - alpha:
-# - batch:
+# - pAdjustMethod: Limma and DEseq2 options. For Limma, "none", "BH", "BY" and "holm" are possible.
+#                  For DESeq2,
+# - alpha: 0.05 by default
+# - batch: NULL or a vector with batch effects as c("","","","")
 #
+#method_choice__ = ["Limma", "DEseq2"]
+#normalisation_choice__ = ["geometrical", "spikes", "scale", "quantile", "cyclycloess"]
+
 
 differential_analysis:
     do: no
