@@ -222,6 +222,13 @@ bowtie2_mapping_ref:
 # - options: any options recognised by feature_counts tool
 # - threads: number of threads to be used
 #
+# in the options, one can use the -t option to specify the feature type in GTF
+# annotation. For example gene, exon (default). The -g option specify the 
+# attribute type in GTF annoation. (gene_id) by default. Finally, 
+# the -s option perform strand specific read counting. 0 unstranded, 1
+# stranded, 
+# 2 reversely stranded.
+#
 feature_counts:
     do: yes
     options: "-t gene -g ID -s 1 " ## if exon/CDS is used, put -O option
