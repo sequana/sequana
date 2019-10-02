@@ -210,7 +210,7 @@ if config['joint_freebayes']['do']:
         __snpeff_joint__log = 'joint_calling/logs/snpeff_joint.log'
         __snpeff_joint__output = 'joint_calling/joint_calling.ann.vcf'
         __snpeff_joint__html = 'joint_calling/snpeff_joint.html'
-        __snpeff_joint__gbk = config['snpeff']['reference_file']
+        __snpeff_joint__annotation = config['snpeff']['reference_file']
         __snpeff_joint__options = config['snpeff']['options']
         exec(open(sequana.modules["snpeff_dynamic"], "r").read())
         include: snpeff_dynamic('joint', manager)
