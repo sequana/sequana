@@ -70,6 +70,7 @@ extra_fn_clean_exts:
     - .fastq
     - _R1_.cutadapt
     - _R1_001
+    - .err
     - type: remove
       pattern: '.sorted'
     - type: regex
