@@ -11,7 +11,7 @@ rule snpeff_%(name)s:
     """
     input:
         vcf = __snpeff_%(name)s__input, 
-        gbk = __snpeff_%(name)s__gbk
+        annotation = __snpeff_%(name)s__annotation
     output:
         ann = __snpeff_%(name)s__output,
         html = __snpeff_%(name)s__html
@@ -22,7 +22,7 @@ rule snpeff_%(name)s:
     run:
         from sequana import SnpEff
 
-        mydata = SnpEff(reference=input.gbk, log=log.log)
+        mydata = SnpEff(input.annotation, log=log.log)
         mydata.launch_snpeff(input.vcf, output.ann, html_output=output.html,
                              options=params.options)
     '''

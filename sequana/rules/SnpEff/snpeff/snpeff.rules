@@ -17,7 +17,7 @@ rule snpeff:
             snpeff:
                 reference: 'genes.gb' # The genbank file with annotation of the reference.
                 options: '-no-downstream' # Any options
-    
+
     Results filter options:
 	    - :code:`-no-downstream`: Do not show DOWNSTREAM changes
 	    - :code:`-no-intergenic`: Do not show INTERGENIC changes
@@ -47,7 +47,7 @@ rule snpeff:
         else:
             options = params['options']
 
-        mydata = SnpEff(reference=input['ann'], log=log['log'])
+        mydata = SnpEff(input['ann'], log=log['log'])
         mydata.launch_snpeff(input['vcf'], output['ann'],
                              html_output=output['html'],
                              options=options)

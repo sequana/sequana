@@ -1,6 +1,8 @@
 rule snpeff_add_locus_in_fasta:
     """
-    SnpEff requires the locus names in the annotation file and in the FASTA file (contig name) to be identical. To make this is true, this rule adds locus names of the genbank file into the FASTA file before the mapping.
+    SnpEff requires the locus names in the annotation file and in the FASTA
+    file (contig name) to be identical. To make this is true, this rule adds
+    locus names of the genbank file into the FASTA file before the mapping.
 
     Required input:
         - __snpeff_add_locus_in_fasta__input: FASTA file of the reference.
@@ -24,6 +26,10 @@ rule snpeff_add_locus_in_fasta:
         log = __snpeff_add_locus_in_fasta__log
     run:
         from sequana import SnpEff
-        
-        snpeff = SnpEff(reference=input['ann'], log=log['log'])
+        if input['ann'].endswith(".gbk"):
+            snpeff = SnpEff(input['ann'], log=log['log'])
+        elif input['ann'].endswith("gff") or input['ann'].endswith('gff3'):
+            print(input)
+            snpeff = SnpEff(input['ann'], log=log['log'], fastafile=input['fasta'])
+
         snpeff.add_locus_in_fasta(input['fasta'], output['fasta'])

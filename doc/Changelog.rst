@@ -10,6 +10,10 @@ This is an unstable release made to includes lots of new features and pipelines
  (chip-seq, atac-seq, demultiplexing, fastqc, laa) and bug fixes made on the
 develop branch into the master. 
 
+* NEWS:
+
+    * snpeff now includes GFF input file
+    * new module trf for tandem repeat finder output. 
 
 
 
