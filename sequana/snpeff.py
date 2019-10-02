@@ -73,13 +73,6 @@ class SnpEff(object):
                 self.format = "gbk"
             elif self.annotation.endswith(".gff3") or self.annotation.endswith(".gff"):
                 self.format = "gff3"
-                if self.fastafile is None:
-                    logger.error("With GFF file, you must provide a FASTA file")
-                    sys.exit(1)
-                if os.path.isfile(self.fastafile) is False:
-                    logger.error("FileNotFoundError: The file " + annotation +
-                         " does not exist")
-                    sys.exit(1)
             else:
                 logger.error("Format must be genbank or gff3")
                 sys.exit(1)
@@ -99,7 +92,10 @@ class SnpEff(object):
 
         # Check if snpEff.config is present
         if not os.path.exists("snpEff.config"):
+            logger.info("snpEff.config file not found, creating one")
             self._get_snpeff_config()
+        else:
+            logger.info("snpEff.config file exists already. Using it.")
 
         # Create custom database
         if not os.path.exists(self.snpeff_datadir + os.sep + self.ref_name
@@ -107,6 +103,8 @@ class SnpEff(object):
             self._add_custom_db()
         elif not self._check_database(self.ref_name):
             self._add_db_in_config()
+        else:
+            logger.info("DB already added in your config and database")
 
     def _check_database(self, reference):
         """ Check if your genbank/GFF is already added."""
@@ -128,6 +126,11 @@ class SnpEff(object):
         """ Add your custom file in the local snpEff database.
         """
         # create directory and copy annotation file
+        logger.info("adding custom DB using your input file(s)")
+        logger.info(" - {}".format(self.annotation))
+        if self.fastafile:
+            logger.info(" - {}".format(self.fastafile))
+
         genome_dir = "data" + os.sep + self.ref_name + os.sep
         try:
             os.makedirs(genome_dir)
@@ -143,6 +146,9 @@ class SnpEff(object):
             snpeff_build_line += [self.ref_name]
         elif self.format == "gff3":
             shutil.copyfile(self.annotation, genome_dir + "genes.gff")
+            if self.fastafile is None or not os.path.exists(self.fastafile):
+                logger.error("Input file {} does not exist".format(self.fastafile))
+                sys.exit(1)
             shutil.copyfile(self.fastafile, genome_dir + "sequences.fa")
             snpeff_build_line = ["snpEff", "build", "-gff3", '-v']
             snpeff_build_line += [self.ref_name]
@@ -155,12 +161,13 @@ class SnpEff(object):
         snp_build.wait()
         rc = snp_build.returncode
         if rc != 0:
-            print("snpEff build return a non-zero code")
+            logger.error("snpEff build return a non-zero code")
             sys.exit(rc)
 
     def _add_db_in_config(self):
         """ Add new annotation at the end of snpEff.config file.
         """
+        logger.info("Updating configuration file")
         if not self._check_database(self.ref_name):
             with open("snpEff.config", "a") as fp:
                 print(self.ref_name + ".genome : " + self.ref_name, file=fp)
