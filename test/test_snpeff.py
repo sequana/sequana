@@ -8,7 +8,7 @@ def test_snpeff():
     # a custom refrence
     fh_log = TempFile()
 
-    mydata = snpeff.SnpEff(reference=sequana_data("JB409847.gbk"), log=fh_log.name)
+    mydata = snpeff.SnpEff(annotation=sequana_data("JB409847.gbk"), log=fh_log.name)
     with TempFile() as fh:
         mydata.launch_snpeff(sequana_data("JB409847.vcf"), fh.name)
     fh_log.delete()
@@ -30,7 +30,7 @@ def test_snpeff():
         pass
 
     try:
-        snpeff.SnpEff(reference="dummy")
+        snpeff.SnpEff(annotation="dummy")
         assert False
     except SystemExit:
         assert True
@@ -53,7 +53,7 @@ def test_snpeff_download():
 
 
 def test_add_locus_no_modification():
-    mydata = snpeff.SnpEff(reference=sequana_data("JB409847.gbk"))
+    mydata = snpeff.SnpEff(annotation=sequana_data("JB409847.gbk"))
     with TempFile() as fh:
         fastafile = sequana_data("JB409847.fasta")
         mydata.add_locus_in_fasta(fastafile, fh.name)
@@ -70,13 +70,14 @@ def test_add_locus_with_modification():
     data = open(sequana_data("JB409847.gbk"), "r").read()
     newdata = data.replace("JB409847", "DUMMY_JB409847")
 
-    fh = TempFile(suffix="gbk")
+    fh = TempFile(suffix=".gbk")
+    print(fh.name)
     with open(fh.name, 'w') as fout:
         fout.write(newdata)
 
     # Now we read this new GBK file that has a different locus name as
     # compared to the fasta
-    mydata = snpeff.SnpEff(reference=fh.name)
+    mydata = snpeff.SnpEff(annotation=fh.name)
 
     # Here is the corresponding FASTA
     fasta = sequana_data("JB409847.fasta")
@@ -95,8 +96,3 @@ def test_add_locus_with_modification():
         data = open(fh2.name, "r").read()
         assert "DUMMY" in data
     fh.delete()
-
-
-
-
-
