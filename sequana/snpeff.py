@@ -67,9 +67,7 @@ class SnpEff(object):
             self.fastafile = fastafile
 
             self.ref_name = os.path.basename(annotation).split('.')[0]
-            if self.annotation.endswith(".genbank"):
-                self.format = "gbk"
-            elif self.annotation.endswith(".gbk"):
+            if self.annotation.endswith(".genbank") or self.annotation.endswith(".gbk"):
                 self.format = "gbk"
             elif self.annotation.endswith(".gff3") or self.annotation.endswith(".gff"):
                 self.format = "gff3"
@@ -199,21 +197,32 @@ class SnpEff(object):
                 proc_ann.wait()
 
     def _get_seq_ids(self):
-        regex = re.compile('^LOCUS\s+([\w\.\-]+)')
-        chrom_regex = re.compile(r'\\chromosome="([\w\.\-]+)"')
-        with open(self.annotation, "r") as fp:
-            line = fp.readline()
-            seq = regex.findall(line)
-            for line in fp:
-                if line.strip().startswith(('gene', 'CDS',)):
-                    break
-                chrom = chrom_regex.search(line)
-                if chrom:
-                     seq = [chrom.group(1)]
-                     regex = chrom_regex
-            seq += [regex.search(line).group(1) for line in fp
-                   if regex.search(line)]
-        return seq
+        if self.format == "gbk":
+            regex = re.compile('^LOCUS\s+([\w\.\-]+)')
+            chrom_regex = re.compile(r'\\chromosome="([\w\.\-]+)"')
+            with open(self.annotation, "r") as fp:
+                line = fp.readline()
+                seq = regex.findall(line)
+                for line in fp:
+                    if line.strip().startswith(('gene', 'CDS',)):
+                        break
+                    chrom = chrom_regex.search(line)
+                    if chrom:
+                         seq = [chrom.group(1)]
+                         regex = chrom_regex
+                seq += [regex.search(line).group(1) for line in fp
+                       if regex.search(line)]
+            return seq
+        else:
+            regex = re.compile('^##sequence-region\s+([\w\.\-]+)')
+            with open(self.annotation, "r") as fp:
+                line = fp.readline()
+                seq = regex.findall(line)
+                for line in fp:
+                    chrom = regex.findall(line)
+                    if chrom:
+                        seq += chrom
+            return seq
 
     def add_locus_in_fasta(self, fasta, output_file):
         """ Add locus of annotation file in description line of fasta file. If
