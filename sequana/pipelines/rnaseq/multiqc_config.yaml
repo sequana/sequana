@@ -69,6 +69,8 @@ extra_fn_clean_exts:
     - .gz
     - .fastq
     - _R1_.cutadapt
+    - _R2_.cutadapt
+    - _R2_001
     - _R1_001
     - .err
     - type: remove
