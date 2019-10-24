@@ -208,10 +208,10 @@ remove_blacklist:
 # hg18 assembly.
 # - readLength: in order to compute the best shift with PPQT when no_model is set
 #
-# tool_choice__ = ["narrow", "broad"]
+# mode_choice__ = ["narrow", "broad"]
 #
 peak_calling:
-    model_choice: 'narrow'    ## may be broad
+    mode_choice: 'narrow'    ## may be broad
     no_model: no             ## may be yes
     options: "--keep-dup 2500 "
     cutoff: 0.1
