@@ -154,7 +154,7 @@ cutadapt:
 # - options: any options recognised by bowtie2 tool
 # - threads: number of threads to be used
 #
-bowtie2_mapping:
+bowtie2_mapping_ref:
     do: yes
     #options: "--dovetail --no-mixed --no-discordant " for paired-end data
     options: "--very-sensitive "
