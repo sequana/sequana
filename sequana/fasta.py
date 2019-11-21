@@ -185,3 +185,31 @@ class FastA(object):
         with open("{}.fa".format(outname), "w") as fout:
             fout.write(">{}\n{}".format(outname, self.sequences[index]))
 
+    def to_fasta(self, outfile, width=80):
+        """Save the input FastA file into a new file
+
+        The interest of this method is to wrap the sequence into 80 characters.
+        This is useful if the input file is not formatted correctly.
+
+        """
+        with open(outfile, "w") as fout:
+            for name,comment,seq in zip(self.names, self.comments, self.sequences):
+                import textwrap
+                seq = "\n".join(textwrap.wrap(seq, width))
+                if comment is None:
+                    fout.write(">{}\n{}\n".format(name, seq))
+                else:
+                    fout.write(">{}\t{}\n{}\n".format(name, comment, seq))
+
+
+
+
+
+
+
+
+
+
+
+
+
