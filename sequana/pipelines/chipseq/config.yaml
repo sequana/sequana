@@ -154,7 +154,7 @@ cutadapt:
 # - options: any options recognised by bowtie2 tool
 # - threads: number of threads to be used
 #
-bowtie2_mapping:
+bowtie2_mapping_ref:
     do: yes
     #options: "--dovetail --no-mixed --no-discordant " for paired-end data
     options: "--very-sensitive "
@@ -208,10 +208,10 @@ remove_blacklist:
 # hg18 assembly.
 # - readLength: in order to compute the best shift with PPQT when no_model is set
 #
-# tool_choice__ = ["narrow", "broad"]
+# mode_choice__ = ["narrow", "broad"]
 #
 peak_calling:
-    model_choice: 'narrow'    ## may be broad
+    mode_choice: 'narrow'    ## may be broad
     no_model: no             ## may be yes
     options: "--keep-dup 2500 "
     cutoff: 0.1

@@ -259,10 +259,10 @@ if manager.config.bowtie1_mapping_ref.do:
     __mapping_output = __bowtie1_mapping_ref__sort
 
 
-if manager.config.bowtie2_mapping_ref.do:
+if manager.config.bowtie2_mapping.do:
 
     # mapping on ref
-    __bowtie2_mapping_ref__input = _clean_ngs__output
+    __bowtie2_mapping_ref__input = __clean_ngs__output
     __bowtie2_mapping_ref__index_done = __bowtie2_index_ref__output_done
     __bowtie2_mapping_ref__sort = manager.getname("bowtie2_mapping_ref", ".sorted.bam")
     __bowtie2_mapping_ref__bam = manager.getname("bowtie2_mapping_ref", ".bam")
@@ -272,7 +272,7 @@ if manager.config.bowtie2_mapping_ref.do:
     __bowtie2_mapping_ref__prefix_index = __bowtie2_index__
     include: bowtie2_mapping_dynamic("ref", manager)
     expected_output.extend(expand(__bowtie2_mapping_ref__sort, sample=manager.samples))
-
+    __mapping_output = __bowtie2_mapping_ref__sort
 
 
 if manager.config.star_mapping.do:

@@ -447,7 +447,7 @@ else :
     include: sm.modules["spp"]
 
 # Peak calling
-model = manager.config.peak_calling.model_choice
+model = manager.config.peak_calling.mode_choice
 model_dir = model
 if manager.config.peak_calling.no_model:
     model_dir += "-nomodel"
