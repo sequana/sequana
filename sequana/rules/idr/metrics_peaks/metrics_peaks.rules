@@ -1,0 +1,93 @@
+rule metrics_peaks:
+    """
+    Rule for compute metrics from previous step
+
+    Required input:
+        __metrics_peaks__input: list of all files needed for metrics
+
+    Required output:
+        __metrics_peaks__output: csv file as described here :
+
+    # plot_type: 'table'
+    Cond	Replicats	PPR	SPR1	SPR2	RR	SCR	Score
+    H3K27Ac_C	30,496	3,197	19,775	20,514	1.05	1.04	1
+    H3K27Ac_U	30,043	35,686	21,289	17,724	1.19	1.20	1
+    H3K4Me1_C	44,316	44,867	23,839	4	3.01	5,959.75	0
+    H3K4Me1_U	42,540	46,534	19,941	21,121	1.09	1.06	1
+
+    """
+    input:
+        inputs = __metrics_peaks__input
+    log:
+        __metrics_peaks__logs
+    params:
+        marks = __metrics_peaks__marks,
+        conds = __metrics_peaks__conds,
+        rep = __metrics_peaks__rep
+    output:
+        __metrics_peaks__output
+    run:
+        import pandas as pd
+        import os.path
+        from collections import OrderedDict
+
+        inputs = [os.path.realpath(f) for f in input['inputs']]
+        output = os.path.realpath(output[0])
+        #initialize dict for store all metrics
+        d = OrderedDict()
+        d['Cond'] = []
+        d['Replicates'] = []
+        d['PPR'] = []
+        d['SPR1'] = []
+        d['SPR2'] = []
+        d['RR'] = []
+        d['SCR'] = []
+        d['Score'] = []
+        nb_rep = nb_ppr = nb_spr1 = nb_spr2 = 0
+        for mark in marks:
+            for cond in conds:
+                sample = mark+"_"+cond
+                d['Cond'].append(mark+"_"+cond)
+                for file in inputs:
+                    if sample in file:
+                        if 'vs'+params.rep in file:
+                            nb_rep = sum(1 for line in open(file))
+                            d['Replicates'].append(nb_rep)
+                        if 'vsPPR' in file:
+                            nb_ppr = sum(1 for line in open(file))
+                            d['PPR'].append(nb_ppr)
+                        if 'vsSPR1' in file:
+                            nb_spr1 = sum(1 for line in open(file))
+                            d['SPR1'].append(nb_spr1)
+                        if 'vsSPR2' in file:
+                            nb_spr2 = sum(1 for line in open(file))
+                            d['SPR2'].append(nb_spr2)
+                #catch illegal division by zero
+                try:
+                    scr = round(max(nb_spr1,nb_spr2)/min(nb_spr1,nb_spr2), 2)
+                except ZeroDivisionError:
+                    scr = 0
+                try:
+                    rr = round(max(nb_rep,nb_ppr)/min(nb_rep,nb_ppr), 2)
+                except ZeroDivisionError:
+                    rr = 0
+                d['SCR'].append(scr)
+                d['RR'].append(rr)
+                if (scr < 2 and rr != 0 ) and (rr < 2 and rr != 0 ) :
+                    d['Score'].append(1)
+                elif (scr > 2 or scr == 0 ) and (rr < 2 and rr != 0 ) :
+                    d['Score'].append(0)
+                elif ( scr < 2 and scr != 0 ) and (rr > 2 or rr == 0 ) :
+                    d['Score'].append(0)
+                else:
+                    d['Score'].append(-1)
+
+
+
+        # create dataframe from dictionary
+        df = pd.DataFrame(data=d, columns=d.keys())
+
+        # write dataframe in output file
+        with open(output, 'w') as f:
+                f.write("# plot_type: 'table'\n")
+        df.to_csv(output, mode='a',sep="\t", index=False)

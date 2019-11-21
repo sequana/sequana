@@ -118,24 +118,24 @@ class CutadaptModule(SequanaBaseModule):
             prefix = ""
 
         df = pd.DataFrame({'Number of reads': [], 'percent': []})
-        df.ix['Total paired reads'] = [
+        df.loc['Total paired reads'] = [
                    self.jinja['%stotal_reads' % prefix],
                    '(100%)']
         if self.mode == "pe":
-            df.ix['Read1 with adapters'] = [
+            df.loc['Read1 with adapters'] = [
                    self.jinja['%sreads1_with_adapters' % prefix],
                    self.jinja['%sreads1_with_adapters_percent'% prefix]]
-            df.ix['Read2 with adapters'] = [
+            df.loc['Read2 with adapters'] = [
                    self.jinja['%sreads2_with_adapters' % prefix],
                    self.jinja['%sreads2_with_adapters_percent'% prefix]]
         else:
-            df.ix['Pairs with adapters'] = [
+            df.loc['Pairs with adapters'] = [
                    self.jinja['%sreads_with_adapters' % prefix],
                    self.jinja['%sreads_with_adapters_percent'% prefix]]
-        df.ix['Pairs too short'] = [
+        df.loc['Pairs too short'] = [
                    self.jinja['%sreads_too_short' % prefix],
                    self.jinja['%sreads_too_short_percent'% prefix]]
-        df.ix['Pairs kept'] = [
+        df.loc['Pairs kept'] = [
                    self.jinja['%sreads_kept' % prefix],
                    self.jinja['%sreads_kept_percent' % prefix]]
         if self.mode != "pe":
@@ -146,7 +146,7 @@ class CutadaptModule(SequanaBaseModule):
         datatable = DataTable(self._get_stats(), "cutadapt", index=True)
         datatable.datatable.datatable_options = {
             'scrollX': '300px',
-            'pageLength': 15,
+            'pageLength': 30,
             'scrollCollapse': 'true',
             'dom': 'rtpB',
             "paging": "false",
@@ -176,7 +176,7 @@ class CutadaptModule(SequanaBaseModule):
         for count, adapter in enumerate(self.data['adapters']):
             name = adapter['name']
             info = adapter['info']
-            df.ix[name] = [info['Length'], info['Trimmed'],
+            df.loc[name] = [info['Length'], info['Trimmed'],
                 info['Type'], info['Sequence']]
         df.columns = ['Length', 'Trimmed', 'Type', 'Sequence']
         df['Trimmed'] = df.Trimmed.map(lambda x: int(x.replace("times.", "")))

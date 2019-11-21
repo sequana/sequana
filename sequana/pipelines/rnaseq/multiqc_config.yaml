@@ -22,7 +22,7 @@
 # Title to use for the report.
 title: "Project Name"
 subtitle: "Titre de l'analyse"           # Grey text below title
-intro_text: "MultiQC reports summarise analysis results produced at "          # Set your own text
+intro_text: "MultiQC reports summarise analysis results produced with RNA-seq sequana pipeline "          # Set your own text
 
 # Add generic information to the top of reports
 report_header_info:
@@ -69,7 +69,11 @@ extra_fn_clean_exts:
     - .gz
     - .fastq
     - _R1_.cutadapt
-    - type: replace
+    - _R2_.cutadapt
+    - _R2_001
+    - _R1_001
+    - .err
+    - type: remove
       pattern: '.sorted'
     - type: regex
       pattern: '^Sample_\d+'

@@ -2,8 +2,14 @@ from sequana.kraken import *
 from sequana import sequana_data, sequana_config_path
 import os
 import tempfile
+import pytest
 
 
+skiptravis = pytest.mark.skipif("TRAVIS_PYTHON_VERSION" in os.environ,
+    reason="On travis")
+
+
+#@skiptravis
 def run_kraken_taxon():
 
     def download():
@@ -34,32 +40,28 @@ output_directory=p.name, force=True)
 
     p.cleanup()
 
-if "TRAVIS_PYTHON_VERSION" in os.environ:
-    pass
-else:
-    def test_kraken():
-        run_kraken_taxon()
 
 
+@skiptravis
 def test_kraken_results():
     test_file = sequana_data("test_kraken.out", "testing")
-    k = KrakenResults(test_file )
+    k = KrakenResults(test_file)
     df = k.plot(kind='pie')
     print(df)
 
     df = k.plot(kind='barh')
 
-    df = k.get_taxonomy_biokit(11234)
+    df = k.get_taxonomy_db(11234)
     assert 11234 in df.index
 
-    df = k.get_taxonomy_biokit("11234")
+    df = k.get_taxonomy_db("11234")
     assert 11234 in df.index
 
 
-    df = k.get_taxonomy_biokit([11234])
+    df = k.get_taxonomy_db([11234])
     assert 11234 in df.index
 
-    df = k.get_taxonomy_biokit(["11234"])
+    df = k.get_taxonomy_db(["11234"])
     assert 11234 in df.index
 
 

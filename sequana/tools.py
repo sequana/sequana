@@ -35,6 +35,10 @@ from easydev import precision
 from easydev.misc import cmd_exists
 import subprocess
 
+from sequana import logger
+logger.name = __name__
+
+
 __all__ = ['StatsBAM2Mapped', 'bam_to_mapped_unmapped_fastq', "GZLineCounter"]
 
 
@@ -491,6 +495,15 @@ class GZLineCounter(object):
                 for line in f:
                     i += 1
         return i
+
+
+def entropy(x):
+    letters = set(x)
+    from pylab import log
+    pi = [x.count(l)/float(len(x)) for l in letters]
+    pi = [x for x in pi if x!=0]
+    return -sum(pi*log(pi))
+
 
 
 

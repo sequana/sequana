@@ -6,14 +6,17 @@ from sequana.adapters import FindAdaptersFromDesign
 
 
 def test_fasta_fwd_rev_to_columns():
-    a1 = sequana_data("adapters_PCRFree_fwd.fa")
-    a2 = sequana_data("adapters_PCRFree_rev.fa")
+    a1 = sequana_data("NEXTFlex48_DNA_fwd.fa")
+    a2 = sequana_data("NEXTFlex48_DNA_rev.fa")
+    a3 = sequana_data("NEXTFlex48_DNA_revcomp.fa")
     f1 = FastA(a1)
     f2 = FastA(a2)
+    f3 = FastA(a3)
     assert f1 == f1
     assert f1 != f2
     assert len(f1) == 49
     assert len(f2) == 49
+    assert len(f3) == 49
 
     with TempFile() as fh:
         adapters.fasta_fwd_rev_to_columns(a1, a2, fh.name)
@@ -23,12 +26,6 @@ def test_fasta_fwd_rev_to_columns():
         adapters.fasta_fwd_rev_to_columns(a1, a2)
     with TempFile() as fh:
         adapters.fasta_fwd_rev_to_columns(a1, None)
-
-
-def test_clean_ngs():
-    a1 = sequana_data("adapters_PCRFree_fwd.fa")
-    with TempFile() as fh:
-        adapters.adapters_to_clean_ngs(a1, fh.name)
 
 
 def test_adapter():
@@ -110,7 +107,7 @@ def test_adapter_reader():
         assert True
 
     # __eq__
-    assert len(ar1) == 56
+    assert len(ar1) == 65
 
     # accessors
     ar1.sequences, ar1.identifiers, ar1.comments
@@ -121,7 +118,6 @@ def test_adapter_reader():
 
     ar2 = AR(data2)
     ar2.reverse()
-    # fails due to S516 ????????
     assert ar1 == ar2
 
     ar3 = AR(data3)
@@ -152,7 +148,7 @@ def test_nextera():
     fa = FindAdaptersFromDesign(design, "Nextera")
     fa.check()
 
-def test_pcrfree():
+def test_nextflex48():
     design = sequana_data("test_index_mapper.csv")
 
     try:
@@ -161,30 +157,30 @@ def test_pcrfree():
     except Exception:
         assert True
 
-    # Other input from PCRFree
-    ad = FindAdaptersFromDesign(design, "PCRFree")
+    # Other input from PCRFree NextFlex48
+    ad = FindAdaptersFromDesign(design, "NEXTFlex48_DNA")
 
     # Test the index1/2_seq with 3 cases
     # index1 present only,
     # no index at all (None)
     # index1 and index2 present
     design1 = sequana_data("test_expdesign_hiseq.csv")
-    ad1 = FindAdaptersFromDesign(design1, "PCRFree")
+    ad1 = FindAdaptersFromDesign(design1, "NEXTFlex48_DNA")
     ad1.check()
     res1 = ad1.get_adapters_from_sample("553-iH2-1")
     res2 = ad1.get_adapters_from_sample("539-st2")
     res3 = ad1.get_adapters_from_sample("107-st2")
 
-    assert res1['index1']['fwd'].identifier == "NextFlex_PCR_Free_adapter8|name:8|seq:TTAGGC"
+    assert res1['index1']['fwd'].identifier == "NEXTFlex48_DNA|name:8|seq:TTAGGC"
     assert res1['index1']['fwd'].name == "8"
-    assert res1['index1']['rev'].name == "8"
+    assert res1['index1']['revc'].name == "8"
 
     assert list(res2.keys()) == ["universal"]
 
     assert res3['index1']['fwd'].name == "9"
-    assert res3['index1']['rev'].name == "9"
+    assert res3['index1']['revc'].name == "9"
     assert res3['index2']['fwd'].name == "10"
-    assert res3['index2']['rev'].name == "10"
+    assert res3['index2']['revc'].name == "10"
 
     # double indexing
     # This is a double indexing for PCRFree, which has not been tested
@@ -199,14 +195,12 @@ def test_pcrfree():
 
 
     design = sequana_data("test_expdesign_miseq_illumina.csv")
-    ad = FindAdaptersFromDesign(design, "PCRFree")
+    ad = FindAdaptersFromDesign(design, "NEXTFlex48_DNA")
     res = ad.get_adapters_from_sample("CR81-L1236-P1")
-    assert res['index1']['fwd'].identifier == 'NextFlex_PCR_Free_adapter1|name:1|seq:CGATGT'
-
-
+    assert res['index1']['fwd'].identifier == 'NEXTFlex48_DNA|name:1|seq:CGATGT'
 
     design1 = sequana_data("test_expdesign_miseq_illumina_1.csv")
-    ad = FindAdaptersFromDesign(design1, "PCRFree")
+    ad = FindAdaptersFromDesign(design1, "NEXTFlex48_DNA")
     ad.check() # all sample names must be found
     res = ad.get_adapters_from_sample("CM-2685")['index1']['fwd']
     assert res.name == "3"
@@ -214,7 +208,7 @@ def test_pcrfree():
 
 def test_wrong_design():
     design = sequana_data("test_expdesign_wrong.csv")
-    ad = FindAdaptersFromDesign(design, "PCRFree")
+    ad = FindAdaptersFromDesign(design, "NEXTFlex48_DNA")
     try:
         ad.check()
         assert False
@@ -222,25 +216,17 @@ def test_wrong_design():
         assert True
 
 
-def test_rubicon():
-    design = sequana_data("test_expdesign_rubicon.csv")
-    fa = FindAdaptersFromDesign(design, "Rubicon")
-    fa.check()
-
 
 def test_wrong_sample():
     design = sequana_data("test_index_mapper.csv")
-    ad = FindAdaptersFromDesign(design, "Rubicon")
+    ad = FindAdaptersFromDesign(design, "TruSeq")
     res = ad.get_adapters_from_sample("C4405-M1-EC1")
     assert res['index1']['fwd'] is None
-    assert res['index1']['rev'] is None
+    assert res['index1']['revc'] is None
 
 
 def test_get_sequana_adapters():
-
-    assert "adapters_PCRFree_rev.fa" in adapters.get_sequana_adapters("PCRFree", "rev")
-    assert "adapters_Rubicon_fwd.fa" in adapters.get_sequana_adapters("Rubicon", "fwd")
-    assert "adapters_Nextera_revcomp.fa" in adapters.get_sequana_adapters("Nextera", "revcomp")
+    assert "NEXTFlex48_DNA_rev.fa" in adapters.get_sequana_adapters("NEXTFlex48_DNA", "rev")
 
     try:
         adapters.get_sequana_adapters("Nexter", "fwd")
@@ -266,73 +252,43 @@ def test_duplicated_design():
 
 
 
+
+def _check_content(res):
+    for this in ["universal", "index1", "index2"]:
+        assert this in res.keys()
+        assert "fwd" in res[this]
+        assert "revc" in res[this]
+
+
+
 def test_all_adapters():
     # test all adapters using a dummy design file.
 
     design = sequana_data("test_index_mapper.csv")
 
-    # Rubicon
-    fa = FindAdaptersFromDesign(design, "Rubicon")
-    res = fa.get_adapters_from_sample("C1152-S2-EC1")
-    assert "PolyA" not in res.keys()
-    assert "PolyT" not in res.keys()
-    assert "universal" in res.keys()
-    assert "fwd" in res['universal']
-    assert "rev" in res['universal']
+    """TODO
+adapters_NEBNext2_fwd.fa
+adapters_NEBNext_fwd.fa
+dapters_Small_fwd.fa
+adapters_NEBNextOligos_fwd.fa
+adapters_SMARTer_fwd.f
+adapters_Nextera_2_fwd.fa
+    """
 
-    # TruSeq
-    fa = FindAdaptersFromDesign(design, "TruSeq")
-    res = fa.get_adapters_from_sample("C1152-S2-EC1")
-    assert "PolyA" in res.keys()
-    assert "PolyT" in res.keys()
-    assert "universal" in res
-    assert "fwd" in res['universal']
-    assert "rev" in res['universal']
+
+    for this in ['TruSeq', 'Nextera', 'NEXTFlex48_DNA', 'Small', 'NEBNext']:
+        #'NEXTFlex96_DNA', 'TruSeqCD_DNA', 'TruSeqUD']:
+        fa = FindAdaptersFromDesign(design, this)
+        res = fa.get_adapters_from_sample("C1152-S2-EC1")
+        _check_content(res)
 
     # Nextera
     fa = FindAdaptersFromDesign(design, "Nextera")
     res = fa.get_adapters_from_sample("C1152-S2-EC1")
-    assert res['index1']['fwd'][0].identifier == "Nextera_index_N701|name:N701|seq:TAAGGCGA"
+    assert "revc" in res['universal']
+    assert "seq:TAAGGCGA" in res['index1']['fwd'][0].identifier
     assert "transposase_seq_1" in res.keys()
     assert "transposase_seq_2" in res.keys()
-    assert "universal" in res.keys()
-    assert "fwd" in res['universal']
-    assert "rev" in res['universal']
-
-    # PCRFree
-    fa = FindAdaptersFromDesign(design, "PCRFree")
-    res = fa.get_adapters_from_sample("C1152-S2-EC1")
-    assert "universal" in res.keys()
-    assert "fwd" in res['universal']
-    assert "rev" in res['universal']
-    # let us be more precise for PCRFree only for a regression bug where 
-    # res['universal'] 
-    assert res["universal"]["fwd"].identifier == "Universal_Adapter|name:universal"
-    assert res["universal"]["fwd"].sequence == "AATGATACGGCGACCACCGAGATCTACACTCTTTCCCTACACGACGCTCTTCCGATCT"
-
-
-    # NEBNext
-    fa = FindAdaptersFromDesign(design, "NEBNext")
-    res = fa.get_adapters_from_sample("C1152-S2-EC1")
-    assert "universal" in res.keys()
-    assert "fwd" in res['universal']
-    assert "rev" in res['universal']
-
-    # Small
-    fa = FindAdaptersFromDesign(design, "Small")
-    res = fa.get_adapters_from_sample("C1152-S2-EC1")
-    assert "universal" in res.keys()
-    assert "fwd" in res['universal']
-    assert "rev" in res['universal']
-
-
-
-
-
-
-
-
-
 
 
 

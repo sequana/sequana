@@ -1,0 +1,70 @@
+
+
+#input_pattern: "data/lima*.fastq"
+#input_pattern: "databam/*bam"
+#input_directory: "."
+
+input_directory: "%(input_directory)s"
+input_pattern: "%(input_pattern)s"
+
+
+#
+#
+# data_type_choice__ = ["lima.ccs.fastq", "lima.ccs.bam", "subreads.bam"]
+input:
+    data_type_choice: "lima.ccs.fastq"   # could be lima.ccs.fastq, lima.ccs.bam or subreads.bam
+    #data_type: "lima.ccs.bam"   # could be lima.ccs.fastq, lima.ccs.bam or subreads.bam
+    reference_file : 
+    smrtlink_report_file: 
+
+
+
+# for populations, and ploidy of 1, a population SNP found in a population
+# will have a score of 0. Here setting to 2 is a trick. Alternative is
+# to set freebayes scores to 0
+# Useful options: 
+# --min-alternate-count set to 1 (default is 2) shows deletions not shown
+# otherwise in project B1962
+# --noindels clean up the final VCF with only SNPs.
+freebayes:
+    do: yes
+    ploidy: 1
+    options: ""
+
+
+snpeff:
+    do: yes
+    reference_file: 
+    options: -no-downstream -no-upstream
+
+
+kraken:
+    do: yes
+    databases:
+        - /home/cokelaer/.config/sequana/kraken_human_only/
+        - /home/cokelaer/.config/sequana/viruses_only/
+        - /home/cokelaer/.config/sequana/kraken_bacteria_only/
+
+
+# We set freebayes_score to zero by default. See note above in the freebayes
+# section
+freebayes_vcf_filter:
+    do: yes
+    freebayes_score: 0   
+    frequency: 0.0
+    min_depth: 10
+    forward_depth: 3
+    reverse_depth: 3
+    strand_ratio: 0.2
+
+
+raxml_mltree:
+    N: 20
+    options: ''
+
+
+raxml_bootstrap:
+    N: 2
+    options: ''
+
+

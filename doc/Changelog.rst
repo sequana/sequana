@@ -3,6 +3,63 @@ Changelog
 
 .. contents::
 
+0.8.0
+------
+
+This is an unstable release made to includes lots of new features and pipelines
+ (chip-seq, atac-seq, demultiplexing, fastqc, laa) and bug fixes made on the
+develop branch into the master. 
+
+* NEWS:
+
+    * snpeff now includes GFF input file
+    * new module trf for tandem repeat finder output. 
+
+
+
+0.7.2
+----------
+
+* NEWS:
+
+
+    * New script: sequana_fastq_summary included in fastqc pipeline
+    * New script: sequana_substractor to remove reads that mapped against a reference(s)
+    * added a new module to upload/export phylogenetic tree on itol website.
+      Used in the laa pipeline
+    * added backspace2fusion code to merge lanes in Illumina raw data
+    * added new pipeline called fastqc to simply run fastqc + multiqc in parallel
+    * added laa pacbio pipeline
+    * multiqc modules: bamtools_stats and kraken module for the laa pipeline
+    * added test file and test for SIRVRerence class (partial fix of issue #504)
+    * added Makefile class in snaketools to help building pipeline
+    * added MultiKrakenResults class
+    * sequanix and snaketools now handle the presence of a multiqc_config 
+      file in the pipeline module
+    * add laa multiqc
+
+* BUGS:
+
+    * in quality_control when using the design file in cutadapt rule
+    * Fix multiqc report for pacbio_qc pipeline
+
+
+* CHANGES:
+
+    * adapters added: TruSeqCD, TruSeqUD, etc
+    * adapters removed: rubicon
+    * remove clean_ngs rule and code related to this software, not used in sequana
+
+* CHANGES for developers:
+
+    * adapters are now named NAME_fwd.fa instead of adapters_NAME_fwd. This
+      should not affect the user interface. Also, the index sequence stored in the
+      adapter files are now identical in the forward/reverse/revcomp versions
+      to simplify the code. We also added a script in ./resources/data/adapters
+      to create the rev and revcomp version automatically.
+    * add missing xlrd dependencies in requirements
+
+
 0.7.1
 ---------
 

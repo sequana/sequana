@@ -1,0 +1,978 @@
+import sequana
+from sequana import snaketools as sm
+from sequana import sequana_data
+
+sm.init("laa", globals())
+
+# This must be defined before the include
+configfile: "config.yaml"
+__snakefile__ = os.path.abspath(__snakefile__) + ".rules"
+
+
+# TEST to performed
+# set snpeff on True/False
+# set kraken on True/False   OK
+# set do_vcf_filter on/off
+
+
+exec(open(sequana.modules["dynamic_copy"], "r").read())
+
+
+M = sm.PipelineManagerGeneric("laa", config)
+
+# set reference alias
+reference = config["input"]["reference_file"]
+
+if len(M.ff) == 0:
+    logger.error("No files found.")
+    sys.exit(0)
+
+# CHECK the input type
+assert config['input']['data_type_choice'] in ['lima.ccs.fastq', 'lima.ccs.bam', 'subreads.bam']
+
+# Check the reference validity
+assert reference.endswith('.fa') or reference.endswith('.fasta'), \
+    "Reference must be a FASTA file ending in .fa or .fasta"
+
+
+do_snpeff = config['snpeff']['do']
+do_kraken = config['kraken']['do']
+do_freebayes = config["freebayes"]["do"]
+do_freebayes_vcf_filter =  config["freebayes_vcf_filter"]["do"]
+
+
+
+
+smrtlink_file = config['input']['smrtlink_report_file']
+if smrtlink_file:
+    if os.path.exists(smrtlink_file) is False:
+        raise IOError("File {} does not exist".format(smrtlink_file))
+    do_smrtlink_report = True
+else:
+    do_smrtlink_report = False
+
+
+
+
+# identify the pattern
+
+data_type = config['input']['data_type_choice']
+
+ccs2fastq = False
+
+if data_type == "lima.ccs.fastq":
+    for filename in M.ff.all_extensions:
+        if "--" not in filename:
+            raise ValueError("input file format must be lima_output.lbcXX--lbcXX.ccs.fastq")
+        sample = filename.split("--")[0]
+        if sample.startswith("lbc") is False:
+            raise ValueError("input file format must be lima_output.lbcXX--lbcXX.ccs.fastq")
+    samples = [sample.split('--')[0][3:] for sample in M.ff.all_extensions]
+elif data_type == "lima.ccs.bam":
+    for filename in M.ff.all_extensions:
+        if "--" not in filename:
+            raise ValueError("input file format must be lima_output.lbcXX--lbcXX.ccs.bam")
+        sample = filename.split("--")[0]
+        if sample.startswith("lbc") is False:
+            raise ValueError("input file format must be lima_output.lbcXX--lbcXX.ccs.bam")
+    samples = [sample.split('--')[0][3:] for sample in M.ff.all_extensions]
+    ccs2fastq = True
+elif data_type == "lima.subreads.bam":
+    raise NotImplementedError
+else:
+    raise ValueError("Input file type must be one of lima.ccs.fastq, lima.ccs.bam, subreads.bam")
+
+M.samples = {tag:fl for tag, fl in zip(samples, M.ff.realpaths)}
+
+
+expected_output = [
+    expand("{sample}/images/coverage.png", sample=samples),
+    "images/plot_ccs_histo.png",
+    "rulegraph/rulegraph.svg",
+    "multiqc_report.html",
+    expand("{sample}/remapping/mapping.sorted.bam",sample=samples),
+    "outputs/mapping_consensus/mapping.sorted.bam",
+    "outputs/raxml/RAxML_bipartitions.T3333",
+    ]
+
+if do_freebayes_vcf_filter:
+    expected_output.append(
+        expand("{sample}/report_variant/variant_calling.html", sample=samples)
+    )
+
+
+__phylogeny__output = "outputs/dendogram.png"
+expected_output.append(__phylogeny__output)
+
+
+# Do kraken analysis ?
+if do_kraken:
+   expected_output.append("images/proportion_kraken.png")
+
+
+if do_snpeff:
+    assert config['snpeff']['reference_file'].endswith('.gbk'), "genbank must end in .gbk"
+
+    __copy_genbank__input = config['snpeff']['reference_file']
+    __copy_genbank__output = "reference/" + os.path.basename(__copy_genbank__input)
+    include: dynamic_copy("genbank", M)
+    expected_output.append(__copy_genbank__output)
+
+
+
+if do_smrtlink_report:
+    expected_output.append("images/barcoding_subreads_histogram.png")
+
+    __copy_smrtlink__input = smrtlink_file
+    __copy_smrtlink__output = "inputs/" + os.path.basename(__copy_smrtlink__input)
+    include: dynamic_copy("smrtlink", M)
+    expected_output.append(__copy_smrtlink__output)
+
+
+# MUST BE ONE OF THE FIRST RULE ?
+rule pipeline:
+    input:  expected_output
+
+
+# Add Conda
+__conda__output = "inputs/requirements.txt"
+include: sm.modules['conda']   # Create requirements.txt(dependencies)
+
+
+__rawdata__input = M.getrawdata()
+
+
+laa = False
+if laa is True:
+    # Looks like the input is not a CCS file but a raw bam files after lima
+    # 6 mins on BC25 of project 812 so we use protected
+    rule laa:
+        input: PATH + "lima_output.lbc{sample}--lbc{sample}.bam"
+        output: protected("bc{sample}/amplicon_analysis_summary.csv"),
+        params:
+            directory="bc{sample}"
+        threads: 2
+        shell:
+            """
+            cd {params.directory}
+            laa --noPhasing --minLength 1000 -v --maxReads 2400  --numThreads={threads} {input}
+            """
+
+# PROJET 812
+BAMPATH = "/pasteur/projets/policy01/Biomics/PacBio/smrtlink/userdata/jobs_root/001/001336/tasks/barcoding.tasks.lima-0/"
+
+
+bam2ccs = False
+if bam2ccs:
+    rule bam2ccs:
+        input: BAMPATH + "lima_output.lbc{sample}--lbc{sample}.bam"
+        output: "bc{sample}/lima_output.lbc{sample}--lbc{sample}.ccs.bam"
+        params:
+            directory="bc{sample}"
+        threads: 8
+        shell:
+            """
+            #mkdir -p {params.directory}
+            #cd {params.directory}
+            ccs {input} {output} --numThreads {threads}
+            """
+
+
+# __mapping__input is made of a set of FASTQ
+
+if ccs2fastq:
+    __ccs2fastq__input = __rawdata__input
+    __ccs2fastq__output = "fastq/{sample}/data.fastq"
+    rule ccs2fastq:
+        input:  __ccs2fastq__input   # "bc{sample}/lima_output.lbc{sample}--lbc{sample}.ccs.bam"
+        output: __ccs2fastq__output # "bc{sample}/lima_output.lbc{sample}--lbc{sample}.ccs.fastq"
+        shell:
+            """
+            bioconvert bam2fastq {input} {output} --force
+            """
+    __mapping__input = __ccs2fastq__output
+    __sequana_kraken__input = __ccs2fastq__output
+else:
+    __mapping__input = __rawdata__input
+    __sequana_kraken__input = __rawdata__input
+
+
+rule fastq_stats:
+    input: __mapping__input
+    output: "{sample}/sequana_laa_{sample}.json"
+    run:
+        import json
+        from sequana import FastQ
+        f = FastQ(input[0])
+        N = len(f)
+        data = {"sample": output[0].split("/", 1)[0], "ccs_reads": N}
+        with open(output[0], "w") as fout:
+            json.dump(data, fout, indent=True, sort_keys=True)
+
+
+
+if do_snpeff:
+    __snpeff_add_locus_in_fasta__log = "common_logs/snpeff_add_locus_in_fasta.log"
+    __snpeff_add_locus_in_fasta__input = reference
+    __snpeff_add_locus_in_fasta__output = "reference/{0}".format(os.path.basename(reference))
+    include: sm.modules["snpeff_add_locus_in_fasta"]
+    reference = __snpeff_add_locus_in_fasta__output
+else:
+    # copy reference into ./reference
+    __copy_reference__input = config['input']['reference_file']
+    __copy_reference__output = "reference/" + os.path.basename(__copy_reference__input)
+    include: dynamic_copy("reference", M)
+    expected_output.append(__copy_reference__output)
+    reference = __copy_reference__output
+
+
+
+rule mapping:
+    # input data is fastq files. 
+    # If input is fastq, we can use the __rawdata__input variable that is
+    # a dictionary with {sample} wildcards, otherwise a simple wildcard, which
+    # is the output of ccs2fastq rule
+    input:
+        fastq=__mapping__input,
+        reference=reference
+    output:
+        sorted_bam = "{sample}/mapping/mapping.sorted.bam",
+        bam = temp("{sample}/mapping/mapping.bam"),
+        sam = temp("{sample}/mapping/mapping.sam"),
+    params:
+        reference = reference
+    log:
+        "{sample}/mapping/mapping.log"
+    threads: 4
+    shell:
+        """
+    minimap2 -x map-pb {input.reference} {input.fastq} -t {threads} -a 1> {output.sam} 2>{log}
+    bioconvert sam2bam {output.sam} {output.bam} --force
+    bamtools sort -in {output.bam} -out {output.sorted_bam}
+        """
+
+
+rule samtools_stats:
+    input: "{sample}/mapping/mapping.sorted.bam"
+    output: "{sample}/mapping/samtools_{sample}.txt"
+    shell:
+        "samtools stats -in {input} > {output}"
+
+
+rule bamtools_stats:
+    input: "{sample}/mapping/mapping.sorted.bam"
+    output: "{sample}/mapping/sequana_bamtools_stats_{sample}.txt"
+    shell:
+        "bamtools stats -in {input} > {output}"
+
+
+rule mapping_index:
+        input: "{sample}/mapping/mapping.sorted.bam"
+        output: "{sample}/mapping/mapping.sorted.bam.bai"
+        threads: 1
+        shell: "bamtools index -in {input}"
+
+
+if do_freebayes:
+    __freebayes__input = "{sample}/mapping/mapping.sorted.bam"
+    __freebayes__reference = reference
+    __freebayes__output = "{sample}/freebayes/variants.raw.vcf"
+    __freebayes__log = "{sample}/freebayes/freebayes.log"
+    include: sm.modules["freebayes"]
+
+
+if do_freebayes and do_snpeff:
+    __snpeff__input = __freebayes__output
+    __snpeff__output = "{sample}/snpeff/variants.ann.vcf"
+    __snpeff__html =   "{sample}/snpeff/snpeff.html"
+    __snpeff__log =    "{sample}/snpeff/snpeff.log"
+    # HERE is it important to include the sample in snpeff.csv file so that
+    # multiqc can differentiate the files from each other.
+    __snpeff__csv =    "{sample}/snpeff/{sample}.snpeff.csv"
+    include: sm.modules["snpeff"]
+    __freebayes_vcf_filter__input = __snpeff__output
+elif do_freebayes:
+    __freebayes_vcf_filter__input = __freebayes__output
+
+
+
+if do_freebayes and do_freebayes_vcf_filter:
+    # __freebayes_vcf_filter__input defined above in the do_snpeff switch
+    __freebayes_vcf_filter__output = "{sample}/freebayes/variants.filtered.vcf"
+    __freebayes_vcf_filter__csv = "{sample}/freebayes/variants.filtered.csv"
+    __freebayes_vcf_filter__report_dir = "{sample}/report_variant"
+    __freebayes_vcf_filter__html =  "{sample}/report_variant/variant_calling.html"
+    include: sm.modules["freebayes_vcf_filter"]
+
+
+rule igv_bases:
+    # an alternative but that gives only the consensus
+    # samtools mpileup -R -B -f ../../reference/CCR5_whole_locus.fasta
+    # mapping.sorted.bam > out
+    #
+    input: "{sample}/mapping/mapping.sorted.bam.bai"
+    output: "{sample}/igvtools/bases.txt"
+    params:
+        reference = reference
+    log: "{sample}/igvtools/coverage.log"
+    run:
+        input = input[0].replace(".bai", "")
+        cmd = "igvtools count {input} stdout {params.reference} -w 1 --bases 1> {output} 2>{log}"
+        shell(cmd)
+
+
+rule igv_count:
+    input: "{sample}/mapping/mapping.sorted.bam.bai"
+    output: "{sample}/igvtools/coverage.txt"
+    params:
+        reference = reference
+    log: "{sample}/igvtools/coverage.log"
+    run:
+        input = input[0].replace(".bai", "")
+        cmd = "igvtools count {input} stdout {params.reference} -w 1 > {output} 2>{log}"
+        shell(cmd)
+
+
+rule coverage:
+    input: "{sample}/igvtools/coverage.txt"
+    output: "{sample}/images/coverage.png"
+    run:
+        from pylab import savefig, ylim, xlabel
+        import pandas as pd
+        df  = pd.read_csv(input[0], skiprows=2, sep="\t", index_col=0, header=None)
+        df.plot(legend=False)
+        ylim([0, max(ylim())])
+        xlabel("position", fontsize=16)
+        savefig(output[0], dpi=150)
+
+"""  DOES NOT WORK when using snakemake in the rulegraph/ directory
+# TODO merge with sequana/rulegraph
+__rulegraph__input = __snakefile__
+__rulegraph__output="rulegraph/rulegraph.svg"
+__rulegraph__mapper = {
+    "kraken": "../kraken/kraken.html",
+}
+include: sm.modules['rulegraph']
+#expected_output.extend([__rulegraph__output])
+"""
+
+
+__rulegraph__output="rulegraph/rulegraph.svg"
+rule rulegraph:
+    input: __snakefile__.replace("rulegraph/", "")
+    output:
+        svg = __rulegraph__output,
+        dot = temp("rg.dot"),
+        dot2 = temp("rg.ann.dot"),
+    run:
+        import os
+        cwd = os.getcwd()
+        from sequana import SequanaConfig, DOTParser
+        from subprocess import Popen
+
+        cmd = "snakemake -s {} --rulegraph --nolock ".format(input[0])
+        # There is an error message caught by the PIPE
+        with open("rg.dot", "w") as fl:
+            p = Popen(cmd.split(), stdout=fl, stderr=subprocess.PIPE)
+            p.wait()
+        d = DOTParser(cwd + os.sep + output.dot)
+        d.add_urls(mapper={
+            #"sequana_kraken": "kraken.html",
+            #"create_proportion_plot_kraken": "images/proportion_kraken.png",
+            #"plot_ccs_histo": "images/plot_ccs_histo.png"
+        })
+        shell("dot -Tsvg {} -o {}".format(output.dot2, output.svg))
+
+
+if do_snpeff:
+    __multiqc__input = (
+        expand("{sample}/snpeff/{sample}.snpeff.csv", sample=samples),
+        expand("{sample}/mapping/samtools_{sample}.txt", sample=samples),
+        expand("{sample}/mapping/sequana_bamtools_stats_{sample}.txt", sample=samples),
+        expand("{sample}/sequana_laa_{sample}.json", sample=samples))
+else:
+    __multiqc__input = (
+        expand("{sample}/mapping/samtools_{sample}.txt", sample=samples),
+        expand("{sample}/mapping/sequana_bamtools_stats_{sample}.txt", sample=samples),
+        expand("{sample}/sequana_laa_{sample}.json", sample=samples))
+
+rule multiqc:
+    input:
+        __multiqc__input
+    output: "multiqc_report.html"
+    params:
+        config=sequana_data("multiqc_config.yaml", "../multiqc")
+    run:
+        # we use a subprocess instead of using shell() to catch the
+        # recurrent errors due to matplotlib warning
+        # samtools multiqc module was buggy and not fitting our needs.
+        # bamtoools module was also not rendering properly. We implemented
+        # our own module within sequana.
+        modules = " -m sequana_bamtools_stats -m sequana_laa "
+        if do_kraken:
+            modules += " -m sequana_kraken "
+        if do_snpeff:
+            modules += " -m snpeff "
+        from subprocess import Popen
+        cmd = "multiqc . -f {} -c {}".format(modules, params.config)
+        process = Popen(cmd.split(), stderr=subprocess.PIPE, stdout=subprocess.PIPE)
+        process.wait()
+
+
+if do_kraken:
+    rule create_proportion_plot_kraken:
+        input: expand("{sample}/taxonomy/kraken/kraken.csv", sample=sorted(samples))
+        output:
+            image="images/proportion_kraken.png",
+            data="outputs/sequana_kraken_summary.json"
+        run:
+            from sequana.kraken import MultiKrakenResults
+            k = MultiKrakenResults(input, sample_names=sorted(samples))
+            fontsize = 12
+            if len(input) > 30:
+                fontsize = 10
+            elif len(input)> 50:
+                fontsize = 8
+            k.plot_stacked_hist(output.image, dpi=200, ytick_fontsize=fontsize)
+
+            import json
+            with open(output.data, "w") as fout:
+                json.dump(k.get_df().to_dict(), fout, indent=True, sort_keys=True)
+
+if do_freebayes:
+    __consensus__input_bases = "{sample}/igvtools/bases.txt"
+    __consensus__input_freebayes = "{sample}/freebayes/variants.raw.vcf"
+else:
+    __consensus__input_bases = "{sample}/igvtools/bases.txt"
+    __consensus__input_freebayes = None
+
+
+rule consensus:
+    """
+
+
+    If coverage is null, igvtools skip the rows. For instance, if pos 3 and 4 
+    are not covered, you end up with this kind of results
+
+    pos A  C G T 
+    1   10 0 0 0
+    2   10 0 0 0
+    5   10 0 0 0
+    6   10 0 0 0
+
+    At position 3 and 4 there is no data to parse, so the consensus will not have those
+    entries.
+
+    Another issue is the mix of highly covered regions vs low covered regions.
+    For instance if the coverage is about 1000 and there is a region covered by 1 read only (coverage of 1X), this could be a chimera or artefact. We therefore set a minimal depth coverage below whihc data is removed.
+
+    pos A  C G T 
+    1   0 0 0 1000
+    2   0 0 0 1000
+    3   0 0 0 5
+    4   0 0 0 1000
+
+    becomes
+
+    pos A  C G T 
+    1   0 0 0 1000
+    2   0 0 0 1000
+    4   0 0 0 1000
+
+    At position 3 there is no data to parse, so the consensus will not have that position
+
+
+
+    """
+    input:
+        bases = __consensus__input_bases,
+        freebayes = __consensus__input_freebayes
+    output:
+        consensus = "{sample}/consensus/consensus.fa",
+        population = "{sample}/consensus/population.csv"
+    params:
+        min_depth = 10
+    run:
+        from sequana.laa import Consensus
+        c = Consensus(input.bases, input.freebayes)
+        c.min_depth = params.min_depth
+
+        # save the consensus including deletion if identified in the VCF file
+        sample_name = input[0].split("/")[0]
+        c.save_consensus(output.consensus, sample_name)
+
+        # save list of SNPs with at least 2 different nucleotides
+        selection = c.get_population(threshold=0.1, Npop=2)
+        selection.to_csv(output.population)
+
+
+rule mafft:
+    """Aligning the sequences using MAFFT. 
+
+    """
+    input:
+        reference= reference,
+        fasta="outputs/allfasta.fa"
+    output:
+        aln="outputs/mafft/mafft.aln.fa"
+    threads: 2
+    shell:
+        """
+        mafft --thread {threads} --retree 1 --maxiterate 0 --add {input.fasta} \
+        --keeplength {input.reference} > {output.aln}
+        """
+
+
+rule raxml_mltree:
+    """Estimating trees with RAxML
+
+    -p seed for parsimony
+    -b turn on bootstrapping
+    -N number of bootstrap
+
+    First, we build 20 ML trees on distinct starting trees and also print 
+    the best likelihood in bestTree.T1::
+
+        raxmlHPC -m GTRGAMMA -p 12345 -N 20 -s aln.fa -n T1
+
+    This will generate 20 trees T1.RUN.X X=1..20 and one bestree.T1
+
+
+    reference: https://cme.h-its.org/exelixis/web/software/raxml/hands_on.html
+
+    """
+    input:
+        aln = "outputs/mafft/mafft.aln.fa"
+    output:
+        tree = "outputs/raxml/RAxML_bestTree.T1111",
+        log = "outputs/raxml/raxml_parcimony.log",
+    threads: 4
+    params:
+        N=config['raxml_mltree']['N'],
+        options=config['raxml_mltree']['options']
+    run:
+        # First, let us get a best likelihood tree from 20 ML trees
+        shell("mkdir -p outputs/raxml")
+        shell("rm -f outputs/raxml/*T1111*")
+
+        cmd = "raxmlHPC-PTHREADS -m GTRGAMMA -s {}".format(input.aln)
+        cmd += " -p 12345 "
+        cmd += " -T {} ".format(threads)
+        cmd += " -w {}".format(os.path.abspath("outputs/raxml"))
+        cmd += " -N {}".format(params.N)
+        cmd += " -n T1111 1>{}".format(output.log)
+
+        shell(cmd)
+
+
+rule raxml_bootstrap:
+    """
+    If we want to do bootstrapinp, we need to use the -b option (seed)::
+
+        raxmlHPC -m GTRGAMMA -p 12345 -b 12345 -N 100 -s aln.fa -n T2
+
+    the bootstrap replicate trees is printed to a file called RAxML_bootstrap.T2
+    """
+
+
+    input:
+        aln = "outputs/mafft/mafft.aln.fa"
+    output:
+        tree = "outputs/raxml/RAxML_bootstrap.T2222",
+        #log = "outputs/raxml/raxml_bootstrap.log",
+    threads: 4
+    params:
+        N=config['raxml_bootstrap']['N'],
+        options=config['raxml_bootstrap']['options']
+    run:
+
+        shell("mkdir -p outputs/raxml")
+        shell("rm -f outputs/raxml/*T2222*")
+
+        cmd = "raxmlHPC-PTHREADS -m GTRGAMMA -s {}".format(input.aln)
+        cmd += " -p 12345 "
+        cmd += " -b 12345 "
+        cmd += " -T {} ".format(threads)
+        cmd += " -w {}".format(os.path.abspath("outputs/raxml"))
+        cmd += " -N {}".format(params.N)
+        cmd += " -n T2222 " # 1>{}".format(output.log)
+        shell(cmd)
+
+
+rule raxml_bipartitions:
+    """we can now use them to draw bipartitions on the best ML tree as follows:
+
+        raxmlHPC -m GTRCAT -p 12345 -f b -t RAxML_bestTree.T1 -z RAxML_bootstrap.T2 -n T3
+
+    This call will produce to output files that can be visualized with Dendroscope:
+    RAxML_bipartitions.T15 (support values assigned to nodes) and RAxML_bipartitionsBranchLabels.T15 (support values assigned to branches of the tree). Note that, for unrooted trees the correct representation is actually the one with support values assigned to branches and not nodes of the tree!
+
+    """
+    input:
+        best="outputs/raxml/RAxML_bestTree.T1111",
+        boot="outputs/raxml/RAxML_bootstrap.T2222"
+    output:
+        parti="outputs/raxml/RAxML_bipartitions.T3333",
+        #log = "outputs/raxml/raxml_partitions.log"
+    threads: 1
+    run:
+        # no need for threading
+        shell("mkdir -p outputs/raxml")
+        shell("rm -f outputs/raxml/*T3333*")
+
+        cmd = "raxmlHPC -m GTRCAT -f b "
+        cmd += " -p 12345 "
+        cmd += " -w {}".format(os.path.abspath("outputs/raxml"))
+        cmd += " -t {}".format(input.best)
+        cmd += " -z {}".format(input.boot)
+        cmd += " -n T3333 "  # 1>{} ".format(output.log)
+
+        shell(cmd)
+
+
+rule itol:
+    """
+        https://github.com/albertyw/itolapi
+
+    """
+    input:
+        best="outputs/raxml/RAxML_bestTree.T1111",
+        boot="outputs/raxml/RAxML_bootstrap.T2222"
+    output:
+        png="outputs/dendogram.png",
+        svg="outputs/dendogram.svg",
+        pdf="outputs/dendogram.pdf"
+    run:
+        shell("mkdir -p outputs/itol")
+        shell("cp {} {}".format(input.best, "outputs/itol/tree_of_life.tree.txt"))
+
+        from sequana import ITOL
+        
+        itol = ITOL("outputs/itol/tree_of_life.tree.txt")
+        itol.params['treeName'] = "amplicon"
+        itol.upload()
+
+        itol.params['display_mode'] = 2
+        itol.params['ignore_branch_length'] = 1
+        itol.params['line_width'] = 5
+        itol.params['bootstrap_display'] = 1
+        itol.params['bootstrap_type'] = 4
+        itol.params['bootstrap_label_size'] = 32
+
+        itol.export(output.png)
+        itol.export(output.svg)
+        itol.export(output.pdf)
+
+
+rule mapping_consensus:
+    input: 
+        reference=reference,
+        consensus="outputs/allfasta.fa"
+    output:
+        sorted_bam = "outputs/mapping_consensus/mapping.sorted.bam",
+        sorted_bam_index = "outputs/mapping_consensus/mapping.sorted.bam.bai",
+        bam = temp("outputs/mapping_consensus/mapping.bam"),
+        sam = temp("outputs/mapping_consensus/mapping.sam")
+    threads: 4
+    log: "outputs/mapping_consensus/mapping.log"
+    shell:
+        """
+        minimap2 -x map-pb {input.reference} {input.consensus} -t {threads} -a 1> {output.sam} 2>{log}
+        bioconvert sam2bam {output.sam} {output.bam} --force
+        bamtools sort -in {output.bam} -out {output.sorted_bam}
+        bamtools index -in {output.sorted_bam}
+        """
+
+
+rule remapping:
+    """Remapp the consensus genomes onto the reference"""
+
+    input: 
+        reference="{sample}/consensus/consensus.fa",
+        fastq=__mapping__input
+    output: 
+        sorted_bam = "{sample}/remapping/mapping.sorted.bam",
+        sorted_bam_index = "{sample}/remapping/mapping.sorted.bam.bai",
+        bam = temp("{sample}/remapping/mapping.bam"),
+        sam = temp("{sample}/remapping/mapping.sam")
+    threads: 4
+    log: "{sample}/mapping/mapping.log"
+    shell:
+        """
+        #bamtools index -in {input.reference}
+        minimap2 -x map-pb {input.reference} {input.fastq} -t {threads} -a 1> {output.sam} 2>{log}
+        bioconvert sam2bam {output.sam} {output.bam} --force
+        bamtools sort -in {output.bam} -out {output.sorted_bam}
+        bamtools index -in {output.sorted_bam}
+        """
+
+
+rule build_fasta:
+    input: expand("{sample}/consensus/consensus.fa", sample=sorted(samples))
+    output: "outputs/allfasta.fa"
+    shell: "cat {input} > {output}"
+
+
+if do_kraken:
+    rule sequana_kraken:
+        #input: lambda wildcards: M.samples[wildcards.sample]
+        input: __sequana_kraken__input
+        output:
+            html="{sample}/taxonomy/summary.html",
+            csv= "{sample}/taxonomy/kraken/kraken.csv"
+        threads: 4
+        run:
+            #print(input)
+            outdir = output.html.split("/",1)[0]
+            cmd = "sequana_taxonomy --file1 {} "
+            cmd += " --output-directory {}/taxonomy "
+            cmd += " --thread {} --databases "
+            cmd = cmd.format(input[0], outdir, threads)
+            for this in config['kraken']['databases']:
+                assert os.path.exists(this), "databases {} does not exits".format(this)
+                cmd += " {} ".format(this)
+            shell(cmd)
+
+
+rule plot_ccs_histo:
+    input: M.ff.realpaths
+    output: "images/plot_ccs_histo.png"
+    run:
+        from sequana import FastQ
+        data = [len(FastQ(filename)) for filename in input]
+        from pylab import plot, hist, savefig, xlabel
+        hist(data, bins=10, lw=1, edgecolor="k")
+        xlabel("Number of reads (in CCS bam file) per bar code", fontsize=16)
+        savefig(output[0], dpi=150)
+
+
+if do_smrtlink_report:
+    rule barcoding:
+        input: __copy_smrtlink__output
+        output:
+            "images/barcoding_subreads_histogram.png",
+            "images/barcoding_hist_polymerase_per_barcode.png",
+            "images/barcoding_hist_quality_per_barcode.png",
+            "images/barcoding_hist_mean_polymerase_read_length.png",
+            "images/barcoding_polymerase_per_barcode.png"
+        run:
+            from sequana.pacbio import Barcoding
+            bc = Barcoding(input[0])
+            import pylab
+
+            def savefile(filename):
+                pylab.savefig("images/" + filename, dpi=200)
+
+            pylab.clf()
+            bc.hist_polymerase_per_barcode()
+            savefile("barcoding_hist_polymerase_per_barcode.png")
+
+            pylab.clf()
+            bc.hist_quality_per_barcode()
+            savefile("barcoding_hist_quality_per_barcode.png")
+
+            pylab.clf()
+            bc.hist_mean_polymerase_read_length()
+            savefile("barcoding_hist_mean_polymerase_read_length.png")
+
+            pylab.clf()
+            bc.plot_polymerase_per_barcode(unbarcoded=False)
+            savefile("barcoding_polymerase_per_barcode.png")
+
+            pylab.clf()
+            bc.plot_subreads_histogram()
+            savefile("barcoding_subreads_histogram.png")
+
+
+if do_snpeff:
+    localrules: conda, smrtlink, genbank, reference, itol
+else:
+    localrules: conda, smrtlink, reference, itol
+
+
+onsuccess:
+
+    shell("rm -f igv.log")
+    from sequana.modules_report.summary import SummaryModule
+    from sequana.modules_report.kraken import KrakenModule
+
+
+    intro = """
+      <h2>Amplicon Analysis Summary.</h2> <br>
+      <br><b>Number of samples:</b> {} </br>
+      <b> MultiQC report: </b> <a href="multiqc_report.html">multiqc report.</a> This multiqc report contains comparative analysis for the different analysis performed by the pipeline including the snpeff, raw reads information (e.g. number of CCS reads in each barcode), taxonomic analysis, variant calling (using freebayes) and some mapping statistics. 
+
+Here below you can find all individual links to HTML reports for each sample for snpeff, kraken and freebayes analysis.
+
+
+
+ <h2>Directory Tree (for one sample, here named 25)</h2><p>
+
+  Each barcode (sample) is analysed and the corresponding results are stored in a 
+  tree structure similar to this one (summary):
+
+ <a href=".">.</a><br>
+ ├── <a href="./25/">25</a><br>
+ │   ├── <a href="./25/consensus/">consensus</a><br>
+ │   │   └── <a href="./25/consensus/consensus.fa">consensus.fa</a><br>
+ │   │   └── <a href="./25/consensus/consensus.fa">population.csv</a><br>
+ │   ├── <a href="./25/freebayes/">freebayes</a><br>
+ │   │   ├── <a href="./25/freebayes/variants.filtered.vcf">variants.filtered.vcf</a><br>
+ │   │   └── <a href="./25/freebayes/variants.raw.vcf">variants.raw.vcf</a><br>
+ │   ├── <a href="./25/images/">images</a><br>
+ │   │   └── <a href="./25/images/coverage.png">coverage.png</a><br>
+ │   ├── <a href="./25/mapping/">mapping</a><br>
+ │   │   ├── <a href="./25/mapping/mapping.sorted.bam">mapping.sorted.bam</a><br>
+ │   │   ├── <a href="./25/mapping/mapping.sorted.bam.bai">mapping.sorted.bam.bai</a><br>
+ │   │   ├── <a href="./25/mapping/samtools_25.txt">samtools_25.txt</a><br>
+ │   │   └── <a href="./25/mapping/sequana_bamtools_stats_25.txt">sequana_bamtools_stats_25.txt</a><br>
+ │   ├── <a href="./25/report_variant/">report_variant</a><br>
+ │   │   └── <a href="./25/report_variant/variant_calling.html">variant_calling.html</a><br>
+ │   ├── <a href="./25/remapping/">remapping</a><br>
+ │   │   ├── <a href="./25/remapping/mapping.sorted.bam">mapping.sorted.bam</a><br>
+ │   │   ├── <a href="./25/remapping/mapping.sorted.bam.bai">mapping.sorted.bam.bai</a><br>
+ │   ├── <a href="./25/snpeff/">snpeff</a><br>
+ │   │   ├── <a href="./25/snpeff/25.snpeff.csv">25.snpeff.csv</a><br>
+ │   │   ├── <a href="./25/snpeff/25.snpeff.genes.txt">25.snpeff.genes.txt</a><br>
+ │   │   ├── <a href="./25/snpeff/snpeff.html">snpeff.html</a><br>
+ │   │   └── <a href="./25/snpeff/variants.ann.vcf">variants.ann.vcf</a><br>
+ │   └── <a href="./25/taxonomy/">taxonomy</a><br>
+ │   &nbsp;&nbsp;&nbsp; └── <a href="./25/taxonomy/summary.html">summary.html</a><br>
+ <br><br>
+
+<p>
+<ul>
+
+<li>The consensus directory contains a consensus.fa file created as follows. Based on the mapping.sorted.bam file to be found in ./mapping, we extract the nucleotides proportions (including deletions and insertions) -- using igvtool -- and keep at each position the nucleotide that is most present. If it is a deletion, it is ignored. Be aware that if a nucleotide is represented by two nucleotides is the same proportion (e.g.; 49/51%) then only one is kept (the one present in 51% of the case). Similarly, if there are 3 or 4 populations leading to a nucleotide supported by e.g. only 30% of the reads. To keep track of this information, we create a second file called <i>population.csv</i>. It contains all positions where there are at least 2 nuleotides supported by 10% of the reads.
+</li>
+
+<li>
+In the freebayes directory, we store the variants in VCF format, which were created by freebayes. We keep the raw data with all variants including non significant calls. We then stored a filtered versio in <i>variants.filtered.vcf</i>.
+</li>
+
+<li>The images directory contains an image showing the coverage along the reference. </li>
+
+<li>The mapping directory contains the mapped reads on the reference. It is a BAM file format and can be visualised in tools such as IGV. It contains the indexed file required by IGV. The reference is stored in the main directoy (see later) In this directory, we also store some files with statistics on the BAM file.
+</li>
+
+<li>The report_variant directory contains a convenient HTML report for variant, which is produced with sequana tools. It uses the filtered VCF file as input, which can be furthered introspect.
+</li>
+
+<li>The <i>remapping</i> directory contains the mapped reads in BAM format on the consensus.</li>
+
+<li>The report_variant directory contains a convenient HTML report for variant, which is produced with sequana tools. It uses the filtered VCF file as input, which can be furthered introspect.
+
+<li>
+The snpeff directory contains snpeff results and its HTML report.
+</li>
+
+<li>
+The taxonomy directory contains results about the taxonomic analysis based on kraken and sequana report.
+</li>
+
+
+</ul>
+
+<p>
+
+
+
+</p>
+
+ <h2>Common directory Tree </h2><p>
+
+The common directory contains final results or files required to redo the analysis.
+
+
+<p>
+ ├── <a href="./multiqc_report.html">multiqc_report.html</a><br>
+ ├── <a href="./outputs/">outputs</a><br>
+ │   ├── <a href="./outputs/allfasta.fa">allfasta.fa</a><br>
+ │   ├── <a href="./outputs/dendogram.png">dendogram</a><br>
+ │   ├── <a href="./outputs/raxml/">raxml </a><br>
+ │   ├── <a href="./outputs/itol/">itol</a><br>
+ │   ├── <a href="./outputs/sequana_kraken_summary.json">sequana_kraken_summary.json</a><br>
+ ├── <a href="./reference/">reference</a><br>
+ │   ├── <a href="./reference/AB038249.fa">AB038249.fa</a><br>
+ │   └── <a href="./reference/AB038249.gbk">AB038249.gbk</a><br>
+ ├── <a href="./summary.html">summary.html</a><br>
+</p>
+<p>At the root directory level you can find a multiqc report in HTML format, a directory called outputs that contains the concatentation of all consensus genome together (allfasta.fa) with a phylogenetic analyses stored in raxml firectory. The reference used is stored in ./reference with the genbank if provided. Finally, you can find this summary HTML page (summary.html).</p>
+
+
+      </p>
+        <h2>Statistics</h2>
+        <p>Number of CCS reads per barcode</p>
+      <img src="images/plot_ccs_histo.png"></img>
+        """
+
+    if do_smrtlink_report:
+        intro +="""
+            <div style="width=50%">
+                <img src="images/barcoding_subreads_histogram.png">
+                <img src="images/barcoding_hist_polymerase_per_barcode.png">
+                <img src="images/barcoding_hist_quality_per_barcode.png">
+                <img src="images/barcoding_hist_mean_polymerase_read_length.png">
+                <img src="images/barcoding_polymerase_per_barcode.png">
+            </div>
+        """
+
+    if do_kraken:
+        intro += """<h2>Kraken analysis</h2>
+      <p>Proportion of reads in virus, bacteria, human and unclassified categories:</p>
+      <img src="images/proportion_kraken.png"></img><br>
+        """
+        for sample in sorted(samples):
+            intro += """<a href="{}/taxonomy/summary.html">{}/kraken</a><br>""".format(sample, sample)
+
+
+    if do_snpeff:
+        intro += """<div><h2>SNP annotations</h2><p>Here below are links to
+SNPEff reports and variant calling reports. For a snpeff summary, please see
+this <a href="multiqc_report.html">multiqc report.</a></p>
+        """
+        for sample in sorted(samples):
+            intro += """<a href="{}/snpeff/snpeff.html">{}/snpeff.html</a><br>""".format(sample, sample)
+        intro += "</div>"
+
+    else:
+        intro +="""<p>No SNPEFF report available (was not required). Please see variant reports instead</p></div>"""
+
+    intro += "<div><h2>Variant reports</h2>"
+    for sample in sorted(samples):
+        intro += """<a href="{}/report_variant/variant_calling.html">{}/variant report</a><br>""".format(sample, sample)
+
+    intro += "<div><h2>Phylogeny</h2><img src={}></img></div>".format(__phylogeny__output)
+
+
+    intro = intro.format(len(M.ff))
+
+    data = {"inputs":None, "outputs":None, "html":None, "snakefile": __snakefile__,
+          "config": "config.yaml", "stats": "stats.txt", "rulegraph": __rulegraph__output,
+          "requirements": "inputs/requirements.txt"}
+
+    s = SummaryModule(data, intro=intro)
+
+    if do_kraken:
+        from sequana.utils import config as conf
+        for sample in sorted(samples):
+            sample_summary = {}
+
+            conf.summary_sections = []
+            conf.output_dir = "{}".format(sample)
+
+            k = KrakenModule( sample + "/taxonomy/kraken")
+            sample_summary['kraken_json'] = json.loads(k._get_stats().to_json())
+            conf.summary_sections.append({
+                "name": "Kraken ",
+                "anchor'": "kraken",
+                "content": k._get_summary_section()
+            })
+
+
+    from sequana.snaketools import Makefile, OnSuccess
+    sm.OnSuccess()
+
+onerror:
+    print("An error occurred. See messages above.")
+

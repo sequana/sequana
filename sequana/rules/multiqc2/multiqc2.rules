@@ -1,0 +1,41 @@
+rule multiqc2:
+    """
+    MultiQC aggregates results from bioinformatics analyses across many
+    samples into a single report.
+
+    It searches a given directory for analysis logs and compiles a HTML
+    report. It's a general use tool, perfect for summarising the output from
+    numerous bioinformatics tools.
+
+    :reference: http://multiqc.info/
+
+    Required output:
+        __multiqc__output: multiqc_report.html in the input directory
+
+    Config:
+
+        .. code-block:: yaml
+
+            multiqc:
+                options: "-c multiqc_config.yaml -f -x *.zip -e htseq" #any options recognised by multiqc
+                output-directory:  " " #name of the output directory where to write results
+
+    :note: if the directory exists, it is overwritten
+    """
+    input:
+        __multiqc2__input
+    log:
+        __multiqc2__logs
+    output:
+        __multiqc2__output
+    params:
+        indir = __multiqc2__indir,
+        outdir   = __multiqc2__outdir,
+        options = config['multiqc']['options'],
+        config = __multiqc2__config,
+        modules = __multiqc2__modules
+    shell:
+        """
+        multiqc {params.indir} -f {params.options} {params.modules} -o {params.outdir} -c {params.config} 2> {log}
+        """
+

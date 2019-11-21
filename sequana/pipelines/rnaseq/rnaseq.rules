@@ -18,8 +18,13 @@ __snakefile__ = srcdir(__snakefile__)
 # Generic include of some dynamic modules
 exec(open(sequana.modules["bowtie1_mapping_dynamic"], "r").read())
 exec(open(sequana.modules["bowtie1_index_dynamic"], "r").read())
+exec(open(sequana.modules["bowtie2_mapping_dynamic"], "r").read())
+exec(open(sequana.modules["bowtie2_index_dynamic"], "r").read())
 exec(open(sequana.modules["fastqc_dynamic"], "r").read())
 exec(open(sequana.modules["dynamic_unpigz"], "r").read())
+exec(open(sequana.modules["mark_duplicates_dynamic"], "r").read())
+
+
 
 manager = sm.PipelineManager("rnaseq", config)
 
@@ -65,11 +70,11 @@ if manager.config.genome.do:
 
 
     # indexing for bowtie2
-    __bowtie2_index__fasta = config["genome"]["fasta_file"]
-    __bowtie2_index__output_done = __prefix_name__ + ".1.bt2"
-    __bowtie2_index__output_prefix = __prefix_name__
-    __bowtie2_index__log = "logs/indexing/bowtie2_genome.log"
-    include: sm.modules["bowtie2_index"]
+    __bowtie2_index_ref__fasta = config["genome"]["fasta_file"]
+    __bowtie2_index_ref__output_done = __prefix_name__ + ".1.bt2"
+    __bowtie2_index_ref__output_prefix = __prefix_name__
+    __bowtie2_index_ref__log = "logs/indexing/bowtie2_genome.log"
+    include: bowtie2_index_dynamic("ref")
 
     # indexing for star
     __star_index__fasta = config["genome"]["fasta_file"]
@@ -80,18 +85,18 @@ if manager.config.genome.do:
 
     #output index
     __star_dir__ = __star_index__output_dir
-    __bowtie2_index__ = __bowtie2_index__output_prefix
+    __bowtie2_index__ = __bowtie2_index_ref__output_prefix
     __bowtie1_index__ = __bowtie1_index_ref__output_prefix
     __RNA_index__ = __bowtie1_index_rna__output_prefix
     __sequence_dictionary__ = __create_sequence_dictionary__output
     expected_output.extend([__create_sequence_dictionary__output,__bowtie1_index_ref__output_done,
-                            __bowtie1_index_rna__output_done,__bowtie2_index__output_done,__star_index__output_done])
+                            __bowtie1_index_rna__output_done,__bowtie2_index_ref__output_done,__star_index__output_done])
 
 else:
     __star_dir__ = config["genome"]["genome_directory"]
     __star_index__output_done = config["genome"]["genome_directory"] +  "/SAindex"
     __bowtie2_index__ =__prefix_name__
-    __bowtie2_index__output_done = __prefix_name__ + ".1.bt2"
+    __bowtie2_index_ref__output_done = __prefix_name__ + ".1.bt2"
     __bowtie1_index__ = __prefix_name__
     __bowtie1_index_ref__output_done = __prefix_name__+ ".1.ebwt"
     __RNA_index__ = __prefix_name__ + "_rRNA"
@@ -252,6 +257,24 @@ if manager.config.bowtie1_mapping_ref.do:
     include: bowtie1_mapping_dynamic("ref", manager)
     expected_output.extend(expand(__bowtie1_mapping_ref__sort, sample=manager.samples))
     __mapping_output = __bowtie1_mapping_ref__sort
+
+
+if manager.config.bowtie2_mapping.do:
+
+    # mapping on ref
+    __bowtie2_mapping_ref__input = __clean_ngs__output
+    __bowtie2_mapping_ref__index_done = __bowtie2_index_ref__output_done
+    __bowtie2_mapping_ref__sort = manager.getname("bowtie2_mapping_ref", ".sorted.bam")
+    __bowtie2_mapping_ref__bam = manager.getname("bowtie2_mapping_ref", ".bam")
+    __bowtie2_mapping_ref__logs_err = manager.getname("bowtie2_mapping_ref", ".err")
+    __bowtie2_mapping_ref__logs_out = manager.getname("bowtie2_mapping_ref", ".out")
+    __bowtie2_mapping_ref__options = config["bowtie2_mapping"]["options"]
+    __bowtie2_mapping_ref__prefix_index = __bowtie2_index__
+    include: bowtie2_mapping_dynamic("ref", manager)
+    expected_output.extend(expand(__bowtie2_mapping_ref__sort, sample=manager.samples))
+    __mapping_output = __bowtie2_mapping_ref__sort
+
+
 if manager.config.star_mapping.do:
     # Mapper rna-star
     __star_mapping__input = __clean_ngs__output
@@ -284,23 +307,25 @@ else :
     include: sm.modules["igvtools"]
     #expected_output.extend(expand(__igvtools__output, sample=manager.samples))
 
+
 # Feature counts from subread suite
 if manager.config.star_mapping.do:
     __feature_counts__input = __star_mapping__sort
 else :
     __feature_counts__input = __mapping_output
 if manager.config.feature_counts.do:
-	__feature_counts__output_count = manager.getname("feature_counts", "_feature.out")
-	__feature_counts__gff = config["genome"]["gff_file"]
-	__feature_counts__output_gene_count = manager.getname("feature_counts", "_count.out")
-	__feature_counts__log = manager.getname("feature_counts", ".logs")
-	include: sm.modules["feature_counts"]
-	expected_output.extend(expand(__feature_counts__output_gene_count, sample=manager.samples))
+    __feature_counts__output_count = manager.getname("feature_counts", "_feature.out")
+    __feature_counts__gff = config["genome"]["gff_file"]
+    __feature_counts__options = config['feature_counts']["options"]
+    __feature_counts__log = manager.getname("feature_counts", ".logs")
+    __feature_counts__threads = config["feature_counts"]["threads"]
+    include: sm.modules["feature_counts"]
+    expected_output.extend(expand(__feature_counts__output_count, sample=manager.samples))
 
 
 # Add Read group on BAM files
 __add_read_group__input = __mapping_output
-__add_read_group__output = manager.getname("add_read_group/", ".bam")
+__add_read_group__output = manager.getname("add_read_group", ".bam")
 __add_read_group__log_err = "%s/logs/AddOrReplaceReadGroups/stderr.logs" % manager.sample
 __add_read_group__log_std ="%s/logs/AddOrReplaceReadGroups/stdout.logs" % manager.sample
 __add_read_group__rg = "ID=%s LB=%s PL=%s PU=%s SM=%s" % (
@@ -312,21 +337,22 @@ include: sm.modules["add_read_group"]
 
 # Mark duplicates
 if config["mark_duplicates"]["do"]:
-    __mark_duplicates__input = __add_read_group__output
-    __mark_duplicates__output = manager.getname("mark_duplicates", ".bam")
-    __mark_duplicates__metrics = manager.getname("mark_duplicates", ".metrics")
-    __mark_duplicates__log_std = "%s/logs/mark_duplicates/stdout.logs" % manager.sample
-    __mark_duplicates__log_err =  "%s/logs/mark_duplicates/stderr.logs" % manager.sample
-    include: sm.modules["mark_duplicates"]
-    expected_output.extend(expand(__mark_duplicates__output, sample=manager.samples))
+    __mark_duplicates_ref__input = __add_read_group__output
+    __mark_duplicates_ref__output = manager.getname("mark_duplicates", ".bam")
+    __mark_duplicates_ref__metrics = manager.getname("mark_duplicates", ".metrics")
+    __mark_duplicates_ref__log_std = "%s/logs/mark_duplicates/stdout.logs" % manager.sample
+    __mark_duplicates_ref__log_err =  "%s/logs/mark_duplicates/stderr.logs" % manager.sample
+    include: mark_duplicates_dynamic("ref", manager)
+    expected_output.extend(expand(__mark_duplicates_ref__output, sample=manager.samples))
+
 
 
 if config["RNAseQC"]["do"]:
-    __reorderSam__input = __mark_duplicates__output
+    __reorderSam__input = __mark_duplicates_ref__output
     __reorderSam__logs = manager.getname("reorderSam", ".logs")
     __reorderSam__output = manager.getname("reorderSam", "_reorder.bam")
     include: sm.modules["reorderSam"]
-    __RNAseQC__input_bam = expand(__mark_duplicates__output, sample=manager.samples)
+    __RNAseQC__input_bam = expand(__mark_duplicates_ref__output, sample=manager.samples)
     __RNAseQC__logs = "RNAseQC/RNAseQC.log"
     __RNAseQC__output = "RNAseQC"
     __RNAseQC__conf = "RNAseQC/sample_index.txt"
@@ -351,11 +377,19 @@ if config["SARTools"]["do"]:
 
 
 # !Reset expected_output variable after multiqc
+# Hack while waiting for a more general multiqc rules
+
 # Multiqc rule
 __multiqc__input = expected_output
 __multiqc__input_dir = "."
 __multiqc__logs = "multiqc/multiqc.log"
 __multiqc__output = config['multiqc']['output-directory'] + "/multiqc_report.html"
+if config['multiqc']['config_file']:
+    __multiqc__options = " -c " + config['multiqc']['config_file'] + config['multiqc']['options']
+else :
+    __multiqc__options = config['multiqc']['options']
+__multiqc__output_dir = config['multiqc']['output-directory']
+
 include: sm.modules["multiqc"]
 expected_output = [__multiqc__output]
 

@@ -28,8 +28,7 @@ from easydev import DevTools
 from sequana import logger
 from sequana.modules_report.kraken import KrakenModule
 
-import colorlog
-_log = colorlog.getLogger(__name__)
+logger.name = __name__
 
 
 class Options(argparse.ArgumentParser):
@@ -146,7 +145,7 @@ def main(args=None):
 
     from sequana import sequana_config_path as scfg
     if options.databases is None:
-        _log.critical("You must provide a database")
+        logger.critical("You must provide a database")
         sys.exit(1)
 
     databases = []
@@ -170,7 +169,7 @@ def main(args=None):
 
     # if there is only one database, use the pipeline else KrakenHierarchical
     if len(databases) == 1:
-        _log.info("Using 1 database")
+        logger.info("Using 1 database")
         k = KrakenPipeline(fastq, databases[0], threads=options.thread,
             output_directory=output_directory)
 
@@ -178,7 +177,7 @@ def main(args=None):
         k.run(output_filename_classified=_pathto(options.classified_out),
               output_filename_unclassified=_pathto(options.unclassified_out))
     else:
-        _log.info("Using %s databases" % len(databases))
+        logger.info("Using %s databases" % len(databases))
         k = KrakenHierarchical(fastq, databases, threads=options.thread,
             output_directory=output_directory+os.sep, force=True,
             keep_temp_files=options.keep_temp_files)
@@ -192,8 +191,8 @@ def main(args=None):
     # output_filename is relative to the config.output_dir defined above
     kk = KrakenModule(output_directory, output_filename="summary.html")
 
-    _log.info("Open ./%s/summary.html" % options.directory)
-    _log.info("or ./%s/kraken/kraken.html" % options.directory)
+    logger.info("Open ./%s/summary.html" % options.directory)
+    logger.info("or ./%s/kraken/kraken.html" % options.directory)
 
     if options.html is True:
         ss.onweb()

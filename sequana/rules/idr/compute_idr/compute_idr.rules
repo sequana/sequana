@@ -1,0 +1,63 @@
+rule compute_idr:
+    """
+    Irreproducibility Discovery Rate
+
+    Required input:
+        input1 = __compute_idr__input1 : peak file
+        input2 = __compute_idr__input2 : peak file
+
+    Required output:
+        idr = __compute_idr__output: idr file
+        peak = __compute_idr__output_peak: peaks passing IDR threshold
+
+    Required configuration:
+        .. code-block:: yaml
+
+            compute_idr:
+                mode:  # narrow/broad
+                rank: # ranking method
+                thresh = # idr threshold
+
+    """
+    input:
+        input1 = __compute_idr__input1,
+        input2 = __compute_idr__input2
+    output:
+        idr = __compute_idr__output,
+        peak = __compute_idr__output_peak
+    log:
+        __compute_idr__log
+    params:
+        mode = __compute_idr__mode,
+        rank = config["compute_idr"]["rank"],
+        thresh = config["compute_idr"]["thresh"]
+    shell:
+        """
+        set +o pipefail
+
+        nb_peak1=$(wc -l {input.input1} | cut -d' ' -f1)
+        nb_peak2=$(wc -l {input.input2} | cut -d' ' -f1)
+        if [[ $nb_peak1 -gt 20 || $nb_peak2 -gt 20 ]] ; then
+
+            #create temporary file for file1 and file2
+            file1=$(mktemp)
+            file2=$(mktemp)
+            sort -k 7nr,7nr {input.input1} | head -100000 > $file1
+            sort -k 7nr,7nr {input.input2} | head -100000 > $file2
+
+            idr --samples $file1 $file2 \
+                --input-file-type {params.mode} \
+                --output-file {output.idr} \
+                --rank {params.rank} \
+                --soft-idr-threshold {params.thresh} \
+                --plot 2> {log}
+
+            IDR_tr=$(awk -v p={params.thresh} 'BEGIN{{print -log(p)/log(10)}}')
+            awk -v x=$IDR_tr 'BEGIN{{OFS="\t"}} $12>=x ' {output.idr} \
+             | sort | uniq | sort -k7n,7n  > {output.peak}
+        else
+            touch {output.idr}
+            touch {output.peak}
+            echo "ValueError: Peak files must contain at least 20 peaks post-merge" 2> {log}
+        fi
+        """

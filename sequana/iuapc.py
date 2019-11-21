@@ -1,3 +1,5 @@
+from sequana import logger
+logger.name = __name__
 
 
 # DNA bases

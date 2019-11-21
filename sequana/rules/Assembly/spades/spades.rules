@@ -46,7 +46,12 @@ rule spades:
         options = config['spades']['options'],
         outdir = __spades__outdir
     run:
-        cmd = "spades.py -k %s -m %i -t %i %s" % (params['k'], params['m'],
+
+        try:
+            kmers = ",".join([str(x) for x in params['k']])
+        except:
+            kmers = params['k']
+        cmd = "spades.py -k %s -m %i -t %i %s" % (kmers, params['m'],
                                                   threads, params['options'])
         if params['careful']:
             cmd += " --careful"

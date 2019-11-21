@@ -28,7 +28,7 @@ rule dag:
     """
     run:
         # We tried with temporary directory but this was creating errs
-        # more probably because temp dir was handle in the code rather than 
+        # more probably because temp dir was handle in the code rather than
         # by snakemake itself. Finally, we decided to use a physical directory
         # named after the rule. The snakemake call is performed in the directory
         import os

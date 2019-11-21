@@ -1,0 +1,25 @@
+rule select_peaks:
+    """
+    Rule for selecting optimal peaks after IDR rule
+    """
+    input:
+        rep =__select_peaks__input_rep,
+        ppr = __select_peaks__input_ppr,
+        pool = __select_peaks__input_pool
+    log:
+        __select_peaks__logs
+    output:
+        __select_peaks__output
+    shell:
+        """
+        set +o pipefail
+
+        numPeaks_Rep=$(wc -l {input.rep} | cut -d' ' -f1)
+        numPeaks_PPR=$(wc -l {input.ppr} | cut -d' ' -f1)
+
+        if [ ${{numPeaks_Rep}} -gt ${{numPeaks_PPR}} ] ; then opTh=${{numPeaks_Rep}} ;
+        else opTh=${{numPeaks_PPR}} ; fi
+
+        sort -k8nr,8nr {input.pool} | head -n ${{opTh}} > {output} 2> {log}
+
+        """

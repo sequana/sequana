@@ -37,6 +37,7 @@ from easydev.console import purple
 
 from pylab import show, figure, savefig
 
+logger.name = __name__
 
 
 # http://stackoverflow.com/questions/18462610/argumentparser-epilog-and-description-formatting-in-conjunction-with-argumentdef
@@ -384,13 +385,14 @@ def run_analysis(chrom, options, feature_dict):
         logger.warning("median window length is too long. \n"
             "    Setting the window length automatically to a fifth of\n"
             "    the chromosome length ({})".format(NW))
-        options.w_median = NW
+    else:
+        NW = options.w_median
 
     # compute the running median, zscore and ROIs for each chunk summarizing the
     # results in a ChromosomeCovMultiChunk instane
-    logger.info('Using running median (w=%s)' % options.w_median)
+    logger.info('Using running median (w=%s)' % NW)
     logger.info("Number of mixture models %s " % options.k)
-    results = chrom.run(options.w_median, options.k,
+    results = chrom.run(NW, options.k,
                         circular=options.circular, binning=options.binning,
                         cnv_delta=options.cnv_clustering)
 
@@ -417,8 +419,11 @@ def run_analysis(chrom, options, feature_dict):
 
     # Create directory and save ROIs
     directory = options.output_directory
+
     directory += os.sep + "coverage_reports"
-    directory += os.sep + chrom.chrom_name
+
+
+    directory += "{}{}".format(os.sep, chrom.chrom_name)
     mkdirs(directory)
     ROIs.df.to_csv("{}/rois.csv".format(directory))
 
@@ -436,11 +441,11 @@ def run_analysis(chrom, options, feature_dict):
 
     logger.info("Creating report in %s. Please wait" % config.output_dir)
     if chrom._mode == "chunks":
-        logger.warning(("This chromosome is large. " 
+        logger.warning(("This chromosome is large. "
             "Plots in the HTML reports are skipped"))
     datatable = CoverageModule.init_roi_datatable(ROIs)
     ChromosomeCoverageModule(chrom, datatable,
-                options={"W": options.w_median,
+                options={"W": NW,
                          "k": options.k,
                          "ROIs": ROIs,
                          "circular": options.circular},

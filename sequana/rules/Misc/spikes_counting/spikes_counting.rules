@@ -1,0 +1,57 @@
+rule spikes_counting:
+    """
+    Use samtools in order to count number of aligned reads again a spike-in genome,
+    produce also a json file readable by multiQC
+
+    Required input:
+        __spikes_counting__input: bam file
+
+    Required output:
+        __spikes_counting__output: matrix file
+        __spikes_counting__output_json: tabulated file for multiqc
+
+
+    """
+    input:
+        inputs = __spikes_counting__input
+    output:
+        tab = __spikes_counting__output,
+        json = __spikes_counting__output_json
+    log:
+        __spikes_counting__log
+    run:
+        import pysam
+        import pandas as pd
+        import os.path
+        from collections import OrderedDict
+        import warnings
+        warnings.filterwarnings('ignore')
+
+
+        inputs = [os.path.realpath(f) for f in input['inputs']]
+        d = OrderedDict()
+        for file in inputs:
+            name = (os.path.basename(file)).split("_sp")[0]
+            samfile = pysam.AlignmentFile(file, "rb")
+            nb_reads = samfile.mapped
+            try:
+                percent = "{0:.2f}".format((samfile.mapped * 100) / (samfile.mapped + samfile.unmapped))
+            except ZeroDivisionError:
+                percent = 0
+            d[name] = [nb_reads, percent]
+
+        #format dataframe
+        df = pd.DataFrame(data=d)
+        df2 = df.drop([1])
+        # write the dataframe in json format for chipuanar
+        df2.to_json(output.json)
+
+
+        df = df.transpose()
+        df.reset_index(inplace=True)
+
+        # write dataframe in output file
+        with open(output.tab, 'w') as f:
+                f.write("# plot_type: 'table'\n")
+        df.to_csv(output.tab, mode='a',sep="\t", index=False, header=['Spike', 'MappedReads', 'Percent'])
+

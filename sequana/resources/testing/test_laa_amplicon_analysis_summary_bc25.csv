@@ -1,0 +1,3 @@
+BarcodeName,FastaName,CoarseCluster,Phase,TotalCoverage,SequenceLength,PredictedAccuracy,ConsensusConverged,NoiseSequence,IsDuplicate,DuplicateOf,IsChimera,ChimeraScore,ParentSequenceA,ParentSequenceB,CrossoverPosition
+25--25,Barcode25--25_Cluster1_Phase0_NumReads497,1,0,497,3073,1,1,0,0,N/A,0,-1,N/A,N/A,-1
+25--25,Barcode25--25_Cluster0_Phase0_NumReads496,0,0,496,2894,1,1,0,0,N/A,0,-1,N/A,N/A,-1

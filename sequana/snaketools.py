@@ -51,13 +51,17 @@ import ruamel.yaml
 from ruamel.yaml import comments
 
 from sequana.misc import wget
+from sequana import version as sequana_version
 from sequana import sequana_data, logger
 from sequana.errors import SequanaException
 
-from sequana import logger
+
+logger.name = __name__
+
 
 __all__ = ["DOTParser", "FastQFactory", "FileFactory",
-           "Module", "PipelineManager", "SnakeMakeStats",
+           "Module", "PipelineManager", "PipelineManagerGeneric", 
+            "SnakeMakeStats",
            "SequanaConfig", "modules", "pipeline_names"]
 
 try:
@@ -94,7 +98,7 @@ class SnakeMakeStats(object):
 
     """
     def __init__(self, filename, N=1):
-        """.. rubric:: Cosntructor"""
+        """.. rubric:: Constructor"""
         self.filename = filename
         self.N = N
 
@@ -109,8 +113,8 @@ class SnakeMakeStats(object):
         from sequana.lazy import pandas as pd
         pylab.clf()
         df = pd.DataFrame(self._parse_data()['rules'])
-        ts = df.ix['mean-runtime']
-        total_time = df.ix['mean-runtime'].sum()
+        ts = df.loc['mean-runtime']
+        total_time = df.loc['mean-runtime'].sum()
         #ts['total'] = self._parse_data()['total_runtime'] / float(self.N)
         ts['total'] = total_time
         ts.sort_values(inplace=True)
@@ -335,6 +339,7 @@ or open a Python shell and type::
         str += "Config: %s\n" % self.config
         str += "Cluster config: %s\n" % self.cluster_config
         str += "Schema for config file: %s\n" % self.schema_config
+        str += "Multiqc config file: %s\n" % self.multiqc_config
         return str
 
     def __str__(self):
@@ -364,6 +369,13 @@ or open a Python shell and type::
         return filename
     schema_config = property(_get_schema_config,
                       doc="full path to the schema config file of the module")
+
+    def _get_multiqc_config(self):
+        filename = self._get_file("multiqc_config.yaml")
+        #if filename is None:
+        return filename
+    multiqc_config = property(_get_multiqc_config,
+                      doc="full path to the multiqc config file of the module")
 
     def _get_cluster_config(self):
         # The default config file for that module
@@ -553,13 +565,6 @@ class SequanaConfig(object):
         >>> sc.config.pattern == "*.fastq.gz"
         True
 
-    Input files should be stored into::
-
-        input_samples:
-            - file1: FILE1
-            - file2: FILE2
-
-    The second file may be optional.
 
 
     Empty strings in a config are interpreted as None but SequanaConfig will
@@ -582,7 +587,6 @@ class SequanaConfig(object):
         SEQUANA config files must have some specific fields::
 
             input_directory
-            input_samples...
         """
         # Create a dummy YAML code to hold data in case the input is a json
         # or a dictionary structure. We use a CommentedMap that works like
@@ -600,8 +604,14 @@ class SequanaConfig(object):
                     # read a JSON
                     import yaml
                     with open(data, "r") as fh:
-                        self._yaml_code =  yaml.load(json.dumps(
-                            json.loads(fh.read())))
+                        try:
+                            self._yaml_code =  yaml.load(json.dumps(
+                                json.loads(fh.read())), Loader=yaml.FullLoader)
+                        except:
+                            # olf python version
+                            self._yaml_code =  yaml.load(json.dumps(
+                                json.loads(fh.read())))
+        
                 config = load_configfile(data)
             else:
                 raise IOError("input string must be an existing file (%s)" % data)
@@ -616,10 +626,8 @@ class SequanaConfig(object):
 
     def check_sequana_fields(self):
         requirements = ["input_directory",
-                        "input_samples",
-                        "input_extension",
                         "input_pattern",
-                        "input_samples:file1", "input_samples:file2"]
+                        ]
         # converts to dictionary ?
         for this in requirements:
             this = this.split(":")[0]
@@ -754,6 +762,87 @@ class DummyManager(object):
             self.paired = False
 
 
+class PipelineManagerGeneric(object):
+    """
+
+    For all files except FastQ, please use this class instead of
+    PipelineManager.
+
+    """
+    def __init__(self, name, config, sample_func=None):
+
+        # Make sure the config is valid
+        cfg = SequanaConfig(config)
+
+        # Used by the dynamic rules to defined the location where to copy
+        # dynamic rules.
+        self.pipeline_dir = os.getcwd() + os.sep
+
+        # Populate the config with additional information
+        self.config = cfg.config
+        self.config.sequana_version = sequana_version
+        self.config.pipeline_name = name
+
+        path = cfg.config["input_directory"]
+        pattern = cfg.config["input_pattern"]
+
+        if path.strip():
+            self.ff = FileFactory(path + os.sep + pattern)
+        else:
+            self.ff = FileFactory(pattern)
+        L = len(self.ff)
+        if L == 0:
+            logger.warning("No files found with the pattern {}".format(pattern))
+        else:
+            logger.info("Found {} files matching your requests".format(L))
+
+        # samples contains a correspondance between the sample name and the
+        # real filename location.
+        self.sample = "{sample}"
+        self.basename = "{sample}/%s/{sample}"
+        self.samples = None
+
+        if sample_func:
+            try:
+                self.samples = {sample_func(filename):filename for filename in self.ff.realpaths}
+            except:
+                self.samples = None
+        else:
+            self.samples = {str(i+1):filename for i,filename in enumerate(self.ff.realpaths)}
+
+
+    def getname(self, rulename, suffix=None):
+        """In the basename, include rulename and suffix"""
+        if suffix is None:
+            suffix = ""
+        return self.basename % rulename + suffix
+
+    def getreportdir(self, acronym):
+        """Create the report directory.
+        """
+        return "{1}{0}report_{2}_{1}{0}".format(os.sep, self.sample, acronym)
+
+    def getwkdir(self, rulename):
+        return self.sample + os.sep + rulename + os.sep
+
+    def getlogdir(self, rulename):
+        """ Create log directory: */sample/logs/sample_rule.logs
+        """
+        return "{1}{0}logs{0}{1}.{2}.log".format(os.sep, self.sample, rulename)
+
+    def getrawdata(self):
+        """Return list of raw data
+
+        If :attr:`mode` is *nowc*, a list of files is returned (one or two files)
+        otherwise, a function compatible with snakemake is returned. This function
+        contains a wildcard to each of the samples found by the manager.
+        """
+        if self.samples is None:
+            raise ValueError("Define the samples attribute as a dictionary with"
+                "sample names as keys and the corresponding location as values.")
+        return lambda wildcards: self.samples[wildcards.sample]
+
+
 class PipelineManager(object):
     """Utility to manage easily the snakemake pipeline
 
@@ -765,12 +854,8 @@ class PipelineManager(object):
     config file must have these fields::
 
         - input_directory:  #a_path
-        - input_extension:  fastq.gz  # this is the default. could be also fq.gz
         - input_readtag: _R[12]_ # default
         - input_pattern:    # a_global_pattern e.g. H*fastq.gz
-        - input_samples:
-            - file1:
-            - file2:
 
     The manager can then easily access to the data with a :class:`FastQFactory`
     instance::
@@ -817,21 +902,13 @@ class PipelineManager(object):
             directory = cfg.config.input_directory.strip()
             if os.path.isdir(directory) is False:
                 self.error("The (%s) directory does not exist." % directory)
-
-            if "input_extension" in cfg.config.keys() and \
-                    cfg.config['input_extension'] not in (None, ""):
-                glob_dir = directory + os.sep + "*" + \
-                           cfg.config['input_extension']
+            if cfg.config.input_pattern:
+                glob_dir = directory + os.sep + cfg.config.input_pattern
             else:
                 glob_dir = directory + os.sep + pattern
         # otherwise, the input_pattern can be used
         elif cfg.config.input_pattern:
             glob_dir = cfg.config.input_pattern
-        # otherwise file1
-        elif cfg.config.input_samples['file1']:
-            glob_dir = [cfg.config.input_samples['file1']]
-            if cfg.config.input_samples['file2']:
-                glob_dir += [cfg.config.input_samples['file2']]
         # finally, if none were provided, this is an error
         else:
             self.error("No valid input provided in the config file")
@@ -847,6 +924,7 @@ class PipelineManager(object):
             self._get_bam_files(glob_dir)
         # finally, keep track of the config file
         self.config = cfg.config
+        self.config.sequana_version = sequana_version
 
     def _get_fastq_files(self, glob_dir, read_tag):
         """
@@ -870,8 +948,7 @@ class PipelineManager(object):
             if R1 == R2:
                 self.paired = True
             else:
-                raise ValueError("Mix of paired and single-end data sets not "
-                                 "implemented yet")
+                raise ValueError("Mix of paired and single-end data sets {}".format(glob_dir))
 
         # Note, however, that another mode is the samples.file1/file2 . If
         # provided, filenames is not empty and superseeds
@@ -887,6 +964,8 @@ class PipelineManager(object):
                     self.paired = False
 
         ff = self.ff  # an alias
+        # samples contains a correspondance between the sample name and the
+        # real filename location.
         self.samples = {tag: [ff.get_file1(tag), ff.get_file2(tag)]
                         if ff.get_file2(tag) else [ff.get_file1(tag)]
                         for tag in ff.tags}
@@ -901,14 +980,15 @@ class PipelineManager(object):
 
     def _get_bam_files(self, pattern):
         ff = FileFactory(pattern)
+        # samples contains a correspondance between the sample name and the
+        # real filename location.
         self.samples = {tag: fl for tag, fl in zip(ff.filenames, ff.realpaths)}
         self.sample = "{sample}"
         self.basename = "{sample}/%s/{sample}"
 
     def error(self, msg):
         msg += ("\nPlease check the content of your config file. You must have "
-                "input_directory set, or input_pattern, or input_samples:file1 "
-                "(and optionally input_samples:file2).")
+                "input_directory set, or input_pattern.")
         raise SequanaException(msg)
 
     def getname(self, rulename, suffix=None):
@@ -1160,6 +1240,18 @@ class FileFactory(object):
         >>> extensions
         ".gz"
 
+    FIXME: pathname to be checked.
+
+    A **basename** is the name of a directory in a Unix pathname that occurs 
+    after the last slash.
+
+    dirname, returns everything but the final basename in a pathname. Both
+
+
+    The **pathname** is a specific label for a file’s directory location 
+    while within an operating system.
+
+
     """
     def __init__(self, pattern):
         """.. rubric:: Constructor
@@ -1209,7 +1301,7 @@ class FileFactory(object):
                          doc="list of filenames (no path, no extension)")
 
     def _pathnames(self):
-        pathnames = [os.path.split(filename)[0] for filename in self._glob]
+        pathnames = [os.path.split(filename)[0] for filename in self.realpaths]
         return pathnames
     pathnames = property(_pathnames,
                          doc="the relative path for each file (list)")
@@ -1338,7 +1430,7 @@ class FastQFactory(FileFactory):
         read_tag = self.read_tag.replace("[12]", r)
         candidates = [realpath for basename, realpath in
                       zip(self.basenames, self.realpaths)
-                      if read_tag in basename and basename.startswith(tag)]
+                      if read_tag in basename and basename.startswith(tag + "_")]
 
         if len(candidates) == 0 and r == "2":
             # assuming there is no R2
@@ -1384,6 +1476,9 @@ def init(filename, namespace):
     else:
         # This contains the full path of the snakefile
         namespace['__snakefile__'] = filename
+
+        # FIXME this is used only in quality_control when using sambamba rule
+        # to remove
         namespace['__pipeline_name__'] = \
             os.path.split(filename)[1].replace(".rules", "")
         namespace['expected_output'] = []
@@ -1450,6 +1545,34 @@ def add_stats_summary_json(json_list, parser):
             print(j, file=fp)
 
 
+class Makefile(object):
+
+    def __init__(self, sections=["bundle"]):
+        self.makefile_filename = "Makefile"
+        self.text = ""
+        for this in sections:
+            try:
+                getattr(self, "add_"+ this)()
+            except:
+                logger.warning("no {} section found in Makefile class".format(
+                    this))
+
+    def add_remove_done(self):
+        self.text += "\nremove_done:\n\trm -f ./*/*/*.done"
+
+    def add_bundle(self):
+        txt = "bundle:\n"
+        if easydev.cmd_exists("pigz"):
+            txt += "\ttar cvf - * | pigz  -p 4 > results.tar.gz\n"
+        else:
+            txt += "\ttar cvfz results.tar.gz *\n"
+        self.text += txt
+
+    def save(self):
+        with open(self.makefile_filename, "w") as fh:
+            fh.write(self.text)
+
+
 class OnSuccess(object):
     def __init__(self, toclean=["fastq_sampling", "logs", "common_logs",
             "images", "rulegraph"]):
@@ -1510,6 +1633,39 @@ shellcmd("rm -rf tmp/")
 shellcmd("rm -f {0}")
 print("done")
     """.format(self.cleanup_filename, additional_dir))
+
+
+class OnSuccessCleaner(object):
+    """Used in demultiplex pipeline to cleanup final results"""
+    def __init__(self):
+        self.makefile_filename = "Makefile"
+        self.files_to_remove = ["config.yaml"]
+        self.directories_to_remove = [".snakemake"]
+        self.bundle = False
+
+    def add_bundle(self, input="*", output="bundle.tar.gz"):
+        self.bundle = True
+        self.bundle_input = input
+        self.bundle_output = output
+
+    def add_makefile(self):
+        makefile = 'all:\n\techo "sequana demultiplexing cleanup"\n'
+        if self.bundle:
+            makefile += "bundle:\n\ttar cvfz {} {}\n".format(
+                self.bundle_output, self.bundle_input)
+        makefile += "clean: clean_files clean_directories\n"
+
+        files = self.files_to_remove + [self.makefile_filename]
+        # in case commas are added in the config file
+        files = [x.replace(",", "") for x in files]
+        
+        makefile += "clean_files:\n\trm -f {}\n".format(" ".join(files))
+
+        dirs = self.directories_to_remove
+        makefile += "clean_directories:\n\trm -rf {}\n".format(" ".join(dirs))
+
+        with open(self.makefile_filename, "w") as fh:
+            fh.write(makefile)
 
 
 def get_pipeline_statistics():

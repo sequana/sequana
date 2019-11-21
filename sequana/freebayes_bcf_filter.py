@@ -21,6 +21,7 @@
 from pysam import VariantFile
 from sequana.lazy import pandas as pd
 from sequana import logger
+logger.name = __name__
 
 
 class Variant(object):

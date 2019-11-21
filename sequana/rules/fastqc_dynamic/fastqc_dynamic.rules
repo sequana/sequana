@@ -33,6 +33,7 @@ rule fastqc_%(name)s:
 
             fastqc:
                 options: "-nogroup"   # a string with fastqc options
+                #thread:              # optional. if not set, 4 threads are used
 
     References:
         - http://www.bioinformatics.babraham.ac.uk/projects/fastqc/
@@ -45,7 +46,7 @@ rule fastqc_%(name)s:
     params:
         wkdir = __fastqc_%(name)s__wkdir,
         kargs = config['fastqc']['options']
-    threads: 4
+    threads: config['fastqc']['threads'] if 'thread' in config['fastqc'] else 4
     log:
         fastqc = __fastqc_%(name)s__log
     run:

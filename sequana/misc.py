@@ -22,6 +22,10 @@ import glob
 import numpy as np
 import platform
 
+from sequana import logger
+logger.name = __name__
+
+
 from docutils import core
 from docutils.writers.html4css1 import Writer,HTMLTranslator
 

@@ -61,12 +61,25 @@ rule sequana_coverage:
                         params['high'])
         bed.compute_gc_content(input['fasta'], params['gc_size'],
                                params['circular'])
+
+        sample = input['bed'].split(os.sep)[0]
         for chrom in bed:
             if params['size'] >  len(chrom.df)/5:
                 W = int(len(chrom.df) / 5)
             else:
                 W = params['size']
-            chrom.run(W, circular=params['circular'], k=params['k'])
+            results = chrom.run(W, circular=params['circular'], k=params['k'])
+            output_json = "{}/{}/sequana_summary_coverage.json".format(
+                                sample, chrom.chrom_name)
+            from easydev import mkdirs
+            mkdirs("{}/{}".format(sample, chrom.chrom_name))
+            #output_roi = "{}/{}/rois.csv".format(
+            #                    output_directory, chromosome.chrom_name)
+            summary = results.get_summary()
+            #print(output_json)
+            summary.to_json(output_json)
+
+        # FIXME the following lines should be in the for loop ?
         bed.to_csv(output['csv'], float_format='%.3g')
 
         # Create HTML reports

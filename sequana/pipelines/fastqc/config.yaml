@@ -1,0 +1,42 @@
+# ============================================================================
+# Config file for Quality Control
+# ==========================================[ Sections for the users ]========
+#
+# One of input_directory, input_pattern and input_samples must be provided
+# If input_directory provided, use it otherwise if input_pattern provided,
+# use it, otherwise use input_samples.
+# ============================================================================
+
+
+input_directory: /home/cokelaer/Temp/test
+input_readtag: _R[12]_
+input_pattern: '*.fastq.gz'
+
+
+##############################################################################
+# FastQC section
+#
+# :Parameters:
+#
+# - options: string with any valid FastQC options
+fastqc:
+    do_group: true
+    options: ''
+    threads: 4
+
+
+##############################################################################
+#
+#
+# - options: any multiqc options accepted. Note that if you use --comments, 
+#   it will be appended to the existing --comments added inside sequana. 
+#   By default, -p (create pictures) and -f (for overwritting) are used. 
+# - indir: The input multiqc (default is local).
+multiqc:
+    options: '-p -f '
+    indir: "."
+
+##############################################################################
+#
+onsuccess:
+    toclean: " slurm*out fastqc.rules config.yaml stats.txt "

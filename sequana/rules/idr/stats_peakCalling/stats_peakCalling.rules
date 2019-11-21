@@ -1,0 +1,47 @@
+rule stats_peakCalling:
+    """
+    Some statistiques on number of peaks after peak calling step
+    Produce a json file for multiqc
+
+    Required input:
+        __stats_peakCalling : all rep peaks files by condition
+
+    Required output:
+        __stats_peakCalling: stat on idr output file
+
+
+    """
+    input:
+         inputs = __stats_peakCalling_input
+    output:
+        __stats_peakCalling_csv
+    params:
+        marks = __stats_peakCalling__marks,
+        conds = __stats_peakCalling__conds,
+        rep = __stats_peakCalling__rep
+    log:
+        __stats_peakCalling_log
+    run:
+        import pandas as pd
+        import os.path
+        from collections import OrderedDict
+
+
+        inputs = [os.path.realpath(f) for f in input['inputs']]
+        output = os.path.realpath(output[0])
+        #initialize dict for store all metrics
+        d = OrderedDict()
+        for file in inputs:
+            name = (os.path.basename(file)).split("_vs")[0]
+            nb_peak = sum(1 for line in open(file))
+            d[name] = [nb_peak]
+
+        #format dataframe
+        df = pd.DataFrame(data=d)
+        df = df.transpose()
+        df.reset_index(inplace=True)
+
+        # write dataframe in output file
+        with open(output, 'w') as f:
+                f.write("# plot_type: 'table'\n")
+        df.to_csv(output, mode='a',sep="\t", index=False, header=['Sample', 'Peaks'])

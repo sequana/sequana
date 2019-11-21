@@ -38,6 +38,8 @@ from sequana import logger, Module
 
 
 logger.level = 'INFO'
+logger.name = __name__
+
 
 adapters_choice = ["Nextera", "Rubicon", "PCRFree", "TruSeq", "SMARTer", "Small"]
 
@@ -49,11 +51,10 @@ Input data must be provided with one of the following parameter:
      the path where to find the FastQ files. By default, extension are
      expected to be fastq.gz but one can use --extension to override this
      behaviour
-  2- For one sample, you can use --file1 and --file2 (paired sample)
-  3- A global pattern using --pattern  <PATTERN> where <PATTERN> should be
+  2- A global pattern using --pattern  <PATTERN> where <PATTERN> should be
      a correct regular expression with wildcards between quotes. For instance,
      "*.fastq.gz" or "/home/user/DATA/*/fastq.gz"
-  4- You may already have a valid configuration file. If so, use --config
+  3- You may already have a valid configuration file. If so, use --config
 """
 
 class Tools(object):
@@ -90,7 +91,6 @@ class Options(argparse.ArgumentParser):
 
             --input-directory <Location of the fastq.gz files>
             --input-pattern <A wildcard to retrieve fastq.gz files>
-            --file1 FILE1 --file2 FILE2
 
         Type
 
@@ -151,18 +151,11 @@ class Options(argparse.ArgumentParser):
             sequana --pipeline quality_control --input-directory .
                 --design SampleSheetUsed.csv  --adapters PCRFree
 
-        If you want to analyse a specific pair of files:
-
-            sequana --pipeline quality_control --file1 test_R1_.fastq.gz
-                --file2 test_R2_.fastq.gz
-                --design SampleSheetUsed.csv  --adapters PCRFree
-
         Note that files by default must contain _R1_ and _R2_ tag and must have
         a common sample name before _R1_ and _R2_ (like in the example above).
-        You can change the read tag with the option --readtag:
             
-            sequana --pipeline quality_control --file1 test_1.fastq.gz
-                --file2 test_2.fastq.gz --input-readtag "_[12].fastq.gz"
+            sequana --pipeline quality_control --input-pattern "test_*.fastq.gz"
+                 --input-readtag "_[12].fastq.gz"
                 --design SampleSheetUsed.csv  --adapters PCRFree
 
 
@@ -203,9 +196,6 @@ Issues: http://github.com/sequana/sequana
                     existing ones)""")
         group.add_argument("--redirection", dest="redirection",
             default=False, action="store_true")
-
-        group.add_argument("--issue", dest='issue',
-                          action="store_true", help="Open github issue page")
 
 
         group = self.add_argument_group("PIPELINES")
@@ -283,12 +273,6 @@ behavious, use this option."""
                           )
 
         group = self.add_argument_group("INPUT FILES")
-        group.add_argument("-1", "--file1", dest="file1", type=str,
-            help=""" Fills the *samples:file1* field in the config file. To be used
-                with --init option""")
-        group.add_argument("-2", "--file2", dest="file2", type=str,
-            help=""" Fills the *samples:file2* field in the config file. To be used
-                with --init option""")
         group.add_argument("--input-pattern", dest="pattern", type=str,
             default=None,
             help="""a pattern to find files. You can use wildcards e.g.
@@ -297,8 +281,7 @@ behavious, use this option."""
         group.add_argument("-i", "--input-directory", dest="input_directory", type=str,
             default=None,
             help="""Search for a pair (or single) of reads in the directory,
-                and fills automatically the project and file1/file2 fields in
-                the config file. To be used with --init option. If more than
+                and fills automatically the project. To be used with --init option. If more than
                 two files or not files ending in fastq.gz are found, an error
                 is raised.""")
         group.add_argument("-t", "--input-readtag", dest="input_readtag",
@@ -401,9 +384,6 @@ The files are part of Sequana and can be found here:
             help="""If provided, no removal of adapters will be
                  performed. Trimming quality is still performed.
                  Value must be set in the config file or using --config-params""")
-        group.add_argument("--kraken", dest="kraken", type=str,
-            help=""" Fills the *kraken* field in the config file. To be used
-                with --init option""")
 
 def main(args=None):
     """Mostly checking the options provided by the user and then call
@@ -432,6 +412,7 @@ def main(args=None):
     sa = Tools(verbose=options.verbose)
     sa.purple("Welcome to Sequana standalone application")
 
+    options.issue = 0
     # Those options are mutually exclusive
     flag = int("%s%s%s%s%s%s" % (
             int(bool(options.issue)),
@@ -443,13 +424,9 @@ def main(args=None):
             ), 2)
     if flag not in [1,2,4,8,16,3,32]:
         logger.critical("You must use one of --pipeline, --info, "
-            "--show-pipelines, --issue, --version, --get-config")
+            "--show-pipelines, --version, --get-config")
         sys.exit(1)
 
-    # OPTIONS that gives info and exit
-    if options.issue:
-        onweb('https://github.com/sequana/sequana/issues')
-        return
 
     if options.version:
         sa.purple("Sequana version %s" % sequana.version)
@@ -486,75 +463,33 @@ def main(args=None):
     Module("dag").check("warning")
     Module(options.pipeline).check("warning")
 
-    # If user provides file1 and/or file2, check the files exist
-    if options.file1 and os.path.exists(options.file1) is False:
-        raise ValueError("%s does not exist" % options.file1)
-
-    if options.file2 and os.path.exists(options.file2) is False:
-        raise ValueError("%s does not exist" % options.file2)
-
-    if options.kraken and os.path.exists(options.kraken) is False:
-        raise ValueError("%s does not exist" % options.kraken)
 
     if options.input_directory and os.path.exists(options.input_directory) is False:
         raise ValueError("%s does not exist" % options.input_directory)
 
-    # check valid combo of arguments
-    flag = int("%s%s%s%s%s" % (
-            int(bool(options.pattern)),
-            int(bool(options.input_directory)),
-            int(bool(options.file1)),
-            int(bool(options.file2)),
-            int(bool(options.config)),
-            ), 2)
-
-    # config file has flag 1, others have flag 2,4,8,16
-    # config file alone : 1
-    # --input-directory alone: 2
-    # --file1 alone: 4
-    # --file1 + --file2 : 2+4=6
-    # --input-pattern alone: 16
-    # none of those options redirect to input_directory=local
-    if flag not in [0, 1, 2, 4, 6, 8, 16]:
-        logger.critical(help_input + "\n\nUse --help for more information")
-        sys.exit(1)
 
     assert options.extension in ["fastq", "fq", "fastq.gz", "fq.gz", "bam"]
 
     # Note that we use abspath to make it more robust and easier to debug
     # If no options, we use input_directory and set it to "."
-    if flag == 0 or options.input_directory:
-        if flag == 0:
-            options.input_directory = "."
+
+    # by default equals "."
+
+    if options.pattern is None:
+        options.pattern = ""
+
+    if options.extension is None:
+        options.extension = ""
+
+    if options.input_directory:
         options.input_directory = os.path.abspath(options.input_directory)
-        data = options.input_directory + os.sep + "*" + options.extension
-        options.file1 = ""
-        options.file2 = ""
-        options.pattern = ""
-        if options.verbose:
-            logger.info("Looking for sample files matching %s" % data)
-    elif options.pattern:
-        options.pattern = os.path.abspath(options.pattern)
-        data = os.path.abspath(options.pattern)
-        options.input_directory = ""
-        options.extension = ""
-        options.file1 = ""
-        options.file2 = ""
-    elif options.config:
-        pass
-    elif options.file1:
-        data = [options.file1]
-        options.file1 = os.path.abspath(options.file1)
-        if options.file2:
-            data = [options.file2]
-            options.file2 = os.path.abspath(options.file2)
-        options.input_directory = ""
-        options.pattern = ""
-        options.extension = ""
+        data = options.input_directory + os.sep + "*" + options.pattern
+    else:
+        data = options.pattern
+        options.input_directory = os.path.abspath(".")
 
     if options.extension == 'bam' or options.pattern.endswith('bam') or \
             options.pattern.endswith('bed'):
-
         ff = FileFactory(data)
     else:
         ff = FastQFactory(data, read_tag=options.input_readtag,
@@ -647,7 +582,7 @@ def copy_config_from_sequana(module, source="config.yaml",
         txt = "copied %s from sequana %s pipeline"
         logger.info(txt % (source, module.name))
     else:
-        logger.warning(user_config + "not found")
+        logger.warning(user_config + " not found")
 
 
 def sequana_init(options):
@@ -730,9 +665,6 @@ def sequana_init(options):
     cfg = SequanaConfig(config_filename)
     cfg.config.input_directory = options.input_directory
     cfg.config.input_pattern = options.pattern
-    cfg.config.input_extension = options.extension
-    cfg.config.input_samples.file1 = options.file1
-    cfg.config.input_samples.file2 = options.file2
     cfg.config.input_readtag = options.input_readtag
 
     # Dedicated section for quality control section
@@ -741,15 +673,11 @@ def sequana_init(options):
             shutil.copy(options.design, options.target_dir + os.sep )
             cfg.config['cutadapt'].design_file = os.path.basename(options.design)
 
-        if options.kraken:
-            cfg.config.kraken.database_directory = os.path.abspath(options.kraken)
-            cfg.config.kraken.do = True
-        else:
-            cfg.config.kraken.do = False
+        cfg.config.kraken.do = False
 
         cfg.config['cutadapt'].fwd = options.adapter_fwd
         cfg.config['cutadapt'].rev = options.adapter_rev
-        cfg.config['cutadapt'].adapter_type = options.adapters
+        cfg.config['cutadapt'].adapter_choice = options.adapters
         # Foir all pipeline using BWA
         if options.reference:
             cfg.config.bwa_mem.reference = os.path.abspath(options.reference)
@@ -833,7 +761,8 @@ def sequana_init(options):
     sa.purple("On a slurm cluster, you may type:")
     sa.purple("\n  srun --qos normal runme.sh\n")
     sa.green("In case of trouble, please post an issue on https://github.com/sequana/sequana/issue ")
-    sa.green("or type sequana --issue and fill a post with the error and the config file (NO DATA PLEASE)")
+    sa.green("and fill a post with the error and the config file (NO DATA PLEASE)")
+
 
     # Change permission
     try: #python 3

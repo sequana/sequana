@@ -20,6 +20,8 @@
 
 from sequana.lazy import numpy as np
 from sequana.lazy import pandas as pd
+from sequana import logger
+logger.name = __name__
 
 
 __all__ = ["moving_average", "evenness"]
@@ -74,3 +76,30 @@ def evenness(data):
     else:
 
         return 1. - (len(D2) - sum(D2) / C) / len(coverage)
+
+
+def N50(data):
+    """Return the N50 value given a list of unsorted/sorted contigs
+
+    Once the list of contigs is sorted, the N50 is the contig length for which at 
+    least half of the nucleotides in the assembly belongs to contigs with the N50
+    length or longer.
+
+    
+    """
+    data = np.sort(data)
+    cdata = np.cumsum(data)
+    return data[np.argmax(cdata>cdata[-1]/2)]
+
+
+def L50(data):
+    """Return the smallest number of contigs whose length sum produces N50
+
+        >>> data = 
+        >>> L50(data)
+        3
+    """
+    data = np.sort(data)
+    cdata = np.cumsum(data)
+    pos = np.argmax(cdata>cdata[-1]/2)
+    return len(data) - pos

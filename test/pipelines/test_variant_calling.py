@@ -14,19 +14,21 @@ class VariantCallingPipeline(Pipeline):
         # Define the data
         data = sequana_data("Hm2_GTGAAA_L005_R1_001.fastq.gz")
         input_directory = os.path.dirname(data)
-        self.input_pattern = input_directory + "/Hm*gz"
+        self.input_pattern = "Hm*gz"
         self.pipeline = "variant_calling"
 
         # Define the project and config file
         subprocess.check_call([
             "sequana", "--pipeline", self.pipeline,
             "--input-pattern", '%s' % self.input_pattern,
+            "--input-directory", '%s' % input_directory,
             "--working-directory", self.wk, "--force"
             ])
 
 
         cmd = ["sequana", "--pipeline", self.pipeline,
              "--input-pattern", '%s'% self.input_pattern,
+            "--input-directory", '%s' % input_directory,
              "--working-directory", self.wk, "--force"]
 
         if "TRAVIS_PYTHON_VERSION" in os.environ:

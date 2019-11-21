@@ -212,6 +212,12 @@ class SequanaFactory(BaseFactory):
             return module.cluster_config
     clusterconfigfile = property(_get_clusterconfigfile)
 
+    def _get_multiqcconfigfile(self):
+        if self.pipeline:
+            module = snaketools.Module(self.pipeline)
+            return module.multiqc_config
+    multiqcconfigfile = property(_get_multiqcconfigfile)
+
     def _get_schemafile(self):
         if self.pipeline:
             module = snaketools.Module(self.pipeline)
@@ -240,6 +246,8 @@ class SequanaFactory(BaseFactory):
             txt +=" - cluster config: %s\n" % self.clusterconfigfile
         if self.schemafile:
             txt +=" - schema config: %s" % self.schemafile
+        if self.multiqcconfigfile:
+            txt +=" - schema config: %s" % self.multiqcconfigfile
         return txt % (self.pipeline, in1, in2, self.directory)
 
 
@@ -257,6 +265,7 @@ class GenericFactory(BaseFactory):
         self._config_browser.clicked_connect(self._switch_off_run)
         self._snakefile_browser.clicked_connect(self._switch_off_run)
         self._schema = None
+        self._multiqcconfigfile = None
 
     def _return_none(self, this):
         if this is None or len(this) == 0:
@@ -275,6 +284,10 @@ class GenericFactory(BaseFactory):
     def _get_schemafile(self):
         return self._return_none(self._schema)
     schemafile = property(_get_schemafile)
+
+    def _get_multiqcconfigfile(self):
+        return self._return_none(self._multiqcconfigfile)
+    multiqcconfigfile = property(_get_multiqcconfigfile)
 
     def _get_config(self):
         filename = self._return_none(self._config_browser.get_filenames())
@@ -304,9 +317,9 @@ class GenericFactory(BaseFactory):
 
     def __repr__(self):
         txt = super(GenericFactory, self).__repr__()
-        txt += "\nsnakefile:%s\nconfigfile:%s\ndirectory:%s\nschema:%s"
+        txt += "\nsnakefile:%s\nconfigfile:%s\ndirectory:%s\nschema:%s\nmultiqcconfigfile:%s"
         return txt % (self.snakefile, self.configfile, self.directory,
-            self.schemafile)
+            self.schemafile, self.multiqcconfigfile)
 
 
 class SequanaGUI(QMainWindow, Tools):
@@ -327,7 +340,7 @@ class SequanaGUI(QMainWindow, Tools):
 
     """
     _not_a_rule = {"requirements", "gatk_bin", "input_directory",
-                    "input_samples", "input_pattern", "ignore"}
+                    "input_pattern", "ignore"}
     _browser_keywords = {"reference"}
     _to_exclude = ["atac-seq", "compressor"]
 
@@ -693,11 +706,11 @@ class SequanaGUI(QMainWindow, Tools):
         self.ui.layout_sequana_wkdir.addWidget(saf._directory_browser)
 
         # add widget for the input sample
-        self.ui.layout_sequana_input_files.addWidget(saf._sequana_paired_tab)
-        hlayout = QW.QHBoxLayout()
-        hlayout.addWidget(saf._sequana_readtag_label2)
-        hlayout.addWidget(saf._sequana_readtag_lineedit2)
-        self.ui.layout_sequana_input_files.addLayout(hlayout)
+        #self.ui.layout_sequana_input_files.addWidget(saf._sequana_paired_tab)
+        #hlayout = QW.QHBoxLayout()
+        #hlayout.addWidget(saf._sequana_readtag_label2)
+        #hlayout.addWidget(saf._sequana_readtag_lineedit2)
+        #self.ui.layout_sequana_input_files.addLayout(hlayout)
 
         # add widget for the input directory
         self.ui.layout_sequana_input_dir.addWidget(saf._sequana_directory_tab)
@@ -1263,34 +1276,23 @@ class SequanaGUI(QMainWindow, Tools):
                 msg.exec_()
                 return
 
-            if self.ui.tabWidget.currentIndex() == 0:
-                filename = self.sequana_factory._sequana_directory_tab.get_filenames()
-                form_dict["input_directory"] = (filename)
+            filename = self.sequana_factory._sequana_directory_tab.get_filenames()
+            form_dict["input_directory"] = (filename)
 
-                # If pattern provided, the input_directory is reset but used in
-                # the pattern as the basename
-                pattern = self.sequana_factory._sequana_pattern_lineedit.text()
-                if len(pattern.strip()):
-                    form_dict["input_pattern"] = (filename)
-                    form_dict["input_pattern"] += os.sep + pattern.strip()
-                    form_dict["input_directory"] = ""
+            # If pattern provided, the input_directory is reset but used in
+            # the pattern as the basename
+            pattern = self.sequana_factory._sequana_pattern_lineedit.text()
+            if len(pattern.strip()):
+                form_dict["input_pattern"] = (filename)
+                form_dict["input_pattern"] += os.sep + pattern.strip()
+                form_dict["input_directory"] = ""
 
-                readtag = self.sequana_factory._sequana_readtag_lineedit.text()
-                if len(readtag.strip()):
-                    form_dict["input_readtag"] = readtag
-                else:
-                    form_dict["input_readtag"] = "_R[12]_"
-                form_dict["input_samples"] = {"file1":None, "file2":None}
+            readtag = self.sequana_factory._sequana_readtag_lineedit.text()
+            if len(readtag.strip()):
+                form_dict["input_readtag"] = readtag
+            else:
+                form_dict["input_readtag"] = "_R[12]_"
 
-            elif self.ui.tabWidget.currentIndex() == 1:
-                filename = self.sequana_factory._sequana_paired_tab.get_filenames()
-                form_dict["input_samples"] = (filename)
-
-                readtag = self.sequana_factory._sequana_readtag_lineedit.text()
-                if len(readtag.strip()):
-                    form_dict["input_readtag"] = readtag
-                else:
-                    form_dict["input_readtag"] = "_R[12]_"
         elif self.mode == "generic":
             # Here we save the undefined section in the form.
             if self._undefined_section in form_dict.keys():
@@ -1364,6 +1366,12 @@ class SequanaGUI(QMainWindow, Tools):
                 # place of the original version when launnching snakemake!
                 #self.snakemake_dialog.set()
                 self.snakemake_dialog.ui.snakemake_options_cluster_cluster__config_value.set_filenames(target)
+
+            # Save the multiqc_config file if provided in sequana pipeline
+            if self.mode == "sequana" and self.sequana_factory.multiqcconfigfile:
+                target = self.working_dir + os.sep + "multiqc_config.yaml"
+                shutil.copy(self.sequana_factory.multiqcconfigfile, target)
+
 
         else:
             self.critical("Config file not saved (no wkdir)")

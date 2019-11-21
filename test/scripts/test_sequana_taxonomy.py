@@ -53,7 +53,7 @@ def test_analysis(krakendb):
     except:
         # For travis test
         HOME = os.getenv('HOME')
-        database = os.sep.join([HOME, 'database'])
+        database = os.sep.join([HOME, '.config', 'sequana', 'kraken_toydb'])
         df = taxonomy.main([prog, '--file1', file1, "--database", database,
             "--file2", file2,  "--output-directory",
             directory.name, "--thread", "1"])

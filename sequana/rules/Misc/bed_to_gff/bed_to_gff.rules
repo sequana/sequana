@@ -1,0 +1,15 @@
+rule bed_to_gff:
+    """
+    Rule for converting output from IDR to GFF passing featureCounts
+    """
+    input:
+        __bed_to_gff__input
+    log:
+        __bed_to_gff__logs
+    output:
+        temp(__bed_to_gff__output)
+    shell:
+        """
+        awk 'BEGIN{{OFS="\t"}} {{print $1"\tChipuana\tpeak\t"$2"\t"$3"\t.\t.\t.\tgene_id \"$1"_"$2"_"$3}}' {input} > {output} 2> {log}
+
+        """

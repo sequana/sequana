@@ -1,0 +1,231 @@
+{
+ "Flowcell" : "H53CTBGXB",
+ "RunNumber" : 273,
+ "RunId" : "190315_NS500199_0273_AH53CTBGXB",
+ "ReadInfosForLanes" : [
+  {
+   "LaneNumber" : 1,
+   "ReadInfos" : [
+    {
+     "Number" : 1,
+     "NumCycles" : 76,
+     "IsIndexedRead" : false
+    },
+    {
+     "Number" : 1,
+     "NumCycles" : 8,
+     "IsIndexedRead" : true
+    },
+    {
+     "Number" : 2,
+     "NumCycles" : 76,
+     "IsIndexedRead" : false
+    }
+   ]
+  },
+  {
+   "LaneNumber" : 2,
+   "ReadInfos" : [
+    {
+     "Number" : 1,
+     "NumCycles" : 76,
+     "IsIndexedRead" : false
+    },
+    {
+     "Number" : 1,
+     "NumCycles" : 8,
+     "IsIndexedRead" : true
+    },
+    {
+     "Number" : 2,
+     "NumCycles" : 76,
+     "IsIndexedRead" : false
+    }
+   ]
+  },
+  {
+   "LaneNumber" : 3,
+   "ReadInfos" : [
+    {
+     "Number" : 1,
+     "NumCycles" : 76,
+     "IsIndexedRead" : false
+    },
+    {
+     "Number" : 1,
+     "NumCycles" : 8,
+     "IsIndexedRead" : true
+    },
+    {
+     "Number" : 2,
+     "NumCycles" : 76,
+     "IsIndexedRead" : false
+    }
+   ]
+  },
+  {
+   "LaneNumber" : 4,
+   "ReadInfos" : [
+    {
+     "Number" : 1,
+     "NumCycles" : 76,
+     "IsIndexedRead" : false
+    },
+    {
+     "Number" : 1,
+     "NumCycles" : 8,
+     "IsIndexedRead" : true
+    },
+    {
+     "Number" : 2,
+     "NumCycles" : 76,
+     "IsIndexedRead" : false
+    }
+   ]
+  }
+ ],
+ "ConversionResults" : [
+  {
+   "LaneNumber" : 1,
+   "TotalClustersRaw" : 115395821,
+   "TotalClustersPF" : 104110240,
+   "Yield" : 15824756480,
+   "DemuxResults" : [
+
+   ],
+   "Undetermined" : {
+    "NumberReads" : 104110240,
+    "Yield" : 15824756480,
+    "ReadMetrics" : [
+     {
+      "ReadNumber" : 1,
+      "Yield" : 7912378240,
+      "YieldQ30" : 7423276947,
+      "QualityScoreSum" : 271785641890,
+      "TrimmedBases" : 0
+     },
+     {
+      "ReadNumber" : 2,
+      "Yield" : 7912378240,
+      "YieldQ30" : 7277205105,
+      "QualityScoreSum" : 268782094873,
+      "TrimmedBases" : 0
+     }
+    ]
+   }
+  },
+  {
+   "LaneNumber" : 2,
+   "TotalClustersRaw" : 133338686,
+   "TotalClustersPF" : 113855901,
+   "Yield" : 17306096952,
+   "DemuxResults" : [
+
+   ],
+   "Undetermined" : {
+    "NumberReads" : 113855901,
+    "Yield" : 17306096952,
+    "ReadMetrics" : [
+     {
+      "ReadNumber" : 1,
+      "Yield" : 8653048476,
+      "YieldQ30" : 7932841351,
+      "QualityScoreSum" : 293238120073,
+      "TrimmedBases" : 0
+     },
+     {
+      "ReadNumber" : 2,
+      "Yield" : 8653048476,
+      "YieldQ30" : 7727343691,
+      "QualityScoreSum" : 289009679823,
+      "TrimmedBases" : 0
+     }
+    ]
+   }
+  },
+  {
+   "LaneNumber" : 3,
+   "TotalClustersRaw" : 116526448,
+   "TotalClustersPF" : 103340396,
+   "Yield" : 15707740192,
+   "DemuxResults" : [
+
+   ],
+   "Undetermined" : {
+    "NumberReads" : 103340396,
+    "Yield" : 15707740192,
+    "ReadMetrics" : [
+     {
+      "ReadNumber" : 1,
+      "Yield" : 7853870096,
+      "YieldQ30" : 7316007491,
+      "QualityScoreSum" : 268646705800,
+      "TrimmedBases" : 0
+     },
+     {
+      "ReadNumber" : 2,
+      "Yield" : 7853870096,
+      "YieldQ30" : 7179997748,
+      "QualityScoreSum" : 265855789971,
+      "TrimmedBases" : 0
+     }
+    ]
+   }
+  },
+  {
+   "LaneNumber" : 4,
+   "TotalClustersRaw" : 133869020,
+   "TotalClustersPF" : 111993615,
+   "Yield" : 17023029480,
+   "DemuxResults" : [
+
+   ],
+   "Undetermined" : {
+    "NumberReads" : 111993615,
+    "Yield" : 17023029480,
+    "ReadMetrics" : [
+     {
+      "ReadNumber" : 1,
+      "Yield" : 8511514740,
+      "YieldQ30" : 7782947320,
+      "QualityScoreSum" : 288012296321,
+      "TrimmedBases" : 0
+     },
+     {
+      "ReadNumber" : 2,
+      "Yield" : 8511514740,
+      "YieldQ30" : 7582209622,
+      "QualityScoreSum" : 283899948749,
+      "TrimmedBases" : 0
+     }
+    ]
+   }
+  }
+ ],
+ "UnknownBarcodes" : [
+  {
+   "Lane" : 1,
+   "Barcodes" : {
+    "unknown" : 104110240
+   }
+  },
+  {
+   "Lane" : 2,
+   "Barcodes" : {
+    "unknown" : 113855900
+   }
+  },
+  {
+   "Lane" : 3,
+   "Barcodes" : {
+    "unknown" : 103340380
+   }
+  },
+  {
+   "Lane" : 4,
+   "Barcodes" : {
+    "unknown" : 111993600
+   }
+  }
+ ]
+}

@@ -34,10 +34,10 @@ rule multiqc:
         __multiqc__output
     params:
         inputdir = __multiqc__input_dir,
-        options = config['multiqc']['options'],
-        outdir = config['multiqc']['output-directory']
+        options = __multiqc__options,
+        outdir = __multiqc__output_dir
     shell:
         """
-        multiqc {params.inputdir} -o {params.outdir} {params.options}  2> {log}
+        multiqc {params.inputdir} -o {params.outdir}  {params.options}  2> {log}
         """
 

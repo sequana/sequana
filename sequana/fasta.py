@@ -168,7 +168,20 @@ class FastA(object):
         return cherries
 
     def get_stats(self):
+        from pylab import mean
         stats = {}
-        stats["N"] = 2
+        stats["N"] = len(self.sequences)
         stats["mean_length"] = mean(self.lengths)
         return stats
+
+    def reverse_and_save(self, filename):
+        with open(filename, "w") as fout:
+            for read in self:
+                fout.write(">{}\t{}\n{}\n".format(read.name, read.comment,
+                    read.sequence[::-1]))
+
+    def save_ctg_to_fasta(self, ctgname, outname):
+        index = self.names.index(ctgname)
+        with open("{}.fa".format(outname), "w") as fout:
+            fout.write(">{}\n{}".format(outname, self.sequences[index]))
+
