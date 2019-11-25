@@ -1,9 +1,0 @@
-channels:
- - etetoolkit
-dependencies:
- - ete3
- - clustalo
- - muscle
- - trimal
- - raxml
-
