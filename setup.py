@@ -12,7 +12,6 @@ _MICRO               = 0
 version              = '%d.%d.%d' % (_MAJOR, _MINOR, _MICRO)
 release              = '%d.%d' % (_MAJOR, _MINOR)
 
-#version += ".post3"
 
 metainfo = {
     'authors': {"main": ("yourname", "email@whatever.org")},
@@ -115,7 +114,6 @@ setup(
     zip_safe=False,
     entry_points = {
         'console_scripts':[
-           'sequana_gui=sequana.gui.sequana_gui:main',
            'sequanix=sequana.gui.sequana_gui:main',
            #'fastq_head=sequana.scripts.fastq_head:main',
            #'fastq_count=sequana.scripts.fastq_count:main',
