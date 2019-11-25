@@ -128,7 +128,7 @@ class StatsFile(object):
         total = total.groupby("lane").sum().reset_index()
         total["name"] = "Determined"
 
-        df = pd.concat([under, total])
+        df = pd.concat([under, total], sort=True)
 
         df = df.pivot(index="lane", columns="name", values="count")
         df = df[["Determined", "Undetermined"]]
