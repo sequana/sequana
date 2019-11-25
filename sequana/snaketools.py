@@ -152,6 +152,7 @@ def plot_stats(inputdir=".", outputdir=".",
         logger.error("Could not process %s/stats.txt file" % inputdir)
 
 
+
 class ModuleFinderSingleton(object):
     """Data structure to hold the :class:`Module` names"""
     def __init__(self):
@@ -173,36 +174,65 @@ class ModuleFinderSingleton(object):
         self._paths = {}
         self._type = {}
 
-        # scan the official paths
-        self._add_names("rules")
-        self._add_names("pipelines")
+        # scan the official path for all rules
+        self._add_rules()
+        self._add_internal_pipelines()
 
-    def _add_names(self, path):
+        # scan all pipeline from sequana_pipelines namespace
+        self._add_pipelines()
+
+    def _add_internal_pipelines(self):
         sepjoin = os.sep.join
-        fullpath = sepjoin([gpl("sequana"), "sequana", path])
-
+        fullpath = sepjoin([gpl("sequana"), "sequana", "pipelines"])
         fullpaths = self._iglob(fullpath)
+
         for this in fullpaths:
             whatever, module_name, filename = this.rsplit(os.sep, 2)
             if module_name in self._paths.keys():
-                raise ValueError("Found duplicated name %s. "
-                                 "Overwrites previous rule " % module_name)
+                logger.warning(
+                    "Found duplicated name %s from %s" % (module_name,this) + 
+                    "Overwrites previous rule ")
             self._paths[module_name] = whatever + os.sep + module_name
-            self._type[module_name] = path[:-1]
+            self._type[module_name] = "pipeline"
+
+    def _add_rules(self):
+        sepjoin = os.sep.join
+        fullpath = sepjoin([gpl("sequana"), "sequana", "rules"])
+        fullpaths = self._iglob(fullpath)
+
+        for this in fullpaths:
+            whatever, module_name, filename = this.rsplit(os.sep, 2)
+            if module_name in self._paths.keys():
+                logger.warning(
+                    "Found duplicated name %s from %s" % (module_name,this) + 
+                    "Overwrites previous rule ")
+            self._paths[module_name] = whatever + os.sep + module_name
+            self._type[module_name] = "rule"
+
+    def _add_pipelines(self):
+        sepjoin = os.sep.join
+
+        import sequana_pipelines
+
+        fullpaths = sequana_pipelines.__path__
+        fullpaths = [self._iglob(x)[0] for x in fullpaths]
+
+        for this in fullpaths:
+
+
+            whatever, module_name, filename = this.rsplit(os.sep, 2)
+
+            if module_name in self._paths.keys():
+                logger.warning(
+                    "Found duplicated name %s from %s" % (module_name,this) + 
+                    "Overwrites previous rule ")
+            self._paths[module_name] = whatever + os.sep + module_name
+            self._type[module_name] = "pipeline"
 
     def _iglob(self, path, extension="rules"):
-        try:
-            from glob import iglob
-            matches = tuple(iglob("%s/**/*.%s" % (path, extension),
+        from glob import iglob
+        matches = tuple(iglob("%s/**/*.%s" % (path, extension),
                                  recursive=True))
-        except:
-            # iglob use recursivity with ** only in py3.5 (snakemake)
-            import fnmatch
-            import os
-            matches = []
-            for root, dirnames, filenames in os.walk(path):
-                for filename in fnmatch.filter(filenames, '*.' + extension):
-                    matches.append(os.path.join(root, filename))
         return matches
 
     def _get_names(self):
@@ -1658,7 +1688,7 @@ class OnSuccessCleaner(object):
         files = self.files_to_remove + [self.makefile_filename]
         # in case commas are added in the config file
         files = [x.replace(",", "") for x in files]
-        
+ 
         makefile += "clean_files:\n\trm -f {}\n".format(" ".join(files))
 
         dirs = self.directories_to_remove
