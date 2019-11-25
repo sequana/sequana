@@ -179,7 +179,10 @@ class ModuleFinderSingleton(object):
         self._add_internal_pipelines()
 
         # scan all pipeline from sequana_pipelines namespace
-        self._add_pipelines()
+        try:
+            self._add_pipelines()
+        except:
+            logger.warning("sequana pipelines not installed. Please install a pipeline from github.com/sequana")
 
     def _add_internal_pipelines(self):
         sepjoin = os.sep.join
