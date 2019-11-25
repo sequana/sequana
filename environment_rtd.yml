@@ -17,7 +17,6 @@ dependencies:
 - bioservices
 - pip
 - shustring
-- biokit>=0.4.3
 - ruamel.yaml
 - kraken
 - krona
