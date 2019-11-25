@@ -1,4 +1,0 @@
-- cutadapt
-- picard-tools
-- bowtie2
-- multiqc

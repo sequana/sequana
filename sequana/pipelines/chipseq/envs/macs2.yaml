@@ -1,5 +1,0 @@
-channels:
-  - bioconda
-dependencies:
-  - python =2.7.15
-  - macs2 =2.1.2
