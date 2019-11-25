@@ -6,6 +6,13 @@ Changelog
 0.8.0
 ------
 
+
+* Remove all pipelines from sequana. Pipelines have now their own repositories
+on github to ease the developpement of sequana and those pipelines. The
+rationale being that we do not need to update sequana when a pipeline changes
+and a pipeline can have its own biocontainer and life cycle.
+
+
 This is an unstable release made to includes lots of new features and pipelines
  (chip-seq, atac-seq, demultiplexing, fastqc, laa) and bug fixes made on the
 develop branch into the master. 
@@ -15,7 +22,10 @@ develop branch into the master.
     * snpeff now includes GFF input file
     * new module trf for tandem repeat finder output. 
 
-
+* CHANGES:
+    * snaketools: pipelines discovery updated in ModuleFinderSingleton
+    * demultiplex: fix a Pandas deprecated warning (add sort argument in pd.concat)
+    * 
 
 0.7.2
 ----------
