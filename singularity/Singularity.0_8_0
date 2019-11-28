@@ -8,6 +8,7 @@ From: ubuntu:16.04
 %labels
 
     AUTHOR Thomas Cokelaer
+    VERSION 0.8.0
 
 %post
 
@@ -86,6 +87,7 @@ From: ubuntu:16.04
     conda install xlrd scipy pyVCF
     conda install multiqc==1.6
 
+    pip install itolapi
 
     # Sequana source code
     pip install -e git://github.com/sequana/sequana.git@refactorisation#egg=sequana
@@ -95,12 +97,7 @@ From: ubuntu:16.04
     conda clean --all -y # next requires lots of space
     ###rm -rf /usr/local/anaconda/pkgs
 
-    # pysam/bzip/hstlib is tricky. We pin versions as follows
-    ###conda install --override-channels -c conda-forge bzip2
-    #conda install --override-channels -c bioconda -c conda-forge htslib==1.7.0
-    #conda install pysam==0.14
-
-    ###if [ ! -d /data ]; then mkdir /data; fi
+    if [ ! -d /data ]; then mkdir /data; fi
     ###if [ ! -d /scripts ]; then mkdir /scripts; fi
     ###if [ ! -d /scratch ]; then mkdir /scratch; fi
     ###if [ ! -d /mounting ]; then mkdir /mounting; fi
@@ -131,8 +128,5 @@ From: ubuntu:16.04
     # according to https://github.com/uncss/uncss/issues/166, should use
     #export LC_ALL=C  but does not work ! Same error as above
     ###export LC_ALL=C.UTF-8
-
-
-
     #echo "backend:agg" > matplotlibrc
 
