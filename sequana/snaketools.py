@@ -373,6 +373,7 @@ or open a Python shell and type::
         str += "Cluster config: %s\n" % self.cluster_config
         str += "Schema for config file: %s\n" % self.schema_config
         str += "Multiqc config file: %s\n" % self.multiqc_config
+        str += "requirements file: %s\n" % self.requirements
         return str
 
     def __str__(self):
@@ -465,7 +466,7 @@ or open a Python shell and type::
         """Is the module executable
 
         A Pipeline Module should have a requirements.txt file that is
-        introspectied to check if all executables are available;
+        introspected to check if all executables are available;
 
         :param verbose:
         :return: a tuple. First element is a boolean to tell if it executable.
@@ -483,11 +484,19 @@ or open a Python shell and type::
         with open(self.requirements, "r") as fh:
             data = fh.read()
             datalist = [this.strip() for this in data.split("\n")
-                        if this.strip() not in [""]]
+                if len(this.strip())>0]
             reqlist = []
             for this in datalist:
                 if this.startswith('-'):
                     req = this.split("-")[1].split()[0].strip()
+                    if req.startswith("["):
+                        req = req.replace("[", "")
+                        req = req.replace("]", "")
+                        pipelines.append(req)
+                    else:
+                        reqlist.append(req)
+                else:
+                    req = this.strip()
                     if req.startswith("["):
                         req = req.replace("[", "")
                         req = req.replace("]", "")
@@ -503,18 +512,15 @@ or open a Python shell and type::
             # It is either a Python package or an executable
             try:
                 easydev.shellcmd("which %s" % req)
-                if verbose:
-                    print("Found %s executable" % req)
+                logger.info("Found %s executable" % req)
             except:
                 # is this a Python code ?
                 if len(easydev.get_dependencies(req)) == 0:
-                    if verbose:
-                        print("%s not found !!" % req)
+                    logger.error("%s not found !! You must install it" % req)
                     executable = False
                     missing.append(req)
                 else:
-                    if verbose:
-                        print("%s python package" % req)
+                    logger.info("%s python package" % req)
         return executable, missing
 
     def check(self, mode="warning"):
