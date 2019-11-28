@@ -47,6 +47,8 @@ packages = [this for this in packages if this not in ['test']]
 # - mock is for the test only
 # - qtconsole is required by Sequanix
 requirements = open("requirements.txt").read().split()
+# not in conda but on pypi
+requirements += ["itolapi"]
 
 on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
 if on_rtd:
