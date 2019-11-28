@@ -74,7 +74,6 @@ class InputOptions():
 
     def add_options(self, parser):
         group = parser.add_argument_group(self.group_name)
-        group.add_argument_group("pipeline")
         group.add_argument(
              "--input-directory",
              dest="input_directory",
@@ -92,8 +91,9 @@ class InputOptions():
 
 
 class SnakemakeOptions():
-    def __init__(self, group_name="snakemake"):
+    def __init__(self, group_name="snakemake", working_directory="analysis"):
         self.group_name = group_name
+        self.workdir = working_directory
 
     def add_options(self, parser):
         group = parser.add_argument_group(self.group_name)
@@ -107,16 +107,16 @@ class SnakemakeOptions():
         group.add_argument(
             "--working-directory",
             dest="workdir",
-            default="analysis",
+            default=self.workdir,
             help="""where to save the pipeline and its configuration file and
-            where the analyse can be run"""
+            where the analyse can be run (default {})""".format(self.workdir)
         )
         group.add_argument(
             "--force",
             dest="force",
             action="store_true",
             default=False,
-            help="""If the working directory exists, proceed anyway. (defaults to analysis)"""
+            help="""If the working directory exists, proceed anyway."""
         )
 
 
