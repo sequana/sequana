@@ -1,9 +1,9 @@
 atropos
 bioservices>=1.5.1
 colorlog>=3.1.0
+cython
 docutils
 easydev>=0.9.36
-itolapi
 matplotlib
 mock
 multiqc==1.6

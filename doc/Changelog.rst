@@ -25,7 +25,8 @@ develop branch into the master.
 * CHANGES:
     * snaketools: pipelines discovery updated in ModuleFinderSingleton
     * demultiplex: fix a Pandas deprecated warning (add sort argument in pd.concat)
-    * 
+    * python dependencies not in conda are not harcoded inside the setup.py
+      (itolapi). add cython into the list of requirements.
 
 0.7.2
 ----------

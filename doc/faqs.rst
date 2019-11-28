@@ -140,6 +140,11 @@ conda-forge (reference: https://github.com/bioconda/bioconda-recipes/issues/5188
 
     conda install --override-channels -c conda-forge bzip2
 
+pysam may not compile due to a missing dependency on lzma. Under fedora,
+type::
+
+    yum install liblzma liblzma-devel
+
 
 
 qt
