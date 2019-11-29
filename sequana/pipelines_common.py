@@ -141,7 +141,7 @@ class SlurmOptions():
             "--slurm-cores-per-job",
             dest="slurm_cores_per_job",
             default=4,
-            help="SLURM queue to be used (biomics)",
+            help="Number of cores/jobs to be used at the same time",
         )
         group.add_argument(
             "--slurm-queue",
@@ -202,10 +202,10 @@ class PipelineManager():
                 self.options.slurm_queue,
                 self.options.slurm_queue)
 
-            self.command += ' --cluster "sbatch --mem {} -c {} {} "'.format(
+            self.command += ' --cluster "sbatch --mem {} -c {} "'.format(
                 self.options.slurm_memory,
                 self.options.slurm_cores_per_job,
-                self.options.slurm_queue)
+                slurm_queue)
 
         # Now we create the directory to store the config/pipeline
         if os.path.exists(self.workdir) is True and self.options.force is False:
