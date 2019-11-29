@@ -202,7 +202,7 @@ class PipelineManager():
                 self.options.slurm_queue,
                 self.options.slurm_queue)
 
-            self.command += ' --cluster "sbatch --mem {} -c {} "'.format(
+            self.command += ' --cluster "sbatch --mem {} -c {} {}"'.format(
                 self.options.slurm_memory,
                 self.options.slurm_cores_per_job,
                 slurm_queue)
