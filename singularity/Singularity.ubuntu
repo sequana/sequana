@@ -68,9 +68,12 @@ From: ubuntu:16.04
     conda config --add channels bioconda
     conda config --add channels conda-forge
 
+    # aug 2019. under py3.5 solving environement takes forever
+    # this fixes the issue https://github.com/conda/conda/issues/8197
+    #conda config --set channel_priority strict
+    #
     conda install python=3.6
 
-    conda install fastqc pigz pbzip2 dsrc bcftools deeptools
 
     # Let us save some space
     conda clean --packages -y
@@ -78,6 +81,7 @@ From: ubuntu:16.04
     ###rm -rf /usr/local/anaconda/pkgs
 
     if [ ! -d /data ]; then mkdir /data; fi
+    echo "backend:agg" > matplotlibrc
 
 %environment
     export PATH=$PATH:/usr/local/anaconda/bin

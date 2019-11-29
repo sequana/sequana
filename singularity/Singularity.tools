@@ -1,0 +1,38 @@
+Bootstrap: localimage
+From: ubuntu.img
+
+
+# Bioinformatics tools available (main ones):
+
+#deeptools, pybabel, dsrc, atropos, bcftools, multiqc, bgzip,samtools
+#sequana, bunzip2, fastqc, pbunzip2, sequana_coverage
+#bzip2, sequanix, pigz,snakemake 
+# bowtie bowtie2, snpEff picard sambamba freebayes bwa etc
+
+
+%labels
+    Author thomas cokelaer
+    Version v1.0
+
+%post 
+
+    export PATH=$PATH:/usr/local/anaconda/bin
+    export LANG=C   # prevents perl for raising warnings
+    export PERL5LIB=/usr/local/anaconda/lib/perl5/5.22.0
+
+    conda install pigz pbzip2 dsrc 
+    conda install fastqc                                   # for fasqc pipeline
+    conda install bcftools deeptools samtools bamtools bwa # general
+    conda install multiqc                                  # general
+    conda install freebayes picard sambamba snpEff   # variant calling
+    conda install bowtie bowtie2                           # rnaseq
+
+    # Let us save some space
+    conda clean --packages -y
+    conda clean --all -y # next requires lots of space
+    ###rm -rf /usr/local/anaconda/pkgs
+
+
+%environment
+    #echo "backend:agg" > matplotlibrc
+
