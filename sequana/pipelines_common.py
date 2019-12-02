@@ -31,7 +31,7 @@ logger.name = __name__
 
 
 __all__ = ["Colors", "InputOptions", "SnakemakeOptions", "SlurmOptions", 
-    "PipelineManager", "GeneralOptions"]
+    "PipelineManager", "GeneralOptions", "print_version"]
 
 
 class Colors:
@@ -114,7 +114,6 @@ class InputOptions():
         )
 
 
-
 class SnakemakeOptions():
     def __init__(self, group_name="snakemake", working_directory="analysis"):
         self.group_name = group_name
@@ -183,6 +182,18 @@ class SlurmOptions():
         )
 
 
+def print_version(name):
+    from sequana import version
+    print("Sequana version used: {}".format(version))
+    try:
+        import pkg_resources
+        ver = pkg_resources.require("sequana_{}".format(name))[0].version
+        print("pipeline sequana_{} version used: {}".format(name, ver))
+    except Exception as err:
+        print(err)
+        print("pipeline sequana_{} version used: ?".format(name))
+        sys.exit(1)
+
 
 class PipelineManager():
     """
@@ -197,16 +208,7 @@ class PipelineManager():
 
         self.options = options
         if self.options.version:
-            from sequana import version
-            print("Sequana version used: {}".format(version))
-            try:
-                import pkg_resources
-                ver = pkg_resources.require("sequana_{}".format(name))[0].version
-                print("pipeline sequana_{} version used: {}".format(name, ver))
-            except Exception as err:
-                print(err)
-                print("pipeline sequana_{} version used: ?".format(name))
-            sys.exit(0)
+            print_version(name)
 
         self.name = name
 
