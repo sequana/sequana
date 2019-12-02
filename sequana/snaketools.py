@@ -512,7 +512,7 @@ or open a Python shell and type::
             # It is either a Python package or an executable
             try:
                 easydev.shellcmd("which %s" % req)
-                logger.info("Found %s executable" % req)
+                logger.debug("Found %s executable" % req)
             except:
                 # is this a Python code ?
                 if len(easydev.get_dependencies(req)) == 0:

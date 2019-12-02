@@ -30,7 +30,8 @@ logger.name = __name__
 
 
 
-__all__ = ["Colors", "InputOptions", "SnakemakeOptions", "SlurmOptions", "PipelineManager"]
+__all__ = ["Colors", "InputOptions", "SnakemakeOptions", "SlurmOptions", 
+    "PipelineManager", "GeneralOptions"]
 
 
 class Colors:
@@ -66,6 +67,29 @@ class Colors:
 
     def blue(self, msg):
         return self.BLUE + msg + self.ENDC
+
+
+class GeneralOptions():
+    def __init__(self):
+        pass
+
+    def add_options(self, parser):
+        parser.add_argument(
+            "--run-mode",
+            dest="run_mode",
+            default=None,
+            choices=['local', 'slurm'],
+            help="""run_mode can be either 'local' or 'slurm'. Use local to
+                run the pipeline locally, otherwise use 'slurm' to run on a
+                cluster with SLURM scheduler. Other clusters are not maintained.
+                However, you can set to slurm and change the output shell script
+                to fulfill your needs. If unset, sequana searches for the sbatch
+                and srun commands. If found, this is set automatically to
+                'slurm', otherwise to 'local'. 
+                """)
+
+        parser.add_argument("--version",
+            action="store_true")
 
 
 class InputOptions():
@@ -172,6 +196,18 @@ class PipelineManager():
         """
 
         self.options = options
+        if self.options.version:
+            from sequana import version
+            print("Sequana version used: {}".format(version))
+            try:
+                import pkg_resources
+                ver = pkg_resources.require("sequana_{}".format(name))[0].version
+                print("pipeline sequana_{} version used: {}".format(name, ver))
+            except Exception as err:
+                print(err)
+                print("pipeline sequana_{} version used: ?".format(name))
+            sys.exit(0)
+
         self.name = name
 
         # handy printer
@@ -188,15 +224,29 @@ class PipelineManager():
         # 
         self.workdir = options.workdir
 
+    def _guess_scheduler(self):
+
+        from easydev import cmd_exists
+        if cmd_exists("sbatch") and cmd_exists("srun"):
+            return 'slurm'
+        else:
+            return 'local'
+
     def setup(self):
         """Starts to fill the command and create the output directory"""
 
         # First we create the beginning of the command with the optional
         # parameters for a run on a SLURM scheduler
+
         cmd = "#!/bin/bash\nsnakemake -s {}.rules"
         self.command = cmd.format(self.name)
 
         self.command += " --jobs {}".format(self.options.jobs)
+
+        if self.options.run_mode is None:
+            self.options.run_mode = self._guess_scheduler()
+            logger.info("Guessed scheduler is {}".format(
+                self.options.run_mode))
 
         if self.options.run_mode == "slurm":
             slurm_queue = "-A {} --qos {} -p {}".format(
