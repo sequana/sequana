@@ -11,7 +11,6 @@ rule fastq_screen_report:
 
     input :
         __fastq_screen_report__input,
-        __fastq_screen_report__input_done
     log :
         __fastq_screen_report__logs
     output:
@@ -103,3 +102,4 @@ rule fastq_screen_report:
         pl.tight_layout()
         fig.savefig(output[0],format='svg')
         pl.close()
+

@@ -22,13 +22,25 @@ rule fastq_screen:
     log:
         __fastq_screen__logs
     output:
-        touch(__fastq_screen__output),
-        outdir = __fastq_screen__outdir
+        #touch(__fastq_screen__output),
+        #outdir = __fastq_screen__outdir
+        txt = __fastq_screen__outdir
     threads: 4
     params:
         configFile = config['fastq_screen']['conf'],
         options = config['fastq_screen']['options']
-    shell:
-        """
-        fastq_screen --outdir {output.outdir} --threads {threads} --conf {params.configFile} {params.options} {input}
-        """
+    #shell:
+    #    """
+    #    fastq_screen --outdir {output.outdir} --threads {threads} --conf {params.configFile} {params.options} {input}
+    #    """
+    #
+    run:
+        import tempfile
+        tempdir = tempfile.mkdtemp()
+        print("//{} {} {}".format(input[0], log[0], output[0])) 
+        shell("fastq_screen --outdir {tempdir} --threads {threads} "
+              "--conf {params.configFile} {params.options} {input} " 
+              " 1> {log[0]} 2>{log[0]}")
+        outdir = output[0].rsplit("/", 1)
+        shell("mv {}/* {}".format(tempdir, outdir[0]))
+
