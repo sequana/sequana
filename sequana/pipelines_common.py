@@ -78,8 +78,9 @@ class InputOptions():
              "--input-directory",
              dest="input_directory",
              default=".",
-             required=True,
-             help="Where to find the FastQ files (default current directory .) ",
+             #required=True,
+             help="""Where to find the FastQ files (default current directory
+                  is the local directory that is '.') """,
         )
         group.add_argument(
             "--input-pattern",
@@ -102,7 +103,8 @@ class SnakemakeOptions():
             "--jobs",
             dest="jobs",
             default=40,
-            help="number of jobs to run at the same time"
+            help="""Number of jobs to run at the same time (default 40). 
+This is the --jobs options of Snakemake"""
         )
         group.add_argument(
             "--working-directory",
