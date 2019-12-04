@@ -25,7 +25,7 @@ From: ubuntu.img
     conda install bcftools deeptools samtools bamtools bwa # general
     conda install multiqc                                  # general
     conda install freebayes picard sambamba snpEff   # variant calling
-    conda install bowtie bowtie2                           # rnaseq
+    conda install bowtie bowtie2 STAR                         # rnaseq
 
     # Let us save some space
     conda clean --packages -y

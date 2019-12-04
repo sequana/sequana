@@ -147,7 +147,7 @@ This is the --jobs options of Snakemake"""
 
 
 class SlurmOptions():
-    def __init__(self, group_name="slurm"):
+    def __init__(self, group_name="slurm", memory=4000, queue="common", cores=4):
         """
         class Options(argparse.ArgumentParser, SlurmOptions):
             def __init__(self, prog"whatever")
@@ -159,25 +159,28 @@ class SlurmOptions():
 
         """
         self.group_name = group_name
+        self.memory = memory
+        self.cores = cores
+        self.queue = quueue
 
     def add_options(self, parser):
         group = parser.add_argument_group(self.group_name)
         group.add_argument(
             "--slurm-cores-per-job",
             dest="slurm_cores_per_job",
-            default=4,
+            default=self.cores,
             help="Number of cores/jobs to be used at the same time",
         )
         group.add_argument(
             "--slurm-queue",
             dest="slurm_queue",
-            default="biomics",
+            default=self.queue,
             help="SLURM queue to be used (biomics)",
         )
         group.add_argument(
             "--slurm-memory",
             dest="slurm_memory",
-            default=4000,
+            default=self.memory,
             help="memory in Mb (default 4000)"
         )
 
