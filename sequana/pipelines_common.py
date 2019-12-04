@@ -161,7 +161,7 @@ class SlurmOptions():
         self.group_name = group_name
         self.memory = memory
         self.cores = cores
-        self.queue = quueue
+        self.queue = queue
 
     def add_options(self, parser):
         group = parser.add_argument_group(self.group_name)
