@@ -179,10 +179,7 @@ class ModuleFinderSingleton(object):
         self._add_internal_pipelines()
 
         # scan all pipeline from sequana_pipelines namespace
-        try:
-            self._add_pipelines()
-        except:
-            logger.warning("sequana pipelines not installed. Please install a pipeline from github.com/sequana")
+        self._add_pipelines()
 
     def _add_internal_pipelines(self):
         sepjoin = os.sep.join
@@ -215,22 +212,25 @@ class ModuleFinderSingleton(object):
     def _add_pipelines(self):
         sepjoin = os.sep.join
 
-        import sequana_pipelines
+        try:
+            import sequana_pipelines
+        except:
+            logger.warning("sequana pipelines not installed. Please install a pipeline from github.com/sequana")
+            return 
 
-        fullpaths = sequana_pipelines.__path__
-        fullpaths = [self._iglob(x)[0] for x in fullpaths]
+        from types import ModuleType
+        candidates = dir(sequana_pipelines)
 
-        for this in fullpaths:
+        for candidate in candidates:
+            obj = getattr(sequana_pipelines, candidate)
+            if isinstance(obj, ModuleType):
+                path = obj.__path__[0].rstrip(candidate)
+                module_name = candidate
 
+                self._paths[module_name] = path
+                self._type[module_name] = "pipeline"
 
-            whatever, module_name, filename = this.rsplit(os.sep, 2)
-
-            if module_name in self._paths.keys():
-                logger.warning(
-                    "Found duplicated name %s from %s" % (module_name,this) + 
-                    "Overwrites previous rule ")
-            self._paths[module_name] = whatever + os.sep + module_name
-            self._type[module_name] = "pipeline"
+                logger.debug("Found {} pipeline".format(module_name))
 
     def _iglob(self, path, extension="rules"):
         from glob import iglob
@@ -361,7 +361,7 @@ or open a Python shell and type::
         """Return true is this module is a pipeline"""
         return self._mf.is_pipeline(self._name)
 
-    def _get_file(self, name):
+    def _get_file(self, name):        
         filename = self._path + os.sep + name
         if os.path.exists(filename):
             return filename
