@@ -218,19 +218,15 @@ class ModuleFinderSingleton(object):
             logger.warning("sequana pipelines not installed. Please install a pipeline from github.com/sequana")
             return 
 
-        from types import ModuleType
-        candidates = dir(sequana_pipelines)
+        import pkgutil
+        import sequana_pipelines
+        for ff, module_name, valid in pkgutil.iter_modules(sequana_pipelines.__path__):
+            self._paths[module_name] = ff.path + os.sep + module_name 
+            self._type[module_name] = "pipeline"
 
-        for candidate in candidates:
-            obj = getattr(sequana_pipelines, candidate)
-            if isinstance(obj, ModuleType):
-                path = obj.__path__[0].rstrip(candidate)
-                module_name = candidate
+            logger.debug("Found {} pipeline".format(module_name))
 
-                self._paths[module_name] = path
-                self._type[module_name] = "pipeline"
 
-                logger.debug("Found {} pipeline".format(module_name))
 
     def _iglob(self, path, extension="rules"):
         from glob import iglob
