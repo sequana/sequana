@@ -1,6 +1,7 @@
 rule fastq_screen_report:
     """
-    fastq_screen_report rule draw a svg plot after fastq_screen. The database used is dedicated to Biomics Pole (Institut Pasteur)
+    fastq_screen_report rule draw a svg plot after fastq_screen. 
+    The database used is dedicated to Biomics Pole (Institut Pasteur)
 
     Required input:
         __fastq_screen_report__input: a output fastq_screen directory
@@ -35,7 +36,6 @@ rule fastq_screen_report:
                 file = fp
 
         for line in csv.reader(open(os.path.join(input[0], file), "r"), dialect="excel-tab") :
-        #for line in csv.reader(open(file, "r"), dialect="excel-tab"):
             if(len(line) == 0) :
                 continue
             if(line[0].startswith("#")) :
@@ -57,14 +57,15 @@ rule fastq_screen_report:
         ohml = array(ohml)
         mhml = array(mhml)
 
-
-
         fig = pl.figure(figsize=(24,10))
         ind = arange(len(species))
         pl.bar(ind, tuple(ohol),width=0.8, color="#0000FF", label="unique")
-        pl.bar(ind, tuple(mhol),width=0.8, color="#6699FF", bottom=tuple(ohol), label="multimap")
-        pl.bar(ind, tuple(ohml),width=0.8, color="#FF0000", bottom=tuple(ohol+mhol), label="conserved")
-        pl.bar(ind, tuple(mhml),width=0.8, color="#FF6347", bottom=tuple(ohol+mhol+ohml), label="repeat")
+        pl.bar(ind, tuple(mhol),width=0.8, color="#6699FF", 
+            bottom=tuple(ohol), label="multimap")
+        pl.bar(ind, tuple(ohml),width=0.8, color="#FF0000", 
+            bottom=tuple(ohol+mhol), label="conserved")
+        pl.bar(ind, tuple(mhml),width=0.8, color="#FF6347", 
+            bottom=tuple(ohol+mhol+ohml), label="repeat")
         p5 = pl.bar(32, nohit, color="#6699FF")
         species.append("no hit")
         ind = arange(len(species))
@@ -76,7 +77,6 @@ rule fastq_screen_report:
         pl.xticks(ind, species, rotation="vertical")
         pl.yticks(arange(0,110,10))
         pl.legend( loc='upper right', bbox_to_anchor=(0.99, 0.9), fancybox=True)
-
 
         ##add phylum
         pl.axvspan(-0.5,2.5,facecolor='#008000', alpha=0.3,label="Mammals")
