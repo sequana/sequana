@@ -201,7 +201,12 @@ class FastA(object):
                 else:
                     fout.write(">{}\t{}\n{}\n".format(name, comment, seq))
 
-
+    def to_igv_chrom_size(self, output):
+        data = self.get_lengths_as_dict()
+        with open(output, "w") as fout:
+        
+            for k,v in data.items():
+                fout.write("{}\t{}\n".format(k, v))
 
 
 
