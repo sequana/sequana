@@ -27,6 +27,12 @@ develop branch into the master.
     * demultiplex: fix a Pandas deprecated warning (add sort argument in pd.concat)
     * python dependencies not in conda are not harcoded inside the setup.py
       (itolapi). add cython into the list of requirements.
+    * Fix deprecated bamCoverage rule to use newest deeptools version.
+    * RNASeq pipeline: removed sartools, kraken. Fixed bamCoverage rule. Simplify
+      usage related to indexing and mapping. Fixed igvtools rule. Fixed the
+      reoderSam rule (wrong executable). Fixed a incorrect parameter name in
+      bamCoverage rule. Fixed incorrect Snakemake syntax in the fastq_screen
+      rule and RNAseQC. 
 
 0.7.2
 ----------

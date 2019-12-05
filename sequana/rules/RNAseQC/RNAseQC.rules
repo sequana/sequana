@@ -1,10 +1,12 @@
 rule RNAseQC:
     """
-    RNA-SeQC is a java program which computes a series of quality control metrics for RNA-seq data.
-    The input can be one or more BAM files. The output consists of HTML reports and tab delimited files of metrics data.
-    This program can be valuable for comparing sequencing quality across different samples or experiments to evaluate
-    different experimental parameters. It can also be run on individual samples as a means of quality control before
-    continuing with downstream analysis.
+    RNA-SeQC computes a series of quality control metrics for RNA-seq data. 
+    The input can be one or more BAM files. 
+    The output consists of HTML reports and tab delimited files of metrics data.
+    This program can be valuable for comparing sequencing quality across 
+    different samples or experiments to evaluate different experimental 
+    parameters. It can also be run on individual samples as a means of 
+    quality control before continuing with downstream analysis.
 
     RNA-SeQC is built on the GATK as well as the Picard API.
 
@@ -12,9 +14,10 @@ rule RNAseQC:
         - __RNAseQC__input_bam : a set of BAM files (sorted and indexed with reOrderSam)
 
     Required output:
-        - __RNAseQC__output: directory where output files are written
-        - __RNAseQC__conf: an automated configuration file build in this rule and give to RNA-seQC
-        - __RNAseQC__figure: a house-made plot of transcrit-associated reads (also avalaible in multiQC)
+        - __RNAseQC__output_directory: directory where to output files
+        - __RNAseQC__output_conf: the configuration feed to RNA-seQC
+        - __RNAseQC__output_figure: plot of transcript-associated 
+            reads (also avalaible in multiQC)
 
     Other requirements:
         -  __RNAseQC__logs
@@ -32,39 +35,43 @@ rule RNAseQC:
     References:
         http://archive.broadinstitute.org/cancer/cga/rnaseqc_run
     """
-
-
-
     input :
-        __RNAseQC__input_bam
+        bam=__RNAseQC__input_bam,
+        genome=__RNAseQC__input_genome,
+        gtf=__RNAseQC__input_gtf
     log :
         __RNAseQC__logs
     output:
-        dir = __RNAseQC__output,
-        sample_index = __RNAseQC__conf,
-        png = __RNAseQC__figure
+        sample_index = __RNAseQC__output_conf,
+        png = __RNAseQC__output_figure
     params:
-        genome = config['genome']['fasta_file'],
-        gtf = config['RNAseQC']['gtf_file'],
-        rRNA = config['RNAseQC']['BWArRNA_file'],
+        directory = __RNAseQC__params_directory,
+        #rRNA = config['RNAseQC']['BWArRNA_file'],
         kwargs = config['RNAseQC']['options']
 
     run:
         import pandas as pd
         import matplotlib.pyplot as pl
         pl.style.use('ggplot')
-        from re import split
-
+        import re
+        import os
+        if os.path.isdir(params['directory']) is False:
+            os.mkdir(params['directory'])
         #create the sample index
-        data = [(split(r'_',file)[0], file, 'NA') for file in input]
+        data = [(re.split(r'_',file)[0], file, 'NA') for file in input["bam"]]
         df = pd.DataFrame(data, columns=['Sample ID','Bam File','Notes'])
-        df.to_csv(output.sample_index, sep="\t",index=False)
+        print(df, output['sample_index'])
+        df.to_csv(output['sample_index'], sep="\t",index=False)
+        df.to_csv("/home/cokelaer/test.tsv", sep="\t",index=False)
 
         #run RNAseQC
-        shell("RNA-SeQC -o {output.dir}  -r {params.genome}  -s {output.sample_index} -t {params.gtf}  -BWArRNA {params.rRNA} {params.kwargs} 2> {log}")
+        #shell("rna-seqc -o {params.directory}  -r {input.genome}  -s {output.sample_index} -t {input.gtf}  -BWArRNA {params.rRNA} {params.kwargs} 2> {log}")
+        shell("rna-seqc -o {params.directory}  -r {input.genome}  -s {output.sample_index} -t {input.gtf}   {params.kwargs} 2> {log}")
 
-        if os.path.isfile(os.path.join(output.dir,'metrics.tsv')):
-            df = pd.DataFrame.from_csv(os.path.join(output.dir,'metrics.tsv'), header = 0, sep="\t")
+
+        thisfile = os.path.join(params['directory'], "metric.tsv")
+        if os.path.isfile(thisfile):
+            df = pd.DataFrame.from_csv(thisfile, header = 0, sep="\t")
             #plot results
             if sum(df['rRNA rate']) == 0 :
                 frames = [df['rRNA rate'] ,df['Exonic Rate'], df['Intronic Rate'], df['Intergenic Rate']]
