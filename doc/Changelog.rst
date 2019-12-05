@@ -32,7 +32,7 @@ develop branch into the master.
       usage related to indexing and mapping. Fixed igvtools rule. Fixed the
       reoderSam rule (wrong executable). Fixed a incorrect parameter name in
       bamCoverage rule. Fixed incorrect Snakemake syntax in the fastq_screen
-      rule and RNAseQC. 
+      rule and RNAseQC. Fixed another deprecated rule: fastq_screen_report.
 
 0.7.2
 ----------
