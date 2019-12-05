@@ -187,6 +187,7 @@ class SlurmOptions():
 
 def print_version(name):
     from sequana import version
+    print(Colors().purple("Welcome to Sequana\n"))
     print("Sequana version used: {}".format(version))
     try:
         import pkg_resources
@@ -196,6 +197,7 @@ def print_version(name):
         print(err)
         print("pipeline sequana_{} version used: ?".format(name))
         sys.exit(1)
+    print(Colors().purple("\nPlease, consider citing us. Visit sequana.readthedocs.io for more information".format(version)))
 
 
 class PipelineManager():
@@ -250,7 +252,7 @@ class PipelineManager():
 
         if self.options.run_mode is None:
             self.options.run_mode = self._guess_scheduler()
-            logger.info("Guessed scheduler is {}".format(
+            logger.debug("Guessed scheduler is {}".format(
                 self.options.run_mode))
 
         if self.options.run_mode == "slurm":
