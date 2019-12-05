@@ -17,6 +17,10 @@ rule fastq_screen_report:
     output:
         __fastq_screen_report__figure
     run:
+
+        print(input[0])
+        print(log[0])
+        print(output[0])
         from re import findall
         import os
         import matplotlib.pyplot as pl
@@ -30,12 +34,8 @@ rule fastq_screen_report:
         ohml = []
         mhml = []
         nohit = ""
-        file = ""
-        for fp in os.listdir(input[0]):
-            if fp.endswith("_screen.txt"):
-                file = fp
 
-        for line in csv.reader(open(os.path.join(input[0], file), "r"), dialect="excel-tab") :
+        for line in csv.reader(open(input[0], "r"), dialect="excel-tab") :
             if(len(line) == 0) :
                 continue
             if(line[0].startswith("#")) :
@@ -70,7 +70,7 @@ rule fastq_screen_report:
         species.append("no hit")
         ind = arange(len(species))
 
-        pl.title("%s" % file.replace("_screen.txt","").split("/")[-1])
+        pl.title("%s" % input[0].replace("_screen.txt","").split("/")[-1])
         pl.ylabel("%")
         pl.ylim((0,105))
         pl.xlim(-0.5,32.5)
