@@ -1,13 +1,12 @@
 rule reorderSam:
     input:
-        sam = __reorderSam__input
-    params:
-        genome = config['genome']['fasta_file']
+        sam = __reorderSam__input_sam,
+        genome = __reorderSam__input_genome
     log:
         __reorderSam__logs
     output:
         __reorderSam__output
     shell:
         """
-        ReorderSam I={input.sam} O={output} R={params.genome} CREATE_INDEX=true 2> {log}
+        picard ReorderSam I={input.sam} O={output} R={input.genome} CREATE_INDEX=true 2> {log}
         """
