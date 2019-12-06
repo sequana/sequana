@@ -97,7 +97,7 @@ rule cutadapt:
         # Paired data
         if len(input.fastq) == 2:
             if executable == "atropos":
-                cmd = "%s trim -p {output.fastq[1]}" % executable
+                cmd = "%s trim" % executable
                 cmd += " -pe1 {input.fastq[0]} -pe2 {input.fastq[1]} "
                 # atropos requires at least 2 threads
                 if int(threads) > 1:
@@ -106,9 +106,7 @@ rule cutadapt:
                 logpath = log[0].replace(".txt", "")
                 cmd += " --report-formats json txt --report-file %s" % logpath
             else:
-                cmd = "%s -p {output.fastq[1]}" % executable
-                cmd += " {input.fastq[0]} {input.fastq[1]} "
-
+                cmd = "{}".format(executable)
             mode2 = params.mode.upper()
 
             if fwd:
@@ -122,7 +120,17 @@ rule cutadapt:
                 cmd += " -%s XXXX " % mode2
 
             cmd += " -m {params.m} -q {params.quality} "
-            cmd += " {params.kwargs} -o {output.fastq[0]} > {log}"
+            # -o is common to atropos and cutadapt for the output R1 and -p for
+            # R2
+            cmd += " {params.kwargs} -o {output.fastq[0]} -p {output.fastq[1]}"
+
+            # input of cutdapt must be at the end. earlier version handled
+            # mixing of optional arguments and positional argument but not
+            # latest version. In any case, it is safer to do it correctly
+            # (changes sequana 0.8)
+            if executable == "cutadapt":
+                cmd += " {input.fastq[0]} {input.fastq[1]} "
+            cmd += "> {log}"
             shell(cmd)
         else:
             if executable == "atropos":
@@ -135,11 +143,15 @@ rule cutadapt:
                 logpath = log[0].replace(".txt", "")
                 cmd += " --report-formats json txt --report-file %s" % logpath
             else:
-                cmd = "%s {input.fastq[0]}" % executable
+                cmd = "%s" % executable
+
             if fwd:
                 cmd += "    -{params.mode} %s " % fwd
             else:
                 cmd += "    -{params.mode} XXXX "
             cmd += " -m {params.m} -q {params.quality} "
-            cmd += " {params.kwargs} -o {output.fastq[0]} > {log}"
+            cmd += " {params.kwargs} -o {output.fastq[0]}"
+            if executable == "cutadapt":
+                cmd += " {input.fastq[0]} "
+            cmd += " > {log}"
             shell(cmd)
