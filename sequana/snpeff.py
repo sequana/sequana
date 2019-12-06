@@ -26,6 +26,7 @@ import subprocess as sp
 from sequana.resources import snpeff
 from sequana import FastA
 from sequana import logger
+
 logger.name = __name__
 
 
