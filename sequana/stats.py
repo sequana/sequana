@@ -81,11 +81,10 @@ def evenness(data):
 def N50(data):
     """Return the N50 value given a list of unsorted/sorted contigs
 
-    Once the list of contigs is sorted, the N50 is the contig length for which at 
+    Once the list of contigs is sorted, the N50 is the contig length for which at
     least half of the nucleotides in the assembly belongs to contigs with the N50
     length or longer.
 
-    
     """
     data = np.sort(data)
     cdata = np.cumsum(data)
@@ -95,7 +94,9 @@ def N50(data):
 def L50(data):
     """Return the smallest number of contigs whose length sum produces N50
 
-        >>> data = 
+    ::
+
+        >>> data =
         >>> L50(data)
         3
     """
