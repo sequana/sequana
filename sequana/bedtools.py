@@ -771,7 +771,9 @@ class ChromosomeCov(object):
                 logger.debug("Analysing chunk {}".format(i+1))
                 self._set_chunk(chunk)
 
+                logger.debug("running median computation")
                 self.running_median(W, circular=circular)
+                logger.debug("zscore computation")
                 self.compute_zscore(k=k, verbose=False) # avoid repetitive warning
 
                 rois = self.get_rois()
@@ -1066,6 +1068,7 @@ class ChromosomeCov(object):
         """
         # here for lazy import
         from sequana import mixture
+
         # normalize coverage
         self._coverage_scaling()
 
@@ -1079,12 +1082,14 @@ class ChromosomeCov(object):
         data = data.replace(0, np.nan)
         data = data.dropna()
 
-
         if data.empty:
             self._df['scale'] = np.ones(len(self.df), dtype=int)
             self._df["zscore"] = np.zeros(len(self.df), dtype=int)
+            # define arbitrary values
             self.gaussians_params = [{'mu': 0.5,  'pi': 0.15,
               'sigma': 0.1}, {'mu': 1, 'pi': 0.85, 'sigma': 0.1}]
+            self.best_gaussian = self._get_best_gaussian()
+
             return
 
         # if len data > 100,000 select 100,000 data points randomly
@@ -1094,12 +1099,10 @@ class ChromosomeCov(object):
             data = [data.iloc[i] for i in indices]
 
         if use_em:
-            self.mixture_fitting = mixture.EM(
-                data)
+            self.mixture_fitting = mixture.EM(data)
             self.mixture_fitting.estimate(k=k)
         else:
-            self.mixture_fitting = mixture.GaussianMixtureFitting(
-                data, k=k)
+            self.mixture_fitting = mixture.GaussianMixtureFitting(data, k=k)
             self.mixture_fitting.estimate()
 
         # keep gaussians informations
@@ -1108,6 +1111,7 @@ class ChromosomeCov(object):
         self.gaussians_params = [{key[:-1]: self.gaussians[key][i] for key in
                                  params_key} for i in range(k)]
         self.best_gaussian = self._get_best_gaussian()
+
 
         # warning when sigma is equal to 0
         if self.best_gaussian["sigma"] == 0:
@@ -1292,7 +1296,7 @@ class ChromosomeCov(object):
         :param set_ylimits: we want to focus on the "normal" coverage ignoring
             unsual excess. To do so, we set the yaxis range between 0 and a
             maximum value. This maximum value is set to the minimum between the
-            6 times the mean coverage and 1.5 the maximum of the high coverage
+            10 times the mean coverage and 1.5 the maximum of the high coverage
             threshold curve. If you want to let the ylimits free, set this
             argument to False
         :param x1: restrict lower x value to x1
@@ -1315,7 +1319,6 @@ class ChromosomeCov(object):
         assert x1<x2
 
         df = self.df.loc[x1:x2]
-
 
         high_zcov = (self.thresholds.high * self.best_gaussian["sigma"] +
                 self.best_gaussian["mu"]) * df["rm"]
@@ -1367,11 +1370,18 @@ class ChromosomeCov(object):
         pylab.grid(True)
 
         # sometimes there are large coverage value that squeeze the plot.
-        # Let us restrict it
+        # Let us restrict it. We can say that 10 times the average coverage is
+        # the maximum. We can save the original plot and the squeezed one. 
+
         if set_ylimits is True:
+            #m1 = high_zcov.max(skipna=True)
+            m4 = high_zcov[high_zcov>0].max(skipna=True)
+            # ignore values equal to zero to compute mean average
+            m3 = df[df['cov']>0]['cov'].mean()
+
             pylab.ylim([0, min([
-                high_zcov.max() * 2,
-                df["cov"].mean()*10])])
+                m4 * 2,
+                m3 * 10])])
         else:
             pylab.ylim([0, pylab.ylim()[1]])
 
@@ -1422,15 +1432,17 @@ class ChromosomeCov(object):
         # remove outlier -> plot crash if range between min and max is too high
         d = d[np.abs(d - d.mean()) <= (4 * d.std())]
         bins = self._set_bins(d, binwidth)
-        self.mixture_fitting.data = d
         try:
+            self.mixture_fitting.data = d
             self.mixture_fitting.plot(self.gaussians_params, bins=bins, Xmin=0,
                                       Xmax=max_z)
         except ZeroDivisionError:
-            pass
+            return
+
         pylab.grid(True)
         pylab.xlim([0,max_z])
         pylab.xlabel("Normalised per-base coverage")
+
         try:
             pylab.tight_layout()
         except:
