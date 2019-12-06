@@ -357,6 +357,8 @@ def main(args=None):
             # since we read just one contig/chromosome, the chr_list contains
             # only one contig, so we access to it with index 0
             run_analysis(gc.chr_list[i], options, gc.feature_dict)
+            # logging level seems to be reset to warning somewhere
+            logger.level = options.logging_level
 
     if options.skip_multiqc is False:
         logger.info("=========================")
@@ -439,6 +441,7 @@ def run_analysis(chrom, options, feature_dict):
     if options.skip_html:
         return
 
+    chrom.plot_coverage(directory+os.sep+"coverage.png")
     logger.info("Creating report in %s. Please wait" % config.output_dir)
     if chrom._mode == "chunks":
         logger.warning(("This chromosome is large. "
