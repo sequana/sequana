@@ -34,6 +34,13 @@ develop branch into the master.
       bamCoverage rule. Fixed incorrect Snakemake syntax in the fastq_screen
       rule and RNAseQC. Fixed another deprecated rule: fastq_screen_report.
 
+* FIXES:
+
+   * cuadapt rules was failing due to a stricter optional/positional argument
+     handling. Fixed the rule accordingly.
+   * sequana_coverage handles low coverage correctly in the HTML reports.Fix the
+     ylimits of the coverage plot for low coverage.
+
 0.7.2
 ----------
 
