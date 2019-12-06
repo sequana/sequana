@@ -29,6 +29,7 @@ from sequana import logger
 from sequana.modules_report.summary import SummaryModule
 
 __all__ = ["CoverageModule", "ChromosomeCoverageModule"]
+logger.name = __name__
 
 
 class CoverageModule(SequanaBaseModule):
@@ -117,7 +118,7 @@ class CoverageModule(SequanaBaseModule):
         row with sub HTML report. All table will have the same appearance.
         We can therefore initialise the roi once for all.
 
-        :param rois: can be a ROIs from ChromosomeCov instance or a simple 
+        :param rois: can be a ROIs from ChromosomeCov instance or a simple
             dataframe
         """
         # computed
@@ -185,16 +186,16 @@ class ChromosomeCoverageModule(SequanaBaseModule):
             # and in memory
             rois = self.chromosome.get_rois()
         elif self.chromosome._mode == "chunks":
-            # we need to reset the data to the first chunk 
+            # we need to reset the data to the first chunk
             # and compute the median and zscore. So, first, we save the entire
             # data set
             #self.chromosome.reset()
             #self.chromosome.running_median(options['W'], circular=options['circular'])
             #self.chromosome.compute_zscore(options['k'])
-            # We mus set the ROI manually 
+            # We mus set the ROI manually
             rois = options['ROIs']
 
-        if self.chromosome.DOC >= 1:
+        if self.chromosome.DOC > 0:
             self.coverage_plot()
             if self.chromosome._mode == "memory":
                 links = self.subcoverage(rois, directory)
@@ -235,9 +236,10 @@ class ChromosomeCoverageModule(SequanaBaseModule):
             self._add_large_data_section("Coverage", "coverage")
             return
 
+
         image = self.create_embedded_png(self.chromosome.plot_coverage,
                                          input_arg="filename")
-        
+
         self.sections.append({
             "name": "Coverage",
             "anchor": "coverage",
@@ -302,7 +304,7 @@ class ChromosomeCoverageModule(SequanaBaseModule):
         chrom = self.chromosome
         N = len(self.chromosome)
 
-        # position does not always start at position zero 
+        # position does not always start at position zero
         shift = self.chromosome.df.pos.iloc[0]
         maxpos = self.chromosome.df.pos.iloc[-1]
 
@@ -449,7 +451,7 @@ class ChromosomeCoverageModule(SequanaBaseModule):
         self.sections.append({
             'name': 'Coverage vs GC content',
             'anchor': 'cov_vs_gc',
-            'content': 
+            'content':
                 "<p>The correlation coefficient between the coverage and GC "
                 "content is <b>{0:.3g}</b> with a window size of {1}bp.</p>\n"
                 "{2}\n"
