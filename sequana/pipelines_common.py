@@ -256,10 +256,13 @@ class PipelineManager():
                 self.options.run_mode))
 
         if self.options.run_mode == "slurm":
-            slurm_queue = "-A {} --qos {} -p {}".format(
-                self.options.slurm_queue,
-                self.options.slurm_queue,
-                self.options.slurm_queue)
+            if self.options.slurm_queue == "common":
+                slurm_queue = ""
+            else:
+                slurm_queue = "-A {} --qos {} -p {}".format(
+                    self.options.slurm_queue,
+                    self.options.slurm_queue,
+                    self.options.slurm_queue)
 
             self.command += ' --cluster "sbatch --mem {} -c {} {}"'.format(
                 self.options.slurm_memory,
