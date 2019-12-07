@@ -169,7 +169,9 @@ class SlurmOptions():
             "--slurm-cores-per-job",
             dest="slurm_cores_per_job",
             default=self.cores,
-            help="Number of cores/jobs to be used at the same time",
+            help="""Number of cores/jobs to be used at the same time. 
+            Ignored and replaced if a cluster_config.yaml file is part 
+            of your pipeline (e.g. rnaseq)""",
         )
         group.add_argument(
             "--slurm-queue",
@@ -181,7 +183,9 @@ class SlurmOptions():
             "--slurm-memory",
             dest="slurm_memory",
             default=self.memory,
-            help="memory in Mb (default 4000)"
+            help="""memory in Mb (default 4000; stands for 4000 Mbytes). 
+            Ignored and replaced if a cluster_config.yaml file is part 
+            of your pipeline (e.g. rnaseq)""",
         )
 
 
@@ -264,10 +268,14 @@ class PipelineManager():
                     self.options.slurm_queue,
                     self.options.slurm_queue)
 
-            self.command += ' --cluster "sbatch --mem {} -c {} {}"'.format(
-                self.options.slurm_memory,
-                self.options.slurm_cores_per_job,
-                slurm_queue)
+            if self.module.cluster_config:
+                self.command += ' --cluster "sbatch --mem={cluster.ram} --cpus-per-task={threads}"'.format(
+                    slurm_queue)
+            else:
+                self.command += ' --cluster "sbatch --mem {} -c {} {}"'.format(
+                    self.options.slurm_memory,
+                    self.options.slurm_cores_per_job,
+                    slurm_queue)
 
         # Now we create the directory to store the config/pipeline
         if os.path.exists(self.workdir) is True and self.options.force is False:
