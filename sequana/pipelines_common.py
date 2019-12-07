@@ -269,7 +269,7 @@ class PipelineManager():
                     self.options.slurm_queue)
 
             if self.module.cluster_config:
-                self.command += ' --cluster "sbatch --mem={cluster.ram} --cpus-per-task={threads}"'.format(
+                self.command += ' --cluster "sbatch --mem={{cluster.ram}} --cpus-per-task={{threads}}"'.format(
                     slurm_queue)
             else:
                 self.command += ' --cluster "sbatch --mem {} -c {} {}"'.format(
