@@ -20,13 +20,28 @@ From: ubuntu.img
     export LANG=C   # prevents perl for raising warnings
     export PERL5LIB=/usr/local/anaconda/lib/perl5/5.22.0
 
-    conda install pigz pbzip2 dsrc 
+    conda install pigz pbzip2 dsrc cutadapt atropos
     conda install fastqc                                   # for fasqc pipeline
     conda install bcftools deeptools samtools bamtools bwa # general
     conda install multiqc                                  # general
-    conda install freebayes picard sambamba snpEff   # variant calling
-    conda install bowtie bowtie2 STAR                         # rnaseq
+    conda install freebayes sambamba snpEff                # variant calling
+    conda install bowtie bowtie2 STAR                      # rnaseq
+    conda install subread   # rnaseq (featureCounts)
+    conda install igvtools   # rnaseq
+    conda install fastq-screen   # rnaseq
 
+    conda install picard 
+    #RNA-seQC                          # variant calling + rnaseq
+    # Installing RNA-seQC means version 1.1.8 that downgraedes  openjdk from
+    # 11.0.1 to 7.0.16 and therefore picard from 2.21.4 to 2.9.2 and fastqc from
+    # 0.11.8.2 to 0.11.6-2 
+    # In such case, picard fails... so we do not install RNA-seQC
+    # we need anoter container unfortunately
+
+
+
+
+    conda install cufflinks                                       # rnaseq converts gff to gtf
     # Let us save some space
     conda clean --packages -y
     conda clean --all -y # next requires lots of space
@@ -36,3 +51,5 @@ From: ubuntu.img
 %environment
     #echo "backend:agg" > matplotlibrc
 
+%runscript
+    PYTHONNOUSERSITE=1 exec ${1+"$@"}
