@@ -96,7 +96,6 @@ class BackSpace(Common):
         self.queue = queue
 
         print("Number of samples: {}".format(len(self.sampleIDs)))
-        print(self.sampleIDs)
         
     def _set_outdir(self, outdir):
         self._outdir = outdir
@@ -110,7 +109,7 @@ class BackSpace(Common):
             pass
         else:
             print("Creating ./{} directory".format(self.outdir))
-            os.mkdir(self.outdir)
+            os.makedirs(self.outdir)
 
     def is_paired(self, sampleID):
         filenames = [x for x in self.filenames if x.startswith(sampleID + "_L00")]
@@ -130,7 +129,6 @@ class BackSpace(Common):
     def get_pigz_cmd(self, sampleID, RX):
         assert RX in ['R1', 'R2']
         params = {"thread": self.threads, "sampleID": sampleID, "RX": RX}
-        print(params)
 
         names = [x for x in self.filenames if x.startswith(sampleID) and RX in x]
 
@@ -158,7 +156,7 @@ class BackSpace(Common):
         cmd  = cmd.format(**params)
         return cmd
 
-    def run(self):
+    def run(self, dry_run=False):
         import os
 
         processes = []
@@ -189,22 +187,25 @@ class BackSpace(Common):
  
             for RX in READS:
                 print("  fusionning {} ({} case)".format(name, RX))
-                script_name = "{}_script.sh".format(name)
+                name.split("/")[-1]
+                script_name = "{}_script.sh".format(os.path.split(name)[1])
                 with open(script_name, 'w') as fin:
                     cmd = self.get_pigz_cmd(name, RX)
                     fin.write(cmd)
 
-                print(cmd)
+                #print(cmd)
                 from shutil import which
                 if which("sbatch") is not None:
                     cmd = sbatch_command.format(**{'thread': self.threads}) + " " + script_name
                 else:
                     cmd = "sh {}".format(script_name)
-                print(cmd)
+                #print(cmd)
                 from subprocess import STDOUT
-                process = subprocess.check_output(cmd.split())
-                #proc = process.split()[-1]
-                processes.append(process)
+                if dry_run is False:
+                    process = subprocess.check_output(cmd.split())
+                    processes.append(process)
+                else:
+                    processes.append("dryrun")
 
 
         if len(processes):
@@ -213,6 +214,7 @@ class BackSpace(Common):
                 print(proc,)
         else:
             print('Found no fastq in ./* directories')
+
         self.processes = processes
 
 
@@ -255,6 +257,8 @@ class Options(argparse.ArgumentParser):
             help="queue to use on the cluster")
         self.add_argument("--lanes", dest="lanes", nargs="+", 
             type=int, required=True)
+        self.add_argument("--dry-run", dest="dry_run", action="store_true",
+            help="just createt the script but do not launch them")
 
 
 def main(args=None):
@@ -271,7 +275,7 @@ def main(args=None):
 
     c = BackSpace(pattern=options.pattern, outdir=options.outdir,
             queue=options.queue, lanes=options.lanes)
-    c.run()
+    c.run(dry_run=options.dry_run)
 
 
 if __name__ == "__main__":
