@@ -93,15 +93,18 @@ class GeneralOptions():
 
 
 class InputOptions():
-    def __init__(self, group_name="data"):
+    def __init__(self, group_name="data", input_directory=".",
+                 input_pattern="*fastq.gz"):
         self.group_name = group_name
+        self.input_directory = input_directory
+        self.input_pattern = input_pattern
 
     def add_options(self, parser):
         group = parser.add_argument_group(self.group_name)
         group.add_argument(
              "--input-directory",
              dest="input_directory",
-             default=".",
+             default=self.input_directory,
              #required=True,
              help="""Where to find the FastQ files (default current directory
                   is the local directory that is '.') """,
@@ -109,8 +112,8 @@ class InputOptions():
         group.add_argument(
             "--input-pattern",
             dest="input_pattern",
-            default="*fastq.gz",
-            help="pattern for the input FastQ files (default  *fastq.gz)",
+            default=self.input_pattern,
+            help="pattern for the input FastQ files (default {})".format(self.input_pattern),
         )
 
 
@@ -294,7 +297,6 @@ class PipelineManager():
         # the config file
         self.config._update_yaml()
         self.config.save("{}/config.yaml".format(self.workdir))
-
 
         # the command
         with open("{}/{}.sh".format(self.workdir, self.name), "w") as fout:
