@@ -54,13 +54,18 @@ class Common(object):
 
     def discover_files(self ):
         """Extract unique sample names"""
-        self.filenames = glob.glob(self.pattern)
-
+        self.filenames = glob.glob(os.path.abspath(self.pattern))
+        print("Found {} files ".format(len(self.filenames)))
+        
         if len(self.filenames) == 0:
             ValueError("No files found. Are you in the correct path ? ")
 
+        print("Identifying lanes from input filenames...")
         lanes = str(self.lanes).replace(" ","")
         self.filenames =[x for x in self.filenames if re.search("_L00{}_".format(lanes), x)] 
+
+        if len(self.filenames) == 0:
+            ValueError("No files found with L00 tag. Are you in the correct path ? ")
 
         #print(self.filenames)
 
@@ -93,7 +98,6 @@ class BackSpace(Common):
         print("Number of samples: {}".format(len(self.sampleIDs)))
         print(self.sampleIDs)
         
-
     def _set_outdir(self, outdir):
         self._outdir = outdir
         self._create_outdir()
@@ -246,11 +250,9 @@ class Options(argparse.ArgumentParser):
         self.add_argument("--threads", dest="threads", type=str,
             default=4,
             help="number of threads per job (pigz)")
-
         self.add_argument("--queue", dest="queue", type=str,
             default="common", choices=["biomics", "common"],
             help="queue to use on the cluster")
-
         self.add_argument("--lanes", dest="lanes", nargs="+", 
             type=int, required=True)
 
