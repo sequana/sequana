@@ -1382,11 +1382,7 @@ class ChromosomeCov(object):
                 m4 = m4.max(skipna=True)
             # ignore values equal to zero to compute mean average
             m3 = df[df['cov']>0]['cov'].mean()
-            high_zcov[high_zcov>0].to_csv("test.csv")
 
-            print(m3, m4)
-    
-            
             pylab.ylim([0, min([
                 m4 * 2,
                 m3 * 10])])
