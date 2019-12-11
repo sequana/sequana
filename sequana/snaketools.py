@@ -1684,7 +1684,7 @@ class OnSuccessCleaner(object):
         self.bundle_output = output
 
     def add_makefile(self):
-        makefile = 'all:\n\techo "sequana demultiplexing cleanup"\n'
+        makefile = 'all:\n\techo "sequana cleanup"\n'
         if self.bundle:
             makefile += "bundle:\n\ttar cvfz {} {}\n".format(
                 self.bundle_output, self.bundle_input)
