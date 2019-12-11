@@ -47,7 +47,10 @@ Sequana documentation
     For the **genome coverage** tool (sequana_coverage), please cite:
 
     Dimitri Desvillechabrol, Christiane Bouchier, Sean Kennedy, Thomas Cokelaer
-    http://biorxiv.org/content/early/2016/12/08/092478
+    *Sequana coverage: detection and characterization of genomic variations 
+    using running median and mixture models*
+    GigaScience, Volume 7, Issue 12, December 2018, giy110,
+    https://doi.org/10.1093/gigascience/giy110
 
     For **Sequanix** (GUI for Snakemake pipeline), please cite:
 
