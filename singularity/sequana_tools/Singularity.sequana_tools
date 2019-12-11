@@ -1,5 +1,5 @@
 Bootstrap: localimage
-From: ubuntu.img
+From: ../ubuntu/ubuntu.img
 
 
 # Bioinformatics tools available (main ones):
@@ -29,8 +29,8 @@ From: ubuntu.img
     conda install subread   # rnaseq (featureCounts)
     conda install igvtools   # rnaseq
     conda install fastq-screen   # rnaseq
-
     conda install picard 
+    conda install bedtools
     #RNA-seQC                          # variant calling + rnaseq
     # Installing RNA-seQC means version 1.1.8 that downgraedes  openjdk from
     # 11.0.1 to 7.0.16 and therefore picard from 2.21.4 to 2.9.2 and fastqc from
