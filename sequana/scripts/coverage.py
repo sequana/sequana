@@ -315,13 +315,12 @@ def main(args=None):
     # Now we can create the instance of GenomeCoverage
     if options.chromosome == -1:
         chrom_list = []
-    else: 
+    else:
         chrom_list = [options.chromosome]
     gc = GenomeCov(bedfile, options.genbank, options.low_threshold,
                    options.high_threshold, options.double_threshold,
                    options.double_threshold, chunksize=options.chunksize,
                    chromosome_list=chrom_list)
-
 
     # if we have the reference, let us use it
     if options.reference:
@@ -346,8 +345,10 @@ def main(args=None):
 
         logger.info("There are %s chromosomes/contigs." % len(gc))
         for this in gc.chrom_names:
-            data = (this, gc.positions[this]["start"], gc.positions[this]["end"])
-            logger.info("    {} (starting pos: {}, ending pos: {})".format(*data))
+            end = gc.positions[this]["end"]
+            start = gc.positions[this]["start"]
+            data = (this, gc.positions[this]["start"], gc.positions[this]["end"], end-start)
+            logger.info("    {} (starting pos: {}, ending pos: {}, length: {})".format(*data))
 
         # here we read chromosome by chromosome to save memory.
         # However, if the data is small.
