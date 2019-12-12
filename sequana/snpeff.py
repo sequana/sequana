@@ -26,7 +26,6 @@ import subprocess as sp
 from sequana.resources import snpeff
 from sequana import FastA
 from sequana import logger
-
 logger.name = __name__
 
 
@@ -231,6 +230,8 @@ class SnpEff(object):
 
         :param str fasta: input fasta file where you want to add locus.
         :param str output_file: output file.
+
+        FIXME: fasta is already known if provided in the init
         """
         fasta_record = FastA(fasta)
         ids_list = self._get_seq_ids()
@@ -249,17 +250,22 @@ class SnpEff(object):
         except FileNotFoundError:
             pass
 
-        if fasta_record.names[0] == ids_list[0]:
-            print("Files have same sequence id.")
+        if sorted(fasta_record.names) == sorted(ids_list):
+            logger.info("Files have same sequence id.")
             if os.path.isfile(output_file):
                 os.remove(output_file)
             os.symlink(os.path.realpath(fasta), output_file)
             return
+        else:
+            logger.info("fasta and GFF seem to have different IDs. Creating a
+new coherent fasta file assuming the chromsome names appear in the same order in
+the fasta and gff")
+
 
         with open(output_file, "w") as fp:
             # write fasta with seqid of annotation file
             for n in range(len(fasta_record)):
-                seq_id = ">{0} {1}\n".format(ids_list[n], fasta_record.names[n])
+                seq_id = ">{0} {1}\n".format(ids_list[index], fasta_record.names[n])
                 seq = fasta_record.sequences[n]
                 sequence = "\n".join([seq[i:min(i+80, len(seq))]
                     for i in range(0, len(seq), 80)]) + "\n"
