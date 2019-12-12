@@ -10,7 +10,17 @@ Changelog
 * Remove all pipelines from sequana. Pipelines have now their own repositories
 on github to ease the developpement of sequana and those pipelines. The
 rationale being that we do not need to update sequana when a pipeline changes
-and a pipeline can have its own biocontainer and life cycle.
+and a pipeline can have its own biocontainer and life cycle. The compressor
+pipeline was dropped (redundant with sequana_compressor standalone). The
+coverage pipeline uses sequana_coverage standalone and should be used only for
+very large genomes. Othe pipeline have now their own repositories:
+
+- sequana_coverage
+- sequana_demultiplex
+- sequana_fastqc
+- sequana_revcomp
+- sequana_rnaseq
+- sequana_variant_calling
 
 
 This is an unstable release made to includes lots of new features and pipelines
@@ -19,10 +29,18 @@ develop branch into the master.
 
 * NEWS:
 
-    * snpeff now includes GFF input file
+    * snpeff now includes GFF input file input as an option (in addition to the GBK)
     * new module trf for tandem repeat finder output. 
+    * a new script sequana_start_pipelines to initiate a new pipeline from 
+      the cookiecutter recipes
 
-* CHANGES:
+* BUG:
+
+    * snpeff_add_locus_tag: if contig name and length in GFF header not in the
+      same order as in the fasta, a new fasta with wrong header was created.
+      This caused trouble in the variant_calling pipeline
+
+* CHANGES/FIXES:
     * snaketools: pipelines discovery updated in ModuleFinderSingleton
     * demultiplex: fix a Pandas deprecated warning (add sort argument in pd.concat)
     * python dependencies not in conda are not harcoded inside the setup.py
@@ -33,9 +51,8 @@ develop branch into the master.
       reoderSam rule (wrong executable). Fixed a incorrect parameter name in
       bamCoverage rule. Fixed incorrect Snakemake syntax in the fastq_screen
       rule and RNAseQC. Fixed another deprecated rule: fastq_screen_report.
-
-* FIXES:
-
+    * sequana_lane_merging is now ready for production. changes made: copy of
+      the script in the local directory, not the data directory. 
    * cuadapt rules was failing due to a stricter optional/positional argument
      handling. Fixed the rule accordingly.
    * sequana_coverage handles low coverage correctly in the HTML reports.Fix the
