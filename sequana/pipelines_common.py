@@ -106,14 +106,13 @@ class InputOptions():
              dest="input_directory",
              default=self.input_directory,
              #required=True,
-             help="""Where to find the FastQ files (default current directory
-                  is the local directory that is '.') """,
+             help="""Where to find the FastQ files""",
         )
         group.add_argument(
             "--input-pattern",
             dest="input_pattern",
             default=self.input_pattern,
-            help="pattern for the input FastQ files (default {})".format(self.input_pattern),
+            help="pattern for the input FastQ files ",
         )
 
 
@@ -137,7 +136,7 @@ This is the --jobs options of Snakemake"""
             dest="workdir",
             default=self.workdir,
             help="""where to save the pipeline and its configuration file and
-            where the analyse can be run (default {})""".format(self.workdir)
+            where the analyse can be run"""
         )
         group.add_argument(
             "--force",
