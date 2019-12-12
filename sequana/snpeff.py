@@ -257,9 +257,9 @@ class SnpEff(object):
             os.symlink(os.path.realpath(fasta), output_file)
             return
         else:
-            logger.info("fasta and GFF seem to have different IDs. Creating a
-new coherent fasta file assuming the chromsome names appear in the same order in
-the fasta and gff")
+            logger.info("fasta and GFF seem to have different IDs. Creating a"
+                "new coherent fasta file assuming the chromsome names appear "
+                "in the same order in the fasta and gff")
 
 
         with open(output_file, "w") as fp:
