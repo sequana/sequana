@@ -115,6 +115,16 @@ class InputOptions():
             help="pattern for the input FastQ files ",
         )
 
+        group.add_argument(
+            "--input-readtag",
+            dest="input_readtag",
+            default="_R[12]_",
+            help="""pattern for the paired/single end FastQ. If your files are 
+            tagged with _R1_ or _R2_, please set this value to '_R[12]_'. If your
+            files are tagged with  _1 and _2, you must change this readtag
+            accordingly to '_[12]'""",
+        )
+
 
 class SnakemakeOptions():
     def __init__(self, group_name="snakemake", working_directory="analysis"):
