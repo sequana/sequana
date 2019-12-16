@@ -31,7 +31,7 @@ logger.name = __name__
 
 
 __all__ = ["Colors", "InputOptions", "SnakemakeOptions", "SlurmOptions", 
-    "PipelineManager", "GeneralOptions", "print_version"]
+    "PipelineManager", "GeneralOptions", "print_version", "CutadaptOptions"]
 
 
 class Colors:
@@ -88,8 +88,10 @@ class GeneralOptions():
                 'slurm', otherwise to 'local'. 
                 """)
 
-        parser.add_argument("--version",
-            action="store_true")
+        parser.add_argument("--version", action="store_true", 
+            help="Print the version and quit")
+        parser.add_argument("--level", dest="level", default="INFO",
+            help="logging level in INFO, DEBUG, WARNING, ERROR, CRITICAL")
 
 
 class InputOptions():
@@ -124,6 +126,28 @@ class InputOptions():
             files are tagged with  _1 and _2, you must change this readtag
             accordingly to '_[12]'""",
         )
+
+
+class CutadaptOptions():
+    def __init__(self, group_name="section_cutadapt"):
+        self.group_name = group_name
+
+    def add_options(self, parser):
+
+        group = parser.add_argument_group(self.group_name)
+
+        group.add_argument("--skip-cutadapt", action="store_true",
+            default=False,
+             help="perform cutadapt cleaning")
+        group.add_argument("--cutadapt-fwd", dest="cutadapt_fwd",
+             default="", help="")
+        group.add_argument("--cutadapt-rev", dest="cutadapt_rev",
+             default="", help="")
+        group.add_argument("--cutadapt-quality", dest="cutadapt_quality",
+             default=30, type=int, help="")
+        group.add_argument("--cutadapt-tool-choice", dest="cutadapt_tool_choice",
+             default="atropos", choices=["cutadapt", "atropos"], help="")
+
 
 
 class SnakemakeOptions():
@@ -216,6 +240,15 @@ def print_version(name):
     print(Colors().purple("\nPlease, consider citing us. Visit sequana.readthedocs.io for more information".format(version)))
 
 
+def get_pipeline_location(pipeline_name):
+    class Opt():pass
+    options = Opt()
+    options.workdir = "."
+    options.version = False
+    p = PipelineManager(options, pipeline_name)
+    return p._get_package_location()
+
+
 class PipelineManager():
     """
 
@@ -225,11 +258,26 @@ class PipelineManager():
         """
         :param options: an instance of :class:`Options`
         :param name: name of the pipeline. Must be a Sequana pipeline already installed.
-        """
 
+        options must be an object with at least the following attributes:
+
+        - version
+        - working_directory
+
+        The working_directory is uesd to copy the pipeline in it.
+        """
+        try:
+            from sequana import logger
+            logger.level = options.level
+        except:
+            pass
         self.options = options
-        if self.options.version:
-            print_version(name)
+
+        try:
+            if self.options.version:
+                print_version(name)
+        except:
+            logger.warning("Please add the --version option in this pipeline {}".format(name))
 
         self.name = name
 
@@ -244,8 +292,45 @@ class PipelineManager():
         # If this is a pipeline, let us load its config file
         self.config = SequanaConfig(self.module.config)
 
-        # 
+        # the working directory
         self.workdir = options.workdir
+
+        # define the data path of the pipeline
+        self.datapath = self._get_package_location()
+
+    def copy_requirements(self):
+        # FIXME
+        # code redundant with snaketools.config.copy_requirements
+        if 'requirements' not in self.config.config:
+            return
+
+        for requirement in self.config.config.requirements:
+            if os.path.exists(requirement):
+                try:
+                    shutil.copy(requirement, target)
+                except:
+                    pass # the target and input may be the same
+            elif requirement.startswith('http') is False:
+                try:
+                    logger.info('Copying {} from sequana pipeline {}'.format(requirement, self.name))
+                    path = self.datapath + os.sep + requirement
+                    shutil.copy(path, self.workdir)
+                except Exception as err:
+                    print(err)
+                    msg = "This requirement %s was not found in sequana."
+                    logger.error(msg)
+                    sys.exit(1)
+ 
+    def _get_package_location(self):
+        try:
+            fullname = "sequana_{}".format(self.name)
+            import pkg_resources
+            info = pkg_resources.get_distribution(fullname)
+            sharedir = os.sep.join([info.location , "sequana_pipelines", self.name, 'data'])
+        except pkg_resources.DistributionNotFound as err:
+            logger.error("package provided (%s) not installed." % package)
+            raise
+        return sharedir
 
     def _guess_scheduler(self):
 
@@ -256,8 +341,24 @@ class PipelineManager():
             return 'local'
 
     def setup(self):
-        """Starts to fill the command and create the output directory"""
+        """Initialise the pipeline. 
 
+        - Create a directory (usually named after the pipeline name)
+        - Copy the pipeline and associated files (e.g. config file)
+        - Create a script in the directory ready to use
+
+        If there is a "requirements" section in your config file, it looks 
+        like::
+
+            requirements:
+                - path to file1
+                - path to file2
+
+        It means that those files will be required by the pipeline to run
+        correctly. If the file exists, use it , otherwise look into 
+        the pipeline itself. 
+
+        """
         # First we create the beginning of the command with the optional
         # parameters for a run on a SLURM scheduler
 
@@ -326,6 +427,10 @@ class PipelineManager():
         if self.module.schema_config:
             shutil.copy(self.module.schema_config, "{}".format(self.workdir))
 
+        # finally, we copy the files be found in the requirements section of the
+        # config file.
+        self.copy_requirements()
+
         # some information
         msg = "Check the script in {}/{}.sh as well as "
         msg += "the configuration file in {}/config.yaml.\n"
@@ -337,14 +442,3 @@ class PipelineManager():
         else:
             msg += "cd {}; sh {}.sh\n\n".format(self.workdir, self.name)
         print(self.colors.purple(msg))
-
-
-
-
-
-
-
-
-
-
-
