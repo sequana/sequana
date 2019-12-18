@@ -29,7 +29,6 @@ from sequana import logger
 logger.name = __name__
 
 
-
 __all__ = ["Colors", "InputOptions", "SnakemakeOptions", "SlurmOptions", 
     "PipelineManager", "GeneralOptions", "print_version", "CutadaptOptions"]
 
@@ -138,15 +137,22 @@ class CutadaptOptions():
 
         group.add_argument("--skip-cutadapt", action="store_true",
             default=False,
-             help="perform cutadapt cleaning")
+             help="If provided, fastq cleaning and trimming will be skipped")
         group.add_argument("--cutadapt-fwd", dest="cutadapt_fwd",
-             default="", help="")
+            default="", 
+            help="""Provide a adapter as a string of stored in a
+                FASTA file. If the file exists, we will store it as expected 
+                with a preceeding prefix 'file:'""")
         group.add_argument("--cutadapt-rev", dest="cutadapt_rev",
-             default="", help="")
+             default="", 
+            help="""Provide a adapter as a string of stored in a
+                FASTA file. If the file exists, we will store it as expected 
+                with a preceeding prefix 'file:'""")
         group.add_argument("--cutadapt-quality", dest="cutadapt_quality",
              default=30, type=int, help="")
         group.add_argument("--cutadapt-tool-choice", dest="cutadapt_tool_choice",
-             default="atropos", choices=["cutadapt", "atropos"], help="")
+             default="cutadat", choices=["cutadapt", "atropos"], 
+            help="Select the prefered tool. Default is cutadapt")
 
 
 
