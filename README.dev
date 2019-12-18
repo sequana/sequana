@@ -1,4 +1,4 @@
-It is sometimes difficult to get a stable requirements.txt htat would work
+It is sometimes difficult to get a stable requirements.txt that would work
 for developers, travis and readthedocs.
 
 This file can be used to provide reasons for pinning some package versions.
