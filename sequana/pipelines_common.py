@@ -151,7 +151,7 @@ class CutadaptOptions():
         group.add_argument("--cutadapt-quality", dest="cutadapt_quality",
              default=30, type=int, help="")
         group.add_argument("--cutadapt-tool-choice", dest="cutadapt_tool_choice",
-             default="cutadat", choices=["cutadapt", "atropos"], 
+             default="cutadapt", choices=["cutadapt", "atropos"], 
             help="Select the prefered tool. Default is cutadapt")
 
 
