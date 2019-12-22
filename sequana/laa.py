@@ -68,11 +68,22 @@ class Consensus():
         return deletions
 
     def get_bases(self):
-        df = pd.read_csv(self.filename_bases, sep="\t", skiprows=3, header=None)
+
+        # header of the consensus created by IGV, may have a warning in the
+        # header, which should be ignored.
+        toskip = 0
+        with open(self.filename_bases) as fin:
+            for line in fin.readline():
+                if line.startswith(tuple(x for x in "1234567890")):
+                    break
+                else:
+                    toskip += 1
+
+        df = pd.read_csv(self.filename_bases, sep="\t", skiprows=toskip, header=None)
         df.columns = ["Pos", "A", "C", "G", "T", "N", "DEL", "INS"]
         df = df.set_index("Pos")
 
-        # Low coverage values should be taken care of. 
+        # Low coverage values should be taken care of.
         # If below min_depth, we set everything to zero and consider the base as
         # an N. 
         indices = df[df.sum(axis=1)<self.min_depth].index
@@ -99,7 +110,6 @@ class Consensus():
             if "".join(dd.loc[pos:pos+len(ref)-1]) != ref:
                 logger.warning("reference string {} not found in consensus at position {}".format(ref, pos))
 
-    
         # Now, we insert the deletions removing the reference and then adding
         # the alternate
         # We aware that some deletions may overlap 
