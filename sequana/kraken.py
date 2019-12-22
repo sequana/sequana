@@ -433,7 +433,6 @@ class KrakenResults(object):
         except:
             data.sort(inplace=True)
 
-/bin/bash: q: command not found
         pylab.figure(figsize=(10, 8))
         pylab.clf()
         if kind == "pie":
