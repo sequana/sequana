@@ -26,9 +26,18 @@ import argparse
 
 class Options(argparse.ArgumentParser):
     def  __init__(self, prog="sequana_mapping"):
-        usage = """Welcome to SEQUANA - create a new pipeline from scratch
+        usage = """Welcome to SEQUANA - This standalone creates a new pipeline.
 
-            sequana_start_pipeline 
+        Just type:
+
+            sequana_start_pipeline
+
+        and follow the instructions. Please see the README page on our
+        repository: https://github.com/sequana/sequana_pipeline_template
+
+        The first question requires the name of the pipeline. Then, you can just
+        type enter to the next 3 questions. The description and keywords can be 
+        changed afterwards in the setup.py file.
 
         """
         description = """DESCRIPTION:
