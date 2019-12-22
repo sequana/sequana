@@ -265,7 +265,7 @@ class SnpEff(object):
         with open(output_file, "w") as fp:
             # write fasta with seqid of annotation file
             for n in range(len(fasta_record)):
-                seq_id = ">{0} {1}\n".format(ids_list[index], fasta_record.names[n])
+                seq_id = ">{0} {1}\n".format(ids_list[n], fasta_record.names[n])
                 seq = fasta_record.sequences[n]
                 sequence = "\n".join([seq[i:min(i+80, len(seq))]
                     for i in range(0, len(seq), 80)]) + "\n"
