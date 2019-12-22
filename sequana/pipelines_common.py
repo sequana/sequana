@@ -68,6 +68,13 @@ class Colors:
     def blue(self, msg):
         return self.BLUE + msg + self.ENDC
 
+def guess_scheduler():
+    from easydev import cmd_exists
+    if cmd_exists("sbatch") and cmd_exists("srun"):
+        return 'slurm'
+    else:
+        return 'local'
+
 
 class GeneralOptions():
     def __init__(self):
@@ -139,7 +146,8 @@ class KrakenOptions():
 
         group.add_argument("--skip-kraken", action="store_true",
             default=False,
-            help="If provided, kraken taxonomy is performed")
+            help="""If provided, kraken taxonomy is performed. A database must be 
+                provided (see below). """)
         
         group.add_argument("--databases", dest="kraken_databases", type=str,
             nargs="+", default=[],
@@ -182,6 +190,12 @@ class SnakemakeOptions():
     def __init__(self, group_name="snakemake", working_directory="analysis"):
         self.group_name = group_name
         self.workdir = working_directory
+    
+    def _default_jobs(self):
+        if guess_scheduler() == "slurm":
+            return 40
+        else:
+            return 4
 
     def add_options(self, parser):
         group = parser.add_argument_group(self.group_name)
@@ -189,9 +203,10 @@ class SnakemakeOptions():
         group.add_argument(
             "--jobs",
             dest="jobs",
-            default=40,
-            help="""Number of jobs to run at the same time (default 40). 
-This is the --jobs options of Snakemake"""
+            default=self._default_jobs(),
+            help="""Number of jobs to run at the same time (default 4 on a local
+                computer, 40 on a SLURM scheduler). This is the --jobs options 
+                of Snakemake"""
         )
         group.add_argument(
             "--working-directory",
@@ -325,6 +340,12 @@ class PipelineManager():
 
         # define the data path of the pipeline
         self.datapath = self._get_package_location()
+
+    def exists(self, filename, exit_on_error=True):
+        if os.path.exists(filename) is False:
+            logger.error("{} file does not exists".format(filename))
+            if exit_on_error:
+                sys.exit(1)
 
     def copy_requirements(self):
         # FIXME
