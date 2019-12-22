@@ -30,7 +30,8 @@ logger.name = __name__
 
 
 __all__ = ["Colors", "InputOptions", "SnakemakeOptions", "SlurmOptions", 
-    "PipelineManager", "GeneralOptions", "print_version", "CutadaptOptions"]
+    "PipelineManager", "GeneralOptions", "print_version", "CutadaptOptions",
+    "KrakenOptions"]
 
 
 class Colors:
@@ -95,36 +96,58 @@ class GeneralOptions():
 
 class InputOptions():
     def __init__(self, group_name="data", input_directory=".",
-                 input_pattern="*fastq.gz"):
+                 input_pattern="*fastq.gz", add_input_readtag=True):
         self.group_name = group_name
         self.input_directory = input_directory
         self.input_pattern = input_pattern
 
+        self.add_input_readtag = add_input_readtag
+
     def add_options(self, parser):
-        group = parser.add_argument_group(self.group_name)
-        group.add_argument(
+        self.group = parser.add_argument_group(self.group_name)
+        self.group.add_argument(
              "--input-directory",
              dest="input_directory",
              default=self.input_directory,
              #required=True,
              help="""Where to find the FastQ files""",
         )
-        group.add_argument(
+        self.group.add_argument(
             "--input-pattern",
             dest="input_pattern",
             default=self.input_pattern,
             help="pattern for the input FastQ files ",
         )
 
-        group.add_argument(
-            "--input-readtag",
-            dest="input_readtag",
-            default="_R[12]_",
-            help="""pattern for the paired/single end FastQ. If your files are 
-            tagged with _R1_ or _R2_, please set this value to '_R[12]_'. If your
-            files are tagged with  _1 and _2, you must change this readtag
-            accordingly to '_[12]'""",
-        )
+        if self.add_input_readtag:
+            self.group.add_argument(
+                "--input-readtag",
+                dest="input_readtag",
+                default="_R[12]_",
+                help="""pattern for the paired/single end FastQ. If your files are 
+                tagged with _R1_ or _R2_, please set this value to '_R[12]_'. If your
+                files are tagged with  _1 and _2, you must change this readtag
+                accordingly to '_[12]'""",
+            )
+
+
+class KrakenOptions():
+    def __init__(self, group_name="section_kraken"):
+        self.group_name = group_name
+    def add_options(self, parser):
+        group = parser.add_argument_group(self.group_name)
+
+        group.add_argument("--skip-kraken", action="store_true",
+            default=False,
+            help="If provided, kraken taxonomy is performed")
+        
+        group.add_argument("--databases", dest="kraken_databases", type=str,
+            nargs="+", default=[],
+            help="""Path to a valid set of Kraken database(s). 
+                If you do not have any, please see https://sequana.readthedocs.io
+                or use sequana_taxonomy --download option. 
+                You may use several, in which case, an iterative taxonomy is 
+                performed as explained in online sequana documentation""")
 
 
 class CutadaptOptions():
@@ -132,7 +155,6 @@ class CutadaptOptions():
         self.group_name = group_name
 
     def add_options(self, parser):
-
         group = parser.add_argument_group(self.group_name)
 
         group.add_argument("--skip-cutadapt", action="store_true",
