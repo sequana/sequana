@@ -99,7 +99,13 @@ class MultiqcModule(BaseMultiqcModule):
 
     def add_kraken(self):
         data = {}
+        
+
         for name in self.sequana_data.keys():
+
+            for this in ['Viruses', 'Bacteria', 'Unclassified', 'Metazoa']:
+                if this not in self.sequana_data[name]:
+                    self.sequana_data[name][this] = 0
             data[name] = {
                 'viruses': self._set_nan_to_zero(self.sequana_data[name]['Viruses']),
                 'bacteria': self._set_nan_to_zero(self.sequana_data[name]['Bacteria']),
