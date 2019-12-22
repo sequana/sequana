@@ -412,7 +412,6 @@ class KrakenResults(object):
         if self.unclassified > 0:
             data.loc[-1] = self.unclassified
 
-        print(df)
 
         data = data/data.sum()*100
         assert threshold > 0 and threshold < 100
@@ -434,8 +433,7 @@ class KrakenResults(object):
         except:
             data.sort(inplace=True)
 
-        print(data)
-        # text may be long so, let us increase the figsize a little bit
+/bin/bash: q: command not found
         pylab.figure(figsize=(10, 8))
         pylab.clf()
         if kind == "pie":
