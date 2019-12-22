@@ -362,7 +362,7 @@ class KrakenResults(object):
         self._data_created = True
         return True
 
-    def plot(self, kind="pie", cmap="copper", threshold=1, radius=0.9,
+    def plot(self, kind="pie", cmap="tab20c", threshold=1, radius=0.9,
                 textcolor="red", **kargs):
         """A simple non-interactive plot of taxons
 
@@ -380,6 +380,10 @@ class KrakenResults(object):
 
         .. seealso:: to generate the data see :class:`KrakenPipeline`
             or the standalone application **sequana_taxonomy**.
+
+
+        .. todo:: For a future release, we could use this kind of plot 
+            https://stackoverflow.com/questions/57720935/how-to-use-correct-cmap-colors-in-nested-pie-chart-in-matplotlib
         """
         if len(self._df) == 0:
             return
@@ -397,25 +401,42 @@ class KrakenResults(object):
             return None
 
         df = self.get_taxonomy_db(list(self.taxons.index))
-        df.iloc[-1] = ["Unclassified"] * 8
+
+        # we add the unclassified only if needed
+        if self.unclassified > 0:
+            df.loc[-1] = ["Unclassified"] * 8
+
         data = self.taxons.copy()
-        data.iloc[-1] = self.unclassified
+
+        # we add the unclassified only if needed
+        if self.unclassified > 0:
+            data.loc[-1] = self.unclassified
+
+        print(df)
 
         data = data/data.sum()*100
         assert threshold > 0 and threshold < 100
+
+        # everything below the threshold (1) is gather together and summarised
+        # into 'others'
         others = data[data<threshold].sum()
-        data = data[data>threshold]
+
+        data = data[data>=threshold]
         names = df.loc[data.index]['name']
 
         data.index = names.values
-        data.loc['others'] = others
+
+        if others > 0:
+            data.loc['others'] = others
+
         try:
             data.sort_values(inplace=True)
         except:
             data.sort(inplace=True)
 
+        print(data)
         # text may be long so, let us increase the figsize a little bit
-        pylab.figure(figsize=(10,8))
+        pylab.figure(figsize=(10, 8))
         pylab.clf()
         if kind == "pie":
             ax = data.plot(kind=kind, cmap=cmap, autopct='%1.1f%%',
