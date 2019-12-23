@@ -1,4 +1,7 @@
-Issue with the sequana_rnaseq pipeline (https://github.com/sequana/sequana_rnaseq)
+-- 
+name: rnaseq pipeline issue
+about: please report issues related to the sequana_rnaseq pipeline (https://github.com/sequana/sequana_rnaseq) here.
+---
 
 # Please fill those information if known:
 
