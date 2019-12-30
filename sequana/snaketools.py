@@ -45,7 +45,7 @@ import warnings
 
 import easydev
 from easydev import get_package_location as gpl
-from easydev import load_configfile, AttrDict, TempFile
+from easydev import AttrDict, TempFile
 
 import ruamel.yaml
 from ruamel.yaml import comments
@@ -60,7 +60,7 @@ logger.name = __name__
 
 
 __all__ = ["DOTParser", "FastQFactory", "FileFactory",
-           "Module", "PipelineManager", "PipelineManagerGeneric", 
+           "Module", "PipelineManager", "PipelineManagerGeneric",
             "SnakeMakeStats",
            "SequanaConfig", "modules", "pipeline_names"]
 
@@ -132,9 +132,11 @@ class SnakeMakeStats(object):
         import pylab
         # If the plot cannot be created (e.g. no valid stats), we create an empty
         # axes
-        try: self.plot()
+        try: 
+            self.plot()
         except:
             pylab.bar([0],[0])
+
         if outputdir is None:
             pylab.savefig(filename)
         else:
@@ -190,7 +192,7 @@ class ModuleFinderSingleton(object):
             whatever, module_name, filename = this.rsplit(os.sep, 2)
             if module_name in self._paths.keys():
                 logger.warning(
-                    "Found duplicated name %s from %s" % (module_name,this) + 
+                    "Found duplicated name %s from %s" % (module_name,this) +
                     "Overwrites previous rule ")
             self._paths[module_name] = whatever + os.sep + module_name
             self._type[module_name] = "pipeline"
@@ -204,7 +206,7 @@ class ModuleFinderSingleton(object):
             whatever, module_name, filename = this.rsplit(os.sep, 2)
             if module_name in self._paths.keys():
                 logger.warning(
-                    "Found duplicated name %s from %s" % (module_name,this) + 
+                    "Found duplicated name %s from %s" % (module_name,this) +
                     "Overwrites previous rule ")
             self._paths[module_name] = whatever + os.sep + module_name
             self._type[module_name] = "rule"
@@ -215,18 +217,17 @@ class ModuleFinderSingleton(object):
         try:
             import sequana_pipelines
         except:
-            logger.warning("sequana pipelines not installed. Please install a pipeline from github.com/sequana")
-            return 
+            logger.warning("sequana pipelines not installed. " + 
+                "Please install a pipeline from github.com/sequana")
+            return
 
         import pkgutil
         import sequana_pipelines
         for ff, module_name, valid in pkgutil.iter_modules(sequana_pipelines.__path__):
-            self._paths[module_name] = ff.path + os.sep + module_name 
+            self._paths[module_name] = ff.path + os.sep + module_name
             self._type[module_name] = "pipeline"
 
             logger.debug("Found {} pipeline".format(module_name))
-
-
 
     def _iglob(self, path, extension="rules"):
         from glob import iglob
@@ -318,9 +319,7 @@ class Module(object):
         m.config
 
     This Module may be rule or pipeline, the method :meth:`is_pipeline` can
-    be used to get that information. Other useful methods are available such
-    as :meth:`onweb` that open the web page of the pipeline (linked to the
-    README).
+    be used to get that information. 
 
     """
     def __init__(self, name):
@@ -357,7 +356,7 @@ or open a Python shell and type::
         """Return true is this module is a pipeline"""
         return self._mf.is_pipeline(self._name)
 
-    def _get_file(self, name):        
+    def _get_file(self, name):
         filename = self._path + os.sep + name
         if os.path.exists(filename):
             return filename
@@ -542,18 +541,6 @@ or open a Python shell and type::
         return self._description
     description = property(_get_description,
                            doc=("Content of the README file associated with "))
-    def onweb(self):
-        # TOD: automatic switch
-        if "rules" in self._path:
-            suffix = self.snakefile.split("rules/")[1]
-            suffix = suffix.rsplit("/", 1)[0]
-            easydev.onweb("http://github.com/sequana/sequana/tree/"
-                  "master/sequana/rules/%s" % suffix)
-        else:
-            suffix = self.snakefile.split("pipelines/")[1]
-            suffix = suffix.rsplit("/", 1)[0]
-            easydev.onweb("http://github.com/sequana/sequana/tree/"
-                  "master/sequana/pipelines/%s" % self.name)
 
     def md5(self):
         """return md5 of snakefile and its default configuration file
@@ -625,7 +612,8 @@ class SequanaConfig(object):
         """
         # Create a dummy YAML code to hold data in case the input is a json
         # or a dictionary structure. We use a CommentedMap that works like
-        # a dictionary. Be aware that the update method will lose the comments
+        # a dictionary. Be aware that the update method may lose the comments
+        # if yaml dictionary not updated correctly.
         if data is None:
             self.config = AttrDict()
             self._yaml_code = comments.CommentedMap()
@@ -633,8 +621,9 @@ class SequanaConfig(object):
             if os.path.exists(data):
                 if data.endswith(".yaml") or data.endswith(".yml"):
                     with open(data, "r") as fh:
-                        self._yaml_code = ruamel.yaml.load(
-                            fh.read(), ruamel.yaml.RoundTripLoader)
+                        from ruamel.yaml import YAML
+                        c = YAML()
+                        self._yaml_code = c.load(fh.read())
                 else:
                     # read a JSON
                     import yaml
@@ -646,8 +635,10 @@ class SequanaConfig(object):
                             # olf python version
                             self._yaml_code =  yaml.load(json.dumps(
                                 json.loads(fh.read())))
-        
-                config = load_configfile(data)
+                with open(data, "r") as fh:
+                    import yaml
+                    config = yaml.load(fh, Loader=yaml.FullLoader)
+
             else:
                 raise IOError("input string must be an existing file (%s)" % data)
             self.config = AttrDict(**config)
@@ -658,17 +649,6 @@ class SequanaConfig(object):
             self.config = AttrDict(**data)
             self._yaml_code = comments.CommentedMap(self.config.copy())
         self.cleanup_config()
-
-    def check_sequana_fields(self):
-        requirements = ["input_directory",
-                        "input_pattern",
-                        ]
-        # converts to dictionary ?
-        for this in requirements:
-            this = this.split(":")[0]
-            if this not in self.config.keys():
-                return False
-        return True
 
     def save(self, filename="config.yaml", cleanup=True):
         """Save the yaml code in _yaml_code with comments"""
@@ -688,23 +668,41 @@ class SequanaConfig(object):
     def _recursive_update(self, target, data):
         # recursive update of target using data. Both target and data must have
         # same items
+
+        # !! essential to use the update() method of the dictionary otherwise
+        # comments are lost
+
         for key, value in data.items():
             if isinstance(value, dict):
-                target[key] = comments.CommentedMap(
-                    self._recursive_update(target[key], data[key]))
-            else:
-                #print(target)
-                if key in target.keys():
+                target.update({key: self._recursive_update(target[key], value)})
+            elif isinstance(value, list):
+                try:
+                    # if input is a yaml
+                    new = ruamel.yaml.comments.CommentedSeq(value)
+                    new.ca._items = target[key].ca._items.copy()
+                    target[key] = new
+                except:
                     target[key] = value
+            elif isinstance(key, (int, float, str)):
+                if key in target.keys():
+                    value = data[key]
+                    target.update({key:value})
                 else:
                     logger.warning("This %s key was not in the original config"
                                    " but added" % key)
+            else:
+                raise NotImplementedError("""
+                    Only dictionaries and list are authorised in the 
+                    input configuration file. Key/value that cause error are
+                    {}/{}""".format(key, value))
         return target
 
     def _update_yaml(self):
         self._recursive_update(self._yaml_code, self.config)
 
     def _update_config(self):
+        # probably useless function now since we do not use json as input
+        # anymore
         self._recursive_update(self.config, self._yaml_code)
 
     def _recursive_cleanup(self, d):
@@ -729,7 +727,7 @@ class SequanaConfig(object):
 
     def cleanup_config(self):
         self._recursive_cleanup(self.config)
-        self._update_yaml()
+        #self._update_yaml()
 
     def cleanup(self):
         """ Remove template elements and change None to empty string.
@@ -844,7 +842,6 @@ class PipelineManagerGeneric(object):
                 self.samples = None
         else:
             self.samples = {str(i+1):filename for i,filename in enumerate(self.ff.realpaths)}
-
 
     def getname(self, rulename, suffix=None):
         """In the basename, include rulename and suffix"""
@@ -1191,7 +1188,7 @@ class DOTParser(object):
                         indices_to_drop.add(index)
                     elif name in mapper.keys():
                         url = mapper[name]
-                        newline = line.split(name)[0] + name +'"' 
+                        newline = line.split(name)[0] + name +'"'
                         newline += (' URL="%s", target="_parent", fillcolor="#5499C7"'
                                    '];\n') % url
                         #newline = line.replace('];', newline)
@@ -1277,13 +1274,13 @@ class FileFactory(object):
 
     FIXME: pathname to be checked.
 
-    A **basename** is the name of a directory in a Unix pathname that occurs 
+    A **basename** is the name of a directory in a Unix pathname that occurs
     after the last slash.
 
     dirname, returns everything but the final basename in a pathname. Both
 
 
-    The **pathname** is a specific label for a file’s directory location 
+    The **pathname** is a specific label for a file’s directory location
     while within an operating system.
 
 
@@ -1415,7 +1412,7 @@ class FastQFactory(FileFactory):
 
         # Filter out reads that do not have the read_tag
         # https://github.com/sequana/sequana/issues/480
-        self._glob = [filename for filename in self._glob 
+        self._glob = [filename for filename in self._glob
                       if re.search(read_tag, os.path.basename(filename))]
 
         if len(self.filenames) == 0:
@@ -1693,7 +1690,7 @@ class OnSuccessCleaner(object):
         files = self.files_to_remove + [self.makefile_filename]
         # in case commas are added in the config file
         files = [x.replace(",", "") for x in files]
- 
+
         makefile += "clean_files:\n\trm -f {}\n".format(" ".join(files))
 
         dirs = self.directories_to_remove
@@ -1706,7 +1703,7 @@ class OnSuccessCleaner(object):
 def get_pipeline_statistics():
     """Get basic statistics about the pipelines
 
-    Count rule used per pipeline and returns a dataframe with rules as index 
+    Count rule used per pipeline and returns a dataframe with rules as index
     and pipeline names as columns
 
     ::
