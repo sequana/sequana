@@ -1,0 +1,114 @@
+"""compressor pipeline
+
+This pipeline should not be used as a snakemake pipeline. Instead, please
+use sequana_compressor standalone, which has its own documentation.
+
+In brief, a config file must be provided. Rules in rules/codecs are used.
+
+"""
+import glob
+import sequana.snaketools as ss
+
+
+cfg = ss.SequanaConfig(config).config
+
+
+if cfg.compressor.verbose:
+    print("Compressor parameters")
+    for k,v in cfg.compressor.items():
+        print("{}: {}".format(k,v))
+
+if cfg.compressor.target.startswith("fastq"):
+    name = "fastq"
+elif cfg.compressor.target.startswith("fq"):
+    name = "fq"
+else:
+    raise NotImplementedError("source/target must contains fastq or fq")
+
+
+def gext(ext=""):
+    global name
+    ext =  name + "." + ext
+    return ext.strip('.')
+
+
+# Decompression
+if cfg.compressor.source == gext('gz') and cfg.compressor.target == gext():
+    include: ss.modules["gz_to_fastq"]
+    target = ""
+elif cfg.compressor.source == gext("bz2") and cfg.compressor.target == gext():
+    include: ss.modules["bz2_to_fastq"]
+    target = ""
+elif cfg.compressor.source == gext("dsrc") and cfg.compressor.target == gext():
+    include: ss.modules["dsrc_to_fastq"]
+    target = ""
+
+
+# Compression
+if cfg.compressor.source == gext() and cfg.compressor.target == gext("bz2"):
+    include: ss.modules["fastq_to_bz2"]
+    target = ".bz2"
+elif cfg.compressor.source == gext() and cfg.compressor.target == gext("gz"):
+    include: ss.modules["fastq_to_gz"]
+    target = ".gz"
+elif cfg.compressor.source == gext() and cfg.compressor.target == gext("dsrc"):
+    include: ss.modules["fastq_to_dsrc"]
+    target = ".dsrc"
+
+
+# From compression to compression
+if cfg.compressor.source == gext("gz") and cfg.compressor.target == gext("bz2"):
+    include: ss.modules["gz_to_bz2"]
+    target = ".bz2"
+elif cfg.compressor.source == gext("bz2") and cfg.compressor.target == gext("gz"):
+    include: ss.modules["bz2_to_gz"]
+    target = ".gz"
+elif cfg.compressor.source == gext("bz2") and cfg.compressor.target == gext("dsrc"):
+    include: ss.modules["bz2_to_dsrc"]
+    target = ".dsrc"
+elif cfg.compressor.source == gext("dsrc") and cfg.compressor.target == gext("bz2"):
+    include: ss.modules["dsrc_to_bz2"]
+    target = ".bz2"
+elif cfg.compressor.source == gext("dsrc") and cfg.compressor.target == gext("gz"):
+    include: ss.modules["dsrc_to_gz"]
+    target = ".gz"
+elif cfg.compressor.source == gext("gz") and cfg.compressor.target == gext("dsrc"):
+    include: ss.modules["gz_to_dsrc"]
+    target = ".dsrc"
+
+
+# The input files can be look for recursively or not
+if cfg.compressor.recursive is True:
+    input_filenames = list(glob.iglob("**/*.%s" % cfg.compressor.source,  
+                           recursive=True))
+else:
+    input_filenames = list(glob.iglob("*.%s" % cfg.compressor.source))
+
+
+# We want to ignore symbolic links !
+input_filenames = [x for x in input_filenames if os.path.islink(x) is False]
+
+
+# We want the basename without the compression extension
+fastq = [x.replace(".bz2", "").replace(".gz","").replace(".dsrc", "") 
+         for x in input_filenames]
+
+
+
+# Some information
+try:
+    if cfg.compressor.verbose:
+        ss.message("Found %s files to process" % len(fastq))
+except:
+    pass
+
+# Finally, the input files to feed to the relevant rules
+rule all:
+    input: expand("{dataset}{extension}", dataset=fastq, extension=target)
+
+onsuccess:
+    shell("rm -f snakejob*.sh.e*")
+    shell("rm -f snakejob*.sh.o*")
+
+
+

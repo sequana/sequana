@@ -1,0 +1,17 @@
+#####################################################################
+#  Converts a bunch of compressed files from one format to another
+#
+# - source: fastq.gz or fastq or fastq.bz2 or fastq.dsrc
+# - target: fastq.gz or fastq or fastq.bz2 or fastq.dsrc
+# - recursive: 
+# - threads:
+# - verbose:
+#
+#
+######################################################################
+compressor:
+    source: fastq.gz
+    target: fastq.bz2
+    recursive: false
+    threads: 4
+    verbose: true

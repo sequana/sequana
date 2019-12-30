@@ -4,9 +4,9 @@
         "ram" : "8G"
     },
 
-    "kraken" :
+    "compressor" :
     {
-        "ram" : "16G"
+        "ram" : "8G"
     }
 }
 
