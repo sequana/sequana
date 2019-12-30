@@ -21,17 +21,20 @@ very large genomes. Othe pipeline have now their own repositories:
 - sequana_revcomp
 - sequana_rnaseq
 - sequana_variant_calling
+- sequana_denovo
+- sequana_pacbio_amplicon
 
 
 This is an unstable release made to includes lots of new features and pipelines
  (chip-seq, atac-seq, demultiplexing, fastqc, laa) and bug fixes made on the
-develop branch into the master. 
+develop branch into the master.
 
 * NEWS:
 
-    * snpeff now includes GFF input file input as an option (in addition to the GBK)
-    * new module trf for tandem repeat finder output. 
-    * a new script sequana_start_pipelines to initiate a new pipeline from 
+    * snpeff now includes GFF input file input as an option (in addition to 
+      the GBK)
+    * new module trf for tandem repeat finder output.
+    * a new script sequana_start_pipelines to initiate a new pipeline from
       the cookiecutter recipes
 
 * BUG:
@@ -39,24 +42,36 @@ develop branch into the master.
     * snpeff_add_locus_tag: if contig name and length in GFF header not in the
       same order as in the fasta, a new fasta with wrong header was created.
       This caused trouble in the variant_calling pipeline
+    * kraken: Fix kraken plot (matplotlib version) when 100% of the reads are
+      classified
+    * Header of igvtools count output may vary. Make the consensus.get_bases more
+      robust to automatically identify number of lines to skip.
+    * Fix the kraken multiqc report
 
-* CHANGES/FIXES:
-    * snaketools: pipelines discovery updated in ModuleFinderSingleton
+* MAJOR CHANGES/FIXES:
+    * The main script 'sequana' is redundant with the new framework of
+      pipelines. IT has been removed in this version
+   * sequana_coverage now handles low coverage correctly in the 
+     HTML reports.Fix the ylimits of the coverage plot for low coverage.
+   * cutadapt rules was failing due to a stricter optional/positional argument
+     handling. Fixed the rule accordingly.
+   * sequana_lane_merging is now ready for production. changes made: copy of
+     the script in the local directory, not the data directory. 
+   * RNASeq pipeline: removed sartools, kraken. Fixed bamCoverage rule. Simplify
+     usage related to indexing and mapping. Fixed igvtools rule. Fixed the
+     reoderSam rule (wrong executable). Fixed a incorrect parameter name in
+     bamCoverage rule. Fixed incorrect Snakemake syntax in the fastq_screen
+     rule and RNAseQC. Fixed another deprecated rule: fastq_screen_report.
+
+* MINOR CHANGES/FIXES
+    * snaketools: pipelines discovery updated in ModuleFinderSingleton. Finally
+      fixed the lost of comments in the config when saved. Removed onweb()
+      method. Fixed the loss of comments when saving yaml file after an update 
+      of the key/value. remove check_sequana_fields.
     * demultiplex: fix a Pandas deprecated warning (add sort argument in pd.concat)
     * python dependencies not in conda are not harcoded inside the setup.py
       (itolapi). add cython into the list of requirements.
     * Fix deprecated bamCoverage rule to use newest deeptools version.
-    * RNASeq pipeline: removed sartools, kraken. Fixed bamCoverage rule. Simplify
-      usage related to indexing and mapping. Fixed igvtools rule. Fixed the
-      reoderSam rule (wrong executable). Fixed a incorrect parameter name in
-      bamCoverage rule. Fixed incorrect Snakemake syntax in the fastq_screen
-      rule and RNAseQC. Fixed another deprecated rule: fastq_screen_report.
-    * sequana_lane_merging is now ready for production. changes made: copy of
-      the script in the local directory, not the data directory. 
-   * cuadapt rules was failing due to a stricter optional/positional argument
-     handling. Fixed the rule accordingly.
-   * sequana_coverage handles low coverage correctly in the HTML reports.Fix the
-     ylimits of the coverage plot for low coverage.
 
 0.7.2
 ----------
