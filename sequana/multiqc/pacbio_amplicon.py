@@ -15,7 +15,7 @@ from multiqc.plots import linegraph, table, heatmap, bargraph
 logging.captureWarnings(False)
 
 # Initialise the logger
-log = logging.getLogger('multiqc.sequana/laa')
+log = logging.getLogger('multiqc.sequana/pacbio_amplicon')
 
 
 class MultiqcModule(BaseMultiqcModule):
@@ -26,8 +26,8 @@ class MultiqcModule(BaseMultiqcModule):
 
         # Initialise the parent object
         super(MultiqcModule, self).__init__(
-            name='Sequana/laa',    # name that appears at the top
-            anchor='sequana_laa',  #
+            name='Sequana/pacbio_amplicon',    # name that appears at the top
+            anchor='sequana_pacbio_amplicon',  #
             target='sequana',  # Name show that link to the following href
             href='http://github.com/sequana/sequana/',
             info="amplicon pipeline multi summary")
@@ -35,14 +35,14 @@ class MultiqcModule(BaseMultiqcModule):
         self.sequana_data = {}
 
         # In theory only one file
-        for myfile in self.find_log_files("sequana_laa"):
+        for myfile in self.find_log_files("sequana_pacbio_amplicon"):
             logging.info("Parsing {}".format(myfile))
             name = myfile['s_name']
-            name = name.replace("sequana_laa_", "")
+            name = name.replace("sequana_pacbio_amplicon_", "")
             self.sequana_data[name] = self.parse_logs(myfile["f"])
 
         if len(self.sequana_data) == 0:
-            log.debug("No samples found: sequana_laa")
+            log.debug("No samples found: sequana_pacbio_amplicon")
             raise UserWarning
 
 
