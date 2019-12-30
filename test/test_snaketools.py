@@ -3,7 +3,7 @@ from sequana.snaketools import DOTParser
 import os, shutil
 import tempfile
 from sequana import Module, SequanaConfig
-
+from easydev import TempFile
 
 def test_dot_parser():
     s = DOTParser(sequana_data("test_dag.dot", "testing"))
@@ -13,7 +13,7 @@ def test_dot_parser():
 
 def test_md5():
     from sequana import Module
-    m = Module("quality_control")
+    m = Module("compressor")
     data = m.md5()
 
 def test_modules():
@@ -33,6 +33,21 @@ def test_snakemake_stats():
     # this is created using snakemake with the option "--stats stats.txt"
     s = snaketools.SnakeMakeStats(sequana_data("test_snakemake_stats.txt"))
     s.plot()
+    with TempFile() as fout:
+        s.plot_and_save(filename=fout.name, outputdir=None)
+
+    with tempfile.TemporaryDirectory() as tempdir:
+        s.plot_and_save(filename="test.png", outputdir=tempdir)
+
+
+def test_plot_stats():
+
+    with tempfile.TemporaryDirectory() as indir:
+        shutil.copy(sequana_data("test_snakemake_stats.txt"), 
+            indir + "/stats.txt")
+        with tempfile.TemporaryDirectory() as outdir:
+            snaketools.plot_stats(indir, outdir)
+    snaketools.plot_stats("dummy", "dummy")
 
 
 def test_module():
@@ -40,9 +55,11 @@ def test_module():
     m = snaketools.Module('mark_duplicates_dynamic')
     m.description
     print(m)
+    m # test __repr__
+    m.__repr__()
     m.path
     m.snakefile
-
+    m.overview
     # a rule with README
     m = snaketools.Module('dag')
     m.description
@@ -51,7 +68,7 @@ def test_module():
     m.check()
 
     # a pipeline
-    m = snaketools.Module('quality_control')
+    m = snaketools.Module('compressor')
     m.is_executable()
     m.check()
     m.snakefile
@@ -62,15 +79,10 @@ def test_module():
     assert m.schema_config.endswith("schema.yaml")
 
 
-def _test_module_onweb():
-    m = snaketools.Module('quality_control')
-    m.onweb()
-
-
 def test_valid_config():
     config = snaketools.SequanaConfig(None)
 
-    s = snaketools.Module("quality_control")
+    s = snaketools.Module("compressor")
     config = snaketools.SequanaConfig(s.config)
 
     from easydev import TempFile
@@ -79,10 +91,10 @@ def test_valid_config():
 
 
 def test_sequana_config():
-    s = snaketools.Module("quality_control")
+    s = snaketools.Module("compressor")
     config = snaketools.SequanaConfig(s.config)
 
-    assert config.config.get("kraken:dummy", "test") == "test"
+    assert config.config.get("compressor")["source"] == "fastq.gz"
     assert config.config.get("kraken:dummy") == None
 
     # --------------------------------- tests different constructors
@@ -107,10 +119,11 @@ def test_sequana_config():
         assert True
 
     # Test an exception
-    s = snaketools.Module("quality_control")
+    s = snaketools.Module("compressor")
     config = snaketools.SequanaConfig(s.config)
     config._recursive_update(config._yaml_code, {"input_directory_dummy": "test"})
 
+    #config.check_config_with_schema(s.schema_config)
     # loop over all pipelines, read the config, save it and check the content is
     # identical. This requires to remove the templates. We want to make sure the
     # empty strings are kept and that "no value" are kept as well
@@ -190,6 +203,17 @@ def test_pipeline_manager():
     pm.getreportdir("test")
     pm.getname("fastqc")
 
+def test_pipeline_manager_generic():
+    cfg = SequanaConfig({})
+    file1 = sequana_data("Hm2_GTGAAA_L005_R1_001.fastq.gz")
+    cfg.config.input_directory, cfg.config.input_pattern = os.path.split(file1)
+    cfg.config.input_pattern = "Hm*gz"
+    pm = snaketools.PipelineManagerGeneric("custom", cfg)
+    pm.getlogdir("fastqc")
+    pm.getwkdir("fastqc")
+    pm.getrawdata()
+    pm.getreportdir("test")
+    pm.getname("fastqc")
 
 def test_file_name_factory():
     import glob
@@ -284,11 +308,8 @@ def test_build_dynamic_rule():
 
 
 def test_init():
-    snaketools.init("quality_control.rules", globals())
+    snaketools.init("compressor.rules", globals())
     assert "expected_output" in globals()
-
-
-
 
 
 def test_get_pipeline_statistics():

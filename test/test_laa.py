@@ -1,7 +1,7 @@
-from sequana.laa import LAA
+from sequana.pacbio_amplicon import LAA
 from sequana import sequana_data
 
-def test_laa():
+def test_pacbio_amplicon():
 
     # test_laa_amplicon_analysis_summary_bc24.csv
     #filename = sequana_data("test_laa_amplicon_analysis_summary_bc24.csv")
