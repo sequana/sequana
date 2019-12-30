@@ -148,7 +148,7 @@ setup(
             "sequana_isoseq_qc=sequana.multiqc.isoseq_qc:MultiqcModule",
             "sequana_bamtools_stats=sequana.multiqc.bamtools_stats:MultiqcModule",
             "sequana_kraken=sequana.multiqc.kraken:MultiqcModule",
-            "sequana_laa=sequana.multiqc.laa:MultiqcModule"
+            "sequana_pacbio_amplicon=sequana.multiqc.pacbio_amplicon:MultiqcModule"
         ],
         'multiqc.hooks.v1': [
             'before_config = sequana.multiqc.config:load_config',
