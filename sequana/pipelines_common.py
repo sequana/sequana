@@ -6,7 +6,7 @@
 #
 #  File author(s):
 #      Thomas Cokelaer <thomas.cokelaer@pasteur.fr>
-#      Dimitri Desvillechabrol <dimitri.desvillechabrol@pasteur.fr>, 
+#      Dimitri Desvillechabrol <dimitri.desvillechabrol@pasteur.fr>,
 #          <d.desvillechabrol@gmail.com>
 #
 #  Distributed under the terms of the 3-clause BSD license.
@@ -22,14 +22,15 @@ import glob
 import sys
 import platform
 import shutil
+import argparse
 
 from sequana.snaketools import SequanaConfig, Module
+from sequana.adapters import AdapterReader
 
 from sequana import logger
 logger.name = __name__
 
-
-__all__ = ["Colors", "InputOptions", "SnakemakeOptions", "SlurmOptions", 
+__all__ = ["Colors", "InputOptions", "SnakemakeOptions", "SlurmOptions",
     "PipelineManager", "GeneralOptions", "print_version", "CutadaptOptions",
     "KrakenOptions"]
 
@@ -76,6 +77,8 @@ def guess_scheduler():
         return 'local'
 
 
+
+
 class GeneralOptions():
     def __init__(self):
         pass
@@ -92,10 +95,10 @@ class GeneralOptions():
                 However, you can set to slurm and change the output shell script
                 to fulfill your needs. If unset, sequana searches for the sbatch
                 and srun commands. If found, this is set automatically to
-                'slurm', otherwise to 'local'. 
+                'slurm', otherwise to 'local'.
                 """)
 
-        parser.add_argument("--version", action="store_true", 
+        parser.add_argument("--version", action="store_true",
             help="Print the version and quit")
         parser.add_argument("--level", dest="level", default="INFO",
             help="logging level in INFO, DEBUG, WARNING, ERROR, CRITICAL")
@@ -107,7 +110,6 @@ class InputOptions():
         self.group_name = group_name
         self.input_directory = input_directory
         self.input_pattern = input_pattern
-
         self.add_input_readtag = add_input_readtag
 
     def add_options(self, parser):
@@ -131,7 +133,7 @@ class InputOptions():
                 "--input-readtag",
                 dest="input_readtag",
                 default="_R[12]_",
-                help="""pattern for the paired/single end FastQ. If your files are 
+                help="""pattern for the paired/single end FastQ. If your files are
                 tagged with _R1_ or _R2_, please set this value to '_R[12]_'. If your
                 files are tagged with  _1 and _2, you must change this readtag
                 accordingly to '_[12]'""",
@@ -141,56 +143,178 @@ class InputOptions():
 class KrakenOptions():
     def __init__(self, group_name="section_kraken"):
         self.group_name = group_name
+
     def add_options(self, parser):
         group = parser.add_argument_group(self.group_name)
 
         group.add_argument("--skip-kraken", action="store_true",
             default=False,
-            help="""If provided, kraken taxonomy is performed. A database must be 
+            help="""If provided, kraken taxonomy is performed. A database must be
                 provided (see below). """)
-        
+
         group.add_argument("--databases", dest="kraken_databases", type=str,
             nargs="+", default=[],
-            help="""Path to a valid set of Kraken database(s). 
+            help="""Path to a valid set of Kraken database(s).
                 If you do not have any, please see https://sequana.readthedocs.io
-                or use sequana_taxonomy --download option. 
-                You may use several, in which case, an iterative taxonomy is 
+                or use sequana_taxonomy --download option.
+                You may use several, in which case, an iterative taxonomy is
                 performed as explained in online sequana documentation""")
 
 
 class CutadaptOptions():
+    description = """
+    This section allows you to trim bases (--cutadapt-quality) with poor
+    quality and/or remove adapters.
+
+    To remove adapters, several options are possible:
+
+    (1) you may use an experimental design file (--cutadapt-design-file),
+    in which case the type of adapters is also required with the option
+    --cutadapt-adapter-choice.
+    (2) specify the name of the adapters(--cutadapt-adapter-choice)
+    e.g. PCRFree. You may specify "universal" to remove universal
+    adapters only.
+    (3) provide the adapters directly as a string (or a file) using
+    --cutadapt-fwd (AND --cutadapt-rev" for paired-end data).
+
+    If you set the --cutadapt-adapter-choice to 'none', fwd and reverse
+    adapters are set to XXXX (see cutadapt documentation).
+
+    """
+
+    adapters_choice = ["none", "universal", "Nextera", "Rubicon", "PCRFree",
+        "TruSeq", "SMARTer", "Small"]
+
     def __init__(self, group_name="section_cutadapt"):
         self.group_name = group_name
 
     def add_options(self, parser):
-        group = parser.add_argument_group(self.group_name)
+
+        group = parser.add_argument_group(self.group_name, self.description)
 
         group.add_argument("--skip-cutadapt", action="store_true",
             default=False,
              help="If provided, fastq cleaning and trimming will be skipped")
+
         group.add_argument("--cutadapt-fwd", dest="cutadapt_fwd",
-            default="", 
+            default="",
             help="""Provide a adapter as a string of stored in a
-                FASTA file. If the file exists, we will store it as expected 
+                FASTA file. If the file exists, we will store it as expected
                 with a preceeding prefix 'file:'""")
+
         group.add_argument("--cutadapt-rev", dest="cutadapt_rev",
-             default="", 
+            default="",
             help="""Provide a adapter as a string of stored in a
-                FASTA file. If the file exists, we will store it as expected 
+                FASTA file. If the file exists, we will store it as expected
                 with a preceeding prefix 'file:'""")
+
+        def quality(x):
+            x = int(x)
+            if x < 0:
+                raise argparse.ArgumentTypeError("quality must be positive")
+            return x
+
         group.add_argument("--cutadapt-quality", dest="cutadapt_quality",
-             default=30, type=int, help="")
+            default=30, type=quality,
+            help="""0  means no trimming, 30 means keep bases with quality
+                above 30""")
+
         group.add_argument("--cutadapt-tool-choice", dest="cutadapt_tool_choice",
-             default="cutadapt", choices=["cutadapt", "atropos"], 
+            default="cutadapt", choices=["cutadapt", "atropos"],
             help="Select the prefered tool. Default is cutadapt")
 
+        group.add_argument("--cutadapt-adapter-choice",
+            dest="cutadapt_adapter_choice",
+            default=None, choices=self.adapters_choice,
+            help="""Select the adapters used that may possibly still be
+                present in the sequences""")
+
+        group.add_argument("--cutadapt-design-file", dest="cutadapt_design_file",
+            default=None,
+            help="A valid CSV file with mapping of adapter index and sample name")
+
+        group.add_argument("--cutadapt-mode", dest="cutadapt_mode",
+            default="b", choices=["g", "a", "b"],
+            help="""Mode used to remove adapters. g for 5', a for 3', b for both
+                5'/3' as defined in cutadapt documentation""")
+
+        group.add_argument("--cutadapt-options", dest="cutadapt_options",
+            default=" -O 6 --trim-n",
+            help="""additional options understood by cutadapt""")
+
+    def check_options(self, options):
+
+        """
+        do: true
+      m: 20
+      mode: b
+      options: -O 6 --trim-n
+      quality: 30
+        """
+        design = options.cutadapt_design_file
+        adapter_choice = options.cutadapt_adapter_choice
+        adapter_fwd = options.cutadapt_fwd
+        adapter_rev = options.cutadapt_rev
+
+        if design:
+            if adapter_fwd or adapter_rev:
+                logger.critical(
+                    "When using --cutadapt-design-file, one must not"
+                    " set the forward/reverse adapters with --cutadapt-fwd"
+                    " and/or --cutadapt-rev\n\n" + self.description)
+                sys.exit(1)
+
+            # otherwise, we just check the format but we need the adapter choice
+            if options.cutadapt_adapter_choice in [None, 'none']:
+                logger.critical(
+                    "When using --cutadapt-design-file, you must also"
+                    " provide the type of adapters using --cutadapt-adapter-choice"
+                    " (set to one of %s )" % self.adapters_choice)
+                sys.exit(1)
+            from sequana import FindAdaptersFromDesign
+            fa = FindAdaptersFromDesign(design, options.cutadapt_adapter_choice)
+            try:
+                fa.check()
+            except:
+                logger.critical("Your design file contains indexes not found "
+                    "in the list of adapters from {}".format(options.cutadapt_adapter_choice))
+                sys.exit(1)
+
+        # No design provided here below
+        # do we need to remove adapters at all ?
+        elif options.cutadapt_adapter_choice == "none":
+            options.cutadapt_adapter_choice = None
+            options.cutadapt_fwd = "XXXX"
+            options.cutadapt_rev = "XXXX"
+        # or just the universal ones ?
+        elif options.cutadapt_adapter_choice == "universal":
+            options.cutadapt_fwd = "GATCGGAAGAGCACACGTCTGAACTCCAGTCACCGATGTATCTCGTATGCCGTCTTCTGC"
+            options.cutadapt_rev = "TCTAGCCTTCTCGCAGCACATCCCTTTCTCACATCTAGAGCCACCAGCGGCATAGTAA"
+        # or do we have a string or files provided for the fwd/rev ?
+        elif options.cutadapt_adapter_choice is None:
+            if options.cutadapt_fwd:
+                # Could be a string or a file. If a file, check the format
+                if os.path.exists(options.cutadapt_fwd):
+                    AdapterReader(options.cutadapt_fwd)
+                    options.cutadapt_fwd = "file:{}".format(
+                        os.path.abspath(options.cutadapt_fwd))
+            if options.cutadapt_rev:
+                # Could be a string or a file. If a file, check the format
+                if os.path.exists(options.cutadapt_rev):
+                    AdapterReader(options.cutadapt_rev)
+                    options.cutadapt_rev = "file:{}".format(
+                        os.path.abspath(options.cutadapt_rev))
+        elif options.cutadapt_adapter_choice:
+            # nothing to do, the cutadapt rules from sequana will use 
+            # the adapter_choice, and fill the fwd/rev automatically
+            pass
 
 
 class SnakemakeOptions():
     def __init__(self, group_name="snakemake", working_directory="analysis"):
         self.group_name = group_name
         self.workdir = working_directory
-    
+
     def _default_jobs(self):
         if guess_scheduler() == "slurm":
             return 40
@@ -205,7 +329,7 @@ class SnakemakeOptions():
             dest="jobs",
             default=self._default_jobs(),
             help="""Number of jobs to run at the same time (default 4 on a local
-                computer, 40 on a SLURM scheduler). This is the --jobs options 
+                computer, 40 on a SLURM scheduler). This is the --jobs options
                 of Snakemake"""
         )
         group.add_argument(
@@ -248,8 +372,8 @@ class SlurmOptions():
             "--slurm-cores-per-job",
             dest="slurm_cores_per_job",
             default=self.cores,
-            help="""Number of cores/jobs to be used at the same time. 
-            Ignored and replaced if a cluster_config.yaml file is part 
+            help="""Number of cores/jobs to be used at the same time.
+            Ignored and replaced if a cluster_config.yaml file is part
             of your pipeline (e.g. rnaseq)""",
         )
         group.add_argument(
@@ -262,8 +386,8 @@ class SlurmOptions():
             "--slurm-memory",
             dest="slurm_memory",
             default=self.memory,
-            help="""memory in Mb (default 4000; stands for 4000 Mbytes). 
-            Ignored and replaced if a cluster_config.yaml file is part 
+            help="""memory in Mb (default 4000; stands for 4000 Mbytes).
+            Ignored and replaced if a cluster_config.yaml file is part
             of your pipeline (e.g. rnaseq)""",
         )
 
@@ -369,7 +493,7 @@ class PipelineManager():
                     msg = "This requirement %s was not found in sequana."
                     logger.error(msg)
                     sys.exit(1)
- 
+
     def _get_package_location(self):
         try:
             fullname = "sequana_{}".format(self.name)
@@ -390,13 +514,13 @@ class PipelineManager():
             return 'local'
 
     def setup(self):
-        """Initialise the pipeline. 
+        """Initialise the pipeline.
 
         - Create a directory (usually named after the pipeline name)
         - Copy the pipeline and associated files (e.g. config file)
         - Create a script in the directory ready to use
 
-        If there is a "requirements" section in your config file, it looks 
+        If there is a "requirements" section in your config file, it looks
         like::
 
             requirements:
@@ -404,8 +528,8 @@ class PipelineManager():
                 - path to file2
 
         It means that those files will be required by the pipeline to run
-        correctly. If the file exists, use it , otherwise look into 
-        the pipeline itself. 
+        correctly. If the file exists, use it , otherwise look into
+        the pipeline itself.
 
         """
         # First we create the beginning of the command with the optional
@@ -457,6 +581,7 @@ class PipelineManager():
         self.config._update_yaml()
         self.config.save("{}/config.yaml".format(self.workdir))
 
+
         # the command
         with open("{}/{}.sh".format(self.workdir, self.name), "w") as fout:
             fout.write(self.command)
@@ -491,3 +616,14 @@ class PipelineManager():
         else:
             msg += "cd {}; sh {}.sh\n\n".format(self.workdir, self.name)
         print(self.colors.purple(msg))
+
+    def update_config(self, config, options, section_name):
+        for option_name in config[section_name]:
+            try:
+                config[section_name][option_name] = getattr(options,
+                    section_name + "_" + option_name)
+            except:
+                logger.debug("update_config. Could not find {}".format(option_name))
+
+
+
