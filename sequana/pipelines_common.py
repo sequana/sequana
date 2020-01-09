@@ -152,7 +152,7 @@ class KrakenOptions():
             help="""If provided, kraken taxonomy is performed. A database must be
                 provided (see below). """)
 
-        group.add_argument("--databases", dest="kraken_databases", type=str,
+        group.add_argument("--kraken-databases", dest="kraken_databases", type=str,
             nargs="+", default=[],
             help="""Path to a valid set of Kraken database(s).
                 If you do not have any, please see https://sequana.readthedocs.io
