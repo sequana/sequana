@@ -36,6 +36,7 @@ develop branch into the master.
     * new module trf for tandem repeat finder output.
     * a new script sequana_start_pipelines to initiate a new pipeline from
       the cookiecutter recipes
+    * new module *gff3* to read GFF files
 
 * BUG:
 
