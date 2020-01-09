@@ -1438,7 +1438,9 @@ class FastQFactory(FileFactory):
 
         # get name before the read tag (R[12])
         self.read_tag = read_tag
-        re_read_tag = re.compile(read_tag)
+
+        # If a user uses a . it should be taken as 
+        re_read_tag = re.compile(read_tag.replace(".", "\."))
         self.tags = list({re_read_tag.split(f)[0] for f in self.basenames})
         self.short_tags = [x.split("_")[0] for x in self.tags]
         if len(self.tags) == 0:
@@ -1458,6 +1460,7 @@ class FastQFactory(FileFactory):
                                  "(sequana.FastQFactory)")
         else:
             assert tag in self.tags, 'invalid tag'
+
         # retrieve file of tag
         read_tag = self.read_tag.replace("[12]", r)
         candidates = [realpath for basename, realpath in
