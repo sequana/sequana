@@ -7,12 +7,16 @@ try:
     try:
         from PyQt5 import QtWebEngine as QtWebKit
         from PyQt5.Qt import QWebEnginePage as QWebPage
-        from PyQt5.QtWebEngineWidgets import QWebEngineSettings
         from PyQt5.Qt import QTabWidget
     except:
         print("""The sequana browser will not be available on your system. This is
-a known issue (https://github.com/sequana/sequana/issues/420) that will be
+a known iissue (https://github.com/sequana/sequana/issues/420) that will be
 fixed.""")
+    try:from PyQt5.QtWebKitWidgets import QWebPage
+    except: pass
+    try:from PyQt5.QtWebEngineWidgets import QWebEngineSettings
+    except:pass
+
 except:
     # PyQt 5.6 and below
     from PyQt5.QtWebKitWidgets import QWebView
