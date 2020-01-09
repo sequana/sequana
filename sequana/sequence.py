@@ -50,8 +50,8 @@ class Sequence(object):
 
         """
         if sequence.endswith(".fa") or sequence.endswith(".fasta"):
-            fasta = FastA(sequence)
-            sequence = fasta.next().sequence.upper()
+            self.fasta = FastA(sequence)
+            sequence = self.fasta.next().sequence.upper()
         else: # assume correct string sequence
             pass
 
@@ -61,6 +61,13 @@ class Sequence(object):
         except:
             self._translate = bytes.maketrans(complement_in, complement_out)
         self._letters = letters
+
+    def __iter__(self):
+        return self
+    
+    def __next__(self):
+        self._data = self.fasta.next().sequence.upper()
+        return self._data
 
     def _get_sequence(self):
         return self._data
@@ -145,6 +152,9 @@ class DNA(Sequence):
     Some long computations are done when setting the window size::
 
         d.window = 100
+
+    The ORF detection has been validated agains a plasmodium 3D7 ORF file 
+    found on plasmodb.org across the 14 chromosomes.
 
     """
     def __init__(self, sequence,
@@ -477,13 +487,13 @@ class DNA(Sequence):
         """Function for finding ORF and CDS in both strands of DNA"""
         # init variables
         d_vars = {
-        "codon" : ["","-","--"],
-        "begin_f" : [0]*3,
-        "begin_r" : [0]*3,
-        "end_f" : [0]*3,
-        "end_r" : [0]*3,
-        "pos_ATG_f" : [np.nan]*3,
-        "pos_ATG_r" : [np.nan]*3
+            "codon" : ["","-","--"],
+            "begin_f" : [0]*3,
+            "begin_r" : [0]*3,
+            "end_f" : [0]*3,
+            "end_r" : [0]*3,
+            "pos_ATG_f" : [np.nan]*3,
+            "pos_ATG_r" : [np.nan]*3
         }
         print("Finding ORF and CDS")
         # result list
