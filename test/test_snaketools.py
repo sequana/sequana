@@ -172,7 +172,7 @@ def test_pipeline_manager():
         assert True
 
     # normal behaviour but no input provided:
-    config = Module("quality_control")._get_config()
+    config = Module("compressor")._get_config()
     cfg = SequanaConfig(config)
     cfg.cleanup() # remove templates
     try:
