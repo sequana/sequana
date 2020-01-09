@@ -22,7 +22,6 @@ import shutil
 import glob
 import sys
 import argparse
-from optparse import OptionParser
 from argparse import RawTextHelpFormatter
 
 from sequana import bedtools, sequana_data
