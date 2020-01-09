@@ -947,8 +947,10 @@ class PipelineManager(object):
 
         logger.debug("Input data{}".format(glob_dir))
 
-        if not cfg.config.input_readtag:
-             cfg.config.input_readtag = "_R[12]_"
+        if "input_readtag" not in cfg.config:
+            logger.warning("No input_readtag option found. Set to _R[12]_ for your")
+            #.input_readtag:
+            cfg.config.input_readtag = "_R[12]_"
 
         if fastq:
             self._get_fastq_files(glob_dir, cfg.config.input_readtag)
