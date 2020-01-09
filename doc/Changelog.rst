@@ -48,6 +48,7 @@ develop branch into the master.
     * Header of igvtools count output may vary. Make the consensus.get_bases more
       robust to automatically identify number of lines to skip.
     * Fix the kraken multiqc report
+    * Fix bug in gui/browser to fix import of QWebPage on travis
 
 * MAJOR CHANGES/FIXES:
     * The main script 'sequana' is redundant with the new framework of
