@@ -21,7 +21,6 @@ import os
 import shutil
 import glob
 import sys
-from optparse import OptionParser
 import argparse
 
 from easydev import DevTools
