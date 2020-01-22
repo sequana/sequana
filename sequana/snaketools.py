@@ -776,6 +776,7 @@ class SequanaConfig(object):
             with TempFile(suffix=".yaml") as fh:
                 self.save(fh.name)
                 c = Core(source_file=fh.name, schema_files=[schemafile])
+                c.validate()
         except Exception as err:
             print(err)
             return False
@@ -874,6 +875,7 @@ class PipelineManagerGeneric(object):
                 "sample names as keys and the corresponding location as values.")
         return lambda wildcards: self.samples[wildcards.sample]
 
+        
 
 class PipelineManager(object):
     """Utility to manage easily the snakemake pipeline
@@ -1515,7 +1517,7 @@ def init(filename, namespace):
         namespace['__snakefile__'] = filename
 
         # FIXME this is used only in quality_control when using sambamba rule
-        # to remove
+        # to remove files.
         namespace['__pipeline_name__'] = \
             os.path.split(filename)[1].replace(".rules", "")
         namespace['expected_output'] = []
