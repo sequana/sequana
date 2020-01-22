@@ -31,8 +31,8 @@ rule bowtie1_index_%(name)s:
         __bowtie1_index_%(name)s__log
     shell:
         """
-        bowtie-build {input.fasta} {params.prefix}  2> {log}
-        samtools faidx {input.fasta} 2>> {log}
+        bowtie-build {input.fasta} {params.prefix}  &> {log}
+        samtools faidx {input.fasta} &>> {log}
         if [ -e {params.prefix}.chrom.sizes ]
         then
             ln -s {input.fasta}.fai {params.prefix}.chrom.sizes 2>> {log}

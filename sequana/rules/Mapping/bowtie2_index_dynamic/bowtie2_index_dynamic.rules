@@ -30,8 +30,8 @@ rule bowtie2_index_%(name)s:
         __bowtie2_index_%(name)s__log
     shell:
         """
-        bowtie2-build {input.fasta} {params.prefix}  2> {log}
-        samtools faidx {input.fasta} 2>> {log}
+        bowtie2-build {input.fasta} {params.prefix}  &> {log}
+        samtools faidx {input.fasta} &>> {log}
 
         """
     '''
