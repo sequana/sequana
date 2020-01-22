@@ -49,6 +49,7 @@ develop branch into the master.
       robust to automatically identify number of lines to skip.
     * Fix the kraken multiqc report
     * Fix bug in gui/browser to fix import of QWebPage on travis
+    * bowtie2 dynamic rule now uses templating correctly (RNASeq pipeline)
 
 * MAJOR CHANGES/FIXES:
     * The main script 'sequana' is redundant with the new framework of
@@ -74,6 +75,11 @@ develop branch into the master.
     * python dependencies not in conda are not harcoded inside the setup.py
       (itolapi). add cython into the list of requirements.
     * Fix deprecated bamCoverage rule to use newest deeptools version.
+    * The check_config_with_schema function now performs the validation
+      correctly
+    * Fix stdout of the fastqc, unpigz, bowtie1 and bowtie2 rules
+    * Atropos 2.0 changed its API. fastq module compat with atropos 1.0 and 2.0 
+    
 
 0.7.2
 ----------
