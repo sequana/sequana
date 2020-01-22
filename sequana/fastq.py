@@ -14,7 +14,10 @@ from sequana.lazy import pylab
 from sequana.tools import GZLineCounter
 from easydev import Progress, do_profile
 
-from atropos.io.seqio import FastqReader
+try:
+    from atropos.io.seqio import FastqReader
+except: # version 2.0
+    from atropos.io.readers import FastqReader
 
 import pysam
 from pysam import qualitystring_to_array
