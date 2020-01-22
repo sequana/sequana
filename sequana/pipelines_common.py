@@ -36,6 +36,14 @@ __all__ = ["Colors", "InputOptions", "SnakemakeOptions", "SlurmOptions",
 
 
 class Colors:
+    """
+
+    ::
+
+        color = Colors()
+        print(color.failed("msg"))
+
+    """
     PURPLE = "\033[95m"
     BLUE = "\033[94m"
     GREEN = "\033[92m"
@@ -60,6 +68,9 @@ class Colors:
     def fail(self, msg):
         return self.FAIL + msg + self.ENDC
 
+    def error(self, msg):
+        return self.FAIL + msg + self.ENDC
+
     def warning(self, msg):
         return self.WARNING + msg + self.ENDC
 
@@ -69,14 +80,23 @@ class Colors:
     def blue(self, msg):
         return self.BLUE + msg + self.ENDC
 
+
+def error(msg, pipeline):
+    color = Colors()
+    print(color("ERROR [sequana.{}]::".format(pipeline) +  msg), flush=True)
+    sys.exit(1)
+
+
 def guess_scheduler():
+    """Guesses whether we are on a SLURM cluster or not. 
+
+    If not, we assume a local run is expected.
+    """
     from easydev import cmd_exists
     if cmd_exists("sbatch") and cmd_exists("srun"):
         return 'slurm'
     else:
         return 'local'
-
-
 
 
 class GeneralOptions():
@@ -624,6 +644,5 @@ class PipelineManager():
                     section_name + "_" + option_name)
             except:
                 logger.debug("update_config. Could not find {}".format(option_name))
-
 
 
