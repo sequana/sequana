@@ -538,7 +538,7 @@ class PipelineManager():
         cmd = "#!/bin/bash\nsnakemake -s {}.rules"
         self.command = cmd.format(self.name)
 
-        self.command += " --jobs {}".format(self.options.jobs)
+        self.command += " -p --jobs {}".format(self.options.jobs)
 
         if self.options.run_mode is None:
             self.options.run_mode = self._guess_scheduler()
