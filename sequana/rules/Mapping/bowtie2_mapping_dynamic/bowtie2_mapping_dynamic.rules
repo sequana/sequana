@@ -38,7 +38,7 @@ rule bowtie2_mapping_%(name)s:
         prefix_index = __bowtie2_mapping_%(name)s__prefix_index,
         options = __bowtie2_mapping_%(name)s__options
     threads:
-        config["bowtie2_mapping"]["threads"]
+        config["bowtie2_mapping_%(name)s"]["threads"]
     run:
         cmd = "bowtie2 -p {threads} {params.options} -x {params.prefix_index}"
         # paired end or single end unzip
