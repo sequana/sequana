@@ -57,17 +57,17 @@ rule RNAseQC:
         import os
         if os.path.isdir(params['directory']) is False:
             os.mkdir(params['directory'])
+
         #create the sample index
         data = [(re.split(r'_',file)[0], file, 'NA') for file in input["bam"]]
         df = pd.DataFrame(data, columns=['Sample ID','Bam File','Notes'])
-        print(df, output['sample_index'])
+        #print(df, output['sample_index'])
         df.to_csv(output['sample_index'], sep="\t",index=False)
         df.to_csv("/home/cokelaer/test.tsv", sep="\t",index=False)
 
         #run RNAseQC
         #shell("rna-seqc -o {params.directory}  -r {input.genome}  -s {output.sample_index} -t {input.gtf}  -BWArRNA {params.rRNA} {params.kwargs} 2> {log}")
         shell("rna-seqc -o {params.directory}  -r {input.genome}  -s {output.sample_index} -t {input.gtf}   {params.kwargs} 2> {log}")
-
 
         thisfile = os.path.join(params['directory'], "metric.tsv")
         if os.path.isfile(thisfile):
@@ -79,7 +79,7 @@ rule RNAseQC:
                 frames = [df['rRNA rate'], df['Exonic Rate'] - df['rRNA rate'], df['Intronic Rate'],
                      df['Intergenic Rate']]
         res = pd.concat(frames, axis=1)
-        ##légender correctement
+        ## 
         res.plot(kind='bar', stacked=True)
         pl.ylim([0,1])
         #pl.legend(('rRNA rate', 'Exonic Rate', 'Intronic Rate', 'Intergenic Rate'), loc='lower center',
