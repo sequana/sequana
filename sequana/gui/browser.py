@@ -1,27 +1,34 @@
 # coding: utf-8
 from PyQt5 import QtCore, QtGui, Qt, QtWidgets
-try:
-    # PyQt 5.6 and above (e.g. conda Mac PyQt5.6 does not work like PyQt5.6
-    # linux)
-    from PyQt5.QtWebEngineWidgets import QWebEngineView as QWebView
-    try:
-        from PyQt5 import QtWebEngine as QtWebKit
-        from PyQt5.Qt import QWebEnginePage as QWebPage
-        from PyQt5.Qt import QTabWidget
-    except:
-        print("""The sequana browser will not be available on your system. This is
-a known iissue (https://github.com/sequana/sequana/issues/420) that will be
-fixed.""")
-    try:from PyQt5.QtWebKitWidgets import QWebPage
-    except: pass
-    try:from PyQt5.QtWebEngineWidgets import QWebEngineSettings
-    except:pass
 
-except:
-    # PyQt 5.6 and below
-    from PyQt5.QtWebKitWidgets import QWebView
-    from PyQt5 import QtWebKit
-    from PyQt5.Qt import QWebPage
+from packaging import version
+
+msg = """WARNING:: Qt import failed. This is a know issue. Qt import should work for version
+5.9 and above, and qt 5.6 Other version may not work. If you get this message,
+please post an issue on https://github.com/sequana/sequana with the python
+version, the qt version and this error message:\n\n"""
+
+if version.parse(QtCore.QT_VERSION_STR) > version.parse("5.9"):
+    # In version 5.9, QtWebEngineWidgets and QtWebKit are deprecated
+    #from PyQt5.Qt import QTabWidget
+    #from PyQt5 import QtWebEngine as QtWebKit
+    from PyQt5.QtWebEngineWidgets import QWebEngineView as QWebView
+    from PyQt5.QtWebEngineWidgets import QWebEnginePage as QWebPage
+    from PyQt5.QtWebEngineWidgets import QWebEngineSettings as QWebSettings
+    #try:
+    #    from PyQt5.Qt import QWebEnginePage as QWebPage
+    #    from PyQt5.QtWebKitWidgets import QWebPage
+    #except: 
+else: # work in PyQt5.6
+    try:
+        from PyQt5.QtWebKitWidgets import QWebView
+        from PyQt5.QtWebKit import QWebSettings
+        from PyQt5.Qt import QWebPage
+    except Exception as err:
+        print(msg + str(err))
+        pass
+
+
 
 from PyQt5.QtWidgets import QProgressBar, QLineEdit
 
@@ -138,11 +145,11 @@ class SequanaQWebView(QWebView):
         # ------------------------------------------------------------
         try:
             self.settings().setAttribute(
-                QtWebKit.QWebSettings.JavascriptCanOpenWindows, True)
+                QWebSettings.JavascriptCanOpenWindows, True)
             self.settings().setAttribute(
-                QtWebKit.QWebSettings.LocalStorageEnabled, True)
+                QWebSettings.LocalStorageEnabled, True)
             self.settings().setAttribute(
-                QtWebKit.QWebSettings.PluginsEnabled, True)
+                QWebSettings.PluginsEnabled, True)
         except:
             print("QtWebKit.QWebSettings not available for you PyQt version")
 
