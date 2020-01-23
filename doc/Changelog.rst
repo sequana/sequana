@@ -50,6 +50,8 @@ develop branch into the master.
     * Fix the kraken multiqc report
     * Fix bug in gui/browser to fix import of QWebPage on travis
     * bowtie2 dynamic rule now uses templating correctly (RNASeq pipeline)
+    * Fix issue in snaketools for input_readtag set to _[12] for paired data
+      The paired attribute wass wrongly set to unpaired. 
 
 * MAJOR CHANGES/FIXES:
     * The main script 'sequana' is redundant with the new framework of
@@ -67,10 +69,14 @@ develop branch into the master.
      rule and RNAseQC. Fixed another deprecated rule: fastq_screen_report.
 
 * MINOR CHANGES/FIXES
-    * snaketools: pipelines discovery updated in ModuleFinderSingleton. Finally
-      fixed the lost of comments in the config when saved. Removed onweb()
-      method. Fixed the loss of comments when saving yaml file after an update 
-      of the key/value. remove check_sequana_fields.
+    * snaketools: 
+          * pipelines discovery updated in ModuleFinderSingleton. Finally
+            fixed the lost of comments in the config when saved. 
+          * Removed onweb() method. 
+          * Fixed the loss of comments when saving yaml file after an update
+            of the key/value. 
+          * remove check_sequana_fields.
+          * more tests and cleanup 
     * demultiplex: fix a Pandas deprecated warning (add sort argument in pd.concat)
     * python dependencies not in conda are not harcoded inside the setup.py
       (itolapi). add cython into the list of requirements.
