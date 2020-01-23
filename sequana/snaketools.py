@@ -64,11 +64,8 @@ __all__ = ["DOTParser", "FastQFactory", "FileFactory",
             "SnakeMakeStats",
            "SequanaConfig", "modules", "pipeline_names"]
 
-try:
-    # This is for python2.7
-    import snakemake
-except:
-    logger.warning("Snakemake must be installed. Available for Python3 only")
+import snakemake
+"""    logger.warning("Snakemake must be installed. Available for Python3 only")
     class MockSnakeMake(object):
         def __init__(self):
             pass
@@ -76,7 +73,7 @@ except:
         def Workflow(self, filename):
             raise ImportError
     snakemake = MockSnakeMake()
-
+"""
 
 class SnakeMakeStats(object):
     """Interpret the snakemake stats file
@@ -690,6 +687,8 @@ class SequanaConfig(object):
                 else:
                     logger.warning("This %s key was not in the original config"
                                    " but added" % key)
+                    value = data[key]
+                    target.update({key:value})
             else:
                 raise NotImplementedError("""
                     Only dictionaries and list are authorised in the 
@@ -875,7 +874,6 @@ class PipelineManagerGeneric(object):
                 "sample names as keys and the corresponding location as values.")
         return lambda wildcards: self.samples[wildcards.sample]
 
-        
 
 class PipelineManager(object):
     """Utility to manage easily the snakemake pipeline
@@ -950,7 +948,7 @@ class PipelineManager(object):
         logger.debug("Input data{}".format(glob_dir))
 
         if "input_readtag" not in cfg.config:
-            logger.warning("No input_readtag option found. Set to _R[12]_ for your")
+            logger.warning("No input_readtag option found. Set to _R[12]_ for you")
             #.input_readtag:
             cfg.config.input_readtag = "_R[12]_"
 
@@ -974,9 +972,17 @@ class PipelineManager(object):
         rt1 = read_tag.replace("[12]", "1")
         rt2 = read_tag.replace("[12]", "2")
 
+        # WARNING; not robust. FIXME
+        # IF read tag is "_[12].", which is the case for filesnames from
+        # NOVOGENE that looks like sample_1.fq.gz, then in the next list 
+        # comprehension, the "." is missing since self.ff.filenames contains
+        # the filename, that is "sample_1" without the extension.
+        # Therefore, rt1 and rt2 must be striped from the right . character if
+        # present.
+
         # count number of occurences
-        R1 = [1 for this in self.ff.filenames if rt1 in this]
-        R2 = [1 for this in self.ff.filenames if rt2 in this]
+        R1 = [1 for this in self.ff.filenames if rt1.rstrip(".") in this]
+        R2 = [1 for this in self.ff.filenames if rt2.rstrip(".") in this]
 
         if len(R2) == 0:
             self.paired = False
@@ -990,6 +996,7 @@ class PipelineManager(object):
         # provided, filenames is not empty and superseeds
         # the previous results (with the glob). Here only 2 files are provided
         # at most
+        """ FIXME commented in v0.8 since probably deprecated
         if not self.ff:
             filenames = self._get_filenames(cfg.config)
             if len(filenames):
@@ -998,7 +1005,7 @@ class PipelineManager(object):
                     self.paired = True
                 else:
                     self.paired = False
-
+        """
         ff = self.ff  # an alias
         # samples contains a correspondance between the sample name and the
         # real filename location.
@@ -1055,6 +1062,8 @@ class PipelineManager(object):
         """
         return lambda wildcards: self.samples[wildcards.sample]
 
+    """ probably not required anymore so commented in v0.8.0
+
     def _get_filenames(self, cfg):
         filenames = []
         file1 = cfg.samples.file1
@@ -1070,7 +1079,7 @@ class PipelineManager(object):
             else:
                 raise FileNotFoundError("%s not found" % file2)
         return filenames
-
+    """
     def message(self, msg):
         message(msg)
 
@@ -1419,17 +1428,6 @@ class FastQFactory(FileFactory):
         self._glob = [filename for filename in self._glob
                       if re.search(read_tag, os.path.basename(filename))]
 
-        if len(self.filenames) == 0:
-            msg = "No files found with the requested pattern (%s)" % pattern
-            logger.critical(msg)
-            raise ValueError(msg)
-
-        # Check the extension of each file (fastq.gz by default) TODO
-        #for this in self.all_extensions:
-        #    assert this.endswith(extension), \
-        #        "Expecting file with %s extension. Found %s" % (extension, this)
-        # identify a possible tag
-
         # check if tag is informative
         if "[12]" not in read_tag:
             msg = "Tag parameter must contain '[12]' for read 1 and 2."
@@ -1439,13 +1437,20 @@ class FastQFactory(FileFactory):
             msg = "Tag parameter must be more informative than just have [12]"
             logger.error(msg)
             raise ValueError(msg)
+        if len(self.filenames) == 0:
+            msg = "No files found with the requested pattern ({}) and readtag ({})"
+            msg = msg.format(pattern, read_tag)
+            logger.error(msg)
+            raise ValueError(msg)
 
         # get name before the read tag (R[12])
         self.read_tag = read_tag
 
-        # If a user uses a . it should be taken as 
+        # If a user uses a . it should be taken into account hence the regex
+        # that follows 
         re_read_tag = re.compile(read_tag.replace(".", "\."))
         self.tags = list({re_read_tag.split(f)[0] for f in self.basenames})
+
         self.short_tags = [x.split("_")[0] for x in self.tags]
         if len(self.tags) == 0:
             msg = "No sample found. Tag '{0}' is not relevant".format(read_tag)
@@ -1478,7 +1483,7 @@ class FastQFactory(FileFactory):
             return candidates[0]
         elif len(candidates) == 0:
             msg = "Found no valid matches. "
-            msg += "Files must have the tag %s" % read_tag
+            msg += "Files must have the tag %s and an underscore somewhere" % read_tag
             logger.critical(msg)
             raise Exception
         else:
@@ -1624,6 +1629,7 @@ class OnSuccess(object):
         self.create_recursive_cleanup(self.toclean)
 
     def add_makefile(self):
+        print("//FIXME use Makefile() class ")
         with open(self.makefile_filename, "w") as fh:
             fh.write("bundle:\n")
             if easydev.cmd_exists("pigz"):
