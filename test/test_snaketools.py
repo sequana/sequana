@@ -4,6 +4,7 @@ import os, shutil
 import tempfile
 from sequana import Module, SequanaConfig
 from easydev import TempFile
+import subprocess
 
 def test_dot_parser():
     s = DOTParser(sequana_data("test_dag.dot", "testing"))
@@ -146,6 +147,10 @@ def test_sequana_config():
         assert cfg1.config == cfg2.config
     output.delete()
 
+def test_check_config_with_schema():
+    schema = Module("compressor").schema_config
+    SequanaConfig(Module("compressor").config).check_config_with_schema(schema) 
+
 
 def test_message():
     snaketools.message("test")
@@ -203,6 +208,91 @@ def test_pipeline_manager():
     pm.getreportdir("test")
     pm.getname("fastqc")
 
+    # Test different configuration of input_directory, input_readtag,
+    # input_pattern
+    # Test the _R[12]_ paired
+    with tempfile.TemporaryDirectory() as tmpdir:
+        cfg = SequanaConfig()
+        cfgname = tmpdir + "/config.yaml"
+        cfg.config.input_pattern = "*fastq.gz"
+        cfg.config.input_directory = tmpdir
+        cfg.config.input_readtag = "_R[12]_"
+        cfg._update_yaml()
+        cfg.save(cfgname)
+        cmd = "touch {}/test_R1_.fastq.gz".format(tmpdir)
+        subprocess.call(cmd.split())
+        cmd = "touch {}/test_R2_.fastq.gz".format(tmpdir)
+        subprocess.call(cmd.split())
+        pm = snaketools.PipelineManager("test", cfgname)
+        assert pm.paired == True
+
+    # Test the _[12]_ paired 
+    with tempfile.TemporaryDirectory() as tmpdir:
+        cfg = SequanaConfig()
+        cfgname = tmpdir + "/config.yaml"
+        cfg.config.input_pattern = "*fastq.gz"
+        cfg.config.input_directory = tmpdir
+        cfg.config.input_readtag = "_[12]."
+        cfg._update_yaml()
+        cfg.save(cfgname)
+        cmd = "touch {}/test_1.fastq.gz".format(tmpdir)
+        subprocess.call(cmd.split())
+        cmd = "touch {}/test_2.fastq.gz".format(tmpdir)
+        subprocess.call(cmd.split())
+        pm = snaketools.PipelineManager("test", cfgname)
+        assert pm.paired is True
+
+    # Test the _R[12]_ single end
+    with tempfile.TemporaryDirectory() as tmpdir:
+        cfg = SequanaConfig()
+        cfgname = tmpdir + "/config.yaml"
+        cfg.config.input_pattern = "*fastq.gz"
+        cfg.config.input_directory = tmpdir
+        cfg.config.input_readtag = "_R[12]_"
+        cfg._update_yaml()
+        cfg.save(cfgname)
+        cmd = "touch {}/test_R1_.fastq.gz".format(tmpdir)
+        subprocess.call(cmd.split())
+        pm = snaketools.PipelineManager("test", cfgname)
+        assert pm.paired is False
+
+    # Test the _R[12]_ single end
+    with tempfile.TemporaryDirectory() as tmpdir:
+        cfg = SequanaConfig()
+        cfgname = tmpdir + "/config.yaml"
+        cfg.config.input_pattern = "*fq.gz" # wrong on purpose
+        cfg.config.input_directory = tmpdir
+        cfg.config.input_readtag = "_R[12]_"
+        cfg._update_yaml()
+        cfg.save(cfgname)
+        cmd = "touch {}/test_R1_.fastq.gz".format(tmpdir)
+        subprocess.call(cmd.split())
+        try:
+            pm = snaketools.PipelineManager("test", cfgname)
+            assert False
+        except:
+            assert True
+
+    # Test the _R[12]_ single end
+    with tempfile.TemporaryDirectory() as tmpdir:
+        cfg = SequanaConfig()
+        cfgname = tmpdir + "/config.yaml"
+        cfg.config.input_pattern = "*fastq.gz" 
+        cfg.config.input_directory = tmpdir
+        cfg.config.input_readtag = "R[12]_"
+        cfg._update_yaml()
+        cfg.save(cfgname)
+        cmd = "touch {}/testR1_.fastq.gz".format(tmpdir)
+        subprocess.call(cmd.split())
+        cmd = "touch {}/testR2_.fastq.gz".format(tmpdir)
+        subprocess.call(cmd.split())
+        try:
+            pm = snaketools.PipelineManager("test", cfgname)
+            assert False
+        except:
+            assert True
+
+
 def test_pipeline_manager_generic():
     cfg = SequanaConfig({})
     file1 = sequana_data("Hm2_GTGAAA_L005_R1_001.fastq.gz")
@@ -214,6 +304,7 @@ def test_pipeline_manager_generic():
     pm.getrawdata()
     pm.getreportdir("test")
     pm.getname("fastqc")
+
 
 def test_file_name_factory():
     import glob
@@ -314,4 +405,45 @@ def test_init():
 
 def test_get_pipeline_statistics():
     df = snaketools.get_pipeline_statistics()
+
+
+def test_create_cleanup():
+    with tempfile.TemporaryDirectory() as fout:
+        snaketools.create_cleanup(fout)
+
+def test_fastqfactory():
+    try:
+        snaketools.FastQFactory("*", read_tag='error') 
+        assert False
+    except:
+        assert True
+
+    try:
+        snaketools.FastQFactory("*", read_tag='[12]') 
+        assert False
+    except:
+        assert True
+
+def test_makefile():
+    with tempfile.TemporaryDirectory() as fout:
+        mk = snaketools.Makefile()
+        mk.makefile_filename = fout + "/Makefile"
+        mk.add_remove_done()
+        mk.add_bundle()
+        mk.save()
+
+def test_bundle():
+    os = snaketools.OnSuccess()
+    os.add_makefile()
+    os.create_recursive_cleanup()
+
+
+
+
+
+
+
+
+
+
 
