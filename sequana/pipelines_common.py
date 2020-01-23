@@ -565,7 +565,11 @@ class PipelineManager():
         cmd = "#!/bin/bash\nsnakemake -s {}.rules"
         self.command = cmd.format(self.name)
 
-        self.command += " -p --jobs {}".format(self.options.jobs)
+        # FIXME a job is not a core. Ideally, we should add a core option
+        if self._guess_scheduler() == "local":
+            self.command += " -p --cores {}".format(self.options.jobs)
+        else:
+            self.command += " -p --jobs {}".format(self.options.jobs)
 
         if self.options.run_mode is None:
             self.options.run_mode = self._guess_scheduler()
