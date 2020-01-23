@@ -433,9 +433,12 @@ def test_makefile():
         mk.save()
 
 def test_bundle():
-    os = snaketools.OnSuccess()
-    os.add_makefile()
-    os.create_recursive_cleanup()
+    with tempfile.TemporaryDirectory() as fout:
+        os = snaketools.OnSuccess()
+        os.makefile_filename = fout + "/Makefile"
+        os.cleanup_filename = fout + "/sequana_cleanup.py"
+        os.add_makefile()
+        os.create_recursive_cleanup()
 
 
 
