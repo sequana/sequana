@@ -23,6 +23,7 @@ import sys
 import platform
 import shutil
 import argparse
+import subprocess
 
 from sequana.snaketools import SequanaConfig, Module
 from sequana.adapters import AdapterReader
@@ -83,7 +84,7 @@ class Colors:
 
 def error(msg, pipeline):
     color = Colors()
-    print(color("ERROR [sequana.{}]::".format(pipeline) +  msg), flush=True)
+    print(color.error("ERROR [sequana.{}]::".format(pipeline) +  msg), flush=True)
     sys.exit(1)
 
 
@@ -412,6 +413,7 @@ class SlurmOptions():
         )
 
 
+
 def print_version(name):
     from sequana import version
     print(Colors().purple("Welcome to Sequana\n"))
@@ -525,6 +527,11 @@ class PipelineManager():
             raise
         return sharedir
 
+    def _get_package_version(self):
+        import pkg_resources
+        ver = pkg_resources.require("sequana_{}".format(self.name))[0].version
+        return ver
+
     def _guess_scheduler(self):
 
         from easydev import cmd_exists
@@ -601,7 +608,6 @@ class PipelineManager():
         self.config._update_yaml()
         self.config.save("{}/config.yaml".format(self.workdir))
 
-
         # the command
         with open("{}/{}.sh".format(self.workdir, self.name), "w") as fout:
             fout.write(self.command)
@@ -636,6 +642,21 @@ class PipelineManager():
         else:
             msg += "cd {}; sh {}.sh\n\n".format(self.workdir, self.name)
         print(self.colors.purple(msg))
+
+        # Save an info.txt with the command used
+        with open(self.workdir + os.sep + "info.txt", "w") as fout:
+            #
+            from sequana import version
+            fout.write("# sequana version: {}\n".format(version))
+            fout.write("# sequana_{} version: {}\n".format(self.name, self._get_package_version()))
+            cmd1 = os.path.basename(sys.argv[0])
+            fout.write(" ".join([cmd1]+sys.argv[1:]))
+
+        # save environement
+        cmd = "conda list"
+        with open("{}/env.yml".format(self.workdir), "w") as fout:
+            subprocess.call(cmd.split(), stdout=fout)
+
 
     def update_config(self, config, options, section_name):
         for option_name in config[section_name]:
