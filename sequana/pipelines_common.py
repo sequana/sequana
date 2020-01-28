@@ -31,6 +31,7 @@ from sequana.adapters import AdapterReader
 from sequana import logger
 logger.name = __name__
 
+
 __all__ = ["Colors", "InputOptions", "SnakemakeOptions", "SlurmOptions",
     "PipelineManager", "GeneralOptions", "print_version", "CutadaptOptions",
     "KrakenOptions"]
@@ -89,7 +90,7 @@ def error(msg, pipeline):
 
 
 def guess_scheduler():
-    """Guesses whether we are on a SLURM cluster or not. 
+    """Guesses whether we are on a SLURM cluster or not.
 
     If not, we assume a local run is expected.
     """
@@ -627,9 +628,16 @@ class PipelineManager():
         if self.module.multiqc_config:
             shutil.copy(self.module.multiqc_config, "{}".format(self.workdir))
 
-        # the multiqc if any
+        # the schema if any
         if self.module.schema_config:
             shutil.copy(self.module.schema_config, "{}".format(self.workdir))
+
+            # This is the place where we can check the entire validity of the
+            # inputs based on the schema
+            logger.warning("Checking config file with schema")
+            from sequana import SequanaConfig
+            cfg = SequanaConfig("{}/config.yaml".format(self.workdir))
+            cfg.check_config_with_schema("{}/schema.yaml".format(self.workdir))
 
         # finally, we copy the files be found in the requirements section of the
         # config file.
@@ -660,7 +668,6 @@ class PipelineManager():
         cmd = "conda list"
         with open("{}/env.yml".format(self.workdir), "w") as fout:
             subprocess.call(cmd.split(), stdout=fout)
-
 
     def update_config(self, config, options, section_name):
         for option_name in config[section_name]:
