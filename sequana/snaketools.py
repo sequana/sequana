@@ -1593,6 +1593,7 @@ class Makefile(object):
 
     def __init__(self, sections=["bundle"]):
         self.makefile_filename = "Makefile"
+        self.cleanup_filename = "sequana_cleanup.py"
         self.text = ""
         for this in sections:
             try:
@@ -1603,6 +1604,12 @@ class Makefile(object):
 
     def add_remove_done(self):
         self.text += "\nremove_done:\n\trm -f ./*/*/*.done"
+
+    def add_clean(self):
+        txt = "clean:\n"
+        th = self.cleanup_filename
+        txt += '\tif [ -f %s ]; then python %s ; else echo "cleaned already"; fi;\n' % (th, th)
+        self.text += txt
 
     def add_bundle(self):
         txt = "bundle:\n"
@@ -1628,18 +1635,10 @@ class OnSuccess(object):
         self.add_makefile()
         self.create_recursive_cleanup(self.toclean)
 
-    def add_makefile(self):
-        print("//FIXME use Makefile() class ")
-        with open(self.makefile_filename, "w") as fh:
-            fh.write("bundle:\n")
-            if easydev.cmd_exists("pigz"):
-                fh.write("\ttar cvf - * | pigz  -p 4 > results.tar.gz\n")
-            else:
-                fh.write("\ttar cvfz results.tar.gz *\n")
-            fh.write("clean:\n")
-
-            th = self.cleanup_filename
-            fh.write('\tif [ -f %s ]; then python %s ; else echo "cleaned already"; fi;\n' % (th, th))
+    def add_makefile(self, sections=['bundle', 'clean']):
+        makefile = Makefile(sections=sections)
+        makefile.makefile_filename = self.makefile_filename
+        makefile.save()
 
     def create_recursive_cleanup(self, additional_dir=[".snakemake"]):
         """Create general cleanup
