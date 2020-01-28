@@ -85,7 +85,7 @@ develop branch into the master.
       correctly
     * Fix stdout of the fastqc, unpigz, bowtie1 and bowtie2 rules
     * Atropos 2.0 changed its API. fastq module compat with atropos 1.0 and 2.0 
-    
+
 
 0.7.2
 ----------
