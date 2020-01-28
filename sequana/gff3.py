@@ -19,6 +19,7 @@ import os
 
 # from bioconvert/io/gff3 and adapted later on
 
+
 class GFF3():
     """Read a GFF file, version 3
 
@@ -29,6 +30,29 @@ class GFF3():
     def __init__(self, filename):
         self.filename = filename
         assert os.path.exists(filename)
+
+    def get_types(self):
+        """Extract unique GFF types
+
+        This is equivalent to awk '{print $3}' | sort | uniq to extract unique GFF
+        types. No sanity check, this is suppose to be fast. 
+
+        Less than a few seconds for mammals.
+        """
+        types = set()
+        with open(self.filename, "r") as reader:
+            for line in reader:
+                # Skip metadata and comments
+                if line.startswith("#"):
+                    continue
+                # Skip empty lines
+                if not line.strip():
+                    continue
+                split = line.rstrip().split("\t")
+                L = len(split)
+                if L == 9:
+                    types.add(split[2])
+        return sorted(types)
 
     def read(self):
         """ Read annotations one by one creating a generator """
@@ -52,7 +76,8 @@ class GFF3():
                 if L != 9 and L != 0:
                     msg = "Incorrect format on line ({}). Expected 9 items, found {}. Skipped"
                     print(msg.format(count, L))
-                    print(line)
+                    print(line.strip())
+                    count+=1
                     continue
 
                 annotation = self._process_main_fields(split[0:8])
@@ -62,6 +87,7 @@ class GFF3():
                 yield annotation
 
     def get_df(self):
+        # FIXME: what do we do if no ID found ? skip or fill with NA ?
         data = list(self.read())
         import pandas as pd
         df = pd.DataFrame(data)
