@@ -6,7 +6,7 @@ docutils
 easydev>=0.9.36
 matplotlib
 mock
-multiqc==1.6
+multiqc
 pandas>=0.22
 psutil
 pykwalify==1.6
