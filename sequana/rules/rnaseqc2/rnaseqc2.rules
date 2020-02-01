@@ -1,0 +1,54 @@
+rule rnaseqc2:
+    """
+    rnaseqc2 computes a series of quality control metrics for RNA-seq data. 
+
+    Required input:
+        - __rnaseqc2__input_bam : a set of BAM files (sorted and indexed with reOrderSam)
+        - __rnaseqc2__input_gtf: a GTF input file
+
+    Required output:
+        - __rnaseqc2__output_directory: directory where to output files
+
+    Other requirements:
+        -  __rnaseqc2__logs
+    
+    Parameters:
+        -  directory __rnaseqc2__logs
+        -  config['rnaseqc2'][options']: any options accepted by rnaseqc2
+
+    Required configuration:
+        .. code-block:: yaml
+
+            rnaseqc2:
+                 do: no
+                 gtf_file: path to a GTF file
+                 options: Any option recognized by RNAseQC tool (v2.3)
+
+
+    References:
+        http://archive.broadinstitute.org/cancer/cga/rnaseqc_run
+    """
+    input :
+        bam = __rnaseqc2__input_bam,
+        gtf = __rnaseqc2__input_gtf
+    log :
+        __rnaseqc2__logs
+    output:
+        metrics = __rnaseqc2__output_metrics
+    params:
+        directory = __rnaseqc2__params_directory,
+        sample = __rnaseqc2__params_sample,
+        kwargs = config['rnaseqc2']['options']
+
+    run:
+        """import pandas as pd
+        import matplotlib.pyplot as pl
+        pl.style.use('ggplot')
+        import re
+        import os
+        if os.path.isdir(params['directory']) is False:
+            os.mkdir(params['directory'])
+        """
+        shell("rnaseqc {input.gtf} {input.bam} {params.directory} -s {params.sample} {params.kwargs}  2>{log}")
+
+
