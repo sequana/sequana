@@ -437,7 +437,8 @@ or open a Python shell and type::
         elif self._get_file(self.name + '.rules'):
             self._snakefile = self._get_file(self.name + ".rules")
         else:
-            print("//Snakefile for %s not found" % self.name)
+            pass
+            #print("//Snakefile for %s not found" % self.name)
         return self._snakefile
     snakefile = property(_get_snakefile,
                          doc="full path to the Snakefile file of the module")
