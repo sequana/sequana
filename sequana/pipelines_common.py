@@ -665,9 +665,16 @@ class PipelineManager():
             fout.write(" ".join([cmd1]+sys.argv[1:]))
 
         # save environement
-        cmd = "conda list"
-        with open("{}/env.yml".format(self.workdir), "w") as fout:
-            subprocess.call(cmd.split(), stdout=fout)
+        try:
+            cmd = "conda list"
+            with open("{}/env.yml".format(self.workdir), "w") as fout:
+                subprocess.call(cmd.split(), stdout=fout)
+            logger.info("Saved your conda environment into env.yml")
+        except:
+            cmd = "pip freeze"
+            with open("{}/pip.yml".format(self.workdir), "w") as fout:
+                subprocess.call(cmd.split(), stdout=fout)
+            logger.info("Saved your pip environement into pip.txt (conda not found)")
 
     def update_config(self, config, options, section_name):
         for option_name in config[section_name]:
