@@ -11,7 +11,7 @@ rule rnaseqc2:
 
     Other requirements:
         -  __rnaseqc2__logs
-    
+
     Parameters:
         -  directory __rnaseqc2__logs
         -  config['rnaseqc2'][options']: any options accepted by rnaseqc2
@@ -49,6 +49,22 @@ rule rnaseqc2:
         if os.path.isdir(params['directory']) is False:
             os.mkdir(params['directory'])
         """
-        shell("rnaseqc {input.gtf} {input.bam} {params.directory} -s {params.sample} {params.kwargs}  2>{log}")
+
+        # If input GTF has no exon or genes, an error message is printed and no
+        # files are created. This seems to be an issue in rnaseqc. So, the only
+        # way is to trick the input GTF file by adding a dummy gene and a dummy
+        # exon
+        from easydev import TempFile
+
+
+        with TempFile() as fout:
+            ff = open(fout.name, "w")
+            ff.write('myCHR\tSGD\tgene\t0\t0\t.\t+\t0\tgene_id "dummy";')
+            ff.write('myCHR\tSGD\texon\t0\t0\t.\t+\t0\texon_id "dummy";')
+            ff.write(open(input['gtf'], "r").read())
+            ff.close()
+            #shell("rnaseqc " + fout.name + " {input.bam} {params.directory} -s {params.sample} {params.kwargs} &>{log}")
+            shell("rnaseqc " + fout.name + " {input.bam} {params.directory}  {params.kwargs} &>{log}")
+            
 
 
