@@ -39,8 +39,8 @@ install:
 
   #- conda install --yes --file requirements.txt
   # to install specific version of multiqc, we install packages manually
-  - conda --yes install matplotlib qtconsole atropos bioservices pandas samtools
-  - conda --yes install xlrd scipy pyVCF
+  - conda install --yes matplotlib qtconsole atropos bioservices pandas samtools
+  - conda install --yes xlrd scipy pyVCF
   - conda install --yes --file requirements_dev.txt
 
   - git clone https://github.com/biomics-pasteur-fr/MultiQC
