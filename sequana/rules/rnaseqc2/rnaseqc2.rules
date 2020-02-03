@@ -63,8 +63,7 @@ rule rnaseqc2:
             ff.write('myCHR\tSGD\texon\t0\t0\t.\t+\t0\texon_id "dummy";')
             ff.write(open(input['gtf'], "r").read())
             ff.close()
-            #shell("rnaseqc " + fout.name + " {input.bam} {params.directory} -s {params.sample} {params.kwargs} &>{log}")
-            shell("rnaseqc " + fout.name + " {input.bam} {params.directory}  {params.kwargs} &>{log}")
+            shell("rnaseqc " + fout.name + " {input.bam} {params.directory} -s {params.sample} {params.kwargs} &>{log}")
             
 
 
