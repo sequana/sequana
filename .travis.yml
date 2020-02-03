@@ -44,8 +44,8 @@ install:
   - conda install --yes --file requirements_dev.txt
 
   - git clone https://github.com/biomics-pasteur-fr/MultiQC
-  - cd MultiQC/ 
-  - git pull origin Feature/RNAseqc2
+  - cd MultiQC/
+  - git pull origin Feature/RNAseqc2 --no-edit
   - python setup.py install
   - cd ..
 
