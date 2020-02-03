@@ -45,7 +45,7 @@ install:
 
   - git clone https://github.com/biomics-pasteur-fr/MultiQC
   - cd MultiQC/ ; git pull origin Feature/RNAseqc2
-  - python setup.py install
+  - python setup.py install; cd ..
 
 
   # ideally, we should use requirements_pipelines but this lead to stall on
