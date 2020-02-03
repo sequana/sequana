@@ -39,15 +39,15 @@ install:
 
   #- conda install --yes --file requirements.txt
   # to install specific version of multiqc, we install packages manually
-  - conda install matplotlib qtconsole atropos bioservices pandas samtools
-  - conda install xlrd scipy pyVCF
+  - conda --yes install matplotlib qtconsole atropos bioservices pandas samtools
+  - conda --yes install xlrd scipy pyVCF
   - conda install --yes --file requirements_dev.txt
 
   - git clone https://github.com/biomics-pasteur-fr/MultiQC
   - cd MultiQC/ ; git pull origin Feature/RNAseqc2
   - python setup.py install
- 
-  
+
+
   # ideally, we should use requirements_pipelines but this lead to stall on
   # travis because of many dependencies. For testing, we only need those ones
   - conda install --yes kraken==1.0 bwa snpeff shustring krona sambamba
