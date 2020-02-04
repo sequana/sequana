@@ -77,8 +77,8 @@ install:
   - conda list
 
 # # command to run tests, e.g. python setup.py test
-script:
-  - pytest -v --durations=10  test/ --cov=sequana --cov-report term --timeout 300 -n 4
+script: 
+  - travis_wait 15 pytest -v --durations=10  test/ --cov=sequana --cov-report term --timeout 300 -n 4
 
 after_success:
   coveralls
