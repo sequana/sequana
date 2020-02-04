@@ -36,7 +36,7 @@ class Options(argparse.ArgumentParser):
                             required=True, help="input GTF file")
         self.add_argument("--output", dest='output', type=str,
                             required=True, help="output GTF file")
- 
+
 def main(args=None):
     if args is None:
         args = sys.argv[:]
@@ -71,7 +71,7 @@ def main(args=None):
                     try:
                         # sanity check that this is correctly written for all
                         # features
-                        annotations = dict([x.strip().split() for x in entries[8].split(";") if len(x.strip())])
+                        annotations = dict([x.strip().split(maxsplit=1) for x in entries[8].split(";") if len(x.strip())])
                     except:
                         print("warning line {}. could not parse annotations correctly".format(count))
 
@@ -85,7 +85,7 @@ def main(args=None):
                         # keep the order
                         for entry in entries[8].split(";"):
                             if len(entry.strip()):
-                                x, y = entry.split()
+                                x, y = entry.split(maxsplit=1)
                                 if x.strip() != "exon_id":
                                     newline += "{} {};".format(x,y)
                                 else:
