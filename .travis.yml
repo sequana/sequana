@@ -78,7 +78,7 @@ install:
 
 # # command to run tests, e.g. python setup.py test
 script: 
-  - travis_wait 15 pytest -v --durations=10  test/ --cov=sequana --cov-report term --timeout 300 -n 4
+  - pytest -v --durations=10  test/ --cov=sequana --cov-report term --timeout 300 -n 1
 
 after_success:
   coveralls

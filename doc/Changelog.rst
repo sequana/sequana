@@ -34,9 +34,11 @@ develop branch into the master.
     * snpeff now includes GFF input file input as an option (in addition to 
       the GBK)
     * new module trf for tandem repeat finder output.
-    * a new script sequana_start_pipelines to initiate a new pipeline from
-      the cookiecutter recipes
+    * new scripts:
+        * sequana_start_pipelines to initiate a new pipeline from the cookiecutter recipes
+        * sequana_gtf_fixer to help fixing GTF issues
     * new module *gff3* to read GFF files
+    
 
 * BUG:
 
