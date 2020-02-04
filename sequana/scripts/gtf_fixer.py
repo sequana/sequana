@@ -79,7 +79,7 @@ def main(args=None):
                     # appending the transcript_version if not already done
                     if entries[2] == "exon" and "." not in annotations["exon_id"]:
                         print("Fixing exon ID line {} for exon ID {}".format(count, annotations["exon_id"]))
-                        exon_id = "{}.{}".format(annotations['exon_id'].rstrip('"'), annotations['transcript_version'].lstrip('"'))
+                        exon_id = "{}.{}.{}".format(annotations['exon_id'].rstrip('"'), annotations['transcript_version'].strip('"'), annotations['transcript_id'].lstrip('"'))
                         newline = "\t".join(entries[0:8])+"\t"
                         # we do not resuse the dictionaru 'annotations' just to
                         # keep the order
