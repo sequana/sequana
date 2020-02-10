@@ -1,0 +1,67 @@
+def bowtie1_mapping_dynamic(name, manager):
+
+    metadata = {'name':name}
+
+    bowtie1_mapping_code = '''
+rule bowtie1_mapping_%(name)s:
+    """bowtie1_mapping_dynamic
+
+    Read mapping for either single end and paired end data using Bowtie1.
+
+    Required input:
+        __bowtie1_mapping_%(name)s__input: list with one or two fastq.gz
+
+    Required output:
+        __bowtie1_mapping_%(name)s__bam: output bam file
+        __bowtie1_mapping_%(name)s__sort: output sorted bam file
+
+    params:
+
+        __bowtie1_mapping_%(name)s__prefix_index: path to the index file of reference genome
+
+    config:
+
+        .. code-block:: yaml
+
+            bowtie:
+                options:  "" #options for bowtie1 you want use
+    """
+    input:
+        fastq = __bowtie1_mapping_%(name)s__input,
+        index = __bowtie1_mapping_%(name)s__index_done
+    output:
+        bam = __bowtie1_mapping_%(name)s__bam,
+        sort = __bowtie1_mapping_%(name)s__sort
+    log:
+        out = __bowtie1_mapping_%(name)s__stdout,
+        err = __bowtie1_mapping_%(name)s__stderr
+    params:
+        options = config["bowtie1_mapping_%(name)s"]["options"],
+        prefix_index = __bowtie1_mapping_%(name)s__prefix_index
+    threads:
+        int(config["bowtie1_mapping_%(name)s"]["threads"])
+    run:
+
+        cmd = "bowtie -S {params.options} -p {threads} {params.prefix_index}"
+        # paired end or single end unzip
+        if len(input.fastq) == 2:
+            bowtie_input = "-1 " + input.fastq[0] + " -2 " + input.fastq[1]
+        else:
+            bowtie_input = input.fastq[0]
+        cmd = cmd + " " + bowtie_input
+        # sam to bam
+        cmd = "%%s | samtools view -Sbh -> {output.bam}" %% cmd
+
+        # logs
+        cmd = "(%%s) > {log.out} 2> {log.err}" %% cmd
+
+        # sort result
+        cmd = "%%s && samtools sort -o {output.sort} {output.bam}" %% cmd
+        cmd = "%%s && samtools index {output.sort}" %% cmd
+
+
+        shell(cmd )
+    '''
+
+    from sequana.snaketools import build_dynamic_rule
+    return build_dynamic_rule(bowtie1_mapping_code % metadata, manager.pipeline_dir)
