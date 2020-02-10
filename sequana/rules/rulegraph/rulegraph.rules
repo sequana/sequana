@@ -1,0 +1,85 @@
+rule rulegraph:
+    """Rulegraph 
+
+     Required input:
+         - __rulegraph__input: the snakefile filename
+
+     Required output:
+         - __rulegraph_output: the output SVG filename rulegraph/rulegraph.svg
+
+    Required parameters:
+        __rulegraph_mapper: a dictionary mapping each rule to a URL (HTML 
+            file or directory). Rules provided in this dictionary will be shown 
+            in blue and clickable in the ouptut SVG file.
+
+    Note1: currenty, a config.yaml is expected to be found in the directory.
+    Note2: this is exactly the same as the rulegraph rule
+    """
+    input:
+        filename = __rulegraph__input
+    output:
+        dot  = temp("rulegraph/rg.dot"), # Here, the rulegraph/ force the directory creation
+        dot2 = temp("rg.ann.dot"),
+        svg  = __rulegraph__output
+    params:
+        directory = "rulegraph",
+        mapper = __rulegraph__mapper,
+        configname = "config.yaml" # to move as an input in future releases
+    message: """
+    -- Creating rulegraph in a dot file and save into rulegraph.svg
+    """
+    run:
+        # This rule calls snakemake. This is in conflict with the main snakemake call itself.
+        # Solution: create a new directory where to launch this snakemake
+
+        # First, we tried with in a temporary directory but this was creating errs
+        # most probably because temp dir was handled in the code rather than 
+        # by snakemake itself. 
+
+        # Second, we used a os.chcwd(). Although functional locally, this 
+        # messes up the main snakemake snakejobs, that could be copied in the 
+        # new working directory  and then not seen by the main snakemake call
+        # (latency in the creation of the output files maybe).
+
+        # third solution (this one) is to call *cd* the shell commands
+
+        import os
+        from sequana import SequanaConfig, DOTParser
+
+        # change relative path to absolute path
+        def parse_path(dico):
+            for key, value in dico.items():
+                try:
+                    if os.path.exists(value):
+                        dico[key] = os.path.realpath(value)
+                # check overflowerror if value is a large int
+                except (TypeError, OverflowError):
+                    try:
+                        parse_path(value)
+                    except AttributeError:
+                        pass
+        cfg = SequanaConfig(params.configname)
+        parse_path(cfg.config)
+        cfg._update_yaml()
+
+        cwd = os.getcwd() # if it fails, we must reset the current working directory
+        try:
+            cfg.copy_requirements(target="rulegraph")
+            cfg.save(filename="rulegraph" + os.sep + params.configname)
+            shell('cd rulegraph; snakemake -s "{input.filename}" --rulegraph --nolock  > rg.dot; cd .. ')
+        except Exception as err:
+            print(err)
+            #make sure we come back to the correct directory
+            os.chdir(cwd)
+
+        # Annotate the dag with URLs
+        d = DOTParser(cwd + os.sep + output.dot)
+        d.add_urls(mapper=params.mapper)
+
+        # Now, create the SVG. Somehow if called dag.svg, this is a conflict
+        # hence the || true
+        shell("dot -Tsvg {output.dot2} -o {output.svg} || true")
+
+
+
+
