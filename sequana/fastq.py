@@ -919,6 +919,8 @@ class FastQC(object):
         with FastqReader(self.filename) as f:
             for i, record in enumerate(f):
                 N = len(record.sequence)
+                if N == 0:
+                    raise ValueError("Read {} has a length equal to zero. Clean your FastQ files".format(i))
                 self.lengths[i] = N
 
                 # we can store all qualities and sequences reads, so
