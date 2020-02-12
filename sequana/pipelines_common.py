@@ -607,7 +607,7 @@ class PipelineManager():
         else:
             os.mkdir(self.workdir)
 
-    def teardown(self):
+    def teardown(self, check_schema=True):
 
         # the config file
         self.config._update_yaml()
@@ -634,10 +634,11 @@ class PipelineManager():
 
             # This is the place where we can check the entire validity of the
             # inputs based on the schema
-            logger.warning("Checking config file with schema")
-            from sequana import SequanaConfig
-            cfg = SequanaConfig("{}/config.yaml".format(self.workdir))
-            cfg.check_config_with_schema("{}/schema.yaml".format(self.workdir))
+            if check_schema:
+                logger.warning("Checking config file with schema")
+                from sequana import SequanaConfig
+                cfg = SequanaConfig("{}/config.yaml".format(self.workdir))
+                cfg.check_config_with_schema("{}/schema.yaml".format(self.workdir))
 
         # finally, we copy the files be found in the requirements section of the
         # config file.
