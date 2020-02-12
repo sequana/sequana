@@ -79,7 +79,7 @@ def test_standalone_generic_with_config(qtbot, tmpdir, module):
         widget.report_issues(fh.name)
 
 
-def test_standalone_generic_with_noconfig_2(qtbot):
+def __test_standalone_generic_with_noconfig_2(qtbot):
     """mimics:
 
         sequanix -s path_to_snakefile
