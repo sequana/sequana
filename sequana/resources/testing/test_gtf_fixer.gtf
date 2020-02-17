@@ -1,0 +1,8 @@
+#!genome-build GRCm38.p6
+#!genome-version GRCm38
+#!genome-date 2012-01
+#!genome-build-accession NCBI:GCA_000001635.8
+#!genebuild-last-updated 2018-01
+1   havana  gene    3073253 3074322 .   +   .   gene_id "ENSMUSG00000102693";gene_version "1"; gene_name "4933401J01Rik"; gene_source "havana"; gene_biotype "TEC";
+1   havana  exon    4493772 4493863 .   -   .   gene_id "ENSMUSG00000025902";gene_version "13"; transcript_id "ENSMUST00000192650"; transcript_version "5"; exon_number "3"; gene_name "Sox17"; gene_source "ensembl_havana"; gene_biotype "protein_coding"; transcript_name "Sox17-206"; transcript_source "havana"; transcript_biotype "protein_coding"; tag "CCDS"; ccds_id "CCDS78539"; exon_id "ENSMUSE00001338503"; exon_version "1"; tag "basic"; transcript_support_level "1";
+1   havana  exon    4493772 4493863 .   -   .   gene_id "ENSMUSG00000025902";gene_version "13"; transcript_id "ENSMUST00000191647"; transcript_version "1";exon_number "3"; gene_name "Sox17"; gene_source "ensembl_havana"; gene_biotype "protein_coding"; transcript_name "Sox17-203"; transcript_source "havana";transcript_biotype "protein_coding"; exon_id "ENSMUSE00001338503"; exon_version "1"; tag "cds_end_NF"; tag "mRNA_end_NF"; transcript_support_level "5";
