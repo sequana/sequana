@@ -26,9 +26,7 @@ __all__ = ["StatsFile"]
 
 
 class StatsFile(object):
-    """Reads a bcl2fastq Stats.json file
-
-
+    """Reads a bcl2fastq Stats.json file and produces useful plots for QCs
     """
     def __init__(self, filename="Stats.json"):
         with open(filename) as fh:
@@ -80,7 +78,7 @@ class StatsFile(object):
                 names.append("Undetermined")
                 lanes.append(i+1)
                 reads.append(0)
-        print(lanes, names, reads)
+        #print(lanes, names, reads)
 
         df = pd.DataFrame({"lane": lanes, "name": names, "count": reads})
         return df
@@ -115,12 +113,14 @@ class StatsFile(object):
             pylab.bar(range(L,L+1), under, color=color, label="undetermined")
             pylab.xticks([])
             pylab.ylabel("Number of reads")
-            try:pylab.legend()
+            try:pylab.legend(loc="best")
             except:pass
             pylab.title("Lane {}".format(lane))
             pylab.savefig(filename.format(lane), dpi=200)
 
-    def barplot_summary(self, filename=None):
+    def barplot_summary(self, filename=None, color=["green", "red"], 
+            alpha=0.8):
+
         df = self.get_data_reads()
         under = df.query("name=='Undetermined'")
 
@@ -132,7 +132,7 @@ class StatsFile(object):
 
         df = df.pivot(index="lane", columns="name", values="count")
         df = df[["Determined", "Undetermined"]]
-        df.plot.barh(stacked=True)
+        df.plot.barh(stacked=True, color=color, alpha=alpha)
         pylab.legend()
         pylab.xlabel("Number of reads")
 
@@ -150,7 +150,7 @@ class StatsFile(object):
         # N lanes with one entry : unknown
         S = df.sum(axis=1).sort_values(ascending=False).index[0:N]
         data = df.loc[S][::-1]
-        print(data)
+        #print(data)
 
         data.columns = ["Lane {}".format(x) for x in data.columns]
         from matplotlib import rcParams
@@ -165,6 +165,6 @@ class StatsFile(object):
         pylab.legend(["Lane {}".format(x) for x in range(1, len(df.columns)+1)])
         try:
             pylab.tight_layout()
-        except:
-            pass
+        except Exception as err:
+            print(err)
         return data
