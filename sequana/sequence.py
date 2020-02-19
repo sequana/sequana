@@ -658,6 +658,7 @@ class Repeats(object):
         .. note:: known problems. Header with a > character (e.g. in the
             comment) are left strip and only the comments is kept. Another issue
             is for multi-fasta where one sequence is ignored (last or first ?)
+
         """
         # used to check everything is fine with the header/name
         self._fasta = FastA(filename_fasta)
@@ -720,7 +721,12 @@ class Repeats(object):
                 stdin=task_read.stdout, stdout=subprocess.PIPE)
 
             # shustring command
-            task_shus = subprocess.Popen(['shustring','-r','-q','-l', ">" + self.header],
+            # the -l option uses a regular expression
+            # if 2 identifier such as >1 and >11 then using regular expression
+            # >1 means both match. Therefore, we use a $ in the next comand line
+            # In Repeats, we set the chrom name therefore, we should add this $
+            # character
+            task_shus = subprocess.Popen(['shustring','-r','-q','-l', ">{}$".format(self.header)],
                 stdin=task_replace_spaces.stdout, stdout=subprocess.PIPE)
 
             # read stdout line by line and append to list
@@ -738,7 +744,6 @@ class Repeats(object):
             # get input sequence length and longest shustring in the first line
             self._length = int(list_df[0][1])
             self._longest_shustring = int(list_df[0][3].split("<=")[2])
-
         return self._df_shustring
     df_shustring = property(_get_shustrings_length)
 
