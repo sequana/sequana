@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+# -* coding: utf-8 -*-
 #
 #  This file is part of Sequana software
 #
@@ -488,11 +488,14 @@ class PipelineManager():
         # define the data path of the pipeline
         self.datapath = self._get_package_location()
 
-    def exists(self, filename, exit_on_error=True):
+    def exists(self, filename, exit_on_error=True, warning_only=False):
         if os.path.exists(filename) is False:
-            logger.error("{} file does not exists".format(filename))
-            if exit_on_error:
-                sys.exit(1)
+            if warning_only is False:
+                logger.error("{} file does not exists".format(filename))
+                if exit_on_error:
+                    sys.exit(1)
+            elif warning_only is True:
+                logger.warning("{} file does not exists".format(filename))
 
     def copy_requirements(self):
         # FIXME
@@ -606,12 +609,19 @@ class PipelineManager():
                 "Path {} exists already but you set --force to overwrite it".format(self.workdir)))
         else:
             os.mkdir(self.workdir)
+    
+        # Now we create the directory to store some info in
+        # working_directory/.sequana for book-keeping and reproducibility
+        hidden_dir = self.workdir + "/.sequana"
+        if os.path.exists(hidden_dir) is False:
+            os.mkdir(self.workdir + "/.sequana")
 
     def teardown(self, check_schema=True):
 
         # the config file
         self.config._update_yaml()
         self.config.save("{}/config.yaml".format(self.workdir))
+        self.config.save("{}/{}/config.yaml".format(self.workdir , ".sequana"))
 
         # the command
         with open("{}/{}.sh".format(self.workdir, self.name), "w") as fout:
@@ -619,6 +629,7 @@ class PipelineManager():
 
         # the snakefile
         shutil.copy(self.module.snakefile, "{}".format(self.workdir))
+        shutil.copy(self.module.snakefile, "{}/{}".format(self.workdir, ".sequana"))
 
         # the cluster config if any
         if self.module.cluster_config:
@@ -635,7 +646,7 @@ class PipelineManager():
             # This is the place where we can check the entire validity of the
             # inputs based on the schema
             if check_schema:
-                logger.warning("Checking config file with schema")
+                #logger.info("Checking config file with schema")
                 from sequana import SequanaConfig
                 cfg = SequanaConfig("{}/config.yaml".format(self.workdir))
                 cfg.check_config_with_schema("{}/schema.yaml".format(self.workdir))
@@ -657,7 +668,7 @@ class PipelineManager():
         print(self.colors.purple(msg))
 
         # Save an info.txt with the command used
-        with open(self.workdir + os.sep + "info.txt", "w") as fout:
+        with open(self.workdir + "/.sequana/info.txt", "w") as fout:
             #
             from sequana import version
             fout.write("# sequana version: {}\n".format(version))
@@ -668,14 +679,14 @@ class PipelineManager():
         # save environement
         try:
             cmd = "conda list"
-            with open("{}/env.yml".format(self.workdir), "w") as fout:
+            with open("{}/.sequana/env.yml".format(self.workdir), "w") as fout:
                 subprocess.call(cmd.split(), stdout=fout)
-            logger.info("Saved your conda environment into env.yml")
+            logger.debug("Saved your conda environment into env.yml")
         except:
             cmd = "pip freeze"
-            with open("{}/pip.yml".format(self.workdir), "w") as fout:
+            with open("{}/.sequana/pip.yml".format(self.workdir), "w") as fout:
                 subprocess.call(cmd.split(), stdout=fout)
-            logger.info("Saved your pip environement into pip.txt (conda not found)")
+            logger.debug("Saved your pip environement into pip.txt (conda not found)")
 
     def update_config(self, config, options, section_name):
         for option_name in config[section_name]:
