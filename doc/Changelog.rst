@@ -54,6 +54,9 @@ develop branch into the master.
     * bowtie2 dynamic rule now uses templating correctly (RNASeq pipeline)
     * Fix issue in snaketools for input_readtag set to _[12] for paired data
       The paired attribute wass wrongly set to unpaired. 
+    * Repeats: for multi fasta with similar header, we were expecting the chrom
+      name to be unique but underlying tool uses regular expression. So, this was
+      buggy when chrom name were starting with same string. e.g chr1 anc chr11.
 
 * MAJOR CHANGES/FIXES:
     * The main script 'sequana' is redundant with the new framework of
