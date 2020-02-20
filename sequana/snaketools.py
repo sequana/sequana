@@ -973,17 +973,18 @@ class PipelineManager(object):
         rt1 = read_tag.replace("[12]", "1")
         rt2 = read_tag.replace("[12]", "2")
 
-        # WARNING; not robust. FIXME
-        # IF read tag is "_[12].", which is the case for filesnames from
-        # NOVOGENE that looks like sample_1.fq.gz, then in the next list 
-        # comprehension, the "." is missing since self.ff.filenames contains
-        # the filename, that is "sample_1" without the extension.
-        # Therefore, rt1 and rt2 must be striped from the right . character if
-        # present.
-
         # count number of occurences
-        R1 = [1 for this in self.ff.filenames if rt1.rstrip(".") in this]
-        R2 = [1 for this in self.ff.filenames if rt2.rstrip(".") in this]
+        # Note1: the filenames do not have the extension and therefore the final "."
+        # Note2: the tag _1 and _2 may be used at the end of the filename. 
+        #        and are not robust enough. Indeed, sample names may contain the
+        #        _1 or _2 strings. Yet, usually, if used, the _1 and _2 are at
+        #        the end of the filename. Thereofre the read "1." and "_2." can
+        #        be used robustly. 
+        # Given Note1 and Note2, we decided to count the R1 and R2 tag by
+        # appending the "." in the variable 'this' so that if used in the
+        # read_tag it can be match
+        R1 = [1 for this in self.ff.filenames if rt1 in this+"."]
+        R2 = [1 for this in self.ff.filenames if rt2 in this+"."]
 
         if len(R2) == 0:
             self.paired = False
