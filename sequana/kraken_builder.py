@@ -188,6 +188,28 @@ class KrakenBuilder():
         self._devtools.mkdir(self.fasta_path)
         self._devtools.mkdir(self.taxon_path)
 
+    def download_ncbi_refseq(self, category):
+        """Download all files of type *fna* from ncbi FTP.
+
+        ::
+
+            kb = KrakenBuilder()
+            kb.download_ncbi_refseq("viral")
+
+        """
+        import ftplib
+        import os
+
+        ftp = ftplib.FTP("ftp.ncbi.nlm.nih.gov")
+        ftp.login("anonymous", "thomas.cokelaer@pasteur.fr")
+        ftp.cwd("refseq/release/{}".format(category))
+
+        import io
+        file_mapper = {}
+        for filename in ftp.nlst():
+            if "genomic.fna" in filename:
+                ftp.retrbinary('RETR ' + filename , open(filename, "wb").write)
+                print(filename)
 
     def download_accession(self, acc):
         """Donwload a specific Fasta from ENA given its accession number
