@@ -403,6 +403,12 @@ or open a Python shell and type::
     multiqc_config = property(_get_multiqc_config,
                       doc="full path to the multiqc config file of the module")
 
+    def _get_logo(self):
+        filename = self._get_file("logo.png")
+        return filename
+    logo = property(_get_logo, 
+                doc="full path to the logo of the module")
+
     def _get_cluster_config(self):
         # The default config file for that module
         return self._get_file("cluster_config.json")
