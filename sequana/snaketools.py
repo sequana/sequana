@@ -37,6 +37,7 @@ Here is an overview (see details here below)
 
 """
 import os
+import sys
 import re
 import json
 import glob
@@ -151,7 +152,6 @@ def plot_stats(inputdir=".", outputdir=".",
         logger.error("Could not process %s/stats.txt file" % inputdir)
 
 
-
 class ModuleFinderSingleton(object):
     """Data structure to hold the :class:`Module` names"""
     def __init__(self):
@@ -194,6 +194,31 @@ class ModuleFinderSingleton(object):
             self._paths[module_name] = whatever + os.sep + module_name
             self._type[module_name] = "pipeline"
 
+    def _is_version(self, version, path):
+        try:
+            # if we can convert the name into an integer, we have an integer for
+            # a rule name, which is not possible
+            int(version)
+            logger.error(
+                "A rule name cannot be a number. Found rule named{}".format(version, path))
+            sys.exit(1)
+        except:
+            pass
+
+        if "." in version:
+            if version.count(".") == 1:
+                x, y = version.split(".")
+                int(x)
+                int(y)
+            else:
+                logger.error("A module version can only contain a single"
+                    ". character, which is used for setting module's "
+                    "version in the form x.y")
+                sys.exit(1)
+            return True
+        else:
+            return False
+
     def _add_rules(self):
         sepjoin = os.sep.join
         fullpath = sepjoin([gpl("sequana"), "sequana", "rules"])
@@ -203,9 +228,16 @@ class ModuleFinderSingleton(object):
             whatever, module_name, filename = this.rsplit(os.sep, 2)
             if module_name in self._paths.keys():
                 logger.warning(
-                    "Found duplicated name %s from %s" % (module_name,this) +
+                    "Found duplicated name %s from %s" % (module_name, this) +
                     "Overwrites previous rule ")
-            self._paths[module_name] = whatever + os.sep + module_name
+
+            if self._is_version(module_name, this):
+                # the module name is the name before the version + the version
+                module_name = filename.replace(".rules", "") + "/" + module_name
+                name, version = module_name.split("/")
+                self._paths[module_name] = whatever + os.sep + version
+            else:
+                self._paths[module_name] = whatever + os.sep + module_name
             self._type[module_name] = "rule"
 
     def _add_pipelines(self):
@@ -366,11 +398,19 @@ or open a Python shell and type::
         str += "Schema for config file: %s\n" % self.schema_config
         str += "Multiqc config file: %s\n" % self.multiqc_config
         str += "requirements file: %s\n" % self.requirements
+        str += "version: %s\n" % self.version
         return str
 
     def __str__(self):
         txt = "Rule **" + self.name + "**:\n" + self.description
         return txt
+
+    def _get_version(self):
+        if "/" in self.name:
+            return self.name.split("/")[1]
+        else:
+            return None
+    version = property(_get_version, doc="Get version")
 
     def _get_path(self):
         return self._path
@@ -443,6 +483,10 @@ or open a Python shell and type::
         elif self._get_file(self.name + '.rules'):
             self._snakefile = self._get_file(self.name + ".rules")
         else:
+            if self.version:
+                name, version = self.name.split("/")
+                name = self._path + os.sep + name + ".rules"
+                self._snakefile = name 
             pass
             #print("//Snakefile for %s not found" % self.name)
         return self._snakefile
