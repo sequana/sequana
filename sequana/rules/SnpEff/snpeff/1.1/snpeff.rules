@@ -1,0 +1,53 @@
+rule snpeff:
+    """
+    SnpEff adds annotation of variants detected in a VCF file. It annotates
+    using the old 'EFF' field instead of 'ANN' field. The latter does not
+    provide the codon change information.
+
+    Required input:
+        - __snpeff__input: VCF file of detected variants.
+
+    Required output:
+        - __snpeff__output: Annotated VCF file.
+        - __snpeff__html: HTML report generate by snpEff.
+
+    Required configuration:
+        .. code-block:: yaml
+
+            snpeff:
+                reference: 'genes.gb' # The genbank file with annotation of the reference.
+                options: '-no-downstream' # Any options
+
+    Results filter options:
+	    - :code:`-no-downstream`: Do not show DOWNSTREAM changes
+	    - :code:`-no-intergenic`: Do not show INTERGENIC changes
+	    - :code:`-no-intron`: Do not show INTRON changes
+	    - :code:`-no-upstream`: Do not show UPSTREAM changes
+	    - :code:`-no-utr`: Do not show 5_PRIME_UTR or 3_PRIME_UTR changes
+
+    Reference:
+        - http://snpeff.sourceforge.net/SnpEff_manual.html
+    """
+    input:
+        vcf = __snpeff__input_vcf, 
+        ann = __snpeff__input_annotation
+    output:
+        ann = __snpeff__output,
+        html = __snpeff__html,
+        csv  = __snpeff__csv
+    log:
+        log = __snpeff__log
+    params:
+        options = config["snpeff"]["options"]
+    run:
+        from sequana import SnpEff
+
+        if output['csv']:
+            options = params['options'] + " -csvStats {}".format(output['csv'])
+        else:
+            options = params['options']
+
+        mydata = SnpEff(input['ann'], log=log['log'])
+        mydata.launch_snpeff(input['vcf'], output['ann'],
+                             html_output=output['html'],
+                             options=options)
