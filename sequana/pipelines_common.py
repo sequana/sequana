@@ -128,10 +128,17 @@ class GeneralOptions():
 
 class InputOptions():
     def __init__(self, group_name="data", input_directory=".",
-                 input_pattern="*fastq.gz", add_input_readtag=True):
+                 input_pattern="*fastq.gz", add_input_readtag=True,
+                 add_is_paired=True):
+        """
+
+        By default, single-end data sets. If paired, set is_paired to True
+        If so, the add_input_readtag must be set
+        """
         self.group_name = group_name
         self.input_directory = input_directory
         self.input_pattern = input_pattern
+        self.add_is_paired = add_is_paired
         self.add_input_readtag = add_input_readtag
 
     def add_options(self, parser):
@@ -158,7 +165,16 @@ class InputOptions():
                 help="""pattern for the paired/single end FastQ. If your files are
                 tagged with _R1_ or _R2_, please set this value to '_R[12]_'. If your
                 files are tagged with  _1 and _2, you must change this readtag
-                accordingly to '_[12]'""",
+                accordingly to '_[12]'. This option is used only if
+                --paired-data is used""",
+            )
+
+        if self.add_is_paired:
+            self.group.add_argument(
+                "--paired-data",
+                dest="paired_data",
+                action="store_true",
+                help="""For Illumina, if paired end data is used, set this option"""
             )
 
 
