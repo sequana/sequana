@@ -630,6 +630,10 @@ class PipelineManager():
         # the snakefile
         shutil.copy(self.module.snakefile, "{}".format(self.workdir))
         shutil.copy(self.module.snakefile, "{}/{}".format(self.workdir, ".sequana"))
+        
+        # the cluster config if any
+        if self.module.logo:
+            shutil.copy(self.module.logo, "{}/{}".format(self.workdir, ".sequana"))
 
         # the cluster config if any
         if self.module.cluster_config:
