@@ -1661,8 +1661,8 @@ class ChromosomeCov(object):
 
         # sample name will be the filename
         # chrom name is the chromosome or contig name
-        #
-        sample_name = os.path.basename(self._bed.input_filename)
+        # Fixes v0.8.0 get rid of the .bed extension
+        sample_name = os.path.basename(self._bed.input_filename.replace(".bed", ""))
         summary = Summary("coverage", sample_name=sample_name, data=d)
 
         summary.data_description = {
