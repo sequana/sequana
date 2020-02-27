@@ -39,7 +39,7 @@ class MultiqcModule(BaseMultiqcModule):
                 name = name.replace("summary_", "")
             data = self.parse_logs(myfile["f"])
 
-            key = data['data']['chrom_name']
+            key = data["sample_name"]+"/"+ data['data']['chrom_name']
             self.sequana_data[key] = data['data']
             self.sequana_desc[key] = data['data_description']
 
@@ -50,8 +50,9 @@ class MultiqcModule(BaseMultiqcModule):
 
         info = "<ul>"
         for this in sorted(self.sequana_data.keys()):
-            info += '<li><a href="coverage_reports/{}.cov.html">{}</a></li>'.format(
-                    this, this)
+            sample_name, chrom_name = this.split("/")
+            info += '<li><a href="../{}/sequana_coverage/coverage_reports/{}.cov.html">{}</a></li>'.format(
+                    sample_name,  chrom_name, this)
         info += "</ul>"
         href="http://sequana.readthedocs.io/en/master/"
         target = "Sequana"
