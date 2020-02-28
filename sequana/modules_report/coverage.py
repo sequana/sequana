@@ -58,8 +58,8 @@ class CoverageModule(SequanaBaseModule):
                    "instance where zscore is computed.")
             raise TypeError(msg)
 
-        self.title = "Coverage Report of {0}".format(config.sample_name)
-        self.intro = ("<p>Report the coverage of your sample {0} to check the "
+        self.title = "Main coverage report ({0})".format(config.sample_name)
+        self.intro = ("<p>Report the coverage of your sample ({0}) to check the "
                       "quality of your mapping and to highlight regions of "
                       "interest (under and over covered).</p>".format(
                       config.sample_name))
@@ -125,12 +125,14 @@ class CoverageModule(SequanaBaseModule):
         try:
             df = rois.df.copy()
         except:
-            df = rois
+            df = rois.copy()
         df['link'] = ''
         # set datatable options
         datatable_js = DataTableFunction(df, 'roi')
-        datatable_js.set_links_to_column('link', 'start')
-        datatable_js.set_links_to_column('link', 'end')
+        if "start" in df.columns:
+            datatable_js.set_links_to_column('link', 'start')
+        if "end" in df.columns:
+            datatable_js.set_links_to_column('link', 'end')
         datatable_js.datatable_options = {'scrollX': 'true',
                                           'pageLength': 15,
                                           'scrollCollapse' : 'true',
@@ -163,13 +165,17 @@ class ChromosomeCoverageModule(SequanaBaseModule):
             directory = '.'
         else:
             self.path = '../'
+
+
         self.chromosome = chromosome
         self.datatable = datatable
         self.command = command
         self.title = "Coverage analysis of chromosome {0}".format(
             self.chromosome.chrom_name)
+
         self.intro = ("<p>The genome coverage analysis of the chromosome "
                       "<b>{0}</b>.</p>".format(self.chromosome.chrom_name))
+
         self.create_report_content(directory, options=options)
         self.html_page = "{0}{1}{2}.cov.html".format(
             directory, os.sep, self.chromosome.chrom_name)
@@ -324,6 +330,7 @@ class ChromosomeCoverageModule(SequanaBaseModule):
         intra_links = ("{0}_{1}_{2}.html".format(name,
                        i, min(i + W, maxpos)) for i in range(shift, shift+N, W))
 
+
         combobox = self.create_combobox(links, 'sub', True)
         combobox_intra = self.create_combobox(intra_links, 'sub', False)
         datatable = self._init_datatable_function(rois)
@@ -390,7 +397,7 @@ class ChromosomeCoverageModule(SequanaBaseModule):
                 x2 = int(x2)
                 if x >= x1 and x<=x2:
                     return link
-            # for the same where the data is fully stored in memory, we must
+            # for the case where the data is fully stored in memory, we must
             # find all events !
             if self.chromosome._mode == "memory" and self.chromosome.binning ==1:
                 raise Exception("{} position not in the range of reports".format(x))
@@ -404,9 +411,14 @@ class ChromosomeCoverageModule(SequanaBaseModule):
         # create datatable
         low_roi = rois.get_low_rois()
         high_roi = rois.get_high_rois()
-        js = self.datatable.create_javascript_function()
-        lroi = DataTable(low_roi, "lroi", self.datatable)
-        hroi = DataTable(high_roi, "hroi", self.datatable)
+
+        datatable = CoverageModule.init_roi_datatable(low_roi)
+
+        datatable.set_links_to_column('link', 'chr')
+
+        js = datatable.create_javascript_function()
+        lroi = DataTable(low_roi, "lroi", datatable)
+        hroi = DataTable(high_roi, "hroi", datatable)
         html_low_roi = lroi.create_datatable(float_format='%.3g')
         html_high_roi = hroi.create_datatable(float_format='%.3g')
         rois.df.drop('link', 1, inplace=True)
@@ -424,6 +436,8 @@ class ChromosomeCoverageModule(SequanaBaseModule):
                                               self.chromosome.thresholds.high2,
                                               self.chromosome.thresholds.high,
                                               len(high_roi))
+
+
         self.sections.append({
             'name': "Regions Of Interest (ROI)",
             'anchor': 'roi',
@@ -521,6 +535,7 @@ class SubCoverageModule(SequanaBaseModule):
         self.rois = rois
         self.combobox = combobox
         self.datatable = datatable
+
         self.start = start
         self.stop = stop
         self.title = ("Coverage analysis of chromosome {0}<br>"
