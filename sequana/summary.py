@@ -61,7 +61,7 @@ class Summary(object):
         s.description = "bla bla bla"
 
     """
-    def __init__(self, name, sample_name="undefined", data={}):
+    def __init__(self, name, sample_name="undefined", data={}, caller=None):
 
         if os.path.exists(name):
             with open(name, "r") as fin:
@@ -71,7 +71,10 @@ class Summary(object):
                 self._data_description = data["data_description"]
                 self.sample_name = data["sample_name"]
                 self.data = data["data"]
-
+                if "caller" in data.keys():
+                    self.caller = data["caller"]
+                else:
+                    self.caller = "undefined"
         else:
             name = name.strip()
             assert len(name.split()) == 1, "no space allowed in the name"
@@ -81,6 +84,7 @@ class Summary(object):
             self._data_description = {}
             self.sample_name = sample_name
             self.data = data
+            self.caller = caller
 
     def as_dict(self):
         return {
@@ -91,6 +95,7 @@ class Summary(object):
             "data": self.data,
             "description": self.description,
             "data_description": self.data_description,
+            "caller": self.caller,
     }
 
     def to_json(self, filename):
