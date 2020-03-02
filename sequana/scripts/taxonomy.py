@@ -59,7 +59,7 @@ class Options(argparse.ArgumentParser):
         Then, you need to use this kind of command:
 
             sequana_taxonomy --file1 R1.fastq --file2 R2.fastq
-                --database /home/user/.config/sequana/kraken_toydb
+                --databases /home/user/.config/sequana/kraken_toydb
                 --show-html --thread 4
 
 AUTHORS: Thomas Cokelaer
