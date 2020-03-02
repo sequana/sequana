@@ -35,5 +35,6 @@
     "description": "",
     "name": "sequana_summary_coverage",
     "sample_name": "S_pombe_vs_09052011_filtered.bed",
-    "version": "0.6.3.post1"
+    "version": "0.6.3.post1",
+    "caller": "sequana.bedtools"
 }
