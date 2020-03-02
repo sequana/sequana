@@ -7,6 +7,8 @@ from sequana.lazy import pylab
 from sequana.lazy import pandas as pd
 from sequana.lazy import numpy as np
 from sequana.viz.core import VizInput2D
+from sequana import logger
+logger.name = __name__
 
 
 __all__ = ["Hist2D"]
@@ -62,7 +64,7 @@ class Hist2D(VizInput2D):
         X = self.df[self.df.columns[0]].values
         Y = self.df[self.df.columns[1]].values
         if len(X) > 10000:
-            print("Computing 2D histogram. Please wait")
+            logger.info("Computing 2D histogram. Please wait")
 
         pylab.clf()
         if norm == 'log':
