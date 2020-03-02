@@ -307,15 +307,12 @@ def main(args=None):
     if options.high_threshold is None:
         options.high_threshold = options.threshold
 
-    # and output directory
-    config.output_dir = options.output_directory
-    config.sample_name = os.path.basename(options.input).split('.')[0]
-
     # Now we can create the instance of GenomeCoverage
     if options.chromosome == -1:
         chrom_list = []
     else:
         chrom_list = [options.chromosome]
+
     gc = GenomeCov(bedfile, options.genbank, options.low_threshold,
                    options.high_threshold, options.double_threshold,
                    options.double_threshold, chunksize=options.chunksize,
@@ -361,17 +358,20 @@ def main(args=None):
             logger.level = options.logging_level
 
     if options.skip_multiqc is False:
-        logger.info("=========================")
         logger.info("Creating multiqc report")
         pathtocfg = sequana_data("multiqc_config.yaml", "../multiqc/")
-        cmd = 'multiqc . -m sequana_coverage -f -c {}'.format(pathtocfg)
+        cmd = 'multiqc . -m sequana_coverage -f -c {} '.format(pathtocfg)
         import subprocess
         proc = subprocess.Popen(cmd.split(), cwd=options.output_directory)
         proc.wait()
+        #    stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        #out, err = proc.communicate()
+        #with open("multiqc.log", "w") as fout:
+        #    fout.write(err.decode())
+    logger.info("Done")
 
 
 def run_analysis(chrom, options, feature_dict):
-
 
     logger.info("Computing some metrics")
     if chrom.DOC < 8:
@@ -390,6 +390,12 @@ def run_analysis(chrom, options, feature_dict):
     else:
         NW = options.w_median
 
+    ######################### DEFINES OUTPUT DIR AND SAMPLE NAME  ###########
+    config.output_dir = options.output_directory
+    config.sample_name = os.path.basename(options.input).split('.')[0]
+    #########################################################################
+
+
     # compute the running median, zscore and ROIs for each chunk summarizing the
     # results in a ChromosomeCovMultiChunk instane
     logger.info('Using running median (w=%s)' % NW)
@@ -397,7 +403,6 @@ def run_analysis(chrom, options, feature_dict):
     results = chrom.run(NW, options.k,
                         circular=options.circular, binning=options.binning,
                         cnv_delta=options.cnv_clustering)
-
 
     # Print some info related to the fitted mixture models
     try:
@@ -408,6 +413,7 @@ def run_analysis(chrom, options, feature_dict):
               (round(mu,3), round(sigma,3), round(pi,3)))
     except:
         pass
+
 
     # some information about the ROIs found
     high = chrom.thresholds.high2
@@ -422,18 +428,16 @@ def run_analysis(chrom, options, feature_dict):
     # Create directory and save ROIs
     directory = options.output_directory
 
-    directory += os.sep + "coverage_reports"
-
-
-    directory += "{}{}".format(os.sep, chrom.chrom_name)
+    directory ="{}/{}".format(options.output_directory, 
+             chrom.chrom_name)
     mkdirs(directory)
     ROIs.df.to_csv("{}/rois.csv".format(directory))
 
     # save summary and metrics
     logger.info("Computing extra metrics")
-    summary = results.get_summary()
+    summary = results.get_summary(caller="sequana_coverage")
 
-    summary.to_json(directory + os.sep + "sequana_summary_coverage.json")
+    summary.to_json("{}/sequana_summary_coverage.json".format(directory))
     logger.info("Evenness: {}".format(summary.data['evenness']))
     logger.info("Centralness (3 sigma): {}".format(summary.data['C3']))
     logger.info("Centralness (4 sigma): {}".format(summary.data['C4']))
@@ -441,18 +445,25 @@ def run_analysis(chrom, options, feature_dict):
     if options.skip_html:
         return
 
-    chrom.plot_coverage(directory+os.sep+"coverage.png")
-    logger.info("Creating report in %s. Please wait" % config.output_dir)
+    chrom.plot_coverage("{}/coverage.png".format(directory))
+    logger.info("Creating report in %s. Please wait" % options.output_directory)
+
     if chrom._mode == "chunks":
         logger.warning(("This chromosome is large. "
             "Plots in the HTML reports are skipped"))
+
     datatable = CoverageModule.init_roi_datatable(ROIs)
+
+    # sample name not important for the standalone
+    config.sample_name = "subreports"
+
     ChromosomeCoverageModule(chrom, datatable,
                 options={"W": NW,
                          "k": options.k,
                          "ROIs": ROIs,
                          "circular": options.circular},
                 command=" ".join(["sequana_coverage"] + sys.argv[1:]))
+                #directory=options.output_directory)
 
 if __name__ == "__main__":
    import sys

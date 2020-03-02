@@ -40,7 +40,8 @@ class CoverageModule(SequanaBaseModule):
         """.. rubric:: constructor
 
         :param data: it can be a csv filename created by sequana_coverage or a
-        :class:`bedtools.GenomeCov` object.
+            :class:`bedtools.GenomeCov` object.
+        :param region_window:
         """
         super().__init__()
         self.region_window = region_window
@@ -52,7 +53,7 @@ class CoverageModule(SequanaBaseModule):
             raise TypeError
 
         try:
-            html_list = self.create_reports()
+            html_list = self.create_chromosome_reports()
         except TypeError:
             msg = ("Data must be either a csv file or a :class:`GenomeCov` "
                    "instance where zscore is computed.")
@@ -68,9 +69,9 @@ class CoverageModule(SequanaBaseModule):
 
     def create_report_content(self, html_list):
         self.sections = list()
-        self.chromosome_table(html_list)
+        self.create_chromosome_table(html_list)
 
-    def chromosome_table(self, html_list):
+    def create_chromosome_table(self, html_list):
         """ Create table with links to chromosome reports
         """
         df = pd.DataFrame([[chrom.chrom_name, chrom.get_size(),
@@ -94,12 +95,12 @@ class CoverageModule(SequanaBaseModule):
                 " in the table below.</p>\n{0}\n{1}".format(js, html_table)
             })
 
-    def create_reports(self):
+    def create_chromosome_reports(self):
         """ Create HTML report for each chromosome present in data.
         """
         # FIXME: why bed[0] (i.e. first chromosome)
         datatable_js = CoverageModule.init_roi_datatable(self.bed[0])
-        chrom_output_dir = config.output_dir + os.sep + "coverage_reports"
+        chrom_output_dir = config.output_dir
         if not os.path.exists(chrom_output_dir):
             os.makedirs(chrom_output_dir)
 
@@ -145,7 +146,7 @@ class ChromosomeCoverageModule(SequanaBaseModule):
     """ Write HTML report of coverage analysis for each chromosome. It is
     created by CoverageModule.
     """
-    def __init__(self, chromosome, datatable, directory="coverage_reports",
+    def __init__(self, chromosome, datatable, 
             region_window=200000, options=None, command=""):
         """
 
@@ -159,6 +160,7 @@ class ChromosomeCoverageModule(SequanaBaseModule):
         super().__init__()
         self.region_window = region_window
 
+        directory = chromosome.chrom_name
         # to define where are css and js
         if directory in {None, '.'}:
             self.path = ''
@@ -170,6 +172,7 @@ class ChromosomeCoverageModule(SequanaBaseModule):
         self.chromosome = chromosome
         self.datatable = datatable
         self.command = command
+        self.command += "\nSequana version: {}".format(config.version)
         self.title = "Coverage analysis of chromosome {0}".format(
             self.chromosome.chrom_name)
 
@@ -287,7 +290,7 @@ class ChromosomeCoverageModule(SequanaBaseModule):
         """ Create subcoverage reports to have access to a zoomable line plot.
 
         :params rois:
-        :param directory:
+        :param directory: directory name for the chromsome
 
         This method create sub reports for each region of 200,000 bases (can be
         changed). Usually, it starts at position 0 so reports will be stored
