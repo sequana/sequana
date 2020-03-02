@@ -32,6 +32,7 @@ from pylab import mean as pymean
 from sequana.tools import gc_content, genbank_features_parser
 from sequana.errors import SequanaException
 from sequana.summary import Summary
+from sequana.stats import evenness
 
 from easydev import do_profile, TempFile, Progress
 
@@ -732,7 +733,6 @@ class ChromosomeCov(object):
 
     def run(self, W, k=2, circular=False, binning=None, cnv_delta=None):
         self.reset()
-
         # for the coverare snakemake pipeline
         if binning == -1:
             binning = None
@@ -1024,7 +1024,6 @@ class ChromosomeCov(object):
 
         """
         if self._evenness is None:
-            from sequana.stats import evenness
             try:
                 self._evenness = evenness(self.df['cov'])
             except:
@@ -1629,7 +1628,8 @@ class ChromosomeCov(object):
         except:
             return {"X": [], "Y": []}
 
-    def get_summary(self, C3=None, C4=None,  stats=None):
+    def get_summary(self, C3=None, C4=None,  stats=None,
+            caller="sequana.bedtools"):
 
         if stats is None:
             stats = self.get_stats()
@@ -1663,7 +1663,9 @@ class ChromosomeCov(object):
         # chrom name is the chromosome or contig name
         # Fixes v0.8.0 get rid of the .bed extension
         sample_name = os.path.basename(self._bed.input_filename.replace(".bed", ""))
-        summary = Summary("coverage", sample_name=sample_name, data=d)
+        summary = Summary("coverage", sample_name=sample_name, data=d,
+            caller=caller)
+
 
         summary.data_description = {
             "BOC": "Breadth of Coverage",
@@ -2079,7 +2081,7 @@ class ChromosomeCovMultiChunk(object):
     def __init__(self, chunk_rois):
         self.data = chunk_rois
 
-    def get_summary(self):
+    def get_summary(self, caller="sequana.bedtools"):
         # get all summaries
         summaries = [this[0].as_dict() for this in self.data]
 
@@ -2087,7 +2089,7 @@ class ChromosomeCovMultiChunk(object):
         data = summaries[0]
         sample_name = data["sample_name"]
         summary = Summary("coverage", sample_name=sample_name,
-            data=data['data'].copy())
+            data=data['data'].copy(), caller=caller)
         summary.data_description = data['data_description'].copy()
 
         # now replace the data field with proper values
