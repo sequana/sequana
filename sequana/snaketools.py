@@ -1307,7 +1307,7 @@ class DOTParser(object):
                     arrow = self.re_arrow.findall(line)
                     if arrow:
                         index = arrow[0]
-                        if not self.drop_arrow(index, indices_to_drop):
+                        if not self._drop_arrow(index, indices_to_drop):
                             fout.write(line + "\n")
                     else:
                         line = line.replace("dashed", "")
