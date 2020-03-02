@@ -77,7 +77,7 @@ rule sequana_coverage:
             results = chrom.run(W, circular=params['circular'], 
                         k=params['k'], binning=-1, cnv_delta=-1)
 
-            prefix = "{}/coverage_reports/{}/".format(params['report_dir'], chrom.chrom_name)
+            prefix = "{}/{}/".format(params['report_dir'], chrom.chrom_name)
 
             output_json = prefix + "sequana_summary_coverage.json"
 
@@ -87,7 +87,7 @@ rule sequana_coverage:
             ROIs = results.get_rois()
             ROIs.df.to_csv(output_roi)
             chrom.plot_coverage(prefix + "coverage.png")
-            summary = results.get_summary()
+            summary = results.get_summary(caller="sequana_pipeline")
             summary.to_json(output_json)
 
             # FIXME the following lines should be in the for loop ?
