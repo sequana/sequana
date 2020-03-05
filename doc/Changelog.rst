@@ -38,7 +38,8 @@ develop branch into the master.
         * sequana_start_pipelines to initiate a new pipeline from the cookiecutter recipes
         * sequana_gtf_fixer to help fixing GTF issues
     * new module *gff3* to read GFF files
-    
+    * Module can now encapsulate logos
+    * Module version implemented
 
 * BUG:
 
@@ -53,10 +54,14 @@ develop branch into the master.
     * Fix bug in gui/browser to fix import of QWebPage on travis
     * bowtie2 dynamic rule now uses templating correctly (RNASeq pipeline)
     * Fix issue in snaketools for input_readtag set to _[12] for paired data
-      The paired attribute wass wrongly set to unpaired. 
+      The paired attribute wass wrongly set to unpaired. Besides, we make it
+      more robust for those who tag their paired data with _1 and _2 instead of
+      _R1_/_R2_
     * Repeats: for multi fasta with similar header, we were expecting the chrom
       name to be unique but underlying tool uses regular expression. So, this was
       buggy when chrom name were starting with same string. e.g chr1 anc chr11.
+    * multiqc section of sequana_coverage: duplicate chrom names across multiple
+      samples were shown as a single entry in the report. 
 
 * MAJOR CHANGES/FIXES:
     * The main script 'sequana' is redundant with the new framework of
@@ -72,6 +77,7 @@ develop branch into the master.
      reoderSam rule (wrong executable). Fixed a incorrect parameter name in
      bamCoverage rule. Fixed incorrect Snakemake syntax in the fastq_screen
      rule and RNAseQC. Fixed another deprecated rule: fastq_screen_report.
+   * New pipeline_common module to be used by all pipelines 
 
 * MINOR CHANGES/FIXES
     * snaketools: 
