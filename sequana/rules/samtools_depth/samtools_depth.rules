@@ -24,5 +24,5 @@ rule samtools_depth:
         __samtools_depth__log
     shell:
         """
-        samtools depth -aa {input} > {output} 2> {log}
+        samtools depth -m 20000 -aa {input} > {output} 2> {log}
         """
