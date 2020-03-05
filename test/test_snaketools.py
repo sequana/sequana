@@ -12,6 +12,11 @@ def test_dot_parser():
     try:os.remove("test_dag.ann.dot")
     except:pass
 
+    s.mode = "v1"
+    s.add_urls()
+    try:os.remove("test_dag.ann.dot")
+    except:pass
+
 def test_md5():
     from sequana import Module
     m = Module("compressor")
@@ -65,7 +70,7 @@ def test_module():
     m = snaketools.Module('dag')
     m.description
     m.overview
-    m.is_executable()
+    assert m.is_executable()
     m.check()
 
     # a pipeline
@@ -152,11 +157,16 @@ def test_check_config_with_schema():
     SequanaConfig(Module("compressor").config).check_config_with_schema(schema) 
 
 
+def test_module_version():
+
+    Module("snpeff/1.0").version == "1.0"
+
+
 def test_message():
     snaketools.message("test")
 
 
-def test_dummy_manager():
+def __test_dummy_manager():
     ss = snaketools.DummyManager()
     ss = snaketools.DummyManager(["test1.fastq.gz", "test2.fastq.gz"])
     assert ss.paired == True
@@ -423,6 +433,17 @@ def test_fastqfactory():
         assert False
     except:
         assert True
+
+    directory = os.path.dirname(sequana_data("Hm2_GTGAAA_L005_R1_001.fastq.gz"))
+
+    ff = snaketools.FastQFactory(directory + os.sep + "Hm2*gz", read_tag='R[12]') 
+    assert ff.paired is True
+    assert ff.tags == ['Hm2_GTGAAA_L005_']
+
+    ff = snaketools.FastQFactory(directory + os.sep + "Hm2*gz", read_tag='') 
+    assert ff.paired is False
+    assert ff.tags == ['Hm2_GTGAAA_L005_R2_001', 'Hm2_GTGAAA_L005_R1_001']
+
 
 def test_makefile():
     with tempfile.TemporaryDirectory() as fout:
