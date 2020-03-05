@@ -831,7 +831,7 @@ class SequanaConfig(object):
             print(err)
             return False
 
-
+"""
 class DummyManager(object):
     def __init__(self, filenames=None, samplename="custom"):
         self.config = {}
@@ -844,7 +844,7 @@ class DummyManager(object):
         elif isinstance(filenames, str):
             self.samples = {samplename: [filenames]}
             self.paired = False
-
+"""
 
 class PipelineManagerGeneric(object):
     """
@@ -894,6 +894,7 @@ class PipelineManagerGeneric(object):
         else:
             self.samples = {str(i+1):filename for i,filename in enumerate(self.ff.realpaths)}
 
+    
     def getname(self, rulename, suffix=None):
         """In the basename, include rulename and suffix"""
         if suffix is None:
@@ -999,7 +1000,7 @@ class PipelineManager(object):
         logger.debug("Input data{}".format(glob_dir))
 
         if "input_readtag" not in cfg.config:
-            logger.warning("No input_readtag option found. Set to _R[12]_ for you")
+            logger.warning("No input_readtag option found in the config file. Set to _R[12]_ for you")
             #.input_readtag:
             cfg.config.input_readtag = "_R[12]_"
 
@@ -1011,6 +1012,10 @@ class PipelineManager(object):
         self.config = cfg.config
         self.config.sequana_version = sequana_version
 
+    def _get_paired(self):
+        return self.ff.paired
+    paired = property(_get_paired)
+
     def _get_fastq_files(self, glob_dir, read_tag):
         """
 
@@ -1019,45 +1024,10 @@ class PipelineManager(object):
         if self.ff.filenames == 0:
             self.error("No files were found with pattern %s and read tag %s.".format(glob_dir, read_tag))
 
-        # change [12] regex
-        rt1 = read_tag.replace("[12]", "1")
-        rt2 = read_tag.replace("[12]", "2")
+        # check whether it is paired or not. This is just to raise an error when
+        # there is inconsistent mix of R1 and R2
+        self.paired
 
-        # count number of occurences
-        # Note1: the filenames do not have the extension and therefore the final "."
-        # Note2: the tag _1 and _2 may be used at the end of the filename. 
-        #        and are not robust enough. Indeed, sample names may contain the
-        #        _1 or _2 strings. Yet, usually, if used, the _1 and _2 are at
-        #        the end of the filename. Thereofre the read "1." and "_2." can
-        #        be used robustly. 
-        # Given Note1 and Note2, we decided to count the R1 and R2 tag by
-        # appending the "." in the variable 'this' so that if used in the
-        # read_tag it can be match
-        R1 = [1 for this in self.ff.filenames if rt1 in this+"."]
-        R2 = [1 for this in self.ff.filenames if rt2 in this+"."]
-
-        if len(R2) == 0:
-            self.paired = False
-        else:
-            if R1 == R2:
-                self.paired = True
-            else:
-                raise ValueError("Mix of paired and single-end data sets {}".format(glob_dir))
-
-        # Note, however, that another mode is the samples.file1/file2 . If
-        # provided, filenames is not empty and superseeds
-        # the previous results (with the glob). Here only 2 files are provided
-        # at most
-        """ FIXME commented in v0.8 since probably deprecated
-        if not self.ff:
-            filenames = self._get_filenames(cfg.config)
-            if len(filenames):
-                self.ff = FastQFactory(filenames)
-                if len(filenames) == 2:
-                    self.paired = True
-                else:
-                    self.paired = False
-        """
         ff = self.ff  # an alias
         # samples contains a correspondance between the sample name and the
         # real filename location.
@@ -1463,7 +1433,7 @@ class FastQFactory(FileFactory):
 
     """
     def __init__(self, pattern, extension=["fq.gz", "fastq.gz"],
-                 read_tag="_R[12]_", verbose=False):
+                 read_tag="_R[12]_", verbose=False, paired=True):
         """.. rubric:: Constructor
 
         :param str pattern: a global pattern (e.g., ``H*fastq.gz``)
@@ -1475,42 +1445,61 @@ class FastQFactory(FileFactory):
         """
         super(FastQFactory, self).__init__(pattern)
 
+        self.read_tag = read_tag
         # Filter out reads that do not have the read_tag
         # https://github.com/sequana/sequana/issues/480
-        self._glob = [filename for filename in self._glob
-                      if re.search(read_tag, os.path.basename(filename))]
+        if self.read_tag is None or self.read_tag.strip() == "":
+            self.read_tag = ""
+
+        if self.read_tag:
+            logger.info("readtag: {}".format(read_tag))
+        else:
+            logger.info("No readtag provided (for paired Illumina data only).")
+        if self.read_tag:
+            remaining = [filename for filename in self._glob
+                      if re.search(self.read_tag, os.path.basename(filename))]
+            if len(remaining) < len(self._glob):
+                diff = len(self._glob) - len(remaining)
+                logger.warning("Filtered out {} files that match the pattern but do not contain the read_tag ({})".format(diff, self.read_tag))
+            self._glob = remaining
 
         # check if tag is informative
-        if "[12]" not in read_tag:
-            msg = "Tag parameter must contain '[12]' for read 1 and 2."
+        if self.read_tag == "":
+            # This means, the data is unpaired
+            paired = False
+        elif "[12]" not in self.read_tag:
+            msg = "the read_tag parameter must contain '[12]' to differentiate read 1 and 2."
             logger.error(msg)
             raise ValueError(msg)
-        if read_tag == "[12]":
-            msg = "Tag parameter must be more informative than just have [12]"
-            logger.error(msg)
-            raise ValueError(msg)
-        if len(self.filenames) == 0:
-            msg = "No files found with the requested pattern ({}) and readtag ({})"
-            msg = msg.format(pattern, read_tag)
+        elif self.read_tag == "[12]":
+            msg = "The read_tag parameter must be more informative than just have [12]"
             logger.error(msg)
             raise ValueError(msg)
 
-        # get name before the read tag (R[12])
-        self.read_tag = read_tag
+        if len(self.filenames) == 0:
+            msg = "No files found with the requested pattern ({}) and readtag ({})"
+            msg = msg.format(pattern, self.read_tag)
+            logger.error(msg)
+            raise ValueError(msg)
+
+        # save pattern and read tag
+        self.pattern = pattern
 
         # If a user uses a . it should be taken into account hence the regex
         # that follows 
-        re_read_tag = re.compile(read_tag.replace(".", "\."))
-        self.tags = list({re_read_tag.split(f)[0] for f in self.basenames})
+        if  self.read_tag:
+            re_read_tag = re.compile(self.read_tag.replace(".", "\."))
+            self.tags = list({re_read_tag.split(f)[0] for f in self.basenames})
+        else:
+            self.tags = list({f.split(".")[0] for f in self.basenames})
 
         self.short_tags = [x.split("_")[0] for x in self.tags]
         if len(self.tags) == 0:
-            msg = "No sample found. Tag '{0}' is not relevant".format(read_tag)
+            msg = "No sample found. Tag '{0}' is not relevant".format(self.read_tag)
             logger.error(msg)
             raise ValueError(msg)
 
-        if verbose:
-            logger.info("Found %s projects/samples " % len(self.tags))
+        logger.info("Found %s projects/samples " % len(self.tags))
 
     def _get_file(self, tag, r):
         if tag is None:
@@ -1523,10 +1512,16 @@ class FastQFactory(FileFactory):
             assert tag in self.tags, 'invalid tag'
 
         # retrieve file of tag
-        read_tag = self.read_tag.replace("[12]", r)
-        candidates = [realpath for basename, realpath in
-                      zip(self.basenames, self.realpaths)
-                      if read_tag in basename and basename.startswith(tag + "_")]
+        if self.read_tag:
+            read_tag = self.read_tag.replace("[12]", r)
+            candidates = [realpath for basename, realpath in
+                          zip(self.basenames, self.realpaths)
+                          if read_tag in basename and basename.startswith(tag + "_")]
+        else:
+            read_tag = ""
+            candidates = [realpath for basename, realpath in
+                          zip(self.basenames, self.realpaths)
+                          if basename.startswith(tag )]
 
         if len(candidates) == 0 and r == "2":
             # assuming there is no R2
@@ -1534,8 +1529,9 @@ class FastQFactory(FileFactory):
         elif len(candidates) == 1:
             return candidates[0]
         elif len(candidates) == 0:
-            msg = "Found no valid matches. "
-            msg += "Files must have the tag %s and an underscore somewhere" % read_tag
+            msg = "Found no valid matches for {}. "
+            msg += "Files must have the tag ({}) and an underscore somewhere"
+            msg = msg.format(tag, read_tag)
             logger.critical(msg)
             raise Exception
         else:
@@ -1550,6 +1546,40 @@ class FastQFactory(FileFactory):
 
     def get_file2(self, tag=None):
         return self._get_file(tag, "2")
+
+    def _get_paired(self):
+
+        # If there is no read_tag, this means data is unpaired
+        if self.read_tag == "":
+            return False
+
+        # change [12] regex
+        rt1 = self.read_tag.replace("[12]", "1")
+        rt2 = self.read_tag.replace("[12]", "2")
+
+        # count number of occurences
+        # Note1: the filenames do not have the extension and therefore the final "."
+        # Note2: the tag _1 and _2 may be used at the end of the filename. 
+        #        and are not robust enough. Indeed, sample names may contain the
+        #        _1 or _2 strings. Yet, usually, if used, the _1 and _2 are at
+        #        the end of the filename. Thereofre the read "1." and "_2." can
+        #        be used robustly. 
+        # Given Note1 and Note2, we decided to count the R1 and R2 tag by
+        # appending the "." in the variable 'this' so that if used in the
+        # read_tag it can be match
+        R1 = [1 for this in self.filenames if rt1 in this+"."]
+        R2 = [1 for this in self.filenames if rt2 in this+"."]
+
+        if len(R2) == 0:
+            return False
+        else:
+            if R1 == R2:
+                return True
+            else:
+                logger.error("Mix of paired and single-end data sets {}".format(self.pattern))
+                sys.exit(1)
+    paired = property(_get_paired, doc="guess whether data is paired or not")
+
 
     def __len__(self):
         return len(self.tags)
@@ -1679,6 +1709,7 @@ class Makefile(object):
 class OnSuccess(object):
     def __init__(self, toclean=["fastq_sampling", "logs", "common_logs",
             "images", "rulegraph"]):
+        print("Deprecated. Use OnSuccessCleaner instead")
         self.makefile_filename = "Makefile"
         self.cleanup_filename = "sequana_cleanup.py"
         self.toclean = toclean
@@ -1733,9 +1764,13 @@ print("done")
 
 class OnSuccessCleaner(object):
     """Used in demultiplex pipeline to cleanup final results"""
-    def __init__(self):
+    def __init__(self, pipeline_name=None):
         self.makefile_filename = "Makefile"
-        self.files_to_remove = ["config.yaml"]
+        self.files_to_remove = ["config.yaml", "multiqc_config.yaml",
+            "slurm*out", "stats.txt", "schema.yaml"]
+        if pipeline_name:
+            self.files_to_remove.append("{}.sh".format(pipeline_name))
+            self.files_to_remove.append("{}.rules".format(pipeline_name))
         self.directories_to_remove = [".snakemake"]
         self.bundle = False
 
@@ -1763,6 +1798,7 @@ class OnSuccessCleaner(object):
         with open(self.makefile_filename, "w") as fh:
             fh.write(makefile)
 
+        logger.info("Once done, please clean up the directory using\n'make clean'")
 
 def get_pipeline_statistics():
     """Get basic statistics about the pipelines
@@ -1797,3 +1833,19 @@ def get_pipeline_statistics():
                     if '"'+rule+'"' in line or "'"+rule+"'" in line or rule+"(" in line:
                         df.loc[rule, pipeline] += 1
     return df
+
+
+def clean_multiqc(filename):
+    with open(filename, "r") as fin:
+        with open(filename + "_tmp_", "w") as fout:
+            line = fin.readline()
+            while line:
+                if """<a href="http://multiqc.info" target="_blank">""" in line:
+                    line = fin.readline() # read the image
+                    line = fin.readline() # read the ending </a> tag
+                else:
+                    fout.write(line)
+                line = fin.readline() # read the next line
+    import shutil
+    shutil.move(filename +"_tmp_", filename)
+
