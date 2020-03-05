@@ -45,8 +45,10 @@ class MultiqcModule(BaseMultiqcModule):
             self.sequana_data[key] = data['data']
             self.sequana_desc[key] = data['data_description']
             self.sequana_root[key] = myfile['root']
-            self.sequana_caller[key] = data['caller']
-
+            try:
+                self.sequana_caller[key] = data['caller']
+            except:
+                self.sequana_caller[key] = "undefined"
         if len(self.sequana_data) == 0:
             log.debug("No samples found: sequana_coverage")
             raise UserWarning
