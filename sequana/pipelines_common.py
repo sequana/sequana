@@ -460,7 +460,7 @@ class PipelineManager():
 
     """
 
-    def __init__(self, options, name):
+    def __init__(self, options, name="undefined"):
         """
         :param options: an instance of :class:`Options`
         :param name: name of the pipeline. Must be a Sequana pipeline already installed.
@@ -471,12 +471,17 @@ class PipelineManager():
         - working_directory
 
         The working_directory is uesd to copy the pipeline in it.
+
+
+        .. todo:: allows options to be None and fill it with miminum contents
         """
         try:
             from sequana import logger
             logger.level = options.level
         except:
             pass
+
+
         self.options = options
 
         try:
@@ -625,14 +630,73 @@ class PipelineManager():
                 "Path {} exists already but you set --force to overwrite it".format(self.workdir)))
         else:
             os.mkdir(self.workdir)
-    
+
         # Now we create the directory to store some info in
         # working_directory/.sequana for book-keeping and reproducibility
         hidden_dir = self.workdir + "/.sequana"
         if os.path.exists(hidden_dir) is False:
             os.mkdir(self.workdir + "/.sequana")
 
-    def teardown(self, check_schema=True):
+    def check_input_files(self, stop_on_error=True):
+        # Sanity checks
+        cfg = self.config.config
+        filenames = glob.glob(cfg.input_directory + os.sep + cfg.input_pattern)
+        logger.info("Found {} files matching your input  pattern ({})".format(
+            len(filenames), cfg.input_pattern))
+
+        if len(filenames) == 0:
+            logger.critical("Found no files with your matching pattern ({})".format(cfg.input_pattern))
+            if "*" not in cfg.input_pattern and "?" not in cfg.input_pattern:
+                logger.critical("No wildcard used in your input pattern, please use a * or ? character")
+            if stop_on_error:
+                sys.exit(1)
+
+        from sequana import FastQFactory
+        try:
+            ff = FastQFactory(cfg.input_directory + os.sep +
+                                    cfg.input_pattern,
+                                  read_tag = cfg.input_readtag)
+
+            # This tells whether the data is paired or not
+            if ff.paired:
+                paired = "paired reads"
+            else:
+                paired = "single-end reads"
+            logger.info("Your input data seems to be made of {}".format(paired))
+
+        except:
+            logger.error("""Input data is not fastq-compatible with sequana pipelines. You may want to set the read_tag to empty string or None if you wish
+to analyse non-fastQ files (e.g. BAM)""")
+            sys.exit(1)
+
+    def teardown(self, check_schema=True, check_input_files=True):
+        """Save all files required to run the pipeline and perform sanity checks
+
+
+        We copy the following files into the working directory:
+
+        * the config file (config.yaml)
+        * a NAME.sh that contains the snakemake command
+        * the Snakefile (NAME.rules)
+
+        For book-keeping and some parts of the pipelines, we copied the config
+        file and its snakefile into the .sequana directory. We also copy
+        the logo.png file if present into this .sequana directory
+
+        and if present:
+
+        * the cluster_config configuration files for snakemake
+        * multiqc_config file for mutliqc reports
+        * the schema.yaml file used to check the content of the
+          config.yaml file
+
+        if the config.yaml contains a requirements section, the files requested
+        are copied in the working directory
+
+        """
+
+        if check_input_files:
+            self.check_input_files()
 
         # the config file
         self.config._update_yaml()
@@ -646,7 +710,7 @@ class PipelineManager():
         # the snakefile
         shutil.copy(self.module.snakefile, "{}".format(self.workdir))
         shutil.copy(self.module.snakefile, "{}/{}".format(self.workdir, ".sequana"))
-        
+
         # the cluster config if any
         if self.module.logo:
             shutil.copy(self.module.logo, "{}/{}".format(self.workdir, ".sequana"))
