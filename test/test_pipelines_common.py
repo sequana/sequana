@@ -156,6 +156,7 @@ def test_pipeline_manager():
     from sequana.pipelines_common import SlurmOptions
     from sequana.pipelines_common import SnakemakeOptions
     from sequana.pipelines_common import GeneralOptions
+    from sequana.pipelines_common import CutadaptOptions
 
     p = argparse.ArgumentParser()
     so = GeneralOptions()
@@ -178,6 +179,15 @@ def test_pipeline_manager():
         options = p.parse_args(["--working-directory", fout, "--force"])
 
         pm = PipelineManager(options, "quality_control")
+
+
+        from sequana.pipelines_common import get_pipeline_location as getpath
+        sharedir = getpath('quality_control')
+
+
+        pm.config.config.input_directory = sharedir
+        pm.config.config.input_readtag = options.input_readtag
+        pm.config.config.input_pattern = options.input_pattern
         pm.setup()
         pm.update_config(pm.config.config, options, "cutadapt")
         pm.teardown()
