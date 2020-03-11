@@ -48,10 +48,17 @@ class Options(argparse.ArgumentParser):
         super(Options, self).__init__(usage=usage, prog=prog,
                 description=description)
 
-        #self.add_argument("--use-sambamba", dest="sambamba", action="store_true",
-        #    default=False,
-        #    help="""use sambamba instead of samtools for the sorting """)
-
+        self.add_argument("-f", "--force", dest="force", action="store_true",
+            default=False,
+            help="""Force the creation to overwrite existing directory and contents""")
+        self.add_argument("--name", dest="name", 
+            required=True,
+            help="Name of your project. For instance for sequana_analysis, just type 'analysis'")
+        self.add_argument("--keywords", dest="keywords",
+            default=None,
+            help="Keywords (you can edit later)")
+        self.add_argument("--description", dest="description", default=None,
+            help="description of your future pipeline (you can still edit later)")
 
 def main(args=None):
 
@@ -66,8 +73,17 @@ def main(args=None):
     else:
        options = user_options.parse_args(args[1:])
 
-    cmd = "cookiecutter https://github.com/sequana/sequana_pipeline_template"
-    import subprocess
-    subprocess.call(cmd.split())
+
+    from cookiecutter.main import cookiecutter
+    extra_context = {"name": options.name}
+    if options.description:
+        extra_context["description"] = options.description
+    if options.keywords:
+        extra_context["keywords"] = options.keywords
+
+    cookiecutter('https://github.com/sequana/sequana_pipeline_template',
+        extra_context=extra_context,
+        overwrite_if_exists=options.force)
+
 
 
