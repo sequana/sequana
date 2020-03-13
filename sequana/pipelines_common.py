@@ -481,8 +481,9 @@ class PipelineManager():
         except:
             pass
 
-
         self.options = options
+
+        # Here, we should population the config file as much as possible ?
 
         try:
             if self.options.version:
@@ -502,6 +503,7 @@ class PipelineManager():
 
         # If this is a pipeline, let us load its config file
         self.config = SequanaConfig(self.module.config)
+
 
         # the working directory
         self.workdir = options.workdir
