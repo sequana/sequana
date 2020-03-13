@@ -359,7 +359,7 @@ class FastQ(object):
         # make sure N is integer
         N = int(N)
 
-        # as fast as zcat file.fastq.gz | head -200000 > out.fasta
+        # as fast as zcat file.fastq.gz | head -200000 > out.fastq
 
         # this is to supress the header
         decoder = zlib.decompressobj(16 + zlib.MAX_WBITS)
@@ -684,13 +684,47 @@ class FastQ(object):
     def __getitem__(self, index):
         return 1
 
-    def _to_fasta(self, output_filename="test.fasta", level=6, CHUNKSIZE=65536):
+    def to_fasta(self, output_filename="test.fasta"):
         """
 
+        Slow but works for now in pure python with input compressed data.
         """
-        cmd = "bioconvert fastq2fasta {} {}".format(self.filename, output_filename)
-        if force is True:
-            cmd += " --force "
+        with open(output_filename, "w") as fout:
+            for this in self:
+                fout.write("{}\n{}\n".format(
+                    this["identifier"].decode() ,
+                    this["sequence"].decode()))
+        return 
+
+        def _reader(fin):
+            last = None
+            while True:
+                if not last:
+                    for l in fin:
+                        if l[0] == "@":
+                            last = l[:-1]
+                            break
+                if not last:
+                    break
+                header, seqs, last = last[1:], [], None
+                for l in fp:  # read the sequence
+                    if l[0] in '@+':
+                        last = l[:-1]
+                        break
+                    seqs.append(l[:-1])
+                seq, leng, seqs = ''.join(seqs), 0, []
+                for l in fp:  # read the quality
+                    seqs.append(l[:-1])
+                    leng += len(l) - 1
+                    if leng >= len(seq):  # have read enough quality
+                        last = None
+                        yield header, seq, ''.join(seqs)  # yield a fastq record
+                        break
+        with open(output_filename, "w") as fasta, open(self.filename, "r") as fastq:
+            for (name, seq, _) in _reader(fastq):
+                fasta.write(">{}\n{}\n".format(name, seq))
+
+
 
     def filter(self, identifiers_list=[], min_bp=None, max_bp=None,
         progressbar=True, output_filename='filtered.fastq'):
