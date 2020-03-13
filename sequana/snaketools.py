@@ -1764,7 +1764,7 @@ print("done")
 
 class OnSuccessCleaner(object):
     """Used in demultiplex pipeline to cleanup final results"""
-    def __init__(self, pipeline_name=None):
+    def __init__(self, pipeline_name=None, bundle=False):
         self.makefile_filename = "Makefile"
         self.files_to_remove = ["config.yaml", "multiqc_config.yaml",
             "slurm*out", "stats.txt", "schema.yaml"]
@@ -1772,7 +1772,7 @@ class OnSuccessCleaner(object):
             self.files_to_remove.append("{}.sh".format(pipeline_name))
             self.files_to_remove.append("{}.rules".format(pipeline_name))
         self.directories_to_remove = [".snakemake"]
-        self.bundle = False
+        self.bundle = bundle
 
     def add_bundle(self, input="*", output="bundle.tar.gz"):
         self.bundle = True
