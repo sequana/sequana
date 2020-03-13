@@ -95,5 +95,8 @@ rule sequana_coverage:
 
         # Create HTML reports
         config.output_dir = params['report_dir']
+        # This works for the variant calling, which report is called
+        # report_vc_{sample}. Since there is no _ in other pipelines, 
+        # this works as well
         config.sample_name = params['report_dir'].split('_')[-1]
         CoverageModule(bed)
