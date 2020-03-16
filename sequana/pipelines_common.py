@@ -483,13 +483,13 @@ class PipelineManager():
 
         self.options = options
 
-        # Here, we should population the config file as much as possible ?
+        # Here, we should populate the config file as much as possible ?
 
-        try:
-            if self.options.version:
-                print_version(name)
-        except:
-            logger.warning("Please add the --version option in this pipeline {}".format(name))
+        if self.options.version:
+            print_version(name)
+            sys.exit(0)
+        #except:
+        #    logger.warning("Please add the --version option in this pipeline {}".format(name))
 
         self.name = name
 
