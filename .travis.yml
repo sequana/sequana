@@ -74,7 +74,7 @@ install:
   - pip install itolapi
   - pip install .
   - pip install sequana_quality_control
-  - conda list
+  #- conda list
 
 # # command to run tests, e.g. python setup.py test
 script: 
