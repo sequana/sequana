@@ -1767,6 +1767,7 @@ class OnSuccessCleaner(object):
     def __init__(self, pipeline_name=None, bundle=False):
         self.makefile_filename = "Makefile"
         self.files_to_remove = ["config.yaml", "multiqc_config.yaml",
+            "cluster_config.json",
             "slurm*out", "stats.txt", "schema.yaml"]
         if pipeline_name:
             self.files_to_remove.append("{}.sh".format(pipeline_name))
