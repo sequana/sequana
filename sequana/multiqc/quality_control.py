@@ -108,6 +108,12 @@ class MultiqcModule(BaseMultiqcModule):
         )
 
     def add_phix_section(self):
+        pconfig = {
+            "title": "Percentage of phix in the raw data",
+            "percentages": True,
+            "min": 0,
+            "max": 100
+        }
         if self._has_phix:
             data = {}
             for name in self.data.keys():
@@ -122,12 +128,6 @@ class MultiqcModule(BaseMultiqcModule):
             description = "No Phix removed (there may be some)"
             plot = None
 
-        pconfig = {
-            "title": "Percentage of phix in the raw data",
-            "percentages": True,
-            "min": 0,
-            "max": 100
-        }
 
         self.add_section(
             name = 'Phix presence',
