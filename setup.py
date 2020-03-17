@@ -99,7 +99,7 @@ setup(
         '': ['Snakefile*', '*html', 'README.rst', "requirements*txt",
              'config*.yaml', '*.css', "*.js",
              "snpEff.config*", "*.fa", "*.rules"],
-        'sequana.rules' : ['*/*.rules', "*/*/*.rules"],
+        'sequana.rules' : ['*/*.rules', "*/*/*.rules", "*/*/*/*.rules"],
         'sequana.pipelines' : ['*/*'],
         'sequana.resources.data' : ['*.*'],  # use *.* for files and not ./adapters
         'sequana.resources.data.adapters' : ['*'],
