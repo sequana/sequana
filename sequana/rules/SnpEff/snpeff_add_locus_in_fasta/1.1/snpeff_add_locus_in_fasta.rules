@@ -31,5 +31,7 @@ rule snpeff_add_locus_in_fasta:
             snpeff = SnpEff(input['ann'], log=log['log'])
         elif input['ann'].endswith("gff") or input['ann'].endswith('gff3'):
             snpeff = SnpEff(input['ann'], log=log['log'], fastafile=input['fasta'])
+        else:
+            raise IOError("Your annotation file does not end with gbk or gff/gff3 extension")
 
         snpeff.add_locus_in_fasta(input['fasta'], output['fasta'])
