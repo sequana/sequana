@@ -58,7 +58,6 @@ class KrakenModule(SequanaBaseModule):
 
     def _get_summary_section(self):
 
-        print(self.directory)
 
         df = self._get_stats()
         if len(df) == 1 and df.iloc[0]['taxon'] == -1:
