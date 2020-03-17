@@ -168,10 +168,11 @@ class KrakenResults(object):
     def _parse_data(self):
         taxonomy = {}
 
-        logger.info("Reading kraken data")
+        logger.info("Reading kraken data from {}".format(self.filename))
         columns = ["status", "taxon", "length"]
         # we select only col 0,2,3 to save memoty, which is required on very
         # large files
+        
         try:
             # each call to concat in the for loop below
             # will take time and increase with chunk position.
@@ -179,14 +180,17 @@ class KrakenResults(object):
             # is better than 1000 and still reasonable in memory
             reader = pd.read_csv(self.filename, sep="\t", header=None,
                                usecols=[0,2,3], chunksize=1000000)
-        except pd.parser.CParserError:
-            raise NotImplementedError  # this section is for the case
-                #only_classified_output when there is no found classified read
-            self.unclassified = N # size of the input data set
+        except pd.errors.EmptyDataError:
+            logger.warning("Empty files. 100% unclassified ?")
+            self.unclassified = "?" # size of the input data set
             self.classified = 0
             self._df = pd.DataFrame([], columns=columns)
             self._taxons = self._df.taxon
             return
+        except pd.errors.ParserError:
+            #raise NotImplementedError  # this section is for the case
+            #    #only_classified_output when there is no found classified read
+            raise NotImplementedError
 
         for chunk in reader:
             try:
@@ -261,7 +265,7 @@ class KrakenResults(object):
             annotations.set_index("taxon", inplace=True)
 
             df2 = annotations.loc[df.taxon][['ena', 'gi', 'description']]
-            # There are duplicates sohow. let us keep the first one for now
+            # There are duplicates so let us keep the first one for now
             df2 = df2.reset_index().drop_duplicates(subset="taxon",
                 keep="first").set_index("taxon")
             self.df2 = df2
@@ -692,7 +696,8 @@ class KrakenHierarchical(object):
     """
     def __init__(self, filename_fastq, fof_databases, threads=1,
                  output_directory="./kraken_hierarchical/", 
-                 keep_temp_files=False, force=False):
+                 keep_temp_files=False, output_filename_unclassified=None, 
+                force=False):
         """.. rubric:: **constructor**
 
         :param filename_fastq: FastQ file to analyse
@@ -753,6 +758,8 @@ class KrakenHierarchical(object):
             msg += "\nYou provided {}".format(filename_fastq)
             raise TypeError(msg)
 
+        self.unclassified_output = output_filename_unclassified
+
     def _run_one_analysis(self, iteration):
         """ Run one analysis """
         db = self.databases[iteration]
@@ -782,6 +789,7 @@ class KrakenHierarchical(object):
         if iteration == len(self.databases) -1:
             only_classified_output = False
 
+
         analysis = KrakenAnalysis(inputs, db, self.threads)
         analysis.run(output_filename=file_kraken_class,
                      output_filename_unclassified=output_filename_unclassified,
@@ -792,7 +800,7 @@ class KrakenHierarchical(object):
 
         if self.keep_temp_files:
             result = KrakenResults(file_kraken_class)
-            result.to_js("%skrona_%d.html" %(self.output_directory, iteration))
+            result.to_js("%s/krona_%d.html" %(self.output_directory, iteration))
 
     def run(self, dbname="multiple", output_prefix="kraken_final"):
         """Run the hierachical analysis
@@ -816,6 +824,7 @@ class KrakenHierarchical(object):
             stat = os.stat(last_unclassified)
             if stat.st_size == 0:
                 break
+
         # concatenate all kraken output files
         file_output_final = self.output_directory + os.sep + "%s.out" % output_prefix
         with open(file_output_final, 'w') as outfile:
@@ -837,6 +846,11 @@ class KrakenHierarchical(object):
         result.kraken_to_csv(prefix + "kraken.csv", dbname)
 
         # remove kraken intermediate files (including unclassified files)
+        if self.unclassified_output:
+            # Just cp the last unclassified file
+            import shutil
+            shutil.copy2(self._list_kraken_input[-1], self.unclassified_output)
+
         if not self.keep_temp_files:
             for f_temp in self._list_kraken_output:
                 os.remove(f_temp)
