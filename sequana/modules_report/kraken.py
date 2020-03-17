@@ -58,6 +58,8 @@ class KrakenModule(SequanaBaseModule):
 
     def _get_summary_section(self):
 
+        print(self.directory)
+
         df = self._get_stats()
         if len(df) == 1 and df.iloc[0]['taxon'] == -1:
             pngimage = sequana_data("no_data.jpg")
@@ -85,9 +87,10 @@ Besides, be aware that closely related species may not be classified precisely.
 </p>
 
     {0}
-    <div style="text-align:center"><a href="./kraken/kraken.html"> {1} </a></div>
+    <div style="text-align:center"><a href="./{1}/kraken.html"> {2} </a></div>
     <br>
-""".format(extra, self.png_to_embedded_png(pngimage))
+""".format(extra, self.directory.split(os.sep, 1)[1], 
+            self.png_to_embedded_png(pngimage))
 
         datatable = DataTable(df, "kraken", index=False)
         # add links
