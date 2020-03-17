@@ -440,7 +440,7 @@ def test_fastqfactory():
     assert ff.paired is True
     assert ff.tags == ['Hm2_GTGAAA_L005_']
 
-    ff = snaketools.FastQFactory(directory + os.sep + "Hm2*gz", read_tag='') 
+    ff = snaketools.FastQFactory(directory + os.sep + "Hm2*gz", read_tag=None) 
     assert ff.paired is False
     assert ff.tags == ['Hm2_GTGAAA_L005_R2_001', 'Hm2_GTGAAA_L005_R1_001']
 
