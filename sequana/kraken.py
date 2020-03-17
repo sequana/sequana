@@ -660,7 +660,7 @@ class KrakenAnalysis(object):
         if self.paired:
             command += " %(file2)s --paired"
         command += " -db %(database)s "
-        command += " --threads %(thread)s --output %(kraken_output)s "
+        command += " --threads %(thread)s --output %(kraken_output)s --out-fmt legacy"
         #command += " --out-fmt legacy"
 
         if output_filename_unclassified:
@@ -775,7 +775,7 @@ class KrakenHierarchical(object):
             inputs = self.inputs
         else:
             inputs = self._list_kraken_input[iteration-1]
-            
+
 
         # if this is the last iteration (even if iteration is zero), save
         # classified and unclassified in the final kraken results.
