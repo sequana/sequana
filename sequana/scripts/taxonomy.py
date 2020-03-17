@@ -167,19 +167,22 @@ def main(args=None):
     devtools.mkdirs(output_directory)
 
     # if there is only one database, use the pipeline else KrakenHierarchical
+    _pathto = lambda x: "{}/kraken/{}".format(options.directory, x) if x else x
     if len(databases) == 1:
         logger.info("Using 1 database")
         k = KrakenPipeline(fastq, databases[0], threads=options.thread,
             output_directory=output_directory)
 
-        _pathto = lambda x: "{}/kraken/{}".format(options.directory, x) if x else x
         k.run(output_filename_classified=_pathto(options.classified_out),
               output_filename_unclassified=_pathto(options.unclassified_out))
     else:
         logger.info("Using %s databases" % len(databases))
-        k = KrakenHierarchical(fastq, databases, threads=options.thread,
-            output_directory=output_directory+os.sep, force=True,
-            keep_temp_files=options.keep_temp_files)
+        k = KrakenHierarchical(fastq, databases,
+            threads=options.thread,
+            output_directory=output_directory + os.sep, 
+            force=True,
+            keep_temp_files=options.keep_temp_files,
+            output_filename_unclassified=_pathto(options.unclassified_out))
         k.run(output_prefix="kraken")
 
     # This statements sets the directory where HTML will be saved
