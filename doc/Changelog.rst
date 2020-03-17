@@ -11,9 +11,8 @@ Changelog
 on github to ease the developpement of sequana and those pipelines. The
 rationale being that we do not need to update sequana when a pipeline changes
 and a pipeline can have its own biocontainer and life cycle. The compressor
-pipeline was dropped (redundant with sequana_compressor standalone). The
-coverage pipeline uses sequana_coverage standalone and should be used only for
-very large genomes. Othe pipeline have now their own repositories:
+pipeline was dropped (redundant with sequana_compressor standalone). 
+Othe pipeline have now their own repositories:
 
 - sequana_coverage
 - sequana_demultiplex
@@ -24,10 +23,13 @@ very large genomes. Othe pipeline have now their own repositories:
 - sequana_denovo
 - sequana_pacbio_amplicon
 
++ new ones
 
-This is an unstable release made to includes lots of new features and pipelines
- (chip-seq, atac-seq, demultiplexing, fastqc, laa) and bug fixes made on the
-develop branch into the master.
+- sequana_downsampling
+- sequana_mapper
+
+This is an stable release made to includes lots of new features and pipelines
+and bug fixes made.
 
 * NEWS:
 
@@ -62,6 +64,7 @@ develop branch into the master.
       buggy when chrom name were starting with same string. e.g chr1 anc chr11.
     * multiqc section of sequana_coverage: duplicate chrom names across multiple
       samples were shown as a single entry in the report. 
+    * draft version of multiqc for sequna_quality_control now available
 
 * MAJOR CHANGES/FIXES:
     * The main script 'sequana' is redundant with the new framework of
