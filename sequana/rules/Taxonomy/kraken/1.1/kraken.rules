@@ -1,0 +1,96 @@
+
+
+rule kraken_to_krona:
+    input: __kraken__output_wkdir + "kraken.out.summary"
+    output: __kraken__output_html
+    run:
+        shell("ktImportText %s -o %s" % (input, output))
+
+
+rule kraken_translate:
+    input: __kraken__output_out
+    output:
+        summary = __kraken__output_wkdir + "kraken.out.summary",
+        png = __kraken__output_wkdir + "kraken.png",
+    run:
+        from sequana.kraken import KrakenResults
+        k = KrakenResults(input[0])
+        k.kraken_to_krona(output_filename=output.summary)
+        df = k.plot(kind='pie')
+        if df is not None and len(df):
+            from pylab import savefig
+            savefig(output.png)
+        else:
+            from sequana import sequana_data
+            import shutil
+            filename = sequana_data("no_data.jpg", "images")
+            shutil.copy(filename, output.png)
+
+
+rule kraken:
+    """Kraken taxonomic sequence classification system
+
+    Required input:
+        - __kraken__input
+
+    Required output:
+        - __kraken__output_wkdir: working directory
+        - __kraken__output: the kraken final output
+        - __kraken__output_csv: summary in csv format
+        - __kraken__output_json: summary in json format
+
+    Config:
+        .. code-block:: yaml
+
+            kraken:
+                database_directory:  # a valid path to a Kraken database
+
+    See `KrakenBuilder <http://sequana.readthedocs.io/en/master/references.html#sequana.kraken_builder.KrakenBuilder>`_ to build your own database or visit 
+    https://github.com/sequana/data for a database toy example.
+
+    References:
+        - https://github.com/DerrickWood/kraken
+
+   """
+    input: __kraken__input
+    output:
+        kraken_out = __kraken__output_out,
+        kraken_csv = __kraken__output_csv,
+        kraken_json = __kraken__output_json
+    params:
+        databases = config['kraken']['databases'],
+        store_unclassified = config['kraken'].get('store_unclassified', True),
+        wkdir = __kraken__output_wkdir,
+    threads: config['kraken'].get('threads', 1)
+    run:
+        DB = " ".join(params.databases)
+        outname = "kraken_unclassified.fastq"
+
+        if len(input) == 1:
+            cmd = "sequana_taxonomy --databases {} --file1 {input[0]} ".format(DB)
+            cmd += " --thread {} --output-directory {}".format(threads, params.wkdir)
+            if params.store_unclassified:
+                cmd += " --unclassified-out {} ".format(outname)
+
+        elif len(input) == 2:
+            cmd = "sequana_taxonomy --databases {} ".format(DB)
+            cmd += " --file1 {} --file2 {} ".format(input[0], input[1])
+            cmd += " --thread {} --output-directory {}".format(threads, params.wkdir)
+            if params.store_unclassified:
+                cmd += " --unclassified-out {} ".format(outname)
+        shell(cmd)
+
+        # Now we compress the unclassified file
+        # Note that we need to prepend the working directory
+        shell("pigz -p {} -f {}".format(
+           threads,
+           params.wkdir + os.sep + "kraken" + os.sep + outname))
+
+        from sequana.kraken import KrakenResults
+        k = KrakenResults(output.kraken_out)
+        # FIXME: a priori, we juste need the path to the first database
+        # This is to find the big taxonomic files in a kraken DB
+        k.kraken_to_csv(output.kraken_csv, params.databases[0])
+        k.kraken_to_json(output.kraken_json, params.databases[0])
+
+
