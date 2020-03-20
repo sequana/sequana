@@ -25,12 +25,6 @@ before_install:
     - conda config --add channels bioconda
     - conda config --add channels defaults
     - conda config --add channels conda-forge
-    # aug 2019. under py3.5 solving environement takes forever
-    # this fixes the issue https://github.com/conda/conda/issues/8197
-    #- conda config --set channel_priority strict
-    # This help testing code with pylab
-    #- "export DISPLAY=:99.0"
-    #- "sh -e /etc/init.d/xvfb start"
 
 install:
   - echo $TRAVIS_PYTHON_VERSION
@@ -41,7 +35,10 @@ install:
   # to install specific version of multiqc, we install packages manually
   - conda install --yes matplotlib qtconsole atropos bioservices pandas samtools
   - conda install --yes xlrd scipy pyVCF
-  - conda install --yes --file requirements_dev.txt
+  # may be a repetitive reason for failure on travis
+  # - conda install --yes --file requirements_dev.txt
+  - conda install -y pytest pytest-cov pytest-xdist pytest-timeout pytest-qt
+
 
   - git clone https://github.com/biomics-pasteur-fr/MultiQC
   - cd MultiQC/
@@ -66,11 +63,6 @@ install:
     #                python setup.py install
     #
 
-
-
-  #- conda install --yes python=$TRAVIS_PYTHON_VERSION --file requirements_pipelines.txt
-  #
-  # not yet in the requirements because not on conda
   - pip install itolapi
   - pip install .
   - pip install sequana_quality_control
@@ -78,7 +70,7 @@ install:
 
 # # command to run tests, e.g. python setup.py test
 script: 
-  - pytest -v --durations=10  test/ --cov=sequana --cov-report term --timeout 300 -n 1
+  - pytest -v --durations=10  test/ --cov=sequana --cov-report term-missing --timeout 300 -n 1
 
 after_success:
   coveralls
