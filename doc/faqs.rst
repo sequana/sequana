@@ -283,3 +283,25 @@ Finally, try to use the container again using this code::
 
     singularity shell sequana-sequana-master.img
 
+
+I got a error "main thread is not in the main loop"
+---------------------------------------------------
+
+::
+
+    Traceback (most recent call last):
+      File
+    ".../lib/python3.5/tkinter/__init__.py",
+    line 627, in after_cancel
+        data = self.tk.call('after', 'info', id)
+    RuntimeError: main thread is not in main loop
+
+This is related to the backend used by matplotlib. This can be ignored. We do
+not have any solution for now, except finding an alternated backend for
+matplotlib. This can be done using a special file called matplotlibrc with this
+content::
+
+    backend: tkagg
+
+where you can replace tkagg with e.g. qt5agg
+
