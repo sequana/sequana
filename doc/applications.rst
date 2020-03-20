@@ -1,4 +1,4 @@
-
+.. _standalones:
 .. _applications:
 
 Applications (standalone)

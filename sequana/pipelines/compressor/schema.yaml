@@ -1,0 +1,26 @@
+# Schema validator for the compressor pipeline
+# author: Thomas Cokelaer
+
+
+type: map
+mapping:
+    "compressor":
+        type: map
+        mapping:
+            "source":
+                type: str
+                required: True
+            "target":
+                type: str
+                required: True
+            "recursive":
+                type: bool
+                required: False
+            "verbose":
+                type: bool
+                required: False
+            "threads":
+                type: int
+                required: True
+                range: { min: 1, max: 8 }
+

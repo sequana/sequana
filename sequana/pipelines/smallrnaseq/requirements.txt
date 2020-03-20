@@ -1,5 +1,0 @@
-- cutadapt
-- picard-tools
-- bowtie
-- multiqc
-- fastq_screen

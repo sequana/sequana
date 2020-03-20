@@ -14,6 +14,15 @@ standalone, we also provide **Singularity** containers. This is a great
 solution for reproducibility as well. Containers are
 available on https://singularity-hub.org/collections/114/. 
 
+Latest recommended installation for developers
+==============================================
+
+::
+
+    conda install -c anaconda qt
+    conda install -c anaconda pyqt=5.6.0
+    python setup.py install
+
 
 Overview of installation methods
 ====================================

@@ -170,7 +170,11 @@ def main(args=None):
     logger.level = options.level
 
     vcf = VCF(options.input_filename)
-    vcf.vcf.filter_dict['QUAL'] =  options.quality
+    try:
+        vcf.vcf.filter_dict['QUAL'] =  options.quality
+    except:
+        vcf.vcf.filter_dict = {}
+        vcf.vcf.filter_dict['QUAL'] =  options.quality
 
     vcf.vcf.apply_indel_filter = options.apply_indel_filter
     vcf.vcf.apply_dp4_filter = options.apply_dp4_filter
@@ -181,9 +185,6 @@ def main(args=None):
     vcf.vcf.minimum_af1 = options.minimum_af1
     vcf.vcf.filter_dict['INFO'] = {}
     vcf.vcf.filter_dict['QUAL'] =  options.quality
-
-
-
 
 
     for this in options.filter:

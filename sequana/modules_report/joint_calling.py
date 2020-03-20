@@ -43,7 +43,7 @@ class JointCallingModule(SequanaBaseModule):
         datatable = DataTable(self.vcf.df, 'jc')
         datatable.datatable.datatable_options = {
                 'scrollX': 'true',
-                'pageLength': 15,
+                'pageLength': 30,
                 'scrollCollapse': 'true',
                 'dom': 'Bfrtip',
                 'buttons': ['copy', 'csv']

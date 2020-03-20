@@ -1,0 +1,58 @@
+
+
+
+rule dag:
+    """DAG
+
+     Required input:
+         - __dag__input: the snakefile filename
+
+     Required output:
+         - __dag_output: the output SVG filename dag/dag.svg
+
+    Note1: currenty, a config.yaml is expected to be found in the directory.
+    Note2: this is exactly the same as the rulegraph rule
+    """
+    input:
+        filename = __dag__input,
+    output:
+        dot  = temp("dag/dag.dot"), # Here, the dag/ is useful: it creates the directory
+        dot2 = temp("dag.ann.dot"),
+        svg  = __dag__output
+    params:
+        directory="dag",
+        mapper = {},               # no mapper for the DAG
+        configname = "config.yaml" # all sequana pipelines use config.yaml
+    message: """
+    -- Creating DAG in a dot file and save into report/dag.svg
+    """
+    run:
+        # We tried with temporary directory but this was creating errs
+        # more probably because temp dir was handle in the code rather than
+        # by snakemake itself. Finally, we decided to use a physical directory
+        # named after the rule. The snakemake call is performed in the directory
+        import os
+        from sequana import SequanaConfig, DOTParser
+        cwd = os.getcwd()
+        os.chdir(params.directory)
+        output_filename = cwd + os.sep + output.dot
+
+        # if it fails, we must reset the current working directory
+        try:
+            configname = ".." + os.sep + params.configname
+            cfg = SequanaConfig(config)
+            cfg.copy_requirements(target=".")
+            shell("cp %s . " % (cwd + os.sep + "config.yaml"))
+            shell("snakemake -s {input.filename} --dag --nolock > dag.dot ")
+        except Exception as err:
+            print(err)
+        finally:
+            os.chdir(cwd)
+
+        # Annotate the dag with URLs
+        d = DOTParser(output_filename)
+        d.add_urls()
+
+        # Now, create the SVG. Somehow if called dag.svg, this is a conflict
+        # hence the || true
+        shell("dot -Tsvg {output.dot2} -o {output.svg} || true")

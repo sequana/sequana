@@ -1,0 +1,45 @@
+def bowtie2_index_dynamic(name):
+
+    metadata = {"name": name}
+
+    bowtie2_index_code = '''
+
+
+
+rule bowtie2_index_%(name)s:
+    """
+    Genome indexation for Bowtie2 mapper
+
+    Required input:
+        __bowtie2_index_%(name)s__fasta: the reference genome to indexed in FASTA format
+
+    Required output:
+        __bowtie2_index_%(name)s__output_done: done file for bowtie2 mapping rule
+
+    params:
+        __bowtie2_index_%(name)s__output_prefix: the directory where write the index
+
+    """
+    input:
+        fasta =  __bowtie2_index_%(name)s__fasta
+    output:
+        __bowtie2_index_%(name)s__output_done
+    params:
+        prefix = __bowtie2_index_%(name)s__output_prefix
+    log:
+        __bowtie2_index_%(name)s__log
+    shell:
+        """
+        bowtie2-build {input.fasta} {params.prefix}  &> {log}
+        samtools faidx {input.fasta} &>> {log}
+
+        """
+    '''
+
+
+    from easydev import TempFile
+
+    tt = TempFile()
+    with open(tt.name, "w") as fh:
+        fh.write(bowtie2_index_code % metadata)
+    return fh.name

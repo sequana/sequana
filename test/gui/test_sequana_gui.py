@@ -79,7 +79,7 @@ def test_standalone_generic_with_config(qtbot, tmpdir, module):
         widget.report_issues(fh.name)
 
 
-def test_standalone_generic_with_noconfig_2(qtbot):
+def __test_standalone_generic_with_noconfig_2(qtbot):
     """mimics:
 
         sequanix -s path_to_snakefile
@@ -192,7 +192,7 @@ def test_user_interface_sequana(qtbot):
     assert widget.form.count() == 0
 
 
-def test_others(qtbot, mock):
+def test_others(qtbot, mocker):
     widget = sequana_gui.SequanaGUI(ipython=True)
     qtbot.addWidget(widget)
     # level and pipeline attribute
@@ -204,16 +204,16 @@ def test_others(qtbot, mock):
 
     # menuQuit
     import sequana.gui.messages
-    mock.patch.object(sequana.gui.messages.WarningMessage, "exec_",
+    mocker.patch.object(sequana.gui.messages.WarningMessage, "exec_",
         return_value=QW.QMessageBox.Yes)
     widget.menuQuit()
 
     # menu Help and About
     import sequana.gui.about
-    mock.patch.object(sequana.gui.about.About, "exec_",
+    mocker.patch.object(sequana.gui.about.About, "exec_",
         return_value=QW.QMessageBox.Ok)
     widget.menuAbout()
-    mock.patch.object(sequana.gui.help.HelpDialog, "exec_",
+    mocker.patch.object(sequana.gui.help.HelpDialog, "exec_",
         return_value=QW.QMessageBox.Ok)
     widget.menuHelp()
 

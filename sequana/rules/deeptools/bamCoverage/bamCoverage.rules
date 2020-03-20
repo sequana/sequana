@@ -28,8 +28,8 @@ rule bamCoverage:
         if [ ! -e {input}.bai ] ; then
             samtools index {input}
         fi
-        bamCoverage --bam {input} -o {output} --numberOfProcessors 4 \
-        --binSize {params.bs} --normalizeTo1x {params.gs} \
+        bamCoverage --bam {input} -o {output} --numberOfProcessors {threads} \
+        --binSize {params.bs} --normalizeUsing RPGC --effectiveGenomeSize {params.gs} \
         --extendReads {params.exRead} --minFragmentLength {params.minFL}  \
         --maxFragmentLength {params.maxFL} 2> {log}
         """

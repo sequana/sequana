@@ -10,6 +10,7 @@ from sequana.lazy import pylab
 
 from sequana import logger
 from easydev import do_profile
+logger.name = __name__
 
 __all__ = ["DNA", "RNA", "Repeats", "Sequence"]
 
@@ -49,8 +50,8 @@ class Sequence(object):
 
         """
         if sequence.endswith(".fa") or sequence.endswith(".fasta"):
-            fasta = FastA(sequence)
-            sequence = fasta.next().sequence.upper()
+            self.fasta = FastA(sequence)
+            sequence = self.fasta.next().sequence.upper()
         else: # assume correct string sequence
             pass
 
@@ -60,6 +61,13 @@ class Sequence(object):
         except:
             self._translate = bytes.maketrans(complement_in, complement_out)
         self._letters = letters
+
+    def __iter__(self):
+        return self
+    
+    def __next__(self):
+        self._data = self.fasta.next().sequence.upper()
+        return self._data
 
     def _get_sequence(self):
         return self._data
@@ -144,6 +152,9 @@ class DNA(Sequence):
     Some long computations are done when setting the window size::
 
         d.window = 100
+
+    The ORF detection has been validated agains a plasmodium 3D7 ORF file 
+    found on plasmodb.org across the 14 chromosomes.
 
     """
     def __init__(self, sequence,
@@ -476,13 +487,13 @@ class DNA(Sequence):
         """Function for finding ORF and CDS in both strands of DNA"""
         # init variables
         d_vars = {
-        "codon" : ["","-","--"],
-        "begin_f" : [0]*3,
-        "begin_r" : [0]*3,
-        "end_f" : [0]*3,
-        "end_r" : [0]*3,
-        "pos_ATG_f" : [np.nan]*3,
-        "pos_ATG_r" : [np.nan]*3
+            "codon" : ["","-","--"],
+            "begin_f" : [0]*3,
+            "begin_r" : [0]*3,
+            "end_f" : [0]*3,
+            "end_r" : [0]*3,
+            "pos_ATG_f" : [np.nan]*3,
+            "pos_ATG_r" : [np.nan]*3
         }
         print("Finding ORF and CDS")
         # result list
@@ -589,6 +600,12 @@ class DNA(Sequence):
         pylab.legend(loc=1)
         pylab.title("Number of ORF and CDS by frame")
 
+    def entropy(self, sequence):
+        # https://www.sciencedirect.com/science/article/pii/S0022519397904938?via%3Dihub
+        pi = [x.count(l)/float(len(x)) for l in 'ACGT']
+        pi = [x for x in pi if x!=0]
+        return -sum(pi*log(pi))
+
 
 class RNA(Sequence):
     """Simple RNA class
@@ -636,6 +653,11 @@ class Repeats(object):
             analyse all sequences, you need to use a loop by setting
             _header for each sequence with the sequence name found in
             sequence header.
+
+
+        .. note:: known problems. Header with a > character (e.g. in the
+            comment) are left strip and only the comments is kept. Another issue
+            is for multi-fasta where one sequence is ignored (last or first ?)
 
         """
         # used to check everything is fine with the header/name
@@ -699,7 +721,12 @@ class Repeats(object):
                 stdin=task_read.stdout, stdout=subprocess.PIPE)
 
             # shustring command
-            task_shus = subprocess.Popen(['shustring','-r','-q','-l', ">" + self.header],
+            # the -l option uses a regular expression
+            # if 2 identifier such as >1 and >11 then using regular expression
+            # >1 means both match. Therefore, we use a $ in the next comand line
+            # In Repeats, we set the chrom name therefore, we should add this $
+            # character
+            task_shus = subprocess.Popen(['shustring','-r','-q','-l', ">{}$".format(self.header)],
                 stdin=task_replace_spaces.stdout, stdout=subprocess.PIPE)
 
             # read stdout line by line and append to list
@@ -717,7 +744,6 @@ class Repeats(object):
             # get input sequence length and longest shustring in the first line
             self._length = int(list_df[0][1])
             self._longest_shustring = int(list_df[0][3].split("<=")[2])
-
         return self._df_shustring
     df_shustring = property(_get_shustrings_length)
 

@@ -3,6 +3,147 @@ Changelog
 
 .. contents::
 
+0.8.0
+------
+
+
+* Remove all pipelines from sequana. Pipelines have now their own repositories
+on github to ease the developpement of sequana and those pipelines. The
+rationale being that we do not need to update sequana when a pipeline changes
+and a pipeline can have its own biocontainer and life cycle. The compressor
+pipeline was dropped (redundant with sequana_compressor standalone). 
+Othe pipeline have now their own repositories:
+
+- sequana_coverage
+- sequana_demultiplex
+- sequana_fastqc
+- sequana_revcomp
+- sequana_rnaseq
+- sequana_variant_calling
+- sequana_denovo
+- sequana_pacbio_amplicon
+
++ new ones
+
+- sequana_downsampling
+- sequana_mapper
+
+This is an stable release made to includes lots of new features and pipelines
+and bug fixes made.
+
+* NEWS:
+
+    * snpeff now includes GFF input file input as an option (in addition to 
+      the GBK)
+    * new module trf for tandem repeat finder output.
+    * new scripts:
+        * sequana_start_pipelines to initiate a new pipeline from the cookiecutter recipes
+        * sequana_gtf_fixer to help fixing GTF issues
+    * new module *gff3* to read GFF files
+    * Module can now encapsulate logos
+    * Module version implemented
+
+* BUG:
+
+    * snpeff_add_locus_tag: if contig name and length in GFF header not in the
+      same order as in the fasta, a new fasta with wrong header was created.
+      This caused trouble in the variant_calling pipeline
+    * kraken: Fix kraken plot (matplotlib version) when 100% of the reads are
+      classified
+    * Header of igvtools count output may vary. Make the consensus.get_bases more
+      robust to automatically identify number of lines to skip.
+    * Fix the kraken multiqc report
+    * Fix bug in gui/browser to fix import of QWebPage on travis
+    * bowtie2 dynamic rule now uses templating correctly (RNASeq pipeline)
+    * Fix issue in snaketools for input_readtag set to _[12] for paired data
+      The paired attribute wass wrongly set to unpaired. Besides, we make it
+      more robust for those who tag their paired data with _1 and _2 instead of
+      _R1_/_R2_
+    * Repeats: for multi fasta with similar header, we were expecting the chrom
+      name to be unique but underlying tool uses regular expression. So, this was
+      buggy when chrom name were starting with same string. e.g chr1 anc chr11.
+    * multiqc section of sequana_coverage: duplicate chrom names across multiple
+      samples were shown as a single entry in the report. 
+    * draft version of multiqc for sequna_quality_control now available
+
+* MAJOR CHANGES/FIXES:
+    * The main script 'sequana' is redundant with the new framework of
+      pipelines. IT has been removed in this version
+   * sequana_coverage now handles low coverage correctly in the 
+     HTML reports.Fix the ylimits of the coverage plot for low coverage.
+   * cutadapt rules was failing due to a stricter optional/positional argument
+     handling. Fixed the rule accordingly.
+   * sequana_lane_merging is now ready for production. changes made: copy of
+     the script in the local directory, not the data directory. 
+   * RNASeq pipeline: removed sartools, kraken. Fixed bamCoverage rule. Simplify
+     usage related to indexing and mapping. Fixed igvtools rule. Fixed the
+     reoderSam rule (wrong executable). Fixed a incorrect parameter name in
+     bamCoverage rule. Fixed incorrect Snakemake syntax in the fastq_screen
+     rule and RNAseQC. Fixed another deprecated rule: fastq_screen_report.
+   * New pipeline_common module to be used by all pipelines 
+
+* MINOR CHANGES/FIXES
+    * snaketools: 
+          * pipelines discovery updated in ModuleFinderSingleton. Finally
+            fixed the lost of comments in the config when saved. 
+          * Removed onweb() method. 
+          * Fixed the loss of comments when saving yaml file after an update
+            of the key/value. 
+          * remove check_sequana_fields.
+          * more tests and cleanup 
+    * demultiplex: fix a Pandas deprecated warning (add sort argument in pd.concat)
+    * python dependencies not in conda are not harcoded inside the setup.py
+      (itolapi). add cython into the list of requirements.
+    * Fix deprecated bamCoverage rule to use newest deeptools version.
+    * The check_config_with_schema function now performs the validation
+      correctly
+    * Fix stdout of the fastqc, unpigz, bowtie1 and bowtie2 rules
+    * Atropos 2.0 changed its API. fastq module compat with atropos 1.0 and 2.0 
+
+
+0.7.2
+----------
+
+* NEWS:
+
+
+    * New script: sequana_fastq_summary included in fastqc pipeline
+    * New script: sequana_substractor to remove reads that mapped against a reference(s)
+    * added a new module to upload/export phylogenetic tree on itol website.
+      Used in the laa pipeline
+    * added backspace2fusion code to merge lanes in Illumina raw data
+    * added new pipeline called fastqc to simply run fastqc + multiqc in parallel
+    * added laa pacbio pipeline
+    * multiqc modules: bamtools_stats and kraken module for the laa pipeline
+    * added test file and test for SIRVRerence class (partial fix of issue #504)
+    * added Makefile class in snaketools to help building pipeline
+    * added MultiKrakenResults class
+    * sequanix and snaketools now handle the presence of a multiqc_config 
+      file in the pipeline module
+    * add laa multiqc
+
+* BUGS:
+
+    * in quality_control when using the design file in cutadapt rule
+    * Fix multiqc report for pacbio_qc pipeline
+
+
+* CHANGES:
+
+    * adapters added: TruSeqCD, TruSeqUD, etc
+    * adapters removed: rubicon
+    * remove clean_ngs rule and code related to this software, not used in sequana
+
+* CHANGES for developers:
+
+    * adapters are now named NAME_fwd.fa instead of adapters_NAME_fwd. This
+      should not affect the user interface. Also, the index sequence stored in the
+      adapter files are now identical in the forward/reverse/revcomp versions
+      to simplify the code. We also added a script in ./resources/data/adapters
+      to create the rev and revcomp version automatically.
+    * add missing xlrd dependencies in requirements
+
+
 0.7.1
 ---------
 

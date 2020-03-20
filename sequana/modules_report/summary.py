@@ -37,6 +37,8 @@ class SummaryModule(SequanaBaseModule):
         """
         super().__init__()
         self.json = data
+        for this in ["inputs", "outputs"]:
+            assert this in self.json
         self.title = "Sequana Report Summary"
         self.intro = intro
         self.create_report_content()
@@ -47,8 +49,10 @@ class SummaryModule(SequanaBaseModule):
         """
         self.sections = list()
 
-        self.pipeline_inputs()
-        self.pipeline_outputs()
+        if self.json['inputs']:
+            self.pipeline_inputs()
+        if self.json["outputs"]:
+            self.pipeline_outputs()
         if self.json['html']:
             self.pipeline_html()
 
@@ -173,7 +177,10 @@ class SummaryModule(SequanaBaseModule):
         """
         html_table = self.get_table_dependencies()
         pypi = self.create_link('Pypi', 'http://pypi.python.org')
-        req = self.copy_file(self.json['requirements'], 'inputs')
+        try:
+            req = self.copy_file(self.json['requirements'], 'inputs')
+        except:
+            req = self.json['requirements']
         req = self.create_link('requirements', req)
         content = ("<p>Dependencies downloaded from bioconda "
                    "<b>{2}</b></p>"

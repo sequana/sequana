@@ -1,4 +1,4 @@
-from sequana.pacbio import BAMSimul, PBSim, PacbioSubreads
+from sequana.pacbio import BAMSimul, PBSim, PacbioSubreads, Barcoding
 from sequana import sequana_data
 from easydev import TempFile
 
@@ -91,3 +91,13 @@ def test_pbsim():
         ss.run(bins=100, step=50, output_filename=fh.name)
     from pylab import close
     close()
+
+
+def test_barcoding():
+    data = sequana_data("test_pacbio_barcode_report.csv")
+    bc = Barcoding(data)
+
+    import tempfile
+    with tempfile.TemporaryDirectory() as tempdir:
+        bc.plot_and_save_all(directory=tempdir)
+    

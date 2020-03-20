@@ -1,0 +1,132 @@
+#BootStrap: debootstrap
+#DistType "debian"
+#MirrorURL: http://us.archive.ubuntu.com/ubuntu/
+#OSVersion: xenial
+BootStrap: docker
+From: ubuntu:16.04
+
+%labels
+
+    AUTHOR Thomas Cokelaer
+    VERSION 0.8.0
+
+%post
+
+    apt-get update
+    apt-get install -y wget
+    apt-get install -y bzip2
+    apt-get install -y vim
+    apt-get install -y libgl1-mesa-glx  # will be required by pyqt
+    apt-get install -y fontconfig # for sequanix/qt fonts otherwise no text in menus
+    apt-get install -y git
+    apt-get install -y gcc
+
+    # for fastqc
+    apt-get install -y libxrender1
+    apt-get install -y libxtst6
+    apt-get install -y libxi6
+
+    # for sequanix (Qt plugin) otherwise libxcb missing
+    apt-get install -y libsm-dev
+    apt-get install -y libxcomposite-dev
+    apt-get install -y libxss1 # for sequanix PyQt
+
+    # This is a large data set again. When using the container a sroot, sequanix
+    # looks good but in normal mode, the menu is blank...and this seems to solve
+    # the issue
+    apt-get install -y libgnomeui-0
+
+    # on some system, there is waning message about dvipng missing
+    #apt-get install -y dvipng
+
+    # avoid warning
+    #  Gtk-Message: Failed to load module "pk-gtk-module"
+    #  Gtk-Message: Failed to load module "canberra-gtk-module"
+    apt-get install -y libcanberra-gtk-module
+    apt-get install -y packagekit-gtk3-module
+
+    # install anaconda
+    if [ ! -d /usr/local/anaconda ]; then
+        #wget https://repo.continuum.io/miniconda/Miniconda3-4.3.14-Linux-x86_64.sh\
+        # for now, we use 4.2.12 to have python3.5 by default so no need to
+        # create a new env saving space in the process. The reason for using 3.5
+        # is inherent to the packages used at the moment.
+        #wget https://repo.continuum.io/miniconda/Miniconda3-4.2.12-Linux-x86_64.sh\
+        #   -O ~/anaconda.sh && \
+        wget https://repo.continuum.io/miniconda/Miniconda2-4.7.12-Linux-x86_64.sh\
+           -O ~/anaconda.sh && \
+        bash ~/anaconda.sh -b -p /usr/local/anaconda && \
+        rm ~/anaconda.sh
+    fi
+
+    # set anaconda path
+    export PATH=$PATH:/usr/local/anaconda/bin
+    conda update conda
+
+    #conda config --add channels r
+    conda config --add channels defaults
+    conda config --add channels bioconda
+    conda config --add channels conda-forge
+
+
+    conda --version
+    # aug 2019. under py3.5 solving environement takes forever
+    # this fixes the issue https://github.com/conda/conda/issues/8197
+    #conda config --set channel_priority strict
+    #
+
+    conda install python=3.6
+
+    # The main packages for sequana:
+    wget https://raw.githubusercontent.com/sequana/sequana/refactorisation/requirements.txt
+    grep -v itolapi requirements.txt > requirements2.txt
+
+    #conda install --file requirements2.txt --verbose
+
+    conda install matplotlib qtconsole atropos bioservices pandas samtools
+    conda install xlrd scipy pyVCF
+    conda install multiqc==1.6
+
+    pip install itolapi
+
+    # Sequana source code
+    pip install -e git://github.com/sequana/sequana.git@refactorisation#egg=sequana
+
+    # Let us save some space
+    conda clean --packages -y
+    conda clean --all -y # next requires lots of space
+    ###rm -rf /usr/local/anaconda/pkgs
+
+    if [ ! -d /data ]; then mkdir /data; fi
+    ###if [ ! -d /scripts ]; then mkdir /scripts; fi
+    ###if [ ! -d /scratch ]; then mkdir /scratch; fi
+    ###if [ ! -d /mounting ]; then mkdir /mounting; fi
+    # temporary fix for IP cluster
+    ###if [ ! -d /pasteur ]; then mkdir /pasteur; fi
+    ###echo "backend:tkagg" > matplotlibrc
+
+    #export PATH=$PATH:/usr/local/anaconda/bin
+    #export LANG=C   # prevents perl for raising warnings
+    #export PERL5LIB=/usr/local/anaconda/lib/perl5/5.22.0
+    #python -c "import sequana" # creates config file and check installation
+
+    # warning message:
+    # QStandardPaths: XDG_RUNTIME_DIR points to non-existing path '/run/user/1000', please create it with 0700 permissions.
+    #sudo mkdir -p /run/user/1000
+    #sudo chmod 0700 /run/user/1000
+    echo "backend:agg" > matplotlibrc
+
+%environment
+    export PATH=$PATH:/usr/local/anaconda/bin
+    export LANG=C   # prevents perl for raising warnings
+    export PERL5LIB=/usr/local/anaconda/lib/perl5/5.22.0
+    # Issue with multiqc/click should be solved with those 2 exports
+    # This one raises a warning: Error: Fontconfig warning: ignoring C.UTF-8:
+    # not a valid language tag.
+    export LANG=C.UTF-8
+    export LC_ALL=C.UTF-8
+    # according to https://github.com/uncss/uncss/issues/166, should use
+    #export LC_ALL=C  but does not work ! Same error as above
+    ###export LC_ALL=C.UTF-8
+    #echo "backend:agg" > matplotlibrc
+

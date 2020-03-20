@@ -7,12 +7,11 @@ from setuptools import setup, find_packages
 import glob
 
 _MAJOR               = 0
-_MINOR               = 7
-_MICRO               = 1
+_MINOR               = 8
+_MICRO               = 0
 version              = '%d.%d.%d' % (_MAJOR, _MINOR, _MICRO)
 release              = '%d.%d' % (_MAJOR, _MINOR)
 
-#version += ".post3"
 
 metainfo = {
     'authors': {"main": ("yourname", "email@whatever.org")},
@@ -48,6 +47,8 @@ packages = [this for this in packages if this not in ['test']]
 # - mock is for the test only
 # - qtconsole is required by Sequanix
 requirements = open("requirements.txt").read().split()
+# not in conda but on pypi
+requirements += ["itolapi"]
 
 on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
 if on_rtd:
@@ -96,9 +97,9 @@ setup(
     exclude_package_data = {"": ["__pycache__"]},
     package_data = {
         '': ['Snakefile*', '*html', 'README.rst', "requirements*txt",
-             'config*.yaml', '*.css', "*.js", 
+             'config*.yaml', '*.css', "*.js",
              "snpEff.config*", "*.fa", "*.rules"],
-        'sequana.rules' : ['*/*.rules', "*/*/*.rules"],
+        'sequana.rules' : ['*/*.rules', "*/*/*.rules", "*/*/*/*.rules"],
         'sequana.pipelines' : ['*/*'],
         'sequana.resources.data' : ['*.*'],  # use *.* for files and not ./adapters
         'sequana.resources.data.adapters' : ['*'],
@@ -115,12 +116,13 @@ setup(
     zip_safe=False,
     entry_points = {
         'console_scripts':[
-           'sequana_gui=sequana.gui.sequana_gui:main',
            'sequanix=sequana.gui.sequana_gui:main',
-           'fastq_head=sequana.scripts.fastq_head:main',
-           'fastq_count=sequana.scripts.fastq_count:main',
+           #'fastq_head=sequana.scripts.fastq_head:main',
+           #'fastq_count=sequana.scripts.fastq_count:main',
            'sequana_fastq_head=sequana.scripts.fastq_head:main',
            'sequana_fastq_count=sequana.scripts.fastq_count:main',
+           'sequana_fastq_summary=sequana.scripts.fastq_summary:main',
+           'sequana_lane_merging=sequana.scripts.lane_merging:main',
            'sequana=sequana.scripts.main:main',
            'sequana_taxonomy=sequana.scripts.taxonomy:main',
            'sequana_coverage=sequana.scripts.coverage:main',
@@ -130,6 +132,9 @@ setup(
            'sequana_report=sequana.scripts.reports:main',
            'sequana_vcf_filter=sequana.scripts.vcf_filter:main', # june 2018
            'sequana_bam_splitter=sequana.scripts.bam_splitter:main', # aug 2018
+           'sequana_substractor=sequana.scripts.substractor:main', # march 2019
+           'sequana_start_pipeline=sequana.scripts.start_pipeline:main', # dec 2019
+           'sequana_gtf_fixer=sequana.scripts.gtf_fixer:main' # jan 2019
         ],
         'sequana.module':[
             'sequana_coverage=sequana.modules_report.coverage:CoverageModule',
@@ -142,9 +147,12 @@ setup(
             "sequana_coverage=sequana.multiqc.coverage:MultiqcModule",
             "sequana_isoseq=sequana.multiqc.isoseq:MultiqcModule",
             "sequana_isoseq_qc=sequana.multiqc.isoseq_qc:MultiqcModule",
+            "sequana_bamtools_stats=sequana.multiqc.bamtools_stats:MultiqcModule",
+            "sequana_kraken=sequana.multiqc.kraken:MultiqcModule",
+            "sequana_pacbio_amplicon=sequana.multiqc.pacbio_amplicon:MultiqcModule"
         ],
         'multiqc.hooks.v1': [
-            'before_config = sequana.multiqc:multiqc_sequana_config',
+            'before_config = sequana.multiqc.config:load_config',
         ]
     },
 

@@ -29,15 +29,20 @@ class MultiqcModule(BaseMultiqcModule):
             info="pipelines multi Summary")
 
         self.sequana_data = {}
-        for myfile in self.find_log_files("sequana/pacbio_qc"):
+        for myfile in self.find_log_files("sequana_pacbio_qc"):
+            logging.info("Parsing {}".format(myfile))
             #print( myfile['f'] )       # File contents
             #print( myfile['s_name'] )  # Sample name (from cleaned filename)
             #print( myfile['fn'] )      # Filename
             #print( myfile['root'] )    # Directory file was in
             name = myfile['s_name']
-            if name.startswith("summary_"):
-                name = name.replace("summary_", "")
+            if name.startswith("sequana_summary_pacbio_qc_"):
+                name = name.replace("sequana_summary_pacbio_qc_", "")
             self.sequana_data[name] = self.parse_logs(myfile["f"])
+
+        if len(self.sequana_data) == 0:
+            log.debug("No samples found: sequana_pacbio_qc")
+            raise UserWarning
 
         info = "<ul>"
         for this in sorted(self.sequana_data.keys()):
@@ -48,9 +53,6 @@ class MultiqcModule(BaseMultiqcModule):
         mname = '<a href="{}" target="_blank">{}</a> individual report pages:'.format(href, target)
         self.intro = '<p>{} {}</p>'.format( mname, info)
 
-        if len(self.sequana_data) == 0:
-            log.debug("Could not find any data in {}".format(config.analysis_dir))
-            raise UserWarning
 
         log.info("Found {} reports".format(len(self.sequana_data)))
 

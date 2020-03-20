@@ -1,0 +1,20 @@
+rule union_peaks:
+    """
+    Rule for doing the Union of optimal peak list for mark and condition
+    """
+    input:
+        __union_peaks__input
+    log:
+        __union_peaks__logs
+    output:
+        __union_peaks__output
+    shell:
+        """
+
+        cat {input} | sort -k1,1 -k2,2n - > {output}_SORT.bed
+
+        bedtools merge -c 10 -o mean -i {output}_SORT.bed > {output}
+
+        rm {output}_SORT.bed
+
+        """

@@ -19,6 +19,7 @@
 from sequana.lazy import vcf
 from sequana.lazy import pandas as pd
 from sequana import logger
+logger.name = __name__
 
 
 class Variant(object):
@@ -227,10 +228,14 @@ class VCF_freebayes(vcf.Reader):
                 break
 
     def _check_if_joint(self):
-        line = next(self)
-        self.rewind()
-        if len(line.samples) > 1:
-            return True
+        try:
+            # Needs a try/except for empty VCF files
+            line = next(self)
+            self.rewind()
+            if len(line.samples) > 1:
+                return True
+        except:
+            logger.warning("Your input VCF may be empty")
         return False
 
     def rewind(self):
@@ -238,6 +243,10 @@ class VCF_freebayes(vcf.Reader):
         """
         self._reader.seek(self._start_index)
         self.reader = (line.strip() for line in self._reader if line.strip())
+
+    def get_variants(self):
+        variants = [Variant(v) for v in self]
+        return variants
 
     def filter_vcf(self, filter_dict=None):
         """ Filter variants in the VCF file.

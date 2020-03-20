@@ -1,0 +1,66 @@
+def bowtie2_mapping_dynamic(name, manager):
+
+    metadata = {'name':name}
+
+    bowtie2_mapping_code = '''
+
+rule bowtie2_mapping_%(name)s:
+    """Read mapping for either single end and paired end data using Bowtie2.
+
+    Required input:
+        __bowtie2_mapping_%(name)s__input: list with one or two fastq.gz
+
+    Required output:
+        __bowtie2_mapping_%(name)s__sort: output sorted bam file
+
+    Config:
+
+        __bowtie2_mapping_%(name)s__outdir: output directory
+        __bowtie2_mapping_%(name)s__sam: output file in SAM format (temporary file)
+
+        .. code-block:: yaml
+
+            bowtie2_mapping:
+                thread: 4      #number of threads to be used
+                options:  ""   #options for bowtie2 you want use
+    """
+
+    input:
+        fastq = __bowtie2_mapping_%(name)s__input,
+        index = __bowtie2_mapping_%(name)s__index_done
+    output:
+        sort = __bowtie2_mapping_%(name)s__sort,
+        bam = temp(__bowtie2_mapping_%(name)s__bam)
+    log:
+        err = __bowtie2_mapping_%(name)s__logs_err,
+        out = __bowtie2_mapping_%(name)s__logs_out
+    params:
+        prefix_index = __bowtie2_mapping_%(name)s__prefix_index,
+        options = __bowtie2_mapping_%(name)s__options
+    threads:
+        config["bowtie2_mapping_%(name)s"]["threads"]
+    run:
+        cmd = "bowtie2 -p {threads} {params.options} -x {params.prefix_index}"
+        # paired end or single end unzip
+        if len(input.fastq) == 2:
+            bowtie_input = "-1 " + input.fastq[0] + " -2 " + input.fastq[1]
+        else:
+            bowtie_input = "-U " + input.fastq[0]
+        cmd = cmd + " " + bowtie_input
+        # sam to bam
+        cmd = "%%s | samtools view -Sbh -> {output.bam}" %% cmd
+
+        # logs
+        cmd = "(%%s) > {log.out} 2> {log.err}" %% cmd
+
+        # sort result
+        cmd = "%%s && samtools sort -o {output.sort} {output.bam}" %% cmd
+        cmd = "%%s && samtools index {output.sort}" %% cmd
+
+
+        shell( cmd )
+    '''
+
+
+    from sequana.snaketools import build_dynamic_rule
+    return build_dynamic_rule(bowtie2_mapping_code % metadata, manager.pipeline_dir)

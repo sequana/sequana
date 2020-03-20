@@ -7,6 +7,11 @@ datagz = sequana_data("test.fastq.gz", "testing")
 data = sequana_data("test.fastq", "testing")
 
 
+def test_basic():
+    f = fastq.FastQ(data)
+    assert f.stats() == {'N': 250, 'mean_read_length': 101.0, 'sum_read_length': 25250}
+
+
 def test_fastq_unzipped():
 
     for thisdata in [data, datagz]:
@@ -136,6 +141,8 @@ def test_others():
     f1 = fastq.FastQ(data)
     f2 = fastq.FastQ(data)
     assert f1 == f2
+
+
 
 def test_fastqc():
     qc = fastq.FastQC(data, dotile=True)

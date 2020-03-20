@@ -168,7 +168,53 @@ class FastA(object):
         return cherries
 
     def get_stats(self):
+        from pylab import mean
         stats = {}
-        stats["N"] = 2
+        stats["N"] = len(self.sequences)
         stats["mean_length"] = mean(self.lengths)
         return stats
+
+    def reverse_and_save(self, filename):
+        with open(filename, "w") as fout:
+            for read in self:
+                fout.write(">{}\t{}\n{}\n".format(read.name, read.comment,
+                    read.sequence[::-1]))
+
+    def save_ctg_to_fasta(self, ctgname, outname):
+        index = self.names.index(ctgname)
+        with open("{}.fa".format(outname), "w") as fout:
+            fout.write(">{}\n{}".format(outname, self.sequences[index]))
+
+    def to_fasta(self, outfile, width=80):
+        """Save the input FastA file into a new file
+
+        The interest of this method is to wrap the sequence into 80 characters.
+        This is useful if the input file is not formatted correctly.
+
+        """
+        with open(outfile, "w") as fout:
+            for name,comment,seq in zip(self.names, self.comments, self.sequences):
+                import textwrap
+                seq = "\n".join(textwrap.wrap(seq, width))
+                if comment is None:
+                    fout.write(">{}\n{}\n".format(name, seq))
+                else:
+                    fout.write(">{}\t{}\n{}\n".format(name, comment, seq))
+
+    def to_igv_chrom_size(self, output):
+        data = self.get_lengths_as_dict()
+        with open(output, "w") as fout:
+        
+            for k,v in data.items():
+                fout.write("{}\t{}\n".format(k, v))
+
+
+
+
+
+
+
+
+
+
+

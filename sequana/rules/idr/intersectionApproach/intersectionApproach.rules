@@ -1,0 +1,26 @@
+rule intersectionApproach:
+    """
+    Rule for selecting optimal peaks when broad mode is used during peak calling
+    """
+    input:
+        rep = __intersectionApproach__input_rep,
+        pool = __intersectionApproach__input_pool
+    log:
+        __intersectionApproach__logs
+    output:
+        __intersectionApproach__output
+    params:
+        overlap = __intersectionApproach__overlap
+    shell:
+        """
+        set +o pipefail
+
+        Pool_temp=$(mktemp)
+        Rep1_temp=$(mktemp)
+        Rep2_temp=$(mktemp)
+        awk '$9>2 && $7>3 {{print $0}}' {input.pool} > $Pool_temp
+        awk '$9>2 && $7>3 {{print $0}}' {input.rep[0]} > $Rep1_temp
+        awk '$9>2 && $7>3 {{print $0}}' {input.rep[1]} > $Rep2_temp
+
+        intersectBed -c -r -f {params.overlap} -a $Pool_temp -b $Rep1_temp $Rep2_temp | awk 'BEGIN{{OFS="\t"}} {{if($NF==2) print $1,$2,$3,$4,$5,$6,$7,$8,$9, $10}}' > {output}
+        """

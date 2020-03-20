@@ -23,6 +23,8 @@ from collections import Counter
 import json
 
 import numpy as np
+from sequana import logger
+logger.name = __name__
 
 
 def list_to_json_for_barplot(l, logy=False):

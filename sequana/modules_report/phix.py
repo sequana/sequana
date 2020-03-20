@@ -139,7 +139,7 @@ class PhixModule(SequanaBaseModule):
         datatable = DataTable(df, "phix_stats", index=True)
         datatable.datatable.datatable_options = {
             'scrollX': '300px',
-            'pageLength': 15,
+            'pageLength': 30,
             'scrollCollapse': 'true',
             'dom': 'tpB',
             "paging": "false",

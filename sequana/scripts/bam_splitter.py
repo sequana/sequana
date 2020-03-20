@@ -5,7 +5,7 @@
 #  Copyright (c) 2016 - Sequana Development Team
 #
 #  File author(s):
-#      Thomas Cokelaer <thomas.cokelaer@pasteur.fr>
+#    Thomas Cokelaer <thomas.cokelaer@pasteur.fr>
 #
 #  Distributed under the terms of the 3-clause BSD license.
 #  The full license is in the LICENSE file, distributed with this software.
@@ -73,7 +73,7 @@ another file\n""" % prog
 
 
 def sniff(filename):
-    logger.info("Sniffing file")
+    logger.info("Sniffing file {}".format(filename))
     from sequana import BAM, SAM, CRAM
     from sequana.sniffer import sniffer
     datatype = sniffer(filename)
@@ -157,7 +157,7 @@ def main(args=None):
         args = sys.argv[:]
 
     print(purple("Welcome to sequana_bam_splitter"))
-    user_options = Options(prog="sequana_vcf_filter")
+    user_options = Options(prog="sequana_bam_splitter")
     if len(args) ==1:
         args.append("--help")
 
@@ -171,8 +171,9 @@ def main(args=None):
 
     # set the level
     logger.level = options.level
-    logger.info("This SAM/BAM/CRAM splitter is used for paired or un-paired reads with perfectly"
-            "mapped or unmapped reads (flags 0, 4 , 16). Others are dropped.")
+    logger.info("This SAM/BAM/CRAM splitter is used for paired or un-paired "
+                "reads with perfectly mapped or unmapped reads (flags 0, 4, "
+                "16). Others are dropped.")
 
     logger.info("Reading {}".format(options.input))
 

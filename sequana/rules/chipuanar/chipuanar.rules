@@ -1,0 +1,95 @@
+rule chipuanar:
+    """
+    Use chipuanar to compute differential expressed peaks for each mark
+
+    Required input:
+        __chipuanar__input: matrix count
+
+    Required output:
+        __chipuanar__conds: conditions for each file
+        __chipuanar__rep: replicate name for each file
+        __chipuanar__norm:
+        __chipuanar__spikes:
+        _chipuanar__padj:
+        __chipuanar__alpha:
+        __chipuanar__batch:
+
+    """
+    input:
+        matrix = __chipuanar__input,
+        done = __chipuanar__input_done
+    params:
+        conds = __chipuanar__conds,
+        rep = __chipuanar__rep,
+        method = __chipuanar__method,
+        norm = __chipuanar__norm,
+        spikes = __chipuanar__spikes,
+        padj = __chipuanar__padj,
+        alpha = __chipuanar__alpha,
+        batch = __chipuanar__batch,
+        genome = __chipuanar__genome,
+        outdir = __chipuanar__output_dir
+
+    output:
+        report = __chipuanar__report,
+        config = __chipuanar__config_r
+
+    run:
+        import os
+        from sequana import sequana_data
+        import linecache
+        from pandas import read_json
+
+        #get current dir
+        cwd = os.getcwd()
+        # Sed on matrix to get MARK_COND_REP as sample names
+        if 'NoBlacklist' in open(input.matrix).read():
+            shell("sed -i 's/4-NoBlacklist\///g' %s && sed -i 's/_%s_sort_dedup_NoBlacklist.bam//g' %s" % (input.matrix, params.genome, input.matrix))
+        elif 'Deduplication' in open(input.matrix).read():
+            shell("sed -i 's/3-Deduplication\///g' %s && sed -i 's/_%s_sort_dedup.bam//g' %s " % (input.matrix, params.genome, input.matrix))
+
+        # get cond and rep vectors
+        samples = (linecache.getline(input.matrix, 2)).rstrip().split('\t')[6:]
+        conds = []
+        rep = []
+        for sample in samples:
+            conds.append(sample.split("_")[1])
+            rep.append(sample.split("_")[2])
+
+        #if spikes, read json file
+        if os.path.isfile(params.spikes):
+            df = read_json(params.spikes)
+            spikes = []
+            for sample in samples:
+                spikes.append(df.loc[:,sample][0])
+            sp = ','.join(str(s) for s in spikes)
+
+        # Write the R config file
+        with open(output.config, "w") as out:
+            out.write("file <- '%s'\n" %  (os.path.realpath(input.matrix)))
+            out.write("Conditions <- c(%s)\n" %  ('\"'+('\",\"').join(conds)+'\"'))
+            out.write("Replicates <- c(%s)\n" %  ('\"'+('\",\"').join(rep)+'\"'))
+            out.write("method <- '%s'\n" %  (params.method))
+            out.write("normalisation <- '%s'\n" %  (params.norm))
+            if os.path.isfile(params.spikes):
+                out.write("spikes <- c(%s)\n" %  (sp))
+            else:
+                out.write("spikes <- NULL\n")
+            out.write("pAdjustMethod <- '%s'\n" %  (params.padj))
+            out.write("alpha <- %s\n" %  (params.alpha))
+            if params.batch:
+                 out.write("batch <- '%s'\n" %  (params.batch))
+            else:
+                 out.write("batch <- NULL")
+
+
+        # load the Rmarkdown
+        os.chdir(params.outdir)
+        outfile = os.path.basename(output.report)
+        chipuanar_script = sequana_data("Report_ChIPuanaR.Rmd", where="scripts")
+        shell("cp %s . " % (chipuanar_script))
+        shell("""Rscript -e "rmarkdown::render(input='%s', output_file='%s', run_pandoc=TRUE, clean=TRUE)" """ % ("Report_ChIPuanaR.Rmd", outfile))
+        #shell("""Rscript -e "rmarkdown::render(input=system.file('Report_ChIPuanaR.Rmd', package='ChIPuanaR'), output_file='%s', run_pandoc=TRUE, clean=TRUE)" """ % (outfile))
+        os.chdir(cwd)
+
+

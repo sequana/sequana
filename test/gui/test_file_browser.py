@@ -23,7 +23,7 @@ def test_basic_search(qtbot, tmpdir):
     tmpdir.join('test2_R2.fastq.gz').ensure()
 
 
-def test_directory_dialog(qtbot, mock):
+def test_directory_dialog(qtbot, mocker):
 
     widget = FileBrowser(paired=False, directory=False, file_filter=None)
 

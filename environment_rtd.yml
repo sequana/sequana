@@ -12,13 +12,12 @@ dependencies:
 - pandas
 - matplotlib
 - pysam
-- reports
+#- reports
 - easydev>=0.9.36
 - bioservices
 - pip
 - shustring
-- biokit>=0.4.1
-- ruamel.yaml==0.12.13
+- ruamel.yaml
 - kraken
 - krona
 #- pygraphviz

@@ -1,0 +1,292 @@
+---
+#logopath: "inst/Logos_LogoC3BI.png" #system.file("Logos_LogoC3BI.png", package = "ChIPuana")
+title: "ChIPuana differential analysis report"
+date: '`r Sys.Date()`'
+output:
+  html_document:
+    #css: ""#system.file("vignette.css", package = "ChIPuana")
+    toc: TRUE
+    toc_depth: 2
+    toc_float:
+      collapsed: FALSE
+      smooth_scroll: TRUE
+    df_print: paged
+    self_contained: TRUE
+---
+The ChIPuana R package which generated this report has been developped at ...  
+Site....
+
+```{r echo=FALSE, results="asis", results="hide",message=FALSE, warning=FALSE}
+# Package
+library(knitr)
+library(kableExtra)
+library(ChIPuanaR)
+
+### INPUTS
+source("config.R")
+data <- read.table(file = file, header=T)
+counts <- as.matrix(data[,-c(1:6)])
+rownames(counts) <- data[,1]
+```
+
+```{r echo=FALSE, results="asis", results="hide"}
+############### LIMMA ########################################
+if (method=="Limma") {
+  library(limma)
+  if (is.null(spikes)){
+    # Diferential analysis
+    resAnDif <- run.Limma(counts = counts, conditions = Conditions,
+                          normalize.method = normalisation, pAdjustMethod = pAdjustMethod, outfile = FALSE)
+  } else {
+    # Diferential analysis
+    resAnDif <- run.Limma(counts = counts, conditions = Conditions, 
+                          normalize.method = "none", pAdjustMethod = pAdjustMethod, spikes = spikes, outfile = FALSE)
+    # Normalisation factor
+    sf <- as.data.frame(spikes/max(spikes))
+    colnames(sf) <- "Size factor"
+  }
+  
+############### DESeq2 ########################################
+} else if(method=="DEseq2") {
+  library(DESeq2)
+    if (is.null(spikes)){
+      normalisation = "geometrical"
+      # Diferential analysis
+      resAnDif <- run.DESeq2(counts = counts, conditions = Conditions, 
+                             pAdjustMethod = pAdjustMethod, batch = batch)
+      # Normalisation factor
+      sf <-as.data.frame(resAnDif$sf)
+      colnames(sf) <- "Size factor"
+    } else {
+      # Diferential analysis
+      resAnDif <- run.DESeq2(counts = counts, conditions = Conditions,
+                             pAdjustMethod = pAdjustMethod, batch = batch, spikes = spikes)
+      # Normalisation factor
+      sf <- as.data.frame(spikes/max(spikes))
+      colnames(sf) <- "Size factor"
+    }
+}
+
+# Export result table
+for (name in names(resAnDif$results)){
+  write.table(resAnDif$results[name], file=paste0(name,"_resAnDif.txt"), sep="\t", row.names=FALSE, dec=".", quote=FALSE)
+}
+```
+
+# 1. Introduction
+
+To be written
+
+# 2. Description of raw data
+The count data files and associated biological conditions are listed in the following table.
+```{r , echo=FALSE, results="asis"}
+# Echo design
+design <- data.frame(Conditions, Replicates, row.names = colnames(counts))
+kable(design, caption = "Table 1: Data files and associated biological conditions",format = "html") %>%
+  kable_styling(c("striped", "bordered", "responsive"), font_size = 14) %>%
+  column_spec(1, bold = T)
+```
+
+After loading the data we first have a look at the raw data table itself. The data table contains one row per annotated feature and one column per sequenced sample. Row names of this table are feature IDs (unique identifiers). The table contains raw count values representing the number of reads that map onto the features. For this project, there are `r nrow(counts)` features in the count data table.
+
+```{r , echo=FALSE, results="asis"}
+# head of the counts table
+kable(head(counts), caption = "Table 2: Partial view of the count data table",format = "html") %>%
+  kable_styling(c("striped", "bordered", "responsive"), font_size = 14) %>%
+  column_spec(1, bold = T)
+```
+
+Looking at the summary of the count table provides a basic description of these raw counts (min and max values, median, etc).
+
+```{r echo=FALSE, results="asis"}
+fun_summary=function(x){
+  out=c(quantile(x,c(0,0.25,0.5),type=1),mean(x),quantile(x,c(0.75,1),type=1))
+  names(out)=c("Min.","1st Qu.","Median","Mean","3rd Qu.","Max.")
+  return(round(out,0))
+}
+kable(apply(counts,2,fun_summary), caption = "Table 3: Summary of the raw counts",format = "html") %>%
+  kable_styling(c("striped", "bordered", "responsive"), font_size = 14) %>%
+  column_spec(1, bold = T)
+```
+
+Figure 1 shows the total number of mapped and counted reads for each sample. We expect total read counts to be similar within conditions, they may be different across conditions. Total counts sometimes vary widely between replicates.
+
+```{r barplot, echo=FALSE,fig.align="center",fig.cap="Figure 1: Number of mapped reads per sample. Colors refer to the biological condition of the sample.", out.width="600px"}
+# Producing Barplot
+barplotTotal(counts = counts, conditions = Conditions)
+```
+
+We may wish to assess the similarity between samples across conditions. A pairwise scatter plot is produced (figure 2) to show how replicates and samples from different biological conditions are similar or different ($\text{log}_2(\text{counts}+1)$ are used instead of raw count values). Moreover, as the Pearson correlation has been shown not to be relevant to measure the similarity between replicates, the SERE statistic has been proposed as a similarity index between RNA-Seq samples [@Schulze2012]. It measures whether the variability between samples is random Poisson variability or higher. Pairwise SERE values are printed in the lower triangle of the pairwise scatter plot. The value of the SERE statistic is:
+
+- 0 when samples are identical (no variability at all: this may happen in the case of a sample duplication)
+- 1 for technical replicates (technical variability follows a Poisson distribution)
+- greater than 1 for biological replicates and samples from different biological conditions (biological variability is higher than technical one, data are over-dispersed with respect to Poisson). The higher the SERE value, the lower the similarity. It is expected to be lower between biological replicates than between samples of different biological conditions. Hence, the SERE statistic can be used to detect inversions between samples.
+
+```{r pairewiseScatter, echo=FALSE,fig.align="center",fig.cap="Figure 2: Pairwise comparison of samples (not produced when more than 30 samples).", out.width="1200px"}
+#PairwiseScatter
+pairwiseScatterPlots(counts = counts, conditions = Conditions, outfile = FALSE)
+```
+
+# 3. Variability within the experiment: data exploration
+
+The main variability within the experiment is expected to come from biological differences between the samples. This can be checked in two ways. The first one is to perform a hierarchical clustering of the whole sample set. This is performed after a transformation of the count data which can be either a Variance Stabilizing Transformation (for DESeq2) or a regularized log transformation (for Limma) [@Anders2010; @Love2014].
+
+Figure 3 sample clustering based on normalized data. An euclidean distance is computed between samples, and the dendrogram is built upon the Ward criterion. We expect this dendrogram to group replicates and separate biological conditions.
+
+```{r clusterplot, echo=FALSE,fig.align="center",fig.cap="Figure 3: Sample clustering based on normalized data.", out.width="600px"}
+# Cluster plot
+clusterPlot(counts.trans = resAnDif$voom$E,conditions = Conditions,outfile = FALSE)
+```
+
+Another way of visualizing the experiment variability is to look at the first principal components of the PCA, as shown on the figure 4. On this figure, the first principal component (PC1) is expected to separate samples from the different biological conditions, meaning that the biological variability is the main source of variance in the data.
+
+```{r PCA, echo=FALSE,fig.align="center",fig.cap="Figure 4: First three components of a Principal Component Analysis, with percentages of variance associated with each axis.", out.width="1200px"}
+# PCA plot
+PCAPlot(counts.trans = resAnDif$voom$E, conditions = Conditions, outfile = FALSE)
+```
+
+
+```{r , echo=FALSE, results="asis"}
+if (!is.null(batch)){
+  cat("For the statistical analysis, we need to take into account the effect of the ",batch," parameter. Statistical models and tests will thus be adjusted on it.\n")
+}
+```
+
+# 4. Normalization
+
+Normalization aims at correcting systematic technical biases in the data, in order to make read counts comparable across samples.  
+```{r echo=FALSE, results="asis"}
+if (normalisation=="geometrical" & method=="DESeq2") {
+  cat("The normalization proposed by DESeq2 relies on the hypothesis that most features are not differentially expressed. It computes a scaling factor for each sample. Normalized read counts are obtained by dividing raw read counts by the scaling factor associated with the sample they belong to. Scaling factors around 1 mean (almost) no normalization is performed. Scaling factors lower than 1 will produce normalized counts higher than raw ones, and the other way around.")
+} else if (normalisation=="spikes" & method=="DESeq2") {
+  cat("On détermine les facteurs de normalisation des pics de chaque échantillon en divisant le nombre de lectures spike-in de cet échantillon par celui de l’échantillon ayant le plus grand nombre de lectures spike-in.")
+} else if (normalisation=="spikes" & method=="Limma") {
+  cat("On détermine les facteurs de normalisation des pics de chaque échantillon en divisant le nombre de lectures spike-in de cet échantillon par celui de l’échantillon ayant le plus grand nombre de lectures spike-in. + passage au log2")
+} else if (normalisation=="scale" & method=="Limma") {
+  cat("Calcul d’un facteur de normalisation pour chaque colonne de la matrice de comptage (correspondant à un échantillon). Ce facteur s’obtient en divisant la somme des comptages de la colonne par la somme des comptages de toute la matrice. Puis, chaque comptage de la colonne est divisé par ce facteur de normalisation.")
+} else if (normalisation=="quantile" & method=="Limma") {
+  cat("quantile Limma")
+} else if (normalisation=="cyclycloess" & method=="Limma") {
+  cat("Sélection de deux colonnes de la matrice et traçage de leur MA-plot. Puis, ajustement de la courbe par régression locale sur le tracé du MA-plot. Ainsi, on définit, pour chaque pic, une différence de comptage appelée D. Ceci est suivi d'une soustraction de D/2 sur la première colonne et ajout de D/2 sur la seconde pour réduire la différence entre les deux. Cette étape est répétée jusqu’à ce que toutes les paires de colonnes aient été comparées et normalisées.")
+}
+  
+if (normalisation=="spikes" | normalisation=="geometrical")
+kable(sf, caption = "Table X: Normalization factors",format = "html") %>%
+  kable_styling(c("striped", "bordered", "responsive"), font_size = 14) %>%
+  column_spec(1, bold = T)
+```
+
+Boxplots are often used as a qualitative measure of the quality of the normalization process, as they show how distributions are globally affected during this process. We expect normalization to stabilize distributions across samples. Figure 5 shows boxplots of raw (left) and normalized (right) data respectively.
+
+```{r boxplot, echo=FALSE,fig.align="center",fig.cap="Figure 5: Boxplots of raw (left) and normalized (right) read counts.", out.width="1200px"}
+countsBoxplots(results = resAnDif$results, conditions = Conditions,method==method)
+```
+
+# 5 Differential analysis
+
+## 5.1. Dispersions estimation
+
+```{r dispersionPlot, echo=FALSE,fig.align="center",fig.cap="Figure 6: Dispersion estimation", out.width="1200px",results="asis"}
+if (method=="DESeq2") {
+  cat("The DESeq2 model assumes that the count data follow a negative binomial distribution which is a robust alternative to the Poisson law when data are over-dispersed (the variance is higher than the mean). The first step of the statistical procedure is to estimate the dispersion of the data. Its purpose is to determine the shape of the mean-variance relationship. The default is to apply a GLM (Generalized Linear Model) based method (fitType='parametric'), which can handle complex designs but may not converge in some cases.\n")
+
+# DESeq2 dispersion plot
+dispersionsPlot(dds = resAnDif$dds,outfile = FALSE)
+
+cat("The figure 6 shows the result of the dispersion estimation step. The x- and y-axes represent the mean count value and the estimated dispersion respectively. Black dots represent empirical dispersion estimates for each feature (from the observed counts). The red dots show the mean-variance relationship function (fitted dispersion value) as estimated by the model. The blue dots are the final estimates from the maximum _a posteriori_ and are used to perform the statistical test. Blue circles (if any) point out dispersion outliers. These are features with a very high empirical variance (computed from observed counts). These high dispersion values fall far from the model estimation. For these features, the statistical test is based on the empirical variance in order to be more conservative than with the MAP dispersion. These features will have low chance to be declared significant. The figure on the right panel allows to check the hypothesis of log-normality of the dispersions.")
+}
+```
+
+```{r meanvar, echo=FALSE,fig.align="center",fig.cap="Figure 6: Mean-variance trend", out.width="1200px"}
+if (method=="Limma") {
+  cat("A paragraph about Limma's method.\nLa variabilité systématique des données est modélisée avec une approche linéaire pour la différencier de la variabilité aléatoire. Cette modélisation linéaire est très similaire à l’ANOVA classique ou à la régression multiple, sauf qu’un modèle est adapté à chaque pic.\n")
+
+meanVariancePlot(voom = resAnDif$voom,outfile = FALSE)  
+
+cat("Explain figure 6")
+}
+```
+
+## 5.2. Statistical test for differential expression
+
+Figure 7 shows the distributions of raw p-values computed by the statistical test for the comparison(s) done. This distribution is expected to be a mixture of a uniform distribution on $[0,1]$ and a peak around 0 corresponding to the differentially expressed features.
+
+```{r, echo=FALSE,fig.align="center",fig.cap="Figure 7: Distribution(s) of raw p-values", out.width="600px"}
+# Pvalue Hist
+rawpHist(result = resAnDif$results, outfile = FALSE)
+```
+
+## 5.3. Final results
+
+A p-value adjustment is performed to take into account multiple testing and control the false positive rate to a chosen level $\alpha$. For this analysis, a `r pAdjustMethod` p-value adjustment was performed [@BH1995 and BY2001] and the level of controlled false positive rate was set to `r alpha`.
+
+```{r echo=FALSE, results="asis"}
+df <- matrix(NA, ncol = 3, nrow = length(resAnDif$results),
+           dimnames=list(names(resAnDif$result), c("Total peaks","Peaks up","Peaks down")))
+
+for (name in names(resAnDif$results)) {
+ results.name <- resAnDif$results[[name]]
+ # Total number of peaks
+ peaks <- as.integer(nrow(results.name[which(results.name$padj<=alpha),]))
+ #Nb gene up
+ peaks.up <- as.integer(nrow(results.name[which(results.name$padj<=alpha & results.name$log2FoldChange>0),]))
+ #Nb gene down
+ peaks.down <-as.integer(nrow(results.name[which(results.name$padj<=alpha & results.name$log2FoldChange<0),]))
+ df[name,] <- c(peaks, peaks.up, peaks.down)
+}
+
+kable(df, caption = "Table 4: Normalization factors",format = "html") %>%
+  kable_styling(c("striped", "bordered", "responsive"), font_size = 14) %>%
+  column_spec(1, bold = T)
+```
+
+Figure 8 represents the MA-plot of the data for the comparisons done, where differentially expressed features are highlighted in red. A MA-plot represents the log ratio of differential expression as a function of the mean intensity for each feature. Triangles correspond to features having a too low/high $\log_2(\text{FC})$ to be displayed on the plot.
+
+```{r MAplot, echo=FALSE,fig.align="center",fig.cap="Figure 8: MA-plot(s) of each comparison. Red dots represent significantly differentially expressed features.", out.width="600px"}
+# Producing MAplots
+MAPlot(results = resAnDif$results, alpha = alpha, outfile = FALSE)
+```
+
+Full results as well as lists of differentially expressed features are provided in the following text files which can be easily read in a spreadsheet. For each comparison **TestVsRef_resAnDif.txt** contains results for all the features
+
+These files contain the following columns:
+
+- Id: unique feature identifier;
+- sampleName: raw counts per sample;
+- norm.sampleName: rounded normalized counts per sample;
+- baseMean: base mean over all samples;
+- FoldChange: fold change of expression, calculated as $2^{\log_2(\text{FC})}$;
+- log2FoldChange: $\log_2(\text{FC})$ as estimated by the GLM model. It reflects the differential expression between Test and Ref and can be interpreted as $\log_2(\frac{\text{Test}}{\text{Ref}})$. If this value is:
+    + around 0: the feature expression is similar in both conditions;
+    + positive: the feature is up-regulated ($\text{Test} > \text{Ref}$);
+    + negative: the feature is down-regulated ($\text{Test} < \text{Ref}$);
+- pvalue: raw p-value from the statistical test;
+- padj: adjusted p-value on which the cut-off $\alpha$ is applied;
+
+# 6. R session information and parameters
+
+The versions of the R software and Bioconductor packages used for this analysis are listed below. It is important to save them if one wants to re-perform the analysis in the same conditions.
+
+```{r , echo=FALSE, results="asis"}
+si <- as.character(toLatex(sessionInfo()))
+si <- si[-c(1,length(si))]
+si <- gsub("(\\\\verb)|(\\|)", "", si)
+si <- gsub("~", " ", si)
+si <- paste(si, collapse=" ")
+si <- unlist(strsplit(si, "\\\\item"))
+cat(paste(si, collapse="\n -"), "\n")
+```
+
+Parameter values used for this analysis are:
+
+- Conditions: `r Conditions`
+- Replicates: `r Replicates`
+- Method: `r method`
+- Normalisation: `r ifelse(is.null(spikes),normalisation,"Spike-in")`
+- Spikes: `r ifelse(is.null(spikes),"NULL",spikes)`
+- batch: `r ifelse(is.null(batch),"NULL",batch)`
+- alpha: `r alpha`
+- pAdjustMethod: `r pAdjustMethod`
+
+# 7. Bibliography
+

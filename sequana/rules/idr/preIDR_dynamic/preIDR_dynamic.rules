@@ -1,0 +1,209 @@
+def preIDR_dynamic(name):
+    """
+    Be careful, this dynamic function use shell, don't forget to double the brace characters
+
+    :param name: name of the function
+    :return: a dynamic snakemake rule for preIDR
+    """
+
+    metadata = {"name": name}
+
+    preIDR_code = '''
+rule preIDR_%(name)s:
+    """
+    pre-IDR rule preprocess bam files for IDR step.
+    see https://github.com/hbc/NGS_Data_Analysis_Summer2016/blob/master/sessionV/lessons/07_IDR_assessing_replicates.md
+    for more informations about IDR steps.
+
+
+    Required input:
+        __preIDR_%(name)s__input: list of bam file (IP or INPUT) at condition level (all replicates)
+
+    Required output:
+        __preIDR_%(name)s__output_done: bam file according to process (PPR, SPR)
+
+    Required params:
+        __preIDR_%(name)s__case : use case SPR, PPR, or Pool
+
+
+
+    """
+
+    input:
+        __preIDR_%(name)s__input_bam
+    params:
+        case = __preIDR_%(name)s__case
+    log:
+        __preIDR_%(name)s__log
+    output:
+        __preIDR_%(name)s__output
+    shell:
+        """
+        set +o pipefail
+        if [[ {params.case} == SPR ]]
+        then
+            i=1
+            tmp="{output}"
+            outfiles=($tmp)
+            for file in {input} ; do
+
+                if [ $i -eq 1 ]
+                then
+                    SPR="SPR1" ; SPR1=${{outfiles[0]}} ; SPR2=${{outfiles[1]}}
+
+                elif [ $i -eq 2 ]
+                then
+                    SPR="SPR2" ; SPR1=${{outfiles[2]}} ; SPR2=${{outfiles[3]}}
+                else
+                    SPR="SPR3"; SPR1=${{outfiles[3]}} ; SPR2=${{outfiles[4]}}
+                fi
+
+                echo "starting $SPR ..." > {log}
+
+                samtools view -H ${{file}} > ${{file%%.*}}_header.sam
+
+                echo "Spliting bam file ${{file}} ..." > {log}
+
+                nlinesSPR=$(samtools view ${{file}} | wc -l ) # Number of reads in the BAM file
+
+                nlinesSPR=$(( ($nlinesSPR+1)/2 )) # half that number
+
+                samtools view ${{file}} | shuf | split -d -l ${{nlinesSPR}} - ${{file%%.*}} # This will shuffle the lines in the file and split it into two SAM files
+
+                cat ${{file%%.*}}_header.sam ${{file%%.*}}00 | samtools view -bS | samtools sort -o ${{SPR1}}
+                cat ${{file%%.*}}_header.sam ${{file%%.*}}01 | samtools view -bS | samtools sort -o ${{SPR2}}
+
+
+                echo "Indexing self pseudos-replicates Bamfiles ${{file}}" > {log}
+                samtools index ${{SPR1}}
+                samtools index ${{SPR2}}
+
+                # Cleaning of useless files
+                rm ${{file%%.*}}_header.sam
+                rm ${{file%%.*}}00
+                rm ${{file%%.*}}01
+                i=$((i + 1))
+
+            done
+        elif [[ {params.case} == PPR ]] ; then
+
+            tmp="{output}"
+            outfiles=($tmp)
+            tmp="{input}"
+            infiles=($tmp)
+
+            FILE1=${{outfiles[0]}}
+            FILE2=${{outfiles[1]}}
+            FILE_Pool=${{outfiles[2]}}
+            echo "Merging BAM files for pseudoreplicates..." > {log}
+            samtools merge $FILE_Pool ${{infiles[0]}} ${{infiles[1]}}
+
+            echo "Spliting bam file $FILE_Pool ..." > {log}
+            samtools view -H $FILE_Pool > ${{FILE_Pool%%.*}}_header.sam
+            nlinesPPR=$(samtools view $FILE_Pool | wc -l ) # Number of reads in the BAM file
+            nlinesPPR=$(( ($nlinesPPR+1)/2 )) # half that number
+
+            # This will shuffle the lines in the file and split it into two SAM files
+            samtools view $FILE_Pool | shuf | split -d -l ${{nlinesPPR}} - ${{FILE_Pool%%.*}} 2> {log}
+
+            cat ${{FILE_Pool%%.*}}_header.sam ${{FILE_Pool%%.*}}00 | samtools view -bS | samtools sort -o ${{FILE1}}
+            cat ${{FILE_Pool%%.*}}_header.sam ${{FILE_Pool%%.*}}01 | samtools view -bS | samtools sort -o ${{FILE2}}
+
+            echo "Indexing self pseudos-replicates Bamfiles ${{FILE1}} ${{FILE2}}" > {log}
+            samtools index ${{FILE1}} 2> {log}
+            samtools index ${{FILE2}} 2> {log}
+
+            # Cleaning of useless files
+                rm ${{FILE_Pool%%.*}}_header.sam
+                rm ${{FILE_Pool%%.*}}00
+                rm ${{FILE_Pool%%.*}}01
+
+
+            if [[ ${{#infiles[@]}} > 3 ]] ; then
+                FILE3=${{infiles[2]}}
+                n=1
+                for $FILEN in ${{infiles[0]}} ${{infiles[1]}} ; do
+                    FILE_Pool=${{FILE1/Rep1/Rep${{n}}3-Pool}}
+                    samtools merge $FILE_Pool $FILEN $FILE2 2> {log}
+
+                    echo "Spliting bam file $FILE_Pool ..." > {log}
+                    nlinesPPR=$(samtools view $FILE_Pool | wc -l ) # Number of reads in the BAM file
+                    nlinesPPR=$(( ($nlinesPPR+1)/2 )) # half that number
+
+                    # This will shuffle the lines in the file and split it into two SAM files
+                    samtools view $FILE_Pool | shuf | split -d -l ${{nlinesPPR}} - ${{FILE_Pool%%.*}}  2> {log}
+
+
+                    cat ${{FILE_Pool%%.*}}_header.sam ${{FILE_Pool%%.*}}00 | samtools view -bS | samtools sort -o ${{FILE_Pool/Pool/PPR1}}
+                    cat ${{FILE_Pool%%.*}}_header.sam ${{FILE_Pool%%.*}}01 | samtools view -bS | samtools sort -o ${{FILE_Pool/Pool/PPR2}}
+
+                    echo "Indexing self pseudos-replicates Bamfiles ${{file}}" > {log}
+                    samtools index ${{FILE_Pool/Pool/PPR1}} 2> {log}
+                    samtools index ${{FILE_Pool/Pool/PPR2}} 2> {log}
+
+                    # Cleaning of useless files
+                    rm ${{FILE_Pool%%.*}}_header.sam
+                    rm ${{FILE_Pool%%.*}}00
+                    rm ${{FILE_Pool%%.*}}01
+
+                    n++
+                done
+
+                echo "Merging BAM files on maxi pool for pseudoreplicates..." > {log}
+                FILE_MaxPool=${{outfiles[4]}}
+                samtools merge ${{FILE_MaxPool}}_tmp ${{infiles[0]}} ${{infiles[1]}} ${{infiles[2]}} 2> {log}
+                samtools sort -o ${{FILE_MaxPool}} ${{FILE_MaxPool}}_tmp 2> {log}
+                samtools index ${{FILE_MaxPool}} 2> {log}
+
+
+                # Cleaning of useless files
+                rm ${{FILE_MaxPool}}_tmp
+
+            fi
+
+        elif [[ {params.case} == Pool ]] ; then
+            #Merge treatment BAMS
+            echo "Merging BAM files for Input..." > {log}
+
+            tmp="{output}"
+            outfiles=($tmp)
+            tmp="{input}"
+            infiles=($tmp)
+
+            FILE1=${{infiles[0]}}
+            FILE2=${{infiles[1]}}
+
+            samtools merge -f ${{outfiles[0]}}_tmp ${{FILE1}} ${{FILE2}} 2> {log}
+
+            echo "Sorting pool Bamfile" > {log}
+            samtools sort -o ${{outfiles[0]}} ${{outfiles[0]}}_tmp 2> {log}
+
+            echo "Indexing pool Bamfiles" > {log}
+            samtools index ${{outfiles[0]}} 2> {log}
+
+            # Cleaning of useless files
+            echo "Removing unsort-files" > {log}
+            rm ${{outfiles[0]}}_tmp
+
+            # if more than 2 input, create also a maxi pool
+            if [[ ${{#infiles[@]}} > 3 ]] ; then
+                echo "Merging BAM files on maxi pool for Input..." > {log}
+                FILE3=${{infiles[2]}}
+                samtools merge -f ${{outfiles[1]}}_tmp ${{FILE1}} ${{FILE2}} ${{FILE3}} 2> {log}
+                samtools sort -o ${{outfiles[1]}} ${{outfiles[1]}}_tmp 2> {log}
+                samtools index ${{outfiles[1]}} 2> {log}
+                rm ${{outfiles[1]}}_tmp
+            fi
+        else
+            echo "unrecognized argument"
+        fi
+
+        """
+    '''
+
+    from easydev import TempFile
+    tt = TempFile()
+    with open(tt.name, "w") as fh:
+        fh.write(preIDR_code % metadata)
+    return fh.name
+

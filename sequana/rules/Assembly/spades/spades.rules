@@ -46,7 +46,11 @@ rule spades:
         options = config['spades']['options'],
         outdir = __spades__outdir
     run:
-        cmd = "spades.py -k %s -m %i -t %i %s" % (params['k'], params['m'],
+        if isinstance(params['k'], str):
+            kmers = params['k']
+        else:
+            kmers = str(params['k'])
+        cmd = "spades.py -k %s -m %i -t %i %s" % (kmers, params['m'],
                                                   threads, params['options'])
         if params['careful']:
             cmd += " --careful"

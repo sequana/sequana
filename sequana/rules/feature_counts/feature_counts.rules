@@ -8,7 +8,6 @@ rule feature_counts:
 
     Required output:
         __feature_counts__output_count: output tabulated-delimited file
-        __feature_counts__output_gene_count: output formatted tab-delimited file
 
     Config:
 
@@ -21,20 +20,18 @@ rule feature_counts:
 
 
     input:
-        bam = __feature_counts__input
+        bam = __feature_counts__input,
+        gff = __feature_counts__gff
     output:
-        count = __feature_counts__output_count,
-        gene_count = __feature_counts__output_gene_count
+        count = __feature_counts__output_count
     params:
-        gff = __feature_counts__gff,
-        mapp = config['feature_counts']["options"]  # -t exon
+        mapp = __feature_counts__options
     log:
         __feature_counts__log
     threads:
-        config['feature_counts']['threads']
+        __feature_counts__threads
     run:
         shell("""featureCounts -T {threads} {params.mapp} \
-                 -a {params.gff} -o {output.count} {input.bam} 2> {log}""")
+                 -a {input.gff} -o {output.count} {input.bam} 2> {log}""")
 
-        shell("""cut -f 1,7- {output.count} | sed '2d' > {output.gene_count}""")
       

@@ -22,10 +22,16 @@ import glob
 import numpy as np
 import platform
 
+from sequana import logger
+logger.name = __name__
+
+
 from docutils import core
 from docutils.writers.html4css1 import Writer,HTMLTranslator
 
-__all__ = ['textwrap', 'rest2html', 'wget', 'findpos', 'on_cluster', "normpdf"]
+__all__ = ['textwrap', 'rest2html', 'wget', 'findpos', 'on_cluster', 
+    "normpdf"]
+
 
 
 def normpdf(x, mu, sigma):

@@ -1,0 +1,69 @@
+rule rnaseqc2:
+    """
+    rnaseqc2 computes a series of quality control metrics for RNA-seq data. 
+
+    Required input:
+        - __rnaseqc2__input_bam : a set of BAM files (sorted and indexed with reOrderSam)
+        - __rnaseqc2__input_gtf: a GTF input file
+
+    Required output:
+        - __rnaseqc2__output_directory: directory where to output files
+
+    Other requirements:
+        -  __rnaseqc2__logs
+
+    Parameters:
+        -  directory __rnaseqc2__logs
+        -  config['rnaseqc2'][options']: any options accepted by rnaseqc2
+
+    Required configuration:
+        .. code-block:: yaml
+
+            rnaseqc2:
+                 do: no
+                 gtf_file: path to a GTF file
+                 options: Any option recognized by RNAseQC tool (v2.3)
+
+
+    References:
+        http://archive.broadinstitute.org/cancer/cga/rnaseqc_run
+    """
+    input :
+        bam = __rnaseqc2__input_bam,
+        gtf = __rnaseqc2__input_gtf
+    log :
+        __rnaseqc2__logs
+    output:
+        metrics = __rnaseqc2__output_metrics
+    params:
+        directory = __rnaseqc2__params_directory,
+        sample = __rnaseqc2__params_sample,
+        kwargs = config['rnaseqc2']['options']
+
+    run:
+        """import pandas as pd
+        import matplotlib.pyplot as pl
+        pl.style.use('ggplot')
+        import re
+        import os
+        if os.path.isdir(params['directory']) is False:
+            os.mkdir(params['directory'])
+        """
+
+        # If input GTF has no exon or genes, an error message is printed and no
+        # files are created. This seems to be an issue in rnaseqc. So, the only
+        # way is to trick the input GTF file by adding a dummy gene and a dummy
+        # exon
+        from easydev import TempFile
+
+
+        with TempFile() as fout:
+            ff = open(fout.name, "w")
+            ff.write('myCHR\tSGD\tgene\t0\t0\t.\t+\t0\tgene_id "dummy";')
+            ff.write('myCHR\tSGD\texon\t0\t0\t.\t+\t0\texon_id "dummy";')
+            ff.write(open(input['gtf'], "r").read())
+            ff.close()
+            shell("rnaseqc " + fout.name + " {input.bam} {params.directory} -s {params.sample} {params.kwargs} &>{log}")
+            
+
+

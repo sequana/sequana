@@ -42,7 +42,6 @@ from sequana.lazy import pylab
 
 import pysam
 from sequana import jsontool, logger
-
 logger.name = __name__
 """
 #http://www.acgt.me/blog/2014/12/16/understanding-mapq-scores-in-sam-files-does-37-42#
@@ -111,8 +110,6 @@ def is_cram(filename, *args):
     return f.is_cram
 
 
-
-
 class SAMBAMbase():
     """Base class for SAM/BAM/CRAM data sets
 
@@ -169,6 +166,35 @@ class SAMBAMbase():
         return self._N
 
     @_reset
+    def get_df(self, max_align=-1):
+        flags = []
+        starts = []
+        ends = []
+        mapqs = []
+        refnames = []
+        querynames = []
+        querylengths = []
+        for i, a in enumerate(self._data):
+            flags.append(a.flag)
+            starts.append(a.reference_start)
+            ends.append(a.reference_end)
+            mapqs.append(a.mapq)
+            try:refnames.append(a.reference_name)
+            except:refnames.append(-1)
+            querynames.append(a.query_name)
+            querylengths.append(a.query_length)
+        df = pd.DataFrame({
+                "flag": flags,
+                "rstart": starts,
+                "rend": ends,
+                "mapqs": mapqs,
+                "rname": refnames,
+                "qname": querynames,
+                "qlen": querylengths
+            })
+        return df
+
+    @_reset
     def get_df_concordance(self, max_align=-1):
         """This methods returns a dataframe with Insert, Deletion, Match,
         Substitution, read length, concordance (see below for a definition)
@@ -199,6 +225,7 @@ class SAMBAMbase():
             try:
                 NM.append([x[1] for x in a.tags if x[0] == "NM"][0])
             except:
+                #FIXME why -1 and not 0
                 NM.append(-1)
 
             flags.append(a.flag)
@@ -548,10 +575,9 @@ class SAMBAMbase():
         samflags_count = dict.fromkeys(samflags, 0)
         for flag, count in self.summary["flags"].items():
             for samflag in samflags:
-                if flag&samflag != 0:
+                if flag & samflag != 0:
                     samflags_count[samflag] += count
         return samflags_count
-
 
     def plot_bar_mapq(self, fontsize=16, filename=None, ):
         """Plots bar plots of the MAPQ (quality) of alignments
@@ -656,10 +682,9 @@ class SAMBAMbase():
         """
         qualities = self._get_qualities(max_sample)
         df = pd.DataFrame(qualities)
-        from biokit.viz.boxplot import Boxplot
+        from sequana.viz.boxplot import Boxplot
         bx = Boxplot(df)
         try:
-            # new version of biokit
             bx.plot(ax=ax)
         except:
             bx.plot()
@@ -781,6 +806,32 @@ class SAMBAMbase():
         pylab.xlabel("Indel length", fontsize=fontsize)
         pylab.ylabel("Indel count", fontsize=fontsize)
         return I, D, R
+
+    @_reset
+    def hist_soft_clipping(self):
+        """histogram of soft clipping length ignoring supplementary and
+            secondary reads
+
+        """
+        from sequana import Cigar
+        N = 0; M=0; C = []; F=[]
+        for i,a in enumerate(self):
+            c = a.cigarstring
+            if c:
+                C.append(Cigar(c).as_dict()['S'])
+                M += 1
+            else: 
+                N+=1
+                C.append(-1)
+            F.append(a.flag)
+
+        df = pd.DataFrame({"S":C, "F":F})
+        df.query("F<32 and F!=4")['S'].hist(bins=100, log=True)
+        pylab.xlabel("Soft clip length", fontsize=16)
+        pylab.ylabel("#", fontsize=16)
+
+
+
 
 
 
@@ -980,6 +1031,16 @@ class CS(dict):
                 number = ""
             else: # a letter or number
                 number += c
+        # last one
+        if current == ":":
+            d["M"] += int(number)
+        elif current == "+":
+            d["I"] += len(number)
+        elif current == "-":
+            d["D"] += len(number)
+        elif current == "*":
+            d["S"] += len(number)
+
         assert d['S'] % 2 == 0
         d['S'] //= 2
         return d

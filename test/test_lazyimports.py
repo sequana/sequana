@@ -7,7 +7,7 @@ def test_lazy(mocker):
     import sys
     import sequana.lazy as lazy
     import sequana.lazyimports as lazyimports
-    import imp
+    import importlib as imp
 
     li = lazyimports.LazyImport('os')
     li

@@ -15,14 +15,14 @@ rule igvtools:
 
         .. code-block:: yaml
 
-            coverage:
-                chromSize_file: A genome id or path to a .chrom.sizes or .genome file.  Default is hg18.
+            igvtools:
+                chrom_sizes_file: A genome id or path to a .chrom.sizes or .genome file.  Default is hg18.
 
     """
     input:
         __igvtools__input
     params:
-        chromSize = config['coverage']['chromSize_file']
+        chromSize = config['igvtools']['chrom_sizes_file']
     log:
         __igvtools__log
     output:

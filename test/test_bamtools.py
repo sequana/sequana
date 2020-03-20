@@ -30,6 +30,7 @@ def test_sam(tmpdir):
     assert s.is_sorted is True
     assert s.is_paired is True
     df = s.get_df_concordance(max_align=100)
+    s.hist_soft_clipping()
 
 
 def test_bam(tmpdir):
@@ -127,7 +128,7 @@ def test_bamreport(tmpdir):
 
 def test_cs():
     from sequana.bamtools import CS
-    assert  CS('-a:6-g:14+g:2+c:9*ac:10-a:13-a') ==  {'D': 3, 'I': 2, 'M': 54, 'S': 1}
+    assert  CS('-a:6-g:14+g:2+c:9*ac:10-a:13-a') ==  {'D': 4, 'I': 2, 'M': 54, 'S': 1}
 
 
 def test_cs_in_bam():
@@ -139,7 +140,7 @@ def test_cs_in_bam():
          'read_length': {1772: 1, 10779: 1, 13726: 1, 20480: 1}}
     df = b.get_df_concordance()
     import math
-    assert math.floor(df.sum().sum()) == 103769  # exact is 103769.5600734975
+    assert math.floor(df.sum().sum()) == 103813  # exact is 103769.5600734975
 
 
 

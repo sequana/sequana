@@ -26,5 +26,6 @@ The following sections are dedicated to each pipeline.
     pipeline_compressor.rst
     pipeline_pacbio_qc.rst
     pipeline_pacbio_denovo.rst
+    pipeline_fastqc.rst
 
 

@@ -20,6 +20,10 @@ import re
 Note: could use pysam most probably to improve the speed.
 """
 
+from sequana import logger
+logger.name = __name__
+
+
 class Cigar(object):
     """
 

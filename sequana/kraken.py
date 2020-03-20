@@ -27,9 +27,11 @@ from sequana.misc import wget
 from sequana import sequana_config_path
 from sequana import logger
 
+logger.name = __name__
+
 
 __all__ = ['KrakenResults', "KrakenPipeline", "KrakenAnalysis",
-            "KrakenDownload", "KrakenHierarchical"]
+            "KrakenDownload", "KrakenHierarchical", "MultiKrakenResults"]
 
 
 class KrakenResults(object):
@@ -86,7 +88,7 @@ class KrakenResults(object):
         on_rtd = os.environ.get("READTHEDOCS", None) == "True"
 
         if on_rtd is False:
-            from biokit import Taxonomy
+            from sequana.taxonomy import Taxonomy
             self.tax = Taxonomy(verbose=True)
             self.tax._load_flat_file() # make sure it is available locally
         else:
@@ -98,7 +100,7 @@ class KrakenResults(object):
                     # Note that we add the name as well here
                     ranks = ['kingdom', 'phylum', 'class', 'order',
                             'family', 'genus', 'species', 'name']
-                    return [(self.df.ix[x][rank], rank) for rank in ranks]
+                    return [(self.df.loc[x][rank], rank) for rank in ranks]
             self.tax = Taxonomy()
 
         if filename:
@@ -106,7 +108,7 @@ class KrakenResults(object):
             self._parse_data()
             self._data_created = False
 
-    def get_taxonomy_biokit(self, ids):
+    def get_taxonomy_db(self, ids):
         """Retrieve taxons given a list of taxons
 
         :param list ids: list of taxons as strings or integers. Could also
@@ -127,7 +129,7 @@ class KrakenResults(object):
         if len(ids) == 0:
             return pd.DataFrame()
 
-        logger.info('Retrieving taxon using biokit.Taxonomy')
+        logger.info('Retrieving taxon using sequana.Taxonomy')
 
         if isinstance(ids, list) is False:
             ids = [ids]
@@ -166,10 +168,11 @@ class KrakenResults(object):
     def _parse_data(self):
         taxonomy = {}
 
-        logger.info("Reading kraken data")
+        logger.info("Reading kraken data from {}".format(self.filename))
         columns = ["status", "taxon", "length"]
         # we select only col 0,2,3 to save memoty, which is required on very
         # large files
+        
         try:
             # each call to concat in the for loop below
             # will take time and increase with chunk position.
@@ -177,14 +180,17 @@ class KrakenResults(object):
             # is better than 1000 and still reasonable in memory
             reader = pd.read_csv(self.filename, sep="\t", header=None,
                                usecols=[0,2,3], chunksize=1000000)
-        except pd.parser.CParserError:
-            raise NotImplementedError  # this section is for the case
-                #only_classified_output when there is no found classified read
-            self.unclassified = N # size of the input data set
+        except pd.errors.EmptyDataError:
+            logger.warning("Empty files. 100% unclassified ?")
+            self.unclassified = "?" # size of the input data set
             self.classified = 0
             self._df = pd.DataFrame([], columns=columns)
             self._taxons = self._df.taxon
             return
+        except pd.errors.ParserError:
+            #raise NotImplementedError  # this section is for the case
+            #    #only_classified_output when there is no found classified read
+            raise NotImplementedError
 
         for chunk in reader:
             try:
@@ -242,13 +248,13 @@ class KrakenResults(object):
         # line 14500
         # >gi|331784|gb|K01711.1|MEANPCG[331784] Measles virus (strain Edmonston), complete genome
 
-        df = self.get_taxonomy_biokit([int(x) for x in self.taxons.index])
+        df = self.get_taxonomy_db([int(x) for x in self.taxons.index])
         df['count'] = self.taxons.values
         df.reset_index(inplace=True)
         newrow = len(df)
-        df.ix[newrow] = "Unclassified"
-        df.ix[newrow, 'count'] = self.unclassified
-        df.ix[newrow, 'index'] = -1
+        df.loc[newrow] = "Unclassified"
+        df.loc[newrow, 'count'] = self.unclassified
+        df.loc[newrow, 'index'] = -1
         df.rename(columns={"index":"taxon"}, inplace=True)
         df["percentage"] = df["count"] / df["count"].sum() * 100
 
@@ -258,8 +264,8 @@ class KrakenResults(object):
             annotations = pd.read_csv(filename)
             annotations.set_index("taxon", inplace=True)
 
-            df2 = annotations.ix[df.taxon][['ena', 'gi', 'description']]
-            # There are duplicates sohow. let us keep the first one for now
+            df2 = annotations.loc[df.taxon][['ena', 'gi', 'description']]
+            # There are duplicates so let us keep the first one for now
             df2 = df2.reset_index().drop_duplicates(subset="taxon",
                 keep="first").set_index("taxon")
             self.df2 = df2
@@ -307,7 +313,7 @@ class KrakenResults(object):
 
         # classified reads as root  (1)
         """try:
-            logger.warning("Removing taxon 1 (%s values) " % self.taxons.ix[1])
+            logger.warning("Removing taxon 1 (%s values) " % self.taxons.iloc[1])
             logger.info("Found %s taxons " % len(taxon_to_find))
             taxon_to_find.pop(taxon_to_find.index(1))
         except:
@@ -318,7 +324,7 @@ class KrakenResults(object):
             return False
 
         if mode != "adapters":
-            df = self.get_taxonomy_biokit(taxon_to_find)
+            df = self.get_taxonomy_db(taxon_to_find)
             self.lineage = [";".join(this) for this in df[df.columns[0:-1]].values]
             self.scnames = list(df['name'].values)  # do we need a cast ?
         else:
@@ -360,7 +366,7 @@ class KrakenResults(object):
         self._data_created = True
         return True
 
-    def plot(self, kind="pie", cmap="copper", threshold=1, radius=0.9,
+    def plot(self, kind="pie", cmap="tab20c", threshold=1, radius=0.9,
                 textcolor="red", **kargs):
         """A simple non-interactive plot of taxons
 
@@ -378,6 +384,10 @@ class KrakenResults(object):
 
         .. seealso:: to generate the data see :class:`KrakenPipeline`
             or the standalone application **sequana_taxonomy**.
+
+
+        .. todo:: For a future release, we could use this kind of plot 
+            https://stackoverflow.com/questions/57720935/how-to-use-correct-cmap-colors-in-nested-pie-chart-in-matplotlib
         """
         if len(self._df) == 0:
             return
@@ -394,26 +404,40 @@ class KrakenResults(object):
         if len(self.taxons.index) == 0:
             return None
 
-        df = self.get_taxonomy_biokit(list(self.taxons.index))
-        df.ix[-1] = ["Unclassified"] * 8
+        df = self.get_taxonomy_db(list(self.taxons.index))
+
+        # we add the unclassified only if needed
+        if self.unclassified > 0:
+            df.loc[-1] = ["Unclassified"] * 8
+
         data = self.taxons.copy()
-        data.ix[-1] = self.unclassified
+
+        # we add the unclassified only if needed
+        if self.unclassified > 0:
+            data.loc[-1] = self.unclassified
+
 
         data = data/data.sum()*100
         assert threshold > 0 and threshold < 100
+
+        # everything below the threshold (1) is gather together and summarised
+        # into 'others'
         others = data[data<threshold].sum()
-        data = data[data>threshold]
-        names = df.ix[data.index]['name']
+
+        data = data[data>=threshold]
+        names = df.loc[data.index]['name']
 
         data.index = names.values
-        data.ix['others'] = others
+
+        if others > 0:
+            data.loc['others'] = others
+
         try:
             data.sort_values(inplace=True)
         except:
             data.sort(inplace=True)
 
-        # text may be long so, let us increase the figsize a little bit
-        pylab.figure(figsize=(10,8))
+        pylab.figure(figsize=(10, 8))
         pylab.clf()
         if kind == "pie":
             ax = data.plot(kind=kind, cmap=cmap, autopct='%1.1f%%',
@@ -635,12 +659,13 @@ class KrakenAnalysis(object):
         if self.paired:
             params["file2"] = self.fastq[1]
 
-        command = "kraken -db %(database)s %(file1)s "
+        command = "kraken %(file1)s "
 
         if self.paired:
             command += " %(file2)s --paired"
-        command += " --threads %(thread)s --output %(kraken_output)s "
-        command += " --out-fmt legacy"
+        command += " -db %(database)s "
+        command += " --threads %(thread)s --output %(kraken_output)s --out-fmt legacy"
+        #command += " --out-fmt legacy"
 
         if output_filename_unclassified:
             command +=  " --unclassified-out %(output_filename_unclassified)s "
@@ -671,7 +696,8 @@ class KrakenHierarchical(object):
     """
     def __init__(self, filename_fastq, fof_databases, threads=1,
                  output_directory="./kraken_hierarchical/", 
-                 keep_temp_files=False, force=False):
+                 keep_temp_files=False, output_filename_unclassified=None, 
+                force=False):
         """.. rubric:: **constructor**
 
         :param filename_fastq: FastQ file to analyse
@@ -732,6 +758,8 @@ class KrakenHierarchical(object):
             msg += "\nYou provided {}".format(filename_fastq)
             raise TypeError(msg)
 
+        self.unclassified_output = output_filename_unclassified
+
     def _run_one_analysis(self, iteration):
         """ Run one analysis """
         db = self.databases[iteration]
@@ -748,16 +776,19 @@ class KrakenHierarchical(object):
         output_filename_unclassified = _pathto("unclassified_%d.fastq" % iteration)
         file_fastq_unclass = _pathto("unclassified_%d.fastq" % iteration)
 
+
+
         if iteration == 0:
             inputs = self.inputs
         else:
-            # previous results
             inputs = self._list_kraken_input[iteration-1]
+
 
         # if this is the last iteration (even if iteration is zero), save
         # classified and unclassified in the final kraken results.
         if iteration == len(self.databases) -1:
             only_classified_output = False
+
 
         analysis = KrakenAnalysis(inputs, db, self.threads)
         analysis.run(output_filename=file_kraken_class,
@@ -769,7 +800,7 @@ class KrakenHierarchical(object):
 
         if self.keep_temp_files:
             result = KrakenResults(file_kraken_class)
-            result.to_js("%skrona_%d.html" %(self.output_directory, iteration))
+            result.to_js("%s/krona_%d.html" %(self.output_directory, iteration))
 
     def run(self, dbname="multiple", output_prefix="kraken_final"):
         """Run the hierachical analysis
@@ -788,7 +819,11 @@ class KrakenHierarchical(object):
 
         # Iteration over the databases
         for iteration in range(len(self.databases)):
-            self._run_one_analysis(iteration)
+            status = self._run_one_analysis(iteration)
+            last_unclassified = self._list_kraken_input[-1]
+            stat = os.stat(last_unclassified)
+            if stat.st_size == 0:
+                break
 
         # concatenate all kraken output files
         file_output_final = self.output_directory + os.sep + "%s.out" % output_prefix
@@ -811,6 +846,11 @@ class KrakenHierarchical(object):
         result.kraken_to_csv(prefix + "kraken.csv", dbname)
 
         # remove kraken intermediate files (including unclassified files)
+        if self.unclassified_output:
+            # Just cp the last unclassified file
+            import shutil
+            shutil.copy2(self._list_kraken_input[-1], self.unclassified_output)
+
         if not self.keep_temp_files:
             for f_temp in self._list_kraken_output:
                 os.remove(f_temp)
@@ -971,3 +1011,62 @@ class KrakenDownload(object):
         # The annotations
         wget("https://github.com/sequana/data/raw/master/sequana_db1/annotations.csv",
             dir1 + os.sep + "annotations.csv")
+
+
+
+class MultiKrakenResults():
+
+    def __init__(self, filenames, sample_names=None):
+        self.filenames = filenames
+        if sample_names is None:
+            self.sample_names = list(range(1,len(filenames)+1))
+        else:
+            self.sample_names = sample_names
+
+    def get_df(self):
+        import pandas as pd
+        data = {}
+        for sample, filename in zip(self.sample_names, self.filenames):
+            df = pd.read_csv(filename)
+            df = df.groupby("kingdom")['percentage'].sum()
+            # if a taxon is obsolete, the kingdom is empty. 
+            # We will set the kingdom as Unclassified and raise a warning
+            # if the count is > 5%
+            if " " in df.index:
+                percent = df.loc[" "]
+                if percent > 5:
+                    logger.warning("Found {}% of taxons in obsolete category".format(percent))
+                if "Unclassified" in df.index:
+                    df.loc['Unclassified'] += df.loc[' ']
+                    df.drop(" ", inplace=True)
+                else:
+                    df.loc['Unclassified'] = df.loc[' ']
+                    df.drop(" ", inplace=True)
+            data[sample] = df
+
+        df = pd.DataFrame(data)
+        #df.to_json(output.data)
+        df = df.sort_index(ascending=False)
+        return df
+
+    def plot_stacked_hist(self, output_filename=None, dpi=200, kind="barh", 
+        fontsize=10, edgecolor="k", lw=1, width=1, ytick_fontsize=10):
+        df = self.get_df()
+        df.T.plot(kind=kind, stacked=True, edgecolor=edgecolor, lw=lw,
+            width=width)
+        ax = pylab.gca()
+        positions = pylab.yticks()
+        #ax.set_yticklabel(positions, labels, fontsize=ytick_fontsize)
+        pylab.xlabel("Percentage (%)", fontsize=fontsize)
+        pylab.ylabel("Sample index/name", fontsize=fontsize)
+        pylab.yticks(fontsize=ytick_fontsize)
+        pylab.legend(title="kingdom")
+        pylab.xlim([0, 100])
+
+        if output_filename:
+            pylab.savefig(output_filename, dpi=dpi)
+
+
+
+
+

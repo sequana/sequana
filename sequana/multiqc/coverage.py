@@ -7,6 +7,7 @@ from math import log10
 
 # prevent boring warning (version 1.0)
 import logging
+
 logging.captureWarnings(True)
 from multiqc import config
 from multiqc.modules.base_module import BaseMultiqcModule
@@ -24,37 +25,59 @@ class MultiqcModule(BaseMultiqcModule):
         # Initialise the parent object
         super(MultiqcModule, self).__init__(
             name='Sequana/coverage',    # name that appears at the top
-            anchor='sequana',  # ??
+            anchor='sequana_coverage',
             target='sequana',  # Name show that link to the following href
             href='http://github.com/sequana/sequana/',
             info="sequana_coverage multi Summary")
 
-        self.sequana_data = {}
+        self.sequana_data = dict()
         self.sequana_desc = {}
-        for myfile in self.find_log_files("sequana/coverage"):
+        self.sequana_root = {}
+        self.sequana_caller = {}
+
+        for myfile in self.find_log_files("sequana_coverage"):
             name = myfile['s_name']
             if name.startswith("summary_"):
                 name = name.replace("summary_", "")
             data = self.parse_logs(myfile["f"])
 
-            key = data['data']['chrom_name']
+            key = data["sample_name"]+"/"+ data['data']['chrom_name']
             self.sequana_data[key] = data['data']
             self.sequana_desc[key] = data['data_description']
-
+            self.sequana_root[key] = myfile['root']
+            try:
+                self.sequana_caller[key] = data['caller']
+            except:
+                self.sequana_caller[key] = "undefined"
+        if len(self.sequana_data) == 0:
+            log.debug("No samples found: sequana_coverage")
+            raise UserWarning
 
         info = "<ul>"
         for this in sorted(self.sequana_data.keys()):
-            info += '<li><a href="coverage_reports/{}.cov.html">{}</a></li>'.format(
-                    this, this)
+            sample_name, chrom_name = this.split("/")
+
+            root = self.sequana_root[key]
+
+            # sequana_coverage store multiqc locally
+            # the pipelines stores it in ./multiqc/ the only way to have the
+            # correct path is to figure out who creates the summary file for
+            # multiqc. If sequana_coverage, no need to alter the path but if
+            # the multiqc were create by the pipelines, you need to come back to
+            # the root of the pipeline
+            if self.sequana_caller[this] in ["sequana_coverage",
+                    "sequana.bedtools"]:
+                subpath = ""
+            else:
+                subpath = "../"
+            info += '<li><a href="{}/{}.cov.html">{}</a></li>'.format(
+                subpath + root,
+                chrom_name,  this)
         info += "</ul>"
         href="http://sequana.readthedocs.io/en/master/"
         target = "Sequana"
         mname = '<a href="{}" target="_blank">{}</a> individual report pages:'.format(href, target)
         self.intro = '<p>{} {}</p>'.format( mname, info)
-
-        if len(self.sequana_data) == 0:
-            log.debug("Could not find any data in {}".format(config.analysis_dir))
-            raise UserWarning
 
         log.info("Found {} reports".format(len(self.sequana_data)))
 

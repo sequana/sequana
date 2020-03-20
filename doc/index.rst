@@ -27,7 +27,7 @@ Sequana documentation
     <a href="http://joss.theoj.org/papers/10.21105/joss.00352">
     <img src="http://joss.theoj.org/papers/10.21105/joss.00352/status.svg"></a>
 
-    <a href="https://gitter.im/sequana/sequana?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge"> 
+    <a href="https://gitter.im/sequana/sequana?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge">
     <img src="https://badges.gitter.im/sequana/sequana.svg">
 
 
@@ -38,17 +38,23 @@ Sequana documentation
 :Python version: Python 3.5, 3.6 although most modules are Python2.7 compatible.
 :Source: See  `http://github.com/sequana/sequana <https://github.com/sequana/sequana/>`_.
 :Issues: Please fill a report on `github <https://github.com/sequana/sequana/issues>`_
-:How to cite: For Sequana in general including the pipelines, please use 
+:How to cite: For Sequana in general including the pipelines, please use
 
     Cokelaer et al, (2017), 'Sequana': a Set of Snakemake NGS pipelines, Journal of
     Open Source Software, 2(16), 352, `JOSS DOI doi:10.21105/joss.00352 <http://www.doi2bib.org/bib/10.21105%2Fjoss.00352>`_
 
 
-    For the **genome coverage** tool (sequana_coverage):  Dimitri Desvillechabrol,
-    Christiane Bouchier, Sean Kennedy, Thomas Cokelaer
-    http://biorxiv.org/content/early/2016/12/08/092478
+    For the **genome coverage** tool (sequana_coverage), please cite:
 
-    For **Sequanix**: Dimitri Desvillechabrol, Rachel Legendre, Claire Rioualen,
+    Dimitri Desvillechabrol, Christiane Bouchier, Sean Kennedy, Thomas Cokelaer
+    *Sequana coverage: detection and characterization of genomic variations 
+    using running median and mixture models*
+    GigaScience, Volume 7, Issue 12, December 2018, giy110,
+    https://doi.org/10.1093/gigascience/giy110
+
+    For **Sequanix** (GUI for Snakemake pipeline), please cite:
+
+    Dimitri Desvillechabrol, Rachel Legendre, Claire Rioualen,
     Christiane Bouchier, Jacques van Helden, Sean Kennedy, Thomas Cokelaer
     Sequanix: A Dynamic Graphical Interface for Snakemake Workflows
     Bioinformatics, bty034, https://doi.org/10.1093/bioinformatics/bty034

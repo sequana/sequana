@@ -1,0 +1,37 @@
+rule snpeff_add_locus_in_fasta:
+    """
+    SnpEff requires the locus names in the annotation file and in the FASTA
+    file (contig name) to be identical. To make this is true, this rule adds
+    locus names of the genbank file into the FASTA file before the mapping.
+
+    Required input:
+        - __snpeff_add_locus_in_fasta__input_fasta:      FASTA file of the reference.
+        - __snpeff_add_locus_in_fasta__input_annotation: GENBANK file
+
+    Required output:
+        - __snpeff_add_locus_in_fasta__output: FASTA file with locus names.
+
+    Required configuration:
+        .. code-block:: yaml
+
+            snpeff:
+                annotation_file:  # the genbank file
+                options:    # result filters options
+    """
+    input:
+        fasta = __snpeff_add_locus_in_fasta__input_fasta,
+        ann = __snpeff_add_locus_in_fasta__input_annotation
+    output:
+        fasta = __snpeff_add_locus_in_fasta__output
+    log:
+        log = __snpeff_add_locus_in_fasta__log
+    run:
+        from sequana import SnpEff
+        if input['ann'].endswith(".gbk"):
+            snpeff = SnpEff(input['ann'], log=log['log'])
+        elif input['ann'].endswith("gff") or input['ann'].endswith('gff3'):
+            snpeff = SnpEff(input['ann'], log=log['log'], fastafile=input['fasta'])
+        else:
+            raise IOError("Your annotation file does not end with gbk or gff/gff3 extension")
+
+        snpeff.add_locus_in_fasta(input['fasta'], output['fasta'])
