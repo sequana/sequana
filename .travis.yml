@@ -37,8 +37,9 @@ install:
   - conda install --yes xlrd scipy pyVCF
   # may be a repetitive reason for failure on travis
   # - conda install --yes --file requirements_dev.txt
-  - conda install -y pytest pytest-cov pytest-xdist pytest-timeout pytest-qt
-
+  # this does not work either
+  # - conda install -y pytest pytest-cov pytest-xdist pytest-timeout pytest-qt
+  - pip install pytest pytest-cov pytest-timeout pytest-qt
 
   - git clone https://github.com/biomics-pasteur-fr/MultiQC
   - cd MultiQC/
