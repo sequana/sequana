@@ -36,6 +36,10 @@ install:
   # to install specific version of multiqc, we install packages manually
   - conda install --yes matplotlib qtconsole atropos bioservices pandas samtools
   - conda install --yes xlrd scipy pyVCF
+
+  # FIXME
+  # for bioservices. should be fixed in bioconda itself I suspect
+  - pip install lxml xmltodict
   # may be a repetitive reason for failure on travis
   # - conda install --yes --file requirements_dev.txt
   # this does not work either
@@ -50,14 +54,14 @@ install:
 
   # ideally, we should use requirements_pipelines but this lead to stall on
   # travis because of many dependencies. For testing, we only need those ones
-  - conda install --yes kraken==1.0 bwa snpeff shustring krona sambamba
+  - conda install --yes kraken==1.1 bwa snpeff shustring krona sambamba
   - conda install --yes pigz cutadapt fastqc
   - conda install --yes freebayes --no-deps
   - conda install --yes pysam samtools --no-deps
   - conda install --yes bedtools --no-deps
 
   - pip install itolapi
-  - pip install .
+  - python setupy.py install
   - pip install sequana_quality_control
   #- conda list
 
