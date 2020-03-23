@@ -509,8 +509,6 @@ class SequanaGUI(QMainWindow, Tools):
             }
             ))
         colorlog.getLogger().addHandler(self.logTextBox)
-        # You can control the logging level
-        #colorlog.getLogger().setLevel(colorlog.logging.logging.INFO)
         self.set_level()
         self.ui.layout_logger.addWidget(self.logTextBox.widget)
 
