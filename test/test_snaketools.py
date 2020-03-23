@@ -6,6 +6,7 @@ from sequana import Module, SequanaConfig
 from easydev import TempFile
 import subprocess
 
+
 def test_dot_parser():
     s = DOTParser(sequana_data("test_dag.dot", "testing"))
     s.add_urls()
@@ -17,10 +18,12 @@ def test_dot_parser():
     try:os.remove("test_dag.ann.dot")
     except:pass
 
+
 def test_md5():
     from sequana import Module
     m = Module("compressor")
     data = m.md5()
+
 
 def test_modules():
     assert "dag" in snaketools.modules.keys()
@@ -151,6 +154,7 @@ def test_sequana_config():
         cfg2._update_config()
         assert cfg1.config == cfg2.config
     output.delete()
+
 
 def test_check_config_with_schema():
     schema = Module("compressor").schema_config
@@ -421,6 +425,7 @@ def test_create_cleanup():
     with tempfile.TemporaryDirectory() as fout:
         snaketools.create_cleanup(fout)
 
+
 def test_fastqfactory():
     try:
         snaketools.FastQFactory("*", read_tag='error') 
@@ -442,7 +447,7 @@ def test_fastqfactory():
 
     ff = snaketools.FastQFactory(directory + os.sep + "Hm2*gz", read_tag=None) 
     assert ff.paired is False
-    assert ff.tags == ['Hm2_GTGAAA_L005_R2_001', 'Hm2_GTGAAA_L005_R1_001']
+    assert sorted(ff.tags) == sorted(['Hm2_GTGAAA_L005_R2_001', 'Hm2_GTGAAA_L005_R1_001'])
 
 
 def test_makefile():
@@ -452,6 +457,7 @@ def test_makefile():
         mk.add_remove_done()
         mk.add_bundle()
         mk.save()
+
 
 def test_bundle():
     with tempfile.TemporaryDirectory() as fout:
