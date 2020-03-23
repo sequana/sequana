@@ -61,7 +61,7 @@ install:
   - conda install --yes bedtools --no-deps
 
   - pip install itolapi
-  - python setupy.py install
+  - python setup.py install
   - pip install sequana_quality_control
   #- conda list
 
