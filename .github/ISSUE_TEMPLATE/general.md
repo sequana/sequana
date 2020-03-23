@@ -1,7 +1,6 @@
 ---
-name: general issue
-about: please report issues related to the sequana library here (bug, requests,
-etc).
+name: 'general'
+about: 'please report issues related to the sequana library here (bug, requests,etc).'
 title: ''
 labels: ''
 assignees: ''
