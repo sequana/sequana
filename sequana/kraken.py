@@ -663,8 +663,10 @@ class KrakenAnalysis(object):
 
         if self.paired:
             command += " %(file2)s --paired"
+
         command += " -db %(database)s "
         command += " --threads %(thread)s --output %(kraken_output)s --out-fmt legacy"
+        # for kraken <=1.0 --out-fmt did not exist
         #command += " --out-fmt legacy"
 
         if output_filename_unclassified:
