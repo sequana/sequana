@@ -25,7 +25,7 @@ SEQUANA
 .. image:: https://badges.gitter.im/sequana/sequana.svg
     :target: https://gitter.im/sequana/sequana?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge
 
-:Python version: 3.5, 3.6
+:Python version: 3.6, 3.7.3 (below for now)
 :Online documentation: `On readthedocs <http://sequana.readthedocs.org/>`_
 :Issues and bug reports: `On github <https://github.com/sequana/sequana/issues>`_
 :How to cite: For Sequana in general including the pipelines, please use 
