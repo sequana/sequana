@@ -123,7 +123,7 @@ setup(
            'sequana_fastq_count=sequana.scripts.fastq_count:main',
            'sequana_fastq_summary=sequana.scripts.fastq_summary:main',
            'sequana_lane_merging=sequana.scripts.lane_merging:main',
-           'sequana=sequana.scripts.main:main',
+           #'sequana=sequana.scripts.main:main',
            'sequana_taxonomy=sequana.scripts.taxonomy:main',
            'sequana_coverage=sequana.scripts.coverage:main',
            'sequana_summary=sequana.scripts.summary:main',
