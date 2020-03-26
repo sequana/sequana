@@ -293,14 +293,14 @@ class PacbioSubreads(PacbioBAMBase):
 
     When introspecting the aligned BAM file, the extent of the query in ZMW read
     is denoted as [qStart, qEnd) and the extent of the aligned subinterval
-    as [aStart, aEnd). The following graphic illustrates these intervals:
+    as [aStart, aEnd). The following graphic illustrates these intervals::
 
-          qStart                         qEnd
-    0         |  aStart                aEnd  |
-    [--...----*--*---------------------*-----*-----...------)  < "ZMW read" coord. system
-              ~~~----------------------~~~~~~                  <  query; "-" =aligning subseq.
-    [--...-------*---------...---------*-----------...------)  < "ref." / "target" coord. system
-    0            tStart                tEnd
+              qStart                         qEnd
+        0         |  aStart                aEnd  |
+        [--...----*--*---------------------*-----*-----...------)  < "ZMW read" coord. system
+                  ~~~----------------------~~~~~~                  <  query; "-" =aligning subseq.
+        [--...-------*---------...---------*-----------...------)  < "ref." / "target" coord. system
+        0            tStart                tEnd
 
     In the BAM files, the qStart, qEnd are contained in the qs and qe tags, (and
     reflected in the QNAME); the bounds of the aligned query in the ZMW read can be
