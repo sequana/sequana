@@ -34,7 +34,7 @@ logger.name = __name__
 
 __all__ = ["Colors", "InputOptions", "SnakemakeOptions", "SlurmOptions",
     "PipelineManager", "GeneralOptions", "print_version", "CutadaptOptions",
-    "KrakenOptions"]
+    "KrakenOptions", "init_pipeline", "sequana_epilog", "sequana_prolog"]
 
 
 class Colors:
@@ -122,6 +122,8 @@ class GeneralOptions():
 
         parser.add_argument("--version", action="store_true",
             help="Print the version and quit")
+        parser.add_argument("--deps", action="store_true",
+            help="Show the known dependencies of the pipeline")
         parser.add_argument("--level", dest="level", default="INFO",
             help="logging level in INFO, DEBUG, WARNING, ERROR, CRITICAL")
 
@@ -174,7 +176,7 @@ class InputOptions():
                 "--paired-data",
                 dest="paired_data",
                 action="store_true",
-                help="""For Illumina, if paired end data is used, set this option"""
+                help="""NOT IMPLEMENTED YET"""
             )
 
 
@@ -430,10 +432,54 @@ class SlurmOptions():
         )
 
 
+def init_pipeline(NAME):
+    """A function to provide --version and --deps for all pipelines
+
+    This is called even before parsing options
+    """
+    import sys
+
+    if "--version" in sys.argv:
+        print_version(NAME)
+        sys.exit(0)
+
+    if "--deps" in sys.argv:
+        from sequana.snaketools import Module
+        module = Module(NAME)
+        with open(module.requirements, "r") as fin:
+            data = fin.read()
+        print("Those software will be required for the pipeline to work correctly:\n{}".format(data))
+        sys.exit(0)
+
+sequana_epilog = Colors().purple("""If you use or like the Sequana project,
+please consider citing us (visit sequana.readthedocs.io for details) or use this
+citation:
+
+Cokelaer et al, (2017), ‘Sequana’: a Set of Snakemake NGS pipelines, Journal of
+Open Source Software, 2(16), 352, JOSS DOI doi:10.21105/joss.00352
+
+
+""")
+
+sequana_prolog = """Welcome to Sequana project\nThis script prepares the
+pipeline {name} and stored the pipeline and its configuration in the requested
+working directory. Please check out the documentation carefully. Pipelines can
+be run locally or on cluster. For a local run, 
+
+sequana_pipelines_{name} --run-mode local
+
+and for s SLURM cluster:
+
+sequana_pipelines_{name} --run-mode slurm
+
+although the pipelines should figure out what to do. A working directory called
+will be created with instructions on how to run the pipeline.
+"""
+
+
 
 def print_version(name):
     from sequana import version
-    print(Colors().purple("Welcome to Sequana\n"))
     print("Sequana version used: {}".format(version))
     try:
         import pkg_resources
@@ -443,7 +489,10 @@ def print_version(name):
         print(err)
         print("pipeline sequana_{} version used: ?".format(name))
         sys.exit(1)
-    print(Colors().purple("\nPlease, consider citing us. Visit sequana.readthedocs.io for more information".format(version)))
+    print(Colors().purple("\nHow to help ?\n- Please, consider citing us (see sequana.readthedocs.io)".format(version)))
+    print(Colors().purple("- Contribute to the code or documentation"))
+    print(Colors().purple("- Fill issues on https://github.com/sequana/sequana/issues/new/choose"))
+    print(Colors().purple("- Star us https://github.com/sequana/sequana/stargazers"))
 
 
 def get_pipeline_location(pipeline_name):
@@ -483,13 +532,9 @@ class PipelineManager():
 
         self.options = options
 
-        # Here, we should populate the config file as much as possible ?
-
         if self.options.version:
             print_version(name)
             sys.exit(0)
-        #except:
-        #    logger.warning("Please add the --version option in this pipeline {}".format(name))
 
         self.name = name
 
