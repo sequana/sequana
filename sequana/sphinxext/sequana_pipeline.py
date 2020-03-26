@@ -24,11 +24,14 @@ def get_rule_doc(name):
     url = "https://raw.githubusercontent.com/sequana/sequana_{}/master/README.rst".format(name)
     data = urllib.request.urlopen(url).read().decode("utf8")
 
-    from sequana import Module
-    m = Module(name)
+    try:
+        from sequana import Module
+        m = Module(name)
+        version = m.version
+    except:
+        version = "?"
 
-
-    docstring = "**current version**:{}\n\n{}".format(m.version, data)
+    docstring = "**current version**:{}\n\n{}".format(version, data)
 
     return docstring
 
