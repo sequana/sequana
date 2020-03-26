@@ -2,17 +2,28 @@ Changelog
 =============
 
 .. contents::
+    :depth: 2
 
-0.8.0
-------
+0.8.1
+-----
 
+* add missing dependency *packaging* in requirements.txt
+* add new sphinx extension to include external pipeline documentation
+* for pipelines, we created a common epilog and prolog statement and a
+init_pipeline to insert before parsing the options. This allows to have the
+--deps argument to print all dependencies of a pipeline
 
-* Remove all pipelines from sequana. Pipelines have now their own repositories
+0.8.0 (24 March 2020)
+---------------------
+
+This is an stable release made to includes lots of new features and pipelines
+and bug fixes made.
+
+We removed all pipelines from sequana. Pipelines have now their own repositories
 on github to ease the developpement of sequana and those pipelines. The
 rationale being that we do not need to update sequana when a pipeline changes
-and a pipeline can have its own biocontainer and life cycle. The compressor
-pipeline was dropped (redundant with sequana_compressor standalone). 
-Othe pipeline have now their own repositories:
+and a pipeline can have its own biocontainer and life cycle. We kept just one
+for testing purposes (compressor). Other pipelines have now their own repositories:
 
 - sequana_coverage
 - sequana_demultiplex
@@ -22,14 +33,10 @@ Othe pipeline have now their own repositories:
 - sequana_variant_calling
 - sequana_denovo
 - sequana_pacbio_amplicon
+- etc
 
-+ new ones
+New pipelines have been added such as sequana_downsampling and sequana_mapper.
 
-- sequana_downsampling
-- sequana_mapper
-
-This is an stable release made to includes lots of new features and pipelines
-and bug fixes made.
 
 * NEWS:
 
@@ -37,12 +44,12 @@ and bug fixes made.
       the GBK)
     * new module trf for tandem repeat finder output.
     * new scripts:
+
         * sequana_start_pipelines to initiate a new pipeline from the cookiecutter recipes
         * sequana_gtf_fixer to help fixing GTF issues
     * new module *gff3* to read GFF files
     * Module can now encapsulate logos
     * Module version implemented
-
 * BUG:
 
     * snpeff_add_locus_tag: if contig name and length in GFF header not in the
@@ -65,10 +72,10 @@ and bug fixes made.
     * multiqc section of sequana_coverage: duplicate chrom names across multiple
       samples were shown as a single entry in the report. 
     * draft version of multiqc for sequna_quality_control now available
-
 * MAJOR CHANGES/FIXES:
-    * The main script 'sequana' is redundant with the new framework of
-      pipelines. IT has been removed in this version
+
+   * The main script 'sequana' is redundant with the new framework of
+     pipelines. It has been removed in this version
    * sequana_coverage now handles low coverage correctly in the 
      HTML reports.Fix the ylimits of the coverage plot for low coverage.
    * cutadapt rules was failing due to a stricter optional/positional argument
@@ -81,9 +88,10 @@ and bug fixes made.
      bamCoverage rule. Fixed incorrect Snakemake syntax in the fastq_screen
      rule and RNAseQC. Fixed another deprecated rule: fastq_screen_report.
    * New pipeline_common module to be used by all pipelines 
-
 * MINOR CHANGES/FIXES
-    * snaketools: 
+
+    * snaketools:
+
           * pipelines discovery updated in ModuleFinderSingleton. Finally
             fixed the lost of comments in the config when saved. 
           * Removed onweb() method. 
@@ -185,7 +193,8 @@ and bug fixes made.
       and AF1 fields
     * rename PacbioBAM into PacbioSubreads
 
-
+0.6.X
+-----
 0.6.5
 ~~~~~~~~~~~
 
@@ -312,6 +321,8 @@ and bug fixes made.
    * Fix reag_tag filtering https://github.com/sequana/sequana/issues/480 
    * Set singularity hub (v2.4)
 
+Prior 0.5.X
+-----------
 0.5.2
 ~~~~~~~~~~~~~~~
 
