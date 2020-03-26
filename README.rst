@@ -22,13 +22,15 @@ SEQUANA
    :target: http://joss.theoj.org/papers/10.21105/joss.00352
    :alt: JOSS (journal of open source software) DOI
 
-.. image:: https://badges.gitter.im/sequana/sequana.svg
-    :target: https://gitter.im/sequana/sequana?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge
 
-:Python version: 3.6, 3.7.3 (below for now)
-:Online documentation: `On readthedocs <http://sequana.readthedocs.org/>`_
-:Issues and bug reports: `On github <https://github.com/sequana/sequana/issues>`_
-:How to cite: For Sequana in general including the pipelines, please use 
+:Python version: 
+    3.6, 3.7.3 (below for now)
+:Online documentation:
+    `On readthedocs <http://sequana.readthedocs.org/>`_
+:Issues and bug reports:
+    `On github <https://github.com/sequana/sequana/issues>`_
+:How to cite: 
+    For Sequana in general including the pipelines, please use 
     the `JOSS DOI (10.21105/joss.00352) <http://www.doi2bib.org/#/doi/10.21105/joss.00352>`_
 
     For the **genome coverage** tool (sequana_coverage):  Dimitri Desvillechabrol,
