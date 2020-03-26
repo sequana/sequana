@@ -54,11 +54,13 @@ print(df)
 # that is those that cover at least 1% of the total reads. Others
 # are put together and labelled "others"
 #
-# A more interactive plot can be obtained using Krona:
+# A more interactive plot can be obtained using Krona if installed:
 from sequana import KrakenResults, sequana_data
 test_file = sequana_data("test_kraken.out", "testing")
-k = KrakenResults(test_file)
-k.to_js(onweb=False)  # The output filame is krona.html by default
+import easydev
+if easydev.cmd_exists("ktImportText"):
+    k = KrakenResults(test_file)
+    k.to_js(onweb=False)  # The output filame is krona.html by default
 
 #######################################################################
 # An example is available in  `Krona example <../_static/krona.html>`_
