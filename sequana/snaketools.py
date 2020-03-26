@@ -361,8 +361,8 @@ class Module(object):
         self._mf.isvalid(name)
 
         if name not in self._mf.names:
-            raise ValueError("""Sequana error: unknown rule or pipeline. Check
-the source code at:
+            raise ValueError("""Sequana error: unknown rule or pipeline {}. 
+Check the source code at:
 
     https://github.com/sequana/sequana/tree/develop/sequana/pipelines and
     https://github.com/sequana/sequana/tree/develop/sequana/rules
@@ -370,7 +370,7 @@ the source code at:
 or open a Python shell and type::
 
     import sequana
-    sequana.modules.keys()""")
+    sequana.modules.keys()""".format(name))
         else:
             self._path = self._mf._paths[name]
 
