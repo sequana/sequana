@@ -14,4 +14,4 @@ python:
           path: .
 
 conda:
-    environment: requirements_rtd.txt
+    environment: environment_rtd.yml
