@@ -14,12 +14,12 @@ dataset  = sequana_data("test_pacbio_subreads.bam")
 
 #############################################
 # Create a :class:`sequana.pacbio.BAMPacbio` instance
-from sequana.pacbio import BAMPacbio
-qc = BAMPacbio(dataset)
+from sequana.pacbio import PacbioSubreads
+qc = PacbioSubreads(dataset)
 
 #########################################
 # plot the histogram of read length
-qc.hist_len()
+qc.hist_read_length()
 
 
 #################################################
