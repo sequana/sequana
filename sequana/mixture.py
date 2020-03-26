@@ -14,14 +14,18 @@ import numpy as np
 half_log_two_pi = 0.5*np.log(2*np.pi)
 
 
+__all__ = ["Gaussian", "GaussianMixture", "GaussianMixtureModel",
+            "GaussianMixtureFitting", "GMM"]
+
 class GaussianMixtureModel(object):
     """Gaussian Mixture Model
 
     .. plot::
 
         from sequana import mixture
-        m = mixture.GaussianMixtureModel()
-        m.pdf(1, params=[1, 0.5, 0.2, 1, 0.5, 0.8])
+        m = mixture.GaussianMixtureModel(k=2)
+        X = linspace(0,10,100)
+        plot(X, [m.pdf(x, params=[1, 0.5, 0.2, 4, 0.5, 0.8]) for x in X])
 
     """
     def __init__(self, k=2):
@@ -155,9 +159,10 @@ class GaussianMixtureFitting(Fitting):
         :width: 80%
         :include-source:
 
-        from sequana.mixture import GaussianMixture, GaussianMixtureFitting
-        m = GaussianMixture(mu=[-1,1], sigma=[0.5,0.5], mixture=[0.2,0.8])
-        mf = GaussianMixtureFitting(m.data)
+        from sequana.mixture import GaussianMixtureModel, GaussianMixtureFitting
+        from pylab import normal 
+        data = [normal(0,1) for x in range(700)] + [normal(3,1) for x in range(300)]
+        mf = GaussianMixtureFitting(data)
         mf.estimate(k=2)
         mf.plot()
 
