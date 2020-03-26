@@ -13,7 +13,7 @@ python:
         - method: pip
           path: .
         - method: pip
-          path: sequana_quality_control
+          path: requirements_pipelines.txt
 
 # it is either conda or python not both....
 # https://docs.readthedocs.io/en/stable/config-file/v2.html

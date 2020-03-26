@@ -1,0 +1,6 @@
+sequana_quality_control
+sequana_fastqc
+sequana_rnaseq
+sequana_variant_calling
+sequana_fastqc
+sequana_demultiplex
