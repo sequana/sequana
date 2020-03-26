@@ -10,5 +10,6 @@ python:
     install:
         - requirements: requirements.txt
         - requirements: requirements_dev.txt
+        - requirements: requirements_rtd.txt
         - method: pip
           path: .
