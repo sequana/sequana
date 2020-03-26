@@ -409,6 +409,10 @@ or open a Python shell and type::
         if "/" in self.name:
             return self.name.split("/")[1]
         else:
+            if self.is_pipeline():
+                import pkg_resources
+                ver = pkg_resources.require("sequana_{}".format(self.name))[0].version
+                return ver
             return None
     version = property(_get_version, doc="Get version")
 
