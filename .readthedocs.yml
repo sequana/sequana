@@ -12,6 +12,10 @@ python:
         - requirements: requirements_dev.txt
         - method: pip
           path: .
+        - method: pip
+          path: sequana_quality_control
 
-conda:
-    environment: environment_rtd.yml
+# it is either conda or python not both....
+# https://docs.readthedocs.io/en/stable/config-file/v2.html
+#conda:
+#    environment: environment_rtd.yml
