@@ -23,6 +23,7 @@ class GaussianMixtureModel(object):
     .. plot::
 
         from sequana import mixture
+        from pylab import plot, linspace
         m = mixture.GaussianMixtureModel(k=2)
         X = linspace(0,10,100)
         plot(X, [m.pdf(x, params=[1, 0.5, 0.2, 4, 0.5, 0.8]) for x in X])

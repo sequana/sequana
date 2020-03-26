@@ -283,13 +283,7 @@ class CutadaptOptions():
             help="""additional options understood by cutadapt""")
 
     def check_options(self, options):
-
         """
-        do: true
-      m: 20
-      mode: b
-      options: -O 6 --trim-n
-      quality: 30
         """
         design = options.cutadapt_design_file
         adapter_choice = options.cutadapt_adapter_choice
