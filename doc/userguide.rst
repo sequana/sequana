@@ -6,11 +6,14 @@ Overview
 **Sequana** provides standalone applications (e.g., **sequana_coverage**,
 **sequana_taxonomy**) and pipelines in the form of Snakefiles. Although the standalone
 applications are usually simpler, they may not have all features or parameters
-offered by the pipelines.
+offered by the pipelines. Since version 0.8.0, most pipelines have been moved to
+different repository with one repository per pipeline. This was done to make
+pipelines independe and the Sequana more modular and effective for deployment in
+production mode. 
 
-The :ref:`Tutorial`, :ref:`pipelines`, :ref:`Gallery` and :ref:`case_examples` 
-sections provide many examples on their usage. 
-
+The :ref:`Tutorial`, :ref:`pipelines`, :ref:`case_examples` 
+sections provide many examples on their usage. Check also the Gallery section
+for code snippets.
 
 This section will not describe all available standalones and pipelines.
 We will focus on one example (coverage) to show how one can use
@@ -18,8 +21,8 @@ the **Sequana** library, or standalone application, or pipeline to get
 information about the coverage of a set of mapped reads onto a reference.
 
 
-**Sequana** library
-========================
+**Sequana** is a Python library
+===============================
 
 Example 1 : running median on coverage
 ----------------------------------------
@@ -67,6 +70,11 @@ and finally plot the coverage together with confidence interval (3 sigma)::
 .. seealso:: notebook available in the `github repository
    <https://github.com/sequana/sequana/blob/master/notebooks/coverage.ipynb>`_
 
+
+As you can see, **Sequana** is a standard Python library where developers can
+select functions, classes, modules to help them design new tools and pipelines.
+
+
 Example2: read a fastq file
 ------------------------------
 
@@ -75,6 +83,7 @@ across all reads of a FastQ file.
 
 
 .. plot::
+    :include-source:
 
     from sequana import FastQC
     from sequana import sequana_data
@@ -92,8 +101,8 @@ across all reads of a FastQ file.
 
 Many more functionalities are available. The reference guide should help you.
 
-**Sequana** standalones
-=========================
+**Sequana** provides standalone applications
+============================================
 
 The Python example about the coverage is actually quite useful. We 
 therefore decided to provide a standalone
@@ -113,70 +122,119 @@ obtain the same figure as above.
 
 An additional feature is the report using  ``--show-html`` option.
 
-**Sequana** pipelines
-=======================
+.. _facilitator:
+
+**Sequana**, a pipeline construction facilitator
+==================================================
 
 In **Sequana**, in addition to the library and standalone applications, we also
-provide a set of pipelines (see :ref:`pipelines` section). The coverage tools
-described so far do not have a dedicated pipeline but is part of a more general
-pipeline called :ref:`pipeline_variant_calling`. Instead of describing in
-details that pipeline, let us explain the way pipelines can be created and run.
+provide a set of pipelines (see :ref:`pipelines` section). Originally, pipeline
+were provided with Sequana, inside the same source repository. Since version
+0.8.0, pipeline have their own repository. For instance, 
+:ref:`pipeline_variant_calling` is available on
+https://github.com/sequana/variant_calling.
+We will not describe all pipelines here below since new ones may appear now and
+then. Instead, let us explain the way pipelines can be designed and run.
 
-Manually
-------------
+Installation of a pipeline
+--------------------------
 
-Pipelines are made of a Snakefile (a Makefile using Python) and an associated
-config file. Pipelines can be downloaded from the **Sequana** 
-`pipeline directory <https://github.com/sequana/sequana/tree/master/sequana/pipelines>`_
-as well as the config file named **config.yaml**.
+With the new design implemented in v0.8.0, pipelines are independent Python
+packages posted on Pypi. You can now install a pipeline (e.g., variant calling)
+as follows in your virtual environment::
 
-Copy the pipeline (ending in .rules) and the configuration file in a local
-directory. The config file is a generic template file and some fields must be
-changed. For instance the beginning of the file looks like::
+    pip install sequana_variant_calling --upgrade
 
-    # list of your input file
-    samples:
-        file1: "%(file1)s"
-        file2: "%(file2)s"
+The --upgrade option is to make sure you install the newest version.
 
-For pipelines that takes FastQ files as inputs, the string **%(file1)s** must be 
-replaced by a valid filename. If you do not have a second file, remove the next
-line (file2). Other similar fields must be filled if required by the pipeline.
+To check if the installation is successful, just type::
 
-Then, a pipeline must be executed using the executable **snakemake**. If you
-choose the **variant_calling** pipeline, the file is executed as follows::
+    sequana_pipelines_variant_calling --help
 
-    snakemake -s variant_calling.rules
+Alias is most probably available (shorter version without _pipelines tag)::
 
-This will search for the **config.yaml** file locally. One good feature is that
-if you interrupt the pipeline (or if it fails), you can fix the problem and
-re-run the command above without executing the parts of the pipelines that were
-succesfully run. If you want to start from scratch, add ``--forceall`` option::
+    sequana_variant_calling --help
 
-    snakemake -s variant_calling.rules --forceall
+Usage
+-----
+
+A very simple and useful pipeline for this explanation is the
+**sequana_fastqc** pipeline. Install it as follows::
+
+    pip install sequana_fastqc
+
+and check the help message::
+
+    sequana_fastqc --help
+
+You will see 4 sections some of which are common to all **Sequana** pipelines.
+
+The generic section allows use to print the help with --help, to set the level
+of information printed to the screen (--level), the version (--version).
+Pipelines can be run locally or on a SLURM clusters. This can be set with the
+--run-mode option. Note, however, that this option is set automatically to
+slurm-mode if slurm commands are found (e.g. sbatch). 
+
+The *slurm* section can be used to set slurm options for Snakemake. If you do
+not know what it means, let it be the defaults values. Just note that memory
+usage is set to 4Gb by default and number of cores is limited to 4 per job.
+
+The *snakemake* section allows you to set to maximum number of jobs to be used,
+which is set to 4 (if run-mode is set to local) and 40 (if run-mode is set to
+slurm). 
+
+The --working-directory is set to the name of the pipeline and is the important
+parameter. It tells sequana where to store the pipeline files (e.g., snakemake,
+configuration files). You can change it to your will but if it exists already,
+the pipeline zill not be set up and you will need to use the --force option to
+overwrite existing files.
+
+The next section is about your input data. Most of the pipelines expect to find
+Illumina data with single or paired-end data sets. The directory where to find
+the data is defined by the --input-directory parameter. You can refine the
+search by providing an input pattern, which is set to `*fastq.gz` by default.
+Since, Illumina data may be paired, we have a mechanism to check and discovered
+paired data for each sample. By default, the paired data are differentiate
+thanks to a pattern _R1_ or _R2_ to be found in the filenames. The common
+pattern set with --input-readtag is set to _R[12]_ but can be easily changed.
+For instance if your files do not contain the R or if the _R1 is to be found at
+the end of the file, just change it accordingly.
+
+
+So, let us now perform the fastqc of a bunch of samples. You could type::
+
+    sequana_fastqc --input-directory my_data_directory --working-directory test1
+
+This will copy the snakefile, the configuration files and useful files to run
+the analysis. Follow the instructions that is::
+
+    cd test1
+
+In this directory, you can find  The configuration file called
+**config.yaml**. This pipeline is very simple but you can see the parameters related to
+your input data::
+
+    input_directory: /home/login_example/data_example/my_data_directory
+    input_readtag: _R[12]_
+    input_pattern: '*fastq.gz'
+
+So you can edit this file to correct it or change other parameters. If you are
+happy with those choices, it is now time to run the pipeline. If you know
+snakemake, you can just use it. For example::
+
+    snakemake -s fastqc.rules
+
+or just type::
+
+    sh fastq.sh
+
+Wait and see. Once done. If every went well, you can keep the configuration
+files and pipeline-related files, or delete them using::
+
+    make clean
 
 .. seealso:: :ref:`pipelines` section for more information.
 
-Using **sequana** standalone
-------------------------------
-
-An easier way to initialise a pipeline, is to use **sequana** executable. For
-instance for the variant calling::
-
-    sequana --pipeline variant_calling \
-        --input-directory data/ \
-        --input-readtag _[12].fastq \
-        --extention fastq.gz \
-        --reference reference.fasta \
-        --working-dir analysis
-
-    cd analysis
-    snakemake -s variant_calling.rules --stats stats.txt
-
-This will automatically download the pipeline, config file and update the latter
-as much as possible.
-
-.. seealso:: :ref:`applications` section
 
 
 Using **Sequanix** standalone
@@ -184,7 +242,12 @@ Using **Sequanix** standalone
 
 An even easier way is to use our graphical interface named **Sequanix**. A
 snapshot can be found in the :ref:`sequanix` section and a tutorial in
-:ref:`tutorial_sequanix`.
+:ref:`sequanix_tutorial`.
+
+Note, however, that the Sequanix interface is slightly different. The content of
+the working directory may differ slightly for the time being. The advantage of
+using Sequanix is that complex configuration pipeline can be tuned easily
+through its graphical interface.
 
 
 

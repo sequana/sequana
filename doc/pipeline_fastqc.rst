@@ -1,8 +1,8 @@
 .. _pipeline_fastqc:
 
-FastQC
+fastqc
 =================
 
-.. include:: ../sequana/pipelines/fastqc/README.rst
+.. sequana_pipeline:: fastqc
 
 

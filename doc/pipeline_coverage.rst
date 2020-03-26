@@ -1,8 +1,8 @@
 .. _pipeline_coverage:
 
-Coverage
-=================
+coverage
+---------
 
-.. include:: ../sequana/pipelines/coverage/README.rst
+.. sequana_pipeline:: coverage
 
 

@@ -27,15 +27,12 @@ Sequana documentation
     <a href="http://joss.theoj.org/papers/10.21105/joss.00352">
     <img src="http://joss.theoj.org/papers/10.21105/joss.00352/status.svg"></a>
 
-    <a href="https://gitter.im/sequana/sequana?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge">
-    <img src="https://badges.gitter.im/sequana/sequana.svg">
-
 
     </p>
     </div>
 
 
-:Python version: Python 3.5, 3.6 although most modules are Python2.7 compatible.
+:Python version: Python 3.6, 3.7.3 (en below) although most modules are Python2.7 compatible.
 :Source: See  `http://github.com/sequana/sequana <https://github.com/sequana/sequana/>`_.
 :Issues: Please fill a report on `github <https://github.com/sequana/sequana/issues>`_
 :How to cite: For Sequana in general including the pipelines, please use

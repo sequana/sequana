@@ -6,7 +6,6 @@ References
 
 .. contents::
 
-
 Adapters
 ---------------
 .. automodule:: sequana.adapters
@@ -20,12 +19,14 @@ Assembly related
     :members:
     :undoc-members:
 
-CIGAR tools
----------------
+.. automodule:: sequana.busco
+    :members:
+    :undoc-members:
 
-.. automodule:: sequana.cigar
-   :members:
-   :undoc-members:
+.. automodule:: sequana.contigs
+    :members:
+    :undoc-members:
+
 
 BAMTOOLS related
 --------------------
@@ -33,11 +34,18 @@ BAMTOOLS related
     :members:
     :undoc-members:
 
-BEDTOOLS related (coverage)
+Coverage (bedtools module)
 ---------------------------
 .. automodule:: sequana.bedtools
     :members:
     :undoc-members:
+
+CIGAR tools
+---------------
+
+.. automodule:: sequana.cigar
+   :members:
+   :undoc-members:
 
 Coverage (theoretical)
 --------------------------
@@ -55,6 +63,10 @@ Access to online database (e.g. ENA)
 Experimental design
 ----------------------------
 .. automodule:: sequana.expdesign
+    :members:
+    :undoc-members:
+
+.. automodule:: sequana.iem
     :members:
     :undoc-members:
 
@@ -82,15 +94,6 @@ Kmer module
 .. automodule:: sequana.kmer
     :members:
     :undoc-members:
-
-ITOL module
------------
-
-.. automodule:: sequana.itol
-    :members: 
-    :undoc-members:
-
-
 
 IOTools module
 ----------------
@@ -137,6 +140,13 @@ Snakemake module
     :members:
     :undoc-members:
 
+pipeline related module
+-----------------------
+.. automodule:: sequana.pipelines_common
+    :members:
+    :undoc-members:
+
+
 Snpeff module
 -----------------
 .. automodule:: sequana.snpeff
@@ -149,13 +159,28 @@ General tools
     :members:
     :undoc-members:
 
+.. automodule:: sequana.tools
+    :members:
+    :undoc-members:
+
+Statistical tools
+------------------
 .. automodule:: sequana.stats
     :members:
     :undoc-members:
 
-.. automodule:: sequana.tools
+.. automodule:: sequana.criteria
     :members:
     :undoc-members:
+
+.. automodule:: sequana.mixture
+    :members:
+    :undoc-members:
+
+.. automodule:: sequana.mh
+    :members:
+    :undoc-members:
+
 
 VCF module
 ------------
@@ -176,21 +201,44 @@ Module Reports
     :members:
     :undoc-members:
 
+Wrapper to other tools
+-------------------------
 
-Others
+.. automodule:: sequana.itol
+    :members: 
+    :undoc-members:
+
+.. automodule:: sequana.cnv
+    :members: 
+    :undoc-members:
+
+.. automodule:: sequana.canu_scanner
+    :members: 
+    :undoc-members:
+
+.. automodule:: sequana.demultiplex
+    :members: 
+    :undoc-members:
+
+.. automodule:: sequana.trf
+    :members: 
+    :undoc-members:
+
+
+Misc
 ---------
 
-data related
-~~~~~~~~~~~~~~~~
 .. automodule:: sequana.datatools
     :members:
     :undoc-members:
 
 .. automodule:: sequana.resources.data
+    :members:
+    :undoc-members:
 
-
-report related
-~~~~~~~~~~~~~~~~~~
+.. automodule:: sequana.sniffer
+    :members:
+    :undoc-members:
 
 .. automodule:: sequana.utils.datatables_js
     :members:
@@ -219,4 +267,13 @@ report related
     .. automodule:: sequana.scripts.taxonomy
         :members:
         :undoc-members:
-    
+
+.. not yet included in the doc:: 
+    ../sequana/gff3.py
+    ../sequana/isoseq.py
+    ../sequana/iuapc.py
+    ../sequana/jsontool.py
+    ../sequana/pacbio_amplicon.py
+    ../sequana/summary.py
+    ../sequana/vcf_filter.py
+    ../sequana/vcftools.py

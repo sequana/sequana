@@ -38,7 +38,7 @@ Quality pipeline
 Assuming DATA (fastq.gz files) are in <DIR1> directory, type this command to create the
 **quality** pipeline and config file automatically::
 
-    sequana --pipeline quality_control --input-dir <DIR1> --working-directory trimming
+    sequana_quality_control --input-directory <DIR1> --working-directory trimming
 
 Then go to the project and execute the pipeline::
 
@@ -82,7 +82,7 @@ Variant analysis
 The output of the **quality** pipeline will be the input of the **variant calling**
 pipeline::
 
-    sequana --pipeline variant_calling --input-dir <DIR2> --project variant_trimming
+    sequana_variant_calling --input-directory <DIR2> --working-directory variant_trimming
 
 
 Here you need to make sure that the **config.yaml** configuration file

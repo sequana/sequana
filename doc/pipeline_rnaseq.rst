@@ -1,8 +1,8 @@
 .. _pipeline_rnaseq:
 
-RNA-seq
+rnaseq
 =================
 
-.. include:: ../sequana/pipelines/rnaseq/README.rst
+.. sequana_pipeline:: rnaseq
 
 

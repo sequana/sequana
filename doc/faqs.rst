@@ -147,8 +147,26 @@ type::
 
 
 
-qt
+
+qt and pyqt
 ~~~~~~~~~~~~~~~~~~
+
+Qt Version
+^^^^^^^^^^
+
+With PyQt 5.12.3 and python3.7, we got lots of errors::
+
+    SystemError: <built-in function connectSlotsByName> returned a result with an error set
+
+This seems to be a PyQt bug according to several github projets based on pyqt.
+It may be fixed a version above. Dowgrading e.g. to pyqt 5.9.2 does not solve
+the problem.
+
+
+
+
+Qt compatibility across platform
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 ::
 
     from PyQt5.QtWebKitWidgets import QWebView

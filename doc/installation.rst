@@ -14,20 +14,57 @@ standalone, we also provide **Singularity** containers. This is a great
 solution for reproducibility as well. Containers are
 available on https://singularity-hub.org/collections/114/. 
 
-Latest recommended installation for developers
-==============================================
+.. topic:: Design choice
 
-::
+    Since version 0.8.0, we decided to move the pipelines outside of the main 
+    sequana library. This choice was made to face the increase of pipelines
+    available in the Sequana project. Indeed, each pipeline comes with its own
+    dependencies, which are not neccesseraly Python. The full installation of
+    Sequana started to be cumbersome even for experienced users. We dealt with this
+    issue using bioconda. Yet, even with such solutions it started to be
+    difficult to manage easy installation. So, as usual, divide and conquer:
+    each pipeline has now its own life cycle outside of Sequana. For example,
+    the variant calling pipeline is hosted on
+    https://github.com/sequana/variant_calling. This way, you can install
+    Sequana quite easily using pip, or bioconda, or virtual environment as shown
+    here below. 
 
-    conda install -c anaconda qt
-    conda install -c anaconda pyqt=5.6.0
-    python setup.py install
 
+Latest recommended installation method
+======================================
 
-Overview of installation methods
-====================================
+Sequana is maintained under Python 3.6 (March 2020) and is known to work under
+Python 3.7.3 and **under**, not beyond due to PyQt library not yet available
+(bug-free) beyond Python 3.7.3.
 
-We support 3 types of installations:
+Since lots of dependencies have been dropped in version 0.8.0, you could simply
+use pip to install Sequana. Yet, we recommend you to create a virtual
+environment so as to not interfer with your own environment. This can be achieve
+with conda::
+
+    conda create --name sequana_env python=3.6
+    source activate sequana_env
+    pip install sequana==0.8.0
+    pip install packaging   # for v0.8.0 only, will be fixed in later versions
+
+This will install the dependencies such as Pandas, Numpy, etc. It will take about
+5-10 minutes to install this version.
+
+.. note:: If you want to use Sequanix, which rely on PyQt5, please install PyQt5 using conda::
+
+        conda install -c anaconda qt pyqt>5
+
+    Using pip may lead to compatibility issues with your underlying Qt library,
+    which must be available to install PyQt
+
+You can now install a specific pipeline as follows::
+
+    pip install sequana_rnaseq
+
+The dependencies of this pipeline must be dealt with by the developer. 
+
+Other solutions (not always up-to-date)
+========================================
 
 #. Singularity (tested with version 2.4.2; see below for installation) . Strictly speaking, there is no compilation. This method is for testing and production. It downloads an image / container that is ready-to-use (here the latest available release)::
 
@@ -53,13 +90,14 @@ These three methods are detailled hereafter.
 .. _installation_conda:
 
 
-From bioconda (Recommended )
-===================================
+From bioconda 
+==============
 
-If you have not installed **Sequana**, be aware that it relies on many dependencies
-that needs to be compiled (i.e., it is time consumming and requires proper C compilator).
+If you have not installed **Sequana**, be aware that many dependencies need to 
+be compiled (i.e., time consumming and requires proper C compilator).
 Besides, many pipelines rely on third-party software such as BWA or samtools that are not
-Python libraries. Yet, using **conda**, this process is simplified.
+Python libraries. We therefore recommend to use **conda** that provides pre-compiled 
+software for you.
 
 Install conda executable
 ----------------------------
@@ -110,7 +148,7 @@ later be removed without affecting your system or conda installation. A
 **conda** environment is nothing else than a directory and can be created as
 follows::
 
-    conda create --name sequana_env python=3.5
+    conda create --name sequana_env python=3.6
 
 Then, since you may have several environments, you must activate the **sequana**
 environment itself (each time you open a new shell)::
@@ -125,17 +163,6 @@ Sequana is on `bioconda <https://bioconda.github.io/>`_. You can follow these `i
 
     conda install sequana
 
-
-This does not provide all dependencies needed by the different pipelines. So,
-you may need to install extra packages as listed in this requirement file that
-can be used with conda::
-
-    conda install --file https://raw.githubusercontent.com/sequana/sequana/master/requirements_pipelines.txt
-
-Additional tools may need to be installed. Thos large packages are stored in
-another requirements to keep the main distribution lighter::
-
-    conda install --file https://raw.githubusercontent.com/sequana/sequana/master/requirements_pipelines_extra.txt
 
 
 From Pypi website (released source code)
@@ -162,32 +189,29 @@ can install **sequana** from source::
     python setup.py install
 
 This should install most of the required dependencies. However, you may need to
-install more packages depending on the pipeline used. See hereafter.
+install more packages depending on the pipeline used (related to Qt for
+instance).
 
 .. _singularity_details:
 
 Singularity
-================
+============
+.. warning:: this is now up-to-date. Come back later or contribute to this
+   section.
 
 We provide Singularity images on https://singularity-hub.org/collections/114/ .
 They contain Sequana standalones and some of the pipelines dependencies
 as well as Sequanix. Note, however, that Sequanix relies on PyQt (graphical
 environment) and would work for Linux users only for the time being. The main
 reason being that under Mac and windows a virtualbox is used by Singularity
-preventing a X connection. This should be solved in the near future.
+preventing a X connection. 
 
 First, install singularity (http://singularity.lbl.gov/). You must use at least
-version 2.4. We tested this recipe with version 2.4.2 (Dec 2017)::
-
-    VERSION=2.4.2
-    wget https://github.com/singularityware/singularity/releases/download/$VERSION/singularity-$VERSION.tar.gz
-    tar xvf singularity-$VERSION.tar.gz
-    cd singularity-$VERSION
-    ./configure --prefix=/usr/local
-    make
-    sudo make install
-
-Second, download a Sequana image. For instance, for the latest master version::
+version 3.5. We suggest users to look at the l=singularity installation page
+itself to install the tool.
+ 
+Once done, you can either build an image yourself or download a Sequana image. 
+For instance, for the latest master version::
 
     singularity pull --name sequana.img shub://sequana/sequana:latest
 
@@ -214,53 +238,10 @@ Would you miss a dependency, just enter into the singularity container and insta
 Then, inside the container, install or fix the problem and type exit to save the
 container.
 
-.. note:: method tested with success on Fedora 23, ubuntu and Centos 6.
-.. seealso:: Notes for developers about :ref:`dev_singularity` especially to get
-   specific versions.
-
-
 .. note:: you may need to install squashfs-tools (e.g. yum install squashfs-tools )
 
-Notes about dependencies
-===========================
 
-When installing **Sequana** with conda and from the source, it should install
-all the Python dependencies and you should be ready to go to use the Sequana
-Python library.
-
-However, note that most of the pipelines rely on extra dependencies that are not
-necesseraly Python-based. For instance **bwa** is in C, others may be in R or
-perl. 
-
-The list of requirements is available in the source code::
-
-    https://raw.githubusercontent.com/sequana/sequana/master/requirements_pipelines.txt
-
-and conda may be used to install those dependencies automatically::
-
-    conda install --file https://raw.githubusercontent.com/sequana/sequana/master/requirements_pipelines.txt
-
-Otherwise you need to proceed to the installation of those dependencies by
-yourself.
-
-.. note:: atropos is an alternative to cutadapt with additional options but same
-   type of functionalties and arguments. We use version 1.0.23 and above though.
-
-
-.. note:: the denovo_assembly pipelines uses Quast tool, which we ported to
-    python 3.5 and was pulled on Quast official github page. This is not
-    yet in bioconda but one can get it from the quast github (sept 2016). This is
-    to be installed manually by users (due to licensing restrictions)
-
-.. note:: For GATK (variant caller), please go to
-   https://software.broadinstitute.org/gatk/download/auth?package=GATK and
-   download the file GenomeAnalysisTK-3.7.tar.bz2 ; then type::
-
-       gatk-register GenomeAnalysisTK-3.7.tar.bz2
-
-
-
-.. include:: ../docker/README.rst
+.. .. include:: ../docker/README.rst
 
 
 

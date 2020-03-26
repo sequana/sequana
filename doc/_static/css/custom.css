@@ -1,3 +1,30 @@
+p{
+text-align: justify;
+}
+
+
+div.topic {
+    border: 1px solid #ccc;
+    padding: 10px 10px 0 10px;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    margin-left: 10px;
+    margin-right: 10px;
+    font-size: 0.9em;
+    background: #ffd0c6; /*# none repeat scroll 0 0;*/
+    text-align: justify;
+}
+
+p.topic-title {
+    font-size: 1.1em;
+    font-weight: bold;
+    margin-top: -10px;
+    margin-right: -10px;
+    margin-left: -10px;
+    padding: 0px 0 0px 10px;
+    border: 1px solid #ccc;
+    background: #ffafa1 none repeat scroll 0 0;
+}
 
 
 

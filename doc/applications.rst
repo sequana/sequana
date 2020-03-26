@@ -42,28 +42,6 @@ Here is a snapshot.
 .. seealso:: see :ref:`sequanix_tutorial` for details
 
 
-.. _sequana_app:
-
-sequana
----------
-
-:Deprecated: will be removed and replaced by Sequanix
-:Overview: Creates project(s) to run a **Sequana** pipeline(s)
-
-The **sequana** executable can be used to create pipelines (and associated
-config file). For example::
-
-    sequana --pipeline quality --file1 R1.fastq.gz --file2 R2.fastq.gz --project TEST
-
-will create a directory called TEST with a few files such as *quality.rules*,
-*config.yaml*, a *runme.sh* and a *README* file.
-
-Valid pipelines can be found using::
-
-    sequana --show-pipelines
-
-There are many more options and documentation. Please use the ``--help``
-option for more information.
 
 .. _standalone_sequana_coverage:
 
@@ -137,7 +115,7 @@ Example::
 
     fastq_count --input test.fastq.gz
 
-fastq related: fastq_head 
+fastq related: fastq_head
 -----------------------------
 
 :Description: Extract head of a fastq files (zipped or not)
@@ -155,4 +133,3 @@ sequana_compressor
     and using multithreaded and multicore tools. 
 :Status: Production
 
-Please see :ref:`pipeline_compressor` for details.

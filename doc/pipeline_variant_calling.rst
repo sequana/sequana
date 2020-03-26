@@ -1,6 +1,6 @@
 .. _pipeline_variant_calling:
 
-Variant Calling
+variant_calling
 =================
 
-.. include:: ../sequana/pipelines/variant_calling/README.rst
+.. sequana_pipeline:: variant_calling

@@ -3,7 +3,19 @@
 Tutorial
 ==========
 
-The following example will show how to run the quality control on a pair of
+Here below you can find tutorials on how to use some of the sequana pipelines
+and standalones. This gives you a flavor of what can be achieved using
+**Sequana**. Dedicated sections on pipelines and applications are found in other
+pages and can be a complement to this quick overview. 
+
+.. contents::
+   :depth: 2
+
+Quality Control pipeline
+--------------------------
+
+The following example will show how to run the quality control pipeline
+(https://github.com/sequana/quality_control) on a pair of
 FastQ files. The data comes from a sequencing (using HiSeq technology) of a
 Measles virus. For testing purposes, you can download :download:`R1
 <../sequana/resources/data/Hm2_GTGAAA_L005_R1_001.fastq.gz>` and
@@ -13,28 +25,33 @@ files that contain only 1500 reads. Copy them in a local directory.
 Those files are from an HiSeq2500 run. The adapters are PCRFree. There is
 only one sample for which the index is GTGAAA. You should have 10% of adapters.
 
+Make sure you have installed the pipeline::
 
-Quality pipeline
----------------------
+    pip install sequana_quality_control --upgrade
 
-**Sequana** comes with standalone applications and pipelines in the form of
-Snakefile (`snakemake <https://bitbucket.org/snakemake/snakemake/wiki/Home>`_)
-
-The following example will show how to initialise and run the quality control
-pipeline
-on a pair of FastQ files.
-The data comes from a sequencing (using HiSeq technology) of a
-Measles virus. For testing purposes, you can download :download:`R1
-<../sequana/resources/data/Hm2_GTGAAA_L005_R1_001.fastq.gz>` and
-:download:`R2 <../sequana/resources/data/Hm2_GTGAAA_L005_R2_001.fastq.gz>`)
-files that contain only 1500 reads. Copy them in a local directory.
+This example show hows to initialise and run the quality control
+pipeline on a pair of FastQ files. Copy the two data files (link above) into the
+local directory where you will initiate the pipeline.
 
 First, run the sequana standalone application to initialise the pipeline
 **quality_control**::
 
-    sequana --pipeline quality_control --working-directory TEST --adapters PCRFree
+    sequana_quality_control  --cutadapt-adapter-choice TruSeq
 
-This command downloads the required configuration file(s) in particular
+Since your data is in the current directory, no need to provide the
+--input-directory argument for now since its default value is *.*. 
+
+This command fill the required configuration file(s) and copy it along the
+pipeline itself inside the default working directory (quality_control)
+
+The pipeline does 3 things:
+
+1. remove the Phix if present
+2. apply cutadapt to trim the bases with quality below 30 and removes adapters 
+   (here TruSeq)
+3. taxonomy if Kraken databases are provided.
+
+in particular
 the config file and the pipeline itself. This example should work out of
 the box but you may want to look at the
 configuration file **config.yaml**. For instance, you may want to change the
@@ -44,26 +61,28 @@ change the adapter_removal section to your needs (cutadapt parameters, in
 particular the forward and reverse complement list of adapters; None by
 default).
 
-By default, the output directory is called **analysis** and can be overwritten
+By default, the output directory is called **quality_control** and can be overwritten
 with the ``--working-directory`` parameter. Then, run the pipeline and wait for
 completion.::
 
-    cd TEST
+    cd quality_control
     snakemake -s quality_control.rules --stats stats.txt -p -j 4 --forceall
 
 The -p option shows the commands, -j 4 means use 4 threads when possible.
 Alternatively, there is also a **runme.sh** script.
 
+.. note:: you can also use the shell script **sh quality_control.sh** instead of
+   the snakemake command.
+
 You should now have a directory with a HTML report corresponding to the sample::
 
-    open Hm2_GTGAAA_L005/report_qc_Hm2_GTGAAA_L005/summary.html
+    open index.html
 
 
-See :ref:`quick_start`
 
 
-Taxonomy
--------------------------------
+Taxonomy (standalone)
+----------------------
 
 To perform a quick taxonomy of your reads, you can use :ref:`standalone_sequana_taxonomy`
 either from Python or as a standalone.
@@ -80,21 +99,25 @@ FASTA files mixing measles viruses and others viruses)::
     kd.download("toydb")
     database_path = sequana_config_path + "/kraken_toydb"
 
-Then, you may use a Sequana pipeline (see :ref:`pipeline_taxon` and
- :mod:`sequana.kraken`) or this standalone application::
+Then, you may use the following code to perform the analysis (using :mod:`sequana.kraken`)::
+
+    from sequana import KrakenPipeline
+    kp = KrakenPipeline(["R1.fastq.gz", "R2.fastq.gz"], database="~/.config/sequana/kraken_toydb")
+    kp.run()
+
+Alternatively, you can use the standalone application::
 
     sequana_taxonomy  --file1 Test_R1.cutadapt.fastq.gz
         --file2 Test_R2.cutadapt.fastq.gz --database  <database_path>
 
-where <database_path> must be replaced with the proper path.
 
 
-Open the local HTML file krona.html. An example is available
+Open the local HTML file taxonomy/kraken.html. An example is available
 in  `Krona example <_static/krona.html>`_
 
 
-Variant calling
--------------------
+Variant calling pipeline
+--------------------------
 
 The following example will show how to initialise and run the variant calling
 pipeline on a pair of FastQ files.
@@ -106,26 +129,19 @@ files that contain only 1500 reads. Copy them in a local directory.
 Note that this does the variant calling + snpEff + coverage.
 See more information in the :ref:`pipeline_variant_calling` section.
 
+Make sure you have installed the pipeline::
 
+    pip install sequana_variant_calling --upgrade
 
-Initialise the pipeline
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-
-Call **sequana** standalone as follows::
-
-    sequana --pipeline variant_calling --input-directory . --working-directory TUTORIAL
-
-Or use Sequanix. 
-
-Go to the project directory
-::
-
-    cd TUTORIAL
-
+The variant calling requires input files. Since you want to map your reads onto
+a reference, you must have a reference. Besides, you may want to annotate your
+results with a specific annotation file. So, let us download those files first.
 
 Get the genbank reference
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+You can use `BioServices <https://bioservices.readthedocs.io/en/master/>`_ to
+download those files.
 
 
 Assuming the reference is **K01711.1** (Measles virus), we first need to fetch
@@ -148,49 +164,19 @@ We will also get the FASTA from ENA::
         fout.write(data.decode())
 
 
-New in v0.10
-~~~~~~~~~~~~~~~~
-
 Assuming the genbank and reference have the same name, you can simply
 type::
 
     from sequana.snpeff import download_fasta_and_genbank
     download_fasta_and_genbank("K01711", "measles")
 
-Get a snpEff config file and update it
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Then you need to initialise a config file for snpEff tool::
-
-    from sequana import snpeff
-    v = snpeff.SnpEff("measles.gbk")
-
-Update the snpeff config file
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Edit the config file **config.yaml** and add the filename *measles.gbk* in the
-snpEff section::
-
-    # snpEff parameter
-    snpeff:
-        do: yes
-        reference: "measles.gbk"
-
-and bwa_ref section::
-
-    # Bwa parameter for reference mapping
-    bwa_mem_ref:
-      reference: "measles.fa"
-
-.. warning:: In the configuration file, in the mark_duplicates section,
-    some output files are huge and requires temporary directory on cluster.
+.. Get a snpEff config file and update it
+   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   Then you need to initialise a config file for snpEff tool::
+       from sequana import snpeff
+       v = snpeff.SnpEff("measles.gbk")
 
 
-.. warning:: in the configuration file -- coverage section -- note that for short genomes, 
-    you may need to decrease the window size.
-
-.. warning:: the mark_duplicates may be changed in the close future to use
-   another tool. 
 
 
 Run the pipeline
@@ -199,11 +185,41 @@ Run the pipeline
 
 ::
 
-    snakemake -s variant_calling.rules --stats stats.txt -p -j 4 --forceall
+    sequana_variant_calling --input-directory . --reference measles.fa --annotation measles.gbk 
+    cd variant_calling
+    sh variant_calling.sh
+
+Wait and see. If the run is succesful, you can just type ::
+
+    make clean
+
+to remove some temporary files. Finally, open the file **index.html** and
+explore summary HTML report pages (multiqc page). Then, you can go to individual
+HTML report page for each sample. The individual report page are in
+**report_SAMPLENAME/summary.html**.
+
+About the configuration file
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+We strongly recommend to look at the configuration file **config.yaml** and to
+check or change the parameters according to your needs. In principle, the
+reference and annotation file have been set up for you when initiating the
+pipeline. 
+
+For example, you should see those lines at the top of the config file::
+
+    annotation_file: measles.gbk
+    reference_file: measles.fa
+
+.. warning:: In the configuration file, in the mark_duplicates section,
+    some output files are huge and requires temporary directory on cluster.
+
+.. warning:: in the configuration file (coverage section), 
+    you may need to decrease the window size for short genomes.
 
 
 De novo
--------------
+-------
 
 The denovo_assembly pipeline can be initialised in the same way::
 
@@ -238,20 +254,18 @@ Initialise the pipeline
 
 Call **sequana** standalone as follows::
 
-    sequana --pipeline rnaseq --input-directory . --working-directory EXAMPLE
+    sequana_rnaseq --working-directory EXAMPLE
         --adapter-fwd GATCGGAAGAGCACACGTCTGAACTCCAGTCA --adapter-rev GTGACTGGAGTTCAGACGTGTGCTCTTCCGATC
 
 This command download the pipeline and its configuration file. The configuration
 file is prefilled with adapter information and input data files found in the
 input directory provided. You can change the configuration afterwards.
 
-An alternative is to use :ref:`sequanix`.
-
-
-Go to the project directory
+Go to the project directory and execute the script
 ::
 
     cd EXAMPLE
+    sh rnaseq.sh
 
 
 Get the fasta and GFF reference
@@ -297,20 +311,8 @@ Edit the config file **config.yaml** and fill the genome section::
    and add the config file in the tool section.
 
 
-Finally, also edit the **multi_config.yaml** file and replace::
 
-    custom_logo: "Institut_Pasteur.png"
-
-with yours or as follows (empty, not an empty string like "" ) ::
-
-    custom_logo:
-
-.. note:: there are other places with hard-coded path but the corresponding
-   sections are not used by default. If you decide to use them (e.g.
-    fastq_screen), you will need to edit the configuration file accordingly.
-
-
-
+An alternative is to use :ref:`sequanix`.
 
 
 Run the pipeline

@@ -3,8 +3,13 @@
 Developer guide
 ################
 
-This section is a tutorial for developers who wish to include a Snakemake
-pipeline in Sequana.
+This section is a tutorial for developers who wish to improve Sequana, in
+particular how to include a new rule or a new pipeline.
+
+Since v0.8.0, creating a pipeline is very easy since we provide a template. 
+
+Yet, before creating a pipeline, we will need the bricks to build it. In
+Snakemake terminology, a brick is called a **rule**.
 
 We will create a very simple pipeline that counts the number of reads in a bunch
 of FastQ files. First, we will need to create the rule that counts the reads and
@@ -12,7 +17,6 @@ then the pipeline. Once the pipeline is created, we will create the
 documentation, test and HTML reports. Finally, when you have a pipeline that
 creates a reports and summary file, you may want to also include a multiqc
 summary. We will also show how to integrate this feature inside our framework.
-
 
 
 The rule simply counts the number of reads in a fastq file.
@@ -23,20 +27,19 @@ integration (section :ref:`pytest` ) and how to add sanity check that the new co
 introduce bugs. In the :ref:`module_reports` section, we explain how to create
 new component in the HTML module reports.
 
+How to write a new pipeline in Sequana (the new way)
+=====================================================
 
-How to write a new module
-==============================
-
-A :term:`Module` (in Sequana parlance) is a directory with a set of files:
-a Snakemake file (also known as :term:`Snakefile`), a README file for the
-documentation and a configuration file (optional).
-The Snakefile may be a simple snakemake rule or a set of them (a pipeline).
+First, you need to find a name for your pipeline. Check out the
+https://github.com/sequana organization page to check whether it is not yet
+taken. Note also that pipeline names may need to be different from all rules
+available in sequana. 
 
 Find a valid name
 -------------------
 
 All rules and pipelines must have a unique name in Sequana. 
-We can quickly check that a name is not alredy used using:
+We can quickly check that a name is not already taken as follows:
 
 .. doctest::
 
@@ -47,7 +50,7 @@ We can quickly check that a name is not alredy used using:
 So, let us name it **count**
 
 
-Create a Snakefile rule
+Create a Snakefile 
 -------------------------
 A possible code that implements the **count** rule is the following Snakefile:
 
@@ -77,55 +80,98 @@ You can check that the file *count.txt* exists.
     already computed earlier).
 
 
-Store the rule in a Sequana module
--------------------------------------
+A sequana pipeline
+-------------------
 
-We now store this Snakefile in the proper place.
-All modules are placed either in *./sequana/pipelines* or in
-*./sequana/rules* directory. The tree structure looks like:
+Somehow, the code above is enough. This is a valid pipeline, which is
+functional. Yet, we have to handle many different pipelines within our
+framework. Therefore, we impose some rules so that arguments are similar,
+testing, documentation are coherent. 
+
+This is achieved easily using the standalone sequana_start_pipeline as follows::
+
+
+    sequana_start_pipeline --name count
+
+Press enter 4 times and you get your new pipeline structure that looks like:
 
 .. only:: html
 
     ::
 
         .
-        ├── rules
-        │   ├── count
-        │   │   ├── count.rules
-        │   │   ├── README.rst
-        ├── pipelines
-        │   ├── count_pipeline
-        │   │   ├── count_pipeline.rules
-        │   │   ├── README.rst
+        ├── doc
+        │   ├── conf.py
+        │   ├── index.rst
+        │   └── Makefile
+        ├── LICENSE
+        ├── README.rst
+        ├── requirements.txt
+        ├── sequana_pipelines
+        │   └── count
+        │       ├── config.yaml
+        │       ├── count.rules
+        │       ├── data
+        │       │   └── __init__.py
+        │       ├── __init__.py
+        │       ├── main.py
+        │       ├── requirements.txt
+        │       └── schema.yaml
+        ├── setup.cfg
+        ├── setup.py
+        ├── singularity
+        │   ├── Makefile
+        │   └── Singularity
+        └── test
+            ├── __init__.py
+            └── test_main.py
+
 
 
 .. only:: latex
 
     ::
 
-        --- rules
-        |   --- count
-        |   |   --- count.rules
-        |   |   --- README.rst
-        --- pipelines
-        |   --- count_pipeline
-        |   |   --- count_pipeline.rules
-        |   |   --- README.rst
+        .
+        |-- doc
+        |   |-- conf.py
+        |   |-- index.rst
+        |   |-- Makefile
+        |-- LICENSE
+        |-- README.rst
+        |-- requirements.txt
+        |-- sequana_pipelines
+        |   |-- count
+        |       |- config.yaml
+        |       |-- count.rules
+        |       |-- data
+        |       |   |-- __init__.py
+        |       |-- __init__.py
+        |       |-- main.py
+        |       |-- requirements.txt
+        |       |-- schema.yaml
+        |-- setup.cfg
+        |-- setup.py
+        |-- singularity
+        |   |-- Makefile
+        |   |-- Singularity
+        |-- test
+            |-- __init__.py
 
 
+This is a valid Python package. What you need to do now is copy your Snakfile
+into ./sequana_pipelines/count/count.rules and adapt the main script
+sequana_pipelines/count/main.py to your needs. 
 
-We have created a *count* directory in *./rules* and put the Snakefile in it
-(named *count.rules*).
+Once ready, install the package::
 
-A few comments: 
+    python setup.py install
 
-- directory names must match the rule filename contain in it
-- all Snakefiles  end in *.rules*
-- a *README.rst* must be present in all pipelines sub-directories
+Check the documentation in the README.rst, add a test in ./test/test_main.py and
+you are ready to upload your package on pypi. 
 
-The README file in the rules can be empty. However, the README in the
-pipelines's directory is used in the documentation and automatically
-parsed. See :ref:`readme` section for further details.
+Ideally, you will now add a repository in https://github.com/sequana/ and
+add/commit/push your code.
 
 The count rules is now part of the library, which can be checked using the same
 code as before:
@@ -241,11 +287,15 @@ current convention::
         cmd += "{input.fastq[0]} {input.fastq[1]}"
         shell(cmd)
 
+Here is the rendering:
+
+
+.. snakemakerule:: cutadapt
 
 .. _dev_pipeline:
 
-How to write a new pipeline
-================================
+More information about pipeline design
+=======================================
 
 
 
@@ -271,13 +321,12 @@ So, your pipeline should look like:
 
     import sequana
     from sequana import snaketools as sm
-    sm.init("counter", globals())        # see later for explanation
+    #sm.init("counter", globals())        # see later for explanation
 
     configfile: "config.yaml"
 
     # include all relevant rules
     include: sm.modules['count']        # if included in sequana/rules
-
 
     # must be defined as the final rule
     rule pipeline_count:
@@ -310,9 +359,10 @@ pipeline name)::
     Requirements
     ~~~~~~~~~~~~~~
 
-    .. include:: ../sequana/pipelines/pipeline_count/requirements.txt
+    Here you should list the dependencies, which should match the file
+    requirements.txt in ./sequana_pipelines/count/ 
 
-    .. image:: https://raw.githubusercontent.com/sequana/sequana/master/sequana/pipelines/pipeline_count/dag.png
+    .. image:: https://raw.githubusercontent.com/sequana/sequana_count/master/sequana_pipelines/count/dag.png
 
     Details
     ~~~~~~~~~~~~~

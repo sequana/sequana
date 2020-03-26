@@ -363,6 +363,11 @@ div.document .topic-title {
     margin-top: 2em;
     font-weight: bold;
 }
+div.document .topic {
+    margin-top: 2em;
+    font-weight: bold;
+    
+}
 .contents ul {
   list-style-type:none;
   padding-bottom: 0;

@@ -1,8 +1,9 @@
 .. _denovo_assembly_pipeline:
 
-denovo_assembly
+denovo
 ====================
 
-.. include:: ../sequana/pipelines/denovo_assembly/README.rst
+
+.. sequana_pipeline:: denovo
 
 

@@ -1,8 +1,8 @@
 .. _pipeline_quality_control:
 
-Quality control
+quality_control
 =================
 
-.. include:: ../sequana/pipelines/quality_control/README.rst
+.. sequana_pipeline:: quality_control
 
 

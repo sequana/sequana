@@ -69,7 +69,8 @@ extensions = [
     'matplotlib.sphinxext.plot_directive',
     'sphinx.ext.autosummary',
     'sphinx_gallery.gen_gallery',
-    "sequana.sphinxext.snakemakerule"
+    "sequana.sphinxext.snakemakerule",
+    "sequana.sphinxext.sequana_pipeline"
     ]
 # note that the numpy directives is buggy. Example: class and init are not recognised as two entities for the autoclass_content=both here below
 
@@ -150,6 +151,10 @@ sphinx_gallery_conf = {
 #    "examples_dirs": "examples",
 #    "gallery_dirs": "auto_examples",
 }
+
+
+# for -- double dash to appear correctly
+smartquotes=False
 
 # Get rid of spurious warnings due to some interaction between
 # autosummary and numpydoc. See
