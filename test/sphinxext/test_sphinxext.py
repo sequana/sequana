@@ -27,7 +27,7 @@ intersphinx_mapping = {}
 """
 
 def test_sequana_pipeline():
-    res  = sequana_pipeline.get_rule_doc("variant_calling")
+    res  = sequana_pipeline.get_rule_doc("quality_control")
 
     with tempfile.TemporaryDirectory() as tmpdir:
 
