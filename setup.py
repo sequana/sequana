@@ -8,29 +8,29 @@ import glob
 
 _MAJOR               = 0
 _MINOR               = 8
-_MICRO               = 0
+_MICRO               = 1
 version              = '%d.%d.%d' % (_MAJOR, _MINOR, _MICRO)
 release              = '%d.%d' % (_MAJOR, _MINOR)
 
 
 metainfo = {
-    'authors': {"main": ("yourname", "email@whatever.org")},
+    'authors': {"main": ("Thomas Cokelaer", "thomas.cokelaer@pasteur.fr")},
+    'maintainer': {"main": ("Thomas Cokelaer", "thomas.cokelaer@pasteur.fr")},
     'version': version,
     'license' : 'new BSD',
-    'download_url' : ['http://pypi.python.org/pypi/sequana'],
-    'url' : ["http://github.com/sequana/"],
+    'download_url': "https://github.com/sequana/sequana/archive/{0}.tar.gz".format(version),
+    'url' : "http://github.com/sequana/sequana",
     'description': "A set of standalone application and pipelines dedicated to NGS (new generation sequencing) analysis" ,
     'platforms' : ['Linux', 'Unix', 'MacOsX', 'Windows'],
-    'keywords' : [''],
+    'keywords' : ['NGS', 'snakemake'],
     'classifiers' : [
-          'Development Status :: 4 - Beta',
+          'Development Status :: 5 - Production/Stable',
           'Intended Audience :: Developers',
           'Intended Audience :: Science/Research',
           'License :: OSI Approved :: BSD License',
           'Operating System :: OS Independent',
-          'Programming Language :: Python :: 2.7',
-          'Programming Language :: Python :: 3.5',
           'Programming Language :: Python :: 3.6',
+          'Programming Language :: Python :: 3.7',
           'Topic :: Software Development :: Libraries :: Python Modules',
           'Topic :: Scientific/Engineering :: Bio-Informatics',
           'Topic :: Scientific/Engineering :: Information Analysis',
