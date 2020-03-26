@@ -10,10 +10,9 @@ python:
     install:
         - requirements: requirements.txt
         - requirements: requirements_dev.txt
+        - requirements: requirements_pipelines.txt
         - method: pip
           path: .
-        - method: pip
-          path: requirements_pipelines.txt
 
 # it is either conda or python not both....
 # https://docs.readthedocs.io/en/stable/config-file/v2.html
