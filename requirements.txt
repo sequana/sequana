@@ -10,7 +10,7 @@ multiqc
 packaging
 pandas>=0.22
 psutil
-pykwalify==1.6
+pykwalify>=1.6
 pyVCF
 pysam
 ruamel.yaml

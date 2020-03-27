@@ -4,6 +4,12 @@ Changelog
 .. contents::
     :depth: 2
 
+0.8.2
+-----
+
+* a quick fix in the requirements to build proper recipes on bioconda
+
+
 0.8.1
 -----
 
