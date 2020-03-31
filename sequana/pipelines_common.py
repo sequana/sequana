@@ -661,6 +661,7 @@ class PipelineManager():
                     self.options.slurm_cores_per_job,
                     slurm_queue)
 
+    def _create_directories(self):
         # Now we create the directory to store the config/pipeline
         if os.path.exists(self.workdir) is True and self.options.force is False:
             print(self.colors.failed(
@@ -738,6 +739,8 @@ to analyse non-fastQ files (e.g. BAM)""")
 
         if check_input_files:
             self.check_input_files()
+
+        self._create_directories()
 
         # the config file
         self.config._update_yaml()

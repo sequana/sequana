@@ -4,6 +4,14 @@ Changelog
 .. contents::
     :depth: 2
 
+0.8.3
+-----
+
+* pipeline now create the directories in the teardown instead of setup. This
+  prevents the creation of directories while input paramters are wrong
+* Fix requirements
+
+
 0.8.2
 -----
 
