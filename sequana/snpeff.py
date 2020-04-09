@@ -286,7 +286,7 @@ def download_fasta_and_genbank(identifier, tag, genbank=True, fasta=True):
         data = eu.EFetch(db="nuccore",id=identifier, rettype="gbwithparts",
             retmode="text")
         if isinstance(data, int) and data == 400:
-            raise ValueError("%s not found on NCBI")
+            raise ValueError("{} not found on NCBI".format(identifier))
         else:
             with open("%s.gbk" %  tag, "w") as fout:
                 fout.write(data.decode())
@@ -296,7 +296,7 @@ def download_fasta_and_genbank(identifier, tag, genbank=True, fasta=True):
         ena = ENA()
         data = ena.get_data(identifier, 'fasta')
         if isinstance(data, int) and data == 400:
-            raise ValueError("%s not found on NCBI")
+            raise ValueError("{} not found on ENA".format(identifier))
         else:
             with open("%s.fa" % tag, "w") as fout:
                 fout.write(data.decode())
