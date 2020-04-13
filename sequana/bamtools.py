@@ -425,8 +425,8 @@ class SAMBAMbase():
                     map_strand = '-'
                 else:
                     map_strand = '+'
-                readStart = an.pos
-                readEnd = readStart + aligned_read.qlen
+                readStart = aln.pos
+                readEnd = readStart + aln.qlen
                 if chrom_name in gene_ranges:
                     tmp = set(gene_ranges[chrom_name].find(readStart,readEnd))
                     if len(tmp) == 0: continue
