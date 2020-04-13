@@ -192,7 +192,7 @@ class SAMBAMbase():
         lower_bound=-1000):
         """
 
-        .. image:: insert_size.png
+        .. image:: _static/insert_size.png
 
         Here we show that about 3000 alignements are enough to get a good
         estimate of the insert size.

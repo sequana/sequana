@@ -10,7 +10,7 @@ Changelog
 * pipeline now create the directories in the teardown instead of setup. This
   prevents the creation of directories while input paramters are wrong
 * Fix requirements adding packaging
-* add new dependency (bx) to include new features in bamtools moule (infer
+* add new dependency (bx) to include new features in bamtools module (infer
   strandness, insert_size)
 * add new module (bed) to include a BED class to read 12-column BED files. 
 

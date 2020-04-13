@@ -252,7 +252,7 @@ class VCF_freebayes(vcf.Reader):
         """ Filter variants in the VCF file.
 
         :param dict filter_dict: dictionary of filters. It updates the
-            attribute :attr:`VCF_freebayes.filters`
+            attribute :attr:`VCF_freebayes.filter_params`
         Return Filtered_freebayes object.
         """
         if filter_dict:

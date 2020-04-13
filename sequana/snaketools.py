@@ -898,7 +898,6 @@ class PipelineManagerGeneric(object):
         else:
             self.samples = {str(i+1):filename for i,filename in enumerate(self.ff.realpaths)}
 
-    
     def getname(self, rulename, suffix=None):
         """In the basename, include rulename and suffix"""
         if suffix is None:
@@ -914,7 +913,7 @@ class PipelineManagerGeneric(object):
         return self.sample + os.sep + rulename + os.sep
 
     def getlogdir(self, rulename):
-        """ Create log directory: */sample/logs/sample_rule.logs
+        """ Create log directory: ``*/sample/logs/sample_rule.logs``
         """
         return "{1}{0}logs{0}{1}.{2}.log".format(os.sep, self.sample, rulename)
 
@@ -1075,7 +1074,7 @@ class PipelineManager(object):
         return self.sample + os.sep + rulename + os.sep
 
     def getlogdir(self, rulename):
-        """ Create log directory: */sample/logs/sample_rule.logs
+        """ Create log directory: ``*/sample/logs/sample_rule.logs``
         """
         return "{1}{0}logs{0}{1}.{2}.log".format(os.sep, self.sample, rulename)
 
@@ -1329,7 +1328,7 @@ class FileFactory(object):
 
         :param pattern: can be a filename, list of filenames, or a global
             pattern (a unix regular expression with wildcards). For instance,
-            "*/*fastq.gz"
+            ``*/*fastq.gz``
 
         .. warning:: Only in Python 3.X supports the recursive global pattern
             for now.

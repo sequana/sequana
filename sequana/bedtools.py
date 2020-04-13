@@ -217,7 +217,6 @@ class GenomeCov(object):
             chromosome can be analysed one by one. Used by the sequana_coverage
             standalone. The only advantage is to speed up the constructor creation
             and could also be used by the Snakemake implementation.
-
         """
         # Keep information if the genome is circular and the window size used
         self._circular = None
@@ -237,18 +236,6 @@ class GenomeCov(object):
 
         self.input_filename = input_filename
 
-        """
-        # check if the input is a csv of a previous analysis
-        try:
-            self.chr_list = None
-            self._read_csv(input_filename)
-            self.positions = {}
-            #for chrom in self.chrom_names:
-            #self.positions[chrom] = {"start":start "end":end "N": N}
-        except FileNotFoundError as e:
-            print("FileNotFound error({0}): {1}".format(e.errno, e.strerror))
-            sys.exit(1)
-        """
         if high_threshold < 2.5 and self.force is False:
             raise ValueError("high threshold must be >=2.5")
         if low_threshold > -2.5 and self.force is False:
@@ -541,7 +528,7 @@ class GenomeCov(object):
         """ Write all data in a csv.
 
         :param str output_filename: csv output file name.
-        :param **dict kwargs: parameters of :meth:`pandas.DataFrame.to_csv`.
+        :param dict kwargs: parameters of :meth:`pandas.DataFrame.to_csv`.
         """
         # Concatenate all df
         df_list = [chrom.df for chrom in self.chr_list]
