@@ -25,6 +25,7 @@ from .datatools import sequana_data
 from .assembly import *
 from .adapters import AdapterReader, FindAdaptersFromDesign, Adapter
 from .bamtools import BAM, SAMFlags, SAM, CRAM
+from .bed import BED
 from .bedtools import GenomeCov
 from .cigar import Cigar
 from .coverage import Coverage
