@@ -53,7 +53,7 @@ class Cigar(object):
     - "=" for equal
     - "X" for diff (sequence mismatched)
     - "B" for back     !!!! could be also NM ???
-    
+
     !!! BWA MEM get_cigar_stats returns list with 11 items
     Last item is 
     !!! what is the difference between M and = ???
@@ -163,4 +163,117 @@ class Cigar(object):
         for k, v in self.as_dict().items():
             data[self.types.index(k)] = v
         return data
+
+
+def fetch_exon(chrom, start, cigar):
+    chrom_start = start
+    exon_bound = []
+    for c, size in cigar:
+        if c == 0:
+            exon_bound.append((chrom, chrom_start, chrom_start + size))
+            chrom_start += size
+        elif c == 1:
+            continue
+        elif c == 2:
+            chrom_start += size
+        elif c == 3:
+            chrom_start += size
+        elif c == 4:  # FIXME do we want to include this in the exon
+            chrom_start += size
+        else:
+            continue
+    return exon_bound
+
+
+def fetch_intron(chrom, start, cigar):
+
+    # equivalence:  
+    # c = 0 -> M
+    # c = 1 -> I
+    # c = 2 -> D
+    # c = 3 -> N gap/intron
+    # c = 4 -> S soft clipping
+    chrom_start = start
+    intron_bound = []
+    for c, size in cigar:
+        if c == 0:
+            chrom_start += size
+        elif c == 1:
+            continue
+        elif c == 2:
+            chrom_start += size
+        elif c == 3:
+            intron_bound.append((chrom, chrom_start, chrom_start + size))
+            chrom_start += size
+        elif c == 4:  # not including soft clipping in the intron
+            continue
+        else:
+            continue
+    return intron_bound
+
+
+def fetch_clip(chrom, start, cigar):
+    chrom_start = start
+    clip_bound = []
+    for c, size in cigar:
+        if c == 0:
+            chrom_start += size
+        elif c == 1:
+            continue
+        elif c == 2:
+            chrom_start += size
+        elif c == 3:
+            chrom_start += size
+        elif c == 4:  
+            clip_bound.append((chrom, chrom_start, chrom_start + size))
+            chrom_start += size
+        else:
+            continue
+    return clip_bound
+
+
+def fetch_deletion(chrom, start, cigar):
+    chrom_start = start
+    deletion_bound = []
+    for c, size in cigar:
+        if c == 0:
+            chrom_start += size
+        elif c == 1:
+            continue
+        elif c == 2:
+            deletion_bound.append((chrom, chrom_start, chrom_start + size))
+            chrom_start += size
+        elif c == 3:
+            chrom_start += size
+        elif c == 4:
+            chrom_start += size
+        else:
+            continue
+    return deletion_bound
+
+
+def fetch_insertion(chrom, start, cigar):
+    # NOTE that the returned insertions are stored as
+    # chrom, start, size rather than chrom, start, end in other fetchers
+    # functions
+    chrom_start = start
+    insertion_bound = []
+    for c, size in cigar:
+        if c == 0:
+            chrom_start += size
+        elif c == 1:
+            # See note above
+            insertion_bound.append((chrom, chrom_start, size))
+            continue
+        elif c == 2:
+            chrom_start += size
+        elif c == 3:
+            chrom_start += size
+        elif c == 4: 
+            chrom_start += size
+        else:
+            continue
+    return insertion_bound
+
+
 
