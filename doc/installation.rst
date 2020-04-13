@@ -6,7 +6,7 @@ Installation
 If you are a developer, you would want to install **Sequana** from source.
 There are lots of dependencies that require compilation and may be time
 consuming. We therefore recommend the **Anaconda** solution. Sequana is indeed
-available on **bioconda**. Note, however, that
+available on **bioconda** for python 3.7.3 (and below). Note, however, that
 releases of Sequana are also available on Pypi so you could also use **pip**. 
 
 If you just want to test **Sequana** or **Sequanix** or one of the Sequana
@@ -27,7 +27,7 @@ available on https://singularity-hub.org/collections/114/.
     the variant calling pipeline is hosted on
     https://github.com/sequana/variant_calling. This way, you can install
     Sequana quite easily using pip, or bioconda, or virtual environment as shown
-    here below. 
+    here below.
 
 
 Latest recommended installation method
@@ -37,15 +37,25 @@ Sequana is maintained under Python 3.6 (March 2020) and is known to work under
 Python 3.7.3 and **under**, not beyond due to PyQt library not yet available
 (bug-free) beyond Python 3.7.3.
 
-Since lots of dependencies have been dropped in version 0.8.0, you could simply
-use pip to install Sequana. Yet, we recommend you to create a virtual
-environment so as to not interfer with your own environment. This can be achieve
-with conda::
+Lots of dependencies have been dropped in version 0.8.0 so that you could simply
+use pip to install Sequana and we can also provide biocontainer or BioConda. 
 
-    conda create --name sequana_env python=3.6
+First you should create a virtual environment so as to not interfer with your own environment. 
+We will use conda for that::
+
+    conda create --name sequana_env python=3.7.3
     source activate sequana_env
-    pip install sequana==0.8.0
-    pip install packaging   # for v0.8.0 only, will be fixed in later versions
+
+.. warning:: we strongly recommend to use Python version 3.7.3 or below so that 
+   you can beneficiate from Sequanix interface. 
+
+pip installation
+----------------
+
+::
+
+    pip install sequana==0.8.2
+    pip install packaging   # for v0.8.0 only, fixed in later versions
 
 This will install the dependencies such as Pandas, Numpy, etc. It will take about
 5-10 minutes to install this version.
@@ -57,11 +67,24 @@ This will install the dependencies such as Pandas, Numpy, etc. It will take abou
     Using pip may lead to compatibility issues with your underlying Qt library,
     which must be available to install PyQt
 
-You can now install a specific pipeline as follows::
+bioconda installation
+-----------------------
+
+::
+
+    conda install sequana==0.8.2
+
+.. note:: see below for more information about bioconda installation (e.g., how to set
+   up the channels)
+
+pipelines
+----------
+Whatever is the installation method you choose, you can now install a specific pipeline as follows::
 
     pip install sequana_rnaseq
 
-The dependencies of this pipeline must be dealt with by the developer. 
+The dependencies of this pipeline must be dealt with by the developer or users.
+
 
 Other solutions (not always up-to-date)
 ========================================
@@ -148,7 +171,7 @@ later be removed without affecting your system or conda installation. A
 **conda** environment is nothing else than a directory and can be created as
 follows::
 
-    conda create --name sequana_env python=3.6
+    conda create --name sequana_env python=3.7.3
 
 Then, since you may have several environments, you must activate the **sequana**
 environment itself (each time you open a new shell)::

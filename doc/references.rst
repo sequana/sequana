@@ -181,6 +181,13 @@ Statistical tools
     :members:
     :undoc-members:
 
+BED module
+----------
+
+.. automodule:: sequana.bed
+    :members:
+    :undoc-members:
+
 
 VCF module
 ------------

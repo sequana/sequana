@@ -9,13 +9,17 @@ Changelog
 
 * pipeline now create the directories in the teardown instead of setup. This
   prevents the creation of directories while input paramters are wrong
-* Fix requirements
+* Fix requirements adding packaging
+* add new dependency (bx) to include new features in bamtools moule (infer
+  strandness, insert_size)
+* add new module (bed) to include a BED class to read 12-column BED files. 
 
 
 0.8.2
 -----
 
-* a quick fix in the requirements to build proper recipes on bioconda
+* a quick fix in the requirements to build proper recipes on bioconda, now
+  available on bioconda channel (1 April 2020).
 
 
 0.8.1
@@ -24,8 +28,8 @@ Changelog
 * add missing dependency *packaging* in requirements.txt
 * add new sphinx extension to include external pipeline documentation
 * for pipelines, we created a common epilog and prolog statement and a
-init_pipeline to insert before parsing the options. This allows to have the
---deps argument to print all dependencies of a pipeline
+  init_pipeline to insert before parsing the options. This allows to have the
+  --deps argument to print all dependencies of a pipeline
 
 0.8.0 (24 March 2020)
 ---------------------
