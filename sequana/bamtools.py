@@ -25,6 +25,7 @@
     CRAM
     SAM
     SAMFlags
+    SAMBAMbase 
 
 .. note:: BAM being the compressed version of SAM files, we do not
     implement any functionalities related to SAM files. We strongly encourage
@@ -33,12 +34,20 @@
 """
 import os
 import json
+import math
+
 from collections import Counter
 from collections import OrderedDict
 
+from bx.intervals.intersection import Interval, IntervalTree
+from bx.bitset import BinnedBitSet 
+from bx.bitset_builders import binned_bitsets_from_list
 from sequana.lazy import pandas as pd
 from sequana.lazy import numpy as np
 from sequana.lazy import pylab
+
+from sequana.bed import BED
+from sequana.cigar import fetch_intron, fetch_exon
 
 import pysam
 from sequana import jsontool, logger
@@ -53,7 +62,8 @@ Interesting commands::
     samtools flagstat contaminant.bam
 """
 
-__all__ = ['BAM','Alignment', 'SAMFlags', "CS", "SAM", "CRAM"]
+# SAMBAMbase is for the doc
+__all__ = ['BAM','Alignment', 'SAMFlags', "CS", "SAM", "CRAM", "SAMBAMbase"]
 
 
 # simple decorator to rewind the BAM file
@@ -166,6 +176,48 @@ class SAMBAMbase():
         return self._N
 
     @_reset
+    def _get_insert_size_data(self, max_entries=100000):
+        count = 0
+        data = []
+        for a in self:
+            count += 1
+            if a.is_paired and a.tlen!=0:
+                data.append(a.tlen)
+            if count>max_entries:
+                break
+        return data
+
+    @_reset
+    def get_estimate_insert_size(self, max_entries=100000, upper_bound=1000,
+        lower_bound=-1000):
+        """
+
+        .. image:: insert_size.png
+
+        Here we show that about 3000 alignements are enough to get a good
+        estimate of the insert size.
+
+        .. plot::
+
+            from sequana import *
+            from pylab import linspace, plot, grid, xlabel, ylabel
+
+            b = BAM(sequana_data("measles.fa.sorted.bam"))
+            X = linspace(100,3000,1000)
+            plot(X, [b.get_estimate_insert_size(x) for x in X])
+            grid()
+            xlabel("Number of alignements used")
+            ylabel("Estimated insert size")
+
+        """
+        # Get an estimate of the read length
+        data = self._get_insert_size_data(max_entries=max_entries)
+        if len(data) == 0:
+            return 0
+        data = [abs(x) for x in data if x>=lower_bound and x<=upper_bound]
+        return pylab.mean([abs(x) for x in data])
+
+    @_reset
     def get_df(self, max_align=-1):
         flags = []
         starts = []
@@ -183,6 +235,8 @@ class SAMBAMbase():
             except:refnames.append(-1)
             querynames.append(a.query_name)
             querylengths.append(a.query_length)
+            if max_align!=-1 and i>max_align:
+                break
         df = pd.DataFrame({
                 "flag": flags,
                 "rstart": starts,
@@ -261,7 +315,8 @@ class SAMBAMbase():
 
         try:
             S = np.array(S)
-            C = 1 - (I + D + S)/(S + I + D + M)
+            denom = S + I + D + M
+            C = 1 - (I + D + S) / denom
             logger.info("computed Concordance based on minimap2 --cs option")
         except:
             logger.info("computed Concordance based on standard CIGAR information using INDEL and NM tag")
@@ -279,6 +334,305 @@ class SAMBAMbase():
     def __next__(self):
         return next(self._data)
 
+    @_reset
+    def infer_strandness(self, reference_bed, max_entries, mapq=30):
+        """
+        :param reference_bed: a BED file (12-columns with 
+            columns 1,2,3,6 used) or GFF file (column 1, 3, 
+            4, 5, 6 are used
+        :param mapq: ignore alignment with mapq below 30.
+        :param max_entries: can be long. max_entries restrict the estimate
+
+        """
+        count = 0
+        from collections import defaultdict
+        p_strandness = defaultdict(int)
+        s_strandness = defaultdict(int)
+
+        gene_ranges = {}
+        if reference_bed.endswith(".bed"):
+            with open(reference_bed, "r") as fin:
+                for line in fin:
+                    if line.startswith(('#','track','browser')):
+                        continue
+                    # Parse fields from gene tabls
+                    fields = line.split()
+                    chrom_name = fields[0]
+                    start = int( fields[1] )
+                    end = int( fields[2] )
+                    #gene_name = fields[3]
+                    strand = fields[5]
+
+                    if chrom_name not in gene_ranges:
+                        gene_ranges[chrom_name] = IntervalTree()
+                    gene_ranges[chrom_name].insert(start,end, strand)
+        elif reference_bed.endswith(".gff"):
+            with open(reference_bed, "r") as fin:
+                for line in fin:
+                    if line.startswith(('#')):
+                        continue
+                    fields = line.split()
+                    if fields[2] != "gene":
+                        continue
+                    chrom_name = fields[0]
+                    start = int( fields[3] )
+                    end = int( fields[4] )
+                    #gene_name = fields[3]
+                    strand = fields[6]
+                    if chrom_name not in gene_ranges:
+                        gene_ranges[chrom_name] = IntervalTree()
+                    gene_ranges[chrom_name].insert(start,end, strand)
+
+        self.gene_ranges = gene_ranges
+
+        count = 0
+        for aln in self:
+            if count >= max_entries:
+                break
+            if aln.is_qcfail:
+                continue
+            if aln.is_duplicate:
+                continue
+            if aln.is_secondary:
+                continue
+            if aln.is_unmapped:
+                continue
+            if aln.mapq < mapq:
+                continue
+
+            chrom_name = self._data.get_reference_name(aln.tid)
+
+            if aln.is_paired:
+                if aln.is_read1:
+                    read_id = '1'
+                if aln.is_read2:
+                    read_id = '2'
+                if aln.is_reverse:
+                    map_strand = '-'
+                else:
+                    map_strand = '+'
+                readStart = aln.pos
+                readEnd = readStart + aln.qlen
+                if chrom_name in gene_ranges:
+                    tmp = set(gene_ranges[chrom_name].find(readStart, readEnd))
+                    if len(tmp) == 0: 
+                        continue
+                    strand_from_gene = ':'.join(tmp)
+                    p_strandness[read_id + map_strand + strand_from_gene] += 1
+                    count += 1
+            else:
+                if aln.is_reverse:
+                    map_strand = '-'
+                else:
+                    map_strand = '+'
+                readStart = an.pos
+                readEnd = readStart + aligned_read.qlen
+                if chrom_name in gene_ranges:
+                    tmp = set(gene_ranges[chrom_name].find(readStart,readEnd))
+                    if len(tmp) == 0: continue
+                    strand_from_gene = ':'.join(tmp)
+                    s_strandness[map_strand + strand_from_gene] += 1
+                    count += 1
+
+        self.s_strandness = s_strandness
+        self.p_strandness = p_strandness
+        # Fraction of reads failed to determine: 0.0189
+        # Fraction of reads explained by "1++,1--,2+-,2-+": 0.6315
+        # Fraction of reads explained by "1+-,1-+,2++,2--": 0.3497
+        # 
+        if len(p_strandness) >0 and len(s_strandness) ==0 :
+            protocol = "Paired-end"
+            spec1= (p_strandness['1++'] + p_strandness['1--'] 
+                    + p_strandness['2+-'] + p_strandness['2-+'])/float(sum(p_strandness.values()))
+            spec2= (p_strandness['1+-'] + p_strandness['1-+'] 
+                    + p_strandness['2++'] + p_strandness['2--'])/float(sum(p_strandness.values()))
+            other = 1 - spec1 - spec2
+
+        elif len(s_strandness) > 0 and len(p_strandness) == 0 :
+            protocol = "Singled-end"
+            spec1 = (s_strandness['++'] + s_strandness['--']) / float(sum(s_strandness.values()))
+            spec2 = (s_strandness['+-'] + s_strandness['-+']) / float(sum(s_strandness.values()))
+            other = 1-spec1-spec2
+        else:
+            protocol="Mixture"
+            spec1 = "NA"
+            spec2 = "NA"
+            other = "NA"
+        return [protocol, spec1, spec2, other]
+
+    @_reset
+    def mRNA_inner_distance(self, refbed, low_bound=-250, up_bound=250,
+            step=5, sample_size=1000000, q_cut=30):
+
+        """Estimate the inner distance of mRNA pair end fragment.
+
+        ::
+
+            from sequana import BAM, sequana_data
+            b = BAM(sequana_data("test_hg38_chr18.bam"))
+            df = b.mRNA_inner_distance(sequana_data("hg38_chr18.bed"))
+
+
+        """
+        #This code was inspired from the RSeQC code v2.6.4 and adapted for
+        #sequana simplifying the code and using pandas to store results. This is
+        #limited by memory but more convenient.
+
+        inner_distance_bitsets = BinnedBitSet()
+        tmp = BinnedBitSet()
+        tmp.set_range(0,0)
+        pair_num=0
+
+        inner_distances = []
+        read_names = []
+        descriptions = []
+
+        logger.info("Get exon regions from ")
+
+        bed_obj = BED(refbed)
+ 
+        ref_exons = [[exn[0].upper(), exn[1], exn[2]] for exn in bed_obj.get_exons()]
+
+        exon_bitsets = binned_bitsets_from_list(ref_exons)
+
+        transcript_ranges = {}
+        for i_chr, i_st, i_end, i_strand, i_name in bed_obj.get_transcript_ranges():
+            i_chr = i_chr.upper()
+            if i_chr not in transcript_ranges:
+                transcript_ranges[i_chr] = IntervalTree()
+            else:
+                transcript_ranges[i_chr].add_interval(Interval(i_st, i_end, value=i_name))
+
+        try:
+            while(1):
+                if pair_num >= sample_size:
+                    break
+                splice_intron_size=0
+                aligned_read = next(self)
+
+                if aligned_read.is_qcfail:continue           #skip low quality
+                if aligned_read.is_duplicate:continue        #skip duplicate read
+                if aligned_read.is_secondary:continue        #skip non primary hit
+                if aligned_read.is_unmapped:continue         #skip unmap read
+                if not aligned_read.is_paired: continue      #skip single map read
+                if aligned_read.mate_is_unmapped:continue    #
+                if aligned_read.mapq < q_cut:continue
+
+                read1_len = aligned_read.qlen
+                read1_start = aligned_read.pos
+                read2_start = aligned_read.mpos        #0-based, not included
+                if read2_start < read1_start:
+                    continue                           #because BAM file is sorted, mate_read is already processed if its coordinate is smaller
+                if  read2_start == read1_start and aligned_read.is_read1:
+                    inner_distance = 0
+                    #inner_distances.append(0)
+                    continue
+
+                pair_num +=1
+
+                # check if reads were mapped to diff chromsomes
+                R_read1_ref = self._data.get_reference_name(aligned_read.tid)
+                R_read2_ref = self._data.get_reference_name(aligned_read.rnext)
+                if R_read1_ref != R_read2_ref:
+                    inner_distances.append("NA")
+                    read_names.append(aligned_read.qname)
+                    descriptions.append("sameChrom=No")
+                    continue
+
+                chrom = self._data.get_reference_name(aligned_read.tid).upper()
+                intron_blocks = fetch_intron(chrom, read1_start, aligned_read.cigar)
+                for intron in intron_blocks:
+                    splice_intron_size += intron[2] - intron[1]
+                read1_end = read1_start + read1_len + splice_intron_size
+
+                if read2_start >= read1_end:
+                    inner_distance = read2_start - read1_end
+                else:
+                    exon_positions = []
+                    exon_blocks = fetch_exon(chrom, read1_start,aligned_read.cigar)
+                    for ex in exon_blocks:
+                        for i in range(ex[1]+1,ex[2]+1):
+                            exon_positions.append(i)
+                    inner_distance = -len([i for i in exon_positions if i > read2_start and i <= read1_end])
+
+                read1_gene_names = set()    #read1_end
+                try:
+                    for gene in transcript_ranges[chrom].find(read1_end-1, read1_end):
+                        #gene: Interval(0, 10, value=a)
+                        read1_gene_names.add(gene.value)                        
+                except:
+                    pass
+
+                read2_gene_names = set()    #read2_start
+                try:
+                    for gene in transcript_ranges[chrom].find(read2_start, read2_start +1):
+                        #gene: Interval(0, 10, value=a)
+                        read2_gene_names.add(gene.value)
+                except:
+                    pass
+
+                if len(read1_gene_names.intersection(read2_gene_names)) == 0:
+                    # no common gene
+                    #reads mapped to different gene
+                    inner_distances.append(inner_distance)
+                    read_names.append(aligned_read.qname)
+                    descriptions.append("sameTranscript=No,dist=genomic")
+                    continue
+
+                if inner_distance > 0:
+                    if chrom in exon_bitsets:
+                        size =0
+                        inner_distance_bitsets.set_range(read1_end, read2_start-read1_end)
+                        inner_distance_bitsets.iand(exon_bitsets[chrom])
+                        end=0
+                        while 1:
+                            start = inner_distance_bitsets.next_set( end )
+                            if start == inner_distance_bitsets.size: break
+                            end = inner_distance_bitsets.next_clear( start )
+                            size += (end - start)
+                        #clear BinnedBitSet
+                        inner_distance_bitsets.iand(tmp)   
+
+                        if size == inner_distance:
+                            inner_distances.append(size)
+                            read_names.append(aligned_read.qname)
+                            descriptions.append("sameTranscript=Yes,sameExon=Yes,dist=mRNA")
+                        elif size > 0 and size < inner_distance:
+                            inner_distances.append(size)
+                            read_names.append(aligned_read.qname)
+                            descriptions.append("sameTranscript=Yes,sameExon=No,dist=mRNA")
+                        elif size <= 0:
+                            inner_distances.append(inner_distance)
+                            read_names.append(aligned_read.qname)
+                            descriptions.append("sameTranscript=Yes,nonExonic=Yes,dist=genomic")
+                    else:
+                        inner_distances.append(inner_distance)
+                        read_names.append(aligned_read.qname)
+                        descriptions.append("unknownChromosome,dist=genomic")
+                else:
+                    inner_distances.append(inner_distance)
+                    read_names.append(aligned_read.qname)
+                    descriptions.append("readPairOverlap")
+
+        except StopIteration:
+            pass
+
+        print("Total read pairs  used " + str(pair_num))
+        if pair_num==0:
+            raise ValueError("Cannot find paired reads")
+
+        df = pd.DataFrame(
+            {"read_names": read_names,
+             "val": inner_distances,
+             "desc": descriptions})
+        df = df[["read_names", "val", "desc"]]
+        df.query("val>=@low_bound and val<=@up_bound").val.hist(bins=50)
+        mu = df.query("val>=@low_bound and val<=@up_bound").val.mean()
+        print("mean insert size: {}".format(mu))
+        pylab.title("Mean inner distance={}".format(round(pylab.mean(mu), 2) ))
+        pylab.axvline(mu, color="r", ls="--", lw=2)
+        return df, mu
+
     # properties
     @_reset
     def _get_paired(self):
@@ -291,6 +645,8 @@ class SAMBAMbase():
             return self._sorted
         pos = next(self._data).pos
         for this in self._data:
+            if this.is_unmapped is True:
+                continue
             if this.pos < pos:
                 self._sorted = False
                 return False
@@ -299,7 +655,7 @@ class SAMBAMbase():
         return self._sorted
     is_sorted = property(_get_is_sorted, doc="return True if the BAM is sorted")
 
-    def get_full_stats_as_df(self):
+    def get_samtools_stats_as_df(self):
         """Return a dictionary with full stats about the BAM/SAM file
 
         The index of the dataframe contains the flags. The column contains
@@ -309,7 +665,7 @@ class SAMBAMbase():
 
             >>> from sequana import BAM, sequana_data
             >>> b = BAM(sequana_data("test.bam"))
-            >>> df = b.get_full_stats_as_df()
+            >>> df = b.get_samtools_stats_as_df()
             >>> df.query("description=='average quality'")
             36.9
 
@@ -357,6 +713,7 @@ class SAMBAMbase():
         read_length_dict = {}
         flag_dict = {}
         mean_qualities = []
+        count = 0
         for read in self:
             self._count_item(mapq_dict, read.mapq)
             self._count_item(flag_dict, read.flag)
@@ -364,6 +721,9 @@ class SAMBAMbase():
                 self._count_item(read_length_dict, read.reference_length)
             try:mean_qualities.append(pylab.mean(read.query_qualities))
             except:mean_qualities.append(read.query_qualities)
+            count += 1
+            if count % 100000 ==0:
+                print(count)
         self._summary = {"mapq": mapq_dict,
                          "read_length": read_length_dict,
                          "flags": flag_dict,
@@ -376,6 +736,33 @@ class SAMBAMbase():
         X = sorted(self.summary['read_length'].keys())
         Y = [self.summary['read_length'][k] for k in X]
         return X, Y
+
+    def plot_insert_size(self, max_entries=100000, bins=100, upper_bound=1000,
+        lower_bound=-1000):
+        """
+
+        This gives an idea of the insert size without taking into account any
+        intronic gap. The mode should give a good idea of the insert size
+        though.
+
+
+        .. plot::
+
+            from sequana import *
+            from pylab import linspace, plot, grid, xlabel, ylabel
+
+            b = BAM(sequana_data("measles.fa.sorted.bam"))
+            b.plot_insert_size()
+
+        """
+        data = self._get_insert_size_data(max_entries=max_entries)
+        if len(data) == 0:
+            return 0
+        data = [x for x in data if x>=lower_bound and x<=upper_bound]
+        M = pylab.mean([abs(x) for x in data])
+        pylab.hist(data, bins=bins)
+        return M
+
 
     def plot_read_length(self):
         """Plot occurences of aligned read lengths
@@ -407,7 +794,7 @@ class SAMBAMbase():
             - mapped_proper_pair : R1 and R2 mapped face to face
             - reads_duplicated: number of reads duplicated
 
-        .. warning:: works only for BAM files. Use :meth:`get_full_stats_as_df`
+        .. warning:: works only for BAM files. Use :meth:`get_samtools_stats_as_df`
             for SAM files.
 
         """
@@ -441,6 +828,198 @@ class SAMBAMbase():
         d['reads_duplicated'] = samflags_count[1024]
         d['secondary_reads'] = samflags_count[256]
         return d
+
+    @_reset
+    def get_stats_full(self, mapq=30, max_entries=-1):
+        # On a bam, this takes about 7minutes
+        # while calling samtools directly takes a little bit more than 1 minute.
+        # but then we can re-use this independently of samtools (not pysam though)
+
+        average_quality = 0
+        average_length = 0
+        bases_mapped = 0
+        bases_mapped_cigar = 0  # more precise according to samtools
+        forward = 0
+        reads_duplicated = 0
+        insert_size_sum = 0
+        insert_size_sum_square = 0
+        non_splice = 0
+        mapq0 = 0
+        mismatches = 0
+        multiple_hit = 0
+        qc_fail = 0
+        reverse = 0
+        reads_paired = 0
+        unique_hit = 0
+        unmapped = 0
+        read1 = 0
+        read2 = 0
+        splice = 0
+        secondary = 0
+        pair_diff_chrom = 0
+        proper_pair = 0
+        total_aln = 0
+        total_length = 0
+        total_r1_length = 0
+        total_r2_length = 0
+
+        for aln in self:
+            total_aln += 1
+            average_quality += sum(aln.query_qualities) / len(aln.query_qualities)
+
+            if aln.is_paired:
+                reads_paired += 1
+
+            if aln.is_unmapped:
+                unmapped +=1
+
+            if aln.is_qcfail: 
+                qc_fail +=1
+                continue
+            if aln.is_duplicate:
+                reads_duplicated += 1
+                continue
+            if aln.is_secondary:
+                secondary += 1
+                continue
+
+            total_length += aln.rlen
+
+            # fixme not really a multiple hit in 100% of cases
+            if aln.mapq < mapq:
+                multiple_hit += 1
+                continue
+            else:
+                unique_hit += 1
+                if aln.is_read1:
+                    read1 += 1
+                    total_r1_length += aln.rlen
+                if aln.is_read2:
+                    read2 += 1
+                    total_r2_length += aln.rlen
+                if aln.is_reverse:
+                    reverse += 1
+                else:
+                    forward +=1
+
+            if aln.mapq == 0:
+                mapq += 0
+
+            # average length of all MAPPED reads to divide by read1+read2 that
+            # mapped
+            average_length += aln.rlen
+            A = abs(aln.tlen)
+
+            bases_mapped_cigar += sum([a[1] for a in aln.cigar if a[0] in [0,1]])
+            bases_mapped += aln.rlen
+
+            introns = fetch_intron("dummy", aln.pos, aln.cigar)
+            if len(introns) == 0:
+                non_splice += 1
+            elif len(introns)>=1:
+                splice += 1
+
+            if aln.is_proper_pair:
+                proper_pair += 1
+                read1_ref = self._data.get_reference_name(aln.tid)
+                read2_ref = self._data.get_reference_name(aln.rnext)
+                if read1_ref != read2_ref:
+                    pair_diff_chrom += 1
+                if aln.pos != 0:
+                    # to avoid effect of circular genome
+                    insert_size_sum += A
+                    insert_size_sum_square += A * A
+
+            # If NM is provided, not always the case though
+            try:mismatches += aln.get_tag('NM')
+            except:pass
+
+            if total_aln % 100000 == 0:
+                print(total_aln)
+                if max_entries != -1 and total_aln >= max_entries:
+                    break
+            if max_entries != -1 and total_aln >= max_entries:
+                break
+
+        results = {
+            "average_quality": average_quality / total_aln,
+            "average_length": average_length / (read1+read2),
+            "bases mapped (cigar)":  bases_mapped_cigar,
+            "bases mapped ":  bases_mapped,
+            "forward": forward,
+            "is sorted": self.is_sorted,
+            "unmapped": unmapped,
+            "mismatches": mismatches,
+            "multiple_hit": multiple_hit,
+            "non_splice": non_splice,
+            "pair_diff_chrom": pair_diff_chrom,
+            "proper_pair": proper_pair,
+            "qc_fail": qc_fail,
+            "read1": read1,
+            "read2": read2,
+            "reads_duplicated": reads_duplicated,
+            "reads_mapq0": mapq0,
+            "reads_mapped": read1 + read2,
+            "reads_paired": reads_paired,
+            # In theory, the next one is paired-end technology bit set + both mates mapped
+            "reads_mapped_and_paired": reads_paired - secondary,
+            "raw_total_sequences": total_aln - secondary,
+            "reverse": reverse,
+            "non_primary_alignements": secondary,
+            "secondary": secondary,
+            "splice": splice,
+            "total_alignments": total_aln,
+            "total_first_fragment_length": total_r1_length,
+            "total_last_fragment_length": total_r2_length,
+            "total_length": total_length,  # ignoring secondary, qcfail to agree with samtools
+            "unique_hit": unique_hit,
+            "error_rate": mismatches / bases_mapped_cigar
+            }
+        assert results['forward'] + results['reverse']
+
+        if proper_pair> 0:
+            results["insert_size_average"] =  insert_size_sum  / proper_pair
+            results["insert_size_std"] =  math.sqrt(
+                insert_size_sum_square/(proper_pair) - (insert_size_sum/(proper_pair))**2)
+        if reads_paired>0:
+            results["percentage_properly_paired"] = 100*proper_pair / reads_paired
+        else:
+            results["percentage_properly_paired"] = 0
+        #else:
+        #    results["insert_size_std"] = None
+
+        return results
+
+    """
+SN	insert size average:	4775.2
+SN	insert size standard deviation:	3817.6
+SN	inward oriented pairs:	169
+SN	outward oriented pairs:	229
+SN	pairs with other orientation:	3
+SN	pairs on different chromosomes:	0
+
+
+ 'bases mapped ': 70050,
+ 'bases mapped (cigar)': 65641,
+ 'forward': 458,
+ 'insert_size_average': 3040185.341991342,
+ 'multiple_hit': 2,
+ 'total_length': 72347,
+
+
+"""
+
+# Note that on large files, differences can be large. Here on a human genome, we
+# got: 
+# 'insert_size_average': 2406.5781705775985,
+# 'insert_size_std': 11633.214727733652,
+#
+#and with samtools:
+#            insert size average        1219.9
+# insert size standard deviation        2249.1
+# In both case, this is wrong. This was RNA data sets and using mRNA_insert_size
+# code, we get about 72 bases as expected. One should ignore values that are too
+# large e.g. below and above -250/250
 
     @_reset
     def get_flags_as_df(self):
@@ -543,9 +1122,13 @@ class SAMBAMbase():
                 fh.write(read)
 
     @_reset
-    def get_mapq_as_df(self):
+    def get_mapq_as_df(self, max_entries=-1):
         """Return dataframe with mapq for each read"""
-        df = pd.DataFrame({'mapq': [this.mapq for this in self]})
+        if max_entries != -1:
+            data = [next(self).mapq for x in range(max_entries)]
+        else:
+            data = [this.mapq for this in self]
+        df = pd.DataFrame({'mapq': data})
         return df
 
     @_reset
@@ -698,8 +1281,8 @@ class SAMBAMbase():
         try: self.alignments
         except: self._set_alignments()
 
-        reference_start = [this.reference_start for this in self.alignments]
-        reference_end = [this.reference_end for this in self.alignments]
+        reference_start = [this.reference_start for this in self.alignments if this.reference_start]
+        reference_end = [this.reference_end for this in self.alignments if this.reference_start]
         N = max([this for this in reference_end if this])
 
         self.coverage = np.zeros(N)
@@ -836,18 +1419,18 @@ class SAMBAMbase():
 
 
 class SAM(SAMBAMbase):
-    """SAM Reader. See :class:`~samtools.bamtools.SAMBAMBase` for details"""
+    """SAM Reader. See :class:`~samtools.bamtools.SAMBAMbase` for details"""
     def __init__(self, filename, *args):
         super(SAM, self).__init__(filename, mode="r", *args)
 
 class CRAM(SAMBAMbase):
-    """CRAM Reader. See :class:`~sequana.bamtools.SAMBAMBase` for details"""
+    """CRAM Reader. See :class:`~sequana.bamtools.SAMBAMbase` for details"""
     def __init__(self, filename, *args):
         super(CRAM, self).__init__(filename, mode="r", *args)
 
 
 class BAM(SAMBAMbase):
-    """BAM reader. See :class:`~sequana.bamtools.SAMBAMBase` for details"""
+    """BAM reader. See :class:`~sequana.bamtools.SAMBAMbase` for details"""
     def __init__(self, filename, *args):
         super(BAM, self).__init__(filename, mode="rb", *args)
 
