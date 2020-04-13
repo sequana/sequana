@@ -711,7 +711,7 @@ class FindAdaptersFromDesign(object):
 
         If sample name is given, it will figure out that for instance the index
         N501 is required. In addition, all sequences with identifier without the
-        |seq: tag in their name will be added; So, here we will also have the
+        **|seq:** tag in their name will be added; So, here we will also have the
         universal and the two transposases
 
 
