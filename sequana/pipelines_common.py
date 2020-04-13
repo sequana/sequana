@@ -386,13 +386,16 @@ class SnakemakeOptions():
 class SlurmOptions():
     def __init__(self, group_name="slurm", memory=4000, queue="common", cores=4):
         """
-        class Options(argparse.ArgumentParser, SlurmOptions):
-            def __init__(self, prog"whatever")
-                super(Options, self).__init__(usage="todo",
-                    prog="whatever",description=""
-                self.add_argument(...)
-                ...
-                self.add_slurm_options()
+
+        ::
+
+            class Options(argparse.ArgumentParser, SlurmOptions):
+                def __init__(self, prog="whatever")
+                    super(Options, self).__init__(usage="todo",
+                        prog="whatever",description=""
+                    self.add_argument(...)
+                    ...
+                    self.add_slurm_options()
 
         """
         self.group_name = group_name
