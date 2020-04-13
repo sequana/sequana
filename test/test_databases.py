@@ -2,7 +2,7 @@ from sequana import databases
 import os
 import glob
 import pytest
-import pytest_timeout  
+import pytest_timeout
 
 import requests
 

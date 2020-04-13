@@ -43,6 +43,8 @@ def test_bam(tmpdir):
     assert int(df.length.sum()) == 67938
     assert int(df.M.sum()) == 67788
 
+    df = s.get_df()
+
     # call this here before other computations on purpose
     with TempFile(suffix=".json") as fh:
         s.bam_analysis_to_json(fh.name)
@@ -51,7 +53,8 @@ def test_bam(tmpdir):
     s.get_mapped_read_length()
 
     s.get_stats()
-    s.get_full_stats_as_df()
+    s.get_stats_full()
+    s.get_samtools_stats_as_df()
 
     with TempFile() as fh:
         s.to_fastq(fh.name)
@@ -143,4 +146,45 @@ def test_cs_in_bam():
     assert math.floor(df.sum().sum()) == 103813  # exact is 103769.5600734975
 
 
+def test_insert_size():
+
+    d1 = sequana_data("test_measles.sam", "testing")
+    d2 = sequana_data("test_measles.cram", "testing")
+    d3 = sequana_data("test.bam", "testing")
+    d4 = sequana_data("test_CS_tiny.bam")
+
+
+    b1  = BAM(d1)
+    # test max_entries
+    assert len(b1._get_insert_size_data(10)) == 7
+    b1.get_estimate_insert_size(100)
+    b1.get_estimate_insert_size()
+    b1.plot_insert_size()
+
+    b2  = BAM(d2)
+    b2.get_estimate_insert_size()
+    
+    b3  = BAM(d3)
+    b3.get_estimate_insert_size()
+    
+    b4  = BAM(d4)
+    assert b4.get_estimate_insert_size() == 0
+
+
+def test_strandness():
+    b = BAM(sequana_data("test_hg38_chr18.bam"))
+    res = b.infer_strandness(sequana_data("hg38_chr18.bed"), 200000)
+    assert res[0] == 'Paired-end'
+    assert res[1]> 0.94
+    assert res[2]<0.06
+    assert res[3] < 0.0011
+
+
+
+def test_mRNA_inner_distance():
+    b = BAM(sequana_data("test_hg38_chr18.bam"))
+    df = b.mRNA_inner_distance(sequana_data("hg38_chr18.bed"))
+    # Total read pairs  used 382
+    # mean insert size: 88.3975155279503
+    assert df[0]['val'].mean() >1436 and df[0]['val'].mean()<1437
 
