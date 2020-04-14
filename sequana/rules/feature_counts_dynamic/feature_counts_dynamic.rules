@@ -42,7 +42,7 @@ rule feature_counts_%(name)s:
         shell("""featureCounts -T {threads} {params.mapp} \
                  -a {input.gff} -o {output.count} {input.bam} 2> {log}""")
         # now we can read the summary file back and add a tag
-        sample = input.bam.split("/")[0] + "_" + str(%(name)s)
+        sample = "__fc{}_".format(str(%(name)s)) + input.bam.split("/")[0]
         cmd = 'sed -i "s/Status.*/Status\t{}/g" {}.summary'.format(sample, output.count)
         shell(cmd)
 
