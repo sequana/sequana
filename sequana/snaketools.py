@@ -557,13 +557,15 @@ or open a Python shell and type::
 
         for req in reqlist:
             # It is either a Python package or an executable
+            if req.startswith("#"):
+                continue
             try:
                 easydev.shellcmd("which %s" % req)
                 logger.debug("Found %s executable" % req)
             except:
                 # is this a Python code ?
                 if len(easydev.get_dependencies(req)) == 0:
-                    logger.error("%s not found !! You must install it" % req)
+                    logger.error("%s not found !! Let us move on but you must install it" % req)
                     executable = False
                     missing.append(req)
                 else:
@@ -577,7 +579,7 @@ or open a Python shell and type::
             txt = "Some executable or Python packages are not available:\n"
             txt += "Some functionalities may not work "
             if mode == "warning":
-                print(txt)
+                logger.warning(txt)
             elif mode == "error":
                 txt += "Use \n conda install missing_package_name;"
                 for this in missing:
@@ -1108,6 +1110,18 @@ class PipelineManager(object):
     def message(self, msg):
         message(msg)
 
+    def plot_stats(self, outputdir=".sequana",
+                 filename="snakemake_stats.png", N=1):
+        logger.info("Creating stats image")
+        try:
+            from sequana.snaketools import SnakeMakeStats
+            SnakeMakeStats("stats.txt", N=N).plot_and_save(
+            outputdir=outputdir, filename=filename)
+        except Exception as err:
+            logger.error(err)
+            logger.error("Could not process stats.txt file" )
+
+
 
 def message(mes):
     """Dedicated print function to include in Snakefiles
@@ -1588,7 +1602,20 @@ class FastQFactory(FileFactory):
         return len(self.tags)
 
 
-def init(filename, namespace):
+"""class Init:
+    class __OnlyOnce:
+        def __init__(self, filename, namespace, mode="error"):
+            init(filename, namespace, mode=mode)
+    instance = None
+    def __init__(self, filename, namespace, mode="error"):
+        if not Init.instance:
+            Init.__OnlyOnce(filename, namespace, mode=mode)
+            instance = True
+        else:
+            pass
+"""
+
+def init(filename, namespace, mode="error"):
     """Defines the global variable __snakefile__ inside snakefiles
 
     If not already defined, __snakefile__ is created to hold the name of the
@@ -1614,7 +1641,7 @@ def init(filename, namespace):
         namespace['toclean'] = []
 
     # check requirements
-    Module(filename.replace(".rules", "")).check('error')
+    Module(filename.replace(".rules", "")).check(mode)
 
 
 def create_cleanup(targetdir, exclude=['logs']):
@@ -1766,7 +1793,7 @@ print("done")
 
 
 class OnSuccessCleaner(object):
-    """Used in demultiplex pipeline to cleanup final results"""
+    """Used in various sequana pipelines to cleanup final results"""
     def __init__(self, pipeline_name=None, bundle=False):
         self.makefile_filename = "Makefile"
         self.files_to_remove = ["config.yaml", "multiqc_config.yaml",
