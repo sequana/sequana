@@ -36,7 +36,7 @@ install:
   #- conda install --yes --file requirements.txt
   # to install specific version of multiqc, we install packages manually
   - conda install --yes matplotlib qtconsole atropos bioservices pandas samtools
-  - conda install --yes xlrd scipy pyVCF
+  - conda install --yes xlrd scipy pyVCF 
 
   # FIXME
   # for bioservices. should be fixed in bioconda itself I suspect
@@ -64,6 +64,7 @@ install:
   - pip install itolapi
   - python setup.py install
   - pip install sequana_quality_control
+  - pip install sphinx==2.2 # for now, sphinx 3 fails the sphinxext from sequana (april 2020)
   #- conda list
 
 # # command to run tests, e.g. python setup.py test
