@@ -343,6 +343,25 @@ class SAMBAMbase():
         :param mapq: ignore alignment with mapq below 30.
         :param max_entries: can be long. max_entries restrict the estimate
 
+        Strandness of transcript is determined from annotation while
+        strandness of reads is determined from alignments.
+
+        For non strand-specific RNA-seq data, strandness of reads and strandness
+        of transcript are independent.
+
+        For strand-specific RNA-seq data, strandness of reads is determined by
+        strandness of transcripts.
+        
+
+        This functions returns a list of 4 values. First one indicates whether
+        data is paired or not. Second and third one are ratio of reads explained
+        by two types of strandness of reads vs transcripts. Last values are
+        fractions of reads that could not be explained. The values 2 and 3 tell
+        you whether this is a strand-specificit dataset. 
+
+        If similar, it is no strand-specific.  If the first value is close to 1
+        while the other is close to 0, this is a strand-specific dataset
+
         """
         count = 0
         from collections import defaultdict
@@ -454,7 +473,7 @@ class SAMBAMbase():
             spec2 = (s_strandness['+-'] + s_strandness['-+']) / float(sum(s_strandness.values()))
             other = 1-spec1-spec2
         else:
-            protocol="Mixture"
+            protocol = "Mixture"
             spec1 = "NA"
             spec2 = "NA"
             other = "NA"
