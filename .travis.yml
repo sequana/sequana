@@ -64,14 +64,14 @@ install:
   - pip install itolapi
   - python setup.py install
   - pip install sequana_quality_control
-  - pip install coveralls
+  - pip install coverage coveralls
   - pip install sphinx==2.2 # for now, sphinx 3 fails the sphinxext from sequana (april 2020)
   - pip install .
   #- conda list
 
 # # command to run tests, e.g. python setup.py test
 script: 
-  - pytest -v --durations=10  test/ --cov=sequana --cov-report term-missing --timeout 300 
+  - pytest -v --cov-config=.coveragerc_travis --durations=10  test/ --cov=sequana --cov-report term-missing --timeout 300 
 
 after_success:
   coveralls
