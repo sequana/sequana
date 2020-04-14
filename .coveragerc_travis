@@ -1,2 +1,2 @@
 [run]
-omit = /home/travis/miniconda3/envs/testenv/lib/python3.5/site-packages/sequana/*
+omit = /home/travis/miniconda3/envs/testenv/lib/python*/site-packages/sequana/*
