@@ -64,6 +64,7 @@ install:
   - pip install itolapi
   - python setup.py install
   - pip install sequana_quality_control
+  - pip install coveralls
   - pip install sphinx==2.2 # for now, sphinx 3 fails the sphinxext from sequana (april 2020)
   #- conda list
 
