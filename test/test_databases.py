@@ -24,9 +24,11 @@ def test_eutils():
         assert res['K01711.1']['taxid'] == '11234'
 
 
+# this is known to fail quite often
+@pytest.mark.xfail
 def test_database_download():
     if network_available():
-
+    
         d = databases.ENADownload()
         d.download_viroid()
         for this in glob.glob('Viroid/*'):
