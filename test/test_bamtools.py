@@ -149,7 +149,7 @@ def test_cs_in_bam():
 def test_insert_size():
 
     d1 = sequana_data("test_measles.sam", "testing")
-    d2 = sequana_data("test_measles.cram", "testing")
+    #d2 = sequana_data("test_measles.cram", "testing")
     d3 = sequana_data("test.bam", "testing")
     d4 = sequana_data("test_CS_tiny.bam")
 
@@ -161,8 +161,8 @@ def test_insert_size():
     b1.get_estimate_insert_size()
     b1.plot_insert_size()
 
-    b2  = BAM(d2)
-    b2.get_estimate_insert_size()
+    #b2  = BAM(d2)
+    #b2.get_estimate_insert_size()
     
     b3  = BAM(d3)
     b3.get_estimate_insert_size()
