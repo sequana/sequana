@@ -7,12 +7,13 @@ Changelog
 0.8.3
 -----
 
-* pipeline now create the directories in the teardown instead of setup. This
-  prevents the creation of directories while input paramters are wrong
-* Fix requirements adding packaging
-* add new dependency (bx) to include new features in bamtools module (infer
-  strandness, insert_size)
+* pipelines now create the directories in the teardown instead of setup. This
+  prevents the creation of directories while input parameters are wrong. 
+* add plot_stats in PipelineManager 
+* Fix requirements adding packaging + new dependency (bx) to include 
+  new features in bamtools module (infer  strandness, insert_size)
 * add new module (bed) to include a BED class to read 12-column BED files. 
+* more tests and documentation as usual
 
 
 0.8.2
