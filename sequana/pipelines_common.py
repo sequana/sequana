@@ -631,12 +631,12 @@ class PipelineManager():
         # First we create the beginning of the command with the optional
         # parameters for a run on a SLURM scheduler
 
-        cmd = "#!/bin/bash\nsnakemake -s {}.rules"
+        cmd = "#!/bin/bash\nsnakemake -s {}.rules --stats stats.txt"
         self.command = cmd.format(self.name)
 
         # FIXME a job is not a core. Ideally, we should add a core option
         if self._guess_scheduler() == "local":
-            self.command += " -p --cores {}".format(self.options.jobs)
+            self.command += " -p --cores {} ".format(self.options.jobs)
         else:
             self.command += " -p --jobs {}".format(self.options.jobs)
 
@@ -664,8 +664,14 @@ class PipelineManager():
                     self.options.slurm_cores_per_job,
                     slurm_queue)
 
+        # This should be in the setup, not in the teardown since we may want to
+        # copy files when creating the pipeline. This is the case e.g. in the
+        # rnaseq pipeline
+        self._create_directories()
+
     def _create_directories(self):
         # Now we create the directory to store the config/pipeline
+
         if os.path.exists(self.workdir) is True and self.options.force is False:
             print(self.colors.failed(
             "Output path {} exists already. Use --force".format(self.workdir)))
@@ -714,6 +720,7 @@ class PipelineManager():
 to analyse non-fastQ files (e.g. BAM)""")
             sys.exit(1)
 
+
     def teardown(self, check_schema=True, check_input_files=True):
         """Save all files required to run the pipeline and perform sanity checks
 
@@ -743,20 +750,27 @@ to analyse non-fastQ files (e.g. BAM)""")
         if check_input_files:
             self.check_input_files()
 
-        self._create_directories()
 
         # the config file
         self.config._update_yaml()
-        self.config.save("{}/config.yaml".format(self.workdir))
         self.config.save("{}/{}/config.yaml".format(self.workdir , ".sequana"))
+        try:
+            os.symlink("{}/config.yaml".format(".sequana"),
+                   "{}/config.yaml".format(self.workdir))
+        except:
+            pass
 
         # the command
         with open("{}/{}.sh".format(self.workdir, self.name), "w") as fout:
             fout.write(self.command)
 
         # the snakefile
-        shutil.copy(self.module.snakefile, "{}".format(self.workdir))
         shutil.copy(self.module.snakefile, "{}/{}".format(self.workdir, ".sequana"))
+        try:
+            os.symlink("{}/{}.rules".format(".sequana", self.name), 
+                "{}/{}.rules".format(self.workdir, self.name))
+        except:
+            pass
 
         # the cluster config if any
         if self.module.logo:
