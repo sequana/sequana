@@ -91,13 +91,13 @@ class GFF3():
         data = list(self.read())
         import pandas as pd
         df = pd.DataFrame(data)
-        def get_description(x):
-            if 'description' in x:
-                return x['description']
+        def get_attr(x, name):
+            if name in x:
+                return x[name]
             else:
-                return ""
-        df['description'] = [get_description(x) for x in df['attributes']]
-        df['ID'] = [x ['ID'] for x in df['attributes']]
+                return None
+        df['description'] = [get_attr(x, "description") for x in df['attributes']]
+        df['ID'] = [get_attr(x, 'ID') for x in df['attributes']]
         return df
 
     def _process_main_fields(self, fields):
@@ -164,3 +164,58 @@ class GFF3():
         text = re.sub("%26", "&", text)
         text = re.sub("%2C", ",", text)
         return text
+
+    def create_files_for_rnadiff(self, outname, genetic_type="gene", 
+        ID="Name", fields=['Name']):
+        """Creates two files required for the RNADiff analysis following
+        sequana_rnaseq pipeline
+
+        :param str outname: the output filename prefix
+        :param genetic_type: genetic type to be selected from the GFF file e.g.
+            gene (default), CDS, etc
+        :param ID: the identifier (key) to be selected from the list of
+            attributes found in the GFF for the given type. By default, 'Name'.
+            Used as first column in the two ouptut file. 
+        :param fields: the fields to be save in the outname_info.tsv file
+        :return: nothing
+
+        This functions reads the GFF file and creates two files:
+        1. outname_gene_lengths.tsv contains column 1 with identifiers and
+           column 2 with length of the selected type (e.g. gene)
+        2. outname_info.tsv first column is the same identifier as in the first
+           file and following columns contain the fields of interest (Name by
+           default but could be any attributes to be found in the GFF such as 
+           description
+
+        """
+
+        data=list(self.read())
+        import pandas as pd
+        df = pd.DataFrame(data)
+
+        # gene here is the type. could be gene, mRNA
+        # the requested type
+        assert genetic_type in set(df['type'])
+
+        df = df.query("type==@genetic_type").copy()
+
+        # HERE we could check that ID exists
+        # This file is required by the RNAdiff pipeline
+
+        attributes = df.attributes.apply(lambda x: x[ID])
+        length = df.stop - df.start
+        df['Gene_id'] = attributes
+        df['Length'] = df.stop - df.start + 1
+        df.sort_values('Gene_id')[['Gene_id', 'Length']].to_csv(
+            "{}_gene_lengths.tsv".format(outname), sep='\t',index=None)
+
+        # Second file (redundant) is also required by the rnadiff pipeline
+
+        fields = ['Name', 'orf_classification']
+        fields = ['Name']
+        for this in fields:
+            data = df.attributes.apply(lambda x: x[this])
+            df[this] = data
+        df['ID'] = df[ID]
+        df.sort_values('ID')[["ID"] +  fields].to_csv(
+            "{}_info.tsv".format(outname), sep="\t", index=None)

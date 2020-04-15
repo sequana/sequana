@@ -1,0 +1,103 @@
+#
+# 100 rows from saccer3.gff3 Created by Saccharomyces Genome Database (http://www.yeastgenome.org/)
+#
+# with add an empty line to test the GFF class and add a score on first 5 (fifth
+# column)
+chrI	SGD	chromosome	1	230218	0.5	.	.	ID=chrI;dbxref=NCBI:;Name=chrI
+
+chrI	SGD	telomere	1	801	.	-	.	ID=TEL01L;Name=TEL01L;Note=Telomeric region on the left arm of Chromosome I; composed of an X element core sequence, X element combinatorial repeats, and a short terminal stretch of telomeric repeats;display=Telomeric region on the left arm of Chromosome I;dbxref=SGD:S000028862
+chrI	SGD	X_element	337	801	.	-	.	ID=TEL01L_X_element;Name=TEL01L_X_element;dbxref=SGD:S000028862
+chrI	SGD	X_element_combinatorial_repeat	63	336	.	-	.	ID=TEL01L_X_element_combinatorial_repeat;Name=TEL01L_X_element_combinatorial_repeat;dbxref=SGD:S000028862
+chrI	SGD	telomeric_repeat	1	62	.	-	.	ID=TEL01L_telomeric_repeat;Name=TEL01L_telomeric_repeat;dbxref=SGD:S000028862
+chrI	SGD	gene	335	649	.	+	.	ID=YAL069W;Name=YAL069W;Ontology_term=GO:0003674,GO:0005575,GO:0008150;Note=Dubious open reading frame; unlikely to encode a functional protein, based on available experimental and comparative sequence data;display=Dubious open reading frame;dbxref=SGD:S000002143;orf_classification=Dubious
+chrI	SGD	CDS	335	649	.	+	0	Parent=YAL069W_mRNA;Name=YAL069W_CDS;orf_classification=Dubious
+chrI	SGD	mRNA	335	649	.	+	.	ID=YAL069W_mRNA;Name=YAL069W_mRNA;Parent=YAL069W
+chrI	SGD	gene	538	792	.	+	.	ID=YAL068W-A;Name=YAL068W-A;Ontology_term=GO:0003674,GO:0005575,GO:0008150;Note=Dubious open reading frame; unlikely to encode a functional protein, based on available experimental and comparative sequence data; identified by gene-trapping, microarray-based expression analysis, and genome-wide homology searching;display=Dubious open reading frame;dbxref=SGD:S000028594;orf_classification=Dubious
+chrI	SGD	CDS	538	792	.	+	0	Parent=YAL068W-A_mRNA;Name=YAL068W-A_CDS;orf_classification=Dubious
+chrI	SGD	mRNA	538	792	.	+	.	ID=YAL068W-A_mRNA;Name=YAL068W-A_mRNA;Parent=YAL068W-A
+chrI	SGD	ARS	707	776	.	.	.	ID=ARS102;Name=ARS102;Alias=ARSI-1;Note=Autonomously Replicating Sequence;display=Autonomously Replicating Sequence;dbxref=SGD:S000121252
+chrI	SGD	gene	1807	2169	.	-	.	ID=YAL068C;Name=YAL068C;gene=PAU8;Alias=PAU8,seripauperin PAU8;Ontology_term=GO:0003674,GO:0005575,GO:0030437,GO:0045944;Note=Protein of unknown function; member of the seripauperin multigene family encoded mainly in subtelomeric regions;display=Protein of unknown function;dbxref=SGD:S000002142;orf_classification=Verified
+chrI	SGD	CDS	1807	2169	.	-	0	Parent=YAL068C_mRNA;Name=YAL068C_CDS;orf_classification=Verified
+chrI	SGD	mRNA	1807	2169	.	-	.	ID=YAL068C_mRNA;Name=YAL068C_mRNA;Parent=YAL068C
+chrI	SGD	gene	2480	2707	.	+	.	ID=YAL067W-A;Name=YAL067W-A;Ontology_term=GO:0003674,GO:0005575,GO:0008150;Note=Putative protein of unknown function; identified by gene-trapping, microarray-based expression analysis, and genome-wide homology searching;display=Putative protein of unknown function;dbxref=SGD:S000028593;orf_classification=Uncharacterized
+chrI	SGD	CDS	2480	2707	.	+	0	Parent=YAL067W-A_mRNA;Name=YAL067W-A_CDS;orf_classification=Uncharacterized
+chrI	SGD	mRNA	2480	2707	.	+	.	ID=YAL067W-A_mRNA;Name=YAL067W-A_mRNA;Parent=YAL067W-A
+chrI	SGD	gene	7235	9016	.	-	.	ID=YAL067C;Name=YAL067C;gene=SEO1;Alias=SEO1,putative permease SEO1;Ontology_term=GO:0005215,GO:0006810,GO:0016020,GO:0016021,GO:0071944;Note=Putative permease; member of the allantoate transporter subfamily of the major facilitator superfamily; mutation confers resistance to ethionine sulfoxide;display=Putative permease;dbxref=SGD:S000000062;orf_classification=Verified
+chrI	SGD	CDS	7235	9016	.	-	0	Parent=YAL067C_mRNA;Name=YAL067C_CDS;orf_classification=Verified
+chrI	SGD	mRNA	7235	9016	.	-	.	ID=YAL067C_mRNA;Name=YAL067C_mRNA;Parent=YAL067C
+chrI	SGD	ARS	7997	8547	.	.	.	ID=ARS103;Name=ARS103;Alias=ARSI-8;Note=Autonomously Replicating Sequence; replication origin of very weak function;display=Autonomously Replicating Sequence;dbxref=SGD:S000121253
+chrI	SGD	gene	10091	10399	.	+	.	ID=YAL066W;Name=YAL066W;Ontology_term=GO:0003674,GO:0005575,GO:0008150;Note=Dubious open reading frame; unlikely to encode a functional protein, based on available experimental and comparative sequence data;display=Dubious open reading frame;dbxref=SGD:S000000061;orf_classification=Dubious
+chrI	SGD	CDS	10091	10399	.	+	0	Parent=YAL066W_mRNA;Name=YAL066W_CDS;orf_classification=Dubious
+chrI	SGD	mRNA	10091	10399	.	+	.	ID=YAL066W_mRNA;Name=YAL066W_mRNA;Parent=YAL066W
+chrI	SGD	gene	11565	11951	.	-	.	ID=YAL065C;Name=YAL065C;Ontology_term=GO:0003674,GO:0005575,GO:0008150;Note=Putative protein of unknown function; shows sequence similarity to FLO1 and other flocculins;display=Putative protein of unknown function;dbxref=SGD:S000001817;orf_classification=Uncharacterized
+chrI	SGD	CDS	11565	11951	.	-	0	Parent=YAL065C_mRNA;Name=YAL065C_CDS;orf_classification=Uncharacterized
+chrI	SGD	mRNA	11565	11951	.	-	.	ID=YAL065C_mRNA;Name=YAL065C_mRNA;Parent=YAL065C
+chrI	SGD	gene	12046	12426	.	+	.	ID=YAL064W-B;Name=YAL064W-B;Ontology_term=GO:0003674,GO:0005783,GO:0008150,GO:0016021;Note=Fungal-specific protein of unknown function;display=Fungal-specific protein of unknown function;dbxref=SGD:S000002141;orf_classification=Uncharacterized
+chrI	SGD	CDS	12046	12426	.	+	0	Parent=YAL064W-B_mRNA;Name=YAL064W-B_CDS;orf_classification=Uncharacterized
+chrI	SGD	mRNA	12046	12426	.	+	.	ID=YAL064W-B_mRNA;Name=YAL064W-B_mRNA;Parent=YAL064W-B
+chrI	SGD	gene	13363	13743	.	-	.	ID=YAL064C-A;Name=YAL064C-A;gene=TDA8;Alias=TDA8,YAL065C-A;Ontology_term=GO:0003674,GO:0005575,GO:0008150;Note=Putative protein of unknown function; null mutant is sensitive to expression of the top1-T722A allele; not an essential gene;display=Putative protein of unknown function;dbxref=SGD:S000002140;orf_classification=Uncharacterized
+chrI	SGD	CDS	13363	13743	.	-	0	Parent=YAL064C-A_mRNA;Name=YAL064C-A_CDS;orf_classification=Uncharacterized
+chrI	SGD	mRNA	13363	13743	.	-	.	ID=YAL064C-A_mRNA;Name=YAL064C-A_mRNA;Parent=YAL064C-A
+chrI	SGD	gene	21566	21850	.	+	.	ID=YAL064W;Name=YAL064W;Ontology_term=GO:0003674,GO:0005575,GO:0008150;Note=Protein of unknown function; may interact with ribosomes, based on co-purification experiments;display=Protein of unknown function;dbxref=SGD:S000000060;orf_classification=Verified
+chrI	SGD	CDS	21566	21850	.	+	0	Parent=YAL064W_mRNA;Name=YAL064W_CDS;orf_classification=Verified
+chrI	SGD	mRNA	21566	21850	.	+	.	ID=YAL064W_mRNA;Name=YAL064W_mRNA;Parent=YAL064W
+chrI	SGD	long_terminal_repeat	22230	22552	.	+	.	ID=YALWdelta1;Name=YALWdelta1;Ontology_term=SO:0000286;Note=Ty1 LTR;display=Ty1 LTR;dbxref=SGD:S000006787
+chrI	SGD	gene	22395	22685	.	-	.	ID=YAL063C-A;Name=YAL063C-A;Ontology_term=GO:0003674,GO:0005575,GO:0008150;Note=Putative protein of unknown function; identified by expression profiling and mass spectrometry;display=Putative protein of unknown function;dbxref=SGD:S000028813;orf_classification=Uncharacterized
+chrI	SGD	CDS	22395	22685	.	-	0	Parent=YAL063C-A_mRNA;Name=YAL063C-A_CDS;orf_classification=Uncharacterized
+chrI	SGD	mRNA	22395	22685	.	-	.	ID=YAL063C-A_mRNA;Name=YAL063C-A_mRNA;Parent=YAL063C-A
+chrI	landmark	region	24000	27968	.	-	.	ID=FLO9
+chrI	SGD	gene	24000	27968	.	-	.	ID=YAL063C;Name=YAL063C;gene=FLO9;Alias=FLO9,flocculin FLO9;Ontology_term=GO:0000128,GO:0000501,GO:0005537,GO:0009277,GO:0031589;Note=Lectin-like protein with similarity to Flo1p; thought to be expressed and involved in flocculation;display=Lectin-like protein with similarity to Flo1p;dbxref=SGD:S000000059;orf_classification=Verified
+chrI	SGD	CDS	24000	27968	.	-	0	Parent=YAL063C_mRNA;Name=YAL063C_CDS;orf_classification=Verified
+chrI	SGD	mRNA	24000	27968	.	-	.	ID=YAL063C_mRNA;Name=YAL063C_mRNA;Parent=YAL063C
+chrI	SGD	ARS	30946	31183	.	.	.	ID=ARS104;Name=ARS104;Alias=ARSI-31;Note=Autonomously Replicating Sequence;display=Autonomously Replicating Sequence;dbxref=SGD:S000118317
+chrI	SGD	ARS_consensus_sequence	31002	31018	.	+	.	ID=ARS104_ARS_consensus_sequence;Name=ARS104_ARS_consensus_sequence;dbxref=SGD:S000118317
+chrI	SGD	gene	31567	32940	.	+	.	ID=YAL062W;Name=YAL062W;gene=GDH3;Alias=GDH3,FUN51,glutamate dehydrogenase (NADP(%2B)) GDH3;Ontology_term=GO:0004354,GO:0005634,GO:0005739,GO:0006537,GO:0019676;Note=NADP(%2B)-dependent glutamate dehydrogenase; synthesizes glutamate from ammonia and alpha-ketoglutarate; rate of alpha-ketoglutarate utilization differs from Gdh1p; expression regulated by nitrogen and carbon sources; GDH3 has a paralog, GDH1, that arose from the whole genome duplication;display=NADP(%2B)-dependent glutamate dehydrogenase;dbxref=SGD:S000000058;orf_classification=Verified
+chrI	SGD	CDS	31567	32940	.	+	0	Parent=YAL062W_mRNA;Name=YAL062W_CDS;orf_classification=Verified
+chrI	SGD	mRNA	31567	32940	.	+	.	ID=YAL062W_mRNA;Name=YAL062W_mRNA;Parent=YAL062W
+chrI	SGD	gene	33448	34701	.	+	.	ID=YAL061W;Name=YAL061W;gene=BDH2;Alias=BDH2,putative dehydrogenase BDH2;Ontology_term=GO:0005634,GO:0005737,GO:0008150,GO:0016616;Note=Putative medium-chain alcohol dehydrogenase with similarity to BDH1; transcription induced by constitutively active PDR1 and PDR3;display=Putative medium-chain alcohol dehydrogenase with similarity to BDH1;dbxref=SGD:S000000057;orf_classification=Uncharacterized
+chrI	SGD	CDS	33448	34701	.	+	0	Parent=YAL061W_mRNA;Name=YAL061W_CDS;orf_classification=Uncharacterized
+chrI	SGD	mRNA	33448	34701	.	+	.	ID=YAL061W_mRNA;Name=YAL061W_mRNA;Parent=YAL061W
+chrI	SGD	gene	35155	36303	.	+	.	ID=YAL060W;Name=YAL060W;gene=BDH1;Alias=BDH1,(R,R)-butanediol dehydrogenase,BDH;Ontology_term=GO:0000721,GO:0005737,GO:0006066,GO:0034079;Note=NAD-dependent (R,R)-butanediol dehydrogenase; catalyzes oxidation of (R,R)-2,3-butanediol to (3R)-acetoin, oxidation of meso-butanediol to (3S)-acetoin, and reduction of acetoin; enhances use of 2,3-butanediol as an aerobic carbon source;display=NAD-dependent (R,R)-butanediol dehydrogenase;dbxref=SGD:S000000056;orf_classification=Verified
+chrI	SGD	CDS	35155	36303	.	+	0	Parent=YAL060W_mRNA;Name=YAL060W_CDS;orf_classification=Verified
+chrI	SGD	mRNA	35155	36303	.	+	.	ID=YAL060W_mRNA;Name=YAL060W_mRNA;Parent=YAL060W
+chrI	SGD	gene	36496	36918	.	-	.	ID=YAL059C-A;Name=YAL059C-A;Ontology_term=GO:0003674,GO:0005575,GO:0008150;Note=Dubious open reading frame; unlikely to encode a functional protein, based on available experimental and comparative sequence data; partially overlaps verified gene ECM1%2FYAL059W;display=Dubious open reading frame;dbxref=SGD:S000028734;orf_classification=Dubious
+chrI	SGD	CDS	36496	36918	.	-	0	Parent=YAL059C-A_mRNA;Name=YAL059C-A_CDS;orf_classification=Dubious
+chrI	SGD	mRNA	36496	36918	.	-	.	ID=YAL059C-A_mRNA;Name=YAL059C-A_mRNA;Parent=YAL059C-A
+chrI	SGD	gene	36509	37147	.	+	.	ID=YAL059W;Name=YAL059W;gene=ECM1;Alias=ECM1;Ontology_term=GO:0000055,GO:0003674,GO:0005634,GO:0005730,GO:0030687;Note=Pre-ribosomal factor involved in 60S ribosomal protein subunit export; associates with the pre-60S particle; shuttles between the nucleus and cytoplasm;display=Pre-ribosomal factor involved in 60S ribosomal protein subunit export;dbxref=SGD:S000000055;orf_classification=Verified
+chrI	SGD	CDS	36509	37147	.	+	0	Parent=YAL059W_mRNA;Name=YAL059W_CDS;orf_classification=Verified
+chrI	SGD	mRNA	36509	37147	.	+	.	ID=YAL059W_mRNA;Name=YAL059W_mRNA;Parent=YAL059W
+chrI	SGD	gene	37464	38972	.	+	.	ID=YAL058W;Name=YAL058W;gene=CNE1;Alias=CNE1,FUN48,calnexin;Ontology_term=GO:0005515,GO:0005783,GO:0006457,GO:0030176,GO:0030433,GO:0051082;Note=Calnexin; integral membrane ER chaperone involved in folding and quality control of glycoproteins; chaperone activity is inhibited by Mpd1p, with which Cne1p interacts; 24%25 identical to mammalian calnexin; Ca%2B binding not yet shown in yeast;display=Calnexin;dbxref=SGD:S000000054;orf_classification=Verified
+chrI	SGD	CDS	37464	38972	.	+	0	Parent=YAL058W_mRNA;Name=YAL058W_CDS;orf_classification=Verified
+chrI	SGD	mRNA	37464	38972	.	+	.	ID=YAL058W_mRNA;Name=YAL058W_mRNA;Parent=YAL058W
+chrI	SGD	gene	38696	39046	.	-	.	ID=YAL056C-A;Name=YAL056C-A;Alias=YAL058C-A;Ontology_term=GO:0003674,GO:0005575,GO:0008150;Note=Dubious open reading frame; unlikely to encode a functional protein, based on available experimental and comparative sequence data;display=Dubious open reading frame;dbxref=SGD:S000002139;orf_classification=Dubious
+chrI	SGD	CDS	38696	39046	.	-	0	Parent=YAL056C-A_mRNA;Name=YAL056C-A_CDS;orf_classification=Dubious
+chrI	SGD	mRNA	38696	39046	.	-	.	ID=YAL056C-A_mRNA;Name=YAL056C-A_mRNA;Parent=YAL056C-A
+chrI	SGD	gene	39259	41901	.	+	.	ID=YAL056W;Name=YAL056W;gene=GPB2;Alias=GPB2,KRH1;Ontology_term=GO:0001403,GO:0004862,GO:0004871,GO:0005737,GO:0005739,GO:0005886,GO:0007124,GO:0007165,GO:0010255,GO:0030437,GO:0032794,GO:0045944,GO:0046580;Note=Multistep regulator of cAMP-PKA signaling; inhibits PKA downstream of Gpa2p and Cyr1p, thereby increasing cAMP dependency; inhibits Ras activity through direct interactions with Ira1p%2F2p; regulated by G-alpha protein Gpa2p; GPB2 has a paralog, GPB1, that arose from the whole genome duplication;display=Multistep regulator of cAMP-PKA signaling;dbxref=SGD:S000000052;orf_classification=Verified
+chrI	SGD	CDS	39259	41901	.	+	0	Parent=YAL056W_mRNA;Name=YAL056W_CDS;orf_classification=Verified
+chrI	SGD	mRNA	39259	41901	.	+	.	ID=YAL056W_mRNA;Name=YAL056W_mRNA;Parent=YAL056W
+chrI	SGD	ARS	41992	42151	.	.	.	ID=ARS105;Name=ARS105;Alias=ARSI-42;Note=Autonomously Replicating Sequence;display=Autonomously Replicating Sequence;dbxref=SGD:S000121254
+chrI	SGD	gene	42177	42719	.	+	.	ID=YAL055W;Name=YAL055W;gene=PEX22;Alias=PEX22,YAF5,ubiquitin-protein transferase activating protein PEX22;Ontology_term=GO:0005737,GO:0005779,GO:0006625,GO:0016562,GO:0031398,GO:0043495,GO:0097027,GO:1902499;Note=Putative peroxisomal membrane protein; required for import of peroxisomal proteins; functionally complements a Pichia pastoris pex22 mutation;display=Putative peroxisomal membrane protein;dbxref=SGD:S000000051;orf_classification=Verified
+chrI	SGD	CDS	42177	42719	.	+	0	Parent=YAL055W_mRNA;Name=YAL055W_CDS;orf_classification=Verified
+chrI	SGD	mRNA	42177	42719	.	+	.	ID=YAL055W_mRNA;Name=YAL055W_mRNA;Parent=YAL055W
+chrI	SGD	gene	42881	45022	.	-	.	ID=YAL054C;Name=YAL054C;gene=ACS1;Alias=ACS1,FUN44,acetate--CoA ligase 1;Ontology_term=GO:0003987,GO:0005739,GO:0005829,GO:0006085,GO:0016021,GO:0016573,GO:0016880,GO:0019654;Note=Acetyl-coA synthetase isoform; along with Acs2p, acetyl-coA synthetase isoform is the nuclear source of acetyl-coA for histone acetylation; expressed during growth on nonfermentable carbon sources and under aerobic conditions;display=Acetyl-coA synthetase isoform;dbxref=SGD:S000000050;orf_classification=Verified
+chrI	SGD	CDS	42881	45022	.	-	0	Parent=YAL054C_mRNA;Name=YAL054C_CDS;orf_classification=Verified
+chrI	SGD	mRNA	42881	45022	.	-	.	ID=YAL054C_mRNA;Name=YAL054C_mRNA;Parent=YAL054C
+chrI	SGD	gene	45899	48250	.	+	.	ID=YAL053W;Name=YAL053W;gene=FLC2;Alias=FLC2,HUF2,flavin adenine dinucleotide transporter FLC2;Ontology_term=GO:0005737,GO:0005783,GO:0006457,GO:0009272,GO:0015230,GO:0015883,GO:0016021,GO:0030148,GO:0055074,GO:0055085,GO:0071476;Note=Putative calcium channel involved in calcium release under hypotonic stress; required for uptake of FAD into endoplasmic reticulum; involved in cell wall maintenance; FLC2 has a paralog, YOR365C, that arose from the whole genome duplication;display=Putative calcium channel involved in calcium release under hypotonic;dbxref=SGD:S000000049;orf_classification=Verified
+chrI	SGD	CDS	45899	48250	.	+	0	Parent=YAL053W_mRNA;Name=YAL053W_CDS;orf_classification=Verified
+chrI	SGD	mRNA	45899	48250	.	+	.	ID=YAL053W_mRNA;Name=YAL053W_mRNA;Parent=YAL053W
+chrI	SGD	gene	48564	51707	.	+	.	ID=YAL051W;Name=YAL051W;gene=OAF1;Alias=OAF1,YAF1,oleate-activated transcription factor OAF1;Ontology_term=GO:0000978,GO:0001077,GO:0031940,GO:0032000,GO:0043565,GO:0045944,GO:0061429,GO:0089716;Note=Oleate-activated transcription factor; subunit of a heterodimeric complex with Pip2p, which binds to oleate-response elements (ORE) in the promoter of genes involved in beta-oxidation of fatty acids, peroxisome organization and biogenesis, activating transcription in the presence of oleate; regulates chromatin silencing at telomeres; involved in diauxic shift; OAF1 has a paralog, PIP2, that arose from the whole genome duplication;display=Oleate-activated transcription factor;dbxref=SGD:S000000048;orf_classification=Verified
+chrI	SGD	CDS	48564	51707	.	+	0	Parent=YAL051W_mRNA;Name=YAL051W_CDS;orf_classification=Verified
+chrI	SGD	mRNA	48564	51707	.	+	.	ID=YAL051W_mRNA;Name=YAL051W_mRNA;Parent=YAL051W
+chrI	SGD	gene	51855	52595	.	-	.	ID=YAL049C;Name=YAL049C;gene=AIM2;Alias=AIM2,protein AIM2;Ontology_term=GO:0003674,GO:0005737,GO:0008150;Note=Cytoplasmic protein involved in mitochondrial function or organization; null mutant displays reduced frequency of mitochondrial genome loss; potential Hsp82p interactor;display=Cytoplasmic protein involved in mitochondrial function or organization;dbxref=SGD:S000000047;orf_classification=Verified
+chrI	SGD	CDS	51855	52595	.	-	0	Parent=YAL049C_mRNA;Name=YAL049C_CDS;orf_classification=Verified
+chrI	SGD	mRNA	51855	52595	.	-	.	ID=YAL049C_mRNA;Name=YAL049C_mRNA;Parent=YAL049C
+chrI	SGD	gene	52801	54789	.	-	.	ID=YAL048C;Name=YAL048C;gene=GEM1;Alias=GEM1,ERMES complex Ca(2%2B)-binding regulatory GTPase GEM1,GON1;Ontology_term=GO:0000001,GO:0003924,GO:0005509,GO:0005739,GO:0005741,GO:0010821,GO:0032865,GO:0055091,GO:1990456;Note=Outer mitochondrial membrane GTPase, subunit of the ERMES complex; potential regulatory subunit of the ERMES complex that links the ER to mitochondria and may promote inter-organellar calcium and phospholipid exchange as well as coordinating mitochondrial DNA replication and growth; cells lacking Gem1p contain collapsed, globular, or grape-like mitochondria; ortholog of metazoan Miro GTPases;display=Outer mitochondrial membrane GTPase, subunit of the ERMES complex;dbxref=SGD:S000000046;orf_classification=Verified
+chrI	SGD	CDS	52801	54789	.	-	0	Parent=YAL048C_mRNA;Name=YAL048C_CDS;orf_classification=Verified
+chrI	SGD	mRNA	52801	54789	.	-	.	ID=YAL048C_mRNA;Name=YAL048C_mRNA;Parent=YAL048C
+chrI	SGD	gene	54584	54913	.	+	.	ID=YAL047W-A;Name=YAL047W-A;Ontology_term=GO:0003674,GO:0005575,GO:0008150;Note=Dubious open reading frame; unlikely to encode a functional protein, based on available experimental and comparative sequence data; partially overlaps ORF GEM1%2FYAL048C;display=Dubious open reading frame;dbxref=SGD:S000028733;orf_classification=Dubious
+chrI	SGD	CDS	54584	54913	.	+	0	Parent=YAL047W-A_mRNA;Name=YAL047W-A_CDS;orf_classification=Dubious
+chrI	SGD	mRNA	54584	54913	.	+	.	ID=YAL047W-A_mRNA;Name=YAL047W-A_mRNA;Parent=YAL047W-A
+chrI	SGD	gene	54989	56857	.	-	.	ID=YAL047C;Name=YAL047C;gene=SPC72;Alias=SPC72,LDB4,gamma-tubulin complex subunit SPC72;Ontology_term=GO:0000022,GO:0000070,GO:0005200,GO:0005824,GO:0007020,GO:0030473,GO:0031578;Note=Gamma-tubulin small complex (gamma-TuSC) receptor; recruits the gamma-TuSC complex to the cytoplasmic side of the SPB, connecting nuclear microtubules to the SPB; involved in astral microtubule formation, stabilization, and with Stu2p, anchoring astral MTs at the cytoplasmic face of the SPB, and regulating plus-end MT dynamics; regulated by Cdc5 kinase;display=Gamma-tubulin small complex (gamma-TuSC) receptor;dbxref=SGD:S000000045;orf_classification=Verified
+chrI	SGD	CDS	54989	56857	.	-	0	Parent=YAL047C_mRNA;Name=YAL047C_CDS;orf_classification=Verified
+chrI	SGD	mRNA	54989	56857	.	-	.	ID=YAL047C_mRNA;Name=YAL047C_mRNA;Parent=YAL047C
+chrI	SGD	gene	57029	57385	.	-	.	ID=YAL046C;Name=YAL046C;gene=BOL3;Alias=BOL3,AIM1;Ontology_term=GO:0003674,GO:0005759,GO:0097428;Note=Protein involved in Fe-S cluster transfer to mitochondrial clients; protects [4Fe-4S] clusters from damage due to oxidative stress by acting along with Nfu1p at a late step in the transfer of [4Fe-4S] clusters from the ISA complex to mitochondrial client proteins like lipoate synthase and succinate dehydrogenase; sequence similarity to human BOLA family member, BOLA3, mutations of which are associated with Multiple Mitochondria Dysfunctions Syndrome (MMDS2);display=Protein involved in Fe-S cluster transfer to mitochondrial clients;dbxref=SGD:S000000044;orf_classification=Verified
