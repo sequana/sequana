@@ -203,3 +203,10 @@ def test_ChromosomeCovMultiChunk():
     res = chrom.run(501, k=2, circular=True)
     res.get_summary()
     res.get_rois()
+
+def test_binining():
+    filename = sequana_data('JB409847.bed')
+    # using chunksize of 7000, we test odd number
+    bed = bedtools.GenomeCov(filename, sequana_data('JB409847.gbk'),chunksize=7000)
+    chrom = bed.chr_list[0]
+    chrom.run(501, k=2, circular=True, binning=2, cnv_delta=100)
