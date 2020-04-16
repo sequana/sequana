@@ -296,7 +296,7 @@ class KrakenResults(object):
         df.to_json(filename)
         return df
 
-    def kraken_to_krona(self, output_filename=None, mode=None, nofile=False):
+    def kraken_to_krona(self, output_filename=None, nofile=False):
         """
 
         :return: status: True is everything went fine otherwise False
@@ -323,32 +323,9 @@ class KrakenResults(object):
         if len(taxon_to_find) == 0:
             return False
 
-        if mode != "adapters":
-            df = self.get_taxonomy_db(taxon_to_find)
-            self.lineage = [";".join(this) for this in df[df.columns[0:-1]].values]
-            self.scnames = list(df['name'].values)  # do we need a cast ?
-        else:
-            # Let us get the known adapters and their identifiers
-            from sequana.adapters import AdapterDB
-            adapters = AdapterDB()
-            adapters.load_all()
-
-            self.scnames = []
-
-            for taxon in self.taxons.index:
-                if str(taxon) in [1, "1"]:
-                    self.scnames.append('unknown')
-                    continue
-
-                if str(taxon) not in list(adapters.df.identifier):
-                    self.scnames.append('unknown')
-                    continue
-
-                self.scnames.append(adapters.get_name(taxon))
-            self.lineage = ["Adapters;%s"% x for x in self.scnames]
-
-            assert len(self.lineage) == len(self.taxons)
-            assert len(self.scnames) == len(self.taxons)
+        df = self.get_taxonomy_db(taxon_to_find)
+        self.lineage = [";".join(this) for this in df[df.columns[0:-1]].values]
+        self.scnames = list(df['name'].values)  # do we need a cast ?
 
         # Now save the file
         self.output_filename = output_filename

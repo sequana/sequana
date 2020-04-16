@@ -14,15 +14,13 @@
 #  documentation: http://sequana.readthedocs.io
 #
 ##############################################################################
-"""Merge Lanes. Be aware that this script works only on a SLURM cluster 
+"""Merge Lanes. Be aware that this script works only on a SLURM cluster
 
 A future version will be more generic.
 
 This only to be used by the biomics platform. You can of course contribute to
 the improvment of this script
 
-For biomics users, please see:
-https://github.com/biomics-pasteur-fr/bioinfo/wiki/NextSeq:-how-to-merge-fusion-lanes
 """
 import sys
 import glob
@@ -38,11 +36,11 @@ class Common(object):
         """
 
         :param pattern: example */*fastq.gz
-        :param lanes: lanes to keep (and fusion)
+        :param lanes: lanes to keep (and merge)
 
         """
         # sanity checks.
-        assert len(lanes)>=2, "to fusion lanes, you need at least 2!"
+        assert len(lanes)>=2, "to merge lanes, you need at least 2!"
         assert min(lanes)>0, "lanes must be positive numbers"
         assert len(set(lanes)) == len(lanes), "lanes number must be unique"
         assert max(lanes)<=8, "lanes must be < 8 "
@@ -56,13 +54,13 @@ class Common(object):
         """Extract unique sample names"""
         self.filenames = glob.glob(os.path.abspath(self.pattern))
         print("Found {} files ".format(len(self.filenames)))
-        
+
         if len(self.filenames) == 0:
             ValueError("No files found. Are you in the correct path ? ")
 
         print("Identifying lanes from input filenames...")
         lanes = str(self.lanes).replace(" ","")
-        self.filenames =[x for x in self.filenames if re.search("_L00{}_".format(lanes), x)] 
+        self.filenames =[x for x in self.filenames if re.search("_L00{}_".format(lanes), x)]
 
         if len(self.filenames) == 0:
             ValueError("No files found with L00 tag. Are you in the correct path ? ")
@@ -86,7 +84,7 @@ class BackSpace(Common):
     in subsirectories, at the end we store everything in a flat structure.
 
     """
-    def __init__(self, pattern="*/*fastq.gz", outdir="fusion", threads=4,
+    def __init__(self, pattern="*/*fastq.gz", outdir="merging", threads=4,
                  queue=None, lanes=[]):
         super(BackSpace, self).__init__(pattern, lanes)
 
@@ -96,7 +94,7 @@ class BackSpace(Common):
         self.queue = queue
 
         print("Number of samples: {}".format(len(self.sampleIDs)))
-        
+
     def _set_outdir(self, outdir):
         self._outdir = outdir
         self._create_outdir()
@@ -179,14 +177,13 @@ class BackSpace(Common):
                 sbatch_command = "sbatch -c {thread} "
                 sbatch_command += " -A {} --qos {} -p {} ".format(self.queue, self.queue, self.queue)
 
-            print(sbatch_command)
             # R1 case and R2 if needed
             READS = ['R1']
             if self.is_paired(name) is True:
                 READS += ['R2']
- 
+
             for RX in READS:
-                print("  fusionning {} ({} case)".format(name, RX))
+                print("  Merging {} ({} case)".format(name, RX))
                 name.split("/")[-1]
                 script_name = "{}_script.sh".format(os.path.split(name)[1])
                 with open(script_name, 'w') as fin:
@@ -199,7 +196,7 @@ class BackSpace(Common):
                     cmd = sbatch_command.format(**{'thread': self.threads}) + " " + script_name
                 else:
                     cmd = "sh {}".format(script_name)
-                #print(cmd)
+
                 from subprocess import STDOUT
                 if dry_run is False:
                     process = subprocess.check_output(cmd.split())
@@ -207,8 +204,7 @@ class BackSpace(Common):
                 else:
                     processes.append("dryrun")
 
-
-        if len(processes):
+        if which("sbatch") is not None and len(processes):
             print("Wait for those process to be over; type 'squeue | grep <your login>")
             for proc in processes:
                 print(proc,)
@@ -219,10 +215,10 @@ class BackSpace(Common):
 
 
 class Options(argparse.ArgumentParser):
-    def __init__(self, prog="backspace_fusion"):
+    def __init__(self, prog="sequana_lane_merging"):
         usage = """%s
 
-        sequana_lane_fusion
+        sequana_lane_merging
 
         This searches for data stored in this format:
 
@@ -236,15 +232,16 @@ class Options(argparse.ArgumentParser):
             sampleID_L002_.fastq.gz
 
 
-        sequana_lane_fusion --lanes 1 2 3 4
+        sequana_lane_merging --lanes 1 2 3 4
 
         """.format(prog)
         super(Options, self).__init__(usage=usage, prog=prog,
-                description="")
+                description="",
+                formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
         # options to fill the config file
         self.add_argument("--output-directory", dest="outdir", type=str,
-            default="fusion",
+            default="merging",
             help="Where to store the new fastq files")
         self.add_argument("--pattern", dest="pattern", type=str,
             default="*/*fastq*gz",
@@ -255,15 +252,15 @@ class Options(argparse.ArgumentParser):
         self.add_argument("--queue", dest="queue", type=str,
             default="common", choices=["biomics", "common"],
             help="queue to use on the cluster")
-        self.add_argument("--lanes", dest="lanes", nargs="+", 
+        self.add_argument("--lanes", dest="lanes", nargs="+",
             type=int, required=True)
         self.add_argument("--dry-run", dest="dry_run", action="store_true",
-            help="just createt the script but do not launch them")
+            help="just create the script but do not launch them")
 
 
 def main(args=None):
 
-    user_options = Options(prog="sequana_backspace_fusion")
+    user_options = Options(prog="sequana_lane_merging")
     if args is None:
         args = sys.argv
 
