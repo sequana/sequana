@@ -8,9 +8,14 @@ import pytest
 skiptravis = pytest.mark.skipif("TRAVIS_PYTHON_VERSION" in os.environ,
     reason="On travis")
 
+try:
+    kd = KrakenDownload()
+    kd.download('toydb')
+except:
+    pass
 
-#@skiptravis
-def run_kraken_taxon():
+#@pytest.mark.xfail
+def test_run_kraken_taxon():
 
     def download():
         kd = KrakenDownload()
@@ -35,14 +40,13 @@ def run_kraken_taxon():
     kt.run()
 
     kt = KrakenHierarchical(file1, [database, database],
-output_directory=p.name, force=True)
+        output_directory=p.name, force=True)
     kt.run()
 
     p.cleanup()
 
 
-
-@skiptravis
+#@pytest.mark.xfail
 def test_kraken_results():
     test_file = sequana_data("test_kraken.out", "testing")
     k = KrakenResults(test_file)
@@ -54,18 +58,34 @@ def test_kraken_results():
     df = k.get_taxonomy_db(11234)
     assert 11234 in df.index
 
-    df = k.get_taxonomy_db("11234")
-    assert 11234 in df.index
+    from easydev import TempFile
+    with TempFile() as fout:
+        k.kraken_to_csv(fout.name, "toydb")
+        k.kraken_to_json(fout.name, "toydb")
+        k.kraken_to_krona(fout.name )
+        k.to_js(fout.name)
 
+def test_kraken_pipeline():
+    
+    from sequana import KrakenPipeline
+    file1 = sequana_data("Hm2_GTGAAA_L005_R1_001.fastq.gz", "data")
+    file2 = sequana_data("Hm2_GTGAAA_L005_R2_001.fastq.gz", "data")
+    def download():
+        kd = KrakenDownload()
+        kd.download('toydb')
+    download()
+    database = sequana_config_path + os.sep + "kraken_toydb"
+    kp = KrakenPipeline([file1, file2], database=database)
+    kp.run()
 
-    df = k.get_taxonomy_db([11234])
-    assert 11234 in df.index
-
-    df = k.get_taxonomy_db(["11234"])
-    assert 11234 in df.index
-
-
+#@pytest.mark.xfail
 def test_download():
     kd = KrakenDownload()
     kd.download('toydb')
 
+
+def test_mkr():
+    from sequana.kraken import MultiKrakenResults
+    mkr = MultiKrakenResults([sequana_data("test_kraken_multiple_1.csv"),
+            sequana_data('test_kraken_multiple_1.csv')])
+    mkr.plot_stacked_hist()           

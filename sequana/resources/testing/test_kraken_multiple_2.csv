@@ -1,0 +1,8 @@
+taxon,count,percentage,kingdom,phylum,class,order,family,genus,species,name
+1,1234,82.32154769846565, , , , , , , ,root (ambigous kingdom)
+-1,190,12.675116744496332,Unclassified,Unclassified,Unclassified,Unclassified,Unclassified,Unclassified,Unclassified,Unclassified
+884099,46,3.068712474983322,Viruses,Negarnaviricota,Monjiviricetes,Mononegavirales,Paramyxoviridae,Morbillivirus,Measles morbillivirus,Measles virus strain MVi/California.USA/8.04
+351680,20,1.33422281521014,Viruses,Negarnaviricota,Monjiviricetes,Mononegavirales,Paramyxoviridae,Morbillivirus,Measles morbillivirus,Measles virus genotypes and isolates
+11234,5,0.333555703802535,Viruses,Negarnaviricota,Monjiviricetes,Mononegavirales,Paramyxoviridae,Morbillivirus,Measles morbillivirus,Measles morbillivirus
+70149,3,0.20013342228152103,Viruses,Negarnaviricota,Monjiviricetes,Mononegavirales,Paramyxoviridae,Morbillivirus,Measles morbillivirus,Measles virus strain Edmonston-Zagreb
+1089795,1,0.06671114076050699,Viruses,Negarnaviricota,Monjiviricetes,Mononegavirales,Paramyxoviridae,Morbillivirus,Measles morbillivirus,Measles virus strain MVi/Washington.USA/18.08/1
