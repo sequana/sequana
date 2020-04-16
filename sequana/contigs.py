@@ -150,7 +150,7 @@ class Contigs(object):
         return alldata
 
     def stats(self):
-        from sequana.stats import N50
+        from sequana.stats import N50, L50
         length = self.get_df()['length']
         return {
             'N50': N50(length),
