@@ -9,12 +9,12 @@ import subprocess
 
 def test_dot_parser():
     s = DOTParser(sequana_data("test_dag.dot", "testing"))
-    s.add_urls()
+    s.add_urls(mapper={'bwa_fix': "test.html"})
     try:os.remove("test_dag.ann.dot")
     except:pass
 
     s.mode = "v1"
-    s.add_urls()
+    s.add_urls(mapper={'bwa_fix': "test.html"})
     try:os.remove("test_dag.ann.dot")
     except:pass
 
@@ -214,6 +214,7 @@ def test_pipeline_manager():
     cfg.config.input_pattern = "Hm*gz"
     #file1 = sequana_data("Hm2_GTGAAA_L005_R1_001.fastq.gz")
     pm = snaketools.PipelineManager("custom", cfg)
+    pm.plot_stats()
     assert pm.paired == True
 
     pm.getlogdir("fastqc")
@@ -330,6 +331,7 @@ def test_file_name_factory():
         ff.realpaths
         ff.all_extensions
         ff.pathnames
+        ff.pathname
         ff.extensions
 
     #list
@@ -340,6 +342,7 @@ def test_file_name_factory():
     # glob
     ff = snaketools.FileFactory("*py")
     inner_test(ff)
+    
 
 
     directory = os.path.dirname(sequana_data("Hm2_GTGAAA_L005_R1_001.fastq.gz"))
