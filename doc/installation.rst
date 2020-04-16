@@ -207,9 +207,18 @@ From GitHub Source code
 Finally, if you are a developer and wish to use the latest code, you 
 can install **sequana** from source::
 
+    conda create --name sequana python=3.7.3
+    source activate sequana
     git clone git@github.com:sequana/sequana.git
     cd sequana
     python setup.py install
+
+    # to use sequanix interface:
+    conda install -c anaconda qt pyqt>5
+
+    # to perform testing and documentation:
+    pip install -r requirements_dev.txt
+
 
 This should install most of the required dependencies. However, you may need to
 install more packages depending on the pipeline used (related to Qt for

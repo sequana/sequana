@@ -8,12 +8,12 @@ Changelog
 -----
 
 * pipelines now create the directories in the teardown instead of setup. This
-  prevents the creation of directories while input parameters are wrong. 
-* add plot_stats in PipelineManager 
-* Fix requirements adding packaging + new dependency (bx) to include 
+  prevents the creation of directories while input parameters are wrong.
+* add plot_stats in PipelineManager
+* Fix requirements adding packaging + new dependency (bx) to include
   new features in bamtools module (infer  strandness, insert_size)
-* add new module (bed) to include a BED class to read 12-column BED files. 
-* more tests and documentation as usual
+* NEW bed module) to include a BED class to read 12-column BED files.
+* gff3 module: a new method to create utility files for the rnaseq pipeline
 
 
 0.8.2
