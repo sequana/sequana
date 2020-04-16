@@ -13,10 +13,12 @@ The name must be a valid sequana rule in the rules directory accesible via the
 
 """
 import re
+from docutils.parsers.rst import Directive
 from docutils.parsers.rst import  directives
 from docutils import nodes
 from docutils.nodes import Body, Element
 import urllib
+from sphinx.util.docutils import SphinxDirective
 
 def get_rule_doc(name):
     """Decode and return the docstring(s) of a sequana/snakemake rule."""
@@ -51,7 +53,7 @@ class snakemake_base(Body, Element):
         return []
 
 
-class sequana_pipeline(snakemake_base):
+class sequana_pipeline_rule(snakemake_base):
     pass
 
 
@@ -62,14 +64,22 @@ def run(content, node_class, state, content_offset):
     return [node]
 
 
-def sequana_pipeline_directive(name, arguments, options, content, lineno,
-                         content_offset, block_text, state, state_machine):
-    return run(content, sequana_pipeline, state, content_offset)
+#def sequana_pipeline_directive(name, arguments, options, content, lineno,
+#                        content_offset, block_text, state, state_machine):
+#   return run(content, sequana_pipeline_rule, state, content_offset)
+
+
+class PipelineDirective(SphinxDirective):
+    has_content = True
+
+    def run(self):
+        return run(self.content, sequana_pipeline_rule, self.state, self.content_offset)
 
 
 def setup(app):
     #app.add_autodocumenter(RuleDocumenter)
-    app.add_directive('sequana_pipeline', sequana_pipeline_directive, True, (0,0,0))
+    #app.add_directive('sequana_pipeline', sequana_pipeline_directive, True, (0,0,0))
+    app.add_directive('sequana_pipeline', PipelineDirective)
 
     # Add visit/depart methods to HTML-Translator:
     def visit_perform(self, node):
@@ -95,7 +105,7 @@ def setup(app):
     def depart_ignore(self, node):
         node.children = []
 
-    app.add_node(sequana_pipeline,
+    app.add_node(sequana_pipeline_rule,
                  html=(visit_perform, depart_perform),
                  latex=(visit_ignore, depart_ignore))
 

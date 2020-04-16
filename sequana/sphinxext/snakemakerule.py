@@ -13,9 +13,14 @@ The name must be a valid sequana rule in the rules directory accesible via the
 
 """
 import re
-from docutils.parsers.rst import  directives
-from docutils import nodes
 from docutils.nodes import Body, Element
+
+
+from docutils import nodes
+from docutils.parsers.rst import Directive
+
+from sphinx.locale import _
+from sphinx.util.docutils import SphinxDirective
 
 
 def get_rule_doc(name):
@@ -65,8 +70,7 @@ def get_rule_doc(name):
     return docstring
 
 
-def get_rule_doc_snakemake(name):
-    """Decode and return lines of the docstring(s) for the object."""
+"""def get_rule_doc_snakemake(name):
     from sequana import Module
     import snakemake
     rule = Module(name)
@@ -74,6 +78,11 @@ def get_rule_doc_snakemake(name):
     wf.include(rule.path + "/%s.rules" % name)
     docstring = list(wf.rules)[0].docstring
     return docstring
+"""
+
+
+
+
 
 
 class snakemake_base(Body, Element):
@@ -91,15 +100,21 @@ def run(content, node_class, state, content_offset):
     state.nested_parse(content, content_offset, node)
     return [node]
 
+class SnakemakeDirective(SphinxDirective):
 
-def snakemake_rule_directive(name, arguments, options, content, lineno,
-                         content_offset, block_text, state, state_machine):
-    return run(content, snakemake_rule, state, content_offset)
+    has_content = True
+
+    def run(self):
+        return run(self.content, snakemake_rule, self.state, self.content_offset)
+
 
 
 def setup(app):
-    #app.add_autodocumenter(RuleDocumenter)
-    app.add_directive('snakemakerule', snakemake_rule_directive, True, (0,0,0))
+   
+    setup.app = app
+    setup.config = app.config
+    setup.confdir = app.confdir
+    app.add_directive('snakemakerule', SnakemakeDirective)
 
     # Add visit/depart methods to HTML-Translator:
     def visit_perform(self, node):
@@ -115,23 +130,25 @@ def setup(app):
             print(err)
             self.body.append('<div class="snakemake"> no docstring </div>' )
 
-
     def depart_perform(self, node):
+        node.children = []
+    
+    def depart_ignore(self, node):
         node.children = []
 
     def visit_ignore(self, node):
         node.children = []
 
-    def depart_ignore(self, node):
-        node.children = []
+    import sequana
+
 
     app.add_node(snakemake_rule,
                  html=(visit_perform, depart_perform),
                  latex=(visit_ignore, depart_ignore))
 
 
-
-
-
-
-
+    return {
+        'version': sequana.version,
+        'parallel_read_safe': True,
+        'parallel_write_safe': True,
+    }
