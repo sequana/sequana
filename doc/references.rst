@@ -181,10 +181,14 @@ Statistical tools
     :members:
     :undoc-members:
 
-BED module
-----------
+Format IO
+------------
 
 .. automodule:: sequana.bed
+    :members:
+    :undoc-members:
+
+.. automodule:: sequana.gff3
     :members:
     :undoc-members:
 
@@ -276,7 +280,6 @@ Misc
         :undoc-members:
 
 .. not yet included in the doc:: 
-    ../sequana/gff3.py
     ../sequana/isoseq.py
     ../sequana/iuapc.py
     ../sequana/jsontool.py
