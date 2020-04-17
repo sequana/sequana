@@ -413,13 +413,13 @@ class GenomeCov(object):
     """
     def _read_csv(self, input_filename):
         # set regex to get important information about previous analysis
-        re_threshold = re.compile("thresholds:([\d,\.-]+)")
-        re_window_size = re.compile("\swindow_size:(\d+)")
-        re_circular = re.compile("circular:(\w+)")
-        re_gc_window_size = re.compile("gc_window_size:(\d+)")
-        re_genbank = re.compile("genbank:([\{0}\w\.\-]+)".format(os.sep))
-        re_chrom = re.compile("^# ([\w\-\.]+):")
-        re_gaussian = re.compile("(\[\{.+\}\])")
+        re_threshold = re.compile(r"thresholds:([\d,\.-]+)")
+        re_window_size = re.compile(r"\swindow_size:(\d+)")
+        re_circular = re.compile(r"circular:(\w+)")
+        re_gc_window_size = re.compile(r"gc_window_size:(\d+)")
+        re_genbank = re.compile(r"genbank:([\{0}\w\.\-]+)".format(os.sep))
+        re_chrom = re.compile(r"^# ([\w\-\.]+):")
+        re_gaussian = re.compile(r"(\[\{.+\}\])")
 
         with open(input_filename, "r") as fp:
             line = fp.readline()

@@ -14,6 +14,9 @@ Changelog
   new features in bamtools module (infer  strandness, insert_size)
 * NEW bed module) to include a BED class to read 12-column BED files.
 * gff3 module: a new method to create utility files for the rnaseq pipeline
+* Fix lane_merging tools with tests. 
+* Fix lots of deprecated warnings in various modules
+* Move from 70 to 85% of testing coverage
 
 
 0.8.2

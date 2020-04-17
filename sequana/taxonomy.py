@@ -83,10 +83,10 @@ class Taxonomy(object):
             data = f.read().strip()
 
         data = data.split("//\n") # the sep is //\n
-        self._child_match = re.compile('ID\s+\:\s*(\d+)\s*')
-        self._parent_match = re.compile('PARENT ID\s+\:\s*(\d+)\s*')
-        self._rank_match = re.compile('RANK\s+\:\s*([^\n]+)\s*')
-        self._name_match = re.compile('SCIENTIFIC NAME\s+\:\s*([^\n]+)\s*')
+        self._child_match = re.compile(r'ID\s+\:\s*(\d+)\s*')
+        self._parent_match = re.compile(r'PARENT ID\s+\:\s*(\d+)\s*')
+        self._rank_match = re.compile(r'RANK\s+\:\s*([^\n]+)\s*')
+        self._name_match = re.compile(r'SCIENTIFIC NAME\s+\:\s*([^\n]+)\s*')
 
         from easydev import Progress
         pb = Progress(len(data))

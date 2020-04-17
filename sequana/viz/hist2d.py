@@ -69,11 +69,11 @@ class Hist2D(VizInput2D):
         pylab.clf()
         if norm == 'log':
             from matplotlib import colors
-            res = pylab.hist2d(X, Y, bins=bins, normed=normed,
+            res = pylab.hist2d(X, Y, bins=bins, density=normed,
                cmap=cmap, norm=colors.LogNorm())
         else:
             res = pylab.hist2d(X, Y, bins=bins, cmap=cmap,
-                    normed=normed, range=range)
+                    density=normed, range=range)
 
         if colorbar is True:
             pylab.colorbar()

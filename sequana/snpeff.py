@@ -198,7 +198,7 @@ class SnpEff(object):
 
     def _get_seq_ids(self):
         if self.format == "gbk":
-            regex = re.compile('^LOCUS\s+([\w\.\-]+)')
+            regex = re.compile(r'^LOCUS\s+([\w\.\-]+)')
             chrom_regex = re.compile(r'\\chromosome="([\w\.\-]+)"')
             with open(self.annotation, "r") as fp:
                 line = fp.readline()

@@ -69,8 +69,8 @@ from sequana import logger
 logger.name = __name__
 
 
-quality = """!"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOP"""
-quality += """QRSTUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxyz{|}~"""
+quality = r"""!"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOP"""
+quality += r"""QRSTUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxyz{|}~"""
 
 
 from math import log10

@@ -422,7 +422,7 @@ def genbank_features_parser(input_filename):
                         while not line[:-1].endswith(")"):
                             line = next(fp)
                             positions += line
-                    pos = [int(n) for n in re.findall("\d+", positions)]
+                    pos = [int(n) for n in re.findall(r"\d+", positions)]
                     # Handle complement(join(3773333..3774355,3774357..3774431))
                     start = pos[0]
                     end = pos[-1]

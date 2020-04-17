@@ -67,7 +67,7 @@ class Cigar(object):
     :reference: https://github.com/samtools/htslib/blob/develop/htslib/sam.h
     """
     __slots__ = ['cigarstring']
-    pattern = '(\d+)([A-Za-z])?'
+    pattern = r'(\d+)([A-Za-z])?'
     # could use a dictionary. would be faster
     #: valid CIGAR types
     types = "MIDNSHP=XB"
