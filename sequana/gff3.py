@@ -202,20 +202,18 @@ class GFF3():
         # HERE we could check that ID exists
         # This file is required by the RNAdiff pipeline
 
-        attributes = df.attributes.apply(lambda x: x[ID])
+        identifiers = df.attributes.apply(lambda x: x[ID])
         length = df.stop - df.start
-        df['Gene_id'] = attributes
+        df['Gene_id'] = identifiers
         df['Length'] = df.stop - df.start + 1
         df.sort_values('Gene_id')[['Gene_id', 'Length']].to_csv(
             "{}_gene_lengths.tsv".format(outname), sep='\t',index=None)
 
         # Second file (redundant) is also required by the rnadiff pipeline
-
-        fields = ['Name', 'orf_classification']
-        fields = ['Name']
         for this in fields:
             data = df.attributes.apply(lambda x: x[this])
             df[this] = data
-        df['ID'] = df[ID]
-        df.sort_values('ID')[["ID"] +  fields].to_csv(
+
+        #df['ID'] = df[ID]
+        df.sort_values('Gene_id')[["Gene_id"] +  fields].to_csv(
             "{}_info.tsv".format(outname), sep="\t", index=None)
