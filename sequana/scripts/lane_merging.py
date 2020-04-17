@@ -71,7 +71,7 @@ class Common(object):
 
         assert len(self.sampleIDs) == len(set(self.sampleIDs))
 
-class BackSpace(Common):
+class LaneMerger(Common):
     """
     In backspace, the sample sheet contains the project, samplesID and name.
 
@@ -85,13 +85,14 @@ class BackSpace(Common):
 
     """
     def __init__(self, pattern="*/*fastq.gz", outdir="merging", threads=4,
-                 queue=None, lanes=[]):
-        super(BackSpace, self).__init__(pattern, lanes)
+                 queue=None, lanes=[], force=False):
+        super(LaneMerger, self).__init__(pattern, lanes)
 
         self._outdir = None
         self.outdir = outdir
         self.threads = threads
         self.queue = queue
+        self.force = force
 
         print("Number of samples: {}".format(len(self.sampleIDs)))
 
@@ -142,7 +143,7 @@ class BackSpace(Common):
 
         output = "{outdir}/{name}_{RX}_001.fastq".format(**params)
 
-        if os.path.exists(output + ".gz"):
+        if os.path.exists(output + ".gz") and self.force is False:
             raise IOError("{} exists already".format(output))
         # Here, we should get 4 files with identical NAME (prefix), which should
         # be used for the output.
@@ -204,12 +205,11 @@ class BackSpace(Common):
                 else:
                     processes.append("dryrun")
 
-        if which("sbatch") is not None and len(processes):
-            print("Wait for those process to be over; type 'squeue | grep <your login>")
-            for proc in processes:
-                print(proc,)
-        else:
-            print('Found no fastq in ./* directories')
+        if which("sbatch") is not None:
+            if len(processes):
+                print("Wait for those process to be over; type 'squeue | grep <your login>")
+                for proc in processes:
+                    print(proc,)
 
         self.processes = processes
 
@@ -256,6 +256,8 @@ class Options(argparse.ArgumentParser):
             type=int, required=True)
         self.add_argument("--dry-run", dest="dry_run", action="store_true",
             help="just create the script but do not launch them")
+        self.add_argument("--force", action="store_true",
+            help="overwrite the output file if it exists")
 
 
 def main(args=None):
@@ -270,8 +272,8 @@ def main(args=None):
     else:
         options = user_options.parse_args(args[1:])
 
-    c = BackSpace(pattern=options.pattern, outdir=options.outdir,
-            queue=options.queue, lanes=options.lanes)
+    c = LaneMerger(pattern=options.pattern, outdir=options.outdir,
+            queue=options.queue, lanes=options.lanes, force=options.force)
     c.run(dry_run=options.dry_run)
 
 
