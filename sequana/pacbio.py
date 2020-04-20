@@ -747,7 +747,7 @@ class CCS(PacbioBAMBase):
 
     def hist_passes(self, maxp=50, fontsize=16):
         passes = self.df.nb_passes.copy()
-        passes.clip_upper(maxp).hist(bins=maxp)
+        passes.clip(upper=maxp).hist(bins=maxp)
         pylab.xlim([0, maxp])
         pylab.ylabel("# count", fontsize=fontsize)
         pylab.xlabel("Passes (max {})".format(maxp), fontsize=fontsize)
