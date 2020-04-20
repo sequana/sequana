@@ -16,6 +16,8 @@ from argparse import Namespace
 from mock import patch
 from easydev import TempFile
 
+skiptravis = pytest.mark.skipif("TRAVIS_PYTHON_VERSION" in os.environ, reason="On travis")
+
 @pytest.fixture
 def module():
     return Module("quality_control")
@@ -57,6 +59,7 @@ def test_standalone_generic_with_config(qtbot, tmpdir, module):
 
     widget.click_run()
 
+@skiptravis
 @pytest.mark.xfail
 def test_standalone_generic_with_noconfig_2(qtbot):
     """mimics:
