@@ -125,6 +125,7 @@ class GeneralOptions():
         parser.add_argument("--deps", action="store_true",
             help="Show the known dependencies of the pipeline")
         parser.add_argument("--level", dest="level", default="INFO",
+            choices=['INFO', 'DEBUG', 'WARNING', 'ERROR', 'CRITICAL'],
             help="logging level in INFO, DEBUG, WARNING, ERROR, CRITICAL")
 
 
