@@ -565,7 +565,9 @@ or open a Python shell and type::
             except:
                 # is this a Python code ?
                 if len(easydev.get_dependencies(req)) == 0:
-                    logger.error("%s not found !! Let us move on but you must install it" % req)
+                    logger.error("%s not found !! " % req + 
+                        "Let us move on but you must probably install " + 
+                        "it to benefit from all fonctionalities")
                     executable = False
                     missing.append(req)
                 else:
