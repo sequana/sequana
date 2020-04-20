@@ -7,16 +7,14 @@ Changelog
 0.8.3
 -----
 
-* pipelines now create the directories in the teardown instead of setup. This
-  prevents the creation of directories while input parameters are wrong.
 * add plot_stats in PipelineManager
 * Fix requirements adding packaging + new dependency (bx) to include
   new features in bamtools module (infer  strandness, insert_size)
-* NEW bed module) to include a BED class to read 12-column BED files.
+* NEW bed module to include a BED class to read 12-column BED files.
 * gff3 module: a new method to create utility files for the rnaseq pipeline
-* Fix lane_merging tools with tests. 
-* Fix lots of deprecated warnings in various modules
+* General cleaning: lane_merging tools with tests, deprecated warnings
 * Move from 70 to 85% of testing coverage
+* New rules: salmon
 
 
 0.8.2
