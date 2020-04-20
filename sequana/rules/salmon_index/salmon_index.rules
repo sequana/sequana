@@ -1,0 +1,30 @@
+rule salmon_index:
+    """
+    Genome indexation for RNA-STAR mapper
+
+    Required input:
+        __salmon_index__fasta: the reference genome to indexed in FASTA format
+
+    Required output:
+        __salmon_index__output_done: done file for STAR mapping rule
+
+    params:
+
+        __salmon_index__output_dir: the directory where write the index
+
+    """
+    input:
+       fasta =  __salmon_index__fasta_input,
+       gff =  __salmon_index__gff_input
+    output:
+        done = __salmon_index__output_done
+    params:
+        wkdir = __salmon_index__genome_dir
+    log:
+        __salmon_index__log
+    shell:
+        """
+        gffread {input.gff} -g {input.fasta} -w {params.wkdir}/salmon_transcript.fa > {log} 2>&1
+        salmon index -t {params.wkdir}/salmon_transcript.fa  -i {params.wkdir} >> {log}  2>&1
+        touch {output.done}
+        """

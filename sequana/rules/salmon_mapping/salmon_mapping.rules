@@ -1,0 +1,50 @@
+rule salmon_mapping:
+    """
+    Read mapping for either single end and paired end data using salmon.
+
+    Required input:
+        __salmon_mapping__input_fastq: list with one or two fastq.gz
+
+    Required output:
+        __salmon_mapping__output_counts: output sorted bam file
+
+    params:
+
+        __salmon_mapping__genome_dir: name of directory for new genome indexation (temporary file)
+
+    config:
+
+        .. code-block:: yaml
+
+            salmon_mapping:
+                prefix_index: "" #path to the index file of reference genome
+                ref: "" #path to the reference genome file in fasta format
+                options:  "" #options for bowtie1 you want use
+    """
+    input:
+        fastq = __salmon_mapping__input_fastq,
+        index = __salmon_index__output_done
+    log:
+        __salmon_mapping__logs
+    output:
+        __salmon_mapping__output_counts
+    params:
+        genome_dir = __salmon_index__genome_dir,
+        kwargs = config['salmon_mapping']['options']
+    threads:
+        config['salmon_mapping']['threads']
+    run:
+        # -l A identify automatically strandness of the data
+        #
+        # in general, we store results in {sample}/rule_name
+        # and results can be e.g. {sample}/rule_name/{sample}.txt
+        # but multiqc report for salmon identofy in the sample name in the
+        # directory where are found the reports. So we must use
+        # {sample}/rule_name_{sample}
+        if len(input.fastq) == 2:
+            shell("""
+            salmon quant -i {params.genome_dir} -l A -1 {input.fastq[0]} -2 {input.fastq[1]} -p {threads} --validateMappings -o {wildcards.sample}/salmon_mapping_{wildcards.sample}/ > {log} 2>&1""")
+        else:
+            shell("""
+            salmon quant -i {params.genome_dir} -l A -r {input.fastq} -p {threads} --validateMappings -o {wildcards.sample}/salmon_mapping_{wildcards.sample}/ > {log} 2>&1""")
+        shell("""mv {wildcards.sample}/salmon_mapping_{wildcards.sample}/quant.sf {wildcards.sample}/salmon_mapping_{wildcards.sample}/{wildcards.sample}_quant.sf""")
