@@ -1,4 +1,4 @@
-from sequana.pacbio import BAMSimul, PBSim, PacbioSubreads, Barcoding
+from sequana.pacbio import BAMSimul, PBSim, PacbioSubreads, Barcoding, CCS
 from sequana import sequana_data
 from easydev import TempFile
 
@@ -100,4 +100,14 @@ def test_barcoding():
     import tempfile
     with tempfile.TemporaryDirectory() as tempdir:
         bc.plot_and_save_all(directory=tempdir)
-    
+
+
+def test_ccs():
+
+    ccs = CCS(sequana_data("lima_output.lbc32--lbc32.ccs.bam"))
+    ccs.df
+    ccs.stats()
+    ccs.to_summary()
+    ccs.plot_GC_read_len()
+    ccs.boxplot_read_length_vs_passes()
+    ccs.hist_passes()

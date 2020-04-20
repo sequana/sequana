@@ -30,29 +30,6 @@ def test_settings(qtbot):
     widget.close()
 
 
-def _test_standalone_sequana(qtbot, tmpdir):
-    wkdir = TemporaryDirectory()
-    inputdir = os.path.realpath(
-            sequana_data("Hm2_GTGAAA_L005_R1_001.fastq.gz")).rsplit(os.sep,1)[0]
-
-    # Standalone for sequana given a wkdir and pipeline and input_dir
-    args = Namespace(pipeline="quality_control", wkdir=wkdir.name,
-                input_directory=inputdir)
-    widget = sequana_gui.SequanaGUI(ipython=False, user_options=args)
-    qtbot.addWidget(widget)
-    assert widget.mode == "sequana"
-    widget.force = True
-    widget.save_project()
-
-    widget.click_run()
-    count = 0
-    while widget.process.state() and count < 5:
-        time.sleep(0.5)
-        count+=0.5
-    widget.click_stop()
-    time.sleep(1)
-
-
 def test_standalone_generic(qtbot, tmpdir, module):
 
     wkdir = TemporaryDirectory()
@@ -63,7 +40,7 @@ def test_standalone_generic(qtbot, tmpdir, module):
     qtbot.addWidget(widget)
     assert widget.mode == "generic"
 
-
+@pytest.mark.xfail
 def test_standalone_generic_with_config(qtbot, tmpdir, module):
     # Standalone for generic case given a wkdir and snakefile
     wkdir = TemporaryDirectory()
@@ -78,8 +55,10 @@ def test_standalone_generic_with_config(qtbot, tmpdir, module):
     with TempFile() as fh:
         widget.report_issues(fh.name)
 
+    widget.click_run()
 
-def __test_standalone_generic_with_noconfig_2(qtbot):
+@pytest.mark.xfail
+def test_standalone_generic_with_noconfig_2(qtbot):
     """mimics:
 
         sequanix -s path_to_snakefile
