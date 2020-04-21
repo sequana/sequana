@@ -52,7 +52,7 @@ class IEM():
     ending square bracket are authorise.
 
 
-    Sample sheet must begin with the [Header] section and end wuth the [Data]
+    Sample sheet must begin with the [Header] section and end with the [Data]
     section. Others can be ordered arbitraly.
 
     **Header** section must be on the first line. It contains records represented
@@ -89,7 +89,7 @@ class IEM():
     def __init__(self, filename):
         logger.warning("Not finalised use with care")
         self.filename = filename
-        self.scanner()
+        self._scanner()
 
     def _line_cleaner(self, line):
         # We can get rid of EOL and spaces
@@ -109,8 +109,7 @@ class IEM():
 
         return line
 
-    def scanner(self):
-
+    def _scanner(self):
 
         current_section = None
         data = collections.defaultdict(list)
@@ -151,6 +150,7 @@ class IEM():
         return data
     settings = property(_get_settings)
 
+
     def _get_header(self):
         data = {}
         for line in self.data['Header']:
@@ -168,21 +168,21 @@ class IEM():
 
     def to_fasta(self, adapter_name):
         ar1 = self.settings['Adapter']
-        ar2 = self.settings['AdapterRead2']
+        try:ar2 = self.settings['AdapterRead2']
+        except: ar2 =""
 
-        for this in self.data['I7']:
-            name, index = this.split()
-            read = ar1 + index + ar2
+        for name, index in zip(self.df['I7_Index_ID'], self.df['index']):
+            read = "{}{}{}".format(ar1, index, ar2)
             frmt = {"adapter": adapter_name, "name": name, "index": index}
             print(">{adapter}_index_{name}|name:{name}|seq:{index}".format(**frmt))
             print(read)
 
-        for this in self.data['I5']:
-            name, index = this.split()
-            read = ar1 + index + ar2
-            frmt = {"adapter": adapter_name, "name": name, "index": index}
-            print(">{adapter}_index_{name}|name:{name}|seq:{index}".format(**frmt))
-            print(read)
+        if 'index2' in self.df.columns:
+            for name, index in zip(self.df["I5_Index_ID"], self.df['index2']):
+                read = "{}{}{}".format(ar1, index, ar2)
+                frmt = {"adapter": adapter_name, "name": name, "index": index}
+                print(">{adapter}_index_{name}|name:{name}|seq:{index}".format(**frmt))
+                print(read)
 
 
 
