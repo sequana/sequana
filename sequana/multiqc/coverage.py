@@ -57,7 +57,7 @@ class MultiqcModule(BaseMultiqcModule):
         for this in sorted(self.sequana_data.keys()):
             sample_name, chrom_name = this.split("/")
 
-            root = self.sequana_root[key]
+            root = self.sequana_root[this]
 
             # sequana_coverage store multiqc locally
             # the pipelines stores it in ./multiqc/ the only way to have the
@@ -70,6 +70,8 @@ class MultiqcModule(BaseMultiqcModule):
                 subpath = ""
             else:
                 subpath = "../"
+
+            print(subpath, root, chrom_name, this)
             info += '<li><a href="{}/{}.cov.html">{}</a></li>'.format(
                 subpath + root,
                 chrom_name,  this)
@@ -85,7 +87,8 @@ class MultiqcModule(BaseMultiqcModule):
         self.add_hist_coverage()
         self.add_DOC()
         self.add_BOC()
-        self.add_CV()
+        try:self.add_CV()
+        except:pass
         self.add_length()
         self.add_ROI()
         self.add_C3()
@@ -123,7 +126,7 @@ class MultiqcModule(BaseMultiqcModule):
             "title": self.sequana_desc[name]["DOC"],
             "percentages": False,
             "min": 100,
-            "logswitch": False}
+            "logswitch": True}
         self.add_section(
             name = 'Depth of coverage',
             anchor = 'doc',
