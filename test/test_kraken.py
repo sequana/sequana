@@ -68,7 +68,6 @@ def test_kraken_pipeline():
     from sequana import KrakenPipeline
     file1 = sequana_data("Hm2_GTGAAA_L005_R1_001.fastq.gz", "data")
     file2 = sequana_data("Hm2_GTGAAA_L005_R2_001.fastq.gz", "data")
-    download()
     database = sequana_config_path + os.sep + "kraken_toydb"
     kp = KrakenPipeline([file1, file2], database=database, threads=1)
     kp.run()
