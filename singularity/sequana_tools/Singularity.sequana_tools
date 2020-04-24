@@ -6,15 +6,16 @@ From: ../ubuntu/ubuntu.img
 
 #deeptools, pybabel, dsrc, atropos, bcftools, multiqc, bgzip,samtools
 #sequana, bunzip2, fastqc, pbunzip2, sequana_coverage
-#bzip2, sequanix, pigz,snakemake 
+#bzip2, sequanix, pigz,snakemake
 # bowtie bowtie2, snpEff picard sambamba freebayes bwa etc
 
 
 %labels
     Author thomas cokelaer
-    Version v1.0
+    # synchronised version with sequana
+    Version v0.8.3
 
-%post 
+%post
 
     export PATH=$PATH:/usr/local/anaconda/bin
     export LANG=C   # prevents perl for raising warnings
@@ -39,7 +40,10 @@ From: ../ubuntu/ubuntu.img
     conda install khmer                         # denovo pipeline
     conda install spades                        # denovo pipeline
 
-    conda install kraken krona
+    # We cannot have kraken1 and kraken2 in the same singularity 
+    # because they rely on a script/tool that is uniquely named and different
+    # between the two versions.
+    conda install krona kraken2
 
     # no dependencies
     conda install minimap2
