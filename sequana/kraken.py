@@ -17,6 +17,7 @@
 #
 ##############################################################################
 import os
+import sys
 
 from easydev import DevTools, execute, TempFile, md5
 
@@ -636,15 +637,25 @@ class KrakenAnalysis(object):
         if self.paired:
             params["file2"] = self.fastq[1]
 
-        command = "kraken %(file1)s "
+        if os.path.exists(self.database + os.sep + "hash.k2d"):
+            logger.info("Using kraken2 ")
+            command = "kraken2"
+        elif os.path.exists(self.database + os.sep + "database.kdb"):
+            # for kraken <=1.0 --out-fmt did not exist
+            #command += " --out-fmt legacy"
+            logger.info("Using kraken1. you must use version 1.1 ")
+            command = "kraken --out-fmt legacy "
+        else:
+            logger.error("Looks like an invalid kraken database directory")
+            sys.exit(1)
+
+        command += " %(file1)s"
 
         if self.paired:
             command += " %(file2)s --paired"
 
         command += " -db %(database)s "
-        command += " --threads %(thread)s --output %(kraken_output)s --out-fmt legacy"
-        # for kraken <=1.0 --out-fmt did not exist
-        #command += " --out-fmt legacy"
+        command += " --threads %(thread)s --output %(kraken_output)s "
 
         if output_filename_unclassified:
             command +=  " --unclassified-out %(output_filename_unclassified)s "
