@@ -631,6 +631,7 @@ class PipelineManager():
         """
         # First we create the beginning of the command with the optional
         # parameters for a run on a SLURM scheduler
+        logger.info("Welcome to Sequana pipelines suite (sequana.readthedocs.io)")
 
         cmd = "#!/bin/bash\nsnakemake -s {}.rules --stats stats.txt"
         self.command = cmd.format(self.name)
@@ -667,7 +668,9 @@ class PipelineManager():
 
         # This should be in the setup, not in the teardown since we may want to
         # copy files when creating the pipeline. This is the case e.g. in the
-        # rnaseq pipeline
+        # rnaseq pipeline. It is a bit annoying since if there is failure
+        # between setup and teardown, the directories are created but no way to
+        # fix that.
         self._create_directories()
 
     def _create_directories(self):
@@ -833,6 +836,35 @@ to analyse non-fastQ files (e.g. BAM)""")
             with open("{}/.sequana/pip.yml".format(self.workdir), "w") as fout:
                 subprocess.call(cmd.split(), stdout=fout)
             logger.debug("Saved your pip environement into pip.txt (conda not found)")
+
+        # General information
+        from easydev import CustomConfig
+        configuration = CustomConfig("sequana", verbose=False)
+        sequana_config_path = configuration.user_config_dir
+        completion = sequana_config_path + "/pipelines/{}.sh".format(self.name)
+        if os.path.exists(completion):
+            with open(completion, "r") as fin:
+                line = fin.readline()
+                if line.startswith("#version:"):
+                    version = line.split("#version:")[1].strip()
+                    from distutils.version import StrictVersion
+                    if StrictVersion(version) <  StrictVersion(self._get_package_version()):
+                        msg = (
+                            "The version {} of your completion file for the"
+                            "  {} pipeline seems older than the installed"
+                            " pipeline itself ({}). "
+                            "Please, consider updating the completion file {}"
+                            " using the following command: \n\t sequana_completion --name {}\n"
+                            "available in the sequana_pipetools package (pip "
+                                "install sequana_completion)")
+                        msg = msg.format(version, self.name, 
+                            self._get_package_version(), completion, self.name)
+                        logger.info(msg)
+
+        else:
+            # we could print a message to use the sequana_completion tools
+            # be maybe boring on the long term
+            pass
 
     def update_config(self, config, options, section_name):
         for option_name in config[section_name]:
