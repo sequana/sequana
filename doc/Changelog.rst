@@ -7,15 +7,27 @@ Changelog
 0.8.3
 -----
 
-* add plot_stats in PipelineManager
-* Fix requirements adding packaging + new dependency (bx) to include
-  new features in bamtools module (infer  strandness, insert_size)
-* NEW bed module to include a BED class to read 12-column BED files.
-* gff3 module: a new method to create utility files for the rnaseq pipeline
+* Pipeline related:
+
+    * add plot_stats function in PipelineManager
+* CHANGEs:
+
+    * new dependency (bx) to include new features in bamtools module (infer
+      strandness, insert size etc)
+
+* BUGs:
+
+    * add package *packaging* in requirements (for travis and pip installation)
+
+* NEWs
+
+    * NEW bed module to include a BED class to read 12-column BED files.
+    * gff3 module: a new method to create utility files for the rnaseq pipeline
+    * New rule for the rnaseq pipeline: salmon
+    * kraken2 database can now be used within sequana_taxonomy
+
 * General cleaning: lane_merging tools with tests, deprecated warnings
 * Move from 70 to 85% of testing coverage
-* New rules for the rnaseq pipeline: salmon
-* kraken2 database can now be used within sequana_taxonomy
 
 
 0.8.2
