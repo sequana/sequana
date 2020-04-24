@@ -53,6 +53,10 @@ class EUtilsTools(object):
         from bioservices import EUtils
         self.eutils = EUtils()
 
+    def get_fasta(self, accession):
+        data = self.eutils.EFetch('nucleotide', id=accession, retmode='text', rettype='fasta') 
+        return data
+
     def accession_to_info(self, ids):
         """An accession or list of them returns list of dictionaries"""
         res = self.eutils.EFetch(db="nuccore",id=ids,
@@ -102,13 +106,12 @@ class ENADownload(object):
     DB), this class can be used to download a bunch of FASTA files, or just one
     given its accession. 
 
-    Pre-defined lists are available from ENA. We refer to them as *virus*,
+    Some **OLD** pre-defined lists are available from ENA. We refer to them as *virus*,
     *plasmid*, *phage*, *archaealvirus*, *archaea*, *bacteria*, *organelle*,
-    *viroid*. In addition we have predefined lists within Sequana. For now,
-    there is one named macaca_fascicularis.
+    *viroid*. 
 
     .. warning:: the header of the FASTA files are changed to add the GI number
-        instead of embl.
+        instead of embl so th&at it can be used by our kraken builder class. 
     """
     def __init__(self):
         """.. rubric:: constructor"""
@@ -126,7 +129,6 @@ class ENADownload(object):
             'bacteria': ("bacteria.txt", "Bacteria"),
             'organelle': ("organelle.txt", "Organelle"),
             'viroid': ("viroid.txt", "Viroid"),
-            "macaca_fascicularis": ("macaca", "MacacaFascicularis"),
             "mus_musculus": ("mus_musculus", "MusMusculus"),
             "worms": ("worms", "Worms")
         }
@@ -165,12 +167,6 @@ class ENADownload(object):
             logger.info("Downloading list from http://www.ebi.ac.uk/genomes/%s" % filelist)
             data = urlopen("http://www.ebi.ac.uk/genomes/%s" % filelist).readlines()
             identifiers = [x.strip().decode() for x in data]
-        elif filelist == "macaca":
-            identifiers = [ "CM001276", "CM001277", "CM001278", "CM001279",
-                "CM001280", "CM001281", "CM001282", "CM001283", "CM001284",
-                "CM001285", "CM001286", "CM001287", "CM001288", "CM001289",
-                "CM001290", "CM001291","CM001292",  "CM001293", "CM001294",
-                "CM001295", "CM001296"]
         elif filelist == "mus_musculus": #19 +x+y chromosomes + 5 mitochondrion
             # could also add strain C57BL.
             identifiers = ["AY172335", "CM000209", "CM000210", "CM000211"
@@ -305,9 +301,6 @@ class ENADownload(object):
 
     def download_archaea(self):
         self.download_fasta(*self._metadata["archaea"])
-
-    def download_macaca(self):
-        self.download_fasta(*self._metadata["macaca_fascicularis"])
 
     def download_bacteria(self):
         """ organisms (may 2016)
