@@ -14,7 +14,8 @@ Changelog
 * gff3 module: a new method to create utility files for the rnaseq pipeline
 * General cleaning: lane_merging tools with tests, deprecated warnings
 * Move from 70 to 85% of testing coverage
-* New rules: salmon
+* New rules for the rnaseq pipeline: salmon
+* kraken2 database can now be used within sequana_taxonomy
 
 
 0.8.2
