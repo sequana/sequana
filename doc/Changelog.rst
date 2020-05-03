@@ -10,10 +10,22 @@ Changelog
 * Pipeline related:
 
     * add plot_stats function in PipelineManager
-* CHANGEs:
+    * add setup/teardown function in PipelineManager
+
+* CHANGES:
 
     * new dependency (bx) to include new features in bamtools module (infer
       strandness, insert size etc)
+    * sequana_taxonomy now handles both kraken1 and kraken2 databases
+      the taxonomy databases is now downloaded from ncbi directly and build
+      within sequana. The standalone can download the taxonomy data itself with
+      --download-taxonomy option. New pipeline available on 
+      github/sequana/sequana_taxonom
+    * rename KrakenHierarchical into KrakenSequential
+    * refactoring of kraken.py and kraken_builder to include kraken2
+    * taxonomy module can now aggregate several taxonomic databases. We now
+      retrieve the input data from NCBI instead of EBI to be up-to-date whenever
+      we want (e.g. daily basis)
 
 * BUGs:
 
@@ -21,6 +33,9 @@ Changelog
 
 * NEWs
 
+    * 7 new modules in sequana.viz dedicated to visualisation, in particular
+      dendogram, corrplot, hist2D from biokit project (merging with sequana) 
+      together with a bunch of notebooks
     * NEW bed module to include a BED class to read 12-column BED files.
     * gff3 module: a new method to create utility files for the rnaseq pipeline
     * New rule for the rnaseq pipeline: salmon

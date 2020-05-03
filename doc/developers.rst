@@ -76,7 +76,7 @@ You can now execute the Snakefile just to check that this rule works as expected
 
 You can check that the file *count.txt* exists.
 
-.. note:: The option `-f ` forces snakemake to run the rules (even though it was 
+.. note:: The option `-f` forces snakemake to run the rules (even though it was
     already computed earlier).
 
 

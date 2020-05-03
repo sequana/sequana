@@ -255,6 +255,45 @@ Misc
     :members:
     :undoc-members:
 
+Visualisation
+-------------
+
+
+.. automodule:: sequana.viz.anova
+    :members:
+    :undoc-members:
+
+.. automodule:: sequana.viz.corrplot
+    :members:
+    :undoc-members:
+
+.. automodule:: sequana.viz.heatmap
+    :members:
+    :undoc-members:
+
+.. automodule:: sequana.viz.hinton
+    :members:
+    :undoc-members:
+
+.. automodule:: sequana.viz.hist2d
+    :members:
+    :undoc-members:
+
+.. automodule:: sequana.viz.imshow
+    :members:
+    :undoc-members:
+
+.. automodule:: sequana.viz.scatter
+    :members:
+    :undoc-members:
+
+
+.. automodule:: sequana.viz.volcano
+    :members:
+    :undoc-members:
+
+
+
 
 
 .. Standalone applications

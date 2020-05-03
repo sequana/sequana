@@ -33,8 +33,8 @@ Sequana documentation
 
 
 :Python version: Python 3.6, 3.7.3; most modules are Python2.7 compatible.
-:Source: See  `http://github.com/sequana/sequana <https://github.com/sequana/sequana/>`_.
-:Issues: Please fill a report on `github <https://github.com/sequana/sequana/issues>`_
+:Source: See  `http://github.com/sequana/sequana <https://github.com/sequana/sequana/>`__.
+:Issues: Please fill a report on `github <https://github.com/sequana/sequana/issues>`__
 :How to cite: For Sequana in general including the pipelines, please use
 
     Cokelaer et al, (2017), 'Sequana': a Set of Snakemake NGS pipelines, Journal of
@@ -90,7 +90,7 @@ form of applications ready for production. Moreover, **Sequanix** can be used to
 set the parameters of pipelines and execute them easily with a graphical user
 interface.
 
-To join the project, please let us know on `github <https://github.com/sequana/sequana/issues/306>`_.
+To join the project, please let us know on `github <https://github.com/sequana/sequana/issues/306>`__.
 
 
 .. Here we are building the carrousel? Note that html and pdf version look for
