@@ -14,7 +14,7 @@ try:
 except:
     pass
 
-#@pytest.mark.xfail
+@pytest.mark.xfail
 def test_run_kraken_taxon():
 
     database = sequana_config_path + os.sep + "kraken_toydb"
@@ -27,6 +27,7 @@ def test_run_kraken_taxon():
     kt.run()
 
 
+@pytest.mark.xfail
 def test_kraken_sequential():
     database = sequana_config_path + os.sep + "kraken_toydb"
     p = tempfile.TemporaryDirectory()
@@ -46,7 +47,7 @@ def test_kraken_sequential():
     p.cleanup()
 
 
-#@pytest.mark.xfail
+@pytest.mark.xfail
 def test_kraken_results():
     test_file = sequana_data("test_kraken.out", "testing")
     k = KrakenResults(test_file)
@@ -65,7 +66,7 @@ def test_kraken_results():
         k.kraken_to_krona(fout.name )
         k.to_js(fout.name)
 
-#@pytest.mark.xfail
+@pytest.mark.xfail
 def test_kraken_pipeline():
     
     from sequana import KrakenPipeline
@@ -77,7 +78,6 @@ def test_kraken_pipeline():
 
 
 
-#@pytest.mark.xfail
 def test_mkr():
     from sequana.kraken import MultiKrakenResults
     mkr = MultiKrakenResults([sequana_data("test_kraken_multiple_1.csv"),
