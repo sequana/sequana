@@ -18,6 +18,7 @@
 ##############################################################################
 import os
 import sys
+import shutil
 
 from easydev import DevTools, execute, TempFile, md5
 
@@ -32,7 +33,47 @@ logger.name = __name__
 
 
 __all__ = ['KrakenResults', "KrakenPipeline", "KrakenAnalysis",
-            "KrakenDownload", "KrakenHierarchical", "MultiKrakenResults"]
+            "KrakenDownload", "KrakenSequential", "MultiKrakenResults"]
+
+
+class KrakenDB():
+    """Class to handle a kraken DB"""
+    def __init__(self, filename):
+
+        if isinstance(filename, KrakenDB):
+            filename = filename.path
+
+        if os.path.exists(filename) is False:
+            possible_path1 = sequana_config_path + "/" + filename
+            possible_path2 = sequana_config_path + "/kraken2_dbs/" + filename
+            possible_path3 = sequana_config_path + "/kraken1_dbs/" + filename
+            if os.path.exists(possible_path1) is True:
+                self.path = possible_path1
+            elif os.path.exists(possible_path2) is True:
+                self.path = possible_path2
+            elif os.path.exists(possible_path3) is True:
+                self.path = possible_path3
+            else:
+                msg = "{} not found locally or in {}. ".format(
+                    filename, sequana_config_path)
+                raise IOError(msg)
+        else:
+            self.path = os.path.abspath(filename)
+
+        self.name = os.path.basename(self.path)
+
+    def _get_database_version(self):
+        if os.path.exists(self.path + os.sep + "hash.k2d"):
+            return "kraken2"
+        elif os.path.exists(self.path + os.sep + "database.kdb"):
+            return "kraken1"
+        else:
+            logger.error("Looks like an invalid kraken database directory")
+            return None
+    version = property(_get_database_version)
+
+    def __repr__(self):
+        return self.name
 
 
 class KrakenResults(object):
@@ -45,6 +86,12 @@ class KrakenResults(object):
     You could use kraken-translate but then you need extra parsing to convert
     into a Krona-compatible file. Here, we take the output from kraken and
     directly transform it to a krona-compatible file.
+
+    If you use sequantial analysis, can you use kraken-translate  or
+    --use-names. what to do with the several outputs?
+
+    kraken1 provides kraken-translate, kraken2 uses the --use-names that needs
+    extra parsing as well.
 
     ::
 
@@ -68,6 +115,10 @@ class KrakenResults(object):
         the next k-mer was not in the database
         the last 3 k-mers mapped to taxonomy ID #562
 
+    For kraken2, format is slighlty different since it depends on paired or not.
+    If paired, ::
+
+        C   read1 2697049 151|151 2697049:117 |:| 0:1 2697049:116
 
     See kraken documentation for details.
 
@@ -78,7 +129,7 @@ class KrakenResults(object):
         from online web services.
 
     """
-    def __init__(self, filename="kraken.out"):
+    def __init__(self, filename="kraken.out", verbose=True):
         """.. rubric:: **constructor**
 
         :param filename: the input from KrakenAnalysis class
@@ -90,8 +141,8 @@ class KrakenResults(object):
 
         if on_rtd is False:
             from sequana.taxonomy import Taxonomy
-            self.tax = Taxonomy(verbose=True)
-            self.tax._load_flat_file() # make sure it is available locally
+            self.tax = Taxonomy(verbose=verbose)
+            self.tax.download_taxonomic_file() # make sure it is available locally
         else:
             class Taxonomy(object):
                 from sequana import sequana_data # must be local
@@ -130,33 +181,57 @@ class KrakenResults(object):
         if len(ids) == 0:
             return pd.DataFrame()
 
-        logger.info('Retrieving taxon using sequana.Taxonomy')
-
         if isinstance(ids, list) is False:
             ids = [ids]
 
         lineage = [self.tax.get_lineage_and_rank(x) for x in ids]
         # Now, we filter each lineage to keep only relevant ranks
-        # We drop the 'no rank' and create a dictionary
-        # Not nice but works for now
+        # There are a few caveats though as explained hereafter
+
+        # we merge the kingdom and superkingdom and subkingdom
         results = []
         for i, this in enumerate(lineage):
             default = dict.fromkeys(ranks, ' ')
             for entry in this:
                 if entry[1] in ranks:
                     default[entry[1]] = entry[0]
-                elif entry[1] == "superkingdom":
+            # if there is a superkingdom, overwrite the kingdom
+            for entry in this:
+                if entry[1] == "superkingdom":
                     default["kingdom"] = entry[0]
-            # Scientific name is the last entry tagged has no_rank  following
-            # species TODO (check this assumption)
-            # e.g. 351680 and 151529 have same 7 ranks so to differenatiate
-            # them, the scientific name should be used.
-            # By default, we will take the last one. If species or genus, we
-            # repeat the term
-            try:
-                default['name'] = this[-1][0]
-            except:
-                default['name'] = "root (ambigous kingdom)"
+            if default["kingdom"] == " ":
+                for entry in this:
+                    if entry[1] == "subkingdom":
+                        default["kingdom"] = entry[0]
+
+            # in theory, we have now populated all ranks; 
+            # Yet, there are several cases:
+            # 1. all ranks are filled: perfect
+            # 2. some ranks are empty: we fill them with a space.
+            # 3. all ranks are empty: 
+            #    a. this is the root
+            #    b. this may be expected. e.g for an artifical sequence 
+            #    c. all ranks below species are empty --> this is probably
+            #       what we will get e.g. for plasmids
+
+            # case 3.b
+            if set([x[1] for x in this]) == {'no rank', 'species'}:
+                # we can ignore the root and keep the others
+                # if we end up with more than 6 entries, this is annoying
+                # let us put a warning for now.
+                count = 0
+                for x in this:
+                    if x[1] == "no rank" and x[0] != 'root':
+                        default[ranks[count]] = x[0]
+                        count += 1
+                    if count >6:
+                        logger.warning("too many no_rank in taxon{}".format(ids[i]))
+                        break
+
+            # for the name, we take the last entry, which is suppose to be the
+            # scientific name found, so the scientific name of the taxon itself.
+            # Note that this is not alwyas the species rank name
+            default['name'] = this[-1][0]
             results.append(default)
 
         df = pd.DataFrame.from_records(results)
@@ -171,9 +246,9 @@ class KrakenResults(object):
 
         logger.info("Reading kraken data from {}".format(self.filename))
         columns = ["status", "taxon", "length"]
-        # we select only col 0,2,3 to save memoty, which is required on very
+        # we select only col 0,2,3 to save memory, which is required on very
         # large files
-        
+
         try:
             # each call to concat in the for loop below
             # will take time and increase with chunk position.
@@ -203,8 +278,11 @@ class KrakenResults(object):
         self._df.columns = columns
 
         count = sum(self._df.taxon == 1)
-        if count:
-            logger.warning("Found %s taxons with root ID (1)" % count)
+        percentage = (count / len(self._df) * 100)
+        if percentage >= 1:
+            logger.warning(
+                "Found {} taxons of classified reads with root ID (1) ({} %)".format(
+                    count, round(percentage,2)))
 
         # This gives the list of taxons as index and their amount
         # above, we select only columns 0, 2, 3  the column are still labelled
@@ -227,6 +305,8 @@ class KrakenResults(object):
             self.unclassified = category['U']
         else:
             self.unclassified = 0
+
+        logger.debug(self.taxons.iloc[0:10])
 
     def _get_taxons(self):
         try:
@@ -294,7 +374,7 @@ class KrakenResults(object):
 
     def kraken_to_json(self, filename, dbname):
         df = self._get_df_with_taxon(dbname)
-        df.to_json(filename)
+        df.to_json(filename, indent=4, orient="records")
         return df
 
     def kraken_to_krona(self, output_filename=None, nofile=False):
@@ -304,6 +384,7 @@ class KrakenResults(object):
         """
         if output_filename is None:
             output_filename = self.filename + ".summary"
+
         taxon_to_find = list(self.taxons.index)
         if len(taxon_to_find) == 0:
             logger.warning("No reads were identified. You will need a more complete database")
@@ -446,7 +527,14 @@ class KrakenResults(object):
 
     def boxplot_classified_vs_read_length(self):
         """Show distribution of the read length grouped by classified or not"""
-        self.df[["status", "length"]].groupby('status').boxplot()
+
+        # if paired and kraken2, there are | in length to separate both reads.
+        # to simplify, if this is the case, we will just take the first read
+        # length for now. 
+        df = self.df.copy()
+        df.length = df.length.apply(lambda x: int(x.split("|")[0]))
+        df[["status", "length"]].groupby('status').boxplot()
+        return df
 
 
 class KrakenPipeline(object):
@@ -473,7 +561,7 @@ class KrakenPipeline(object):
 
     """
     def __init__(self, fastq, database, threads=4, output_directory="kraken",
-            dbname=None):
+            dbname=None, confidence=0):
         """.. rubric:: Constructor
 
         :param fastq: either a fastq filename or a list of 2 fastq filenames
@@ -492,7 +580,7 @@ class KrakenPipeline(object):
         self._devtools = DevTools()
         self.output_directory = output_directory
         self._devtools.mkdir(output_directory)
-        self.ka = KrakenAnalysis(fastq, database, threads)
+        self.ka = KrakenAnalysis(fastq, database, threads, confidence=confidence)
 
         if dbname is None:
             self.dbname = os.path.basename(database)
@@ -519,7 +607,7 @@ class KrakenPipeline(object):
 
         # Translate kraken output to a format understood by Krona and save png
         # image
-        self.kr = KrakenResults(kraken_results)
+        self.kr = KrakenResults(kraken_results, verbose=False)
 
         df = self.kr.plot(kind="pie")
         pylab.savefig(self.output_directory + os.sep + "kraken.png")
@@ -577,22 +665,21 @@ class KrakenAnalysis(object):
     This creates a file named *kraken.out*. It can be interpreted with
     :class:`KrakenResults`
     """
-    def __init__(self, fastq, database, threads=4 ):
+    def __init__(self, fastq, database, threads=4, 
+            confidence=0):
         """.. rubric:: Constructor
 
         :param fastq: either a fastq filename or a list of 2 fastq filenames
         :param database: the path to a valid Kraken database
         :param threads: number of threads to be used by Kraken
-        :param output: output filename of the Krona HTML page
+        :param confidence: for kraken2 only
 
         :param return:
 
         """
-        self._devtools = DevTools()
-        self._devtools.check_exists(database)
-
-        self.database = database
+        self.database = KrakenDB(database)
         self.threads = threads
+        self.confidence = confidence
 
         # Fastq input
         if isinstance(fastq, str):
@@ -601,14 +688,14 @@ class KrakenAnalysis(object):
         elif isinstance(fastq, list):
             if len(fastq) == 2:
                 self.paired = True
-            else:
+            elif len(fastq) == 1:
                 self.paired = False
+            else:
+                raise IOError(("You must provide 1 or 2 files"))
             self.fastq = fastq
         else:
             raise ValueError("Expected a fastq filename or list of 2 fastq filenames")
 
-        for this in self.fastq:
-            self._devtools.check_exists(database)
 
     def run(self, output_filename=None, output_filename_classified=None,
             output_filename_unclassified=None, only_classified_output=False):
@@ -624,9 +711,26 @@ class KrakenAnalysis(object):
             self.kraken_output = TempFile().name
         else:
             self.kraken_output = output_filename
+            dirname = os.path.dirname(output_filename)
+            if os.path.exists(dirname) is False:
+                os.makedirs(dirname)
 
+        # make sure the required output directories exit:
+        # and that the output filenames ends in .fastq
+        if output_filename_classified:
+            assert output_filename_classified.endswith(".fastq")
+            dirname = os.path.dirname(output_filename_classified)
+            if os.path.exists(dirname) is False:
+                os.makedirs(dirname)
+
+        if output_filename_unclassified:
+            assert output_filename_unclassified.endswith(".fastq")
+            dirname = os.path.dirname(output_filename_unclassified)
+            if os.path.exists(dirname) is False:
+                os.makedirs(dirname)
+ 
         params = {
-            "database": self.database,
+            "database": self.database.path,
             "thread": self.threads,
             "file1": self.fastq[0],
             "kraken_output": self.kraken_output,
@@ -637,46 +741,147 @@ class KrakenAnalysis(object):
         if self.paired:
             params["file2"] = self.fastq[1]
 
-        if os.path.exists(self.database + os.sep + "hash.k2d"):
+        if self.database.version == "kraken2":
             logger.info("Using kraken2 ")
-            command = "kraken2"
-        elif os.path.exists(self.database + os.sep + "database.kdb"):
+            command = "kraken2 --confidence {}".format(self.confidence)
+        elif self.database.version == "kraken1":
             # for kraken <=1.0 --out-fmt did not exist
             #command += " --out-fmt legacy"
-            logger.info("Using kraken1. you must use version 1.1 ")
-            command = "kraken --out-fmt legacy "
-        else:
-            logger.error("Looks like an invalid kraken database directory")
-            sys.exit(1)
+            # version 0.8.3 of sequana, we changed the output from legacy to
+            # interleaved. legacy puts R1 and R2 together (separated by a N)
+            # but N's may be present in the reads itself, so we prefer to use
+            # the interleaved now so that it is easy to split the interleaved
+            # R1/R2 into two files R1 and R2
+            # we also added the --fastq-output to be compatible/coherent with kraken2
+            # behaviour
+            logger.info("Using kraken1. You should use version 1.1 ")
+            command = "kraken "
+            # --fastq-output seems to work only if paired
+            # therefore --fastq-output can only be used with --paired and
+            # --out-fmt interleaved makes sense only with --paired and therefore
+            # --fastq-output. Consequently, single end data output will only be
+            # available as fasta
+            if self.paired:
+                command += " --fastq-output --out-fmt interleaved "
 
         command += " %(file1)s"
 
         if self.paired:
             command += " %(file2)s --paired"
 
-        command += " -db %(database)s "
+        command += " --db %(database)s "
         command += " --threads %(thread)s --output %(kraken_output)s "
 
-        if output_filename_unclassified:
-            command +=  " --unclassified-out %(output_filename_unclassified)s "
+        # If N is number of reads unclassified 3 cases depending on out-fmt
+        # choice
+        # case1 --paired and out-fmt legacy saved fasta R1 and R2 together on N lines
+        # case2 --paired and out-fmt interleaved saved fasta R1 and R2 alternatively on 2N lines
+        # case3 --paired and out-fmt paired saved R1 on N lines. Where is R2 ????
+        # Note, that there is always one single file. So, the only way for
+        # kraken to know that this new files (used as input) is paired, is to
+        # use --paired.
 
+        # In any case, this new file looks like an R1-only file. Indeed, if
+        # interleaved, all data inside the file, if legacy, The R1 and R2 are
+        # separated by N but a unique sequence. If --out-fmt is paired, this is
+        # annoying. Indeed, half of the data is lost.
+
+        # So, if now input is
+        # case1, we cannot provide --paired
+        # case2 we cannot either, so how are R1 and R2 taken care of ?
+        # besides, if provided, the interleaved input is seen as single ended.
+        # Indeed, if provided, --out-fmt cannot be interleaved since krakne1
+        # complains that input is not paired.
+        # case3, only R1 so we cannot use --paired
+
+        # if kraken2, there is no --out-fmt option, so output is always a fastq
+        # with either R1 only or two output files.
+        # If we omit the --paired options, the 2 input R1 and R2 are considered
+        # as 2 different unrelated samples 
+        # if we use --paired we now must have # in the file name, and then
+        # the two files are created
+        if self.database.version == "kraken2":
+            if output_filename_unclassified:
+                command +=  " --unclassified-out %(output_filename_unclassified)s "
+            if output_filename_classified:
+                command +=  " --classified-out %(output_filename_classified)s "
+
+        # For kraken1, if paired, we first save into a temporary file as interleaved data
+        # and then split the data. That way, it is compatible with
+        # kraken2 if databases are mixed. If not paired, nothing special to do;
+        # just save the data
+        if self.database.version == "kraken1":
+            if output_filename_unclassified:
+                command +=  " --unclassified-out %(output_filename_unclassified)s "
+            if output_filename_classified:
+                command +=  " --classified-out %(output_filename_classified)s "
+
+        # This is for the kraken output, not classified fastq
         if only_classified_output is True:
+            # This was a convenient option in kraken1, not available anymore in
+            # kraken2. See later after the command call 
             command += " --only-classified-output"
-
-        if output_filename_classified:
-            command +=  " --classified-out %(output_filename_classified)s "
 
         command = command % params
         # Somehow there is an error using easydev.execute with pigz
         from snakemake import shell
+        logger.debug(command)
         shell(command)
 
+        if self.database.version == "kraken2" and only_classified_output:
+            # kraken2 has no classified_output option. we mimic it here below
+            # just to get a temporary filename
+            fout = TempFile()
+            outname = fout.name
+            newfile = open(outname, "w")
+            with open(output_filename, "r") as fin:
+                for line in fin.readlines():
+                    if line.startswith("C"):
+                        newfile.write(line)
+            newfile.close()
+            shutil.move(outname, output_filename)
+            # now let us delete the temp file
+            # The temp file has been moved so no need to delete it
+            # fout.delete()
 
-class KrakenHierarchical(object):
-    """Kraken Hiearchical Analysis
+        # a simple utility function
+        try:
+            from itertools import izip_longest
+        except:
+            from itertools import zip_longest as izip_longest 
+        def grouper(iterable):
+            args = [iter(iterable)] * 8
+            return izip_longest(*args)
+
+        if self.database.version == "kraken1" and self.paired:
+            logger.info("This is kraken1 paired, let us split the interleaved data set")
+            if output_filename_unclassified:
+                f1 = output_filename_unclassified.replace(".fastq", "_1.fastq")
+                f2 = output_filename_unclassified.replace(".fastq", "_2.fastq")
+                with open(f1, "w") as R1, open(f2, "w") as R2:
+                    with open(output_filename_unclassified, "r") as fin:
+                        for lines in grouper(fin):
+                            R1.write("".join(lines[0:4]))
+                            R2.write("".join(lines[4:]))
+                # now we can remove the temporary file
+                os.remove(output_filename_unclassified)
+            if output_filename_classified:
+                f1 = output_filename_classified.replace(".fastq", "_1.fastq")
+                f2 = output_filename_classified.replace(".fastq", "_2.fastq")
+                with open(f1, "w") as R1, open(f2, "w") as R2:
+                    with open(output_filename_classified, "r") as fin:
+                        for lines in grouper(fin):
+                            R1.write("".join(lines[0:4]))
+                            R2.write("".join(lines[4:]))
+                # now we can remove the temporary file
+                os.remove(output_filename_classified)
+
+
+class KrakenSequential(object):
+    """Kraken Sequential Analysis
 
     This runs Kraken on a FastQ file with multiple k-mer databases in a
-    hierarchical way. Unclassified sequences with the first database are input
+    sequencial way way. Unclassified sequences with the first database are input
     for the second, and so on.
 
     The input may be a single FastQ file or paired, gzipped or not. FastA are
@@ -685,9 +890,11 @@ class KrakenHierarchical(object):
 
     """
     def __init__(self, filename_fastq, fof_databases, threads=1,
-                 output_directory="./kraken_hierarchical/", 
-                 keep_temp_files=False, output_filename_unclassified=None, 
-                force=False):
+                 output_directory="./kraken_sequential/",
+                 keep_temp_files=False, 
+                 output_filename_unclassified=None,
+                 output_filename_classified=None,
+                 force=False, confidence=0):
         """.. rubric:: **constructor**
 
         :param filename_fastq: FastQ file to analyse
@@ -701,17 +908,10 @@ class KrakenHierarchical(object):
         :param bool force: if the output directory already exists, the
             instanciation fails so that the existing data is not overrwritten. 
             If you wish to overwrite the existing directory, set this 
-            parameter to True.
+            parameter to iTrue.
         """
-        # When running kraken in paired mode and saving the unclassified reads
-        # in a file, the output file (fastq) contains both R1 and R2 so there
-        # are concatenated in the same file. Actually, if there is R1 and R2,
-        # there are concatenated as R1 N R2 (with the letter N as link). 
-        # So, in the hiearchical search, paired case, the first iteration has 2
-        # input files, must subsequent iterations will have only one file as
-        # input, that is the output of the previous run (provided by
-        # --unclassified-out option)
         self.filename_fastq = filename_fastq
+        self.confidence = confidence
 
         # input databases may be stored in a file
         if isinstance(fof_databases, str) and os.path.exists(fof_databases):
@@ -723,6 +923,9 @@ class KrakenHierarchical(object):
         else:
             raise TypeError("input databases must be a list of valid kraken "
                             "databases or a file (see documebntation)")
+
+        self.databases = [KrakenDB(x) for x in self.databases]
+
         self.threads = threads
         self.output_directory = output_directory
         self.keep_temp_files = keep_temp_files
@@ -748,7 +951,13 @@ class KrakenHierarchical(object):
             msg += "\nYou provided {}".format(filename_fastq)
             raise TypeError(msg)
 
+        if len(self.inputs) == 1:
+            self.paired = False
+        elif len(self.inputs) == 2:
+            self.paired = True
+
         self.unclassified_output = output_filename_unclassified
+        self.classified_output = output_filename_classified
 
     def _run_one_analysis(self, iteration):
         """ Run one analysis """
@@ -762,38 +971,55 @@ class KrakenHierarchical(object):
         _pathto = lambda x: self.output_directory + x
 
         # the output is saved in this file
-        file_kraken_class = _pathto("kraken_%d.out" % iteration)
-        output_filename_unclassified = _pathto("unclassified_%d.fastq" % iteration)
-        file_fastq_unclass = _pathto("unclassified_%d.fastq" % iteration)
-
-
+        if db.version == "kraken2" and self.paired:
+            # if paired, kraken2 expect a # and then will create 2 files (1 and 2
+            # )
+            # Note that kraken adds a _ before the # (1,2) so no need to add one
+            output_filename_unclassified = _pathto("unclassified_%d#.fastq" % iteration)
+            file_fastq_unclass = [
+                _pathto("unclassified_%d_1.fastq" % iteration),
+                _pathto("unclassified_%d_2.fastq" % iteration)]
+        elif db.version == "kraken2" and self.paired is False:
+            output_filename_unclassified = _pathto("unclassified_%d.fastq" % iteration)
+            file_fastq_unclass = _pathto("unclassified_%d.fastq" % iteration)
+        elif db.version == "kraken1" and self.paired is False:
+            output_filename_unclassified = _pathto("unclassified_%d.fastq" % iteration)
+            file_fastq_unclass =  _pathto("unclassified_%d.fastq" % iteration)
+        elif db.version == "kraken1" and self.paired is True:
+            # if paired, kraken1 expects 1 file and creates 1 file.
+            # To be compatible with inputs of kraken2, if paired, the output
+            # must be made of two files that will be created by KrakenAnalysis
+            # class by us (using the single file created by kraken1)
+            output_filename_unclassified = _pathto("unclassified_%d.fastq" % iteration)
+            file_fastq_unclass = [
+                _pathto("unclassified_%d_1.fastq" % iteration),
+                _pathto("unclassified_%d_2.fastq" % iteration)]
 
         if iteration == 0:
             inputs = self.inputs
         else:
             inputs = self._list_kraken_input[iteration-1]
 
-
         # if this is the last iteration (even if iteration is zero), save
         # classified and unclassified in the final kraken results.
         if iteration == len(self.databases) -1:
             only_classified_output = False
 
+        file_kraken_out = self.output_directory + "/kraken_{}.out".format(iteration)
 
-        analysis = KrakenAnalysis(inputs, db, self.threads)
-        analysis.run(output_filename=file_kraken_class,
+        # The analysis itself
+        analysis = KrakenAnalysis(inputs, db, self.threads,
+            confidence=self.confidence)
+        analysis.run(output_filename=file_kraken_out,
                      output_filename_unclassified=output_filename_unclassified,
                      only_classified_output=only_classified_output)
 
+        # save input/output files
         self._list_kraken_input.append(file_fastq_unclass)
-        self._list_kraken_output.append(file_kraken_class)
-
-        if self.keep_temp_files:
-            result = KrakenResults(file_kraken_class)
-            result.to_js("%s/krona_%d.html" %(self.output_directory, iteration))
+        self._list_kraken_output.append(file_kraken_out)
 
     def run(self, dbname="multiple", output_prefix="kraken_final"):
-        """Run the hierachical analysis
+        """Run the sequential analysis
 
         This method does not return anything but creates a set of files:
 
@@ -803,17 +1029,34 @@ class KrakenHierarchical(object):
 
         .. note:: the databases are run in the order provided in the constructor.
         """
+        import shutil
         # list of all output to merge at the end
         self._list_kraken_output = []
         self._list_kraken_input = []
 
         # Iteration over the databases
         for iteration in range(len(self.databases)):
+            kraken_out = self.output_directory + "/kraken_{}.out".format(iteration)
+
+            # The analysis itself
             status = self._run_one_analysis(iteration)
+
+            # We save intermediate krona except last one that will be done
+            # anyway
+            if self.keep_temp_files and iteration != len(self.databases) - 1:
+                kraken_out = self._list_kraken_output[-1] 
+                result = KrakenResults(kraken_out, verbose=False)
+                result.to_js("%s/krona_%d.html" %(self.output_directory, iteration))
+
             last_unclassified = self._list_kraken_input[-1]
-            stat = os.stat(last_unclassified)
-            if stat.st_size == 0:
-                break
+            if isinstance(last_unclassified, str):
+                stat = os.stat(last_unclassified)
+                if stat.st_size == 0:
+                    break
+            elif isinstance(last_unclassified, list):
+                stat = os.stat(last_unclassified[0])
+                if stat.st_size == 0:
+                    break
 
         # concatenate all kraken output files
         file_output_final = self.output_directory + os.sep + "%s.out" % output_prefix
@@ -823,9 +1066,8 @@ class KrakenHierarchical(object):
                     for line in infile:
                         outfile.write(line)
 
-        # create html report
-        logger.info("Analysing results")
-        result = KrakenResults(file_output_final)
+        logger.info("Analysing final results")
+        result = KrakenResults(file_output_final, verbose=False)
 
         # TODO: this looks similar to the code in KrakenPipeline. could be factorised
         result.to_js("%s%s%s.html" % (self.output_directory, os.sep, output_prefix))
@@ -838,14 +1080,25 @@ class KrakenHierarchical(object):
         # remove kraken intermediate files (including unclassified files)
         if self.unclassified_output:
             # Just cp the last unclassified file
-            import shutil
             shutil.copy2(self._list_kraken_input[-1], self.unclassified_output)
 
+        if self.classified_output:
+            # Just cp the last classified file
+            shutil.copy2(self._list_kraken_input[-1], self.classified_output)
+
+
         if not self.keep_temp_files:
+            # kraken_0.out
             for f_temp in self._list_kraken_output:
                 os.remove(f_temp)
+
+            # unclassified
             for f_temp in self._list_kraken_input:
-                os.remove(f_temp)
+                if isinstance(f_temp, str):
+                    os.remove(f_temp)
+                elif isinstance(f_temp, list):
+                    for this in f_temp:
+                        os.remove(this)
 
 
 class KrakenDownload(object):
@@ -1005,7 +1258,9 @@ class KrakenDownload(object):
 
 
 class MultiKrakenResults():
+    """Slect several kraken output and creates summary plots
 
+    """
     def __init__(self, filenames, sample_names=None):
         self.filenames = filenames
         if sample_names is None:
@@ -1013,7 +1268,7 @@ class MultiKrakenResults():
         else:
             self.sample_names = sample_names
 
-    def get_df(self):
+    def get_df(self, limit=5):
         import pandas as pd
         data = {}
         for sample, filename in zip(self.sample_names, self.filenames):
@@ -1024,8 +1279,8 @@ class MultiKrakenResults():
             # if the count is > 5%
             if " " in df.index:
                 percent = df.loc[" "]
-                if percent > 5:
-                    logger.warning("Found {}% of taxons in obsolete category".format(percent))
+                if percent > limit:
+                    logger.warning("Found {}% of taxons with no kingdom".format(percent))
                 if "Unclassified" in df.index:
                     df.loc['Unclassified'] += df.loc[' ']
                     df.drop(" ", inplace=True)
@@ -1035,8 +1290,10 @@ class MultiKrakenResults():
             data[sample] = df
 
         df = pd.DataFrame(data)
-        #df.to_json(output.data)
         df = df.sort_index(ascending=False)
+
+        df.sum(axis=1).sort_values(ascending=False).index[0]
+
         return df
 
     def plot_stacked_hist(self, output_filename=None, dpi=200, kind="barh", 
@@ -1050,9 +1307,15 @@ class MultiKrakenResults():
         pylab.xlabel("Percentage (%)", fontsize=fontsize)
         pylab.ylabel("Sample index/name", fontsize=fontsize)
         pylab.yticks(fontsize=ytick_fontsize)
-        pylab.legend(title="kingdom")
-        pylab.xlim([0, 100])
-
+        if kind == "barh":
+            pylab.xlim([0, 100])
+        else:
+            pylab.ylim([0, 100])
+        ax = pylab.gca()
+        ax.legend(title="kingdom",  bbox_to_anchor=(1,1))
+        try: 
+            pylab.tight_layout()    
+        except:pass
         if output_filename:
             pylab.savefig(output_filename, dpi=dpi)
 
