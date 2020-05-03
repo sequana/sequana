@@ -980,8 +980,10 @@ class PipelineManager(object):
         :param pattern: a default pattern if not provided in the configuration
             file as an *input_pattern* field.
         """
+        self.name = name
+
         cfg = SequanaConfig(config)
-        cfg.config.pipeline_name = name
+        cfg.config.pipeline_name = self.name
         self.pipeline_dir = os.getcwd() + os.sep
 
         # Default mode is the input directory .
@@ -1123,6 +1125,34 @@ class PipelineManager(object):
             logger.error(err)
             logger.error("Could not process stats.txt file" )
 
+    def setup(self,  namespace, mode="error"):
+        """
+        """
+        if "__snakefile__" in namespace.keys():
+            self._snakefile = namespace["__snakefile__"]
+        else:
+            filename = self.name + ".rules"
+            # This contains the full path of the snakefile
+            namespace['__snakefile__'] = filename
+            self._snakefile = namespace["workflow"].included_stack[-1]
+
+            # FIXME this is used only in quality_control when using sambamba rule
+            # to remove files.
+            namespace['__pipeline_name__'] = \
+                os.path.split(filename)[1].replace(".rules", "")
+            namespace['expected_output'] = []
+            namespace['toclean'] = []
+
+        # check requirements
+        Module(self.name).check(mode)
+
+    def _get_snakefile(self):
+        #globals()['__snakefile__']
+        return self._snakefile
+    snakefile = property(_get_snakefile)
+
+    def teardown(self):
+        pass
 
 
 def message(mes):
@@ -1617,17 +1647,20 @@ class FastQFactory(FileFactory):
             pass
 """
 
+
 def init(filename, namespace, mode="error"):
     """Defines the global variable __snakefile__ inside snakefiles
 
     If not already defined, __snakefile__ is created to hold the name of the
-    pipeline. We also define initialise these variables :
+    pipeline. We also initialise these variables :
 
         * expected_output as an empty list
-        * toclean as an empty  list
+        * toclean as an empty list
 
     Use e.g. in quality_control pipeline for bwa_mem_dynamic option
     """
+    logger.warning("Message for developers. This will be deprecated soon. "
+        "Please use the PipelineManager instead setup() method")
     # Create global name for later
     if "__snakefile__" in namespace.keys():
         pass
