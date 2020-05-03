@@ -103,6 +103,11 @@ Issues: http://github.com/sequana/sequana
             help="save unclassified sequences to filename")
         self.add_argument("--classified-out",
             help="save unclassified sequences to filename")
+        self.add_argument("--confidence", type=float, default=0, 
+            help="confidence (kraken2 DB only)")
+        self.add_argument("--update-taxonomy", action="store_true",
+            default="False",
+            help="Update the local NCBI taxonomy database to the last version")
         self.add_argument('--level', dest="level",
             default="INFO", choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"])
 
@@ -122,9 +127,17 @@ def main(args=None):
 
     logger.level = options.level
 
+    if options.update_taxonomy is True:
+        from sequana.taxonomy import Taxonomy
+        tax = Taxonomy()
+        from sequana import sequana_config_path as cfg
+        logger.info("Will overwrite the local database taxonomy.dat in {}".format(cfg))
+        tax.download_taxonomic_file(overwrite=True)
+        sys.exit(0)
+
     # We put the import here to make the --help faster
     from sequana import KrakenPipeline
-    from sequana.kraken import KrakenHierarchical
+    from sequana.kraken import KrakenSequential
     devtools = DevTools()
 
     if options.download:
@@ -171,18 +184,19 @@ def main(args=None):
     if len(databases) == 1:
         logger.info("Using 1 database")
         k = KrakenPipeline(fastq, databases[0], threads=options.thread,
-            output_directory=output_directory)
+            output_directory=output_directory, confidence=options.confidence)
 
         k.run(output_filename_classified=_pathto(options.classified_out),
               output_filename_unclassified=_pathto(options.unclassified_out))
     else:
         logger.info("Using %s databases" % len(databases))
-        k = KrakenHierarchical(fastq, databases,
+        k = KrakenSequential(fastq, databases,
             threads=options.thread,
             output_directory=output_directory + os.sep, 
             force=True,
             keep_temp_files=options.keep_temp_files,
-            output_filename_unclassified=_pathto(options.unclassified_out))
+            output_filename_unclassified=_pathto(options.unclassified_out),
+            confidence=options.confidence)
         k.run(output_prefix="kraken")
 
     # This statements sets the directory where HTML will be saved
