@@ -17,7 +17,6 @@ __all__ = ["Hist2D"]
 class Hist2D(VizInput2D):
     """2D histogram
 
-
     .. plot::
         :include-source:
         :width: 80%

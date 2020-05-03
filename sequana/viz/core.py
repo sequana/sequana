@@ -1,5 +1,5 @@
 """Core function for the plotting tools"""
-import pandas as pd
+from sequana.lazy import pandas as pd
 
 
 __all__ = ["VizInput2D"]
@@ -32,8 +32,6 @@ class VizInput2D(object):
                     self.df = self.df.transpose()
         elif x is not None and y is not None:
             self.df = pd.DataFrame({'x':x, 'y':y})
-        else:
-            raise ValueError('not a dataframe or list of items or dictionary.')
 
 
 

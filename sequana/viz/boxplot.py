@@ -4,7 +4,8 @@ from sequana.lazy import pylab
 
 
 class Boxplot(object):
-
+    """Used to plot boxplot of fastq quality a la fastqc"""
+    
     def __init__(self, data):
 
         # if data is a dataframe, keep it else, transform to dataframe
