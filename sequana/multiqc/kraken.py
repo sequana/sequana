@@ -59,9 +59,7 @@ class MultiqcModule(BaseMultiqcModule):
             name = myfile['s_name']
             d = json.loads(myfile['f'])
 
-
             for k,v in d.items():
-                # check for None and NAN
                 S = sum(list(v.values()))
                 U = v['Unclassified']
                 v['Classified'] = S - U
@@ -86,9 +84,35 @@ class MultiqcModule(BaseMultiqcModule):
 
         self.populate_columns()
         self.add_kraken()
+        self.add_classified_vs_unclassified()
 
     def add_classified_vs_unclassified(self):
-        pass
+        data = {}
+        for sample_name in self.sequana_data.keys():
+            C = self.sequana_data[sample_name]['Classified']
+            U = self.sequana_data[sample_name]['Unclassified']
+            data[sample_name] = {'unclassified': U, 'classified': C}
+
+        pconfig = {
+            "title": "classification",
+            "count": False,
+            "percentages": True,
+            "min": 0,
+            "max":100,
+            "format": '{0:.2f}',
+            "logswitch": False,
+        }
+
+        keys = OrderedDict()
+        keys['classified'] = {'color': 'green', 'name': 'Classified'}
+        keys['unclassified'] = {'color': 'red', 'name': 'Unclassified'}
+
+        self.add_section(
+            name = 'Classification ratio',
+            anchor = 'classification_ratio',
+            description = 'The following barplots shows proportion of classified and unclassified reads in percentage',
+            helptext = "",
+            plot = bargraph.plot(data, keys, pconfig))
 
     def _set_nan_to_zero(self, x):
         try:
@@ -99,22 +123,39 @@ class MultiqcModule(BaseMultiqcModule):
 
     def add_kraken(self):
         data = {}
-        
 
-        for name in self.sequana_data.keys():
+        # First, we figure out all possible names
+        kingdoms = set([x for k in self.sequana_data.keys() for x in self.sequana_data[k].keys()])
 
-            for this in ['Viruses', 'Bacteria', 'Unclassified', 'Metazoa']:
-                if this not in self.sequana_data[name]:
-                    self.sequana_data[name][this] = 0
-            data[name] = {
-                'viruses': self._set_nan_to_zero(self.sequana_data[name]['Viruses']),
-                'bacteria': self._set_nan_to_zero(self.sequana_data[name]['Bacteria']),
-                'unclassified': self._set_nan_to_zero(self.sequana_data[name]['Unclassified']),
-                'metazoa': self._set_nan_to_zero(self.sequana_data[name]['Metazoa'])
-            }
+        colors = ['Archaea', 'Bacteria', 'Eukaryota', 'Viruses', 'Metazoa',
+            'Fungi', "Unclassified", "Classified"]
+
+        for sample_name in self.sequana_data.keys():
+            for kingdom in sorted(kingdoms):
+                if kingdom not in self.sequana_data[sample_name]:
+                    self.sequana_data[sample_name][kingdom] = 0
+
+            data[sample_name] = {"others": 0}
+            for kingdom in sorted(kingdoms):
+
+                if kingdom not in colors:
+                    # here we add together non-superkingdom + other artifical
+                    # sequences
+                    print(kingdom)
+                    data[sample_name]["others"] += \
+                         self._set_nan_to_zero(self.sequana_data[sample_name][kingdom])
+                else:
+                    data[sample_name][kingdom.lower()] = \
+                         self._set_nan_to_zero(self.sequana_data[sample_name][kingdom])
+            data[sample_name]['unclassified'] = \
+                self._set_nan_to_zero(self.sequana_data[sample_name]['Unclassified'])
+
+        print(data)
+            #S = sum([v for k,v in data[sample_name].items()] )
+            #data[sample_name]['others'] = 100 - S - data[sample_name]['unclassified']
 
         pconfig = {
-            "title": "Taxonomy",
+            "title": "Taxonomy by kingdom",
             "percentages": True,
             "min": 0,
             "max":100,
@@ -123,13 +164,19 @@ class MultiqcModule(BaseMultiqcModule):
         }
 
         keys = OrderedDict()
-        keys['viruses'] = {'color': '#437bb1', 'name': 'Viruses'}
+        keys['archea'] = {'color': 'orange', 'name': 'Archea'}
         keys['bacteria'] = {'color': '#b1084c', 'name': 'Bacteria'}
+        keys['eukaryota'] = {'color': 'green', 'name': 'Eukaryota'}
+        keys['viruses'] = {'color': '#437bb1', 'name': 'Viruses'}
         keys['metazoa'] = {'color': 'green', 'name': 'Metazoa'}
+        keys['fungi'] = {'color': 'purple', 'name': 'Fungi'}
         keys['unclassified'] = {'color': 'grey', 'name': 'Unclassified'}
+        keys['others'] = {'color': 'blue', 'name': 'Others'}
+        #keys['viridiplantae'] = {'color': 'yellow', 'name': 'Viridiplantae'}
+        #keys['dikarya'] = {'color': 'brown', 'name': 'dikarya'}
 
         self.add_section(
-            name = 'taxonomy',
+            name = 'Taxonomy by kingdom',
             anchor = 'taxonomy',
             description = 'The following barplots summarizes the kraken analysis for each sample. ',
             helptext = "",
@@ -148,6 +195,18 @@ class MultiqcModule(BaseMultiqcModule):
                 'format': '{0:.2f}',
                 'shared_key': 'count',
             }
+
+        for name in ['Viruses', 'Bacteria', 'Eukaryota', 'Archea']:
+            if any([name in self.sequana_data[s] for s in self.sequana_data]):
+                headers[name] = {
+                    'title': 'Reads classified as {} (%)'.format(name.lower()),
+                    'description': 'Reads classified as {} (%)'.format(name.lower()),
+                    'min': 0,
+                    'max': 100,
+                    'scale': 'RdYlGn',
+                    'format': '{0:.2f}',
+                    'shared_key': 'count',
+                }
 
         if len(headers.keys()):
             self.general_stats_addcols(self.sequana_data, headers)
