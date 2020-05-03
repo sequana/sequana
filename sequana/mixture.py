@@ -14,8 +14,9 @@ import numpy as np
 half_log_two_pi = 0.5*np.log(2*np.pi)
 
 
-__all__ = ["Gaussian", "GaussianMixture", "GaussianMixtureModel",
-            "GaussianMixtureFitting", "GMM"]
+__all__ = ["Fitting",  "GaussianMixtureModel",
+            "GaussianMixtureFitting", "EM"]
+
 
 class GaussianMixtureModel(object):
     """Gaussian Mixture Model

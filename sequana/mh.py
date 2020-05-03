@@ -25,7 +25,7 @@ from sequana import logger
 logger.name = __name__
 
 
-__all__ = ["MH"]
+__all__ = ["MetropolisHasting"]
 
 
 class MetropolisHasting():
