@@ -180,9 +180,10 @@ class GFF3():
         :return: nothing
 
         This functions reads the GFF file and creates two files:
-        1. outname_gene_lengths.tsv contains column 1 with identifiers and
+
+        #. outname_gene_lengths.tsv contains column 1 with identifiers and
            column 2 with length of the selected type (e.g. gene)
-        2. outname_info.tsv first column is the same identifier as in the first
+        #. outname_info.tsv first column is the same identifier as in the first
            file and following columns contain the fields of interest (Name by
            default but could be any attributes to be found in the GFF such as 
            description
