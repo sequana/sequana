@@ -141,7 +141,6 @@ class MultiqcModule(BaseMultiqcModule):
                 if kingdom not in colors:
                     # here we add together non-superkingdom + other artifical
                     # sequences
-                    print(kingdom)
                     data[sample_name]["others"] += \
                          self._set_nan_to_zero(self.sequana_data[sample_name][kingdom])
                 else:
@@ -149,10 +148,6 @@ class MultiqcModule(BaseMultiqcModule):
                          self._set_nan_to_zero(self.sequana_data[sample_name][kingdom])
             data[sample_name]['unclassified'] = \
                 self._set_nan_to_zero(self.sequana_data[sample_name]['Unclassified'])
-
-        print(data)
-            #S = sum([v for k,v in data[sample_name].items()] )
-            #data[sample_name]['others'] = 100 - S - data[sample_name]['unclassified']
 
         pconfig = {
             "title": "Taxonomy by kingdom",
