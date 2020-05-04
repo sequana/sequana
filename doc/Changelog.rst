@@ -4,6 +4,11 @@ Changelog
 .. contents::
     :depth: 2
 
+0.8.4
+-----
+
+* MultiKrakenResults set nan tp zeros
+
 0.8.3
 -----
 
