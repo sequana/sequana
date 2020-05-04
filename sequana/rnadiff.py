@@ -6,16 +6,18 @@ from sequana.lazy import pandas as pd
 from sequana.lazy import pylab
 
 from matplotlib_venn import venn2_unweighted, venn3_unweighted
+
 try:
     import gseapy
 except:
     pass
 
 
-__all__ = ['RNADiffResults', 'plot_venn']
+__all__ = ["RNADiffResults", "plot_venn"]
+
 
 class RNADiffResults(object):
-    """ A representation of a biomics RNADiffResults analysis.
+    """ An object representation of results coming from a RNADiff analysis.
     """
 
     TABLE_DIR_NAME = "tables"
@@ -37,8 +39,8 @@ class RNADiffResults(object):
         self.alpha = alpha
 
     def get_table(self, pattern):
-        """Extract the complete (with all comparisons) table from a biomics
-        RNADiff analysis or the normCounts table depending on the PATTERN specified.
+        """ Extract the complete (with all comparisons) table from a RNADiff analysis or
+        the normCounts table depending on the pattern specified.
         """
 
         table_files = [f for f in self.table_folder.glob("*.xls")]
@@ -55,6 +57,8 @@ class RNADiffResults(object):
             )
 
     def get_comparisons(self):
+        """ Get a list of comparisons performed in the RNADiff analysis.
+        """
 
         comparisons = set(
             [x.split(".")[0] for x in self.df.filter(regex=(".*vs.*\..*")).columns]
@@ -62,6 +66,8 @@ class RNADiffResults(object):
         return comparisons
 
     def get_gene_lists(self, alpha=None):
+        """ Get differentially regulated gene lists.
+        """
 
         gene_sets = {}
 
@@ -84,12 +90,11 @@ class RNADiffResults(object):
         return gene_sets
 
     def run_enrichr(self, gene_sets, top_term=20):
-        """
-        Run enrichr using gseapy
+        """Run enrichr using gseapy.
 
         gene_sets: A list of databases coming from the database available with
-        gseapy (see gseapy.get_library_name(database="Mouse"))
-        top_term: The max number of term to plot.
+        gseapy (see gseapy.get_library_name(database="Mouse")) top_term: The max
+        number of term to plot.
         """
 
         out_dir_enr = os.path.join(self.out_dir, "enrichr")
@@ -137,6 +142,8 @@ class RNADiffResults(object):
         print(f"No DR genes found for: {','.join(no_dr_genes)}")
 
     def summary(self):
+        """ Get a summary DataFrame from a RNADiff analysis.
+        """
         summary = pd.DataFrame(
             {
                 k: {x: len(self.dr_gene_lists[k][x]) for x in self.dr_gene_lists[k]}
