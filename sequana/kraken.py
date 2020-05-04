@@ -1290,6 +1290,7 @@ class MultiKrakenResults():
             data[sample] = df
 
         df = pd.DataFrame(data)
+        df = df.fillna(0)
         df = df.sort_index(ascending=False)
 
         df.sum(axis=1).sort_values(ascending=False).index[0]
@@ -1298,6 +1299,9 @@ class MultiKrakenResults():
 
     def plot_stacked_hist(self, output_filename=None, dpi=200, kind="barh", 
         fontsize=10, edgecolor="k", lw=1, width=1, ytick_fontsize=10):
+        """Summary plot of reads classified.
+
+        """
         df = self.get_df()
         df.T.plot(kind=kind, stacked=True, edgecolor=edgecolor, lw=lw,
             width=width)
@@ -1313,8 +1317,8 @@ class MultiKrakenResults():
             pylab.ylim([0, 100])
         ax = pylab.gca()
         ax.legend(title="kingdom",  bbox_to_anchor=(1,1))
-        try: 
-            pylab.tight_layout()    
+        try:
+            pylab.tight_layout()
         except:pass
         if output_filename:
             pylab.savefig(output_filename, dpi=dpi)
