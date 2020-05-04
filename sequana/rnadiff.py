@@ -12,6 +12,8 @@ except:
     pass
 
 
+__all__ = ['RNADiffResults', 'plot_venn']
+
 class RNADiffResults(object):
     """ A representation of a biomics RNADiffResults analysis.
     """

@@ -115,6 +115,10 @@ Taxonomy related (Kraken - Krona)
     :members:
     :undoc-members:
 
+.. automodule:: sequana.taxonomy
+    :members:
+    :undoc-members:
+
 Pacbio module
 ----------------
 .. automodule:: sequana.pacbio
@@ -125,6 +129,13 @@ Pacbio module
 Phred quality
 ------------------
 .. automodule:: sequana.phred
+    :members:
+    :undoc-members:
+
+RNAdiff
+-------
+
+.. automodule:: sequana.rnadiff
     :members:
     :undoc-members:
 
