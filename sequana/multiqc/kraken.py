@@ -164,14 +164,18 @@ class MultiqcModule(BaseMultiqcModule):
         }
 
         keys = OrderedDict()
+        # superkingdom:
         keys['archea'] = {'color': 'orange', 'name': 'Archea'}
         keys['bacteria'] = {'color': '#b1084c', 'name': 'Bacteria'}
         keys['eukaryota'] = {'color': 'green', 'name': 'Eukaryota'}
         keys['viruses'] = {'color': '#437bb1', 'name': 'Viruses'}
+        # kingdom: 
         keys['metazoa'] = {'color': 'green', 'name': 'Metazoa'}
         keys['fungi'] = {'color': 'purple', 'name': 'Fungi'}
+        # others
         keys['unclassified'] = {'color': 'grey', 'name': 'Unclassified'}
         keys['others'] = {'color': 'blue', 'name': 'Others'}
+        # subkingdom
         #keys['viridiplantae'] = {'color': 'yellow', 'name': 'Viridiplantae'}
         #keys['dikarya'] = {'color': 'brown', 'name': 'dikarya'}
 
