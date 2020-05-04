@@ -5,20 +5,34 @@ import pandas as pd
 from sequana import logger
 from functools import wraps
 logger.name = __name__
-
-
+from sequana.misc import wget
+from easydev import TempFile
 
 class NCBITaxonomy():
+    """
+
+
+    """
     def __init__(self, names, nodes):
+        """
+
+        :param names: can be a local file or URL
+        :param nodes: can be a local file or URL
+
+        """
         # Path to existing files
         logger.info("Reading input files")
-        assert os.path.exists(names)
-        assert os.path.exists(nodes)
         self.names = names
         self.nodes = nodes
 
         # First, the nodes
-        self.df_nodes = pd.read_csv(nodes, sep="|", header=None)
+        if os.path.exists(nodes):
+            self.df_nodes = pd.read_csv(nodes, sep="|", header=None)
+        else:
+            with TempFile() as fout_nodes:
+                logger.info("Loading nodes.dmp from an URL {}".format(nodes))
+                wget(nodes, fout_nodes.name)
+                self.df_nodes = pd.read_csv(fout_nodes.name, sep="|", header=None)
         for i, _type in enumerate(self.df_nodes.dtypes):
             if _type == "O":
                 self.df_nodes[i] = self.df_nodes[i].str.strip('\t')
@@ -52,7 +66,14 @@ class NCBITaxonomy():
         self.df_nodes.set_index("taxid", inplace=True)
 
         # now we read the names
-        self.df_names = pd.read_csv(names, sep="|", header=None)
+        if os.path.exists(names):
+            self.df_names = pd.read_csv(names, sep="|", header=None)
+        else:
+            with TempFile() as fout_names:
+                logger.info("Loading names.dmp from an URL {}".format(names))
+                wget(names, fout_names.name)
+                self.df_names = pd.read_csv(fout_names.name, sep="|", header=None)
+
         for i, _type in enumerate(self.df_names.dtypes):
             if _type == "O":
                 self.df_names[i] = self.df_names[i].str.strip('\t')
@@ -89,6 +110,7 @@ class NCBITaxonomy():
                 fout.write("//\n")
                 count += 1
                 pb.animate(count)
+
 
 
 def load_taxons(f):
