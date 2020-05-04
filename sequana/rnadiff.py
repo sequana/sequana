@@ -1,10 +1,15 @@
 from pathlib import Path
 import re
-import pandas as pd
 import os
-import matplotlib.pyplot as plt
+
+from sequana.lazy import pandas as pd
+from sequana.lazy import pylab
+
 from matplotlib_venn import venn2_unweighted, venn3_unweighted
-import gseapy
+try:
+    import gseapy
+except:
+    pass
 
 
 class RNADiffResults(object):
@@ -153,7 +158,7 @@ class RNADiffResults(object):
         # If compa_list is a list of lists of comparison
         if all(isinstance(l, list) for l in compa_list):
 
-            fig, ax = plt.subplots(6, 1, figsize=(6, 20))
+            fig, ax = pylab.subplots(6, 1, figsize=(6, 20))
             ax = ax.flat
 
             for i, c in enumerate(compa_list):
@@ -173,7 +178,7 @@ class RNADiffResults(object):
         os.makedirs(out_dir, exist_ok=True)
         outfile = os.path.join(out_dir, f"{prefix}vennDiagrams_{direction}.pdf")
 
-        plt.savefig(outfile, bbox_inches="tight")
+        pylab.savefig(outfile, bbox_inches="tight")
 
     def compare(self, rnadiff_res_obj, make_plot=False, plot_to_file=""):
         """Compare two RNADiffResults objects.  For now this will plot venn
