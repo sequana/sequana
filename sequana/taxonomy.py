@@ -1,3 +1,20 @@
+# -*- coding: utf-8 -*-
+#
+#  This file is part of Sequana software
+#
+#  Copyright (c) 2016-2020 - Sequana Development Team
+#
+#  File author(s):
+#      Thomas Cokelaer <thomas.cokelaer@pasteur.fr>
+#
+#  Distributed under the terms of the 3-clause BSD license.
+#  The full license is in the LICENSE file, distributed with this software.
+#
+#  website: https://github.com/sequana/sequana
+#  documentation: http://sequana.readthedocs.io
+#
+##############################################################################
+
 import os
 import re
 from sequana import sequana_config_path
@@ -7,6 +24,9 @@ from functools import wraps
 logger.name = __name__
 from sequana.misc import wget
 from easydev import TempFile
+
+__all__ = ['NCBITaxonomy', 'Taxonomy']
+
 
 class NCBITaxonomy():
     """
