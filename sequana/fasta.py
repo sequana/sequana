@@ -77,7 +77,7 @@ class FastA(object):
     def __len__(self):
         if self._N is None:
             logger.info("Reading input fasta file...please wait") 
-            self._N = len([x for x in FastxFile(filename)])
+            self._N = len([x for x in FastxFile(self.filename)])
         return self._N
 
     def _get_names(self):
@@ -146,26 +146,28 @@ class FastA(object):
             with open(self.filename) as fin:
                 with open(output_filename, "w") as fout:
                     skip = False
-                    for line in fin.readlines():
+                    # do no use readlines. may be slower but may cause memory
+                    # issue
+                    for line in fin:
                         if line.startswith(">"):
                             if line[1:].split()[0] in names_to_exclude:
                                 skip = True
                             else:
                                 skip = False
-                        
                         if skip is False:
                             fout.write(line)
         elif names_to_keep:
             with open(self.filename) as fin:
                 with open(output_filename, "w") as fout:
+                    # do no use readlines. may be slower but may cause memory
+                    # issue
                     skip = True
-                    for line in fin.readlines():
+                    for line in fin:
                         if line.startswith(">"):
                             if line[1:].split()[0] in names_to_keep:
                                 skip = False
                             else:
                                 skip = True
-                        
                         if skip is False:
                             fout.write(line)
 
