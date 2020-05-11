@@ -839,20 +839,6 @@ class SequanaConfig(object):
             print(err)
             return False
 
-"""
-class DummyManager(object):
-    def __init__(self, filenames=None, samplename="custom"):
-        self.config = {}
-        if isinstance(filenames, list) and len(filenames) == 2:
-            self.paired = True
-            self.samples = {samplename: filenames}
-        elif isinstance(filenames, list) and len(filenames) == 1:
-            self.paired = False
-            self.samples = {samplename: filenames}
-        elif isinstance(filenames, str):
-            self.samples = {samplename: [filenames]}
-            self.paired = False
-"""
 
 class PipelineManagerGeneric(object):
     """
@@ -902,6 +888,11 @@ class PipelineManagerGeneric(object):
         else:
             self.samples = {str(i+1):filename for i,filename in enumerate(self.ff.realpaths)}
 
+    def error(self, msg):
+        msg += ("\nPlease check the content of your config file. You must have "
+                "input_directory set, or input_pattern.")
+        raise SequanaException(msg)
+
     def getname(self, rulename, suffix=None):
         """In the basename, include rulename and suffix"""
         if suffix is None:
@@ -933,8 +924,76 @@ class PipelineManagerGeneric(object):
                 "sample names as keys and the corresponding location as values.")
         return lambda wildcards: self.samples[wildcards.sample]
 
+    def plot_stats(self, outputdir=".sequana",
+                 filename="snakemake_stats.png", N=1):
+        logger.info("Creating stats image")
+        try:
+            from sequana.snaketools import SnakeMakeStats
+            SnakeMakeStats("stats.txt", N=N).plot_and_save(
+            outputdir=outputdir, filename=filename)
+        except Exception as err:
+            logger.error(err)
+            logger.error("Could not process stats.txt file" )
 
-class PipelineManager(object):
+    def message(self, msg):
+        message(msg)
+
+    def setup(self,  namespace, mode="error", matplotlib="Agg"):
+        """
+
+        90% of the errors come from the fact that users did not set a matplotlib
+        backend properly. In the setup() function, we set the backend to Agg on
+        purpose. One can set this parameter to None to avoid this behaviour
+        """
+        if "__snakefile__" in namespace.keys():
+            self._snakefile = namespace["__snakefile__"]
+        else:
+            filename = self.name + ".rules"
+            # This contains the full path of the snakefile
+            namespace['__snakefile__'] = filename
+            self._snakefile = namespace["workflow"].included_stack[-1]
+
+            # FIXME this is used only in quality_control when using sambamba rule
+            # to remove files.
+            namespace['__pipeline_name__'] = \
+                os.path.split(filename)[1].replace(".rules", "")
+            namespace['expected_output'] = []
+            namespace['toclean'] = []
+
+        # check requirements
+        Module(self.name).check(mode)
+
+        if matplotlib:
+            import matplotlib
+            matplotlib.use('Agg')
+
+    def _get_snakefile(self):
+        return self._snakefile
+    snakefile = property(_get_snakefile)
+
+    def teardown(self):
+        pass
+
+
+class PipelineManagerDirectory(object):
+    """
+
+    For all files except FastQ, please use this class instead of
+    PipelineManager.
+
+    """
+    def __init__(self, name, config):
+        cfg = SequanaConfig(config)
+        # Used by the dynamic rules to defined the location where to copy
+        # dynamic rules.
+        self.pipeline_dir = os.getcwd() + os.sep
+        # Populate the config with additional information
+        self.config = cfg.config
+        self.config.sequana_version = sequana_version
+        
+
+
+class PipelineManager(PipelineManagerGeneric):
     """Utility to manage easily the snakemake pipeline
 
     Inside a snakefile, use it as follows::
@@ -1060,30 +1119,6 @@ class PipelineManager(object):
         self.sample = "{sample}"
         self.basename = "{sample}/%s/{sample}"
 
-    def error(self, msg):
-        msg += ("\nPlease check the content of your config file. You must have "
-                "input_directory set, or input_pattern.")
-        raise SequanaException(msg)
-
-    def getname(self, rulename, suffix=None):
-        """In the basename, include rulename and suffix"""
-        if suffix is None:
-            suffix = ""
-        return self.basename % rulename + suffix
-
-    def getreportdir(self, acronym):
-        """Create the report directory.
-        """
-        return "{1}{0}report_{2}_{1}{0}".format(os.sep, self.sample, acronym)
-
-    def getwkdir(self, rulename):
-        return self.sample + os.sep + rulename + os.sep
-
-    def getlogdir(self, rulename):
-        """ Create log directory: ``*/sample/logs/sample_rule.logs``
-        """
-        return "{1}{0}logs{0}{1}.{2}.log".format(os.sep, self.sample, rulename)
-
     def getrawdata(self):
         """Return list of raw data
 
@@ -1093,66 +1128,6 @@ class PipelineManager(object):
         """
         return lambda wildcards: self.samples[wildcards.sample]
 
-    """ probably not required anymore so commented in v0.8.0
-
-    def _get_filenames(self, cfg):
-        filenames = []
-        file1 = cfg.samples.file1
-        file2 = cfg.samples.file2
-        if file1:
-            if os.path.exists(file1):
-                filenames.append(file1)
-            else:
-                raise FileNotFoundError("%s not found" % file1)
-        if file2:
-            if os.path.exists(file2):
-                filenames.append(file2)
-            else:
-                raise FileNotFoundError("%s not found" % file2)
-        return filenames
-    """
-    def message(self, msg):
-        message(msg)
-
-    def plot_stats(self, outputdir=".sequana",
-                 filename="snakemake_stats.png", N=1):
-        logger.info("Creating stats image")
-        try:
-            from sequana.snaketools import SnakeMakeStats
-            SnakeMakeStats("stats.txt", N=N).plot_and_save(
-            outputdir=outputdir, filename=filename)
-        except Exception as err:
-            logger.error(err)
-            logger.error("Could not process stats.txt file" )
-
-    def setup(self,  namespace, mode="error"):
-        """
-        """
-        if "__snakefile__" in namespace.keys():
-            self._snakefile = namespace["__snakefile__"]
-        else:
-            filename = self.name + ".rules"
-            # This contains the full path of the snakefile
-            namespace['__snakefile__'] = filename
-            self._snakefile = namespace["workflow"].included_stack[-1]
-
-            # FIXME this is used only in quality_control when using sambamba rule
-            # to remove files.
-            namespace['__pipeline_name__'] = \
-                os.path.split(filename)[1].replace(".rules", "")
-            namespace['expected_output'] = []
-            namespace['toclean'] = []
-
-        # check requirements
-        Module(self.name).check(mode)
-
-    def _get_snakefile(self):
-        #globals()['__snakefile__']
-        return self._snakefile
-    snakefile = property(_get_snakefile)
-
-    def teardown(self):
-        pass
 
 
 def message(mes):
