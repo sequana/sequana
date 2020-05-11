@@ -37,6 +37,8 @@ __all__ = ["Colors", "InputOptions", "SnakemakeOptions", "SlurmOptions",
     "KrakenOptions", "init_pipeline", "sequana_epilog", "sequana_prolog"]
 
 
+deprecated = "This is a deprecated class {}. Please use sequana_pipetools instead of sequana.pipeline_common."
+
 class Colors:
     """
 
@@ -103,7 +105,7 @@ def guess_scheduler():
 
 class GeneralOptions():
     def __init__(self):
-        pass
+        print(deprecated.format("GeneralOptions"))
 
     def add_options(self, parser):
         parser.add_argument(
@@ -139,6 +141,7 @@ class InputOptions():
         If so, the add_input_readtag must be set
         """
         self.group_name = group_name
+        print(deprecated.format("InputOptions"))
         self.input_directory = input_directory
         self.input_pattern = input_pattern
         self.add_is_paired = add_is_paired
@@ -183,6 +186,7 @@ class InputOptions():
 
 class KrakenOptions():
     def __init__(self, group_name="section_kraken"):
+        print(deprecated.format("KrakenOptions"))
         self.group_name = group_name
 
     def add_options(self, parser):
@@ -228,6 +232,7 @@ class CutadaptOptions():
 
     def __init__(self, group_name="section_cutadapt"):
         self.group_name = group_name
+        print(deprecated.format("CutadaptOptions"))
 
     def add_options(self, parser):
 
@@ -349,6 +354,7 @@ class SnakemakeOptions():
     def __init__(self, group_name="snakemake", working_directory="analysis"):
         self.group_name = group_name
         self.workdir = working_directory
+        print(deprecated.format("SnakemakeOptions"))
 
     def _default_jobs(self):
         if guess_scheduler() == "slurm":
@@ -399,6 +405,7 @@ class SlurmOptions():
                     self.add_slurm_options()
 
         """
+        print(deprecated.format("SlurmOptions"))
         self.group_name = group_name
         self.memory = memory
         self.cores = cores
@@ -502,7 +509,8 @@ def get_pipeline_location(pipeline_name):
     return p._get_package_location()
 
 
-class PipelineManager():
+
+class SequanaPipeline():
     """
 
     """
@@ -875,3 +883,8 @@ to analyse non-fastQ files (e.g. BAM)""")
                 logger.debug("update_config. Could not find {}".format(option_name))
 
 
+class PipelineManager(SequanaPipeline):
+    def __init__(self, options, name="undefined"):
+        super(PipelineManager, self).__init__(options, name=name)
+        print(deprecated.format("PipelineManager"))
+        print("Use SequanaPipeline instead")
