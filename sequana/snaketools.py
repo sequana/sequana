@@ -988,7 +988,7 @@ class PipelineManagerDirectory(PipelineManagerBase):
 
     """
     def __init__(self, name, config):
-        super(PipelineManagerGeneric, self).__init__(name, config)
+        super(PipelineManagerDirectory, self).__init__(name, config)
 
 
 
