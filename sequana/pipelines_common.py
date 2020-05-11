@@ -33,7 +33,7 @@ logger.name = __name__
 
 
 __all__ = ["Colors", "InputOptions", "SnakemakeOptions", "SlurmOptions",
-    "PipelineManager", "GeneralOptions", "print_version", "CutadaptOptions",
+    "SequanaManager", "PipelineManager", "GeneralOptions", "print_version", "CutadaptOptions",
     "KrakenOptions", "init_pipeline", "sequana_epilog", "sequana_prolog"]
 
 
@@ -510,7 +510,7 @@ def get_pipeline_location(pipeline_name):
 
 
 
-class SequanaPipeline():
+class SequanaManager():
     """
 
     """
@@ -883,8 +883,8 @@ to analyse non-fastQ files (e.g. BAM)""")
                 logger.debug("update_config. Could not find {}".format(option_name))
 
 
-class PipelineManager(SequanaPipeline):
+class PipelineManager(SequanaManager):
     def __init__(self, options, name="undefined"):
         super(PipelineManager, self).__init__(options, name=name)
         print(deprecated.format("PipelineManager"))
-        print("Use SequanaPipeline instead")
+        print("Use SequanaManager instead")
