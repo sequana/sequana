@@ -8,6 +8,19 @@ Changelog
 -----
 
 * MultiKrakenResults set nan tp zeros
+* fasta module: new filter() method to keep or exclude some entries
+* CHANGES: 
+
+    * pipeline_common: PipelineManager renamed into SequanaManager to avoid same
+      name as in snaketools.PipelineManager
+    * snaketools: PipelineManagerGeneric is now the base class for
+      PipelineManager. factorise common methods into PipelineManagerGeneric
+
+* NEWs:
+    
+    * snaketoole: new PipelineManagerDirectory class (used by
+      sequana_demultiplex) when no input files are used, but only an input
+      directory
 
 0.8.3
 -----
