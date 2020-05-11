@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+
 #
 #  This file is part of Sequana software
 #
@@ -840,16 +840,16 @@ class SequanaConfig(object):
             return False
 
 
-class PipelineManagerGeneric(object):
+class PipelineManagerBase(object):
     """
 
     For all files except FastQ, please use this class instead of
     PipelineManager.
 
     """
-    def __init__(self, name, config, sample_func=None):
-
+    def __init__(self, name, config):
         # Make sure the config is valid
+        self.name = name
         cfg = SequanaConfig(config)
 
         # Used by the dynamic rules to defined the location where to copy
@@ -860,33 +860,6 @@ class PipelineManagerGeneric(object):
         self.config = cfg.config
         self.config.sequana_version = sequana_version
         self.config.pipeline_name = name
-
-        path = cfg.config["input_directory"]
-        pattern = cfg.config["input_pattern"]
-
-        if path.strip():
-            self.ff = FileFactory(path + os.sep + pattern)
-        else:
-            self.ff = FileFactory(pattern)
-        L = len(self.ff)
-        if L == 0:
-            logger.warning("No files found with the pattern {}".format(pattern))
-        else:
-            logger.info("Found {} files matching your requests".format(L))
-
-        # samples contains a correspondance between the sample name and the
-        # real filename location.
-        self.sample = "{sample}"
-        self.basename = "{sample}/%s/{sample}"
-        self.samples = None
-
-        if sample_func:
-            try:
-                self.samples = {sample_func(filename):filename for filename in self.ff.realpaths}
-            except:
-                self.samples = None
-        else:
-            self.samples = {str(i+1):filename for i,filename in enumerate(self.ff.realpaths)}
 
     def error(self, msg):
         msg += ("\nPlease check the content of your config file. You must have "
@@ -975,7 +948,39 @@ class PipelineManagerGeneric(object):
         pass
 
 
-class PipelineManagerDirectory(object):
+class PipelineManagerGeneric(PipelineManagerBase):
+    def __init__(self, name, config, sample_func=None):
+        super(PipelineManagerGeneric, self).__init__(name, config)
+
+        path = cfg.config["input_directory"]
+        pattern = cfg.config["input_pattern"]
+
+        if path.strip():
+            self.ff = FileFactory(path + os.sep + pattern)
+        else:
+            self.ff = FileFactory(pattern)
+        L = len(self.ff)
+        if L == 0:
+            logger.warning("No files found with the pattern {}".format(pattern))
+        else:
+            logger.info("Found {} files matching your requests".format(L))
+
+        # samples contains a correspondance between the sample name and the
+        # real filename location.
+        self.sample = "{sample}"
+        self.basename = "{sample}/%s/{sample}"
+        self.samples = None
+
+        if sample_func:
+            try:
+                self.samples = {sample_func(filename):filename for filename in self.ff.realpaths}
+            except:
+                self.samples = None
+        else:
+            self.samples = {str(i+1):filename for i,filename in enumerate(self.ff.realpaths)}
+
+
+class PipelineManagerDirectory(PipelineManagerBase):
     """
 
     For all files except FastQ, please use this class instead of
@@ -983,14 +988,8 @@ class PipelineManagerDirectory(object):
 
     """
     def __init__(self, name, config):
-        cfg = SequanaConfig(config)
-        # Used by the dynamic rules to defined the location where to copy
-        # dynamic rules.
-        self.pipeline_dir = os.getcwd() + os.sep
-        # Populate the config with additional information
-        self.config = cfg.config
-        self.config.sequana_version = sequana_version
-        
+        super(PipelineManagerGeneric, self).__init__(name, config)
+
 
 
 class PipelineManager(PipelineManagerGeneric):
@@ -1039,7 +1038,7 @@ class PipelineManager(PipelineManagerGeneric):
         :param pattern: a default pattern if not provided in the configuration
             file as an *input_pattern* field.
         """
-        self.name = name
+        super(PipelineManagerGeneric, self).__init__(name, config)
 
         cfg = SequanaConfig(config)
         cfg.config.pipeline_name = self.name
