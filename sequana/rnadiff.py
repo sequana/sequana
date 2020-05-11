@@ -4,6 +4,7 @@ import os
 
 from sequana.lazy import pandas as pd
 from sequana.lazy import pylab
+from sequana.lazy import numpy as np
 
 from matplotlib_venn import venn2_unweighted, venn3_unweighted
 
@@ -23,8 +24,8 @@ class RNADiffResults(object):
     TABLE_DIR_NAME = "tables"
     # File name for the complete table is of form:
     # B1234-v1 (Number of project, number of version)
-    TOTAL_TABLE_PATTERN = ".*B\d+-v\d+\.complete\.xls"
-    NORMCOUNTS_TABLE = ".*B\d+-v\d+\.normCounts\.xls"
+    TOTAL_TABLE_PATTERN = ".*B\d+-v\d+.*.complete\.xls"
+    NORMCOUNTS_TABLE = ".*B\d+-v\d+\.*.normCounts\.xls"
     SEP = "\t"
 
     def __init__(self, rnadiff_folder, alpha=0.05, out_dir="gsea"):
@@ -35,6 +36,9 @@ class RNADiffResults(object):
         self.normcounts = self.get_table(self.NORMCOUNTS_TABLE)
         self.comparisons = self.get_comparisons()
         self.dr_gene_lists = self.get_gene_lists(alpha=alpha)
+        if len(self.dr_gene_lists) == 0:
+            self.dr_gene_lists = self.get_gene_lists_one_condition(alpha=alpha)
+            
         self.out_dir = out_dir
         self.alpha = alpha
 
@@ -64,6 +68,24 @@ class RNADiffResults(object):
             [x.split(".")[0] for x in self.df.filter(regex=(".*vs.*\..*")).columns]
         )
         return comparisons
+
+    def get_gene_lists_one_condition(self, alpha=None):
+        if alpha is None:
+            alpha = 0.05
+
+        gene_sets =  {}
+        gene_sets["AvsB"] = {}
+        
+        condition_up = np.logical_and(self.df.log2FoldChange > 0, self.df.padj <alpha)
+        gene_sets["AvsB"]['up'] = self.df[condition_up].index
+
+        condition_down = np.logical_and(self.df.log2FoldChange < 0, self.df.padj <alpha)
+        gene_sets["AvsB"]['down'] = self.df[condition_down].index
+
+        condition_down = self.df.padj <alpha
+        gene_sets["AvsB"]['all'] = self.df[condition_down].index
+        return gene_sets
+
 
     def get_gene_lists(self, alpha=None):
         """ Get differentially regulated gene lists.
@@ -239,6 +261,21 @@ class RNADiffResults(object):
 
 def plot_venn(compa_list, labels, title=None, ax=None):
     """ Plot venn diagramm according to number of groups.
+
+    .. plot::
+        :include-source:
+
+        from sequana.rnadiff import plot_venn
+        plot_venn((100,200,10), ("a", 'b'))
+
+
+    .. plot::
+        :include-source:
+
+        from sequana.rnadiff import plot_venn
+        plot_venn((100,200,300, 10,20,30,5), ("a", 'b', 'c')) 
+
+
     """
 
     if len(compa_list) == 2:
@@ -250,3 +287,153 @@ def plot_venn(compa_list, labels, title=None, ax=None):
 
     venn_function(compa_list, set_labels=labels, ax=ax)
     # ax.set_title = title
+
+
+class PathwayEnrichment():
+    """DRAFT IN PROGRESS
+
+    pe = PathwayEnrichment("rnadiff", "eco")
+    pe.run()
+    enr_up = pe.enrichr("up", 5000)
+    enr_down = pe.enrichr("down", 5000)
+    enr_all = pe.enrichr("all", 5000)
+
+
+    with panther
+    p = Panther() 
+    gene_list = pe.rnadiff.df.query("log2FoldChange>1 and padj<0.05")
+    gg = ",".join(gene_list.Name)
+    res = p.get_enrichment(gg, 83333, 'ANNOT_TYPE_ID_PANTHER_GO_SLIM_MF')
+    res['result']
+
+    """
+    def __init__(self, folder, organism, comparaison="AvsB"):
+        from bioservices import KEGG
+        self.kegg = KEGG(cache=True)
+        self.kegg.organism = organism
+        self.rnadiff = RNADiffResults(folder)
+        self.comparaison = comparaison
+        print("loading all pathways from KEGG. may take time the first time")
+        self.load_pathways()
+
+        dd= self.kegg.conv("eco", "ncbi-geneid")
+        df = pd.DataFrame(
+            {"keggid": [x.split(":")[1] for x in dd.values()], 
+            "ncbi": [x.split(":")[1] for x in dd.keys()]}
+            )
+
+    def load_pathways(self):
+        # Load all pathways
+        self.pathways = {}
+        from easydev import Progress
+        pb = Progress(len(self.kegg.pathwayIds))
+        for i, ID in enumerate(self.kegg.pathwayIds):
+            self.pathways[ID] = self.kegg.parse(self.kegg.get(ID))
+            pb.animate(i+1)
+
+        self.gene_sets = {}
+        for ID in self.kegg.pathwayIds:
+            res =  self.pathways[ID]
+            if "GENE" in res.keys():
+                results = [res['GENE'][g].split(';')[0] for g in res['GENE'].keys()]
+                self.gene_sets[ID] = results
+            else:
+                print("SKIPPED {}".format(res['NAME'], res['ENTRY']))
+
+    def plot_genesets_hist(self, bins=20):
+        pylab.hist([len(v) for k,v in self.gene_sets.items()],bins=20)
+        pylab.title("{} gene sets")
+        pylab.xlabel("Gene set sizes")
+        pylab.grid()
+
+    def enrichr(self, category, background=None, verbose=True):
+        if isinstance(category, list):
+            gene_list = category
+        else:
+            assert category in ['up', 'down', 'complete']
+            gene_list = list(self.rnadiff.dr_gene_lists[self.comparaison][category])
+        enr = gseapy.enrichr(
+            gene_list=gene_list,
+            gene_sets=self.gene_sets,
+            verbose=verbose,
+            background=background,
+            outdir="test", no_plot=True)
+        return enr
+
+    def _get_final_df(self, df, cutoff=0.1, nmax=10):
+        df = df.copy()
+        df['name'] = [self.pathways[x]['NAME'][0] for x in df.Term]
+        df['size'] = [len(x.split(";")) for x in df.Genes]
+        df = df.sort_values("Adjusted P-value")
+        df.reset_index(drop=True, inplace=True)
+        df = df[df["Adjusted P-value"]<=cutoff]
+
+        if len(df)<nmax:
+            nmax = len(df)
+        df = df.iloc[0:nmax]
+        df = df.sort_values("Adjusted P-value", ascending=False)                                    
+        return df
+
+    def barplot(self, enrich, cutoff=0.1, nmax=10):
+        df = self._get_final_df(enrich.results, cutoff=cutoff, nmax=nmax)
+
+        pylab.clf()
+        pylab.barh(range(len(df)), -pylab.log10(df['Adjusted P-value']))
+        pylab.yticks(range(len(df)), df.name)       
+        pylab.axvline(1.3, lw=2, ls="--", color="r")
+        pylab.grid(True)
+        pylab.xlabel("Adjusted p-value (log10)")
+        pylab.ylabel("Gene sets")
+        a,b = pylab.xlim()
+        pylab.xlim([0, b])
+        pylab.tight_layout()
+        return df
+
+    def scatterplot(self, enrich, cutoff=0.1, nmax=10, gene_set_size=[]):
+        df = self._get_final_df(enrich.results, cutoff=cutoff, nmax=nmax)
+
+        pylab.clf()
+        pylab.scatter(-pylab.log10(df['Adjusted P-value']), range(len(df)), s=10*df['size'],    
+            c=df['size'])
+        
+        pylab.xlabel("Odd ratio")
+        pylab.ylabel("Gene sets")
+        pylab.yticks(range(len(df)), df.name)
+        a,b = pylab.xlim()
+        pylab.xlim([0, b])
+        pylab.grid(True)
+        ax = pylab.gca()
+
+        M = max(df['size'])
+        if M >100:
+            l1,l2,l3  = "10", "100", str(M)
+        else:
+            l1,l2,l3 = str(round(M/3)), str(round(M*2/3)), str(M)
+
+        handles = [
+            pylab.Line2D([0], [0],marker="o", markersize=5, label=l1, ls=""),
+            pylab.Line2D([0], [0],marker="o", markersize=10, label=l2, ls=""),
+            pylab.Line2D([0], [0],marker="o", markersize=15, label=l3, ls="")]
+        ax.legend(handles=handles, loc="upper left", title="gene-set size")
+
+        pylab.axvline(1.3, lw=2, ls="--", color="r")
+        pylab.tight_layout()
+        ax = pylab.colorbar(pylab.gci())
+        return df
+
+    def show_pathway(self, ID):
+
+        genes = self.kegg.parse(self.kegg.get(ID))['GENE']
+        down = pd.read_csv("rnadiff/tables/B3789-v1.BvsA.down.xls", sep="\t")
+        up = pd.read_csv("rnadiff/tables/B3789-v1.BvsA.up.xls", sep="\t")
+
+        colors = {}
+        for k,v in genes.items():
+            name = v.split(";")[0].strip()
+            if name.lower() in [x.lower() for x in down.Name]:
+                colors[name] = "red"
+            elif name.lower() in [x.lower() for x in up.Name]:
+                colors[name] = "blue"
+        self.kegg.show_pathway(ID, dcolor="white", keggid=colors)
+
+
