@@ -3,8 +3,7 @@ import pkg_resources
 try:
     version = pkg_resources.require("sequana")[0].version
 except:
-    version = ">=0.7.1"
-
+    version = ">=0.8.3"
 
 try:
     from easydev.logging_tools import Logging
@@ -12,7 +11,6 @@ try:
 except:
     import colorlog
     logger = colorlog.getLogger("sequana")
-
 
 
 from easydev import CustomConfig
