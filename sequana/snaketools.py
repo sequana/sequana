@@ -145,8 +145,8 @@ def plot_stats(inputdir=".", outputdir=".",
                filename="snakemake_stats.png", N=1):
     logger.info("Workflow finished. Creating stats image")
     try:
-        SnakeMakeStats("%s/stats.txt" % inputdir, N=N).plot_and_save(
-            outputdir=outputdir, filename=filename)
+        sms = SnakeMakeStats("%s/stats.txt" % inputdir, N=N)
+        sms.plot_and_save(outputdir=outputdir, filename=filename)
     except Exception as err:
         logger.error(err)
         logger.error("Could not process %s/stats.txt file" % inputdir)
@@ -902,8 +902,12 @@ class PipelineManagerBase(object):
         logger.info("Creating stats image")
         try:
             from sequana.snaketools import SnakeMakeStats
-            SnakeMakeStats("stats.txt", N=N).plot_and_save(
-            outputdir=outputdir, filename=filename)
+            sms = SnakeMakeStats("stats.txt", N=N)
+            if sms._parse_data() == {'total_runtime': 0, 
+                'rules': {}, 'files':{}}:
+                return 
+
+            sms.plot_and_save(outputdir=outputdir, filename=filename)
         except Exception as err:
             logger.error(err)
             logger.error("Could not process stats.txt file" )
@@ -944,8 +948,27 @@ class PipelineManagerBase(object):
         return self._snakefile
     snakefile = property(_get_snakefile)
 
+    def clean_multiqc(self, filename):
+        with open(filename, "r") as fin:
+            with open(filename + "_tmp_", "w") as fout:
+                line = fin.readline()
+                while line:
+                    if """<a href="http://multiqc.info" target="_blank">""" in line:
+                        line = fin.readline() # read the image
+                        line = fin.readline() # read the ending </a> tag
+                    else:
+                        fout.write(line)
+                    line = fin.readline() # read the next line
+        import shutil
+        shutil.move(filename +"_tmp_", filename)
+
     def teardown(self):
-        pass
+
+        self.plot_stats()
+
+        cleaner = OnSuccessCleaner(self.name)
+        cleaner.add_makefile()
+
 
 
 class PipelineManagerGeneric(PipelineManagerBase):
@@ -1805,9 +1828,13 @@ class OnSuccessCleaner(object):
     """Used in various sequana pipelines to cleanup final results"""
     def __init__(self, pipeline_name=None, bundle=False):
         self.makefile_filename = "Makefile"
-        self.files_to_remove = ["config.yaml", "multiqc_config.yaml",
+        self.files_to_remove = [
+            "config.yaml",
+            "multiqc_config.yaml",
             "cluster_config.json",
-            "slurm*out", "stats.txt", "schema.yaml"]
+            "slurm*out",
+            "stats.txt",
+            "schema.yaml"]
         if pipeline_name:
             self.files_to_remove.append("{}.sh".format(pipeline_name))
             self.files_to_remove.append("{}.rules".format(pipeline_name))
@@ -1838,7 +1865,7 @@ class OnSuccessCleaner(object):
         with open(self.makefile_filename, "w") as fh:
             fh.write(makefile)
 
-        logger.info("Once done, please clean up the directory using\n'make clean'")
+        logger.info("Once done, please clean up the directory using: 'make clean'")
 
 def get_pipeline_statistics():
     """Get basic statistics about the pipelines
@@ -1876,6 +1903,7 @@ def get_pipeline_statistics():
 
 
 def clean_multiqc(filename):
+    print("Deprecated. Use the pipeline manager instead")
     with open(filename, "r") as fin:
         with open(filename + "_tmp_", "w") as fout:
             line = fin.readline()
