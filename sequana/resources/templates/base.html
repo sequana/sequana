@@ -37,11 +37,16 @@
       </h2>
     </header>
     {% block content %}{% endblock %}
-  </div>
+    <br>
+    <br>
+    </div>
+    
   <footer class="footer">
     <div class="container">
-      <div class="copyright">
-        Generated with Sequana ({{ config.time_now }})
+    This pipeline is part of the  <a href="http://sequana.readthedocs.io"
+target="_blank">Sequana project</a>. If you use this report, please consider
+citing us. Visit the  <a href="http://sequana.readthedocs.io">How to cite ?</a> section. 
+        <br>Generated with Sequana ({{ config.time_now }})
       </div>
     </div>
   </footer>
