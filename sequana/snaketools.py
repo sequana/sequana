@@ -975,6 +975,7 @@ class PipelineManagerGeneric(PipelineManagerBase):
     def __init__(self, name, config, sample_func=None):
         super(PipelineManagerGeneric, self).__init__(name, config)
 
+        cfg = SequanaConfig(config)
         path = cfg.config["input_directory"]
         pattern = cfg.config["input_pattern"]
 
@@ -1207,9 +1208,9 @@ class DOTParser(object):
 
         """
         self.filename = filename
-        self.re_index = re.compile('(\d+)\[')
-        self.re_name = re.compile('label = "(\w+)"')
-        self.re_arrow = re.compile('(\d+) -> (\d+)')
+        self.re_index = re.compile(r'(\d+)\[')
+        self.re_name = re.compile(r'label = "(\w+)"')
+        self.re_arrow = re.compile(r'(\d+) -> (\d+)')
         self.mode = mode
 
     def add_urls(self, output_filename=None, mapper={}, title=None):
@@ -1485,7 +1486,7 @@ class FastQFactory(FileFactory):
         :param str pattern: a global pattern (e.g., ``H*fastq.gz``)
         :param list extension: not used
         :param str read_tag: regex tag used to join paired end files. Some
-            characters need to be escaped with a '\' to be interpreted as
+            characters need to be escaped with a \ character to be interpreted as
             character. (e.g. '_R[12]_\.fastq\.gz')
         :param bool verbose:
         """
@@ -1534,7 +1535,7 @@ class FastQFactory(FileFactory):
         # If a user uses a . it should be taken into account hence the regex
         # that follows 
         if  self.read_tag:
-            re_read_tag = re.compile(self.read_tag.replace(".", "\."))
+            re_read_tag = re.compile(self.read_tag.replace(r".", r"\."))
             self.tags = list({re_read_tag.split(f)[0] for f in self.basenames})
         else:
             self.tags = list({f.split(".")[0] for f in self.basenames})
