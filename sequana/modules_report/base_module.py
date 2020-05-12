@@ -34,8 +34,12 @@ __all__ = ["SequanaBaseModule"]
 class SequanaBaseModule(object):
     """ Generic Module to write HTML reports.
     """
-    required_dir = ("css", "js", "images")
-    def __init__(self, template_fn='standard.html'):
+    def __init__(self, template_fn='standard.html', required_dir=None):
+        if required_dir is None:
+            self.required_dir=("css", "js", "images")
+        else:
+            self.required_dir = required_dir
+
         self.output_dir = config.output_dir
         self.path = "./"
         # Initiate jinja template
@@ -55,6 +59,7 @@ class SequanaBaseModule(object):
         # Create report directory
         if os.path.isdir(config.output_dir) is False:
             os.mkdir(self.output_dir)
+
         for directory in self.required_dir:
             complete_directory = os.sep.join([self.output_dir, directory])
             if os.path.isdir(complete_directory) is False:
