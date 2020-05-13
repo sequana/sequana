@@ -962,11 +962,17 @@ class PipelineManagerBase(object):
         import shutil
         shutil.move(filename +"_tmp_", filename)
 
-    def teardown(self):
+    def teardown(self, extra_dirs_to_remove=[], extra_files_to_remove=[],
+        plot_stats=True):
 
-        self.plot_stats()
+        # create and save the stats plot
+        if plot_stats:
+            self.plot_stats()
 
+        # add a Makefile
         cleaner = OnSuccessCleaner(self.name)
+        cleaner.directories_to_remove.extend(extra_dirs_to_remove)
+        cleaner.files_to_remove.extend(extra_files_to_remove)
         cleaner.add_makefile()
 
 
@@ -1848,7 +1854,7 @@ class OnSuccessCleaner(object):
         self.bundle_output = output
 
     def add_makefile(self):
-        makefile = 'all:\n\techo "sequana cleanup"\n'
+        makefile = 'all:\n\techo "type *make clean* to delete temporary files"\n'
         if self.bundle:
             makefile += "bundle:\n\ttar cvfz {} {}\n".format(
                 self.bundle_output, self.bundle_input)
