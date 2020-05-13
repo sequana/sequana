@@ -15,12 +15,17 @@ Changelog
       name as in snaketools.PipelineManager
     * snaketools: PipelineManagerGeneric is now the base class for
       PipelineManager. factorise common methods into PipelineManagerGeneric
+    * SnakeMakeStats now skip the figure if stats is empty
 
 * NEWs:
-    
-    * snaketoole: new PipelineManagerDirectory class (used by
+
+    * snaketools: new PipelineManagerDirectory class (used by
       sequana_demultiplex) when no input files are used, but only an input
-      directory
+      directory. we can now import exiting project to fill the config file automatically
+    * module fastqc to plot static images of fastqc contents. The parsing method
+      was adapted from multiqc.module.fastqc itself as a quick hack to
+      incorporate in the sequana_fastqc pipeline 
+    
 
 0.8.3
 -----
