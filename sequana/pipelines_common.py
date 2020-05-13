@@ -505,7 +505,7 @@ def get_pipeline_location(pipeline_name):
     options = Opt()
     options.workdir = "."
     options.version = False
-    p = PipelineManager(options, pipeline_name)
+    p = SequanaManager(options, pipeline_name)
     return p._get_package_location()
 
 
@@ -554,7 +554,7 @@ class SequanaManager():
 
         # If this is a pipeline, let us load its config file
         # Do we start from an existing project with a valid config file ?
-        if options.from_project:
+        if "from_project" in dir(options):
             cfg_project_filename = None
             if os.path.exists(options.from_project) and options.from_project.endswith("config.yaml"):
                 cfg_project_filename = options.from_project
