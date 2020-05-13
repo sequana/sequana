@@ -1273,6 +1273,10 @@ class MultiKrakenResults():
         data = {}
         for sample, filename in zip(self.sample_names, self.filenames):
             df = pd.read_csv(filename)
+            if "kingdom" not in df.columns:
+                for name in "kingdom,phylum,class,order,family,genus,species,name".split(","):
+                    df[name] = "Unclassified"
+        
             df = df.groupby("kingdom")['percentage'].sum()
             # if a taxon is obsolete, the kingdom is empty. 
             # We will set the kingdom as Unclassified and raise a warning
