@@ -361,7 +361,7 @@ class Module(object):
         self._mf.isvalid(name)
 
         if name not in self._mf.names:
-            raise ValueError("""Sequana error: unknown rule or pipeline {}. 
+            raise ValueError("""Sequana error: unknown rule or pipeline '{}'. 
 Check the source code at:
 
     https://github.com/sequana/sequana/tree/develop/sequana/pipelines and
@@ -1727,8 +1727,8 @@ def build_dynamic_rule(code, directory):
     fh.close()
     return filename
 
-
-def add_stats_summary_json(json_list, parser):
+"""
+def __add_stats_summary_json(json_list, parser):
     if not parser.stats:
         return
     for jfile in json_list:
@@ -1738,7 +1738,7 @@ def add_stats_summary_json(json_list, parser):
         j = json.dumps(jdict)
         with open(jfile, 'w') as fp:
             print(j, file=fp)
-
+"""
 
 class Makefile(object):
 
