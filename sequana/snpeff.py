@@ -214,7 +214,7 @@ class SnpEff(object):
                        if regex.search(line)]
             return seq
         else:
-            regex = re.compile('^##sequence-region\s+([\w\.\-]+)')
+            regex = re.compile(r'^##sequence-region\s+([\w\.\-]+)')
             with open(self.annotation, "r") as fp:
                 line = fp.readline()
                 seq = regex.findall(line)
