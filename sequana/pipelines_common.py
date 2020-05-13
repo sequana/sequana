@@ -443,7 +443,7 @@ def init_pipeline(NAME):
     This is called even before parsing options
     """
     import sys
-
+    print("deprecated use the before_pipeline from sequana_pipetools")
     if "--version" in sys.argv:
         print_version(NAME)
         sys.exit(0)
@@ -551,6 +551,7 @@ class SequanaManager():
         self.module = Module(self.name)
         if self.module.is_pipeline() is False:
             raise ValueError("{} does not seem to be installed or is not a valid pipeline".format(self.name))
+        self.module.is_executable()
 
         # If this is a pipeline, let us load its config file
         # Do we start from an existing project with a valid config file ?
@@ -562,7 +563,7 @@ class SequanaManager():
                 if os.path.exists(options.from_project + "/config.yaml"):
                     cfg_project_filename = options.from_project
             elif os.path.exists(options.from_project + "/.sequana/config.yaml"):
-                cfg_project_filename = options.from_project + ".sequana/config.yaml"
+                cfg_project_filename = options.from_project + "/.sequana/config.yaml"
 
             if cfg_project_filename is None:
                 raise IOError("Could not find config.yaml in the project specified {}".format(
@@ -571,7 +572,6 @@ class SequanaManager():
             self.config = SequanaConfig(cfg_project_filename)
         else:
             self.config = SequanaConfig(self.module.config)
-
 
         # the working directory
         self.workdir = options.workdir
