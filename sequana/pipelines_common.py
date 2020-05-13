@@ -554,7 +554,7 @@ class SequanaManager():
 
         # If this is a pipeline, let us load its config file
         # Do we start from an existing project with a valid config file ?
-        if "from_project" in dir(options):
+        if "from_project" in dir(options) and options.from_project:
             cfg_project_filename = None
             if os.path.exists(options.from_project) and options.from_project.endswith("config.yaml"):
                 cfg_project_filename = options.from_project
