@@ -152,6 +152,7 @@ def test_get_pipeline_location():
 def test_pipeline_manager():
 
     from sequana.pipelines_common import PipelineManager
+    from sequana.pipelines_common import SequanaManager
     from sequana.pipelines_common import InputOptions
     from sequana.pipelines_common import SlurmOptions
     from sequana.pipelines_common import SnakemakeOptions
@@ -178,7 +179,7 @@ def test_pipeline_manager():
     with TemporaryDirectory() as fout:
         options = p.parse_args(["--working-directory", fout, "--force"])
 
-        pm = PipelineManager(options, "quality_control")
+        pm = SequanaManager(options, "quality_control")
 
 
         from sequana.pipelines_common import get_pipeline_location as getpath
