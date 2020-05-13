@@ -553,7 +553,24 @@ class SequanaManager():
             raise ValueError("{} does not seem to be installed or is not a valid pipeline".format(self.name))
 
         # If this is a pipeline, let us load its config file
-        self.config = SequanaConfig(self.module.config)
+        # Do we start from an existing project with a valid config file ?
+        if options.from_project:
+            cfg_project_filename = None
+            if os.path.exists(options.from_project) and options.from_project.endswith("config.yaml"):
+                cfg_project_filename = options.from_project
+            elif ".sequana" in options.from_project:
+                if os.path.exists(options.from_project + "/config.yaml"):
+                    cfg_project_filename = options.from_project
+            elif os.path.exists(options.from_project + "/.sequana/config.yaml"):
+                cfg_project_filename = options.from_project + ".sequana/config.yaml"
+
+            if cfg_project_filename is None:
+                raise IOError("Could not find config.yaml in the project specified {}".format(
+                    options.from_project))
+            logger.info("Reading existing config file {}".format(cfg_project_filename))
+            self.config = SequanaConfig(cfg_project_filename)
+        else:
+            self.config = SequanaConfig(self.module.config)
 
 
         # the working directory
