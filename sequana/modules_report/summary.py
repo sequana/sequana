@@ -57,7 +57,10 @@ class SummaryBase(SequanaBaseModule):
         html_table = self.get_table_dependencies()
         pypi = self.create_link('Pypi', 'http://pypi.python.org')
         try:
-            req = self.copy_file(self.json['requirements'], 'inputs')
+            if 'requirements' in self.json:
+                req = self.copy_file(self.json['requirements'], 'inputs')
+            else:
+                raise Exception
         except:
             try :
                 req = self.json['requirements']
@@ -289,7 +292,7 @@ class SummaryModule2(SummaryBase):
                 c = "\n".join(c)
         except:
             c = "no config found in .sequana/"
-        
+
         self.sections.append({
             'name': 'Workflow',
             'anchor': 'workflow',
@@ -305,4 +308,34 @@ class SummaryModule2(SummaryBase):
                 "    <li>{2}</li>\n"
                 "</ul>".format(dag_svg, sf, c, snakefile, configfile)
         })
+
+
+    def dependencies(self):
+        """ Table with all python dependencies and a text file with tools
+        needed and their versions.
+        """
+        html_table = self.get_table_dependencies()
+        pypi = self.create_link('Pypi', 'http://pypi.python.org')
+
+
+        req = self.create_link('requirements', ".sequana/env.yml")
+        content = ("<p>Dependencies downloaded from bioconda "
+                   "<b>{2}</b></p>"
+                   "<p>Python dependencies (<b>{0}</b>){1}</p>".format(
+                        pypi, html_table, req))
+        l, c = self.create_hide_section('Dep', 'collapse/expand', content,
+                                        hide=True)
+        self.sections.append({
+            'name': "Dependencies {0}".format(
+                self.add_float_right('<small>{0}</small>'.format(l))
+            ),
+            'anchor': 'dependencies',
+            'content': c
+         })
+
+
+
+
+
+
 
