@@ -4,6 +4,16 @@ Changelog
 .. contents::
     :depth: 2
 
+0.8.5
+------
+
+* CHANGES:
+
+    * coverage multiqc plugin to remove unique chromomosome name from the sample name, if it is unique
+    * bamtools_stats multiqc plugin to remove unique chromomosome name from the sample name, if it is unique
+
+
+
 0.8.4
 -----
 
