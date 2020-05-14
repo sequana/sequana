@@ -152,6 +152,18 @@ padding: 5px;
 left-margin:5px;
 }    
 
+div.box_1_3
+{
+
+font-size:0.8em;
+border: 1px solid;
+width: 30%;
+padding: 5px;
+left-margin:5px;
+float:left;
+}    
+
+
 /*
  * ┌──────────────────────────────────────────────────────────────────────────┐
  * │                                                                     Code │
