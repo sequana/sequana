@@ -254,6 +254,7 @@ class SummaryModule2(SummaryBase):
         self.name = data['name']
         self.title = "Sequana Report Summary ({})".format(self.name)
         self.intro = intro
+        config.pipeline_name = data['name']
         self.create_report_content()
         self.create_html(output_filename)
 
