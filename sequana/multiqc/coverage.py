@@ -35,13 +35,34 @@ class MultiqcModule(BaseMultiqcModule):
         self.sequana_root = {}
         self.sequana_caller = {}
 
+        # Do we have a unique chromosome/contig name ?
+        chrom_names = set([])
         for myfile in self.find_log_files("sequana_coverage"):
             name = myfile['s_name']
             if name.startswith("summary_"):
                 name = name.replace("summary_", "")
             data = self.parse_logs(myfile["f"])
+            chrom_names.add(data['data']['chrom_name'])
 
-            key = data["sample_name"]+"/"+ data['data']['chrom_name']
+        self._maps = {}
+        if len(chrom_names) == 1:
+            self.unique = True
+        else:
+            self.unique = False
+
+        for myfile in self.find_log_files("sequana_coverage"):
+            name = myfile['s_name']
+            if name.startswith("summary_"):
+                name = name.replace("summary_", "")
+            data = self.parse_logs(myfile["f"])
+            if self.unique is True:
+                 key = data["sample_name"]
+            else:
+                key = data["sample_name"]+"/"+ data['data']['chrom_name']
+
+            # in any case, just keep track of key / chrom_name
+            self._maps[key] = data["sample_name"] + "/" + data['data']['chrom_name']
+
             self.sequana_data[key] = data['data']
             self.sequana_desc[key] = data['data_description']
             self.sequana_root[key] = myfile['root']
@@ -55,7 +76,8 @@ class MultiqcModule(BaseMultiqcModule):
 
         info = "<ul>"
         for this in sorted(self.sequana_data.keys()):
-            sample_name, chrom_name = this.split("/")
+            sample_name, chrom_name = self._maps[this].split("/")
+            #sample_name, chrom_name = this.split("/")
 
             root = self.sequana_root[this]
 
@@ -71,7 +93,6 @@ class MultiqcModule(BaseMultiqcModule):
             else:
                 subpath = "../"
 
-            print(subpath, root, chrom_name, this)
             info += '<li><a href="{}/{}.cov.html">{}</a></li>'.format(
                 subpath + root,
                 chrom_name,  this)
@@ -284,6 +305,7 @@ class MultiqcModule(BaseMultiqcModule):
                 if field in ['BOC']:
                     headers[field]['min'] = 0
                     headers[field]['max'] = 100
+
 
         if len(headers.keys()):
             self.general_stats_addcols(self.sequana_data, headers)
