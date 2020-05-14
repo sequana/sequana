@@ -941,8 +941,8 @@ class PipelineManagerBase(object):
         Module(self.name).check(mode)
 
         if matplotlib:
-            import matplotlib
-            matplotlib.use('Agg')
+            import matplotlib as mpl
+            mpl.use(matplotlib)
 
     def _get_snakefile(self):
         return self._snakefile
