@@ -80,6 +80,7 @@ class MultiqcModule(BaseMultiqcModule):
             Duplicates:        0    (0%)
             Paired-end reads:  0    (0%)
         """
+        # FIXME will fail if instead of 0.001% we have 1e-3%
         data = {}
         regexes = {
             'total_reads': r"Total reads:\s*(\d+)",
