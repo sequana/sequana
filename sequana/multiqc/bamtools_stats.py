@@ -151,6 +151,10 @@ class MultiqcModule(BaseMultiqcModule):
         for name in self.sequana_data.keys():
             forward = self.sequana_data[name]["forward_strand_pct"]
             reverse = self.sequana_data[name]["reverse_strand_pct"]
+            if reverse is None:
+                reverse = 0
+            if forward is None:
+                forward = 0
             data[name] = {'fwd': forward, "rev":reverse}
 
         pconfig = {
