@@ -33,7 +33,7 @@
       <h1 class="title">{{ module.title }}</h1>
       <h2 class="subtitle">
         Report created with <a href="http://sequana.readthedocs.org">Sequana</a>
-        ({{ config.version }})
+        ({{ config.version }} 
       </h2>
     </header>
     {% block content %}{% endblock %}
@@ -45,7 +45,10 @@
     <div class="container">
     This pipeline is part of the  <a href="http://sequana.readthedocs.io"
 target="_blank">Sequana project</a>. If you use this report, please consider
-citing us. Visit the  <a href="http://sequana.readthedocs.io">How to cite ?</a> section. 
+citing us. Visit the  <a href="http://sequana.readthedocs.io">How to cite ?</a>
+section. You may also visit the pipeline 
+page <a
+href="https://github.com/sequana/sequana_{{config.pipeline_name}}/stargazers">{{config.pipeline_name}}</a> and star us.  
         <br>Generated with Sequana ({{ config.time_now }})
       </div>
     </div>
