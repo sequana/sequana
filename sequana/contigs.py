@@ -5,7 +5,65 @@ from sequana.lazy import numpy as np
 from sequana import tools
 
 
-class Contigs(object):
+class ContigsBase(object):
+    def __init__(self, filename):
+        self.filename = filename
+        self.fasta = FastA(filename)
+
+    def get_gc(self, window=100):
+        data = tools._base_content(self.filename, window, "GC")
+        names = self.fasta.names
+        lengths = self.fasta.lengths
+        GC = [100*np.nanmean(data[name]) for name in names]
+        return GC
+
+    def plot_contig_length_vs_GC(self,alpha=0.5):
+        pylab.plot(self.df["length"], self.df['GC'], "o", alpha=alpha)
+        pylab.xlabel("contig length (bp)")
+        pylab.ylabel("GC (%)")
+        pylab.grid(True)
+        pylab.ylim([0,100])
+        pylab.xlim(0, max(self.df['length']) + 10)
+
+    def scatter_length_cov_gc(self, min_length=200, min_cov=10):
+        pylab.clf()
+        pylab.scatter(self.df.length, self.df['cov'], c=self.df.GC)
+        pylab.loglog()
+        pylab.axvline(min_length, lw=2, c="r", ls='--')
+        pylab.axhline(min_cov, lw=2, c="r", ls='--')
+        pylab.xlabel("contig length")
+        pylab.ylabel("contig coverage")
+        pylab.colorbar(label="GC")
+        pylab.grid(True)
+
+
+class ContigsSpades(ContigsBase):
+    def __init__(self, filename):
+        super(ContigsSpades, self).__init__(filename)
+
+        lengths = []
+        names = []
+        covs = []
+        for name in self.fasta.names:
+            _, ID, _, length, _, cov = name.split("_")
+            lengths.append(length)
+            names.append(ID)
+            covs.append(cov)
+        self.df = pd.DataFrame({"cov": covs, "length": lengths, "name":names })
+        self.df = self.df.astype({"length": int, "cov": float})
+        self.df = self.df[['name', 'length', 'cov']]
+        self.df['GC'] = self.get_gc()
+
+    def hist_plot_contig_length(self, bins=30, fontsize=16):
+        pylab.clf()
+        pylab.hist(self.df.length, lw=1, ec="k",bins=bins) 
+        pylab.grid()
+        pylab.xlabel("Contig length", fontsize=fontsize)
+        pylab.ylabel("#", fontsize=fontsize)
+        pylab.title("Distribution {} contigs".format(len(self.df)))
+
+
+class Contigs(ContigsBase):
 
     def __init__(self, filename, reference=None, bamfile=None, mode="canu"):
 
@@ -16,8 +74,7 @@ class Contigs(object):
             bioconvert sam2bam temp.sam temp.bam
 
         """
-        self.filename = filename
-        self.fasta = FastA(filename)
+        super(ContigsSpades, self).__init__(filename)
         self.mode = mode
         self._df = None
         if bamfile:
