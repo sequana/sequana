@@ -54,7 +54,7 @@ class ContigsSpades(ContigsBase):
         self.df = self.df[['name', 'length', 'cov']]
         self.df['GC'] = self.get_gc()
 
-    def hist_plot_contig_length(self, bins=30, fontsize=16):
+    def hist_contig_length(self, bins=30, fontsize=16):
         pylab.clf()
         pylab.hist(self.df.length, lw=1, ec="k",bins=bins) 
         pylab.grid()
@@ -74,7 +74,7 @@ class Contigs(ContigsBase):
             bioconvert sam2bam temp.sam temp.bam
 
         """
-        super(ContigsSpades, self).__init__(filename)
+        super(Contigs, self).__init__(filename)
         self.mode = mode
         self._df = None
         if bamfile:
