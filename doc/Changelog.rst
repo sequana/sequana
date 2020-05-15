@@ -11,6 +11,11 @@ Changelog
 
     * coverage multiqc plugin to remove unique chromomosome name from the sample name, if it is unique
     * bamtools_stats multiqc plugin to remove unique chromomosome name from the sample name, if it is unique
+    * fix regression bug in report summary page for the taxonomy tools
+   
+* NEWs:
+
+    * Contigs now acceps Spades fasta files
 
 
 
