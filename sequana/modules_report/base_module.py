@@ -194,7 +194,7 @@ class SequanaBaseModule(object):
         if style:
             html = '<img style="{0}" alt="{1}"'.format(style, alt)
         else:
-            html = "<img alt={}".format(alt)
+            html = '<img alt="{}"'.format(alt)
         return '{0} src="data:image/png;base64,{1}">'.format(html, png)
 
     def create_embedded_png(self, plot_function, input_arg, style=None,
