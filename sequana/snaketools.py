@@ -148,8 +148,8 @@ def plot_stats(inputdir=".", outputdir=".",
         sms = SnakeMakeStats("%s/stats.txt" % inputdir, N=N)
         sms.plot_and_save(outputdir=outputdir, filename=filename)
     except Exception as err:
-        logger.error(err)
-        logger.error("Could not process %s/stats.txt file" % inputdir)
+        logger.warning(err)
+        logger.warning("Could not process %s/stats.txt file" % inputdir)
 
 
 class ModuleFinderSingleton(object):
