@@ -340,8 +340,10 @@ class KrakenResults(object):
         df["percentage"] = df["count"] / df["count"].sum() * 100
 
         # Now get back all annotations from the database itself.
+        # This is not used anymore. let us put a warning for now
         filename = dbname + os.sep + "annotations.csv"
         if os.path.exists(filename):
+            print("Using _get_df_with_taxon with valid annotation.csv in {}".format(filename))
             annotations = pd.read_csv(filename)
             annotations.set_index("taxon", inplace=True)
 
@@ -374,7 +376,10 @@ class KrakenResults(object):
 
     def kraken_to_json(self, filename, dbname):
         df = self._get_df_with_taxon(dbname)
-        df.to_json(filename, indent=4, orient="records")
+        try:
+            df.to_json(filename, indent=4, orient="records")
+        except:
+/bin/bash: q: command not found
         return df
 
     def kraken_to_krona(self, output_filename=None, nofile=False):
@@ -465,7 +470,6 @@ class KrakenResults(object):
 
         df = self.get_taxonomy_db(list(self.taxons.index))
 
-        # we add the unclassified only if needed
         if self.unclassified > 0:
             df.loc[-1] = ["Unclassified"] * 8
 
@@ -474,7 +478,6 @@ class KrakenResults(object):
         # we add the unclassified only if needed
         if self.unclassified > 0:
             data.loc[-1] = self.unclassified
-
 
         data = data/data.sum()*100
         assert threshold > 0 and threshold < 100
@@ -498,6 +501,7 @@ class KrakenResults(object):
 
         pylab.figure(figsize=(10, 8))
         pylab.clf()
+        self.dd = data
         if kind == "pie":
             ax = data.plot(kind=kind, cmap=cmap, autopct='%1.1f%%',
                 radius=radius, **kargs)
