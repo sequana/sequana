@@ -430,6 +430,115 @@ class KrakenResults(object):
         self._data_created = True
         return True
 
+    def plot2(self, kind="pie", ):
+        import numpy as np
+        import matplotlib.pyplot as plt
+
+        taxons = self.taxons.copy()
+        if len(self.taxons.index) == 0:
+            return None
+
+        df = self.get_taxonomy_db(list(self.taxons.index))
+        self.dd = df
+        if self.unclassified > 0:
+            df.loc[-1] = ['Unclassified'] * 8
+            taxons[-1] = self.unclassified
+        df['ratio'] = taxons / taxons.sum() * 100
+
+
+        data_class = df.groupby(['kingdom', 'class']).sum()
+        data_species = df.groupby(['kingdom', 'species']).sum()
+
+        X = []
+        Y = []
+        Z = []
+        labels = []
+        zlabels, ztaxons = [], []
+        kingdom_colors = []
+        inner_colors = []
+        inner_labels=[]
+        species_colors = []
+        taxons =  df['species'].reset_index().set_index('species')
+
+        for kingdom in data_class.index.levels[0]:
+            # kingdom info
+            X.append(data_class.loc[kingdom].ratio.sum())
+
+            # class info
+            y = list(data_class.loc[kingdom].ratio.values)
+            temp = data_class.loc[kingdom]
+            y1 = temp.query('ratio>=0.5')
+            y2 = temp.query('ratio<0.5')
+            y = list(y1.ratio.values) + list(y2.ratio.values)
+            inner_labels += list(y1.ratio.index) + [''] * len(y2.ratio)
+            Y.extend(y)
+
+            #species info
+            temp = data_species.loc[kingdom]
+            z1 = temp.query('ratio>=0.5')
+            z2 = temp.query('ratio<0.5')
+            z = list(z1.ratio.values) + list(z2.ratio.values)
+            zlabels += list(z1.ratio.index) + [''] * len(z2.ratio)
+            Z.extend(z)
+
+            labels.append(kingdom)
+
+            if kingdom == "Eukaryota":
+                this_cmap = plt.cm.Purples
+            elif kingdom == "Unclassified":
+                this_cmap = plt.cm.Greys
+            elif kingdom == "Bacteria":
+                this_cmap = plt.cm.Reds
+            elif kingdom == "Viruses":
+                this_cmap = plt.cm.Greens
+            elif kingdom == "Archea":
+                this_cmap = plt.cm.Yellows
+            else:
+                this_cmap = plt.cm.Blues
+
+            kingdom_colors.append(this_cmap(0.8))
+            inner_colors.extend(this_cmap(np.linspace(.6,.2, len(y))))
+            species_colors.extend(this_cmap(np.linspace(.6,.2, len(z))))
+
+        fig, ax = pylab.subplots(figsize=(9.5,7))
+        size = 0.2
+
+        pct_distance=0
+        w1, l1 = ax.pie(X, radius=1-2*size, colors=kingdom_colors,
+           wedgeprops=dict(width=size, edgecolor='w'), labels=labels,
+            labeldistance=0.4)
+
+        w2, l2 = ax.pie(Y, radius=1-size, colors=inner_colors,
+                labels=inner_labels.replace("Unclassified", ""),
+               wedgeprops=dict(width=size, edgecolor='w'),
+            labeldistance=0.65)
+
+        w3, l3 = ax.pie(Z, radius=1, colors=species_colors,
+            labels=zlabels.replace("Unclassified", ""),
+               wedgeprops=dict(width=size, edgecolor='w'),
+                labeldistance=0.9)
+
+        ax.set(aspect="equal")
+        pylab.subplots_adjust(right=1, left=0, bottom=0, top=1)
+        pylab.legend(labels, title="kingdom", loc="upper right")
+        import webbrowser
+        mapper = {k:v for k,v in zip(zlabels, Z)}
+        def on_pick(event):
+            wedge = event.artist
+            label = wedge.get_label()
+            if mapper[label] >1:
+                taxon = taxons.loc[label, "index"]
+                webbrowser.open("https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id={}".format(taxon))
+            else:
+                wedge.set_color("white")
+        for wedge in w3:
+            wedge.set_picker(True)
+        fig.canvas.mpl_connect("pick_event", on_pick)
+        
+        # this is used to check that everything was okay in the rules   
+        return df
+
+
     def plot(self, kind="pie", cmap="tab20c", threshold=1, radius=0.9,
                 textcolor="red", **kargs):
         """A simple non-interactive plot of taxons
@@ -613,7 +722,10 @@ class KrakenPipeline(object):
         # image
         self.kr = KrakenResults(kraken_results, verbose=False)
 
-        df = self.kr.plot(kind="pie")
+        try:
+            self.kr.plot2(kind="pie")
+        except:
+            self.kr.plot(kind="pie")
         pylab.savefig(self.output_directory + os.sep + "kraken.png")
 
         prefix = self.output_directory + os.sep
