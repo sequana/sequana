@@ -379,7 +379,7 @@ class KrakenResults(object):
         try:
             df.to_json(filename, indent=4, orient="records")
         except:
-/bin/bash: q: command not found
+            df.to_json(filename, orient="records")
         return df
 
     def kraken_to_krona(self, output_filename=None, nofile=False):
