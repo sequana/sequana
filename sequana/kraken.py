@@ -509,12 +509,12 @@ class KrakenResults(object):
             labeldistance=0.4)
 
         w2, l2 = ax.pie(Y, radius=1-size, colors=inner_colors,
-                labels=inner_labels.replace("Unclassified", ""),
+                labels=[x.replace('Unclassified', "") for x in inner_labels],
                wedgeprops=dict(width=size, edgecolor='w'),
             labeldistance=0.65)
 
         w3, l3 = ax.pie(Z, radius=1, colors=species_colors,
-            labels=zlabels.replace("Unclassified", ""),
+               labels=[x.replace("Unclassified", "") for x in zlabels],
                wedgeprops=dict(width=size, edgecolor='w'),
                 labeldistance=0.9)
 
