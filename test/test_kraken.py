@@ -65,6 +65,7 @@ def test_kraken_results():
         k.kraken_to_json(fout.name, "toydb")
         k.kraken_to_krona(fout.name )
         k.to_js(fout.name)
+    df = k.plot2(kind='pie')
 
 @pytest.mark.xfail
 def test_kraken_pipeline():
