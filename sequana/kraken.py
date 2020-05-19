@@ -1187,7 +1187,10 @@ class KrakenSequential(object):
 
         # TODO: this looks similar to the code in KrakenPipeline. could be factorised
         result.to_js("%s%s%s.html" % (self.output_directory, os.sep, output_prefix))
-        result.plot(kind="pie")
+        try:
+            result.plot2(kind="pie")
+        except:
+            result.plot(kind="pie")
         pylab.savefig(self.output_directory + os.sep + "kraken.png")
         prefix = self.output_directory + os.sep
         result.kraken_to_json(prefix + "kraken.json", dbname)
