@@ -1479,18 +1479,18 @@ class MultiKrakenResults():
                 color="red"
             elif kingdom == "Viruses":
                 color="darkgreen"
-            elif kingdom == "Archea":
+            elif kingdom == "Archaea":
                 color="yellow"
             else:
                 color="blue"
             if kind=="barh":
                 pylab.barh(range(0, len(df.columns)), df.loc[kingdom], height=width,
                         left=df.loc[labels].sum().values, edgecolor=edgecolor,
-                        lw=lw, color=color)
+                        lw=lw, color=color, alpha=0.8)
             else:
                 pylab.bar(range(0, len(df.columns)), df.loc[kingdom], width=width,
                         bottom=df.loc[labels].sum().values, edgecolor=edgecolor,
-                        lw=lw,color=color                 )
+                        lw=lw,color=color, alpha=0.8)
             labels.append(kingdom)
 
 
