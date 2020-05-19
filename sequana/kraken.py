@@ -1374,7 +1374,13 @@ class KrakenDownload(object):
 
 
 class MultiKrakenResults():
-    """Slect several kraken output and creates summary plots
+    """Select several kraken output and creates summary plots
+
+    ::
+
+        import glob
+        mkr = MultiKrakenResults(glob.glob("*/*/kraken.csv"))
+        mkr.plot_stacked_hist()
 
     """
     def __init__(self, filenames, sample_names=None):
@@ -1418,25 +1424,67 @@ class MultiKrakenResults():
         return df
 
     def plot_stacked_hist(self, output_filename=None, dpi=200, kind="barh", 
-        fontsize=10, edgecolor="k", lw=1, width=1, ytick_fontsize=10):
+        fontsize=10, edgecolor="k", lw=1, width=1, ytick_fontsize=10,
+        max_labels=50):
+
         """Summary plot of reads classified.
 
         """
         df = self.get_df()
-        df.T.plot(kind=kind, stacked=True, edgecolor=edgecolor, lw=lw,
-            width=width)
-        ax = pylab.gca()
+
+        fig, ax = pylab.subplots(figsize=(9.5,7))
+
+        labels = []
+        for kingdom in sorted(df.index):
+            if kingdom == "Eukaryota":
+                color="purple"
+            elif kingdom == "Unclassified":
+                color="grey"
+            elif kingdom == "Bacteria":
+                color="red"
+            elif kingdom == "Viruses":
+                color="darkgreen"
+            elif kingdom == "Archea":
+                color="yellow"
+            else:
+                color="blue"
+            if kind=="barh":
+                pylab.barh(range(0, len(df.columns)), df.loc[kingdom], height=width,
+                        left=df.loc[labels].sum().values, edgecolor=edgecolor,
+                        lw=lw, color=color)
+            else:
+                pylab.bar(range(0, len(df.columns)), df.loc[kingdom], width=width,
+                        bottom=df.loc[labels].sum().values, edgecolor=edgecolor,
+                        lw=lw,color=color                 )
+            labels.append(kingdom)
+
+
         positions = pylab.yticks()
         #ax.set_yticklabel(positions, labels, fontsize=ytick_fontsize)
-        pylab.xlabel("Percentage (%)", fontsize=fontsize)
-        pylab.ylabel("Sample index/name", fontsize=fontsize)
-        pylab.yticks(fontsize=ytick_fontsize)
+
         if kind == "barh":
+            pylab.xlabel("Percentage (%)", fontsize=fontsize)
+            pylab.ylabel("Sample index/name", fontsize=fontsize)
+            if len(self.sample_names)<max_labels:
+                pylab.yticks(range(len(self.sample_names)), self.sample_names, 
+                    fontsize=ytick_fontsize)
+            else:
+                pylab.yticks([1], [""])
             pylab.xlim([0, 100])
+            pylab.ylim([0.5, len(df.columns)-0.5])
         else:
+            pylab.ylabel("Percentage (%)", fontsize=fontsize)
+            pylab.xlabel("Sample index/name", fontsize=fontsize)
             pylab.ylim([0, 100])
-        ax = pylab.gca()
-        ax.legend(title="kingdom",  bbox_to_anchor=(1,1))
+            if len(self.sample_names)<max_labels:
+                pylab.xticks(range(len(self.sample_names)), self.sample_names, 
+                    fontsize=ytick_fontsize)
+            else:
+                pylab.xticks([1], [""])
+            pylab.xlim([0.5, len(df.columns)-0.5])
+
+
+        ax.legend(labels, title="kingdom",  bbox_to_anchor=(1,1))
         try:
             pylab.tight_layout()
         except:pass
