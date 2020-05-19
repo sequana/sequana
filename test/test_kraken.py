@@ -83,4 +83,5 @@ def test_mkr():
     from sequana.kraken import MultiKrakenResults
     mkr = MultiKrakenResults([sequana_data("test_kraken_multiple_1.csv"),
             sequana_data('test_kraken_multiple_1.csv')])
-    mkr.plot_stacked_hist()           
+    mkr.plot_stacked_hist(kind="bar")           
+    mkr.plot_stacked_hist(kind="barh")           
