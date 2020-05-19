@@ -16,7 +16,10 @@ rule kraken_translate:
         from sequana.kraken import KrakenResults
         k = KrakenResults(input[0])
         k.kraken_to_krona(output_filename=output.summary)
-        df = k.plot(kind='pie')
+        try:
+            df = k.plot2(kind='pie')
+        except:
+            df = k.plot(kind='pie')
         if df is not None and len(df):
             from pylab import savefig
             savefig(output.png)
