@@ -1244,11 +1244,46 @@ class KrakenDownload(object):
             self._download_minikraken(verbose=verbose)
         elif name == "toydb":
             self._download_kraken_toydb(verbose=verbose)
+        elif name == "toydb2":
+            self._download_kraken2_toydb(verbose=verbose)
         elif name == "sequana_db1":
             self._download_sequana_db1(verbose=verbose)
         else:
             raise ValueError("name must be toydb or minikraken, or sequana_db1")
 
+    def _download_kraken2_toydb(self, verbose=True):
+        """Download the kraken DB toy example from sequana_data into
+        .config/sequana directory
+
+        Checks the md5 checksums. About 32Mb of data
+        """
+        dv = DevTools()
+        base = sequana_config_path + os.sep + "kraken2_dbs/toydb_nomasking"
+        dv.mkdir(base)
+
+        baseurl = "https://github.com/sequana/data/raw/master/"
+
+        # download only if required
+        logger.info("Downloading the database into %s" % base)
+
+        md5sums = [
+            "31f4b20f9e5c6beb9e1444805264a6e5",
+            "733f7587f9c0c7339666d5906ec6fcd3",
+            "7bb56a0f035b27839fb5c18590b79263"]
+
+        filenames = [
+            "hash.k2d",
+            "opts.k2d",
+            "taxo.k2d"]
+
+        for filename, md5sum in zip(filenames, md5sums):
+            url = baseurl + "kraken2_toydb/%s" % filename
+            filename = base + os.sep + filename
+            if os.path.exists(filename) and md5(filename) == md5sum:
+                logger.warning("%s already present" % filename)
+            else:
+                logger.info("Downloading %s" % url)
+                wget(url, filename)
 
     def _download_kraken_toydb(self, verbose=True):
         """Download the kraken DB toy example from sequana_data into
