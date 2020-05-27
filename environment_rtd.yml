@@ -18,6 +18,8 @@ dependencies:
 - ruamel.yaml
 - kraken
 - krona
+- shustring
+- sklearn
 
 - pip:
   - ipython
