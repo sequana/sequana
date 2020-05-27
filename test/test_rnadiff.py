@@ -1,13 +1,19 @@
-from sequana.rnadiff import RNADiffResults, plot_venn
+from sequana.rnadiff import RNADiffResults
 from sequana import sequana_data
 
 
-RNADIFF_DIR = sequana_data("rnadiff") + "/rnadiff_analysis_1"
 
 
-def test_rnadiff():
-    RNADiffResults(RNADIFF_DIR)
+def test_rnadiff_onecond():
+    RNADIFF_DIR = sequana_data("rnadiff") + "/rnadiff_onecond_1"
+    r = RNADiffResults(RNADIFF_DIR)
 
+    r.plot_count_per_sample()
+    r.plot_percentage_null_read_counts()
+    r.plot_volcano()
+    r.pca()
 
-def test_plot_venn():
-    plot_venn(compa_list=[{"a", "b"}, {"a"}], labels=["t1", "t2"])
+def test_rnadiff_several_cond():
+    RNADIFF_DIR = sequana_data("rnadiff") + "/rnadiff_analysis_1"
+    r = RNADiffResults(RNADIFF_DIR)
+    r.pca() 
