@@ -1,3 +1,21 @@
+# -*- coding: utf-8 -*-
+#
+#  This file is part of Sequana software
+#
+#  Copyright (c) 2016-2020 - Sequana Development Team
+#
+#  File author(s):
+#      Thomas Cokelaer <thomas.cokelaer@pasteur.fr>
+#      Etienne Kornobis <etienne.kornobis@pasteur.fr>
+#
+#  Distributed under the terms of the 3-clause BSD license.
+#  The full license is in the LICENSE file, distributed with this software.
+#
+#  website: https://github.com/sequana/sequana
+#  documentation: http://sequana.readthedocs.io
+#
+##############################################################################
+
 from pathlib import Path
 import re
 import os
@@ -5,8 +23,7 @@ import os
 from sequana.lazy import pandas as pd
 from sequana.lazy import pylab
 from sequana.lazy import numpy as np
-
-from matplotlib_venn import venn2_unweighted, venn3_unweighted
+from sequana import logger
 
 try:
     import gseapy
@@ -14,39 +31,50 @@ except:
     pass
 
 
-__all__ = ["RNADiffResults", "plot_venn"]
+__all__ = ["RNADiffResults"]
+
 
 
 class RNADiffResults(object):
     """ An object representation of results coming from a RNADiff analysis.
     """
-
     TABLE_DIR_NAME = "tables"
     # File name for the complete table is of form:
     # B1234-v1 (Number of project, number of version)
-    TOTAL_TABLE_PATTERN = ".*B\d+-v\d+.*.complete\.xls"
-    NORMCOUNTS_TABLE = ".*B\d+-v\d+\.*.normCounts\.xls"
+    TOTAL_TABLE_PATTERN = r".*B\d+-v\d+.*.complete\.xls"
     SEP = "\t"
 
-    def __init__(self, rnadiff_folder, alpha=0.05, out_dir="gsea"):
+    def __init__(self, rnadiff_folder, alpha=0.05, out_dir="gsea", fc=0):
         self.analysis_folder = Path(rnadiff_folder)
         self.name = self.analysis_folder.stem
         self.table_folder = self.analysis_folder / self.TABLE_DIR_NAME
         self.df = self.get_table(self.TOTAL_TABLE_PATTERN)
-        self.normcounts = self.get_table(self.NORMCOUNTS_TABLE)
+
+        # Just an alias to a subset of the dataframe
+        normed = [x for x in self.df.columns if x.startswith('norm')]
+        self.normcounts = self.df[normed]
+
+        # get the different conditions
         self.comparisons = self.get_comparisons()
-        self.dr_gene_lists = self.get_gene_lists(alpha=alpha)
-        if len(self.dr_gene_lists) == 0:
-            self.dr_gene_lists = self.get_gene_lists_one_condition(alpha=alpha)
-            
+
+        # some parameters
         self.out_dir = out_dir
         self.alpha = alpha
 
-    def get_table(self, pattern):
-        """ Extract the complete (with all comparisons) table from a RNADiff analysis or
-        the normCounts table depending on the pattern specified.
-        """
+        # What are the sample names and condition names
+        self.sample_names = [x.replace('norm.', '') for x in normed]
+        self.condition_names = set([x[0:-1] for x in self.sample_names])
 
+        # 
+        self.dr_gene_lists = self.get_gene_lists(alpha=alpha)
+        if len(self.dr_gene_lists) == 0:
+            self.dr_gene_lists = self.get_gene_lists_one_condition(fc=fc, alpha=alpha)
+
+    def get_table(self, pattern):
+        """ Extract the complete (with all comparisons) table 
+        from a RNADiff analysis or the normCounts table 
+        depending on the pattern specified.
+        """
         table_files = [f for f in self.table_folder.glob("*.xls")]
 
         table = [f for f in table_files if re.match(pattern, str(f))]
@@ -69,25 +97,26 @@ class RNADiffResults(object):
         )
         return comparisons
 
-    def get_gene_lists_one_condition(self, alpha=None):
+    def get_gene_lists_one_condition(self, alpha=None, fc=0):
         if alpha is None:
             alpha = 0.05
 
         gene_sets =  {}
-        gene_sets["AvsB"] = {}
+        key = "vs".join(sorted(self.condition_names))
+        gene_sets[key] = {}
         
-        condition_up = np.logical_and(self.df.log2FoldChange > 0, self.df.padj <alpha)
-        gene_sets["AvsB"]['up'] = self.df[condition_up].index
+        condition_up = np.logical_and(self.df.log2FoldChange > fc, self.df.padj <alpha)
+        gene_sets[key]['up'] = set(self.df[condition_up].index)
 
-        condition_down = np.logical_and(self.df.log2FoldChange < 0, self.df.padj <alpha)
-        gene_sets["AvsB"]['down'] = self.df[condition_down].index
+        condition_down = np.logical_and(self.df.log2FoldChange < -fc, self.df.padj <alpha)
+        gene_sets[key]['down'] = set(self.df[condition_down].index)
 
-        condition_down = self.df.padj <alpha
-        gene_sets["AvsB"]['all'] = self.df[condition_down].index
+        condition_all = self.df.padj <alpha
+        gene_sets[key]['all'] = set(self.df[condition_all].index)
         return gene_sets
 
 
-    def get_gene_lists(self, alpha=None):
+    def get_gene_lists(self, alpha=0.05, fc=0):
         """ Get differentially regulated gene lists.
         """
 
@@ -101,8 +130,8 @@ class RNADiffResults(object):
             padj_colname = f"{compa}.padj"
             sub_df = self.df.filter(regex=regex)
 
-            query_up = f"`{log2FC_colname}` > 0 and `{padj_colname}` < {alpha}"
-            query_down = f"`{log2FC_colname}` < 0 and `{padj_colname}` < {alpha}"
+            query_up = f"`{log2FC_colname}` > {fc} and `{padj_colname}` < {alpha}"
+            query_down = f"`{log2FC_colname}` < -{fc} and `{padj_colname}` < {alpha}"
             query_all = f"`{padj_colname}` < {alpha}"
 
             gene_sets[compa]["up"] = set(sub_df.query(query_up).index)
@@ -185,7 +214,7 @@ class RNADiffResults(object):
         compa_list can be a list of lists of comparisons to make.
         ie [["WT", "KO1"],["WT", "KO2"]
         """
-
+        from sequana.viz.venn import plot_venn
         # If compa_list is a list of lists of comparison
         if all(isinstance(l, list) for l in compa_list):
 
@@ -258,182 +287,121 @@ class RNADiffResults(object):
 
         print(pd.DataFrame(res_summary).to_string())
 
+    def plot_count_per_sample(self, fontsize=12, sample_list=None):
+        """"Number of mapped reads per sample. Each color for each replicate
 
-def plot_venn(compa_list, labels, title=None, ax=None):
-    """ Plot venn diagramm according to number of groups.
+        .. plot::
+            :include-source:
+    
+            from sequana.rnadiff import RNADiffResults
+            from sequana import sequana_data
 
-    .. plot::
-        :include-source:
-
-        from sequana.rnadiff import plot_venn
-        plot_venn((100,200,10), ("a", 'b'))
-
-
-    .. plot::
-        :include-source:
-
-        from sequana.rnadiff import plot_venn
-        plot_venn((100,200,300, 10,20,30,5), ("a", 'b', 'c')) 
-
-
-    """
-
-    if len(compa_list) == 2:
-        venn_function = venn2_unweighted
-    elif len(compa_list) == 3:
-        venn_function = venn3_unweighted
-    else:
-        raise IOError("Venn diagramm supports only 2 or 3 groups.")
-
-    venn_function(compa_list, set_labels=labels, ax=ax)
-    # ax.set_title = title
-
-
-class PathwayEnrichment():
-    """DRAFT IN PROGRESS
-
-    pe = PathwayEnrichment("rnadiff", "eco")
-    pe.run()
-    enr_up = pe.enrichr("up", 5000)
-    enr_down = pe.enrichr("down", 5000)
-    enr_all = pe.enrichr("all", 5000)
-
-
-    with panther
-    p = Panther() 
-    gene_list = pe.rnadiff.df.query("log2FoldChange>1 and padj<0.05")
-    gg = ",".join(gene_list.Name)
-    res = p.get_enrichment(gg, 83333, 'ANNOT_TYPE_ID_PANTHER_GO_SLIM_MF')
-    res['result']
-
-    """
-    def __init__(self, folder, organism, comparaison="AvsB"):
-        from bioservices import KEGG
-        self.kegg = KEGG(cache=True)
-        self.kegg.organism = organism
-        self.rnadiff = RNADiffResults(folder)
-        self.comparaison = comparaison
-        print("loading all pathways from KEGG. may take time the first time")
-        self.load_pathways()
-
-        dd= self.kegg.conv("eco", "ncbi-geneid")
-        df = pd.DataFrame(
-            {"keggid": [x.split(":")[1] for x in dd.values()], 
-            "ncbi": [x.split(":")[1] for x in dd.keys()]}
-            )
-
-    def load_pathways(self):
-        # Load all pathways
-        self.pathways = {}
-        from easydev import Progress
-        pb = Progress(len(self.kegg.pathwayIds))
-        for i, ID in enumerate(self.kegg.pathwayIds):
-            self.pathways[ID] = self.kegg.parse(self.kegg.get(ID))
-            pb.animate(i+1)
-
-        self.gene_sets = {}
-        for ID in self.kegg.pathwayIds:
-            res =  self.pathways[ID]
-            if "GENE" in res.keys():
-                results = [res['GENE'][g].split(';')[0] for g in res['GENE'].keys()]
-                self.gene_sets[ID] = results
-            else:
-                print("SKIPPED {}".format(res['NAME'], res['ENTRY']))
-
-    def plot_genesets_hist(self, bins=20):
-        pylab.hist([len(v) for k,v in self.gene_sets.items()],bins=20)
-        pylab.title("{} gene sets")
-        pylab.xlabel("Gene set sizes")
-        pylab.grid()
-
-    def enrichr(self, category, background=None, verbose=True):
-        if isinstance(category, list):
-            gene_list = category
-        else:
-            assert category in ['up', 'down', 'complete']
-            gene_list = list(self.rnadiff.dr_gene_lists[self.comparaison][category])
-        enr = gseapy.enrichr(
-            gene_list=gene_list,
-            gene_sets=self.gene_sets,
-            verbose=verbose,
-            background=background,
-            outdir="test", no_plot=True)
-        return enr
-
-    def _get_final_df(self, df, cutoff=0.1, nmax=10):
-        df = df.copy()
-        df['name'] = [self.pathways[x]['NAME'][0] for x in df.Term]
-        df['size'] = [len(x.split(";")) for x in df.Genes]
-        df = df.sort_values("Adjusted P-value")
-        df.reset_index(drop=True, inplace=True)
-        df = df[df["Adjusted P-value"]<=cutoff]
-
-        if len(df)<nmax:
-            nmax = len(df)
-        df = df.iloc[0:nmax]
-        df = df.sort_values("Adjusted P-value", ascending=False)                                    
-        return df
-
-    def barplot(self, enrich, cutoff=0.1, nmax=10):
-        df = self._get_final_df(enrich.results, cutoff=cutoff, nmax=nmax)
-
+            r = RNADiffResults(sequana_data("rnadiff/rnadiff_onecond_1"))
+            r.plot_count_per_sample()
+        """
+        sample_names = [x for x in self.df.columns if x.startswith("norm")] 
+        sample_names = [x.replace("norm.", "") for x in sample_names]
+        N = len(sample_names)
+        dd = self.df[sample_names].sum()
         pylab.clf()
-        pylab.barh(range(len(df)), -pylab.log10(df['Adjusted P-value']))
-        pylab.yticks(range(len(df)), df.name)       
-        pylab.axvline(1.3, lw=2, ls="--", color="r")
+        pylab.bar(range(N), (dd/1000000).values, color=['r']*3+['b']*3, alpha=1)
+        pylab.xlabel("Samples", fontsize=fontsize)
+        pylab.ylabel("Total read count (millions)", fontsize=fontsize)
         pylab.grid(True)
-        pylab.xlabel("Adjusted p-value (log10)")
-        pylab.ylabel("Gene sets")
-        a,b = pylab.xlim()
-        pylab.xlim([0, b])
-        pylab.tight_layout()
-        return df
+        pylab.title("Total read count per sample", fontsize=fontsize)
 
-    def scatterplot(self, enrich, cutoff=0.1, nmax=10, gene_set_size=[]):
-        df = self._get_final_df(enrich.results, cutoff=cutoff, nmax=nmax)
+    def plot_percentage_null_read_counts(self):
+        """
+
+
+        Bars represent the percentage of null counts in each samples. 
+        The dashed horizontal line represents the percentage of 
+        feature counts being equal to zero across all samples.
+
+        .. plot::
+            :include-source:
+    
+            from sequana.rnadiff import RNADiffResults
+            from sequana import sequana_data
+
+            r = RNADiffResults(sequana_data("rnadiff/rnadiff_onecond_1"))
+            r.plot_percentage_null_read_counts()
+
+
+        """
+        N = len(self.sample_names)
+
+        data = (self.df[self.sample_names]==0).sum() 
+        data = data / len(self.df) * 100
+
+        all_null = (self.df[self.sample_names].sum(axis=1) == 0).sum()
 
         pylab.clf()
-        pylab.scatter(-pylab.log10(df['Adjusted P-value']), range(len(df)), s=10*df['size'],    
-            c=df['size'])
+        pylab.bar(range(N), data)
+        pylab.axhline(all_null / len(self.df) * 100, lw=2, ls="--", color="k")
+        pylab.xticks(range(N), self.sample_names)
+        pylab.xlabel("Sample")
+
+
+    def plot_volcano(self):
+        """
+        .. plot::
+            :include-source:
+    
+            from sequana.rnadiff import RNADiffResults
+            from sequana import sequana_data
+
+            r = RNADiffResults(sequana_data("rnadiff/rnadiff_onecond_1"))
+            r.plot_volcano()
+
+        """
+        d1 = self.df.query("padj>0.05")
+        d2 = self.df.query("padj<=0.05")
+
+        fig = pylab.figure()
+        pylab.plot(d1.log2FoldChange, -np.log10(d1.padj), marker="o",
+            alpha=0.5, color="r", lw=0)
+        pylab.plot(d2.log2FoldChange, -np.log10(d2.padj), marker="o",
+            alpha=0.5, color="k", lw=0)
+
+        pylab.grid(True)
+        pylab.xlabel("fold change")
+        pylab.ylabel("log10 adjusted p-value")
+        m1 = abs(min(self.df.log2FoldChange))
+        m2 = max(self.df.log2FoldChange)
+        limit = max(m1,m2)
+        pylab.xlim([-limit, limit])
+        y1,y2 = pylab.ylim()
+        pylab.ylim([0,y2])
+
+        pylab.axhline(-np.log10(0.05), lw=2, ls="--", color="r", label="pvalue threshold (0.05)")
+
+    def pca(self, colors=None):
+        """
+
+        .. plot::
+            :include-source:
+
+            from sequana.rnadiff import RNADiffResults
+            from sequana import sequana_data
+
+            path = sequana_data("rnadiff/rnadiff_onecond_1")
+            r = RNADiffResults(path)
+
+            colors = {
+                'surexp1': 'r',
+                'surexp2':'r', 
+                'surexp3':'r'}
+                'surexp1': 'b',
+                'surexp2':'b', 
+                'surexp3':'b'}
+            r.pca(colors=colors)
+
+        """
+        from sequana.viz import PCA
+        p = PCA(self.df[self.sample_names])
+        p.plot(colors=colors)
         
-        pylab.xlabel("Odd ratio")
-        pylab.ylabel("Gene sets")
-        pylab.yticks(range(len(df)), df.name)
-        a,b = pylab.xlim()
-        pylab.xlim([0, b])
-        pylab.grid(True)
-        ax = pylab.gca()
 
-        M = max(df['size'])
-        if M >100:
-            l1,l2,l3  = "10", "100", str(M)
-        else:
-            l1,l2,l3 = str(round(M/3)), str(round(M*2/3)), str(M)
-
-        handles = [
-            pylab.Line2D([0], [0],marker="o", markersize=5, label=l1, ls=""),
-            pylab.Line2D([0], [0],marker="o", markersize=10, label=l2, ls=""),
-            pylab.Line2D([0], [0],marker="o", markersize=15, label=l3, ls="")]
-        ax.legend(handles=handles, loc="upper left", title="gene-set size")
-
-        pylab.axvline(1.3, lw=2, ls="--", color="r")
-        pylab.tight_layout()
-        ax = pylab.colorbar(pylab.gci())
-        return df
-
-    def show_pathway(self, ID):
-
-        genes = self.kegg.parse(self.kegg.get(ID))['GENE']
-        down = pd.read_csv("rnadiff/tables/B3789-v1.BvsA.down.xls", sep="\t")
-        up = pd.read_csv("rnadiff/tables/B3789-v1.BvsA.up.xls", sep="\t")
-
-        colors = {}
-        for k,v in genes.items():
-            name = v.split(";")[0].strip()
-            if name.lower() in [x.lower() for x in down.Name]:
-                colors[name] = "red"
-            elif name.lower() in [x.lower() for x in up.Name]:
-                colors[name] = "blue"
-        self.kegg.show_pathway(ID, dcolor="white", keggid=colors)
-
-
+        
+        
