@@ -7,3 +7,5 @@ from sequana.viz.corrplot import Corrplot
 from sequana.viz.anova import ANOVA
 from sequana.viz.volcano import Volcano
 from sequana.viz.hinton import hinton
+from sequana.viz.venn import plot_venn
+from sequana.viz.pca import PCA
