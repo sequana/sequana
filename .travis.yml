@@ -62,6 +62,7 @@ install:
   - conda install --yes bedtools --no-deps
 
   - pip install itolapi
+  - pip install sklearn
   - python setup.py install
   - pip install sequana_quality_control
   - pip install coverage coveralls
