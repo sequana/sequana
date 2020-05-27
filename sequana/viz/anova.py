@@ -80,7 +80,7 @@ class ANOVA(object):
         df = pd.DataFrame(res, index=self.df.columns, columns=self.df.columns)
         #FIXME: may have na, which are set to 1
         df = df.fillna(1)
-        if log == True:  
+        if log is True:
             Imshow(-np.log10(df)).plot(**kargs)
         else:
             Imshow(df).plot(**kargs)
