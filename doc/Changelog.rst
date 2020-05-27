@@ -12,10 +12,13 @@ Changelog
     * coverage multiqc plugin to remove unique chromomosome name from the sample name, if it is unique
     * bamtools_stats multiqc plugin to remove unique chromomosome name from the sample name, if it is unique
     * fix regression bug in report summary page for the taxonomy tools
-   
+
 * NEWs:
 
     * Contigs now acceps Spades fasta files
+    * added a new viz module for PCA plotting
+    * added a new stats module for data normalisation
+    * added a new enrichment module to include KeggPathway enrichment
 
 
 
