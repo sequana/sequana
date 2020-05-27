@@ -38,7 +38,7 @@ from .krona import KronaMerger
 from .kraken import KrakenResults, KrakenPipeline, KrakenAnalysis, KrakenDownload, KrakenSequential
 from .pacbio import PacbioSubreads
 from .phred import Quality
-from .rnadiff import RNADiffResults, plot_venn
+from .rnadiff import RNADiffResults
 from .running_median import RunningMedian
 from .snaketools import *
 from .snpeff import SnpEff
