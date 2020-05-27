@@ -146,13 +146,14 @@ class Heatmap(Linkage):
              ):
         """
 
-        Using::
+        Using as input::
 
             df = pd.DataFrame({'A':[1,0,1,1],
                                'B':[.9,0.1,.6,1],
                             'C':[.5,.2,0,1],
                             'D':[.5,.2,0,1]})
-        and::
+
+        we can plot the heatmap + dendogram as follows::
 
             h = Heatmap(df)
             h.plot(vmin=0, vmax=1.1)
