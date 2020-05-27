@@ -390,8 +390,8 @@ class RNADiffResults(object):
 
             colors = {
                 'surexp1': 'r',
-                'surexp2':'r', 
-                'surexp3':'r'}
+                'surexp2':'r',
+                'surexp3':'r',
                 'surexp1': 'b',
                 'surexp2':'b', 
                 'surexp3':'b'}
