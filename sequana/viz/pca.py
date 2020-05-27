@@ -16,7 +16,7 @@
 ##############################################################################
 
 from sequana.lazy import pylab
-
+from sequana import logger
 
 __all__ = ['PCA']
 
@@ -29,8 +29,12 @@ class PCA():
 
         from sequana.viz.pca import PCA
         from sequana import sequana_data
+        import pandas as pd
+
         data = sequana_data("test_pca.csv")
-        p = PCA(data, colors={
+        df = pd.read_csv(data)
+        df = df.set_index("Id")
+        p = PCA(df, colors={
             "A1": 'r', "A2": 'r', 'A3': 'r',
             "B1": 'b', "B2": 'b', 'B3': 'b'})
         p.plot(n_components=2)
@@ -45,6 +49,23 @@ class PCA():
             self.colors[k] = v
 
     def plot_pca_vs_max_features(self, max_features=100, n_components=2):
+        """
+
+        .. plot::
+            :include-source:
+
+            from sequana.viz.pca import PCA
+            from sequana import sequana_data
+            import pandas as pd
+
+            data = sequana_data("test_pca.csv")
+            df = pd.read_csv(data)
+            df = df.set_index("Id")
+
+            p = PCA(df)
+            p.plot_pca_vs_max_features()
+
+        """
         assert n_components in [2,3]
         N = len(self.df)
         if max_features > N:
@@ -133,6 +154,12 @@ class PCA():
             colors = [self.colors[k] for k in self.labels]
             if len(colors) != len(Xr):
                 colors = ["r"] * len(Xr[:,0])
+        else:
+            for k in self.labels:
+                if k not in colors.keys():
+                    logger.warning("No key color for this sample: {}. Set to red".format(k))
+                    colors[k] = "r"
+            colors = [colors[k] for k in self.labels]
 
         pylab.scatter(Xr[:,pc1], Xr[:,pc2], c=colors)
         ax = pylab.gca()
