@@ -105,6 +105,7 @@ setup(
         'sequana.resources.data.adapters' : ['*'],
         'sequana.resources.images' : ['*'],
         'sequana.resources.testing' : ['*'],
+        'sequana.resources.testing.rnadiff' : ['*/tables/*'],
         'sequana.resources.busco' : ['*'],
         'sequana.multiqc' : ['*yaml'],
         },
