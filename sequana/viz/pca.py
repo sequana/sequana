@@ -97,6 +97,7 @@ class PCA():
             with zeros, are set to 1
         """
         assert transform in ['log', 'anscombe']
+        
         from sklearn.preprocessing import StandardScaler
         from sklearn.decomposition import PCA
         import numpy as np
