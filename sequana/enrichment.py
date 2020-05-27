@@ -35,7 +35,7 @@ except:
 
 __all__ = ["KeggPathwayEnrichment"]
 
-class PantherEnrichment():
+class PantherEnrichment():  # pragma: no cover
     """
         p = Panther()
         gene_list = pe.rnadiff.df.query("log2FoldChange>1 and padj<0.05")
@@ -47,17 +47,19 @@ class PantherEnrichment():
         pass
 
 
-class KeggPathwayEnrichment():
+class KeggPathwayEnrichment():  # pragma: no cover
     """DRAFT IN PROGRESS
 
-    pe = PathwayEnrichment("rnadiff", "eco")
-    pe.compute_enrichment()
-    pe.barplot(pe.enrichment['down'])
+    ::
+
+        pe = PathwayEnrichment("rnadiff", "eco")
+        pe.compute_enrichment()
+        pe.barplot(pe.enrichment['down'])
 
 
-    # Save all deregulated pathways found by the enrichment:
-    pe.save_significant_pathways("up")
-    pe.save_significant_pathways("down")
+        # Save all deregulated pathways found by the enrichment:
+        pe.save_significant_pathways("up")
+        pe.save_significant_pathways("down")
 
 
     """
