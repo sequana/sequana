@@ -693,6 +693,7 @@ class KrakenPipeline(object):
         self._devtools = DevTools()
         self.output_directory = output_directory
         self._devtools.mkdir(output_directory)
+        self.database = database
         self.ka = KrakenAnalysis(fastq, database, threads, confidence=confidence)
 
         if dbname is None:
@@ -741,6 +742,18 @@ class KrakenPipeline(object):
             shell("ktImportText %s -o %s" % (prefix+"kraken.out.summary", kraken_html))
         else:
             shell("touch {}".format(kraken_html))
+
+        database = KrakenDB(self.database)
+
+        summary = {"database": [database.name]}
+        summary[database.name] = {"C": int(self.kr.classified)}
+        summary["U"] = int(self.kr.unclassified)
+        summary["total"] = int(self.kr.unclassified + self.kr.classified)
+        # redundant but useful and compatible with sequential approach
+        summary["unclassified"] = int(self.kr.unclassified)
+        summary["classified"] = int(self.kr.classified)
+
+        return summary
 
     def show(self):
         """Opens the filename defined in the constructor"""
@@ -811,7 +824,6 @@ class KrakenAnalysis(object):
             self.fastq = fastq
         else:
             raise ValueError("Expected a fastq filename or list of 2 fastq filenames")
-
 
     def run(self, output_filename=None, output_filename_classified=None,
             output_filename_unclassified=None, only_classified_output=False):
@@ -1080,8 +1092,6 @@ class KrakenSequential(object):
         db = self.databases[iteration]
         logger.info("Analysing data using database {}".format(db))
 
-        # By default, the output contains only classified reads
-        only_classified_output = True
 
         # a convenient alias
         _pathto = lambda x: self.output_directory + x
@@ -1120,24 +1130,32 @@ class KrakenSequential(object):
         # classified and unclassified in the final kraken results.
         if iteration == len(self.databases) -1:
             only_classified_output = False
+        else:
+            only_classified_output = True
 
         file_kraken_out = self.output_directory + "/kraken_{}.out".format(iteration)
 
         # The analysis itself
         analysis = KrakenAnalysis(inputs, db, self.threads,
             confidence=self.confidence)
+
         analysis.run(output_filename=file_kraken_out,
                      output_filename_unclassified=output_filename_unclassified,
                      only_classified_output=only_classified_output)
 
-        # save input/output files
+        # save input/output files.
         self._list_kraken_input.append(file_fastq_unclass)
         self._list_kraken_output.append(file_kraken_out)
 
     def run(self, dbname="multiple", output_prefix="kraken_final"):
         """Run the sequential analysis
 
-        This method does not return anything but creates a set of files:
+        :param dbname:
+        :param output_prefix:
+        :return: dictionary summarizing the databases names and
+            classified/unclassied
+
+        This method does not return anything creates a set of files:
 
         - kraken_final.out
         - krona_final.html
@@ -1152,7 +1170,7 @@ class KrakenSequential(object):
 
         # Iteration over the databases
         for iteration in range(len(self.databases)):
-            kraken_out = self.output_directory + "/kraken_{}.out".format(iteration)
+            #kraken_out = self.output_directory + "/kraken_{}.out".format(iteration)
 
             # The analysis itself
             status = self._run_one_analysis(iteration)
@@ -1165,6 +1183,8 @@ class KrakenSequential(object):
                 result.to_js("%s/krona_%d.html" %(self.output_directory, iteration))
 
             last_unclassified = self._list_kraken_input[-1]
+
+            # If everything was classified, we can stop here
             if isinstance(last_unclassified, str):
                 stat = os.stat(last_unclassified)
                 if stat.st_size == 0:
@@ -1205,6 +1225,23 @@ class KrakenSequential(object):
             # Just cp the last classified file
             shutil.copy2(self._list_kraken_input[-1], self.classified_output)
 
+        summary = {"databases": [x.name for x in self.databases]}
+        total = 0
+        classified = 0
+        for f_temp, db in zip(self._list_kraken_output, self.databases):
+            df = pd.read_csv(f_temp, sep="\t", header=None,usecols=[0])
+            C = sum(df[0] == "C")
+            total += C
+            classified += C
+            U = sum(df[0] == "U")
+            total+=U
+            # In theory, the first N-1 DB returns only classified (C) read
+            # and the last one contains both
+            summary[db.name] = {"C":C}
+            if U != 0: # the last one
+                summary['unclassified'] = U
+        summary['total'] = total
+        summary['classified'] = classified
 
         if not self.keep_temp_files:
             # kraken_0.out
@@ -1218,7 +1255,8 @@ class KrakenSequential(object):
                 elif isinstance(f_temp, list):
                     for this in f_temp:
                         os.remove(this)
-
+        return summary
+        
 
 class KrakenDownload(object):
     """Utility to download Kraken DB and place them in a local directory
@@ -1436,7 +1474,7 @@ class MultiKrakenResults():
             if "kingdom" not in df.columns:
                 for name in "kingdom,phylum,class,order,family,genus,species,name".split(","):
                     df[name] = "Unclassified"
-        
+
             df = df.groupby("kingdom")['percentage'].sum()
             # if a taxon is obsolete, the kingdom is empty. 
             # We will set the kingdom as Unclassified and raise a warning
@@ -1456,8 +1494,9 @@ class MultiKrakenResults():
         df = pd.DataFrame(data)
         df = df.fillna(0)
         df = df.sort_index(ascending=False)
+        df = df.sort_index(ascending=False, axis=1)
 
-        df.sum(axis=1).sort_values(ascending=False).index[0]
+        #df.sum(axis=1).sort_values(ascending=False).index[0]
 
         return df
 
@@ -1509,7 +1548,7 @@ class MultiKrakenResults():
             else:
                 pylab.yticks([1], [""])
             pylab.xlim([0, 100])
-            pylab.ylim([0.5, len(df.columns)-0.5])
+            pylab.ylim([-0.5, len(df.columns)-0.5])
         else:
             pylab.ylabel("Percentage (%)", fontsize=fontsize)
             pylab.xlabel("Sample index/name", fontsize=fontsize)
@@ -1519,7 +1558,7 @@ class MultiKrakenResults():
                     fontsize=ytick_fontsize)
             else:
                 pylab.xticks([1], [""])
-            pylab.xlim([0.5, len(df.columns)-0.5])
+            pylab.xlim([-0.5, len(df.columns)-0.5])
 
 
         ax.legend(labels, title="kingdom",  bbox_to_anchor=(1,1))
@@ -1532,4 +1571,81 @@ class MultiKrakenResults():
 
 
 
+class MultiKrakenResults2():
+    """Select several kraken output and creates summary plots
 
+    ::
+
+        import glob
+        mkr = MultiKrakenResults2(glob.glob("*/*/summary.json"))
+        mkr.plot_stacked_hist()
+
+    """
+    def __init__(self, filenames, sample_names=None):
+        self.filenames = filenames
+        if sample_names is None:
+            self.sample_names = list(range(1,len(filenames)+1))
+        else:
+            self.sample_names = sample_names
+
+    def get_df(self, limit=5):
+        import pandas as pd
+        import json
+        data = {}
+        for sample, filename in zip(self.sample_names, self.filenames):
+            summary = json.loads(open(filename, "r").read())
+            total = summary["total"]
+            data[sample] = {"unclassified": round(summary['unclassified']/total*100,2)}
+            for db in summary['databases']:
+                data[sample][db] = round(summary[db]['C'] / total * 100,2)
+        df = pd.DataFrame(data)
+        df = df.fillna(0)
+        # sort the index by amount of reads classified in each DB
+        df = df.loc[df.mean(axis=1).sort_values().index]
+
+        # sort the columns by sample names
+        df = df.sort_index(ascending=False, axis=1)
+        #df.sum(axis=1).sort_values(ascending=False).index[0]
+        return df
+
+    def plot_stacked_hist(self, output_filename=None, dpi=200, kind="barh", 
+        fontsize=10, edgecolor="k", lw=1, width=1, ytick_fontsize=10,
+        max_labels=50, logx=False, alpha=0.8, colors=["blue", "green", "orange", "red",
+            "purple", "yellow"]):
+
+        """Summary plot of reads classified."""
+        df = self.get_df()
+        df = df.loc[["unclassified"]+[x for x in df.index if x!="unclassified"]]
+        df = df.T
+
+        fig, ax = pylab.subplots(figsize=(9.5,7))
+
+        labels = []
+        # we will store grey/unclassified first and then other DB with a max of
+        # 10 DBs
+        colors = ['grey'] + colors
+        df.plot(kind="barh", stacked=True, width=width, 
+                    edgecolor=edgecolor, color=colors,
+                    lw=lw,  alpha=alpha, ax=ax, legend=False)
+        if logx is True:
+            pylab.semilogx()
+
+
+        positions = pylab.yticks()
+
+        pylab.xlabel("Percentage (%)", fontsize=fontsize)
+        pylab.ylabel("Sample index/name", fontsize=fontsize)
+        if len(self.sample_names)<max_labels:
+            pylab.yticks(range(len(self.sample_names)), self.sample_names, 
+                fontsize=ytick_fontsize)
+        else:
+            pylab.yticks([1], [""])
+        pylab.xlim([0, 100])
+        pylab.ylim([0-0.5, len(df.index)-0.5])  # +1 for the legends
+        ax.legend(df.columns, title="DBs ",  bbox_to_anchor=(1,1))
+        try:
+            pylab.tight_layout()
+        except:pass
+        if output_filename:
+            pylab.savefig(output_filename, dpi=dpi)
+        return df
