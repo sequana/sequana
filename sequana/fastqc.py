@@ -50,13 +50,10 @@ class FastQC():
                             'value': float(s_headers[1])
                         })
                     else:
-                      # Special case: Rename dedup header in old versions of
-                      # FastQC (v10)
                         if s_headers[1] == 'Relative count':
                             s_headers[1] = 'Percentage of total'
                         s_headers = [s.lower().replace(' ', '_') for s in s_headers]
                         self.fastqc_data[s_name][section] = list()
-
                 elif s_headers is not None:
                     s = l.split("\t")
                     row = dict()
@@ -78,6 +75,13 @@ class FastQC():
         # Tidy up the Basic Stats
         self.fastqc_data[s_name]['basic_statistics'] = {
             d['measure']: d['value'] for d in self.fastqc_data[s_name]['basic_statistics']}
+
+        # TC: may 2020 Here we add the mean quality, which surprisingly is not
+        # to be found in the basic statistics.
+        quality_sum = sum([x['quality'] * x['count'] for x in self.fastqc_data[s_name]['per_sequence_quality_scores']])
+        nreads = sum([x['count'] for x in self.fastqc_data[s_name]['per_sequence_quality_scores']])
+        mean_quality = quality_sum / float(nreads)
+        self.fastqc_data[s_name]['basic_statistics']['mean_quality'] = mean_quality
 
         # Calculate the average sequence length (Basic Statistics gives a range)
         length_bp = 0
@@ -124,12 +128,6 @@ class FastQC():
 
         X = range(1, xmax + 1)
 
-        #pylab.fill_between(X, 
-        #    self.df.mean()+self.df.std(), 
-        #    self.df.mean()-self.df.std(), 
-        #    color=color, interpolate=False)
-
-        #pylab.plot(X, self.df.mean(), color=color_line, lw=lw)
         pylab.ylim([0, ymax])
         pylab.xlim([0, xmax])
         pylab.title("Quality scores across all bases")
