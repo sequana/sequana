@@ -89,3 +89,10 @@ def test_mkr():
             sequana_data('test_kraken_multiple_1.csv')])
     mkr.plot_stacked_hist(kind="bar")           
     mkr.plot_stacked_hist(kind="barh")           
+
+
+def test_mkr2():
+    from sequana.kraken import MultiKrakenResults2
+    mkr = MultiKrakenResults2([sequana_data("test_kraken_mkr2_summary_1.json"),
+            sequana_data('test_kraken_mkr2_summary_2.json')])
+    mkr.plot_stacked_hist()
