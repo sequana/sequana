@@ -1,0 +1,19 @@
+{
+    "databases": [
+        "covid2_nomasking",
+        "kraken2_respo_twist_no_masking",
+        "kraken2_viral"
+    ],
+    "covid2_nomasking": {
+        "C": 95831
+    },
+    "kraken2_respo_twist_no_masking": {
+        "C": 154
+    },
+    "kraken2_viral": {
+        "C": 53
+    },
+    "unclassified": 22807,
+    "total": 118845,
+    "classified": 96038
+}
