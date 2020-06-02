@@ -58,20 +58,25 @@ class KeggPathwayEnrichment():  # pragma: no cover
 
 
         # Save all deregulated pathways found by the enrichment:
-        pe.save_significant_pathways("up")
-        pe.save_significant_pathways("down")
+        up = pe.save_significant_pathways("up")
+        down = pe.save_significant_pathways("down")
 
 
     """
-    def __init__(self, folder, organism, comparaison="AvsB", alpha=0.05, fc=0):
+    def __init__(self, folder, organism, comparison=None, alpha=0.05, fc=0):
         print("DRAFT in progress")
         from bioservices import KEGG
         self.kegg = KEGG(cache=True)
         self.kegg.organism = organism
 
         self.read_rnadiff(folder, alpha=alpha, fc=fc)
-
-        self.comparaison = comparaison
+        choices = list(self.rnadiff.dr_gene_lists.keys())
+        if comparison:
+            assert comparison in choices
+            self.comparison = comparison
+        elif len(choices) == 1:
+            logger.info("One comparison found and set automatically")
+            self.comparison = choices[0]
 
         self.background = len(self.kegg.list(self.kegg.organism).split("\n"))
         logger.info("Set number of genes to {}".format(self.background))
@@ -142,7 +147,7 @@ class KeggPathwayEnrichment():  # pragma: no cover
             gene_list = category
         else:
             assert category in ['up', 'down', 'all']
-            gene_list = list(self.rnadiff.dr_gene_lists[self.comparaison][category])
+            gene_list = list(self.rnadiff.dr_gene_lists[self.comparison][category])
 
         enr = gseapy.enrichr(
             gene_list=gene_list,
@@ -216,8 +221,11 @@ class KeggPathwayEnrichment():  # pragma: no cover
 
     def _get_summary_pathway(self, pathway_ID):
         genes = self.df_pathways.loc[pathway_ID]['GENE']
-        df_down = pd.read_csv("rnadiff/tables/B3789-v1.BvsA.down.xls", sep="\t")
-        df_up = pd.read_csv("rnadiff/tables/B3789-v1.BvsA.up.xls", sep="\t")
+        df_down = self.rnadiff.df.query("padj<=0.05 and log2FoldChange<0")
+        df_up = self.rnadiff.df.query("padj<=0.05 and log2FoldChange>0")
+
+        #f_down = self.rnadiff.dr_gene_lists[self.comparison]
+
         logger.info("Total down-regulated: {}".format(len(df_down)))
         logger.info("Total up-regulated: {}".format(len(df_up)))
 
@@ -344,11 +352,11 @@ class KeggPathwayEnrichment():  # pragma: no cover
 
         logger.info("saving {} deregulated pathways".format(len(df)))
 
-        summaries = []
+        summaries = {}
         # save them
         for ID in df['Term']:
             summary = self.save_pathway(ID, filename="{}_{}.png".format(ID, mode))
-            summaries.append(summary)
+            summaries[ID] = summary
         return summaries
 
 
