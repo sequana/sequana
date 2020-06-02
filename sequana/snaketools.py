@@ -975,6 +975,28 @@ class PipelineManagerBase(object):
         cleaner.files_to_remove.extend(extra_files_to_remove)
         cleaner.add_makefile()
 
+    def get_html_summary(self, float="left", width=30):
+        import pandas as pd
+        import pkg_resources
+        vers = pkg_resources.require("sequana_{}".format(self.name))[0].version
+        df_general = pd.DataFrame({
+            "samples": len(self.samples), 
+            "paired": self.paired, 
+            "sequana_{}_version".format(self.name): vers}, 
+            index=["summary"])
+
+        from sequana.utils.datatables_js import DataTable
+        datatable = DataTable(df_general.T, 'general', index=True)
+        datatable.datatable.datatable_options = {'paging': 'false',
+                                             'bFilter': 'false',
+                                              'bInfo': 'false',
+                                               'header': 'false',
+                                              'bSort': 'true'}
+        js = datatable.create_javascript_function()
+        htmltable = datatable.create_datatable(style="width: 20%; float:left" )
+        contents = """<div style="float:{}; width:{}%">{}</div>""".format(float,
+            width, js + htmltable)
+        return contents
 
 
 class PipelineManagerGeneric(PipelineManagerBase):
