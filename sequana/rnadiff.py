@@ -44,11 +44,26 @@ class RNADiffResults(object):
     TOTAL_TABLE_PATTERN = r".*B\d+-v\d+.*.complete\.xls"
     SEP = "\t"
 
-    def __init__(self, rnadiff_folder, alpha=0.05, out_dir="gsea", fc=0):
+    def __init__(self, rnadiff_folder, alpha=0.05, out_dir="gsea", fc=0,
+        pattern=None):
+        """.. rubric:: constructor
+
+        :param rnadiff_folder:
+        :param alpha:
+        :param out_dir:
+        :param fc:
+        :param pattern: to replace the default pattern 
+
+        """
+
         self.analysis_folder = Path(rnadiff_folder)
         self.name = self.analysis_folder.stem
         self.table_folder = self.analysis_folder / self.TABLE_DIR_NAME
-        self.df = self.get_table(self.TOTAL_TABLE_PATTERN)
+
+        if pattern:
+            self.df = self.get_table(pattern)
+        else:
+            self.df = self.get_table(self.TOTAL_TABLE_PATTERN)
 
         # Just an alias to a subset of the dataframe
         normed = [x for x in self.df.columns if x.startswith('norm')]
