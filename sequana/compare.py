@@ -59,8 +59,16 @@ class RNADiffCompare(Compare):
 
     def __init__(self, r1, r2):
 
-        self.r1 = RNADiffResults(r1)
-        self.r2 = RNADiffResults(r2)
+        if isinstance(r1, RNADiffResults):
+            self.r1 = r1
+        elif os.path.exists(r1):
+            self.r1 = RNADiffResults(r1)
+
+        if isinstance(r2, RNADiffResults):
+            self.r2 = r2
+        elif os.path.exists(r2):
+            self.r2 = RNADiffResults(r2)
+        
 
     def summary(self):
         cond1, cond2 = self._get_cond1_cond2()
@@ -146,11 +154,12 @@ class RNADiffCompare(Compare):
 
 
     def plot_common_major_counts(self, mode, labels=None,
-            switch_up_down_cond2=False, add_venn=True, xmax=None):
+            switch_up_down_cond2=False, add_venn=True, xmax=None, cond1=None,
+            cond2=None, title="", fontsize=12):
         """
 
         :param mode: down, up or all
-        
+
 
         .. plot::
             :include-source:
@@ -195,25 +204,25 @@ class RNADiffCompare(Compare):
             pylab.axvline(len(A), ls="--", color="k", label="rank of minor set")
 
         pylab.plot(N)
-        pylab.xlabel('rank')
-        pylab.ylabel('% common features')
+        pylab.xlabel('rank', fontsize=fontsize)
+        pylab.ylabel('% common features', fontsize=fontsize)
         pylab.grid(True)
         pylab.ylim([0,100])
         if xmax:
             pylab.xlim([0, xmax])
         else:
             pylab.xlim([0, max(len(A),len(B))])
-
+        pylab.title(title, fontsize=fontsize)
 
         if add_venn:
             f = pylab.gcf()
             ax = f.add_axes([0.5,0.5,0.35,0.35], facecolor="grey")
             if mode=="down":
-                self.venn_down_only(ax=ax, title=None)
+                self.venn_down_only(ax=ax, title=None, labels=labels)
             elif mode=="up":
-                self.venn_up_only(ax=ax, title=None)
+                self.venn_up_only(ax=ax, title=None, labels=labels)
             elif mode=="all":
-                self.venn_all(ax=ax, title=None)
+                self.venn_all(ax=ax, title=None, labels=labels)
 
 
     def plot_volcano(self, cond1=None, cond2=None):
