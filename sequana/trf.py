@@ -1,9 +1,27 @@
+# -*- coding: utf-8 -*-
+#
+#  This file is part of Sequana software
+#
+#  Copyright (c) 2016 - Sequana Development Team
+#
+#  File author(s):
+#      Thomas Cokelaer <thomas.cokelaer@pasteur.fr>
+#      Dimitri Desvillechabrol <dimitri.desvillechabrol@pasteur.fr>, 
+#          <d.desvillechabrol@gmail.com>
+#
+#  Distributed under the terms of the 3-clause BSD license.
+#  The full license is in the LICENSE file, distributed with this software.
+#
+#  website: https://github.com/sequana/sequana
+#  documentation: http://sequana.readthedocs.io
+#
+##############################################################################
 import pandas as pd
 
-import pandas as pd
+__all__ = ["TRF"]
 
 
-class TRF():
+class TRF():   # pragma: no cover
     """
 
     The data is not a CSV. It contains comments in the middle of the file to
@@ -11,6 +29,7 @@ class TRF():
 
     """
     def __init__(self, filename):
+        print('This is a draft class do not use')
         self.filename = filename
         self.df = self.scandata()
 
