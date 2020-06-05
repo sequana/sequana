@@ -430,7 +430,7 @@ class KrakenResults(object):
         self._data_created = True
         return True
 
-    def plot2(self, kind="pie", ):
+    def plot2(self, kind="pie", fontsize=12):
         import numpy as np
         import matplotlib.pyplot as plt
 
@@ -500,6 +500,7 @@ class KrakenResults(object):
             inner_colors.extend(this_cmap(np.linspace(.6,.2, len(y))))
             species_colors.extend(this_cmap(np.linspace(.6,.2, len(z))))
 
+
         fig, ax = pylab.subplots(figsize=(9.5,7))
         size = 0.2
 
@@ -513,14 +514,23 @@ class KrakenResults(object):
                wedgeprops=dict(width=size, edgecolor='w'),
             labeldistance=0.65)
 
+        # labels can be long. Let us cut them 
+        zlabels2 = []
+        for this in zlabels:
+            if len(this)>30:
+                zlabels2.append(this[0:30] + "...") 
+            else:
+                zlabels2.append(this)
+
         w3, l3 = ax.pie(Z, radius=1, colors=species_colors,
-               labels=[x.replace("Unclassified", "") for x in zlabels],
+               labels=[x.replace("Unclassified", "") for x in zlabels2],
                wedgeprops=dict(width=size, edgecolor='w'),
                 labeldistance=0.9)
 
         ax.set(aspect="equal")
         pylab.subplots_adjust(right=1, left=0, bottom=0, top=1)
-        pylab.legend(labels, title="kingdom", loc="upper right")
+        pylab.legend(labels, title="kingdom", loc="upper right",
+            fontsize=fontsize)
         import webbrowser
         mapper = {k:v for k,v in zip(zlabels, Z)}
         def on_pick(event):
@@ -1595,7 +1605,9 @@ class MultiKrakenResults2():
         for sample, filename in zip(self.sample_names, self.filenames):
             summary = json.loads(open(filename, "r").read())
             total = summary["total"]
-            data[sample] = {"unclassified": round(summary['unclassified']/total*100,2)}
+            data[sample] = {
+                    "unclassified": round(summary['unclassified']/total*100,2), 
+                    "nreads": summary['total']}
             for db in summary['databases']:
                 data[sample][db] = round(summary[db]['C'] / total * 100,2)
         df = pd.DataFrame(data)
