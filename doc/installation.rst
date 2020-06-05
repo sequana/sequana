@@ -65,7 +65,8 @@ This will install the dependencies such as Pandas, Numpy, etc. It will take abou
         conda install -c anaconda qt pyqt>5
 
     Using pip may lead to compatibility issues with your underlying Qt library,
-    which must be available to install PyQt
+    which must be available to install PyQt. PyQt5, v5.9.2 is known to work.
+    v5.15.0 fails (PyQt5.QtWebEngineWidgets)
 
 bioconda installation
 -----------------------
