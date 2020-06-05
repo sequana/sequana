@@ -154,8 +154,8 @@ class RNADiffCompare(Compare):
 
 
     def plot_common_major_counts(self, mode, labels=None,
-            switch_up_down_cond2=False, add_venn=True, xmax=None, cond1=None,
-            cond2=None, title="", fontsize=12):
+            switch_up_down_cond2=False, add_venn=True, xmax=None, 
+            title="", fontsize=12):
         """
 
         :param mode: down, up or all
@@ -225,7 +225,7 @@ class RNADiffCompare(Compare):
                 self.venn_all(ax=ax, title=None, labels=labels)
 
 
-    def plot_volcano(self, cond1=None, cond2=None):
+    def plot_volcano(self, labels=None):
         """Volcano plot of log2 fold change versus log10 of adjusted p-value
 
         .. plot::
@@ -240,6 +240,8 @@ class RNADiffCompare(Compare):
             c.plot_volcano()
         """
         cond1, cond2 = self._get_cond1_cond2()
+        if labels is None:
+            labels = [cond1, cond2]
         A = self.r1.df.loc[self.r1.dr_gene_lists[cond1]["all"]]
         B = self.r2.df.loc[self.r2.dr_gene_lists[cond2]["all"]]
 
@@ -249,9 +251,9 @@ class RNADiffCompare(Compare):
 
         pylab.clf()
         pylab.plot(A.log2FoldChange, -np.log10(A.padj), marker="o",
-            alpha=0.5, color="r", lw=0, label=cond1, picker=4)
+            alpha=0.5, color="r", lw=0, label=labels[0], picker=4)
         pylab.plot(B.log2FoldChange, -np.log10(B.padj), marker="x",
-            alpha=0.5, color="k", lw=0, label=cond2, picker=4)
+            alpha=0.5, color="k", lw=0, label=labels[1], picker=4)
 
         genes = list(A.index) + list(B.index)
         pylab.grid(True)
