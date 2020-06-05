@@ -1629,6 +1629,7 @@ class MultiKrakenResults2():
         df = self.get_df()
         df = df.loc[["unclassified"]+[x for x in df.index if x!="unclassified"]]
         df = df.T
+        del df['nreads']
 
         fig, ax = pylab.subplots(figsize=(9.5,7))
 
