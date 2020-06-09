@@ -1630,6 +1630,7 @@ class MultiKrakenResults2():
         df = df.loc[["unclassified"]+[x for x in df.index if x!="unclassified"]]
         df = df.T
         del df['nreads']
+        print(df)
 
         fig, ax = pylab.subplots(figsize=(9.5,7))
 
@@ -1649,7 +1650,7 @@ class MultiKrakenResults2():
         pylab.xlabel("Percentage (%)", fontsize=fontsize)
         pylab.ylabel("Sample index/name", fontsize=fontsize)
         if len(self.sample_names)<max_labels:
-            pylab.yticks(range(len(self.sample_names)), self.sample_names, 
+            pylab.yticks(range(len(self.sample_names)), df.index[::-1], 
                 fontsize=ytick_fontsize)
         else:
             pylab.yticks([1], [""])
