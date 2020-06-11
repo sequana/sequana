@@ -33,6 +33,15 @@ __all__ = ["SequanaBaseModule"]
 
 class SequanaBaseModule(object):
     """ Generic Module to write HTML reports.
+
+
+    # to add a TOC, add this code::
+
+        <div id="tocDiv">
+        <ul id="tocList"> </ul>
+        </div>
+
+
     """
     def __init__(self, template_fn='standard.html', required_dir=None):
         if required_dir is None:
@@ -237,3 +246,4 @@ class SequanaBaseModule(object):
 <a href="#" data-jq-dropdown="#jq-dropdown-{1}">Subchromosome</a>
         """.format('\n'.join(option_list), html_id)
         return html
+
