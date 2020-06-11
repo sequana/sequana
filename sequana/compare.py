@@ -155,7 +155,7 @@ class RNADiffCompare(Compare):
 
     def plot_common_major_counts(self, mode, labels=None,
             switch_up_down_cond2=False, add_venn=True, xmax=None, 
-            title="", fontsize=12):
+            title="", fontsize=12, sortby="log2FoldChange"):
         """
 
         :param mode: down, up or all
@@ -178,13 +178,13 @@ class RNADiffCompare(Compare):
 
         if mode in ["down"]:
             # Negative values !
-            A = self.r1.df.loc[self.r1.dr_gene_lists[cond1][mode]].sort_values(by="log2FoldChange")
-            B = self.r2.df.loc[self.r2.dr_gene_lists[cond2][mode]].sort_values(by="log2FoldChange")
+            A = self.r1.df.loc[self.r1.dr_gene_lists[cond1][mode]].sort_values(by=sortby)
+            B = self.r2.df.loc[self.r2.dr_gene_lists[cond2][mode]].sort_values(by=sortby)
         else:
             A = self.r1.df.loc[self.r1.dr_gene_lists[cond1][mode]].sort_values(
-                by="log2FoldChange", ascending=False)
+                by=sortby, ascending=False)
             B = self.r2.df.loc[self.r2.dr_gene_lists[cond2][mode]].sort_values(
-                by="log2FoldChange", ascending=False)
+                by=sortby, ascending=False)
         # sometimes, up and down may be inverted as compared to the other
         # conditions
         N = []
@@ -213,6 +213,12 @@ class RNADiffCompare(Compare):
         else:
             pylab.xlim([0, max(len(A),len(B))])
         pylab.title(title, fontsize=fontsize)
+        ax = pylab.gca()
+        ax2 = ax.twinx()
+        ax2.plot(A[sortby].values, "orange", label=sortby)
+        ax2.set_ylabel(sortby)
+        pylab.legend(loc="lower left")
+        ax.legend(loc="lower right")
 
         if add_venn:
             f = pylab.gcf()
