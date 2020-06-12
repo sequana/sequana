@@ -430,7 +430,7 @@ class KrakenResults(object):
         self._data_created = True
         return True
 
-    def plot2(self, kind="pie", ):
+    def plot2(self, kind="pie", fontsize=12):
         import numpy as np
         import matplotlib.pyplot as plt
 
@@ -500,6 +500,7 @@ class KrakenResults(object):
             inner_colors.extend(this_cmap(np.linspace(.6,.2, len(y))))
             species_colors.extend(this_cmap(np.linspace(.6,.2, len(z))))
 
+
         fig, ax = pylab.subplots(figsize=(9.5,7))
         size = 0.2
 
@@ -513,14 +514,23 @@ class KrakenResults(object):
                wedgeprops=dict(width=size, edgecolor='w'),
             labeldistance=0.65)
 
+        # labels can be long. Let us cut them 
+        zlabels2 = []
+        for this in zlabels:
+            if len(this)>30:
+                zlabels2.append(this[0:30] + "...") 
+            else:
+                zlabels2.append(this)
+
         w3, l3 = ax.pie(Z, radius=1, colors=species_colors,
-               labels=[x.replace("Unclassified", "") for x in zlabels],
+               labels=[x.replace("Unclassified", "") for x in zlabels2],
                wedgeprops=dict(width=size, edgecolor='w'),
                 labeldistance=0.9)
 
         ax.set(aspect="equal")
         pylab.subplots_adjust(right=1, left=0, bottom=0, top=1)
-        pylab.legend(labels, title="kingdom", loc="upper right")
+        pylab.legend(labels, title="kingdom", loc="upper right",
+            fontsize=fontsize)
         import webbrowser
         mapper = {k:v for k,v in zip(zlabels, Z)}
         def on_pick(event):
@@ -1582,50 +1592,72 @@ class MultiKrakenResults2():
 
     """
     def __init__(self, filenames, sample_names=None):
+
         self.filenames = filenames
         if sample_names is None:
             self.sample_names = list(range(1,len(filenames)+1))
         else:
             self.sample_names = sample_names
 
-    def get_df(self, limit=5):
+
+
+    def get_df(self, limit=5, sorting_method="sample_name"):
         import pandas as pd
         import json
         data = {}
         for sample, filename in zip(self.sample_names, self.filenames):
             summary = json.loads(open(filename, "r").read())
             total = summary["total"]
-            data[sample] = {"unclassified": round(summary['unclassified']/total*100,2)}
+            data[sample] = {
+                    "unclassified": round(summary['unclassified']/total*100,2), 
+                    "nreads": summary['total']}
             for db in summary['databases']:
                 data[sample][db] = round(summary[db]['C'] / total * 100,2)
         df = pd.DataFrame(data)
         df = df.fillna(0)
-        # sort the index by amount of reads classified in each DB
-        df = df.loc[df.mean(axis=1).sort_values().index]
+        df = df.sort_index(ascending=False)
+        df = df.sort_index(ascending=False, axis=1)
+
+
+        # We sort the databases from best to worst. We ignore the nreads columns of
+        # course, which is not related to the ability of each DB to classify the
+        # reads
+        index = df.loc[df.index.drop("nreads")].mean(axis=1).sort_values(ascending=False).index
+        df = df.loc[list(index) + ["nreads"]]
 
         # sort the columns by sample names
-        df = df.sort_index(ascending=False, axis=1)
+        #df = df.sort_index(ascending=False, axis=1)
         #df.sum(axis=1).sort_values(ascending=False).index[0]
         return df
 
     def plot_stacked_hist(self, output_filename=None, dpi=200, kind="barh", 
-        fontsize=10, edgecolor="k", lw=1, width=1, ytick_fontsize=10,
-        max_labels=50, logx=False, alpha=0.8, colors=["blue", "green", "orange", "red",
-            "purple", "yellow"]):
+            fontsize=10, edgecolor="k", lw=2, width=1, ytick_fontsize=10,
+            max_labels=50, logx=False, alpha=0.8, colors=None, 
+            cmap="hot_r", sorting_method="sample_name"):
+        """Summary plot of reads classified.
 
-        """Summary plot of reads classified."""
-        df = self.get_df()
+
+        :param sorting_method: only by sample name for now
+        """
+        df = self.get_df(sorting_method=sorting_method)
+
+
         df = df.loc[["unclassified"]+[x for x in df.index if x!="unclassified"]]
         df = df.T
+        del df['nreads']
 
         fig, ax = pylab.subplots(figsize=(9.5,7))
 
         labels = []
         # we will store grey/unclassified first and then other DB with a max of
         # 10 DBs
+        L = len(df.columns) - 1
+        from matplotlib import cm
+        if colors is None:
+            colors = [cm.get_cmap(cmap)(x) for x in pylab.linspace(0.2,1,L)]
         colors = ['grey'] + colors
         df.plot(kind="barh", stacked=True, width=width, 
-                    edgecolor=edgecolor, color=colors,
+                    edgecolor=edgecolor, color=colors, 
                     lw=lw,  alpha=alpha, ax=ax, legend=False)
         if logx is True:
             pylab.semilogx()
@@ -1636,7 +1668,7 @@ class MultiKrakenResults2():
         pylab.xlabel("Percentage (%)", fontsize=fontsize)
         pylab.ylabel("Sample index/name", fontsize=fontsize)
         if len(self.sample_names)<max_labels:
-            pylab.yticks(range(len(self.sample_names)), self.sample_names, 
+            pylab.yticks(range(len(self.sample_names)), df.index[::-1], 
                 fontsize=ytick_fontsize)
         else:
             pylab.yticks([1], [""])

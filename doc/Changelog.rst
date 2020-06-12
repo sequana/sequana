@@ -4,6 +4,16 @@ Changelog
 .. contents::
     :depth: 2
 
+0.8.6
+-----
+
+* CHANGES:
+
+    * module kraken: better label in plot2 method to avoid long label to be cut
+    * module compare: fix label in comparative plots 
+    * module modules_report/bases now include title in the embedded image 
+
+
 0.8.5
 ------
 

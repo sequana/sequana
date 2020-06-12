@@ -59,8 +59,16 @@ class RNADiffCompare(Compare):
 
     def __init__(self, r1, r2):
 
-        self.r1 = RNADiffResults(r1)
-        self.r2 = RNADiffResults(r2)
+        if isinstance(r1, RNADiffResults):
+            self.r1 = r1
+        elif os.path.exists(r1):
+            self.r1 = RNADiffResults(r1)
+
+        if isinstance(r2, RNADiffResults):
+            self.r2 = r2
+        elif os.path.exists(r2):
+            self.r2 = RNADiffResults(r2)
+        
 
     def summary(self):
         cond1, cond2 = self._get_cond1_cond2()
@@ -146,11 +154,12 @@ class RNADiffCompare(Compare):
 
 
     def plot_common_major_counts(self, mode, labels=None,
-            switch_up_down_cond2=False, add_venn=True, xmax=None):
+            switch_up_down_cond2=False, add_venn=True, xmax=None, 
+            title="", fontsize=12, sortby="log2FoldChange"):
         """
 
         :param mode: down, up or all
-        
+
 
         .. plot::
             :include-source:
@@ -169,13 +178,13 @@ class RNADiffCompare(Compare):
 
         if mode in ["down"]:
             # Negative values !
-            A = self.r1.df.loc[self.r1.dr_gene_lists[cond1][mode]].sort_values(by="log2FoldChange")
-            B = self.r2.df.loc[self.r2.dr_gene_lists[cond2][mode]].sort_values(by="log2FoldChange")
+            A = self.r1.df.loc[self.r1.dr_gene_lists[cond1][mode]].sort_values(by=sortby)
+            B = self.r2.df.loc[self.r2.dr_gene_lists[cond2][mode]].sort_values(by=sortby)
         else:
             A = self.r1.df.loc[self.r1.dr_gene_lists[cond1][mode]].sort_values(
-                by="log2FoldChange", ascending=False)
+                by=sortby, ascending=False)
             B = self.r2.df.loc[self.r2.dr_gene_lists[cond2][mode]].sort_values(
-                by="log2FoldChange", ascending=False)
+                by=sortby, ascending=False)
         # sometimes, up and down may be inverted as compared to the other
         # conditions
         N = []
@@ -195,28 +204,34 @@ class RNADiffCompare(Compare):
             pylab.axvline(len(A), ls="--", color="k", label="rank of minor set")
 
         pylab.plot(N)
-        pylab.xlabel('rank')
-        pylab.ylabel('% common features')
+        pylab.xlabel('rank', fontsize=fontsize)
+        pylab.ylabel('% common features', fontsize=fontsize)
         pylab.grid(True)
         pylab.ylim([0,100])
         if xmax:
             pylab.xlim([0, xmax])
         else:
             pylab.xlim([0, max(len(A),len(B))])
-
+        pylab.title(title, fontsize=fontsize)
+        ax = pylab.gca()
+        ax2 = ax.twinx()
+        ax2.plot(A[sortby].values, "orange", label=sortby)
+        ax2.set_ylabel(sortby)
+        pylab.legend(loc="lower left")
+        ax.legend(loc="lower right")
 
         if add_venn:
             f = pylab.gcf()
             ax = f.add_axes([0.5,0.5,0.35,0.35], facecolor="grey")
             if mode=="down":
-                self.venn_down_only(ax=ax, title=None)
+                self.venn_down_only(ax=ax, title=None, labels=labels)
             elif mode=="up":
-                self.venn_up_only(ax=ax, title=None)
+                self.venn_up_only(ax=ax, title=None, labels=labels)
             elif mode=="all":
-                self.venn_all(ax=ax, title=None)
+                self.venn_all(ax=ax, title=None, labels=labels)
 
 
-    def plot_volcano(self, cond1=None, cond2=None):
+    def plot_volcano(self, labels=None):
         """Volcano plot of log2 fold change versus log10 of adjusted p-value
 
         .. plot::
@@ -231,6 +246,8 @@ class RNADiffCompare(Compare):
             c.plot_volcano()
         """
         cond1, cond2 = self._get_cond1_cond2()
+        if labels is None:
+            labels = [cond1, cond2]
         A = self.r1.df.loc[self.r1.dr_gene_lists[cond1]["all"]]
         B = self.r2.df.loc[self.r2.dr_gene_lists[cond2]["all"]]
 
@@ -240,9 +257,9 @@ class RNADiffCompare(Compare):
 
         pylab.clf()
         pylab.plot(A.log2FoldChange, -np.log10(A.padj), marker="o",
-            alpha=0.5, color="r", lw=0, label=cond1, picker=4)
+            alpha=0.5, color="r", lw=0, label=labels[0], picker=4)
         pylab.plot(B.log2FoldChange, -np.log10(B.padj), marker="x",
-            alpha=0.5, color="k", lw=0, label=cond2, picker=4)
+            alpha=0.5, color="k", lw=0, label=labels[1], picker=4)
 
         genes = list(A.index) + list(B.index)
         pylab.grid(True)

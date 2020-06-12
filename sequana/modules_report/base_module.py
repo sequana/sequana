@@ -33,6 +33,15 @@ __all__ = ["SequanaBaseModule"]
 
 class SequanaBaseModule(object):
     """ Generic Module to write HTML reports.
+
+
+    # to add a TOC, add this code::
+
+        <div id="tocDiv">
+        <ul id="tocList"> </ul>
+        </div>
+
+
     """
     def __init__(self, template_fn='standard.html', required_dir=None):
         if required_dir is None:
@@ -185,16 +194,16 @@ class SequanaBaseModule(object):
                 '<img src="{0}"></object>')
         return html.format(filename)
 
-    def png_to_embedded_png(self, png, style=None, alt=""):
+    def png_to_embedded_png(self, png, style=None, alt="", title=""):
         """ Include a PNG file as embedded file.
         """
         import base64
         with open(png, 'rb') as fp:
             png = base64.b64encode(fp.read()).decode()
         if style:
-            html = '<img style="{0}" alt="{1}"'.format(style, alt)
+            html = '<img style="{0}" alt="{1}", title="{2}"'.format(style, alt, title)
         else:
-            html = '<img alt="{}"'.format(alt)
+            html = '<img alt="{}", title="{}"'.format(alt, title)
         return '{0} src="data:image/png;base64,{1}">'.format(html, png)
 
     def create_embedded_png(self, plot_function, input_arg, style=None,
@@ -237,3 +246,4 @@ class SequanaBaseModule(object):
 <a href="#" data-jq-dropdown="#jq-dropdown-{1}">Subchromosome</a>
         """.format('\n'.join(option_list), html_id)
         return html
+
