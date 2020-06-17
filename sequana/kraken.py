@@ -655,7 +655,10 @@ class KrakenResults(object):
         # to simplify, if this is the case, we will just take the first read
         # length for now. 
         df = self.df.copy()
-        df.length = df.length.apply(lambda x: int(x.split("|")[0]))
+        try: # kraken2
+            df.length = df.length.apply(lambda x: int(x.split("|")[0]))
+        except:
+            pass
         df[["status", "length"]].groupby('status').boxplot()
         return df
 
