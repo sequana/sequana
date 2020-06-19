@@ -41,11 +41,10 @@ class RNADiffResults(object):
     TABLE_DIR_NAME = "tables"
     # File name for the complete table is of form:
     # B1234-v1 (Number of project, number of version)
-    TOTAL_TABLE_PATTERN = r".*B\d+-v\d+.*.complete\.xls"
     SEP = "\t"
 
     def __init__(self, rnadiff_folder, alpha=0.05, out_dir="gsea", fc=0,
-        pattern=None):
+        pattern="*complete.xls"):
         """.. rubric:: constructor
 
         :param rnadiff_folder:
@@ -58,12 +57,9 @@ class RNADiffResults(object):
 
         self.analysis_folder = Path(rnadiff_folder)
         self.name = self.analysis_folder.stem
-        self.table_folder = self.analysis_folder / self.TABLE_DIR_NAME
+        self._table_folder = self.analysis_folder / self.TABLE_DIR_NAME
 
-        if pattern:
-            self.df = self.get_table(pattern)
-        else:
-            self.df = self.get_table(self.TOTAL_TABLE_PATTERN)
+        self.df = self._get_table(pattern)
 
         # Just an alias to a subset of the dataframe
         normed = [x for x in self.df.columns if x.startswith('norm')]
@@ -79,29 +75,47 @@ class RNADiffResults(object):
         # What are the sample names and condition names
         self.sample_names = [x.replace('norm.', '') for x in normed]
         self.condition_names = set([x[0:-1] for x in self.sample_names])
+        self.set_colors()
 
         # 
         self.dr_gene_lists = self.get_gene_lists(alpha=alpha)
         if len(self.dr_gene_lists) == 0:
             self.dr_gene_lists = self.get_gene_lists_one_condition(fc=fc, alpha=alpha)
 
-    def get_table(self, pattern):
+    def set_colors(self, colors=None):
+        self.colors = {}
+        if colors is None:
+            colors = ['orange', 'b', 'r', "y", "k"]
+        for i,name in enumerate(self.condition_names):
+            try:
+                self.colors[name] = colors[i]
+            except:
+                self.colors[name] = colors[len(colors)-1]
+
+
+    def _get_table(self, pattern):
         """ Extract the complete (with all comparisons) table 
         from a RNADiff analysis or the normCounts table 
         depending on the pattern specified.
         """
-        table_files = [f for f in self.table_folder.glob("*.xls")]
-
-        table = [f for f in table_files if re.match(pattern, str(f))]
-
-        if len(table) == 1 and table[0].is_file():
-
-            return pd.read_csv(table[0], self.SEP, index_col=0)
-
+        if pattern:
+            table_files = [f for f in self._table_folder.glob(pattern)]
+            if len(table_files) == 0:
+                raise ValueError("Found no file for your pattern {}".format(pattern))
+            elif len(table_files) != 1:
+                print(table_files)
+                raise ValueError("Found more than 1 file with the pattern {}".format(pattern))
+            return pd.read_csv(table_files[0], self.SEP, index_col=0)
         else:
-            raise IOError(
-                f"Cannot find a single proper table with pattern: {pattern} from RNADiff: {table}"
-            )
+            table_files = [f for f in self._table_folder.glob("*.xls")]
+            table = [f for f in table_files if re.match(pattern, str(f))]
+
+            if len(table) == 1 and table[0].is_file():
+                return pd.read_csv(table[0], self.SEP, index_col=0)
+            else:
+                raise IOError(
+                    f"Cannot find a single proper table with pattern: {pattern} from RNADiff: {table}"
+                )
 
     def get_comparisons(self):
         """ Get a list of comparisons performed in the RNADiff analysis.
@@ -391,7 +405,7 @@ class RNADiffResults(object):
 
         pylab.axhline(-np.log10(0.05), lw=2, ls="--", color="r", label="pvalue threshold (0.05)")
 
-    def pca(self, colors=None):
+    def pca(self, n_components=2, colors=None):
         """
 
         .. plot::
@@ -415,8 +429,21 @@ class RNADiffResults(object):
         """
         from sequana.viz import PCA
         p = PCA(self.df[self.sample_names])
-        p.plot(colors=colors)
-        
+        if colors is None:
+            colors = {}
+            for sample in self.sample_names:
+                colors[sample] = self.colors[self.get_cond_from_sample(sample)]
+        p.plot(n_components=n_components, colors=colors)
 
-        
-        
+
+    def get_cond_from_sample(self, sample_name):
+        try:
+            candidates = [x for x in self.condition_names if sample_name.startswith(x)]
+            if len(candidates) == 1:
+                return candidates[0]
+            else:
+                raise ValueError("ambiguous sample name found in several conditions")
+        except:
+            logger.warning("{} not found".format(sample_name))
+            return None
+
