@@ -404,9 +404,9 @@ class KeggPathwayEnrichment():  # pragma: no cover
             background = self.background
 
         # select the relevant pathways
-        df = self._enrichr(mode, self.background).results
+        df = self._enrichr(mode, background).results
         df = self._get_final_df(df, cutoff=cutoff, nmax=nmax)
-        if len(df) == nmax:
+        logger.warning("Found {} pathways to save".format(len(dflen(df)        if len(df) == nmax:
             logger.warning("Restricted pathways to {}".format(nmax))
 
         logger.info("saving {} deregulated pathways".format(len(df)))
