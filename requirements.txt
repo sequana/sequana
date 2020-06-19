@@ -21,6 +21,7 @@ pysam
 ruamel.yaml
 qtconsole
 snakemake
+scikit-learn
 scipy
 xlrd
 xml2dict
