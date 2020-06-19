@@ -4,6 +4,12 @@ Changelog
 .. contents::
     :depth: 2
 
+0.8.7
+-----
+
+* Fix bug kraken sequential when no reads are classified
+
+
 0.8.6
 -----
 
