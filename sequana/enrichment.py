@@ -43,8 +43,67 @@ class PantherEnrichment():  # pragma: no cover
         res = p.get_enrichment(gg, 83333, 'ANNOT_TYPE_ID_PANTHER_GO_SLIM_MF')
         res['result']
     """
-    def __init__(self):
-        pass
+    def __init__(self, folder):
+        from bioservices import panther, quickgo
+        self.panther = panther.Panther()
+        self.quickgo = quicko.QuickGo(cache=True)
+
+
+    def compute_enrichment(self, mygenes, taxid):
+        #taxid=83333 # ecoli
+        ancestors = {"MF": "GO:0003674", "CC": "GO:0005575", "BP": "GO:008150"}
+
+        MF = self.get_enrichment(myGenes, 83333, "ANNOT_TYPE_ID_PANTHER_GO_SLIM_MF")
+        CC = self.get_enrichment(myGenes, 83333, "ANNOT_TYPE_ID_PANTHER_GO_SLIM_CC")
+        BP = self.get_enrichment(myGenes, 83333, "ANNOT_TYPE_ID_PANTHER_GO_SLIM_BP")
+
+        # remove unclassified for now
+        MF_ids = [x for x in MF['result'] if go['term']['label'] != "UNCLASSIFIED"]
+        BP_ids = [x for x in BP['result'] if go['term']['label'] != "UNCLASSIFIED"]
+        CC_ids = [x for x in CC['result'] if go['term']['label'] != "UNCLASSIFIED"]
+
+        # Here we filter the data to keep only the relevant go terms as shown in
+        # panther pie chart
+        levels = []
+        for _id in MF_ids:
+
+            
+            info = self.quickgo.go_terms_ancestors(_id)
+            # in theory, only one
+            aspect = info[0]["aspect"]
+            assert aspect == "molecular function"
+            # now figure out the distance to main ancestor
+            paths = go.go_terms_paths(_id, ancestors["MF"])
+            if len(paths["results"]) == 0:
+                pass
+            else:
+                distances = [len(path) for path in paths["results"]]
+                if min(distances) == 1:
+                    # good GO term to keep
+                    levels.append(min(distances))
+
+        import networkx as nx
+        gg = nx.DiGraph()
+        for goterm in res: 
+            if "id" not in goterm["term"]: 
+                continue
+            _id = goterm["term"]['id']
+            print(_id) 
+            if _id == "GO:0003674":
+                continue
+            edges = go.get_go_paths(_id, "GO:0003674") 
+            if isinstance(edges, int): 
+                print("skipped {} obsolete maybe".format(goterm["term"]["id"])) 
+                continue 
+            if len(edges["results"])>1:
+                for path in edges["results"]:
+                    for edge in path:
+                        gg.add_edge(edge['child'], edge["parent"]) 
+
+        paths = nx.shortest_path_length(gg, target="GO:0003674")
+
+
+
 
 
 class KeggPathwayEnrichment():  # pragma: no cover
@@ -358,5 +417,68 @@ class KeggPathwayEnrichment():  # pragma: no cover
             summary = self.save_pathway(ID, filename="{}_{}.png".format(ID, mode))
             summaries[ID] = summary
         return summaries
+
+
+    def find_pathways_by_gene(self, gene_name, match="exact"):
+
+        #First let us find the kegg ID
+        genes = self.kegg.list(self.kegg.organism).strip().split("\n")
+
+        keggid = [x.split("\t")[0].strip() for x in genes]
+        gene_names = [x.split("\t")[1].split(";")[0].strip() for x in genes]
+
+        self.keggid = keggid
+        self.gene_names = gene_names
+        candidates = []
+        for x,y in zip(keggid, gene_names):
+
+            if match == "exact":
+                if gene_name == y:
+                    candidates = x.split(":")[1]
+                    break
+            else:
+                if gene_name in y:
+                    candidates.append(x)
+
+        if match != "exact":
+            candidates = [x.split(":")[1] for x in candidates]
+            logger.info("Found {} candidate(s): {}".format(len(candidates), candidates))
+        else:
+            logger.info("Found {} in {}".format(gene_name, candidates))
+
+
+        print(candidates)
+
+        paths = []
+        for key in self.pathways.keys():
+            if "GENE" in self.pathways[key]:
+                if match == "exact":
+                    if candidates in self.pathways[key]['GENE']:
+                        paths.append(key)
+                else:
+                    for candidate in candidates:
+                        if candidate in self.pathways[key]['GENE']:
+                            paths.append(key)
+        return list(set(paths))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
