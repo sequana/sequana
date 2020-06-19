@@ -21,9 +21,8 @@ def test_pca():
     p.plot(transform="log", switch_y=True, switch_x=True, max_features=500)
     p.plot(transform="anscombe", switch_y=True, switch_x=True, max_features=500)
 
-
     # set max_features to large values to test option
-    p.plot_pca_vs_max_features(max_features=10000)
+    p.plot_pca_vs_max_features(step=10000)
     p.plot_pca_vs_max_features(n_components=3)
 
     # 3 components
