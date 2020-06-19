@@ -1239,14 +1239,19 @@ class KrakenSequential(object):
         total = 0
         classified = 0
         for f_temp, db in zip(self._list_kraken_output, self.databases):
-            df = pd.read_csv(f_temp, sep="\t", header=None,usecols=[0])
-            C = sum(df[0] == "C")
-            total += C
-            classified += C
-            U = sum(df[0] == "U")
-            total+=U
             # In theory, the first N-1 DB returns only classified (C) read
             # and the last one contains both
+            try:            
+                df = pd.read_csv(f_temp, sep="\t", header=None,usecols=[0])
+                C = sum(df[0] == "C")
+                U = sum(df[0] == "U")
+            except pd.errors.EmptyDataError:
+                # if no read classified, 
+                C = 0
+                U = 0
+            total+=U
+            total += C
+            classified += C
             summary[db.name] = {"C":C}
             if U != 0: # the last one
                 summary['unclassified'] = U
