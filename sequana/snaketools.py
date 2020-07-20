@@ -1393,6 +1393,12 @@ class FileFactory(object):
     The **pathname** is a specific label for a file’s directory location
     while within an operating system.
 
+    .. versionchanges:: 0.8.7 attributes were recomputed at each accession. For
+        small projects, this is transparent, but on novogene or large set of samples,
+        this is taking too much time. This was done in case FileFactorry
+        attributes such as input directorty or pattern are changed. In practice this
+        does not happen, so we can write the basenames and other attributes in variables
+        once for all
 
     """
     def __init__(self, pattern):
@@ -1426,12 +1432,23 @@ class FileFactory(object):
                     raise ValueError("This file % does not exist" % this)
             self._glob = pattern[:]
 
+
+        self.realpaths = [os.path.realpath(filename) for filename in self._glob]
+        self.basenames = [os.path.split(filename)[1] for filename in self._glob]
+        self.filenames =  [this.split(".")[0] for this in self.basenames]
+        self.pathnames = [os.path.split(filename)[0] for filename in self.realpaths]
+        self.extensions = [os.path.splitext(filename)[1] for filename in self._glob]
+        self.all_extensions = [this.split('.', 1)[1] if "." in this else "" for this in self.basenames]
+
+
+    """
     def _get_realpath(self):
         return [os.path.realpath(filename) for filename in self._glob]
     realpaths = property(_get_realpath,
                          doc=("real path is the full path + the filename"
                               " the extension"))
 
+    
     def _get_basenames(self):
         return [os.path.split(filename)[1] for filename in self._glob]
     basenames = property(_get_basenames,
@@ -1447,7 +1464,7 @@ class FileFactory(object):
         return pathnames
     pathnames = property(_pathnames,
                          doc="the relative path for each file (list)")
-
+    """
     def _pathname(self):
         pathname = set(self.pathnames)
         if len(pathname) == 1:
@@ -1455,7 +1472,7 @@ class FileFactory(object):
         else:
             raise ValueError("found more than one pathname")
     pathname = property(_pathname, doc="the common relative path")
-
+    """
     def _get_extensions(self):
         filenames = [os.path.splitext(filename)[1] for filename in self._glob]
         return filenames
@@ -1467,7 +1484,7 @@ class FileFactory(object):
         return filenames
     all_extensions = property(_get_all_extensions,
                               doc="the extensions (list)")
-
+    """
     def __len__(self):
         return len(self.filenames)
 
@@ -1509,7 +1526,7 @@ class FastQFactory(FileFactory):
     """
     def __init__(self, pattern, extension=["fq.gz", "fastq.gz"],
                  read_tag="_R[12]_", verbose=False, paired=True):
-        """.. rubric:: Constructor
+        r""".. rubric:: Constructor
 
         :param str pattern: a global pattern (e.g., ``H*fastq.gz``)
         :param list extension: not used
@@ -1589,9 +1606,12 @@ class FastQFactory(FileFactory):
         # retrieve file of tag
         if self.read_tag:
             read_tag = self.read_tag.replace("[12]", r)
+
+            # changed in v0.8.7 tricky hanbling of sample names
+            # https://github.com/sequana/sequana/issues/576
             candidates = [realpath for basename, realpath in
                           zip(self.basenames, self.realpaths)
-                          if read_tag in basename and basename.startswith(tag + "_")]
+                          if read_tag in basename and tag == basename.split(read_tag)[0]]
         else:
             read_tag = ""
             candidates = [realpath for basename, realpath in
