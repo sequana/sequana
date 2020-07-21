@@ -1,5 +1,8 @@
 from pathlib import Path
 import pandas as pd
+from sequana import logger
+
+logger.name = __name__
 
 
 def get_most_probable_strand(sample_folder):
@@ -9,14 +12,15 @@ def get_most_probable_strand(sample_folder):
     This assumes a single sample by featureCounts file
     """
 
-    fc_files = Path(sample_folder).glob("feature_counts_*/*_feature.out")
+    sample_folder = Path(sample_folder)
+    fc_files = sample_folder.glob("feature_counts_*/*_feature.out")
 
     sample_name = sample_folder.stem
     res_dict = {}
 
     for f in fc_files:
         strand = str(f.parent)[-1]
-        res_dict[strand] = int(FeatureCount(f).get_df().sum())
+        res_dict[strand] = int(FeatureCount(f).df.sum())
 
     return pd.DataFrame(res_dict, index=[sample_name])
 
@@ -29,20 +33,22 @@ def get_all_most_probable_strand(sample_folders):
         [get_most_probable_strand(sample_folder) for sample_folder in sample_folders]
     )
 
+    logger.info(df)
+
     # Extract the index (ie strand 0,1,2) for the the max count for each sample
     probable_strand_df = df.apply(lambda x: x.idxmax(), axis=1)
-    probable_strand = set(probable_strand_df)
+    probable_strand = list(set(probable_strand_df))
 
-    if len(probable_strand) != 1:
+    if len(probable_strand) == 1:
+        return probable_strand[0]
+    else:
         raise IOError(
             f"No consensus on most probable strand. Could be: {probable_strand}"
         )
-    else:
-        return list(probable_strand)[0]
 
 
 class MultiFeatureCount:
-    """ Read multiple features 
+    """ IN DEV. Read multiple features. NOT FUNCTIONAL YET
     """
 
     def __init__(
@@ -57,6 +63,11 @@ class MultiFeatureCount:
         self.extra_name_rm = extra_name_rm
         self.drop_loc = drop_loc
         self._data = []
+
+        self._df = self._get_df()
+
+    def _get_df(self):
+        pass
 
 
 class FeatureCount:
