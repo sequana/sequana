@@ -1561,7 +1561,7 @@ class MultiKrakenResults():
             pylab.xlabel("Percentage (%)", fontsize=fontsize)
             pylab.ylabel("Sample index/name", fontsize=fontsize)
             if len(self.sample_names)<max_labels:
-                pylab.yticks(range(len(self.sample_names)), self.sample_names, 
+                pylab.yticks(range(len(self.sample_names)), self.sample_names[::-1], 
                     fontsize=ytick_fontsize)
             else:
                 pylab.yticks([1], [""])
@@ -1572,7 +1572,7 @@ class MultiKrakenResults():
             pylab.xlabel("Sample index/name", fontsize=fontsize)
             pylab.ylim([0, 100])
             if len(self.sample_names)<max_labels:
-                pylab.xticks(range(len(self.sample_names)), self.sample_names, 
+                pylab.xticks(range(len(self.sample_names)), self.sample_names[::-1], 
                     fontsize=ytick_fontsize)
             else:
                 pylab.xticks([1], [""])
@@ -1606,8 +1606,6 @@ class MultiKrakenResults2():
             self.sample_names = list(range(1,len(filenames)+1))
         else:
             self.sample_names = sample_names
-
-
 
     def get_df(self, limit=5, sorting_method="sample_name"):
         import pandas as pd
@@ -1676,7 +1674,7 @@ class MultiKrakenResults2():
         pylab.xlabel("Percentage (%)", fontsize=fontsize)
         pylab.ylabel("Sample index/name", fontsize=fontsize)
         if len(self.sample_names)<max_labels:
-            pylab.yticks(range(len(self.sample_names)), df.index[::-1], 
+            pylab.yticks(range(len(self.sample_names)), df.index, 
                 fontsize=ytick_fontsize)
         else:
             pylab.yticks([1], [""])
