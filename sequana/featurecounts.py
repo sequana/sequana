@@ -5,11 +5,10 @@ from sequana import logger
 logger.name = __name__
 
 
-def get_most_probable_strand(sample_folder):
-    """Return the strand of the most probable featureCount matrix
-    Most probable is the one getting more counts overall.
-    
-    This assumes a single sample by featureCounts file
+def get_most_probable_strand(sample_folder, tolerance=0.10):
+    """Return total counts by strand from featureCount matrix folder, strandness and
+    probable strand for a single sample (using a tolerance threshold for
+    strandness). This assumes a single sample by featureCounts file.
     """
 
     sample_folder = Path(sample_folder)
@@ -22,52 +21,45 @@ def get_most_probable_strand(sample_folder):
         strand = str(f.parent)[-1]
         res_dict[strand] = int(FeatureCount(f).df.sum())
 
-    return pd.DataFrame(res_dict, index=[sample_name])
+    strandness = res_dict["1"] / (res_dict["1"] + res_dict["2"])
+    res_dict["strandness"] = strandness
+
+    if strandness < tolerance:
+        res_dict["strand"] = "2"
+    elif strandness > 1 - tolerance:
+        res_dict["strand"] = "1"
+    elif 0.5 - tolerance < strandness or strandness > 0.5 + tolerance:
+        res_dict["strand"] = "0"
+    else:
+        raise IOError(
+            f"No strandness could be inferred from the count files for '{sample_name}' with a tolerance of {tolerance}"
+        )
+
+    df = pd.DataFrame(res_dict, index=[sample_name])
+
+    return df
 
 
-def get_all_most_probable_strand(sample_folders):
-    """ From a sequana rna-seq run get the most probable strand.
+def get_most_probable_strand_consensus(rnaseq_folder):
+    """From a sequana rna-seq run folder get the most probable strand, based on the
+    frequecies of counts assigned with '0', '1' or '2' type strandness
+    (featureCounts nomenclature)
     """
 
     df = pd.concat(
-        [get_most_probable_strand(sample_folder) for sample_folder in sample_folders]
+        [get_most_probable_strand(sample_folder) for sample_folder in rnaseq_folder]
     )
 
     logger.info(df)
 
-    # Extract the index (ie strand 0,1,2) for the the max count for each sample
-    probable_strand_df = df.apply(lambda x: x.idxmax(), axis=1)
-    probable_strand = list(set(probable_strand_df))
+    probable_strands = df.loc[:, "strand"].unique()
 
-    if len(probable_strand) == 1:
-        return probable_strand[0]
+    if len(probable_strands) == 1:
+        return probable_strands[0]
     else:
         raise IOError(
-            f"No consensus on most probable strand. Could be: {probable_strand}"
+            f"No consensus on most probable strand. Could be: {probable_strands}"
         )
-
-
-class MultiFeatureCount:
-    """ IN DEV. Read multiple features. NOT FUNCTIONAL YET
-    """
-
-    def __init__(
-        self,
-        filenames,
-        clean_sample_names=True,
-        extra_name_rm=["_Aligned"],
-        drop_loc=True,
-    ):
-        self.filenames = filenames
-        self.clean_sample_names = clean_sample_names
-        self.extra_name_rm = extra_name_rm
-        self.drop_loc = drop_loc
-        self._data = []
-
-        self._df = self._get_df()
-
-    def _get_df(self):
-        pass
 
 
 class FeatureCount:
@@ -124,3 +116,26 @@ class FeatureCount:
             new_name = new_name.replace(pattern, "")
 
         return new_name
+
+
+class MultiFeatureCount:
+    """ IN DEV. Read multiple features. NOT FUNCTIONAL YET
+    """
+
+    def __init__(
+        self,
+        filenames,
+        clean_sample_names=True,
+        extra_name_rm=["_Aligned"],
+        drop_loc=True,
+    ):
+        self.filenames = filenames
+        self.clean_sample_names = clean_sample_names
+        self.extra_name_rm = extra_name_rm
+        self.drop_loc = drop_loc
+        self._data = []
+
+        self._df = self._get_df()
+
+    def _get_df(self):
+        pass
