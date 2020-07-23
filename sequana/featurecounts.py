@@ -46,10 +46,16 @@ def get_most_probable_strand_consensus(rnaseq_folder):
     (featureCounts nomenclature)
     """
 
-    df = pd.concat(
-        [get_most_probable_strand(sample_folder) for sample_folder in rnaseq_folder]
+    rnaseq_folder = Path(rnaseq_folder)
+    sample_folders = list(
+        set([x.parent for x in rnaseq_folder.glob("*/feature_counts_[012]")])
     )
 
+    df = pd.concat(
+        [get_most_probable_strand(sample_folder) for sample_folder in sample_folders]
+    )
+
+    logger.info("Strandness probability report:")
     logger.info(df)
 
     probable_strands = df.loc[:, "strand"].unique()
