@@ -25,17 +25,285 @@ from sequana.lazy import pylab
 from sequana.lazy import numpy as np
 from sequana import logger
 
-try:
-    import gseapy
-except:
-    pass
+import glob
 
 
-__all__ = ["RNADiffResults"]
+__all__ = ["RNADiffResults", "RNADiffResultsOld"]
+
+
+class RNADiffResults():
+    """An object representation of results coming from a RNADiff analysis."""
+
+    def __init__(self, filename, alpha=0.05, log2_fc=0, pattern="*complete*xls",
+        sep="\t"):
+        """.. rubric:: constructor
+
+        :param rnadiff_results: can be a folder for a simple comparison, or an
+            output file containing the rseults of a rnadiff analysis
+        :param alpha:
+        :param out_dir:
+        :param log2_fc: the log2 fold change to apply
+
+        """
+        if os.path.isdir(filename):
+            filenames = glob.glob(filename + "/tables/" + pattern)
+            if len(filenames) == 1:
+                self.filename = filenames[0]
+            else:
+                raise IOError("Found several file with the {} pattern. Please be"
+                    "more restrictive using the pattern argument")
+        elif os.path.exists(filename):
+            # must be a 'complete' file from rnadiff analysis
+            self.filename = filename
+        else:
+            raise TypeError("{} does not exists".format(filename))
+
+        # Finally, read the data itself
+        self.df = pd.read_csv(self.filename, sep, index_col=0)
+
+        # Just an alias to a subset of the dataframe
+        normed = [x for x in self.df.columns if x.startswith('norm')]
+        self.normcounts = self.df[normed]
+
+        # some parameters/attributes
+        self._alpha = alpha
+        self._log2_fc = log2_fc
+
+        # What are the sample names and condition names
+        self.sample_names = [x.replace('norm.', '') for x in normed]
+        self.condition_names = set([x[0:-1] for x in self.sample_names])
+        self.set_colors()
+
+        self._set_gene_lists_one_condition()
+
+    def set_colors(self, colors=None):
+        self.colors = {}
+        if colors is None:
+            colors = ['orange', 'b', 'r', "y", "k"]
+        for i,name in enumerate(self.condition_names):
+            try:
+                self.colors[name] = colors[i]
+            except:
+                self.colors[name] = colors[len(colors)-1]
+
+    def _set_log2_fc(self, value):
+        self._log2_fc = value
+        self._set_gene_lists_one_condition()
+    def _get_log2_fc(self):
+        return self._log2_fc
+    log2_fc = property(_get_log2_fc, _set_log2_fc)
+
+    def _set_alpha(self, value):
+        self._alpha = value
+    def _get_alpha(self):
+        return self._alpha
+    alpha = property(_get_alpha, _set_alpha)
+
+    def _set_gene_lists_one_condition(self):
+
+        gene_sets =  {}
+        key = "vs".join(sorted(self.condition_names))
+        gene_sets = {}
+
+        condition_up = np.logical_and(self.df.log2FoldChange > self.log2_fc,
+            self.df.padj <self.alpha)
+        gene_sets['up'] = set(self.df[condition_up].index)
+
+        condition_down = np.logical_and(self.df.log2FoldChange < -self.log2_fc,
+            self.df.padj <self.alpha)
+        gene_sets['down'] = set(self.df[condition_down].index)
+
+        condition_all = np.logical_or(
+            np.logical_and(self.df.padj < self.alpha, self.df.log2FoldChange > self.log2_fc),
+            np.logical_and(self.df.padj < self.alpha, self.df.log2FoldChange < -self.log2_fc)
+        )
+        gene_sets['all'] = set(self.df[condition_all].index)
+
+        self.gene_lists = gene_sets
+
+    def summary(self):
+        """ Get a summary DataFrame from a RNADiff analysis.
+        """
+        summary = pd.DataFrame(
+            {
+                (x,len(self.gene_lists[x])) for x in self.gene_lists.keys()
+            }
+        )
+
+        df = summary.set_index(0)
+        df.columns = ["_vs_".join(self.condition_names)]
+        return df
+
+    def plot_count_per_sample(self, fontsize=12, sample_list=None):
+        """"Number of mapped reads per sample. Each color for each replicate
+
+        .. plot::
+            :include-source:
+
+            from sequana.rnadiff import RNADiffResults
+            from sequana import sequana_data
+
+            r = RNADiffResults(sequana_data("rnadiff/rnadiff_onecond_1"))
+            r.plot_count_per_sample()
+        """
+        sample_names = self.sample_names
+        N = len(sample_names)
+        dd = self.df[sample_names].sum()
+        pylab.clf()
+
+        colors = []
+        for sample in self.sample_names:
+            colors.append(self.colors[self.get_cond_from_sample(sample)])
+
+        pylab.bar(range(N), (dd/1000000).values, 
+            color=colors, alpha=1, 
+            zorder=10, lw=1, ec="k", width=0.9)
+        pylab.xlabel("Samples", fontsize=fontsize)
+        pylab.ylabel("Total read count (millions)", fontsize=fontsize)
+        pylab.grid(True, zorder=0)
+        pylab.title("Total read count per sample", fontsize=fontsize)
+        pylab.xticks(range(N), self.sample_names)
+
+    def plot_percentage_null_read_counts(self):
+        """
+
+        Bars represent the percentage of null counts in each samples. 
+        The dashed horizontal line represents the percentage of 
+        feature counts being equal to zero across all samples.
+
+        .. plot::
+            :include-source:
+    
+            from sequana.rnadiff import RNADiffResults
+            from sequana import sequana_data
+
+            r = RNADiffResults(sequana_data("rnadiff/rnadiff_onecond_1"))
+            r.plot_percentage_null_read_counts()
+
+
+        """
+        N = len(self.sample_names)
+
+        data = (self.df[self.sample_names]==0).sum() 
+        data = data / len(self.df) * 100
+
+        all_null = (self.df[self.sample_names].sum(axis=1) == 0).sum()
+
+        colors = []
+        for sample in self.sample_names:
+            colors.append(self.colors[self.get_cond_from_sample(sample)])
+
+        pylab.clf()
+        pylab.bar(range(N), data, 
+            color=colors, alpha=1, 
+            zorder=10, lw=1, ec="k", width=0.9)
+        pylab.axhline(all_null / len(self.df) * 100, lw=2, ls="--", color="k",
+            zorder=20)
+        pylab.xticks(range(N), self.sample_names)
+        pylab.xlabel("Sample")
+        pylab.ylabel("Proportion of null counts (%)")
+        pylab.grid(True, zorder=0)
+
+
+    def plot_volcano(self, padj=0.05):
+        """
+
+
+        .. plot::
+            :include-source:
+
+            from sequana.rnadiff import RNADiffResults
+            from sequana import sequana_data
+
+            r = RNADiffResults(sequana_data("rnadiff/rnadiff_onecond_1"))
+            r.plot_volcano()
+
+        """
+        d1 = self.df.query("padj>@padj")
+        d2 = self.df.query("padj<=@padj")
+
+        fig = pylab.figure()
+        pylab.plot(d1.log2FoldChange, -np.log10(d1.padj), marker="o",
+            alpha=0.5, color="r", lw=0)
+        pylab.plot(d2.log2FoldChange, -np.log10(d2.padj), marker="o",
+            alpha=0.5, color="k", lw=0)
+
+        pylab.grid(True)
+        pylab.xlabel("fold change")
+        pylab.ylabel("log10 adjusted p-value")
+        m1 = abs(min(self.df.log2FoldChange))
+        m2 = max(self.df.log2FoldChange)
+        limit = max(m1,m2)
+        pylab.xlim([-limit, limit])
+        y1,y2 = pylab.ylim()
+        pylab.ylim([0,y2])
+
+        pylab.axhline(-np.log10(0.05), lw=2, ls="--", color="r", label="pvalue threshold (0.05)")
+
+    def plot_pca(self, n_components=2, colors=None):
+        """
+
+        .. plot::
+            :include-source:
+
+            from sequana.rnadiff import RNADiffResults
+            from sequana import sequana_data
+
+            path = sequana_data("rnadiff/rnadiff_onecond_1")
+            r = RNADiffResults(path)
+
+            colors = {
+                'surexp1': 'r',
+                'surexp2':'r',
+                'surexp3':'r',
+                'surexp1': 'b',
+                'surexp2':'b', 
+                'surexp3':'b'}
+            r.pca(colors=colors)
+
+        """
+        from sequana.viz import PCA
+        p = PCA(self.df[self.sample_names])
+        if colors is None:
+            colors = {}
+            for sample in self.sample_names:
+                colors[sample] = self.colors[self.get_cond_from_sample(sample)]
+        p.plot(n_components=n_components, colors=colors)
+
+    def plot_mds(self, n_components=2, colors=None, clf=True):
+        from sequana.viz.mds import MDS
+        p = MDS(self.df[self.sample_names])
+        if colors is None:
+            colors = {}
+            for sample in self.sample_names:
+                colors[sample] = self.colors[self.get_cond_from_sample(sample)]
+        p.plot(n_components=n_components, colors=colors, clf=clf)
+
+    def plot_isomap(self, n_components=2, colors=None):
+        from sequana.viz.isomap import Isomap
+        p = Isomap(self.df[self.sample_names])
+        if colors is None:
+            colors = {}
+            for sample in self.sample_names:
+                colors[sample] = self.colors[self.get_cond_from_sample(sample)]
+        p.plot(n_components=n_components, colors=colors)
+
+
+    def get_cond_from_sample(self, sample_name):
+        try:
+            candidates = [x for x in self.condition_names if sample_name.startswith(x)]
+            if len(candidates) == 1:
+                return candidates[0]
+            else:
+                raise ValueError("ambiguous sample name found in several conditions")
+        except:
+            logger.warning("{} not found".format(sample_name))
+            return None
 
 
 
-class RNADiffResults(object):
+
+class RNADiffResultsOld(object):  #pragma: no cover
     """ An object representation of results coming from a RNADiff analysis.
     """
     TABLE_DIR_NAME = "tables"
