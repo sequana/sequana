@@ -7,6 +7,7 @@ cython
 docutils
 easydev>=0.9.36
 gseapy
+itolapi
 lxml
 matplotlib<3.1.2
 matplotlib-venn
