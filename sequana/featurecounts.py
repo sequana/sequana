@@ -28,7 +28,7 @@ def get_most_probable_strand(sample_folder, tolerance=0.10):
         res_dict["strand"] = "2"
     elif strandness > 1 - tolerance:
         res_dict["strand"] = "1"
-    elif 0.5 - tolerance < strandness or strandness > 0.5 + tolerance:
+    elif 0.5 - tolerance < strandness and strandness < 0.5 + tolerance:
         res_dict["strand"] = "0"
     else:
         raise IOError(
