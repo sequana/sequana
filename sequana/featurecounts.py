@@ -32,7 +32,7 @@ def get_most_probable_strand(sample_folder, tolerance=0.10):
         res_dict["strand"] = "0"
     else:
         raise IOError(
-            f"No strandness could be inferred from the count files for '{sample_name}' with a tolerance of {tolerance}"
+            f"No strandness could be inferred from the count files for '{sample_name}' with a tolerance of {tolerance}. Value of 'strandness': {strandness:.2f}"
         )
 
     df = pd.DataFrame(res_dict, index=[sample_name])
