@@ -30,9 +30,9 @@ def test_distance():
 
 def test_gc_content():
     from sequana.tools import gc_content
-    data = sequana_data('test.fasta', "testing")
-    gc_content(data, 10)['seq1']
-    gc_content(data, 101, circular=True)['seq1']
+    data = sequana_data('measles.fa', "testing")
+    gc_content(data, 10)['chr1']
+    gc_content(data, 101, circular=True)['chr1']
 
 
 def test_genbank_features_parser():
