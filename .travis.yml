@@ -61,6 +61,7 @@ install:
   - conda install --yes pysam samtools --no-deps
   - conda install --yes bedtools --no-deps
 
+  - pip instal pyopengl
   - pip install itolapi
   - pip install sklearn statsmodels
   - python setup.py install

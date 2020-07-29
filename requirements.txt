@@ -9,7 +9,7 @@ easydev>=0.9.36
 gseapy
 itolapi
 lxml
-matplotlib<3.1.2
+matplotlib
 matplotlib-venn
 mock
 multiqc
@@ -17,6 +17,7 @@ packaging
 pandas>=0.22
 psutil
 pykwalify>=1.6
+pyopengl
 pyVCF
 pysam
 ruamel.yaml
