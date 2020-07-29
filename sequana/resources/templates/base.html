@@ -33,7 +33,12 @@
       <h1 class="title">{{ module.title }}</h1>
       <h2 class="subtitle">
         Report created with <a href="http://sequana.readthedocs.org">Sequana</a>
-        ({{ config.version }}) 
+        (v{{ config.version }}) 
+
+{% if config.pipeline_version %} 
+and <a href="https://github.com/sequana/sequana_{{ config.pipeline_name}}">sequana_{{ config.pipeline_name  }}</a> (v{{ config.pipeline_version}})
+{% endif %}
+
       </h2>
     </header>
     {% block content %}{% endblock %}
