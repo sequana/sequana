@@ -1817,6 +1817,8 @@ def main(args=None):
     options = user_options.parse_args(args[1:])
 
     signal.signal(signal.SIGINT, sigint_handler)
+
+    #QtCore.QCoreApplication.setAttribute(QtCore.Qt.AA_ShareOpenGLContexts)
     app = QW.QApplication(sys.argv)
 
     filename = sequana_data("drawing.png", "../gui")
