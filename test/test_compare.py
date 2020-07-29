@@ -13,10 +13,9 @@ def test_rnadiff_volcano():
     c.plot_common_major_counts("up")
     c.plot_common_major_counts("all")
 
-    assert c.summary() == {'up1': 1295,
-         'up2': 56,
+    assert c.summary() == {"up1": 1295,   'up2': 56,
          'down1': 1325,
          'down2': 163,
-         'common_down': 112,
-         'common_up': 32}
+         'common_down_r1_r2': 112,
+         'common_up_r1_r2': 32}
 

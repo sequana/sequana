@@ -57,7 +57,7 @@ class RNADiffCompare(Compare):
 
     """
 
-    def __init__(self, r1, r2):
+    def __init__(self, r1, r2, r3=None):
 
         if isinstance(r1, RNADiffResults):
             self.r1 = r1
@@ -68,56 +68,66 @@ class RNADiffCompare(Compare):
             self.r2 = r2
         elif os.path.exists(r2):
             self.r2 = RNADiffResults(r2)
-        
+
+        if r3 is None:
+            self.r3 = None
+        elif isinstance(r3, RNADiffResults):
+            self.r3 = r3
+        elif os.path.exists(r3):
+            self.r3 = RNADiffResults(r3)
+
 
     def summary(self):
-        cond1, cond2 = self._get_cond1_cond2()
-        d1 = self.r1.dr_gene_lists[cond1]['down']
-        d2 = self.r2.dr_gene_lists[cond2]['down']
-        u1 = self.r1.dr_gene_lists[cond1]['up']
-        u2 = self.r2.dr_gene_lists[cond2]['up']
-
+        conditions = self._get_conditions()
+        d1 = self.r1.gene_lists['down']
+        d2 = self.r2.gene_lists['down']
+        u1 = self.r1.gene_lists['up']
+        u2 = self.r2.gene_lists['up']
         res = {
             "up1": len(u1), "up2": len(u2),
             "down1": len(d1), "down2": len(d2),
-            "common_down": len(set(d1).intersection(set(d2))),
-            "common_up": len(set(u1).intersection(set(u2)))
+            "common_down_r1_r2": len(set(d1).intersection(set(d2))),
+            "common_up_r1_r2": len(set(u1).intersection(set(u2)))
         }
+
+        if len(conditions) == 3:
+            d3 = self.r3.gene_lists['down']
+            u3 = self.r3.gene_lists['up']
+
+            res['up3'] = len(u3)
+            res['down3'] = len(d3)
+
+        
         return res
 
-    def _get_cond1_cond2(self, cond1=None, cond2=None):
-        k1 = self.r1.dr_gene_lists.keys()
-        k2 = self.r2.dr_gene_lists.keys()
-        if len(k1) == 1:
-            cond1 = list(k1)[0]
-        elif cond1: # try it 
-            self.r1.dr_gene_lists[cond1]
-        else: # pragma: no cover
-            raise KeyError("You must set the cond1 name amongst: {}".format(k1))
+    def _get_conditions(self, cond1=None, cond2=None):
 
-        if len(k2) == 1:
-            cond2 = list(k2)[0]
-        elif cond2: # try it 
-            self.r2.dr_gene_lists[cond2]
-        else:
-            raise KeyError("You must set the cond2 name amongst: {}".format(k2))
-        return cond1, cond2
+        cond1 = "_vs_".join(sorted(self.r1.condition_names))
+        cond2 = "_vs_".join(sorted(self.r2.condition_names))
+        try:
+            cond3 = "_vs_".join(sorted(self.r3.condition_names))
+            return cond1, cond2, cond3
+        except:
+            return cond1, cond2
 
-    def venn_down_only(self, cond1=None, cond2=None, labels=None, ax=None,
-            title="Down expressed genes"):
+    def venn_down_only(self, cond1=None, cond2=None, cond3=None, labels=None, ax=None,
+            title="Down expressed genes", mode="all"):
+        kargs = {}
+        kargs['title'] = title
+        kargs['labels'] = labels
+        kargs['cond1'] = cond1
+        kargs['cond2'] = cond2
+        kargs['cond3'] = cond3
+        kargs['ax'] = ax
+        kargs['data1'] = self.r1.gene_lists['down']
+        kargs['data2'] = self.r2.gene_lists['down']
+        if self.r3 and mode=="all":
+            kargs['data3'] =  self.r3.gene_lists['down']
+        self._venn(**kargs)
 
-        cond1, cond2 = self._get_cond1_cond2()
-        if labels is None:
-            labels = [cond1, cond2]
-        from sequana.viz.venn import plot_venn
-        plot_venn([
-                self.r1.dr_gene_lists[cond1]['down'],
-                self.r2.dr_gene_lists[cond2]['down']], 
-                labels=labels, ax=ax,
-                title=title)
 
-    def venn_up_only(self, cond1=None,cond2=None, labels=None,ax=None,
-         title="Up expressed genes"):
+    def venn_up_only(self, cond1=None,cond2=None, cond3=None, labels=None,ax=None,
+         title="Up expressed genes", mode="all"):
         """Venn diagram of cond1 from RNADiff result1 vs cond2 in RNADiff
         result 2
 
@@ -132,26 +142,53 @@ class RNADiffCompare(Compare):
                 sequana_data("rnadiff/rnadiff_onecond_2"))
             c.venn_up_only()
         """
-        cond1, cond2 = self._get_cond1_cond2()
-        if labels is None:
-            labels = [cond1, cond2]
+        kargs = {}
+        kargs['title'] = title
+        kargs['labels'] = labels
+        kargs['cond1'] = cond1
+        kargs['cond2'] = cond2
+        kargs['cond3'] = cond3
+        kargs['ax'] = ax
+        kargs['data1'] = self.r1.gene_lists['up']
+        kargs['data2'] = self.r2.gene_lists['up']
+        if self.r3 and mode=="all":
+            kargs['data3'] =  self.r3.gene_lists['up']
+        self._venn(**kargs)
+
+    def _venn(self, data1, data2, data3=None, cond1=None, cond2=None, cond3=None, labels=None,
+        ax=None, title="expressed genes"):
+
         from sequana.viz.venn import plot_venn
-        plot_venn([
-                self.r1.dr_gene_lists[cond1]['up'],
-                self.r2.dr_gene_lists[cond2]['up']], 
+        if data3 is None:
+            # if mode is two_only, this returns 3 conditions
+            #cond1, cond2 = self._get_conditions()
+            if labels is None:
+                labels = [cond1, cond2]
+            plot_venn([data1, data2],
+                labels=labels, ax=ax, title=title)
+        else:
+            cond1, cond2, cond3 = self._get_conditions()
+            if labels is None:
+                labels = [cond1, cond2, cond3]
+            plot_venn(
+                [data1, data2, data3],
                 labels=labels, ax=ax, title=title)
 
-    def venn_all(self, cond1=None, cond2=None, labels=None, ax=None, 
-        title="all expressed genes"):
-        cond1, cond2 = self._get_cond1_cond2()
-        if labels is None:
-            labels = [cond1, cond2]
-        from sequana.viz.venn import plot_venn
-        plot_venn([
-                self.r1.dr_gene_lists[cond1]['all'],
-                self.r2.dr_gene_lists[cond2]['all']], 
-                labels=labels, ax=ax, title=title)
+    def venn_all(self, cond1=None, cond2=None, cond3=None, labels=None, ax=None,
+        title="all expressed genes", mode="all"):
 
+        kargs = {}
+        kargs['title'] = title
+        kargs['labels'] = labels
+        kargs['cond1'] = cond1
+        kargs['cond2'] = cond2
+        kargs['cond3'] = cond3
+        kargs['ax'] = ax
+        kargs['data1'] = self.r1.gene_lists['all']
+        kargs['data2'] = self.r2.gene_lists['all']
+        if self.r3 and mode=="all":
+            kargs['data3'] =  self.r3.gene_lists['all']
+        self._venn(**kargs)
 
     def plot_common_major_counts(self, mode, labels=None,
             switch_up_down_cond2=False, add_venn=True, xmax=None, 
@@ -172,18 +209,18 @@ class RNADiffCompare(Compare):
                 sequana_data("rnadiff/rnadiff_onecond_2"))
             c.plot_common_major_counts("down")
         """
-        cond1, cond2 = self._get_cond1_cond2()
+        #cond1, cond2 = self._get_cond1_cond2()
         if labels is None:
-            labels = [cond1, cond2]
+            labels = ['r1', 'r2']
 
         if mode in ["down"]:
             # Negative values !
-            A = self.r1.df.loc[self.r1.dr_gene_lists[cond1][mode]].sort_values(by=sortby)
-            B = self.r2.df.loc[self.r2.dr_gene_lists[cond2][mode]].sort_values(by=sortby)
+            A = self.r1.df.loc[self.r1.gene_lists[mode]].sort_values(by=sortby)
+            B = self.r2.df.loc[self.r2.gene_lists[mode]].sort_values(by=sortby)
         else:
-            A = self.r1.df.loc[self.r1.dr_gene_lists[cond1][mode]].sort_values(
+            A = self.r1.df.loc[self.r1.gene_lists[mode]].sort_values(
                 by=sortby, ascending=False)
-            B = self.r2.df.loc[self.r2.dr_gene_lists[cond2][mode]].sort_values(
+            B = self.r2.df.loc[self.r2.gene_lists[mode]].sort_values(
                 by=sortby, ascending=False)
         # sometimes, up and down may be inverted as compared to the other
         # conditions
@@ -224,11 +261,14 @@ class RNADiffCompare(Compare):
             f = pylab.gcf()
             ax = f.add_axes([0.5,0.5,0.35,0.35], facecolor="grey")
             if mode=="down":
-                self.venn_down_only(ax=ax, title=None, labels=labels)
+                self.venn_down_only(ax=ax, title=None, labels=labels,
+                    mode="two_only")
             elif mode=="up":
-                self.venn_up_only(ax=ax, title=None, labels=labels)
+                self.venn_up_only(ax=ax, title=None, labels=labels,
+                    mode="two_only")
             elif mode=="all":
-                self.venn_all(ax=ax, title=None, labels=labels)
+                self.venn_all(ax=ax, title=None, labels=labels,
+                    mode="two_only")
 
 
     def plot_volcano(self, labels=None):
@@ -245,11 +285,14 @@ class RNADiffCompare(Compare):
                 sequana_data("rnadiff/rnadiff_onecond_2"))
             c.plot_volcano()
         """
-        cond1, cond2 = self._get_cond1_cond2()
+        #cond1, cond2 = self._get_cond1_cond2()
+        cond1, cond2 = "cond1", "cond2"
         if labels is None:
+            #labels = [cond1, cond2]
             labels = [cond1, cond2]
-        A = self.r1.df.loc[self.r1.dr_gene_lists[cond1]["all"]]
-        B = self.r2.df.loc[self.r2.dr_gene_lists[cond2]["all"]]
+
+        A = self.r1.df.loc[self.r1.gene_lists["all"]]
+        B = self.r2.df.loc[self.r2.gene_lists["all"]]
 
         if cond1 == cond2:
             cond1 += "(1)"
@@ -257,9 +300,11 @@ class RNADiffCompare(Compare):
 
         pylab.clf()
         pylab.plot(A.log2FoldChange, -np.log10(A.padj), marker="o",
-            alpha=0.5, color="r", lw=0, label=labels[0], picker=4)
+            alpha=0.5, color="r", lw=0, label=labels[0], pickradius=4,
+            picker=True)
         pylab.plot(B.log2FoldChange, -np.log10(B.padj), marker="x",
-            alpha=0.5, color="k", lw=0, label=labels[1], picker=4)
+            alpha=0.5, color="k", lw=0, label=labels[1], pickradius=4,
+            picker=True)
 
         genes = list(A.index) + list(B.index)
         pylab.grid(True)
