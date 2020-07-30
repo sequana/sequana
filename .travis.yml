@@ -35,8 +35,9 @@ install:
 
   #- conda install --yes --file requirements.txt
   # to install specific version of multiqc, we install packages manually
-  - conda install --yes matplotlib qtconsole atropos bioservices pandas samtools
+  - conda install --yes matplotlib qtconsole atropos pandas samtools
   - conda install --yes xlrd scipy pyVCF 
+  - pip install bioservices>=1.7.7
 
   # FIXME
   # for bioservices. should be fixed in bioconda itself I suspect
