@@ -209,7 +209,7 @@ can install **sequana** from source::
 
     conda create --name sequana python=3.7.3
     source activate sequana
-    git clone git@github.com:sequana/sequana.git
+    git clone git@https://github.com:sequana/sequana.git
     cd sequana
     python setup.py install
 
