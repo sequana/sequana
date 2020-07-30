@@ -4,15 +4,20 @@ Changelog
 .. contents::
     :depth: 2
 
-0.8.7
+0.9.0
 -----
 
+
+* Fix requirements (missing stattmodels)
 * Fix bug kraken sequential when no reads are classified
 * Fix FileFactory to make it much faster (speed up pipeline initialisation). This should also fix a recurrent issue with read tag (see https://github.com/sequana/sequana/issues/526
-
 * NEWS:
 
-    * implement  go term enrichment
+    * implemented rnadiff module
+    * implemented go term enrichment
+    * implemented feature counts 
+    * implemented plot.viz.venn
+    * implemented compare module (for rnadiff comparison)
 
 
 0.8.6
