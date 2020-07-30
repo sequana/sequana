@@ -25,5 +25,6 @@ qtconsole
 snakemake
 scikit-learn
 scipy
+statsmodels
 xlrd
 xml2dict
