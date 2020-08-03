@@ -113,13 +113,15 @@ class StatsFile(object):
             pylab.bar(range(L,L+1), under, color=color, label="undetermined")
             pylab.xticks([])
             pylab.ylabel("Number of reads")
-            try:pylab.legend(loc="best")
+            try:pylab.legend(loc="lower left")
             except:pass
             pylab.title("Lane {}".format(lane))
             pylab.savefig(filename.format(lane), dpi=200)
 
     def barplot_per_sample(self, alpha=0.5, width=0.8, filename=None):
         df = self.get_data_reads()
+
+        # this is ugly but will do the job for now
         under = df.query("name=='Undetermined'")
         others = df.query("name!='Undetermined'")
 
@@ -130,8 +132,16 @@ class StatsFile(object):
         others = others[["name", "count"]].set_index("name")
 
 
-        all_data = pd.concat([others, under]).sort_values("name", ascending=False)
+        all_data = others.sort_index(ascending=False)
         all_data.columns = ["samples"]
+
+        # appended at the end
+        all_data.loc['undetermined']  = 0
+
+        # revert back 
+        all_data = all_data.loc[::-1]
+
+        # just for legend
         under.columns = ['undetermined']
         if all_data.sum().min() > 1e6:
             all_data /= 1e6
@@ -141,10 +151,11 @@ class StatsFile(object):
             M = False
 
         all_data.plot(kind="barh",alpha=alpha, zorder=1, width=width, ec='k')
+
         under.plot(kind="barh", alpha=alpha, color="red", ax=pylab.gca(),
             zorder=1, width=width, ec='k')
-        pylab.ylim([-0.5, len(all_data)+0.5])
-        if len(all_data)<100:
+        pylab.ylim([-0.5, len(all_data) + 0.5])
+        if len(all_data) < 100:
             pylab.yticks(range(len(all_data)), all_data.index)
 
         pylab.legend()
@@ -160,7 +171,7 @@ class StatsFile(object):
         if filename:
             pylab.savefig(filename, dpi=200)
 
-    def barplot_summary(self, filename=None, color=["green", "red"], 
+    def barplot_summary(self, filename=None, color=["green", "red"],
             alpha=0.8):
 
         df = self.get_data_reads()
@@ -210,7 +221,7 @@ class StatsFile(object):
         pylab.ylabel("")
         pylab.grid(True)
         pylab.legend(["Lane {}".format(x) for x in range(1, len(df.columns)+1)],
-            loc="lower left")
+            loc="lower right")
         try:
             pylab.tight_layout()
         except Exception as err:
