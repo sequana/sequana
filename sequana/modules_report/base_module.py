@@ -187,12 +187,12 @@ class SequanaBaseModule(object):
         html = HTMLTable(dataframe)
         return html.to_html(**kwargs)
 
-    def include_svg_image(self, filename):
+    def include_svg_image(self, filename, alt="undefined"):
         """ Include SVG image in the html.
         """
         html = ('<object data="{0}" type="image/svg+xml">\n'
-                '<img src="{0}"></object>')
-        return html.format(filename)
+                '<img src="{0}" alt={1}></object>')
+        return html.format(filename, alt)
 
     def png_to_embedded_png(self, png, style=None, alt="", title=""):
         """ Include a PNG file as embedded file.
@@ -201,9 +201,9 @@ class SequanaBaseModule(object):
         with open(png, 'rb') as fp:
             png = base64.b64encode(fp.read()).decode()
         if style:
-            html = '<img style="{0}" alt="{1}", title="{2}"'.format(style, alt, title)
+            html = '<img style="{0}" alt="{1}" title="{2}"'.format(style, alt, title)
         else:
-            html = '<img alt="{}", title="{}"'.format(alt, title)
+            html = '<img alt="{}" title="{}"'.format(alt, title)
         return '{0} src="data:image/png;base64,{1}">'.format(html, png)
 
     def create_embedded_png(self, plot_function, input_arg, style=None,

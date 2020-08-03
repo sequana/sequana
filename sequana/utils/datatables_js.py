@@ -389,7 +389,7 @@ class DataTable(object):
             header += [th.format(name) for name in self.df]
         else:
             header = [th.format(name) for name in self.df]
-        header = '<thead>{0}</thead>'.format("\n".join(header))
+        header = '<thead><tr>{0}</tr></thead>'.format("\n".join(header))
         html_table = """
     {0}
         {1}

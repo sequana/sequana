@@ -211,7 +211,7 @@ class SummaryModule(SummaryBase):
         configfile = self.copy_file(self.json['config'], './inputs')
         # move the SVG file in the images directory
         img = self.copy_file(self.json['rulegraph'], './images')
-        dag_svg = self.include_svg_image(img)
+        dag_svg = self.include_svg_image(img, alt='rulegraph')
         with open(self.json['snakefile'], 'r') as fp:
             code = self.add_code_section(fp.read(), 'python')
         sf = self.create_hide_section('Sf', "Show/hide Snakemake file", code,
@@ -276,7 +276,7 @@ class SummaryModule2(SummaryBase):
 
     def workflow(self):
         img = self.json['rulegraph']
-        dag_svg = self.include_svg_image(img)
+        dag_svg = self.include_svg_image(img, alt="workflow")
         snakefile =  ".sequana/{}.rules".format(self.name)
 
         try:
