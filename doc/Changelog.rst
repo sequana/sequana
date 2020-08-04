@@ -4,6 +4,11 @@ Changelog
 .. contents::
     :depth: 2
 
+0.9.1
+-----
+* Fix html syntax in the templates
+* Fix demultiplex.barplot_samples layout
+
 0.9.0
 -----
 
