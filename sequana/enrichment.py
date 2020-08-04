@@ -135,6 +135,12 @@ class PantherEnrichment():
         self.mygenes_down = list(self.mygenes_down.sort_values('padj').index)
         self.mygenes_up = list(self.mygenes_up.sort_values('padj').index)
 
+        # When using ENSEMBL, prefix "gene:"  should be removed to be understood
+        # by PantherDB
+        self.mygenes = [x.replace("gene:", "") for x in self.mygenes]
+        self.mygenes_down = [x.replace("gene:", "") for x in self.mygenes_down]
+        self.mygenes_up = [x.replace("gene:", "") for x in self.mygenes_up]
+
         logger.info("Kept {} genes ({} up; {} down)".format(
             len(self.mygenes),
             len(self.mygenes_down),
@@ -453,9 +459,12 @@ class PantherEnrichment():
         ax2 = pylab.colorbar(shrink=0.5); 
         ax2.ax.set_ylabel('FDR')
 
+        
+
         labels = [x if len(x)<50 else x[0:47]+"..." for x in list(subdf.label)]
         ticks = ["{} ({}) {}".format(ID,level, "; " + label.title()) 
             for level, ID, label in zip(subdf['level'], subdf.id, labels)]
+
         pylab.yticks(range(N), ticks, fontsize=fontsize,ha='left')
 
         yax = pylab.gca().get_yaxis()
@@ -503,7 +512,11 @@ class PantherEnrichment():
         s2 = pylab.scatter([],[], s=m2, marker='o', color='#555555', ec="k")
         s3 = pylab.scatter([],[], s=m3, marker='o', color='#555555', ec="k")
 
-        if len(subdf) <20:
+        if len(subdf) <10:
+            labelspacing=1.5 * 4
+            borderpad=4
+            handletextpad=2
+        elif len(subdf) <20:
             labelspacing=1.5 * 2
             borderpad=1
             handletextpad=2
@@ -512,15 +525,26 @@ class PantherEnrichment():
             borderpad=2
             handletextpad=2
 
-        leg = pylab.legend((s1,s2,s3),
-            (str(int(min_size)), str(int(min_size + (max_size-min_size)/2)),str(int(max_size))),
-            scatterpoints=1,
-            loc='lower right',
-            ncol=1,
-            frameon=True, title="gene-set size",
-            labelspacing=labelspacing, borderpad=borderpad, 
-             handletextpad=handletextpad,
-            fontsize=8)
+        if len(subdf)>=3:
+            leg = pylab.legend((s1,s2,s3),
+                (str(int(min_size)), str(int(min_size + (max_size-min_size)/2)),str(int(max_size))),
+                scatterpoints=1,
+                loc='lower right',
+                ncol=1,
+                frameon=True, title="gene-set size",
+                labelspacing=labelspacing, borderpad=borderpad, 
+                 handletextpad=handletextpad,
+                fontsize=8)
+        else:
+            leg = pylab.legend((s1, ),
+                (str(int(min_size)), ),
+                scatterpoints=1,
+                loc='lower right',
+                ncol=1,
+                frameon=True, title="gene-set size",
+                labelspacing=labelspacing, borderpad=borderpad, 
+                 handletextpad=handletextpad,
+                fontsize=8)
 
         frame = leg.get_frame()
         frame.set_facecolor('#b4aeae')
@@ -685,6 +709,7 @@ class KeggPathwayEnrichment():
             res =  self.pathways[ID]
             if "GENE" in res.keys():
                 results = [res['GENE'][g].split(';')[0] for g in res['GENE'].keys()]
+                
                 self.gene_sets[ID] = results
             else:
                 print("SKIPPED (no genes) {}: {}".format(ID, res['NAME']))
