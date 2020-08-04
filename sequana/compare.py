@@ -63,11 +63,15 @@ class RNADiffCompare(Compare):
             self.r1 = r1
         elif os.path.exists(r1):
             self.r1 = RNADiffResults(r1)
+        else:
+            raise NotImplementedError
 
         if isinstance(r2, RNADiffResults):
             self.r2 = r2
         elif os.path.exists(r2):
             self.r2 = RNADiffResults(r2)
+        else:
+            raise NotImplementedError
 
         if r3 is None:
             self.r3 = None
@@ -75,6 +79,8 @@ class RNADiffCompare(Compare):
             self.r3 = r3
         elif os.path.exists(r3):
             self.r3 = RNADiffResults(r3)
+        else:
+            raise NotImplementedError
 
 
     def summary(self):
