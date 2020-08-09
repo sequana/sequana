@@ -8,6 +8,8 @@ Changelog
 -----
 * Fix html syntax in the templates
 * Fix demultiplex.barplot_samples layout
+* Created a sequana main script with currentl one command, fastq, which replaces
+  sequana_fastq_head, sequana_fastq_count, etc
 
 0.9.0
 -----
