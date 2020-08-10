@@ -76,7 +76,7 @@ class SnakemakeDialog(QW.QDialog):
             snakemake_version = StrictVersion(snakemake.__version__)
         for name, widget in zip(names, widgets):
             # This option is valid for snakemake above 3.10
-            if name == "restart-times" and snakemake_version < StrictVersion("3.10"):
+            if name == "restart-times" and snakemake_version < StrictVersion("3.10"): #prgma: no cover
                 print("You should use Snakemake 3.10 or above")
                 continue
             options.append(SOptions(name, widget))
@@ -163,7 +163,7 @@ class SnakemakeDialog(QW.QDialog):
                 value = widget.value()
             elif isinstance(widget, FileBrowser):
                 value = widget.get_filenames()
-            else:
+            else: #pragma: no cover
                 raise NotImplementedError("for developers")
             items[name] = value
         items["tab_position"] = self.ui.tabs.currentIndex()
@@ -199,7 +199,7 @@ class SOptions(object):
         else:
             try:
                 value = self.widget.text()
-            except:
+            except: #pragma: no cover
                 print("unknown widget" + str(type(self.widget)))
                 value = ""
         return value
