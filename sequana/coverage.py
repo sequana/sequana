@@ -210,26 +210,25 @@ class Coverage(object):
         return np.log(-1/(-M))
 
     def get_mean_number_contigs(self):
-        r"""Expected number of contigs
-
+        """Expected number of contigs
 
         A binomial distribution with parameters :math:`N` and :math:`p`
 
-        .. math:: (aG/L) \exp^{-a}
+        .. math:: \frac{aG}{L}) \exp^{-a}
 
         """
         return self.G/float(self.L) * self.a * math.exp(-self.a)
 
     def get_mean_contig_length(self):
-        r"""Expected length of the contigs
+        """Expected length of the contigs
 
-        .. math:: \frac{e^a-1)L}{a}
+        .. math:: \\frac{e^a-1)L}{a}
 
         """
         return (math.exp(self.a) - 1) * self.L / self.a
 
     def get_mean_reads_per_contig(self):
-        """Expected number of reads per contig
+        r"""Expected number of reads per contig
 
         Number of reads divided by expected number of contigs:
 
