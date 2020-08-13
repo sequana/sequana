@@ -36,17 +36,17 @@ except:
 __all__ = ["PantherEnrichment", "KeggPathwayEnrichment"]
 
 
-class PantherEnrichment():  
+class PantherEnrichment():
     """
 
-        # This will read your rnadiff results and tstore the rlevants genes into 
+        # This will read your rnadiff results and tstore the rlevants genes into
         # mygenes_u, mygenes_down, mygenes attributes.
 
         By default, we keep only the genes with a adjusted pvalue <= 0.05. The
         fold_change threshold is on a log2 scale and set to 0 (meaning no
         filtering). Only one value is requested and
         used to filter out positive and negative fold change (on the log2
-        scale). In other word, a log2 fold change threshold of 2 means that we 
+        scale). In other word, a log2 fold change threshold of 2 means that we
         filter out values between -2 and 2.
 
         If you prefer to work in natural scale, just set the parameter
@@ -146,8 +146,8 @@ class PantherEnrichment():
             len(self.mygenes_down),
             len(self.mygenes_up)))
 
-    def compute_enrichment(self, mygenes, taxid, ontologies=None, 
-            enrichment_test="FISHER", correction="FDR"):
+    def compute_enrichment(self, mygenes, taxid, ontologies=None,
+            enrichment_test="FISHER", correction="FDR", progress=True):
         #taxid=83333 # ecoli
         """
         :param enrichment_test: Fisher or Binomial
@@ -155,15 +155,15 @@ class PantherEnrichment():
 
         The field **number_in_reference** indicates from the reference, the number
         of genes that have a given ontolgy term. For instance, 998 genes have
-        the term. This is stored in **number_in_reference**. If the reference 
+        the term. This is stored in **number_in_reference**. If the reference
         contains 4391 genes, and you provided 49
         genes , the **expected** number of genes that have this ontology term is
-        49*998/4391 that is 11.1369, which is stored in **"expected**. 
+        49*998/4391 that is 11.1369, which is stored in **"expected**.
 
         Now, if you actually find that 14 out of 49
         genes have the term, you need to compare the numbers 11.1369 and 14. Are
         they really different ? The ratio 14 / 11.1369 is stored in
-        **fold_enrichment**. The pvalue and FDR are stored as well. 
+        **fold_enrichment**. The pvalue and FDR are stored as well.
 
 
         Some genes may be missing If you provide 50 genes, you may end up with
@@ -258,21 +258,21 @@ class PantherEnrichment():
         goids = defaultdict(list)
         for x in info:
             name = x['persistent_id']
-            if "annotation_type_list" in x.keys(): 
-                data = x["annotation_type_list"]["annotation_data_type"] 
-                for annot in data: 
+            if "annotation_type_list" in x.keys():
+                data = x["annotation_type_list"]["annotation_data_type"]
+                for annot in data:
                     if 'content' not in annot:
                         print(x, annot)
                     print(annot['content'])
-                    if annot["content"] in annotation_list: 
-                        if "annotation" in annot['annotation_list']: 
-                            subdata = annot["annotation_list"]["annotation"] 
- 
-                            if isinstance(subdata,dict): 
-                                goids[name].append(subdata["id"]) 
-                            else: 
-                                for item in subdata: 
-                                    goids[name].append(item["id"]) 
+                    if annot["content"] in annotation_list:
+                        if "annotation" in annot['annotation_list']:
+                            subdata = annot["annotation_list"]["annotation"]
+
+                            if isinstance(subdata,dict):
+                                goids[name].append(subdata["id"])
+                            else:
+                                for item in subdata:
+                                    goids[name].append(item["id"])
         return goids
 
     def __get_names(self, mapping_results): #pragma: no cover
@@ -298,7 +298,7 @@ class PantherEnrichment():
     def plot_piechart(self, df):
         # Here we show the GO terms that have number in list > 0
         # Note, that this is dangerous to look only at this picture without
-        # the reference plot, which data is not available thourg the pathner API 
+        # the reference plot, which data is not available thourg the pathner API
         labels = []
         for this in df.query("number_in_list!=0").label.values:
             if len(this)>50:
@@ -351,7 +351,7 @@ class PantherEnrichment():
         df["abs_log2_fold_enrichment"] = abs(pylab.log2(df['fold_enrichment']))
 
         # Some user may want to include GO terms with fold enrichment
-        # significanyly below 1 or not. 
+        # significanyly below 1 or not.
         if include_negative_enrichment is False:
             df = df.query("fold_enrichment>=1").copy()
             logger.info("Found {} GO terms after keeping only positive enrichment".format(len(df)))
@@ -367,10 +367,10 @@ class PantherEnrichment():
         log=False,
         fontsize=8, minimum_genes=0, pvalue=0.05,
         cmap="summer_r",
-        sort_by="fold_enrichment", 
+        sort_by="fold_enrichment",
         show_pvalues=False,
-        include_negative_enrichment=False, 
-        fdr_threshold=0.05, compute_levels=True):
+        include_negative_enrichment=False,
+        fdr_threshold=0.05, compute_levels=True, progress=True):
 
         assert sort_by in ['pValue', 'fold_enrichment', 'fdr']
 
@@ -413,7 +413,7 @@ class PantherEnrichment():
         # We get all levels for each go id.
         # They are stored by MF, CC or BP
         if compute_levels:
-            paths = self.get_graph(list(subdf['id'].values))
+            paths = self.get_graph(list(subdf['id'].values), progress=progress)
             levels = []
             keys = list(paths.keys())
             goid_levels = paths[keys[0]]
@@ -438,9 +438,9 @@ class PantherEnrichment():
         if log:
             pylab.scatter(pylab.log2(subdf.fold_enrichment), range(len(subdf)),
                 c=subdf.fdr,
-                s=sizes, 
+                s=sizes,
                 cmap=cmap,
-                alpha=0.8, 
+                alpha=0.8,
                 ec="k",
                 vmin=0, vmax=fdr_threshold, zorder=10)
             #pylab.barh(range(N), pylab.log2(subdf.fold_enrichment), color="r",
@@ -449,20 +449,20 @@ class PantherEnrichment():
             #pylab.axvline(-1, color="gray", ls="--")
         else:
              pylab.scatter(subdf.fold_enrichment, range(len(subdf)),
-                c=subdf.fdr, cmap=cmap, 
-                s=sizes, 
-                ec="k",alpha=.8, 
+                c=subdf.fdr, cmap=cmap,
+                s=sizes,
+                ec="k",alpha=.8,
                 vmin=0, vmax=fdr_threshold, zorder=10)
             #    pylab.barh(range(N), subdf.fold_enrichment, color="r",
             #    label="not significant")
         pylab.grid(zorder=-10)
-        ax2 = pylab.colorbar(shrink=0.5); 
+        ax2 = pylab.colorbar(shrink=0.5);
         ax2.ax.set_ylabel('FDR')
 
-        
+
 
         labels = [x if len(x)<50 else x[0:47]+"..." for x in list(subdf.label)]
-        ticks = ["{} ({}) {}".format(ID,level, "; " + label.title()) 
+        ticks = ["{} ({}) {}".format(ID,level, "; " + label.title())
             for level, ID, label in zip(subdf['level'], subdf.id, labels)]
 
         pylab.yticks(range(N), ticks, fontsize=fontsize,ha='left')
@@ -479,8 +479,8 @@ class PantherEnrichment():
         fc_max = subdf.fold_enrichment.max(skipna=True)
         fc_min = subdf.fold_enrichment.min(skipna=True)
         # go into log2 space
-        fc_max = pylab.log2(fc_max) 
-        fc_min = pylab.log2(fc_min) 
+        fc_max = pylab.log2(fc_max)
+        fc_min = pylab.log2(fc_min)
         abs_max = max(fc_max, abs(fc_min), 1)
 
         if log:
@@ -532,7 +532,7 @@ class PantherEnrichment():
                 loc='lower right',
                 ncol=1,
                 frameon=True, title="gene-set size",
-                labelspacing=labelspacing, borderpad=borderpad, 
+                labelspacing=labelspacing, borderpad=borderpad,
                  handletextpad=handletextpad,
                 fontsize=8)
         else:
@@ -542,7 +542,7 @@ class PantherEnrichment():
                 loc='lower right',
                 ncol=1,
                 frameon=True, title="gene-set size",
-                labelspacing=labelspacing, borderpad=borderpad, 
+                labelspacing=labelspacing, borderpad=borderpad,
                  handletextpad=handletextpad,
                 fontsize=8)
 
@@ -555,7 +555,7 @@ class PantherEnrichment():
         self.df = df
         return df
 
-    def get_graph(self, go_ids, ontologies=None):
+    def get_graph(self, go_ids, ontologies=None, progress=True):
         # Here we filter the data to keep only the relevant go terms as shown in
         # panther pie chart
         import networkx as nx
@@ -579,7 +579,7 @@ class PantherEnrichment():
         for i, go_id in enumerate(go_ids):
 
             # Some go terms maybe obsolet or renamed. Looking at other functions
-            # may not work simply because the ID has changed. 
+            # may not work simply because the ID has changed.
             info = self.quickgo.get_go_terms(go_id)
             annotations[go_id] = info
 
@@ -610,10 +610,11 @@ class PantherEnrichment():
                 if len(edges["results"])>=1:
                     for path in edges["results"]:
                         for edge in path:
-                            gg.add_edge(edge['child'], edge["parent"]) 
+                            gg.add_edge(edge['child'], edge["parent"])
                 else:
                     print(_id, edges["results"])
-            pb.animate(i+1)
+            if progress is True:
+                pb.animate(i+1)
 
         self.obsolets = obsolets
         self.annotations = annotations
@@ -671,24 +672,71 @@ class KeggPathwayEnrichment():
         up.to_csv("kegg_pathway_up_regulated.csv")
         down.to_csv("kegg_pathway_down_regulated.csv")
 
+    # transparent for ecoli. Set the organism to eco
+    # For mus musculus, you will need convert the Gene Input IDs into
+    # kegg identifiers so as to compare them.
+    from bioservices import BioMart
+    b = BioMart()
+    datasets = b.get_datasets("ENSEMBL_MART_ENSEMBL")
+    [x for x in datasets if 'mus' in x]
+    -> one of interest is obviously mmusculus_gene_ensembl
+    attributes = b.attributes(dataset='mmusculus_gene_ensembl')
+    filters = b.filters(dataset='mmusculus_gene_ensembl')
+
+    b.new_query()
+    b.add_dataset_to_xml('mmusculus_gene_ensembl')
+    b.add_attribute_to_xml('ensembl_gene_id')
+    b.add_attribute_to_xml('go_id')
+    b.add_attribute_to_xml('entrezgene_id')
+    b.add_attribute_to_xml('mgi_id')
+    b.add_attribute_to_xml('external_gene_name')
+    xml = b.get_xml()
+    res = b.query(xml)
+    import pandas as pd
+    df.columns=['ensembl','go', 'entrez', 'mgi', 'name'] 
+    df = df.set_index('ensembl')
+    # name should be the name used by kegg
+
     """
-    def __init__(self, folder, organism, alpha=0.05, log2_fc=0):
+    def __init__(self, folder, organism, alpha=0.05, log2_fc=0, progress=True,
+            mapper=None, background=None):
+
+
         print("DRAFT in progress")
         from bioservices import KEGG
         self.kegg = KEGG(cache=True)
         self.kegg.organism = organism
 
         self.rnadiff = RNADiffResults(folder ,alpha=alpha, log2_fc=log2_fc)
+        # some clean up
+        if "ID" in self.rnadiff.df.columns:
+            self.rnadiff.df['ID'] = [x.replace("gene:", "") for x in self.rnadiff.df['ID']]
+        self.rnadiff.df.index = [x.replace("gene:", "") for x in self.rnadiff.df.index]
+        for key, values in self.rnadiff.gene_lists.items():
+            self.rnadiff.gene_lists[key] = [x.replace("gene:", "") for x in values]
+
+        self.rnadiff.df.index = [x.replace("gene:", "") for x in self.rnadiff.df.index]
+
         choices = list(self.rnadiff.gene_lists.keys())
 
-        self.background = len(self.kegg.list(self.kegg.organism).split("\n"))
+        if background:
+            self.background = background
+        else:
+            self.background = len(self.kegg.list(self.kegg.organism).split("\n"))
         logger.info("Set number of genes to {}".format(self.background))
 
-        self._load_pathways()
-        self.compute_enrichment()
+        self._load_pathways(progress=progress)
+
+        self.mapper = mapper
+
+        try:
+            self.compute_enrichment()
+        except Exception:
+            logger.critical("An error occured while computing enrichments")
+            pass
 
 
-    def _load_pathways(self):
+    def _load_pathways(self, progress=True):
         # This is just loading all pathways once for all
         logger.info("loading all pathways from KEGG. may take time the first time")
         self.pathways = {}
@@ -696,7 +744,8 @@ class KeggPathwayEnrichment():
         pb = Progress(len(self.kegg.pathwayIds))
         for i, ID in enumerate(self.kegg.pathwayIds):
             self.pathways[ID.replace("path:", "")] = self.kegg.parse(self.kegg.get(ID))
-            pb.animate(i+1)
+            if progress:
+                pb.animate(i+1)
 
         # Some cleanup
         for ID in self.pathways.keys():
@@ -708,8 +757,16 @@ class KeggPathwayEnrichment():
         for ID in self.pathways.keys():
             res =  self.pathways[ID]
             if "GENE" in res.keys():
-                results = [res['GENE'][g].split(';')[0] for g in res['GENE'].keys()]
-                
+                results = []
+                # some pathways reports genes as a dictionary id:'gene name; description' ('.eg. eco')
+                # others reports genes as a dictionary id:'description'
+                for geneID, description in res['GENE'].items():
+                    if ";" in description:
+                        name = description.split(';')[0]
+                    else:
+                        name = geneID
+                    results.append(name)
+
                 self.gene_sets[ID] = results
             else:
                 print("SKIPPED (no genes) {}: {}".format(ID, res['NAME']))
@@ -751,6 +808,13 @@ class KeggPathwayEnrichment():
         else:
             assert category in ['up', 'down', 'all']
             gene_list = list(self.rnadiff.gene_lists[category])
+
+        if self.mapper is not None:
+            logger.info("Input gene list of {} ids".format(len(gene_list)))
+            #gene_list = [x.replace("gene:", "") for x in gene_list]
+            identifiers = self.mapper.loc[gene_list]['name'].drop_duplicates().values
+            logger.info("Mapped gene list of {} ids".format(len(identifiers)))
+            gene_list = list(identifiers)
 
         enr = gseapy.enrichr(
             gene_list=gene_list,
@@ -797,9 +861,9 @@ class KeggPathwayEnrichment():
         df = self._get_final_df(enrich.results, cutoff=cutoff, nmax=nmax)
 
         pylab.clf()
-        pylab.scatter(-pylab.log10(df['Adjusted P-value']), range(len(df)), s=10*df['size'],    
+        pylab.scatter(-pylab.log10(df['Adjusted P-value']), range(len(df)), s=10*df['size'],
             c=df['size'])
- 
+
         pylab.xlabel("Odd ratio")
         pylab.ylabel("Gene sets")
         pylab.yticks(range(len(df)), df.name)
@@ -827,8 +891,8 @@ class KeggPathwayEnrichment():
 
     def _get_summary_pathway(self, pathway_ID):
         genes = self.df_pathways.loc[pathway_ID]['GENE']
-        df_down = self.rnadiff.df.query("padj<=0.05 and log2FoldChange<0")
-        df_up = self.rnadiff.df.query("padj<=0.05 and log2FoldChange>0")
+        df_down = self.rnadiff.df.query("padj<=0.05 and log2FoldChange<0").copy()
+        df_up = self.rnadiff.df.query("padj<=0.05 and log2FoldChange>0").copy()
 
         #f_down = self.rnadiff.dr_gene_lists[self.comparison]
 
@@ -839,7 +903,6 @@ class KeggPathwayEnrichment():
         for k,v in genes.items():
             mapper[v.split(";")[0]] = k
         self.genes = genes
-        self.mapper = mapper
         self.df_down = df_down
         self.df_up = df_up
         summary_names = []
@@ -847,6 +910,21 @@ class KeggPathwayEnrichment():
         summary_types = []
         summary_pvalues = []
         summary_fcs = []
+
+        if self.mapper is not None:
+            if 'Name' not in df_down.columns:
+                df_down['Name'] = df_down['ID']
+                Names = []
+                for index in df_down.index:
+                    Names.append(self.mapper.loc[index]['name'][0])
+                df_down['Name'] = Names
+            if 'Name' not in df_up.columns:
+                df_up['Name'] = df_up['ID']
+                Names = []
+                for index in df_up.index:
+                    Names.append(self.mapper.loc[index]['name'][0])
+                df_up['Name'] = Names
+
         for name, kegg_id in mapper.items():
             summary_names.append(name)
             summary_keggids.append(kegg_id)
@@ -876,7 +954,7 @@ class KeggPathwayEnrichment():
                     "keggid": summary_keggids
                     })
         summary['description'] = [self.pathways[pathway_ID]['GENE'][x] for x in summary.keggid]
-        return summary 
+        return summary
 
     def _get_colors(self, summary):
         colors = {}
@@ -945,7 +1023,8 @@ class KeggPathwayEnrichment():
             self.save_pathway(ID)
 
     def save_significant_pathways(self, mode, cutoff=0.05, nmax=20,
-        background=None):#pragma: no cover  
+        background=None ):#pragma: no cover
+        """mode should be up, down or all"""
 
         if background is None:
             background = self.background
@@ -970,7 +1049,7 @@ class KeggPathwayEnrichment():
     def find_pathways_by_gene(self, gene_name, match="exact"):
         """Returns pathways that contain the gene name
 
-        ke.find_pathways_by_gene("ysgA") 
+        ke.find_pathways_by_gene("ysgA")
         """
 
         #First let us find the kegg ID
