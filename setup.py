@@ -7,8 +7,8 @@ from setuptools import setup, find_packages
 import glob
 
 _MAJOR               = 0
-_MINOR               = 8
-_MICRO               = 3
+_MINOR               = 9
+_MICRO               = 1
 version              = '%d.%d.%d' % (_MAJOR, _MINOR, _MICRO)
 release              = '%d.%d' % (_MAJOR, _MINOR)
 
@@ -105,6 +105,7 @@ setup(
         'sequana.resources.data.adapters' : ['*'],
         'sequana.resources.images' : ['*'],
         'sequana.resources.testing' : ['*'],
+        'sequana.resources.testing.rnadiff' : ['*/tables/*'],
         'sequana.resources.busco' : ['*'],
         'sequana.multiqc' : ['*yaml'],
         },
@@ -119,11 +120,8 @@ setup(
            'sequanix=sequana.gui.sequana_gui:main',
            #'fastq_head=sequana.scripts.fastq_head:main',
            #'fastq_count=sequana.scripts.fastq_count:main',
-           'sequana_fastq_head=sequana.scripts.fastq_head:main',
-           'sequana_fastq_count=sequana.scripts.fastq_count:main',
-           'sequana_fastq_summary=sequana.scripts.fastq_summary:main',
            'sequana_lane_merging=sequana.scripts.lane_merging:main',
-           #'sequana=sequana.scripts.main:main',
+           'sequana=sequana.scripts.main:main',
            'sequana_taxonomy=sequana.scripts.taxonomy:main',
            'sequana_coverage=sequana.scripts.coverage:main',
            'sequana_summary=sequana.scripts.summary:main',

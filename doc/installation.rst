@@ -65,7 +65,8 @@ This will install the dependencies such as Pandas, Numpy, etc. It will take abou
         conda install -c anaconda qt pyqt>5
 
     Using pip may lead to compatibility issues with your underlying Qt library,
-    which must be available to install PyQt
+    which must be available to install PyQt. PyQt5, v5.9.2 is known to work.
+    v5.15.0 fails (PyQt5.QtWebEngineWidgets)
 
 bioconda installation
 -----------------------
@@ -86,7 +87,7 @@ Whatever is the installation method you choose, you can now install a specific p
 The dependencies of this pipeline must be dealt with by the developer or users.
 
 
-Other solutions (not always up-to-date)
+Other solutions (overview)
 ========================================
 
 #. Singularity (tested with version 2.4.2; see below for installation) . Strictly speaking, there is no compilation. This method is for testing and production. It downloads an image / container that is ready-to-use (here the latest available release)::
@@ -161,6 +162,14 @@ You should see::
     --add channels 'conda-forge'
     --add channels 'bioconda'   # highest priority
 
+As of May 2020, the recommended order is now::
+
+    conda config --add channels defaults
+    conda config --add channels bioconda
+    conda config --add channels conda-forge
+
+
+
 Create an environement
 -------------------------
 
@@ -196,7 +205,7 @@ If you do not want to use **conda**, we provide releases on the Python Package I
     pip install PyQt5
 
 
-.. warning:: we do not support this methods but it should work. The main
+.. warning:: we do not support this method but it should work. The main
     issues being that you will need to install the dependencies yourself. See
     hereafter for some of the tool used by the pipelines
 

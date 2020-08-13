@@ -33,9 +33,11 @@ logger.name = __name__
 
 
 __all__ = ["Colors", "InputOptions", "SnakemakeOptions", "SlurmOptions",
-    "PipelineManager", "GeneralOptions", "print_version", "CutadaptOptions",
+    "SequanaManager", "PipelineManager", "GeneralOptions", "print_version", "CutadaptOptions",
     "KrakenOptions", "init_pipeline", "sequana_epilog", "sequana_prolog"]
 
+
+deprecated = "This is a deprecated class {}. Please use sequana_pipetools instead of sequana.pipeline_common."
 
 class Colors:
     """
@@ -103,7 +105,7 @@ def guess_scheduler():
 
 class GeneralOptions():
     def __init__(self):
-        pass
+        print(deprecated.format("GeneralOptions"))
 
     def add_options(self, parser):
         parser.add_argument(
@@ -139,6 +141,7 @@ class InputOptions():
         If so, the add_input_readtag must be set
         """
         self.group_name = group_name
+        print(deprecated.format("InputOptions"))
         self.input_directory = input_directory
         self.input_pattern = input_pattern
         self.add_is_paired = add_is_paired
@@ -183,6 +186,7 @@ class InputOptions():
 
 class KrakenOptions():
     def __init__(self, group_name="section_kraken"):
+        print(deprecated.format("KrakenOptions"))
         self.group_name = group_name
 
     def add_options(self, parser):
@@ -228,6 +232,7 @@ class CutadaptOptions():
 
     def __init__(self, group_name="section_cutadapt"):
         self.group_name = group_name
+        print(deprecated.format("CutadaptOptions"))
 
     def add_options(self, parser):
 
@@ -349,6 +354,7 @@ class SnakemakeOptions():
     def __init__(self, group_name="snakemake", working_directory="analysis"):
         self.group_name = group_name
         self.workdir = working_directory
+        print(deprecated.format("SnakemakeOptions"))
 
     def _default_jobs(self):
         if guess_scheduler() == "slurm":
@@ -399,6 +405,7 @@ class SlurmOptions():
                     self.add_slurm_options()
 
         """
+        print(deprecated.format("SlurmOptions"))
         self.group_name = group_name
         self.memory = memory
         self.cores = cores
@@ -436,7 +443,7 @@ def init_pipeline(NAME):
     This is called even before parsing options
     """
     import sys
-
+    print("deprecated use the before_pipeline from sequana_pipetools")
     if "--version" in sys.argv:
         print_version(NAME)
         sys.exit(0)
@@ -498,11 +505,12 @@ def get_pipeline_location(pipeline_name):
     options = Opt()
     options.workdir = "."
     options.version = False
-    p = PipelineManager(options, pipeline_name)
+    p = SequanaManager(options, pipeline_name)
     return p._get_package_location()
 
 
-class PipelineManager():
+
+class SequanaManager():
     """
 
     """
@@ -543,10 +551,27 @@ class PipelineManager():
         self.module = Module(self.name)
         if self.module.is_pipeline() is False:
             raise ValueError("{} does not seem to be installed or is not a valid pipeline".format(self.name))
+        self.module.is_executable()
 
         # If this is a pipeline, let us load its config file
-        self.config = SequanaConfig(self.module.config)
+        # Do we start from an existing project with a valid config file ?
+        if "from_project" in dir(options) and options.from_project:
+            cfg_project_filename = None
+            if os.path.exists(options.from_project) and options.from_project.endswith("config.yaml"):
+                cfg_project_filename = options.from_project
+            elif ".sequana" in options.from_project:
+                if os.path.exists(options.from_project + "/config.yaml"):
+                    cfg_project_filename = options.from_project
+            elif os.path.exists(options.from_project + "/.sequana/config.yaml"):
+                cfg_project_filename = options.from_project + "/.sequana/config.yaml"
 
+            if cfg_project_filename is None:
+                raise IOError("Could not find config.yaml in the project specified {}".format(
+                    options.from_project))
+            logger.info("Reading existing config file {}".format(cfg_project_filename))
+            self.config = SequanaConfig(cfg_project_filename)
+        else:
+            self.config = SequanaConfig(self.module.config)
 
         # the working directory
         self.workdir = options.workdir
@@ -875,3 +900,8 @@ to analyse non-fastQ files (e.g. BAM)""")
                 logger.debug("update_config. Could not find {}".format(option_name))
 
 
+class PipelineManager(SequanaManager):
+    def __init__(self, options, name="undefined"):
+        super(PipelineManager, self).__init__(options, name=name)
+        print(deprecated.format("PipelineManager"))
+        print("Use SequanaManager instead")

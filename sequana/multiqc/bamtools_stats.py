@@ -80,6 +80,7 @@ class MultiqcModule(BaseMultiqcModule):
             Duplicates:        0    (0%)
             Paired-end reads:  0    (0%)
         """
+        # FIXME will fail if instead of 0.001% we have 1e-3%
         data = {}
         regexes = {
             'total_reads': r"Total reads:\s*(\d+)",
@@ -151,6 +152,10 @@ class MultiqcModule(BaseMultiqcModule):
         for name in self.sequana_data.keys():
             forward = self.sequana_data[name]["forward_strand_pct"]
             reverse = self.sequana_data[name]["reverse_strand_pct"]
+            if reverse is None:
+                reverse = 0
+            if forward is None:
+                forward = 0
             data[name] = {'fwd': forward, "rev":reverse}
 
         pconfig = {

@@ -11,6 +11,7 @@ skiptravis = pytest.mark.skipif("TRAVIS_PYTHON_VERSION" in os.environ,
 try:
     kd = KrakenDownload()
     kd.download('toydb')
+    kd.download('toydb2')
 except:
     pass
 
@@ -30,13 +31,14 @@ def test_run_kraken_taxon():
 @pytest.mark.xfail
 def test_kraken_sequential():
     database = sequana_config_path + os.sep + "kraken_toydb"
+    database2 = sequana_config_path + os.sep + "kraken2_dbs/toydb_nomasking"
     p = tempfile.TemporaryDirectory()
 
     file1 = sequana_data("Hm2_GTGAAA_L005_R1_001.fastq.gz", "data")
     file2 = sequana_data("Hm2_GTGAAA_L005_R2_001.fastq.gz", "data")
 
     # Test paired data with 2 kraken1 DB
-    kt = KrakenSequential([file1, file2], [database, database],
+    kt = KrakenSequential([file1, file2], [database, database2],
             output_directory=p.name, force=True)
     kt.run()
 
@@ -52,6 +54,7 @@ def test_kraken_results():
     test_file = sequana_data("test_kraken.out", "testing")
     k = KrakenResults(test_file)
     df = k.plot(kind='pie')
+    k.boxplot_classified_vs_read_length()
     print(df)
 
     df = k.plot(kind='barh')
@@ -65,6 +68,8 @@ def test_kraken_results():
         k.kraken_to_json(fout.name, "toydb")
         k.kraken_to_krona(fout.name )
         k.to_js(fout.name)
+    df = k.plot2(kind='pie')
+    
 
 @pytest.mark.xfail
 def test_kraken_pipeline():
@@ -82,4 +87,12 @@ def test_mkr():
     from sequana.kraken import MultiKrakenResults
     mkr = MultiKrakenResults([sequana_data("test_kraken_multiple_1.csv"),
             sequana_data('test_kraken_multiple_1.csv')])
-    mkr.plot_stacked_hist()           
+    mkr.plot_stacked_hist(kind="bar")           
+    mkr.plot_stacked_hist(kind="barh")           
+
+
+def test_mkr2():
+    from sequana.kraken import MultiKrakenResults2
+    mkr = MultiKrakenResults2([sequana_data("test_kraken_mkr2_summary_1.json"),
+            sequana_data('test_kraken_mkr2_summary_2.json')])
+    mkr.plot_stacked_hist()

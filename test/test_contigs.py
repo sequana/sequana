@@ -10,3 +10,12 @@ def test_all():
 
     c.hist_plot_contig_length()
     c.get_df()
+
+
+
+def test_spades():
+    filename = sequana_data('test_contigs_spades.fasta')
+    c = contigs.ContigsSpades(filename)
+    c.hist_contig_length()
+    c.plot_contig_length_vs_GC()
+    c.scatter_length_cov_gc()

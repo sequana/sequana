@@ -52,7 +52,7 @@ import easydev
 import colorlog
 
 
-def sigint_handler(*args):
+def sigint_handler(*args): #pragma: no cover
     """Handler for the SIGINT signal."""
     sys.stderr.write('\r')
     if QW.QMessageBox.question(None, '', "Are you sure you want to quit?",
@@ -80,11 +80,11 @@ class BaseFactory(Tools):
         self._directory_browser = FileBrowser(directory=True)
         self._directory_browser.clicked_connect(self._switch_off_run)
 
-    def _switch_off_run(self):
+    def _switch_off_run(self): #pragma: no cover
         self.debug("Switching off run button")
         self._run_button.setEnabled(False)
 
-    def copy(self, source, target, force):
+    def copy(self, source, target, force): #pragma: no cover
         if os.path.exists(target) and force is False:
             save_msg = WarningMessage(
                     "The file <i>{0}</i> already exists in the working directory".format(source))
@@ -103,7 +103,7 @@ class BaseFactory(Tools):
         else:
                 super(BaseFactory, self).copy(source, target)
 
-    def _copy_snakefile(self, force=False):
+    def _copy_snakefile(self, force=False): #pragma: no cover
         if self.snakefile is None:
             self.info("No pipeline selected yet")
             return # nothing to be done
@@ -129,7 +129,7 @@ class BaseFactory(Tools):
         self.info("Copying snakefile in %s " % self.directory)
         self.copy(self.snakefile, target, force=force)
 
-    def _copy_configfile(self):
+    def _copy_configfile(self): #pragma: no cover
         if self.configfile is None:
             self.info("No config selected yet")
             return # nothing to be done
@@ -237,7 +237,7 @@ class SequanaFactory(BaseFactory):
                 return
     config = property(_get_config)
 
-    def __repr__(self):
+    def __repr__(self): #pragma: no cover
         in1 = self._sequana_directory_tab.get_filenames()
         in2 = self._sequana_paired_tab.get_filenames()
         txt = super(SequanaFactory, self).__repr__()
@@ -289,7 +289,7 @@ class GenericFactory(BaseFactory):
         return self._return_none(self._multiqcconfigfile)
     multiqcconfigfile = property(_get_multiqcconfigfile)
 
-    def _get_config(self):
+    def _get_config(self): #pragma: no cover
         filename = self._return_none(self._config_browser.get_filenames())
         if filename:
             try:
@@ -409,7 +409,7 @@ class SequanaGUI(QMainWindow, Tools):
                 self.generic_factory._config_browser.set_filenames(filename)
             self.ui.tabs_pipeline.setCurrentIndex(1)
 
-        if isset(user_options, "pipeline"):
+        if isset(user_options, "pipeline"): #pragma: no cover
             self.info("Setting Sequana pipeline %s " % user_options.pipeline)
             pipelines = self.sequana_factory.valid_pipelines
             if user_options.pipeline in pipelines:
@@ -420,7 +420,7 @@ class SequanaGUI(QMainWindow, Tools):
             else:
                 self.error("unknown pipeline. Use one of %s " % pipelines)
 
-        if isset(user_options, "input_directory"):
+        if isset(user_options, "input_directory"): #pragma: no cover
             directory = user_options.input_directory
             self.info("Setting Sequana input directory")
             if directory and os.path.exists(directory) is False:
@@ -591,7 +591,7 @@ class SequanaGUI(QMainWindow, Tools):
     #|-----------------------------------------------------|
     #|                       MENU related                  |
     #|-----------------------------------------------------|
-    def menuImportConfig(self, configfile=None):
+    def menuImportConfig(self, configfile=None): #pragma: no cover
         # The connector send a False signal but default is None
         # so we need to handle the two cases
         if self.snakefile is None:
@@ -617,7 +617,7 @@ class SequanaGUI(QMainWindow, Tools):
             self.sequana_factory._imported_config = None
         self.create_base_form()
 
-    def menuImportSchema(self, schemafile=None ):
+    def menuImportSchema(self, schemafile=None): #pragma: no cover
         if schemafile:
             self.generic_factory._schema = schemafile
             return
@@ -888,7 +888,7 @@ class SequanaGUI(QMainWindow, Tools):
         line = line.replace("\\x1b[33m", "")
         return line
 
-    def snakemake_data_stdout(self):
+    def snakemake_data_stdout(self): #pragma: no cover
         """ Read standard output of snakemake process """
         data = str(self.process.readAllStandardOutput())
         self.shell += data
@@ -934,7 +934,7 @@ class SequanaGUI(QMainWindow, Tools):
             option += ["-R", starting_rule]
         return option
 
-    def _get_snakemake_command(self, snakefile):
+    def _get_snakemake_command(self, snakefile): #pragma: no cover
         """If the cluster option is selected, then the cluster field in
         the snakemake menu must be set to a string different from empty string.
 
@@ -1171,7 +1171,7 @@ class SequanaGUI(QMainWindow, Tools):
                 # Kills the main process
                 os.kill(pid, signal.SIGINT)
                 # And the children
-                for this in pid_children:
+                for this in pid_children: #pragma: no cover
                     self.info("Remove pid {} ".format(this))
                     try:
                         os.kill(this, signal.SIGINT)
@@ -1206,7 +1206,7 @@ class SequanaGUI(QMainWindow, Tools):
     def start_progress(self):
         self.ui.progressBar.setRange(0,1)
 
-    def end_run(self):
+    def end_run(self): #pragma: no cover
         pal = self.ui.progressBar.palette()
         if self.ui.progressBar.value() >= 100 :
             self._set_pb_color(self._colors['green'].name())
@@ -1224,14 +1224,14 @@ class SequanaGUI(QMainWindow, Tools):
         dialog = self.preferences_dialog
         box = dialog.ui.preferences_options_general_overwrite_value
         return box.isChecked()
-    def _set_force(self, boolean):
+    def _set_force(self, boolean): #pragma: no cover
         assert boolean in [True, False]
         dialog = self.preferences_dialog
         box = dialog.ui.preferences_options_general_overwrite_value
         box.setChecked(boolean)
     force = property(_get_force, _set_force)
 
-    def save_project(self):
+    def save_project(self): #pragma: no cover
         self.info('Saving project')
 
         if self.configfile is None:
@@ -1519,7 +1519,7 @@ class SequanaGUI(QMainWindow, Tools):
     # DAG footer button
     # -----------------------------------------------------------------------
 
-    def show_dag(self):
+    def show_dag(self): #pragma: no cover
         try:
             # This command should work on various platform, just in case
             # we add a try/except
@@ -1809,7 +1809,7 @@ class Options(argparse.ArgumentParser):
             help="optional schema file to check the config file")
 
 
-def main(args=None):
+def main(args=None): #pragma: no cover 
 
     if args is None:
         args = sys.argv[:]
@@ -1817,6 +1817,8 @@ def main(args=None):
     options = user_options.parse_args(args[1:])
 
     signal.signal(signal.SIGINT, sigint_handler)
+
+    #QtCore.QCoreApplication.setAttribute(QtCore.Qt.AA_ShareOpenGLContexts)
     app = QW.QApplication(sys.argv)
 
     filename = sequana_data("drawing.png", "../gui")

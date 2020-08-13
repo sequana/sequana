@@ -4,6 +4,80 @@ Changelog
 .. contents::
     :depth: 2
 
+0.9.1
+-----
+* Fix html syntax in the templates
+* Fix demultiplex.barplot_samples layout
+* Created a sequana main script with currentl one command, fastq, which replaces
+  sequana_fastq_head, sequana_fastq_count, etc
+
+0.9.0
+-----
+
+
+* Fix requirements (missing stattmodels)
+* Fix bug kraken sequential when no reads are classified
+* Fix FileFactory to make it much faster (speed up pipeline initialisation). This should also fix a recurrent issue with read tag (see https://github.com/sequana/sequana/issues/526
+* NEWS:
+
+    * implemented rnadiff module
+    * implemented go term enrichment
+    * implemented feature counts 
+    * implemented plot.viz.venn
+    * implemented compare module (for rnadiff comparison)
+
+
+0.8.6
+-----
+
+* CHANGES:
+
+    * module kraken: better label in plot2 method to avoid long label to be cut
+    * module compare: fix label in comparative plots 
+    * module modules_report/bases now include title in the embedded image 
+
+
+0.8.5
+------
+
+* CHANGES:
+
+    * coverage multiqc plugin to remove unique chromomosome name from the sample name, if it is unique
+    * bamtools_stats multiqc plugin to remove unique chromomosome name from the sample name, if it is unique
+    * fix regression bug in report summary page for the taxonomy tools
+
+* NEWs:
+
+    * Contigs now acceps Spades fasta files
+    * added a new viz module for PCA plotting
+    * added a new stats module for data normalisation
+    * added a new enrichment module to include KeggPathway enrichment
+
+
+
+0.8.4
+-----
+
+* MultiKrakenResults set nan tp zeros
+* fasta module: new filter() method to keep or exclude some entries
+* CHANGES: 
+
+    * pipeline_common: PipelineManager renamed into SequanaManager to avoid same
+      name as in snaketools.PipelineManager
+    * snaketools: PipelineManagerGeneric is now the base class for
+      PipelineManager. factorise common methods into PipelineManagerGeneric
+    * SnakeMakeStats now skip the figure if stats is empty
+
+* NEWs:
+
+    * snaketools: new PipelineManagerDirectory class (used by
+      sequana_demultiplex) when no input files are used, but only an input
+      directory. we can now import exiting project to fill the config file automatically
+    * module fastqc to plot static images of fastqc contents. The parsing method
+      was adapted from multiqc.module.fastqc itself as a quick hack to
+      incorporate in the sequana_fastqc pipeline 
+    
+
 0.8.3
 -----
 

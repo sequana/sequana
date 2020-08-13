@@ -61,7 +61,8 @@ class Summary(object):
         s.description = "bla bla bla"
 
     """
-    def __init__(self, name, sample_name="undefined", data={}, caller=None):
+    def __init__(self, name, sample_name="undefined", data={}, caller=None,
+            pipeline_version=None):
 
         if os.path.exists(name):
             with open(name, "r") as fin:
@@ -85,12 +86,14 @@ class Summary(object):
             self.sample_name = sample_name
             self.data = data
             self.caller = caller
+            self.pipeline_version = pipeline_version
 
     def as_dict(self):
         return {
             "name": self.name,
             "sample_name": self.sample_name,
             "version": self.version,
+            "pipeline_version": self.pipeline_version,
             "date": self.date,
             "data": self.data,
             "description": self.description,

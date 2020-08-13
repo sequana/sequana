@@ -18,6 +18,8 @@ from easydev import TempFile
 
 skiptravis = pytest.mark.skipif("TRAVIS_PYTHON_VERSION" in os.environ, reason="On travis")
 
+
+
 @pytest.fixture
 def module():
     return Module("quality_control")

@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+
 #
 #  This file is part of Sequana software
 #
@@ -145,11 +145,11 @@ def plot_stats(inputdir=".", outputdir=".",
                filename="snakemake_stats.png", N=1):
     logger.info("Workflow finished. Creating stats image")
     try:
-        SnakeMakeStats("%s/stats.txt" % inputdir, N=N).plot_and_save(
-            outputdir=outputdir, filename=filename)
+        sms = SnakeMakeStats("%s/stats.txt" % inputdir, N=N)
+        sms.plot_and_save(outputdir=outputdir, filename=filename)
     except Exception as err:
-        logger.error(err)
-        logger.error("Could not process %s/stats.txt file" % inputdir)
+        logger.warning(err)
+        logger.warning("Could not process %s/stats.txt file" % inputdir)
 
 
 class ModuleFinderSingleton(object):
@@ -361,7 +361,7 @@ class Module(object):
         self._mf.isvalid(name)
 
         if name not in self._mf.names:
-            raise ValueError("""Sequana error: unknown rule or pipeline {}. 
+            raise ValueError("""Sequana error: unknown rule or pipeline '{}'. 
 Check the source code at:
 
     https://github.com/sequana/sequana/tree/develop/sequana/pipelines and
@@ -839,31 +839,17 @@ class SequanaConfig(object):
             print(err)
             return False
 
-"""
-class DummyManager(object):
-    def __init__(self, filenames=None, samplename="custom"):
-        self.config = {}
-        if isinstance(filenames, list) and len(filenames) == 2:
-            self.paired = True
-            self.samples = {samplename: filenames}
-        elif isinstance(filenames, list) and len(filenames) == 1:
-            self.paired = False
-            self.samples = {samplename: filenames}
-        elif isinstance(filenames, str):
-            self.samples = {samplename: [filenames]}
-            self.paired = False
-"""
 
-class PipelineManagerGeneric(object):
+class PipelineManagerBase(object):
     """
 
     For all files except FastQ, please use this class instead of
     PipelineManager.
 
     """
-    def __init__(self, name, config, sample_func=None):
-
+    def __init__(self, name, config):
         # Make sure the config is valid
+        self.name = name
         cfg = SequanaConfig(config)
 
         # Used by the dynamic rules to defined the location where to copy
@@ -875,32 +861,10 @@ class PipelineManagerGeneric(object):
         self.config.sequana_version = sequana_version
         self.config.pipeline_name = name
 
-        path = cfg.config["input_directory"]
-        pattern = cfg.config["input_pattern"]
-
-        if path.strip():
-            self.ff = FileFactory(path + os.sep + pattern)
-        else:
-            self.ff = FileFactory(pattern)
-        L = len(self.ff)
-        if L == 0:
-            logger.warning("No files found with the pattern {}".format(pattern))
-        else:
-            logger.info("Found {} files matching your requests".format(L))
-
-        # samples contains a correspondance between the sample name and the
-        # real filename location.
-        self.sample = "{sample}"
-        self.basename = "{sample}/%s/{sample}"
-        self.samples = None
-
-        if sample_func:
-            try:
-                self.samples = {sample_func(filename):filename for filename in self.ff.realpaths}
-            except:
-                self.samples = None
-        else:
-            self.samples = {str(i+1):filename for i,filename in enumerate(self.ff.realpaths)}
+    def error(self, msg):
+        msg += ("\nPlease check the content of your config file. You must have "
+                "input_directory set, or input_pattern.")
+        raise SequanaException(msg)
 
     def getname(self, rulename, suffix=None):
         """In the basename, include rulename and suffix"""
@@ -933,8 +897,154 @@ class PipelineManagerGeneric(object):
                 "sample names as keys and the corresponding location as values.")
         return lambda wildcards: self.samples[wildcards.sample]
 
+    def plot_stats(self, outputdir=".sequana",
+                 filename="snakemake_stats.png", N=1):
+        logger.info("Creating stats image")
+        try:
+            from sequana.snaketools import SnakeMakeStats
+            sms = SnakeMakeStats("stats.txt", N=N)
+            if sms._parse_data() == {'total_runtime': 0, 
+                'rules': {}, 'files':{}}:
+                return 
 
-class PipelineManager(object):
+            sms.plot_and_save(outputdir=outputdir, filename=filename)
+        except Exception as err:
+            logger.error(err)
+            logger.error("Could not process stats.txt file" )
+
+    def message(self, msg):
+        message(msg)
+
+    def setup(self,  namespace, mode="error", matplotlib="Agg"):
+        """
+
+        90% of the errors come from the fact that users did not set a matplotlib
+        backend properly. In the setup() function, we set the backend to Agg on
+        purpose. One can set this parameter to None to avoid this behaviour
+        """
+        if "__snakefile__" in namespace.keys():
+            self._snakefile = namespace["__snakefile__"]
+        else:
+            filename = self.name + ".rules"
+            # This contains the full path of the snakefile
+            namespace['__snakefile__'] = filename
+            self._snakefile = namespace["workflow"].included_stack[-1]
+
+            # FIXME this is used only in quality_control when using sambamba rule
+            # to remove files.
+            namespace['__pipeline_name__'] = \
+                os.path.split(filename)[1].replace(".rules", "")
+            namespace['expected_output'] = []
+            namespace['toclean'] = []
+
+        # check requirements
+        Module(self.name).check(mode)
+
+        if matplotlib:
+            import matplotlib as mpl
+            mpl.use(matplotlib)
+
+    def _get_snakefile(self):
+        return self._snakefile
+    snakefile = property(_get_snakefile)
+
+    def clean_multiqc(self, filename):
+        with open(filename, "r") as fin:
+            with open(filename + "_tmp_", "w") as fout:
+                line = fin.readline()
+                while line:
+                    if """<a href="http://multiqc.info" target="_blank">""" in line:
+                        line = fin.readline() # read the image
+                        line = fin.readline() # read the ending </a> tag
+                    else:
+                        fout.write(line)
+                    line = fin.readline() # read the next line
+        import shutil
+        shutil.move(filename +"_tmp_", filename)
+
+    def teardown(self, extra_dirs_to_remove=[], extra_files_to_remove=[],
+        plot_stats=True):
+
+        # create and save the stats plot
+        if plot_stats:
+            self.plot_stats()
+
+        # add a Makefile
+        cleaner = OnSuccessCleaner(self.name)
+        cleaner.directories_to_remove.extend(extra_dirs_to_remove)
+        cleaner.files_to_remove.extend(extra_files_to_remove)
+        cleaner.add_makefile()
+
+    def get_html_summary(self, float="left", width=30):
+        import pandas as pd
+        import pkg_resources
+        vers = pkg_resources.require("sequana_{}".format(self.name))[0].version
+        df_general = pd.DataFrame({
+            "samples": len(self.samples), 
+            "paired": self.paired, 
+            "sequana_{}_version".format(self.name): vers}, 
+            index=["summary"])
+
+        from sequana.utils.datatables_js import DataTable
+        datatable = DataTable(df_general.T, 'general', index=True)
+        datatable.datatable.datatable_options = {'paging': 'false',
+                                             'bFilter': 'false',
+                                              'bInfo': 'false',
+                                               'header': 'false',
+                                              'bSort': 'true'}
+        js = datatable.create_javascript_function()
+        htmltable = datatable.create_datatable(style="width: 20%; float:left" )
+        contents = """<div style="float:{}; width:{}%">{}</div>""".format(float,
+            width, js + htmltable)
+        return contents
+
+
+class PipelineManagerGeneric(PipelineManagerBase):
+    def __init__(self, name, config, sample_func=None):
+        super(PipelineManagerGeneric, self).__init__(name, config)
+
+        cfg = SequanaConfig(config)
+        path = cfg.config["input_directory"]
+        pattern = cfg.config["input_pattern"]
+
+        if path.strip():
+            self.ff = FileFactory(path + os.sep + pattern)
+        else:
+            self.ff = FileFactory(pattern)
+        L = len(self.ff)
+        if L == 0:
+            logger.warning("No files found with the pattern {}".format(pattern))
+        else:
+            logger.info("Found {} files matching your requests".format(L))
+
+        # samples contains a correspondance between the sample name and the
+        # real filename location.
+        self.sample = "{sample}"
+        self.basename = "{sample}/%s/{sample}"
+        self.samples = None
+
+        if sample_func:
+            try:
+                self.samples = {sample_func(filename):filename for filename in self.ff.realpaths}
+            except:
+                self.samples = None
+        else:
+            self.samples = {str(i+1):filename for i,filename in enumerate(self.ff.realpaths)}
+
+
+class PipelineManagerDirectory(PipelineManagerBase):
+    """
+
+    For all files except FastQ, please use this class instead of
+    PipelineManager.
+
+    """
+    def __init__(self, name, config):
+        super(PipelineManagerDirectory, self).__init__(name, config)
+
+
+
+class PipelineManager(PipelineManagerGeneric):
     """Utility to manage easily the snakemake pipeline
 
     Inside a snakefile, use it as follows::
@@ -980,7 +1090,7 @@ class PipelineManager(object):
         :param pattern: a default pattern if not provided in the configuration
             file as an *input_pattern* field.
         """
-        self.name = name
+        super(PipelineManagerGeneric, self).__init__(name, config)
 
         cfg = SequanaConfig(config)
         cfg.config.pipeline_name = self.name
@@ -1060,30 +1170,6 @@ class PipelineManager(object):
         self.sample = "{sample}"
         self.basename = "{sample}/%s/{sample}"
 
-    def error(self, msg):
-        msg += ("\nPlease check the content of your config file. You must have "
-                "input_directory set, or input_pattern.")
-        raise SequanaException(msg)
-
-    def getname(self, rulename, suffix=None):
-        """In the basename, include rulename and suffix"""
-        if suffix is None:
-            suffix = ""
-        return self.basename % rulename + suffix
-
-    def getreportdir(self, acronym):
-        """Create the report directory.
-        """
-        return "{1}{0}report_{2}_{1}{0}".format(os.sep, self.sample, acronym)
-
-    def getwkdir(self, rulename):
-        return self.sample + os.sep + rulename + os.sep
-
-    def getlogdir(self, rulename):
-        """ Create log directory: ``*/sample/logs/sample_rule.logs``
-        """
-        return "{1}{0}logs{0}{1}.{2}.log".format(os.sep, self.sample, rulename)
-
     def getrawdata(self):
         """Return list of raw data
 
@@ -1093,66 +1179,6 @@ class PipelineManager(object):
         """
         return lambda wildcards: self.samples[wildcards.sample]
 
-    """ probably not required anymore so commented in v0.8.0
-
-    def _get_filenames(self, cfg):
-        filenames = []
-        file1 = cfg.samples.file1
-        file2 = cfg.samples.file2
-        if file1:
-            if os.path.exists(file1):
-                filenames.append(file1)
-            else:
-                raise FileNotFoundError("%s not found" % file1)
-        if file2:
-            if os.path.exists(file2):
-                filenames.append(file2)
-            else:
-                raise FileNotFoundError("%s not found" % file2)
-        return filenames
-    """
-    def message(self, msg):
-        message(msg)
-
-    def plot_stats(self, outputdir=".sequana",
-                 filename="snakemake_stats.png", N=1):
-        logger.info("Creating stats image")
-        try:
-            from sequana.snaketools import SnakeMakeStats
-            SnakeMakeStats("stats.txt", N=N).plot_and_save(
-            outputdir=outputdir, filename=filename)
-        except Exception as err:
-            logger.error(err)
-            logger.error("Could not process stats.txt file" )
-
-    def setup(self,  namespace, mode="error"):
-        """
-        """
-        if "__snakefile__" in namespace.keys():
-            self._snakefile = namespace["__snakefile__"]
-        else:
-            filename = self.name + ".rules"
-            # This contains the full path of the snakefile
-            namespace['__snakefile__'] = filename
-            self._snakefile = namespace["workflow"].included_stack[-1]
-
-            # FIXME this is used only in quality_control when using sambamba rule
-            # to remove files.
-            namespace['__pipeline_name__'] = \
-                os.path.split(filename)[1].replace(".rules", "")
-            namespace['expected_output'] = []
-            namespace['toclean'] = []
-
-        # check requirements
-        Module(self.name).check(mode)
-
-    def _get_snakefile(self):
-        #globals()['__snakefile__']
-        return self._snakefile
-    snakefile = property(_get_snakefile)
-
-    def teardown(self):
-        pass
 
 
 def message(mes):
@@ -1210,9 +1236,9 @@ class DOTParser(object):
 
         """
         self.filename = filename
-        self.re_index = re.compile('(\d+)\[')
-        self.re_name = re.compile('label = "(\w+)"')
-        self.re_arrow = re.compile('(\d+) -> (\d+)')
+        self.re_index = re.compile(r'(\d+)\[')
+        self.re_name = re.compile(r'label = "(\w+)"')
+        self.re_arrow = re.compile(r'(\d+) -> (\d+)')
         self.mode = mode
 
     def add_urls(self, output_filename=None, mapper={}, title=None):
@@ -1367,6 +1393,12 @@ class FileFactory(object):
     The **pathname** is a specific label for a file’s directory location
     while within an operating system.
 
+    .. versionchanged:: 0.8.7 attributes were recomputed at each accession. For
+        small projects, this is transparent, but on novogene or large set of samples,
+        this is taking too much time. This was done in case FileFactorry
+        attributes such as input directorty or pattern are changed. In practice this
+        does not happen, so we can write the basenames and other attributes in variables
+        once for all
 
     """
     def __init__(self, pattern):
@@ -1400,12 +1432,23 @@ class FileFactory(object):
                     raise ValueError("This file % does not exist" % this)
             self._glob = pattern[:]
 
+
+        self.realpaths = [os.path.realpath(filename) for filename in self._glob]
+        self.basenames = [os.path.split(filename)[1] for filename in self._glob]
+        self.filenames =  [this.split(".")[0] for this in self.basenames]
+        self.pathnames = [os.path.split(filename)[0] for filename in self.realpaths]
+        self.extensions = [os.path.splitext(filename)[1] for filename in self._glob]
+        self.all_extensions = [this.split('.', 1)[1] if "." in this else "" for this in self.basenames]
+
+
+    """
     def _get_realpath(self):
         return [os.path.realpath(filename) for filename in self._glob]
     realpaths = property(_get_realpath,
                          doc=("real path is the full path + the filename"
                               " the extension"))
 
+    
     def _get_basenames(self):
         return [os.path.split(filename)[1] for filename in self._glob]
     basenames = property(_get_basenames,
@@ -1421,7 +1464,7 @@ class FileFactory(object):
         return pathnames
     pathnames = property(_pathnames,
                          doc="the relative path for each file (list)")
-
+    """
     def _pathname(self):
         pathname = set(self.pathnames)
         if len(pathname) == 1:
@@ -1429,7 +1472,7 @@ class FileFactory(object):
         else:
             raise ValueError("found more than one pathname")
     pathname = property(_pathname, doc="the common relative path")
-
+    """
     def _get_extensions(self):
         filenames = [os.path.splitext(filename)[1] for filename in self._glob]
         return filenames
@@ -1441,7 +1484,7 @@ class FileFactory(object):
         return filenames
     all_extensions = property(_get_all_extensions,
                               doc="the extensions (list)")
-
+    """
     def __len__(self):
         return len(self.filenames)
 
@@ -1483,12 +1526,12 @@ class FastQFactory(FileFactory):
     """
     def __init__(self, pattern, extension=["fq.gz", "fastq.gz"],
                  read_tag="_R[12]_", verbose=False, paired=True):
-        """.. rubric:: Constructor
+        r""".. rubric:: Constructor
 
         :param str pattern: a global pattern (e.g., ``H*fastq.gz``)
         :param list extension: not used
         :param str read_tag: regex tag used to join paired end files. Some
-            characters need to be escaped with a '\' to be interpreted as
+            characters need to be escaped with a \ character to be interpreted as
             character. (e.g. '_R[12]_\.fastq\.gz')
         :param bool verbose:
         """
@@ -1537,7 +1580,7 @@ class FastQFactory(FileFactory):
         # If a user uses a . it should be taken into account hence the regex
         # that follows 
         if  self.read_tag:
-            re_read_tag = re.compile(self.read_tag.replace(".", "\."))
+            re_read_tag = re.compile(self.read_tag.replace(r".", r"\."))
             self.tags = list({re_read_tag.split(f)[0] for f in self.basenames})
         else:
             self.tags = list({f.split(".")[0] for f in self.basenames})
@@ -1563,9 +1606,12 @@ class FastQFactory(FileFactory):
         # retrieve file of tag
         if self.read_tag:
             read_tag = self.read_tag.replace("[12]", r)
+
+            # changed in v0.8.7 tricky hanbling of sample names
+            # https://github.com/sequana/sequana/issues/576
             candidates = [realpath for basename, realpath in
                           zip(self.basenames, self.realpaths)
-                          if read_tag in basename and basename.startswith(tag + "_")]
+                          if read_tag in basename and tag == basename.split(read_tag)[0]]
         else:
             read_tag = ""
             candidates = [realpath for basename, realpath in
@@ -1723,8 +1769,9 @@ def build_dynamic_rule(code, directory):
     fh.close()
     return filename
 
-
-def add_stats_summary_json(json_list, parser):
+"""
+def __add_stats_summary_json(json_list, parser):
+    # used by the denovo pipeline only
     if not parser.stats:
         return
     for jfile in json_list:
@@ -1734,7 +1781,7 @@ def add_stats_summary_json(json_list, parser):
         j = json.dumps(jdict)
         with open(jfile, 'w') as fp:
             print(j, file=fp)
-
+"""
 
 class Makefile(object):
 
@@ -1831,9 +1878,13 @@ class OnSuccessCleaner(object):
     """Used in various sequana pipelines to cleanup final results"""
     def __init__(self, pipeline_name=None, bundle=False):
         self.makefile_filename = "Makefile"
-        self.files_to_remove = ["config.yaml", "multiqc_config.yaml",
+        self.files_to_remove = [
+            "config.yaml",
+            "multiqc_config.yaml",
             "cluster_config.json",
-            "slurm*out", "stats.txt", "schema.yaml"]
+            "slurm*out",
+            "stats.txt",
+            "schema.yaml"]
         if pipeline_name:
             self.files_to_remove.append("{}.sh".format(pipeline_name))
             self.files_to_remove.append("{}.rules".format(pipeline_name))
@@ -1846,7 +1897,7 @@ class OnSuccessCleaner(object):
         self.bundle_output = output
 
     def add_makefile(self):
-        makefile = 'all:\n\techo "sequana cleanup"\n'
+        makefile = 'all:\n\techo "type *make clean* to delete temporary files"\n'
         if self.bundle:
             makefile += "bundle:\n\ttar cvfz {} {}\n".format(
                 self.bundle_output, self.bundle_input)
@@ -1864,7 +1915,7 @@ class OnSuccessCleaner(object):
         with open(self.makefile_filename, "w") as fh:
             fh.write(makefile)
 
-        logger.info("Once done, please clean up the directory using\n'make clean'")
+        logger.info("Once done, please clean up the directory using: 'make clean'")
 
 def get_pipeline_statistics():
     """Get basic statistics about the pipelines
@@ -1902,6 +1953,7 @@ def get_pipeline_statistics():
 
 
 def clean_multiqc(filename):
+    print("Deprecated. Use the pipeline manager instead")
     with open(filename, "r") as fin:
         with open(filename + "_tmp_", "w") as fout:
             line = fin.readline()

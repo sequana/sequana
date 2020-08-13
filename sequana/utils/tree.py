@@ -43,7 +43,7 @@ class HTMLDirectory():
             if self.pattern:
                 if self.pattern in name:
                     html += '<a href="{}">{}</a><br>'.format(realpath, name) + "\n"
-                else:
+                else: #pragma: no cover
                     pass
             else:
                 S = [item in name for item in self.skip_pattern]

@@ -13,7 +13,7 @@ footer {
     position: fixed;
     bottom: 0;
     width: 100%;
-    height: 2em;
+    height: 5em;
     background-color: #eee;
     border-top: 3px solid #aaaaaa;
 }
@@ -151,6 +151,18 @@ border: 1px solid;
 padding: 5px;
 left-margin:5px;
 }    
+
+div.box_1_3
+{
+
+font-size:0.8em;
+border: 1px solid;
+width: 30%;
+padding: 5px;
+left-margin:5px;
+float:left;
+}    
+
 
 /*
  * ┌──────────────────────────────────────────────────────────────────────────┐

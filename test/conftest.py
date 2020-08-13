@@ -7,7 +7,7 @@ skiptravis = pytest.mark.skipif("TRAVIS_PYTHON_VERSION" in os.environ,
 
 
 def pytest_runtest_setup(item):
-    if "TRAVIS_PYTHON_VERSION" in os.environ or 1 == 1:
+    if "TRAVIS_PYTHON_VERSION" in os.environ:
         print("downloading toydb data from github")
         from sequana.taxonomy import NCBITaxonomy
         from sequana import sequana_config_path

@@ -186,7 +186,7 @@ def main(args=None):
         k = KrakenPipeline(fastq, databases[0], threads=options.thread,
             output_directory=output_directory, confidence=options.confidence)
 
-        k.run(output_filename_classified=_pathto(options.classified_out),
+        summary = k.run(output_filename_classified=_pathto(options.classified_out),
               output_filename_unclassified=_pathto(options.unclassified_out))
     else:
         logger.info("Using %s databases" % len(databases))
@@ -197,7 +197,11 @@ def main(args=None):
             keep_temp_files=options.keep_temp_files,
             output_filename_unclassified=_pathto(options.unclassified_out),
             confidence=options.confidence)
-        k.run(output_prefix="kraken")
+        summary = k.run(output_prefix="kraken")
+
+    with open(output_directory + "/summary.json", "w") as fh:
+        import json
+        json.dump( summary, fh, indent=4)
 
     # This statements sets the directory where HTML will be saved
     from sequana.utils import config

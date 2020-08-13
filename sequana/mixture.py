@@ -161,10 +161,10 @@ class GaussianMixtureFitting(Fitting):
         :width: 80%
         :include-source:
 
-        from sequana.mixture import GaussianMixtureModel, GaussianMixtureFitting
+        from sequana import mixture 
         from pylab import normal 
         data = [normal(0,1) for x in range(700)] + [normal(3,1) for x in range(300)]
-        mf = GaussianMixtureFitting(data)
+        mf = mixture.GaussianMixtureFitting(data)
         mf.estimate(k=2)
         mf.plot()
 
@@ -260,9 +260,10 @@ class EM(Fitting):
         :width: 50%
         :include-source:
 
-        from sequana.mixture import GaussianMixture, EM
-        m = GaussianMixture(mu=[-1,1], sigma=[0.5,0.5], mixture=[0.2,0.8])
-        em = EM(m.data)
+        from sequana import mixture
+        from pylab import normal
+        data = [normal(0,1) for x in range(7000)] + [normal(3,1) for x in range(3000)]
+        em = mixture.EM(data)
         em.estimate(k=2)
         em.plot()
 

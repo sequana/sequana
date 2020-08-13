@@ -1,4 +1,18 @@
 
+Generation of test_meales.sam/bam/cram
+======================================
+
+looks like the sam and bam were generated with a measles.fa edited to simplify
+the name of the chromosome into 'chr1'. Earlier version of samtools could read
+the cram without the reference, but not newest one (v1.9). So I copied the
+samtools locally, rename the chromosome into chr1 and then typed::
+
+     samtools faidx measles.fa
+     samtools view -@ 8 -C test_measles.bam -T measles.fa -o test_measles.cram
+
+test_bamtools.py worked afterwards
+
+
 
 test_pacbio_barcode_report.csv: file from smrtlink pacbio report after
 demultiplexing to test BarCode class

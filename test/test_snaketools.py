@@ -162,22 +162,12 @@ def test_check_config_with_schema():
 
 
 def test_module_version():
-
     Module("snpeff/1.0").version == "1.0"
 
 
 def test_message():
     snaketools.message("test")
 
-
-def __test_dummy_manager():
-    ss = snaketools.DummyManager()
-    ss = snaketools.DummyManager(["test1.fastq.gz", "test2.fastq.gz"])
-    assert ss.paired == True
-    ss = snaketools.DummyManager(["test1.fastq.gz"])
-    assert ss.paired == False
-    ss = snaketools.DummyManager("test1.fastq.gz")
-    assert ss.paired == False
 
 
 def test_pipeline_manager():
@@ -195,16 +185,16 @@ def test_pipeline_manager():
     cfg = SequanaConfig(config)
     cfg.cleanup() # remove templates
     try:
-        pm = snaketools.PipelineManager("custome", cfg)
+        pm = snaketools.PipelineManager("custom", cfg)
         assert False
     except:
         assert True
 
+    # normal behaviour
     cfg = SequanaConfig(config)
     cfg.cleanup() # remove templates
     file1 = sequana_data("Hm2_GTGAAA_L005_R1_001.fastq.gz")
     cfg.config.input_directory, cfg.config.input_pattern = os.path.split(file1)
-    #file2 = sequana_data("Hm2_GTGAAA_L005_R2_001.fastq.gz")
     pm = snaketools.PipelineManager("custom", cfg)
     assert pm.paired == False
 
@@ -240,6 +230,7 @@ def test_pipeline_manager():
         subprocess.call(cmd.split())
         pm = snaketools.PipelineManager("test", cfgname)
         assert pm.paired == True
+
 
     # Test the _[12]_ paired 
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -313,13 +304,29 @@ def test_pipeline_manager_generic():
     file1 = sequana_data("Hm2_GTGAAA_L005_R1_001.fastq.gz")
     cfg.config.input_directory, cfg.config.input_pattern = os.path.split(file1)
     cfg.config.input_pattern = "Hm*gz"
-    pm = snaketools.PipelineManagerGeneric("custom", cfg)
+    pm = snaketools.PipelineManagerGeneric("quality_control", cfg)
     pm.getlogdir("fastqc")
     pm.getwkdir("fastqc")
     pm.getrawdata()
     pm.getreportdir("test")
     pm.getname("fastqc")
+    gg = globals()
+    gg['__snakefile__'] = "dummy"
+    pm.setup(gg)
+    del gg['__snakefile__']
+    class WF():
+        included_stack = ["dummy", 'dummy']
+    wf = WF()
+    gg['workflow'] = wf
+    pm.setup(gg)
+    pm.teardown()
 
+    with tempfile.TemporaryDirectory() as dd:
+        multiqc = open(dd + "/multiqc.html", "w")
+        multiqc.write("test")
+        multiqc.close()
+        newfile = dd + "/multiqc.html_tmp_"
+        pm.clean_multiqc(dd + "/multiqc.html")
 
 def test_file_name_factory():
     import glob

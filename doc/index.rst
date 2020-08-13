@@ -185,6 +185,8 @@ User guide and reference
     developers
     rules
     references
+    references_viz
+    references_stats
     faqs
     Changelog
     glossary

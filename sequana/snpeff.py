@@ -214,7 +214,7 @@ class SnpEff(object):
                        if regex.search(line)]
             return seq
         else:
-            regex = re.compile('^##sequence-region\s+([\w\.\-]+)')
+            regex = re.compile(r'^##sequence-region\s+([\w\.\-]+)')
             with open(self.annotation, "r") as fp:
                 line = fp.readline()
                 seq = regex.findall(line)
@@ -299,4 +299,8 @@ def download_fasta_and_genbank(identifier, tag, genbank=True, fasta=True):
             raise ValueError("{} not found on ENA".format(identifier))
         else:
             with open("%s.fa" % tag, "w") as fout:
-                fout.write(data.decode())
+                try:
+                    # change in API in v1.7.8
+                    fout.write(data)
+                except:
+                    fout.write(data.decode())

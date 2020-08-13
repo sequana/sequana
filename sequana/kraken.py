@@ -340,8 +340,10 @@ class KrakenResults(object):
         df["percentage"] = df["count"] / df["count"].sum() * 100
 
         # Now get back all annotations from the database itself.
+        # This is not used anymore. let us put a warning for now
         filename = dbname + os.sep + "annotations.csv"
         if os.path.exists(filename):
+            print("Using _get_df_with_taxon with valid annotation.csv in {}".format(filename))
             annotations = pd.read_csv(filename)
             annotations.set_index("taxon", inplace=True)
 
@@ -374,7 +376,10 @@ class KrakenResults(object):
 
     def kraken_to_json(self, filename, dbname):
         df = self._get_df_with_taxon(dbname)
-        df.to_json(filename, indent=4, orient="records")
+        try:
+            df.to_json(filename, indent=4, orient="records")
+        except:
+            df.to_json(filename, orient="records")
         return df
 
     def kraken_to_krona(self, output_filename=None, nofile=False):
@@ -425,6 +430,125 @@ class KrakenResults(object):
         self._data_created = True
         return True
 
+    def plot2(self, kind="pie", fontsize=12):
+        import numpy as np
+        import matplotlib.pyplot as plt
+
+        taxons = self.taxons.copy()
+        if len(self.taxons.index) == 0:
+            return None
+
+        df = self.get_taxonomy_db(list(self.taxons.index))
+        self.dd = df
+        if self.unclassified > 0:
+            df.loc[-1] = ['Unclassified'] * 8
+            taxons[-1] = self.unclassified
+        df['ratio'] = taxons / taxons.sum() * 100
+
+
+        data_class = df.groupby(['kingdom', 'class']).sum()
+        data_species = df.groupby(['kingdom', 'species']).sum()
+
+        X = []
+        Y = []
+        Z = []
+        labels = []
+        zlabels, ztaxons = [], []
+        kingdom_colors = []
+        inner_colors = []
+        inner_labels=[]
+        species_colors = []
+        taxons =  df['species'].reset_index().set_index('species')
+
+        for kingdom in data_class.index.levels[0]:
+            # kingdom info
+            X.append(data_class.loc[kingdom].ratio.sum())
+
+            # class info
+            y = list(data_class.loc[kingdom].ratio.values)
+            temp = data_class.loc[kingdom]
+            y1 = temp.query('ratio>=0.5')
+            y2 = temp.query('ratio<0.5')
+            y = list(y1.ratio.values) + list(y2.ratio.values)
+            inner_labels += list(y1.ratio.index) + [''] * len(y2.ratio)
+            Y.extend(y)
+
+            #species info
+            temp = data_species.loc[kingdom]
+            z1 = temp.query('ratio>=0.5')
+            z2 = temp.query('ratio<0.5')
+            z = list(z1.ratio.values) + list(z2.ratio.values)
+            zlabels += list(z1.ratio.index) + [''] * len(z2.ratio)
+            Z.extend(z)
+
+            labels.append(kingdom)
+
+            if kingdom == "Eukaryota":
+                this_cmap = plt.cm.Purples
+            elif kingdom == "Unclassified":
+                this_cmap = plt.cm.Greys
+            elif kingdom == "Bacteria":
+                this_cmap = plt.cm.Reds
+            elif kingdom == "Viruses":
+                this_cmap = plt.cm.Greens
+            elif kingdom == "Archea":
+                this_cmap = plt.cm.Yellows
+            else:
+                this_cmap = plt.cm.Blues
+
+            kingdom_colors.append(this_cmap(0.8))
+            inner_colors.extend(this_cmap(np.linspace(.6,.2, len(y))))
+            species_colors.extend(this_cmap(np.linspace(.6,.2, len(z))))
+
+
+        fig, ax = pylab.subplots(figsize=(9.5,7))
+        size = 0.2
+
+        pct_distance=0
+        w1, l1 = ax.pie(X, radius=1-2*size, colors=kingdom_colors,
+           wedgeprops=dict(width=size, edgecolor='w'), labels=labels,
+            labeldistance=0.4)
+
+        w2, l2 = ax.pie(Y, radius=1-size, colors=inner_colors,
+                labels=[x.replace('Unclassified', "") for x in inner_labels],
+               wedgeprops=dict(width=size, edgecolor='w'),
+            labeldistance=0.65)
+
+        # labels can be long. Let us cut them 
+        zlabels2 = []
+        for this in zlabels:
+            if len(this)>30:
+                zlabels2.append(this[0:30] + "...") 
+            else:
+                zlabels2.append(this)
+
+        w3, l3 = ax.pie(Z, radius=1, colors=species_colors,
+               labels=[x.replace("Unclassified", "") for x in zlabels2],
+               wedgeprops=dict(width=size, edgecolor='w'),
+                labeldistance=0.9)
+
+        ax.set(aspect="equal")
+        pylab.subplots_adjust(right=1, left=0, bottom=0, top=1)
+        pylab.legend(labels, title="kingdom", loc="upper right",
+            fontsize=fontsize)
+        import webbrowser
+        mapper = {k:v for k,v in zip(zlabels, Z)}
+        def on_pick(event):
+            wedge = event.artist
+            label = wedge.get_label()
+            if mapper[label] >1:
+                taxon = taxons.loc[label, "index"]
+                webbrowser.open("https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id={}".format(taxon))
+            else:
+                wedge.set_color("white")
+        for wedge in w3:
+            wedge.set_picker(True)
+        fig.canvas.mpl_connect("pick_event", on_pick)
+        
+        # this is used to check that everything was okay in the rules   
+        return df
+
+
     def plot(self, kind="pie", cmap="tab20c", threshold=1, radius=0.9,
                 textcolor="red", **kargs):
         """A simple non-interactive plot of taxons
@@ -465,7 +589,6 @@ class KrakenResults(object):
 
         df = self.get_taxonomy_db(list(self.taxons.index))
 
-        # we add the unclassified only if needed
         if self.unclassified > 0:
             df.loc[-1] = ["Unclassified"] * 8
 
@@ -474,7 +597,6 @@ class KrakenResults(object):
         # we add the unclassified only if needed
         if self.unclassified > 0:
             data.loc[-1] = self.unclassified
-
 
         data = data/data.sum()*100
         assert threshold > 0 and threshold < 100
@@ -498,6 +620,7 @@ class KrakenResults(object):
 
         pylab.figure(figsize=(10, 8))
         pylab.clf()
+        self.dd = data
         if kind == "pie":
             ax = data.plot(kind=kind, cmap=cmap, autopct='%1.1f%%',
                 radius=radius, **kargs)
@@ -532,7 +655,10 @@ class KrakenResults(object):
         # to simplify, if this is the case, we will just take the first read
         # length for now. 
         df = self.df.copy()
-        df.length = df.length.apply(lambda x: int(x.split("|")[0]))
+        try: # kraken2
+            df.length = df.length.apply(lambda x: int(x.split("|")[0]))
+        except:
+            pass
         df[["status", "length"]].groupby('status').boxplot()
         return df
 
@@ -580,6 +706,7 @@ class KrakenPipeline(object):
         self._devtools = DevTools()
         self.output_directory = output_directory
         self._devtools.mkdir(output_directory)
+        self.database = database
         self.ka = KrakenAnalysis(fastq, database, threads, confidence=confidence)
 
         if dbname is None:
@@ -609,7 +736,10 @@ class KrakenPipeline(object):
         # image
         self.kr = KrakenResults(kraken_results, verbose=False)
 
-        df = self.kr.plot(kind="pie")
+        try:
+            self.kr.plot2(kind="pie")
+        except:
+            self.kr.plot(kind="pie")
         pylab.savefig(self.output_directory + os.sep + "kraken.png")
 
         prefix = self.output_directory + os.sep
@@ -625,6 +755,18 @@ class KrakenPipeline(object):
             shell("ktImportText %s -o %s" % (prefix+"kraken.out.summary", kraken_html))
         else:
             shell("touch {}".format(kraken_html))
+
+        database = KrakenDB(self.database)
+
+        summary = {"database": [database.name]}
+        summary[database.name] = {"C": int(self.kr.classified)}
+        summary["U"] = int(self.kr.unclassified)
+        summary["total"] = int(self.kr.unclassified + self.kr.classified)
+        # redundant but useful and compatible with sequential approach
+        summary["unclassified"] = int(self.kr.unclassified)
+        summary["classified"] = int(self.kr.classified)
+
+        return summary
 
     def show(self):
         """Opens the filename defined in the constructor"""
@@ -695,7 +837,6 @@ class KrakenAnalysis(object):
             self.fastq = fastq
         else:
             raise ValueError("Expected a fastq filename or list of 2 fastq filenames")
-
 
     def run(self, output_filename=None, output_filename_classified=None,
             output_filename_unclassified=None, only_classified_output=False):
@@ -964,8 +1105,6 @@ class KrakenSequential(object):
         db = self.databases[iteration]
         logger.info("Analysing data using database {}".format(db))
 
-        # By default, the output contains only classified reads
-        only_classified_output = True
 
         # a convenient alias
         _pathto = lambda x: self.output_directory + x
@@ -1004,24 +1143,32 @@ class KrakenSequential(object):
         # classified and unclassified in the final kraken results.
         if iteration == len(self.databases) -1:
             only_classified_output = False
+        else:
+            only_classified_output = True
 
         file_kraken_out = self.output_directory + "/kraken_{}.out".format(iteration)
 
         # The analysis itself
         analysis = KrakenAnalysis(inputs, db, self.threads,
             confidence=self.confidence)
+
         analysis.run(output_filename=file_kraken_out,
                      output_filename_unclassified=output_filename_unclassified,
                      only_classified_output=only_classified_output)
 
-        # save input/output files
+        # save input/output files.
         self._list_kraken_input.append(file_fastq_unclass)
         self._list_kraken_output.append(file_kraken_out)
 
     def run(self, dbname="multiple", output_prefix="kraken_final"):
         """Run the sequential analysis
 
-        This method does not return anything but creates a set of files:
+        :param dbname:
+        :param output_prefix:
+        :return: dictionary summarizing the databases names and
+            classified/unclassied
+
+        This method does not return anything creates a set of files:
 
         - kraken_final.out
         - krona_final.html
@@ -1036,7 +1183,7 @@ class KrakenSequential(object):
 
         # Iteration over the databases
         for iteration in range(len(self.databases)):
-            kraken_out = self.output_directory + "/kraken_{}.out".format(iteration)
+            #kraken_out = self.output_directory + "/kraken_{}.out".format(iteration)
 
             # The analysis itself
             status = self._run_one_analysis(iteration)
@@ -1049,6 +1196,8 @@ class KrakenSequential(object):
                 result.to_js("%s/krona_%d.html" %(self.output_directory, iteration))
 
             last_unclassified = self._list_kraken_input[-1]
+
+            # If everything was classified, we can stop here
             if isinstance(last_unclassified, str):
                 stat = os.stat(last_unclassified)
                 if stat.st_size == 0:
@@ -1071,7 +1220,10 @@ class KrakenSequential(object):
 
         # TODO: this looks similar to the code in KrakenPipeline. could be factorised
         result.to_js("%s%s%s.html" % (self.output_directory, os.sep, output_prefix))
-        result.plot(kind="pie")
+        try:
+            result.plot2(kind="pie")
+        except:
+            result.plot(kind="pie")
         pylab.savefig(self.output_directory + os.sep + "kraken.png")
         prefix = self.output_directory + os.sep
         result.kraken_to_json(prefix + "kraken.json", dbname)
@@ -1086,6 +1238,28 @@ class KrakenSequential(object):
             # Just cp the last classified file
             shutil.copy2(self._list_kraken_input[-1], self.classified_output)
 
+        summary = {"databases": [x.name for x in self.databases]}
+        total = 0
+        classified = 0
+        for f_temp, db in zip(self._list_kraken_output, self.databases):
+            # In theory, the first N-1 DB returns only classified (C) read
+            # and the last one contains both
+            try:            
+                df = pd.read_csv(f_temp, sep="\t", header=None,usecols=[0])
+                C = sum(df[0] == "C")
+                U = sum(df[0] == "U")
+            except pd.errors.EmptyDataError:
+                # if no read classified, 
+                C = 0
+                U = 0
+            total+=U
+            total += C
+            classified += C
+            summary[db.name] = {"C":C}
+            if U != 0: # the last one
+                summary['unclassified'] = U
+        summary['total'] = total
+        summary['classified'] = classified
 
         if not self.keep_temp_files:
             # kraken_0.out
@@ -1099,7 +1273,8 @@ class KrakenSequential(object):
                 elif isinstance(f_temp, list):
                     for this in f_temp:
                         os.remove(this)
-
+        return summary
+        
 
 class KrakenDownload(object):
     """Utility to download Kraken DB and place them in a local directory
@@ -1128,11 +1303,46 @@ class KrakenDownload(object):
             self._download_minikraken(verbose=verbose)
         elif name == "toydb":
             self._download_kraken_toydb(verbose=verbose)
+        elif name == "toydb2":
+            self._download_kraken2_toydb(verbose=verbose)
         elif name == "sequana_db1":
             self._download_sequana_db1(verbose=verbose)
         else:
             raise ValueError("name must be toydb or minikraken, or sequana_db1")
 
+    def _download_kraken2_toydb(self, verbose=True):
+        """Download the kraken DB toy example from sequana_data into
+        .config/sequana directory
+
+        Checks the md5 checksums. About 32Mb of data
+        """
+        dv = DevTools()
+        base = sequana_config_path + os.sep + "kraken2_dbs/toydb_nomasking"
+        dv.mkdir(base)
+
+        baseurl = "https://github.com/sequana/data/raw/master/"
+
+        # download only if required
+        logger.info("Downloading the database into %s" % base)
+
+        md5sums = [
+            "31f4b20f9e5c6beb9e1444805264a6e5",
+            "733f7587f9c0c7339666d5906ec6fcd3",
+            "7bb56a0f035b27839fb5c18590b79263"]
+
+        filenames = [
+            "hash.k2d",
+            "opts.k2d",
+            "taxo.k2d"]
+
+        for filename, md5sum in zip(filenames, md5sums):
+            url = baseurl + "kraken2_toydb/%s" % filename
+            filename = base + os.sep + filename
+            if os.path.exists(filename) and md5(filename) == md5sum:
+                logger.warning("%s already present" % filename)
+            else:
+                logger.info("Downloading %s" % url)
+                wget(url, filename)
 
     def _download_kraken_toydb(self, verbose=True):
         """Download the kraken DB toy example from sequana_data into
@@ -1258,7 +1468,13 @@ class KrakenDownload(object):
 
 
 class MultiKrakenResults():
-    """Slect several kraken output and creates summary plots
+    """Select several kraken output and creates summary plots
+
+    ::
+
+        import glob
+        mkr = MultiKrakenResults(glob.glob("*/*/kraken.csv"))
+        mkr.plot_stacked_hist()
 
     """
     def __init__(self, filenames, sample_names=None):
@@ -1273,6 +1489,10 @@ class MultiKrakenResults():
         data = {}
         for sample, filename in zip(self.sample_names, self.filenames):
             df = pd.read_csv(filename)
+            if "kingdom" not in df.columns:
+                for name in "kingdom,phylum,class,order,family,genus,species,name".split(","):
+                    df[name] = "Unclassified"
+
             df = df.groupby("kingdom")['percentage'].sum()
             # if a taxon is obsolete, the kingdom is empty. 
             # We will set the kingdom as Unclassified and raise a warning
@@ -1292,31 +1512,74 @@ class MultiKrakenResults():
         df = pd.DataFrame(data)
         df = df.fillna(0)
         df = df.sort_index(ascending=False)
+        df = df.sort_index(ascending=False, axis=1)
 
-        df.sum(axis=1).sort_values(ascending=False).index[0]
+        #df.sum(axis=1).sort_values(ascending=False).index[0]
 
         return df
 
     def plot_stacked_hist(self, output_filename=None, dpi=200, kind="barh", 
-        fontsize=10, edgecolor="k", lw=1, width=1, ytick_fontsize=10):
+        fontsize=10, edgecolor="k", lw=1, width=1, ytick_fontsize=10,
+        max_labels=50):
+
         """Summary plot of reads classified.
 
         """
         df = self.get_df()
-        df.T.plot(kind=kind, stacked=True, edgecolor=edgecolor, lw=lw,
-            width=width)
-        ax = pylab.gca()
+
+        fig, ax = pylab.subplots(figsize=(9.5,7))
+
+        labels = []
+        for kingdom in sorted(df.index):
+            if kingdom == "Eukaryota":
+                color="purple"
+            elif kingdom == "Unclassified":
+                color="grey"
+            elif kingdom == "Bacteria":
+                color="red"
+            elif kingdom == "Viruses":
+                color="darkgreen"
+            elif kingdom == "Archaea":
+                color="yellow"
+            else:
+                color="blue"
+            if kind=="barh":
+                pylab.barh(range(0, len(df.columns)), df.loc[kingdom], height=width,
+                        left=df.loc[labels].sum().values, edgecolor=edgecolor,
+                        lw=lw, color=color, alpha=0.8)
+            else:
+                pylab.bar(range(0, len(df.columns)), df.loc[kingdom], width=width,
+                        bottom=df.loc[labels].sum().values, edgecolor=edgecolor,
+                        lw=lw,color=color, alpha=0.8)
+            labels.append(kingdom)
+
+
         positions = pylab.yticks()
         #ax.set_yticklabel(positions, labels, fontsize=ytick_fontsize)
-        pylab.xlabel("Percentage (%)", fontsize=fontsize)
-        pylab.ylabel("Sample index/name", fontsize=fontsize)
-        pylab.yticks(fontsize=ytick_fontsize)
+
         if kind == "barh":
+            pylab.xlabel("Percentage (%)", fontsize=fontsize)
+            pylab.ylabel("Sample index/name", fontsize=fontsize)
+            if len(self.sample_names)<max_labels:
+                pylab.yticks(range(len(self.sample_names)), self.sample_names[::-1], 
+                    fontsize=ytick_fontsize)
+            else:
+                pylab.yticks([1], [""])
             pylab.xlim([0, 100])
+            pylab.ylim([-0.5, len(df.columns)-0.5])
         else:
+            pylab.ylabel("Percentage (%)", fontsize=fontsize)
+            pylab.xlabel("Sample index/name", fontsize=fontsize)
             pylab.ylim([0, 100])
-        ax = pylab.gca()
-        ax.legend(title="kingdom",  bbox_to_anchor=(1,1))
+            if len(self.sample_names)<max_labels:
+                pylab.xticks(range(len(self.sample_names)), self.sample_names[::-1], 
+                    fontsize=ytick_fontsize)
+            else:
+                pylab.xticks([1], [""])
+            pylab.xlim([-0.5, len(df.columns)-0.5])
+
+
+        ax.legend(labels, title="kingdom",  bbox_to_anchor=(1,1))
         try:
             pylab.tight_layout()
         except:pass
@@ -1326,4 +1589,101 @@ class MultiKrakenResults():
 
 
 
+class MultiKrakenResults2():
+    """Select several kraken output and creates summary plots
 
+    ::
+
+        import glob
+        mkr = MultiKrakenResults2(glob.glob("*/*/summary.json"))
+        mkr.plot_stacked_hist()
+
+    """
+    def __init__(self, filenames, sample_names=None):
+
+        self.filenames = filenames
+        if sample_names is None:
+            self.sample_names = list(range(1,len(filenames)+1))
+        else:
+            self.sample_names = sample_names
+
+    def get_df(self, limit=5, sorting_method="sample_name"):
+        import pandas as pd
+        import json
+        data = {}
+        for sample, filename in zip(self.sample_names, self.filenames):
+            summary = json.loads(open(filename, "r").read())
+            total = summary["total"]
+            data[sample] = {
+                    "unclassified": round(summary['unclassified']/total*100,2), 
+                    "nreads": summary['total']}
+            for db in summary['databases']:
+                data[sample][db] = round(summary[db]['C'] / total * 100,2)
+        df = pd.DataFrame(data)
+        df = df.fillna(0)
+        df = df.sort_index(ascending=False)
+        df = df.sort_index(ascending=False, axis=1)
+
+
+        # We sort the databases from best to worst. We ignore the nreads columns of
+        # course, which is not related to the ability of each DB to classify the
+        # reads
+        index = df.loc[df.index.drop("nreads")].mean(axis=1).sort_values(ascending=False).index
+        df = df.loc[list(index) + ["nreads"]]
+
+        # sort the columns by sample names
+        #df = df.sort_index(ascending=False, axis=1)
+        #df.sum(axis=1).sort_values(ascending=False).index[0]
+        return df
+
+    def plot_stacked_hist(self, output_filename=None, dpi=200, kind="barh", 
+            fontsize=10, edgecolor="k", lw=2, width=1, ytick_fontsize=10,
+            max_labels=50, logx=False, alpha=0.8, colors=None, 
+            cmap="hot_r", sorting_method="sample_name"):
+        """Summary plot of reads classified.
+
+
+        :param sorting_method: only by sample name for now
+        """
+        df = self.get_df(sorting_method=sorting_method)
+
+
+        df = df.loc[["unclassified"]+[x for x in df.index if x!="unclassified"]]
+        df = df.T
+        del df['nreads']
+
+        fig, ax = pylab.subplots(figsize=(9.5,7))
+
+        labels = []
+        # we will store grey/unclassified first and then other DB with a max of
+        # 10 DBs
+        L = len(df.columns) - 1
+        from matplotlib import cm
+        if colors is None:
+            colors = [cm.get_cmap(cmap)(x) for x in pylab.linspace(0.2,1,L)]
+        colors = ['grey'] + colors
+        df.plot(kind="barh", stacked=True, width=width, 
+                    edgecolor=edgecolor, color=colors, 
+                    lw=lw,  alpha=alpha, ax=ax, legend=False)
+        if logx is True:
+            pylab.semilogx()
+
+
+        positions = pylab.yticks()
+
+        pylab.xlabel("Percentage (%)", fontsize=fontsize)
+        pylab.ylabel("Sample index/name", fontsize=fontsize)
+        if len(self.sample_names)<max_labels:
+            pylab.yticks(range(len(self.sample_names)), df.index, 
+                fontsize=ytick_fontsize)
+        else:
+            pylab.yticks([1], [""])
+        pylab.xlim([0, 100])
+        pylab.ylim([0-0.5, len(df.index)-0.5])  # +1 for the legends
+        ax.legend(df.columns, title="DBs ",  bbox_to_anchor=(1,1))
+        try:
+            pylab.tight_layout()
+        except:pass
+        if output_filename:
+            pylab.savefig(output_filename, dpi=dpi)
+        return df

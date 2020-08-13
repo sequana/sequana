@@ -1,0 +1,38 @@
+
+
+
+rule multiqc:
+    """This rule launch multiqc;
+
+    Input:
+
+    - __multiqc__config
+
+    Output:
+
+    - __multiqc__input
+
+    parameters:
+
+    - __multiqc__indir
+    - __multiqc__outdir
+    - __multiqc__config
+
+    config file:
+
+    - multiqc/options
+
+
+    """
+    input:  __multiqc__input
+    output: globals().get("__multiqc__output", "multiqc/multiqc_report.html")
+    params:
+        indir   = globals().get("__multiqc__indir",  "."),
+        outdir  = globals().get('__multiqc__outdir', "multiqc"),
+        config  = globals().get("__multiqc__config", "multiqc_config.yaml"),
+        options = config["multiqc"]["options"]
+    shell:
+        """
+        multiqc {params.indir} -o {params.outdir} -c {params.config} {params.options} 2> {params.outdir}/multiqc.log
+        """
+

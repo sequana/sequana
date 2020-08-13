@@ -1,6 +1,6 @@
 # coding: utf-8
 from PyQt5 import QtCore, QtGui, Qt, QtWidgets
-
+from OpenGL import GL
 from packaging import version
 
 msg = """WARNING:: Qt import failed. This is a know issue. Qt import should work for version

@@ -50,8 +50,7 @@ class FastA(object):
             raise ValueError("Must be decompressed.")
         self._fasta = FastxFile(filename)
         self.filename = filename
-        logger.info("Reading input fasta file...please wait") 
-        self._N = len([x for x in FastxFile(filename)])
+        self._N = None
 
     def __iter__(self):
         return self
@@ -76,6 +75,9 @@ class FastA(object):
         return d
 
     def __len__(self):
+        if self._N is None:
+            logger.info("Reading input fasta file...please wait") 
+            self._N = len([x for x in FastxFile(self.filename)])
         return self._N
 
     def _get_names(self):
@@ -134,6 +136,40 @@ class FastA(object):
                     len(contigs.sequence), 80)]) + "\n"
                 fp.write(name + sequence)
                 n += 1
+
+    def filter(self, output_filename, names_to_keep=None, names_to_exclude=None):
+        if names_to_exclude is None and names_to_keep is None:
+            logger.warning("No ids provided")
+            return
+
+        if names_to_exclude:
+            with open(self.filename) as fin:
+                with open(output_filename, "w") as fout:
+                    skip = False
+                    # do no use readlines. may be slower but may cause memory
+                    # issue
+                    for line in fin:
+                        if line.startswith(">"):
+                            if line[1:].split()[0] in names_to_exclude:
+                                skip = True
+                            else:
+                                skip = False
+                        if skip is False:
+                            fout.write(line)
+        elif names_to_keep:
+            with open(self.filename) as fin:
+                with open(output_filename, "w") as fout:
+                    # do no use readlines. may be slower but may cause memory
+                    # issue
+                    skip = True
+                    for line in fin:
+                        if line.startswith(">"):
+                            if line[1:].split()[0] in names_to_keep:
+                                skip = False
+                            else:
+                                skip = True
+                        if skip is False:
+                            fout.write(line)
 
     def select_random_reads(self, N=None, output_filename="random.fasta"):
         """Select random reads and save in a file
@@ -204,7 +240,6 @@ class FastA(object):
     def to_igv_chrom_size(self, output):
         data = self.get_lengths_as_dict()
         with open(output, "w") as fout:
-        
             for k,v in data.items():
                 fout.write("{}\t{}\n".format(k, v))
 

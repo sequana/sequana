@@ -3,8 +3,7 @@ import pkg_resources
 try:
     version = pkg_resources.require("sequana")[0].version
 except:
-    version = ">=0.7.1"
-
+    version = ">=0.8.3"
 
 try:
     from easydev.logging_tools import Logging
@@ -12,7 +11,6 @@ try:
 except:
     import colorlog
     logger = colorlog.getLogger("sequana")
-
 
 
 from easydev import CustomConfig
@@ -40,6 +38,7 @@ from .krona import KronaMerger
 from .kraken import KrakenResults, KrakenPipeline, KrakenAnalysis, KrakenDownload, KrakenSequential
 from .pacbio import PacbioSubreads
 from .phred import Quality
+from .rnadiff import RNADiffResults
 from .running_median import RunningMedian
 from .snaketools import *
 from .snpeff import SnpEff

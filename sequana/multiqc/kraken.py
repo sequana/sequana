@@ -95,8 +95,7 @@ class MultiqcModule(BaseMultiqcModule):
 
         pconfig = {
             "title": "classification",
-            "count": False,
-            "percentages": True,
+            "cpswitch": False,
             "min": 0,
             "max":100,
             "format": '{0:.2f}',
@@ -151,7 +150,8 @@ class MultiqcModule(BaseMultiqcModule):
 
         pconfig = {
             "title": "Taxonomy by kingdom",
-            "percentages": True,
+            #"percentages": True,
+            "cpswitch": False,
             "min": 0,
             "max":100,
             "format": '{0:.2f}',
@@ -195,7 +195,7 @@ class MultiqcModule(BaseMultiqcModule):
                 'shared_key': 'count',
             }
 
-        for name in ['Viruses', 'Bacteria', 'Eukaryota', 'Archea']:
+        for name in ['Viruses', 'Bacteria', 'Eukaryota', 'Archea', 'Fungi']:
             if any([name in self.sequana_data[s] for s in self.sequana_data]):
                 headers[name] = {
                     'title': 'Reads classified as {} (%)'.format(name.lower()),

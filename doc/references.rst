@@ -115,6 +115,10 @@ Taxonomy related (Kraken - Krona)
     :members:
     :undoc-members:
 
+.. automodule:: sequana.taxonomy
+    :members:
+    :undoc-members:
+
 Pacbio module
 ----------------
 .. automodule:: sequana.pacbio
@@ -125,6 +129,17 @@ Pacbio module
 Phred quality
 ------------------
 .. automodule:: sequana.phred
+    :members:
+    :undoc-members:
+
+RNAdiff
+-------
+
+.. automodule:: sequana.rnadiff
+    :members:
+    :undoc-members:
+
+.. automodule:: sequana.compare
     :members:
     :undoc-members:
 
@@ -163,23 +178,6 @@ General tools
     :members:
     :undoc-members:
 
-Statistical tools
-------------------
-.. automodule:: sequana.stats
-    :members:
-    :undoc-members:
-
-.. automodule:: sequana.criteria
-    :members:
-    :undoc-members:
-
-.. automodule:: sequana.mixture
-    :members:
-    :undoc-members:
-
-.. automodule:: sequana.mh
-    :members:
-    :undoc-members:
 
 Format IO
 ------------
@@ -252,43 +250,6 @@ Misc
     :undoc-members:
 
 .. automodule:: sequana.utils.datatables_js
-    :members:
-    :undoc-members:
-
-Visualisation
--------------
-
-
-.. automodule:: sequana.viz.anova
-    :members:
-    :undoc-members:
-
-.. automodule:: sequana.viz.corrplot
-    :members:
-    :undoc-members:
-
-.. automodule:: sequana.viz.heatmap
-    :members:
-    :undoc-members:
-
-.. automodule:: sequana.viz.hinton
-    :members:
-    :undoc-members:
-
-.. automodule:: sequana.viz.hist2d
-    :members:
-    :undoc-members:
-
-.. automodule:: sequana.viz.imshow
-    :members:
-    :undoc-members:
-
-.. automodule:: sequana.viz.scatter
-    :members:
-    :undoc-members:
-
-
-.. automodule:: sequana.viz.volcano
     :members:
     :undoc-members:
 

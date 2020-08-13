@@ -83,6 +83,10 @@ class Imshow(VizInputSquare):
             pylab.tight_layout()
 
 
+        # For some reasons, in newest version of python/mpl, this is required
+        # for ylim, not for xlim
+        y1,y2 = pylab.ylim()
+        pylab.ylim([y1+0.5, y2-0.5])
 
 
 

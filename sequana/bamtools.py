@@ -387,10 +387,14 @@ class SAMBAMbase():
                     gene_ranges[chrom_name].insert(start,end, strand)
         elif reference_bed.endswith(".gff"):
             with open(reference_bed, "r") as fin:
+                count = 0
                 for line in fin:
+                    count +=1
                     if line.startswith(('#')):
                         continue
                     fields = line.split()
+                    if len(fields)<6:
+                        logger.warning("invalid format on line {}: {}".format(count, line))
                     if fields[2] != "gene":
                         continue
                     chrom_name = fields[0]

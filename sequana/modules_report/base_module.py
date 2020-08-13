@@ -33,9 +33,22 @@ __all__ = ["SequanaBaseModule"]
 
 class SequanaBaseModule(object):
     """ Generic Module to write HTML reports.
+
+
+    # to add a TOC, add this code::
+
+        <div id="tocDiv">
+        <ul id="tocList"> </ul>
+        </div>
+
+
     """
-    required_dir = ("css", "js", "images")
-    def __init__(self, template_fn='standard.html'):
+    def __init__(self, template_fn='standard.html', required_dir=None):
+        if required_dir is None:
+            self.required_dir=("css", "js", "images")
+        else:
+            self.required_dir = required_dir
+
         self.output_dir = config.output_dir
         self.path = "./"
         # Initiate jinja template
@@ -55,6 +68,7 @@ class SequanaBaseModule(object):
         # Create report directory
         if os.path.isdir(config.output_dir) is False:
             os.mkdir(self.output_dir)
+
         for directory in self.required_dir:
             complete_directory = os.sep.join([self.output_dir, directory])
             if os.path.isdir(complete_directory) is False:
@@ -173,23 +187,23 @@ class SequanaBaseModule(object):
         html = HTMLTable(dataframe)
         return html.to_html(**kwargs)
 
-    def include_svg_image(self, filename):
+    def include_svg_image(self, filename, alt="undefined"):
         """ Include SVG image in the html.
         """
         html = ('<object data="{0}" type="image/svg+xml">\n'
-                '<img src="{0}"></object>')
-        return html.format(filename)
+                '<img src="{0}" alt={1}></object>')
+        return html.format(filename, alt)
 
-    def png_to_embedded_png(self, png, style=None):
+    def png_to_embedded_png(self, png, style=None, alt="", title=""):
         """ Include a PNG file as embedded file.
         """
         import base64
         with open(png, 'rb') as fp:
             png = base64.b64encode(fp.read()).decode()
         if style:
-            html = '<img style="{0}"'.format(style)
+            html = '<img style="{0}" alt="{1}" title="{2}"'.format(style, alt, title)
         else:
-            html = "<img "
+            html = '<img alt="{}" title="{}"'.format(alt, title)
         return '{0} src="data:image/png;base64,{1}">'.format(html, png)
 
     def create_embedded_png(self, plot_function, input_arg, style=None,
@@ -232,3 +246,4 @@ class SequanaBaseModule(object):
 <a href="#" data-jq-dropdown="#jq-dropdown-{1}">Subchromosome</a>
         """.format('\n'.join(option_list), html_id)
         return html
+

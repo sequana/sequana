@@ -113,12 +113,65 @@ class StatsFile(object):
             pylab.bar(range(L,L+1), under, color=color, label="undetermined")
             pylab.xticks([])
             pylab.ylabel("Number of reads")
-            try:pylab.legend(loc="best")
+            try:pylab.legend(loc="lower left")
             except:pass
             pylab.title("Lane {}".format(lane))
             pylab.savefig(filename.format(lane), dpi=200)
 
-    def barplot_summary(self, filename=None, color=["green", "red"], 
+    def barplot_per_sample(self, alpha=0.5, width=0.8, filename=None):
+        df = self.get_data_reads()
+
+        # this is ugly but will do the job for now
+        under = df.query("name=='Undetermined'")
+        others = df.query("name!='Undetermined'")
+
+        under = under.groupby("name").sum().reset_index()
+        others = others.groupby("name").sum().reset_index()
+
+        under = under[["name", "count"]].set_index("name")
+        others = others[["name", "count"]].set_index("name")
+
+
+        all_data = others.sort_index(ascending=False)
+        all_data.columns = ["samples"]
+
+        # appended at the end
+        all_data.loc['undetermined']  = 0
+
+        # revert back 
+        all_data = all_data.loc[::-1]
+
+        # just for legend
+        under.columns = ['undetermined']
+        if all_data.sum().min() > 1e6:
+            all_data /= 1e6
+            under /= 1e6
+            M = True
+        else:
+            M = False
+
+        all_data.plot(kind="barh",alpha=alpha, zorder=1, width=width, ec='k')
+
+        under.plot(kind="barh", alpha=alpha, color="red", ax=pylab.gca(),
+            zorder=1, width=width, ec='k')
+        pylab.ylim([-0.5, len(all_data) + 0.5])
+        if len(all_data) < 100:
+            pylab.yticks(range(len(all_data)), all_data.index)
+
+        pylab.legend()
+        pylab.grid(True, zorder=-1)
+        if M:
+            pylab.xlabel("Number of reads (M)")
+        else:
+            pylab.xlabel("Number of reads")
+        try:
+            pylab.tight_layout()
+        except:
+            pass
+        if filename:
+            pylab.savefig(filename, dpi=200)
+
+    def barplot_summary(self, filename=None, color=["green", "red"],
             alpha=0.8):
 
         df = self.get_data_reads()
@@ -132,9 +185,14 @@ class StatsFile(object):
 
         df = df.pivot(index="lane", columns="name", values="count")
         df = df[["Determined", "Undetermined"]]
-        df.plot.barh(stacked=True, color=color, alpha=alpha)
+        if df.sum().min()>1e6:
+            df/=1e6
+            df.plot.barh(stacked=True, color=color, alpha=alpha, ec='k')
+            pylab.xlabel("Number of reads (M)")
+        else:
+            df.plot.barh(stacked=True, color=color, alpha=alpha, ec='k')
+            pylab.xlabel("Number of reads")
         pylab.legend()
-        pylab.xlabel("Number of reads")
 
         if filename:
             pylab.savefig(filename, dpi=200)
@@ -160,9 +218,10 @@ class StatsFile(object):
         data.plot(kind="barh", width=1, ec="k", ax=ax)
         rcParams['axes.axisbelow'] = False
         pylab.xlabel("Number of reads", fontsize=12)
-        pylab.ylabel("Frequency (%)", fontsize=12)
+        pylab.ylabel("")
         pylab.grid(True)
-        pylab.legend(["Lane {}".format(x) for x in range(1, len(df.columns)+1)])
+        pylab.legend(["Lane {}".format(x) for x in range(1, len(df.columns)+1)],
+            loc="lower right")
         try:
             pylab.tight_layout()
         except Exception as err:
