@@ -259,7 +259,7 @@ class RNADiffResults():
                 'surexp1': 'b',
                 'surexp2':'b', 
                 'surexp3':'b'}
-            r.pca(colors=colors)
+            r.plot_pca(colors=colors)
 
         """
         from sequana.viz import PCA
