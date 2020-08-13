@@ -1393,7 +1393,7 @@ class FileFactory(object):
     The **pathname** is a specific label for a file’s directory location
     while within an operating system.
 
-    .. versionchanges:: 0.8.7 attributes were recomputed at each accession. For
+    .. versionchanged:: 0.8.7 attributes were recomputed at each accession. For
         small projects, this is transparent, but on novogene or large set of samples,
         this is taking too much time. This was done in case FileFactorry
         attributes such as input directorty or pattern are changed. In practice this
