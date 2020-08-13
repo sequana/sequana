@@ -19,24 +19,166 @@
 import collections
 import os
 import ftplib
+import io
 import subprocess
 import sys
 import glob
+import subprocess
 
 
 from sequana.databases import ENADownload
 from easydev import execute, TempFile, Progress, md5, DevTools
 
+from bioservices import EUtils
+from sequana import sequana_config_path
 from sequana.lazy import pandas as pd
 from sequana import logger
 logger.name = __name__
 
 
-
 __all__ = ["KrakenBuilder"]
 
 
-class KrakenBuilder():
+class KrakenBuilderBase():
+    def __init__(self, dbname):
+        self.dbname = dbname
+        self.eutils = EUtils()
+        self.enadb = ENADownload()
+
+        self.category = ['archaea', 'bacteria', 'fungi', 'invertebrate',
+            'mitonchondrion', 'other', 'plant', 'plasmid', 'plastid', 'protozoa',
+            'vertebrate_mammalian', 'vertebrate_other', 'viral']
+    
+    def download_ncbi_refseq(self, category):
+        """Download all files of type *fna* from ncbi FTP.
+
+        ::
+
+            kb = KrakenBuilder()
+            kb.download_ncbi_refseq("viral")
+
+        """
+        import ftplib
+        import os
+        assert category in self.category, "Please use one of {}".format(self.category)
+
+        ftp = ftplib.FTP("ftp.ncbi.nlm.nih.gov")
+        ftp.login("anonymous", "thomas.cokelaer@pasteur.fr")
+        ftp.cwd("refseq/release/{}".format(category))
+
+        import io
+        file_mapper = {}
+        for filename in ftp.nlst():
+            if "genomic.fna" in filename:
+                ftp.retrbinary('RETR ' + filename , open(filename, "wb").write)
+                print(filename)
+
+    def download_genomes_from_ncbi(self, email, category):
+        """This downloads all genomes on ncbi for a given category looking at
+        their ftp. This could be highly redundant.
+
+
+        """
+        assert category in self.category
+
+        ftp = ftplib.FTP("ftp.ncbi.nlm.nih.gov")
+        ftp.login("anonymous", email)
+        ftp.cwd("refseq/release/{}".format(category))
+
+        file_mapper = {}
+        for filename in ftp.nlst():
+            if "genomic.fna" in filename:
+                ftp.retrbinary('RETR ' + filename , open(filename, "wb").write)
+                logger.info(filename)
+
+    def _download_assembly_report(self, category):
+        assert category in self.category
+
+        ftp = ftplib.FTP("ftp.ncbi.nlm.nih.gov")
+        ftp.login("anonymous", "anonymous")
+        ftp.cwd("genomes/refseq/{}".format(category))
+
+        filename = "assembly_summary.txt"
+        ftp.retrbinary('RETR ' + filename,
+                open(filename.replace(".txt", "_{}.txt".format(category)), "wb").write)
+        logger.info(filename)
+
+
+    def download_accession_from_ncbi(self, accession):
+        # a list of accessions in a file
+        # can be a list, a unique string, a filename with 1-column wit accession
+        # to retrieve
+        if isinstance(accession, list):
+            pass
+        elif isinstance(accession, str):
+            if os.path.exists(accession):
+                with open(accession, "r") as fin:
+                    accessions = fin.read().split()
+            else:
+                accessions = [accession]
+
+        from easydev import Progress
+        N = len(accessions)
+        pb = Progress(N)
+        logger.info("Fetching {} accession fasta files from NCBI".format(N))
+        for i, accession in enumerate(accessions):
+            data = self.eutils.EFetch("nucleotide", rettype="fasta",
+                id=accession, retmode="text")
+            if isinstance(data, int):
+                logger.info("Could not fetch this accession: {}. continue".format(accession))
+                print("Could not fetch this accession: {}. continue".format(accession))
+            else:
+                outname = "{}/library/{}.fa".format(self.dbname, accession)
+                with open(outname, "wb") as fout:
+                    fout.write(data)
+            pb.animate(i+1)
+
+
+class Kraken2Builder(KrakenBuilderBase):
+    def __init__(self, dbname):
+        super(Kraken2Builder, self).__init__(dbname)
+        self.path_to_taxonomy = sequana_config_path + os.sep + "kraken2_taxonomy"
+        from easydev import mkdirs
+        mkdirs(self.path_to_taxonomy)
+
+    def kraken2_add_genomes(self, path_or_filename, extension="fa"):
+        # Could be the path to a unique fasta or a directory, in which case all
+        # files ending in .fa are added
+        if os.path.exists(path_or_filename) and os.path.isfile(path_or_filename):
+            cmd = "kraken2-build -db {} --add-to-library {}"
+            cmd = cmd.format(self.dbname, path_or_filename)
+        else:
+            filenames = glob.glob(path_or_filename)
+            for filename in filenames:
+                cmd = "kraken2-build -db {} --add-to-library {}"
+                cmd = cmd.format(self.dbname, filename)
+
+    def kraken2_build_download_taxonomy(self, download=False, path_to_taxonomy=None):
+
+        if path_to_taxonomy:
+            filenames = glob.glob(self.path_to_taxonomy + os.sep + "*")
+        else:
+            filenames = glob.glob(self.path_to_taxonomy + os.sep + "*")
+
+        if len(filenames) == 15:
+            for filename in glob.glob(self.path_to_taxonomy + os.sep + "*"):
+                basename = os.path.basename(filename)
+                os.symlink(filename,
+                    "{}/taxonomy/{}".format(self.dbbame , basename))
+        else:
+            # first, have we already downloaded the 30gb of data ? If so, this was
+            # done in the sequana_config_path once for all
+            cmd = "kraken2-build -db {} --download-taxonomy"
+            cmd = cmd.format(self.path_to_taxonomy)
+            subprocess.call(cmd)
+
+    def rdp(self):
+        pass
+        #"http://rdp.cme.msu.edu/misc/resources.jsp
+
+
+
+class KrakenBuilder(KrakenBuilderBase):
     """This class will help you building a custom Kraken database
 
 
@@ -83,7 +225,7 @@ class KrakenBuilder():
     It is now time to build the DB itself. This is based on the kraken tool.
     You may do it yourself in a shell::
 
-        kraken-build  --rebuild -db virusdb --minimizer-len 10 --max-db-size 4 --threads 4
+        kraken-build  --rebuild --db virusdb --minimizer-len 10 --max-db-size 4 --threads 4
         --kmer-len 26 --jellyfish-hash-size 500000000
 
     Or you the KrakenBuilder. First you need to look at the :attr:`params`
@@ -150,6 +292,21 @@ class KrakenBuilder():
 
         kb.clean_db()
 
+
+    With kraken, you type::
+
+        kraken-build --db TEST --download-taxonomy
+
+    then, you can download and copy fasta files as follows::
+
+
+
+kraken2-build -db kraken2_test --download-taxonomy
+kraken2-build -db kraken2_test --add-to-library ~/Biomics_directory/resources/Kraken/library/ncbi2019/viral/viral.1.1.genomic.fna
+srun -c 4 $BIOMICS --mem 16000 kraken2-build -db kraken2_test --build  --threads 4
+kraken2-build --clean --db kraken2_test
+
+
     """
     def __init__(self, dbname):
         """.. rubric:: Constructor
@@ -158,9 +315,8 @@ class KrakenBuilder():
 
 
         """
+        super(KrakenBuilder, self).__init__(dbname)
         # See databases.py module
-        self.dbname = dbname
-        self.enadb = ENADownload()
         self.valid_dbs = self.enadb._metadata.keys()
 
         # mini_kraken uses minimiser-length = 13, max_db =4, others=default so
@@ -180,7 +336,7 @@ class KrakenBuilder():
         # mkdir library
         self.library_path = self.dbname + os.sep + "library"
         self.taxon_path = self.dbname + os.sep + "taxonomy"
-        self.fasta_path = self.library_path + os.sep + "added"
+        self.fasta_path = self.library_path
 
         self._devtools = DevTools()
         self._devtools.mkdir(self.dbname)
@@ -188,30 +344,7 @@ class KrakenBuilder():
         self._devtools.mkdir(self.fasta_path)
         self._devtools.mkdir(self.taxon_path)
 
-    def download_ncbi_refseq(self, category):
-        """Download all files of type *fna* from ncbi FTP.
-
-        ::
-
-            kb = KrakenBuilder()
-            kb.download_ncbi_refseq("viral")
-
-        """
-        import ftplib
-        import os
-
-        ftp = ftplib.FTP("ftp.ncbi.nlm.nih.gov")
-        ftp.login("anonymous", "thomas.cokelaer@pasteur.fr")
-        ftp.cwd("refseq/release/{}".format(category))
-
-        import io
-        file_mapper = {}
-        for filename in ftp.nlst():
-            if "genomic.fna" in filename:
-                ftp.retrbinary('RETR ' + filename , open(filename, "wb").write)
-                print(filename)
-
-    def download_accession(self, acc):
+    def download_accession(self, acc, output=None):
         """Donwload a specific Fasta from ENA given its accession number
 
         Note that if you want to add specific FASTA from ENA, you must use
@@ -219,7 +352,8 @@ class KrakenBuilder():
         The header must use a GI number (not ENA)
 
         """
-        output = self.dbname+os.sep + "library" + os.sep + "added"
+        if output is None:
+            output = self.dbname + os.sep + "library"
         """Download a specific FASTA file given its ENA accession number """
         self.enadb.download_accession(acc, output=output)
 
@@ -238,6 +372,10 @@ class KrakenBuilder():
         # Start with the FASTA
         self._download_dbs(dbs)
 
+        # FIXME
+        # kraken-build --add-to-library ./polyo/library/MN908947_3.fna -db polyo
+
+
         self.download_taxonomy()
 
         # search for taxon file. If not found, error
@@ -250,7 +388,8 @@ class KrakenBuilder():
         self._build_kraken()
 
     def download_taxonomy(self, force=False):
-        """Download kraken data
+        """Download kraken data, once for all instead of doing it for each build.
+
 
         The downloaded file is large (1.3Gb) and the unzipped file is about 9Gb.
 
@@ -258,6 +397,12 @@ class KrakenBuilder():
         parameter is set to True.
 
         """
+        # valid with kraken 1.1
+    
+        urls
+        #ftp://ftp.ncbi.nlm.nih.gov/pub/taxonomy/accession2taxid/nucl_gb.accession2taxid.gz
+        #ftp://ftp.ncbi.nlm.nih.gov/pub/taxonomy/accession2taxid/nucl_wgs.accession2taxid.gz
+        #ftp://ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz
 
         # If the requested file exists, nothing to do
         expected_filename = self.taxon_path + os.sep + "gi_taxid_nucl.dmp"
@@ -306,7 +451,7 @@ class KrakenBuilder():
         print('Building the kraken db ')
         self.params['hash_size'] = int(self.params["hash_size"])
 
-        cmd = """kraken-build  --rebuild -db %(dbname)s \
+        cmd = """kraken-build  --rebuild --db %(dbname)s \
             --minimizer-len %(minimizer_len)s\
             --max-db-size %(max_db_size)s \
             --threads %(threads)s\
