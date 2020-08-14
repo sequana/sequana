@@ -20,12 +20,21 @@ logger.level = "INFO"
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 
 
+import pkg_resources
+pipelines = [item.key for item in pkg_resources.working_set if item.key.startswith("sequana")]
+if len(pipelines): 
+    version +="\nThe following pipelines are installed:\n"
+for item in pkg_resources.working_set:
+    if item.key.startswith("sequana") and item.key != 'sequana':
+        version += "\n - {}, version {}".format(item.key, item.version)
 
 @click.group(context_settings=CONTEXT_SETTINGS)
 @click.version_option(version=version)
 def main():
     """This is the main help"""
     pass
+
+
 
 
 @main.command()
@@ -65,16 +74,21 @@ def fastq(**kwargs):
         print("Use one of the commands")
 
 
-
-
 @main.command()
 @click.argument('name', type=click.STRING)
-def develop(**kwargs):
-    """
-
-    """
+@click.option('--check', is_flag=True)
+@click.option('--extract-adapters', is_flag=True)
+def samplesheet(**kwargs):
+    """Utilities to manipulate sample sheet"""
     name = kwargs['name']
+    from sequana.iem import IEM
+    iem = IEM(name)
+    if kwargs['check']:
+        iem.validate()
+    elif kwargs["extract_adapters"]:
+        iem.to_fasta()
 
+    
 
 if __name__ == "__main__": #pragma: no cover
     main()

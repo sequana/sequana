@@ -20,3 +20,5 @@ def test_iem():
         iem.name
         iem.header
         iem.to_fasta("TEST")
+        try:iem.validate()
+        except:pass
