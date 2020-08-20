@@ -36,7 +36,6 @@ def main():
 
 
 
-
 @main.command()
 @click.argument('filename', type=click.STRING)
 @click.option("--count-reads", is_flag=True)
@@ -68,9 +67,9 @@ def fastq(**kwargs):
         assert kwargs['output']
         N = kwargs['head'] * 4 
         f.extract_head(N=N, output_filename=kwargs['output'])
-    elif kwargs['tail']:
+    elif kwargs['tail']: #pragma: no cover
         raise NotImplementedError
-    else:
+    else:  #pragma: no cover
         print("Use one of the commands")
 
 
@@ -88,7 +87,41 @@ def samplesheet(**kwargs):
     elif kwargs["extract_adapters"]:
         iem.to_fasta()
 
-    
+@main.command()
+@click.argument("name", type=click.STRING)
+@click.option("--module")
+def summary(**kwargs):
+    name = kwargs['name']
+    # we will try by monkey patching
+    from sequana.rnadiff import RNADiffResults
+    from sequana.modules_report.rnadiff import RNAdiffModule
+    from sequana.modules_report.bamqc import BAMQCModule
+
+    module = kwargs['module']
+    if module:
+        if module =="bamqc":
+            report = BAMQCModule(name, "bamqc.html")
+        elif module == "rnadiff":
+            data = RNADiffResults(name)
+            report = RNAdiffModule(data)
+    else: # we try everthing
+        found = False
+        if found is False:
+            try:
+                data = RNADiffResults(name)
+                report = RNAdiffModule(data)
+                found = True
+                print("RNADiff module created ")
+            except Exception as err: 
+                pass
+
+        if found is False:
+            try: 
+                report = BAMQCModule(name, "bamqc.html")
+                found = True
+                print("BAMQC module created in bamqc.html")
+            except:pass
+
 
 if __name__ == "__main__": #pragma: no cover
     main()

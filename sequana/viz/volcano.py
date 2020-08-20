@@ -77,6 +77,8 @@ class Volcano(object):
 
         if color is None:
             self.color = ['blue'] * len(self.pvalues)
+        elif isinstance(color, str):
+            self.color = [color] * len(self.pvalues)
         else:
             self.color = np.array(color)
         # TODO: check that the 3 columns have same length
@@ -86,9 +88,14 @@ class Volcano(object):
         self.df = pd.DataFrame({"fold_change": self.fold_changes,
             "pvalue": self.pvalues, 'color': self.color})
 
-    def plot(self, size=100, alpha=0.5, marker='o', fontsize=16,
-            xlabel='fold change',
-            ylabel='p-value', pvalue_threshold=1.5, fold_change_threshold=1):
+    def plot(self, size=10, alpha=0.5, marker='o', fontsize=16,
+            xlabel='fold change', logy=False, 
+            threshold_lines={"color": "black", 'ls': "--"},
+            ylabel='p-value', pvalue_threshold=1.3, fold_change_threshold=1,
+
+            add_broken_axes=False,
+            broken_axes={"ylims": ((0,10), (50,100))}
+            ):
         """
 
         :param size: size of the markers
@@ -108,26 +115,48 @@ class Volcano(object):
 
         colors = self.df.color
 
-        pylab.scatter(self.fold_changes[mask1],
+        if add_broken_axes: 
+            from brokenaxes import brokenaxes
+            _ylims = broken_axes.get("ylims", None)
+            _xlims = broken_axes.get("xlims", None)
+            bax = brokenaxes(ylims=_ylims, xlims=_xlims)
+        else:
+            bax = pylab
+        bax.scatter(self.fold_changes[mask1],
                 self.pvalues[mask1],
                 s=size,
                 alpha=alpha,
                 c='grey', marker=marker)
-        pylab.scatter(self.fold_changes[mask2],
+        bax.scatter(self.fold_changes[mask2],
                 self.pvalues[mask2],
                 s=size,
                 alpha=alpha,
                 c=colors[mask2])
 
-        pylab.grid()
+        bax.grid()
         #pylab.ylim([0, pylab.ylim()[1]])
         #M = max(abs(self.fold_change)) * 1.1
         #pylab.xlim([-M, M])
-        pylab.xlabel(xlabel, fontsize=fontsize)
-        pylab.ylabel(ylabel, fontsize=fontsize)
-        pylab.axhline(pvalue_threshold, color='red', linestyle='--')
-        pylab.axvline(fold_change_threshold, color='red', linestyle='--')
-        pylab.axvline(-1*fold_change_threshold, color='red', linestyle='--')
+        try:
+            bax.set_xlabel(xlabel, fontsize=fontsize)
+            bax.set_ylabel(ylabel, fontsize=fontsize)
+        except:
+            bax.xlabel(xlabel, fontsize=fontsize)
+            bax.ylabel(ylabel, fontsize=fontsize)
+    
+        bax.axhline(pvalue_threshold, color=threshold_lines['color'], 
+                linestyle=threshold_lines["ls"])
+        bax.axvline(fold_change_threshold, 
+                color=threshold_lines['color'],
+                linestyle=threshold_lines["ls"])
+        bax.axvline(-1*fold_change_threshold,
+                color=threshold_lines['color'],
+                linestyle=threshold_lines["ls"])
+
+        if logy is True:
+            ax = pylab.gca()
+            ax.set(yscale="log")
+            
 
 
 

@@ -136,7 +136,7 @@ class PCA(clusterisation.Cluster):
                 pylab.figure(2)
                 self._plot(Xr, pca=pca, pc1=0,pc2=2, colors=colors)
                 pylab.figure(3)
-                self._plot(Xr, pca=None, pc1=1,pc2=2, colors=colors)
+                self._plot(Xr, pca=pca, pc1=1,pc2=2, colors=colors)
 
         return pca.explained_variance_ratio_
 

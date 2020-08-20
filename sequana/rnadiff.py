@@ -28,6 +28,8 @@ from sequana import logger
 import glob
 
 
+
+
 __all__ = ["RNADiffResults", "RNADiffResultsOld"]
 
 
@@ -44,22 +46,33 @@ class RNADiffResults():
         :param out_dir:
         :param log2_fc: the log2 fold change to apply
 
+
+        Note that if the index or Name/ID columns are made of ensemble ID, they
+        may be preceded by the gene: prefix, which is removed
         """
-        if os.path.isdir(filename):
+        if isinstance(filename, RNADiffResults):
+            self.df = filename.df.copy()
+        elif os.path.isdir(filename):
             filenames = glob.glob(filename + "/tables/" + pattern)
             if len(filenames) == 1:
                 self.filename = filenames[0]
             else:
                 raise IOError("Found several file with the {} pattern. Please be"
                     "more restrictive using the pattern argument")
+            self.df = pd.read_csv(self.filename, sep, index_col=0)
         elif os.path.exists(filename):
             # must be a 'complete' file from rnadiff analysis
             self.filename = filename
+            self.df = pd.read_csv(self.filename, sep, index_col=0)
         else:
             raise TypeError("{} does not exists".format(filename))
 
-        # Finally, read the data itself
-        self.df = pd.read_csv(self.filename, sep, index_col=0)
+        # Some cleanup
+        self.df.index = [x.replace('gene:', '') for x in self.df.index]
+        for col in ['ID', 'Name']:
+            if col in self.df.columns:
+                self.df[col] = [x.replace('gene:', '') for x in self.df[col]]
+
 
         # Just an alias to a subset of the dataframe
         normed = [x for x in self.df.columns if x.startswith('norm')]
@@ -205,7 +218,8 @@ class RNADiffResults():
         pylab.grid(True, zorder=0)
 
 
-    def plot_volcano(self, padj=0.05):
+    def plot_volcano(self, padj=0.05, add_broken_axes=False, markersize=4,
+        limit_broken_line=[20,40], plotly=False):
         """
 
 
@@ -222,23 +236,58 @@ class RNADiffResults():
         d1 = self.df.query("padj>@padj")
         d2 = self.df.query("padj<=@padj")
 
-        fig = pylab.figure()
-        pylab.plot(d1.log2FoldChange, -np.log10(d1.padj), marker="o",
-            alpha=0.5, color="r", lw=0)
-        pylab.plot(d2.log2FoldChange, -np.log10(d2.padj), marker="o",
-            alpha=0.5, color="k", lw=0)
+        if plotly:
+            from plotly import express as px
+            df = self.df.copy() 
+            df['log_adj_pvalue'] = -pylab.log10(self.df.padj)
+            df['color'] = ['significant' if x else "not significant" for x in df.padj<0.05]
+            fig = px.scatter(df, x="log2FoldChange", 
+                                 y="log_adj_pvalue",
+                                 hover_name="Name" ,log_y=False, color="color", 
+                                 labels={"log_adj_pvalue":"lof adjusted p-value"}
+)
+            
+            return fig 
 
-        pylab.grid(True)
-        pylab.xlabel("fold change")
-        pylab.ylabel("log10 adjusted p-value")
+        from brokenaxes import brokenaxes
+        M = max(-pylab.log10(self.df.padj.dropna()))
+
+        br1, br2 = limit_broken_line 
+        if M > br1:
+            if add_broken_axes:
+                bax = brokenaxes(ylims=((0,br1),(M-10,M)), xlims=None)
+            else:
+                bax = pylab
+
+ 
+        bax.plot(d1.log2FoldChange, -np.log10(d1.padj), marker="o",
+            alpha=0.5, color="k", lw=0, markersize=markersize)
+        bax.plot(d2.log2FoldChange, -np.log10(d2.padj), marker="o",
+            alpha=0.5, color="r", lw=0, markersize=markersize)
+
+        bax.grid(True)
+        try:
+            bax.set_xlabel("fold change")
+            bax.set_ylabel("log10 adjusted p-value")
+        except:
+            bax.xlabel("fold change")
+            bax.ylabel("log10 adjusted p-value")
+
         m1 = abs(min(self.df.log2FoldChange))
         m2 = max(self.df.log2FoldChange)
         limit = max(m1,m2)
-        pylab.xlim([-limit, limit])
-        y1,y2 = pylab.ylim()
-        pylab.ylim([0,y2])
-
-        pylab.axhline(-np.log10(0.05), lw=2, ls="--", color="r", label="pvalue threshold (0.05)")
+        try:
+            bax.set_xlim([-limit, limit])
+        except:
+            bax.xlim([-limit, limit])
+        try:
+            y1,_ = bax.get_ylim()
+            ax1 = bax.axs[0].set_ylim([br2,y1[1]*1.1])
+        except:
+            y1,y2 = bax.ylim()
+            bax.ylim([0,y2])
+        bax.axhline(-np.log10(0.05), lw=2, ls="--", color="r", label="pvalue threshold (0.05)")
+        return bax
 
     def plot_pca(self, n_components=2, colors=None):
         """
@@ -299,6 +348,131 @@ class RNADiffResults():
         except:
             logger.warning("{} not found".format(sample_name))
             return None
+
+
+    def plot_density(self):
+        import seaborn
+        seaborn.set()
+        for x in self.sample_names:
+            seaborn.kdeplot(pylab.log10(self.df[x].clip(lower=1)))
+            pylab.ylabel("Density")
+            pylab.xlabel("Raw counts (log10)")
+        #import matplotlib
+        #matplotlib.rc_file_defaults()
+
+
+    def plot_feature_most_present(self):
+        """
+        """
+        _description = "test me"
+        N = len(self.sample_names)
+
+        data = self.df[self.sample_names].max() / self.df[self.sample_names].sum()
+        data = data  *100
+
+        colors = []
+        names = []
+        for sample in self.sample_names:
+            colors.append(self.colors[self.get_cond_from_sample(sample)])
+
+        pylab.clf()
+        pylab.barh(range(0, len(data)), data, 
+            color=colors, alpha=1,
+            zorder=10, lw=1, ec="k", height=0.9)
+        count = 0
+        for x, sample in zip(data, self.sample_names):
+            index_name = self.df[sample].argmax()
+            name = self.df.iloc[index_name].Name # !! this is the index not the column called Name
+            pylab.text(x, count, name, fontdict={'ha': 'center', 'va': 'center'}, zorder=20)
+            count += 1
+        x0, x1 = pylab.xlim()
+        pylab.xlim([0, min(100, x1*1.2)])
+        pylab.yticks(range(N), self.sample_names)
+        pylab.xlabel("Reads captured by most important feature (%s)")
+        pylab.ylabel("Sample")
+
+    def plot_dendogram(self, max_features=5000, transform_method="log"):
+
+        assert transform_method in ['log', 'anscombe']
+        # first we take the normalised data
+        from sequana.viz import clusterisation
+        from sequana.viz import dendogram
+        cluster = clusterisation.Cluster(self.normcounts)
+        #cluster = clusterisation.Cluster(self.df[self.sample_names])
+        data = cluster.scale_data(transform_method=transform_method, 
+                max_features=max_features)
+        df = pd.DataFrame(data[0])
+        df.index = data[1]
+        df.columns = self.normcounts.columns
+
+        d = dendogram.Dendogram(df.T)
+        d.category = {}
+        conditions = list(self.condition_names)
+        for sample_name in df.columns:
+            cond = self.get_cond_from_sample(sample_name.replace("norm.", ""))
+            d.category[sample_name] = conditions.index(cond)
+        d.plot()
+
+
+    def boxplot_rawdata(self, fliersize=2, linewidth=2, **kwargs):
+        import seaborn as sbn
+        sbn.set()
+
+        colors = []
+        for sample in self.sample_names:
+            col = self.colors[self.get_cond_from_sample(sample)]
+            if col == "orange":
+                colors.append("#FFA500")
+            else:
+                colors.append("#3c5688")
+
+        ax = sbn.boxplot(data=self.df[self.sample_names].clip(1), 
+            linewidth=linewidth, fliersize=fliersize, palette=colors, **kwargs);
+        ax.set(yscale="log")
+
+    def boxplot_normeddata(self, fliersize=2, linewidth=2, **kwargs):
+        import seaborn as sbn
+        sbn.set()
+        colors = []
+        for sample in self.sample_names:
+            col = self.colors[self.get_cond_from_sample(sample)]
+            if col == "orange":
+                colors.append("#FFA500")
+            else:
+                colors.append("#3c5688")
+        ax = sbn.boxplot(data=self.normcounts.clip(1), 
+            linewidth=linewidth, fliersize=fliersize, palette=colors, **kwargs);
+        ax.set(yscale="log")
+
+
+    def plot_pvalue_hist(self, bins=60, fontsize=16):
+        pylab.hist(self.df.pvalue.dropna(), bins=bins, ec="k")
+        pylab.grid(True)
+        pylab.xlabel("raw p-value", fontsize=fontsize)
+        pylab.ylabel("Occurences", fontsize=fontsize)
+
+    def plot_padj_hist(self, bins=60, fontsize=16):
+        pylab.hist(self.df.padj.dropna(), bins=bins, ec="k")
+        pylab.grid(True)
+        pylab.xlabel("Adjusted p-value", fontsize=fontsize)
+        pylab.ylabel("Occurences", fontsize=fontsize)
+        pylab.ylabel("Dispersion", fontsize=fontsize)
+        pylab.xlabel("Mean of normalized counts", fontsize=fontsize)
+
+    def plot_dispersion(self):
+
+
+
+        pylab.plot(self.normcounts.mean(axis=1), self.df.dispGeneEst, "ok", 
+            label="Estimate", ms=1)
+        pylab.plot(self.normcounts.mean(axis=1), self.df.dispersion, "ob", 
+            label="final", ms=1)
+        pylab.plot(self.normcounts.mean(axis=1), self.df.dispFit, "or", 
+            label="Fit", ms=1)
+        pylab.legend()
+        ax = pylab.gca()
+        ax.set(yscale="log")
+        ax.set(xscale="log")
 
 
 
@@ -655,23 +829,29 @@ class RNADiffResultsOld(object):  #pragma: no cover
         d1 = self.df.query("padj>0.05")
         d2 = self.df.query("padj<=0.05")
 
-        fig = pylab.figure()
-        pylab.plot(d1.log2FoldChange, -np.log10(d1.padj), marker="o",
-            alpha=0.5, color="r", lw=0)
-        pylab.plot(d2.log2FoldChange, -np.log10(d2.padj), marker="o",
-            alpha=0.5, color="k", lw=0)
+        #fig = pylab.figure()
+        #pylab.plot(d1.log2FoldChange, -np.log10(d1.padj), marker="o",
+        #    alpha=0.5, color="r", lw=0)
+        #pylab.plot(d2.log2FoldChange, -np.log10(d2.padj), marker="o",
+        #    alpha=0.5, color="k", lw=0)
 
-        pylab.grid(True)
-        pylab.xlabel("fold change")
-        pylab.ylabel("log10 adjusted p-value")
+        #pylab.grid(True)
+        #pylab.xlabel("fold change")
+        #pylab.ylabel("log10 adjusted p-value")
+        #y1,y2 = pylab.ylim()
+        #pylab.ylim([0,y2])
+
+        #pylab.axhline(-np.log10(0.05), lw=2, ls="--", color="r", label="pvalue threshold (0.05)")
+
+        from sequana.viz.volcano import Volcano
+        v = Volcano(self.df.log2FoldChange, -pylab.log10(self.df.padj), 
+                color='red')
+        v.plot(add_broken_axes=True, xlabl="Fold change", ylabel="log10 adjusted p-value")
         m1 = abs(min(self.df.log2FoldChange))
         m2 = max(self.df.log2FoldChange)
         limit = max(m1,m2)
         pylab.xlim([-limit, limit])
-        y1,y2 = pylab.ylim()
-        pylab.ylim([0,y2])
 
-        pylab.axhline(-np.log10(0.05), lw=2, ls="--", color="r", label="pvalue threshold (0.05)")
 
     def pca(self, n_components=2, colors=None):
         """
