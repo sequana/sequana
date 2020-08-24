@@ -10,7 +10,7 @@ rule add_read_group:
         rg = __add_read_group__rg
     shell:
         """
-        picard AddOrReplaceReadGroups I={input.bam} O={output.rgbam} \
+        picard AddOrReplaceReadGroups VALIDATION_STRINGENCY=SILENT I={input.bam} O={output.rgbam} \
         {params.rg} > {log.out} 2> {log.err}
         samtools index {output.rgbam}
         """
