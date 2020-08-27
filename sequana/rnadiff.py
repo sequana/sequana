@@ -71,7 +71,9 @@ class RNADiffResults():
         self.df.index = [x.replace('gene:', '') for x in self.df.index]
         for col in ['ID', 'Name']:
             if col in self.df.columns:
-                self.df[col] = [x.replace('gene:', '') for x in self.df[col]]
+                try:
+                    self.df[col] = [x.replace('gene:', '') for x in self.df[col]]
+                except:pass
 
 
         # Just an alias to a subset of the dataframe
@@ -349,7 +351,6 @@ class RNADiffResults():
             logger.warning("{} not found".format(sample_name))
             return None
 
-
     def plot_density(self):
         import seaborn
         seaborn.set()
@@ -357,9 +358,6 @@ class RNADiffResults():
             seaborn.kdeplot(pylab.log10(self.df[x].clip(lower=1)))
             pylab.ylabel("Density")
             pylab.xlabel("Raw counts (log10)")
-        #import matplotlib
-        #matplotlib.rc_file_defaults()
-
 
     def plot_feature_most_present(self):
         """
