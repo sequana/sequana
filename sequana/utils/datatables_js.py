@@ -242,9 +242,9 @@ class DataTableFunction(object):
         try:
             self.datatable_columns[link_col]['visible'] = 'false'
         except KeyError:
-            logger.warning("KeyError: Column name '{0}' does not exist."
-                           .format(target_col))
-            pass
+
+            keys = self.datatable_columns.keys() 
+            logger.warning(f"KeyError: Column name '{target_col}' does not exist. Use one of {keys}")
         # function to add link
         fct = """function(data, type, row, meta){{
             return '<a href="'+row.{0}+'" target="_blank">'+data+'</a>';
