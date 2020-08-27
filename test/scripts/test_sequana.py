@@ -3,15 +3,15 @@ from sequana.scripts import main as script
 import subprocess
 
 from sequana import sequana_data
-filename1 = sequana_data("test.fastq")
-filename2 = sequana_data("test_1_1000.fastq.gz")
 
 def test_sequana_app():
     from click.testing import CliRunner
     runner = CliRunner()
 
+    # fastq command
+    filename1 = sequana_data("test.fastq")
+    filename2 = sequana_data("test_1_1000.fastq.gz")
     results = runner.invoke(script.fastq, ['--help'])
-    # fastq
     results = runner.invoke(script.fastq, [filename1, '--count-reads'])
     assert results.exit_code == 0
     with TempFile() as fout:
@@ -19,8 +19,18 @@ def test_sequana_app():
 fout.name])
         assert results.exit_code == 0
 
+    # The samplesheet command
+
+    filename1 = sequana_data("test_expdesign_wrong.csv")
+    filename2 = sequana_data("test_expdesign_miseq_illumina_1.csv")
+    results = runner.invoke(script.samplesheet, ['--help'])
+    results = runner.invoke(script.samplesheet, [filename1, '--check'])
+    results = runner.invoke(script.samplesheet, [filename2, '--check'])
+    results = runner.invoke(script.samplesheet, [filename2, '--extract-adapters'])
 
 def test_sequana_app_user():
+    filename1 = sequana_data("test.fastq")
+    filename2 = sequana_data("test_1_1000.fastq.gz")
 
     cmd = "sequana --version"
     status = subprocess.call(cmd.split())
