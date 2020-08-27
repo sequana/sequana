@@ -43,8 +43,9 @@ rule salmon_mapping:
         # {sample}/rule_name_{sample}
         if len(input.fastq) == 2:
             shell("""
-            salmon quant -i {params.genome_dir} -l A -1 {input.fastq[0]} -2 {input.fastq[1]} -p {threads} --validateMappings -o {wildcards.sample}/salmon_mapping_{wildcards.sample}/ > {log} 2>&1""")
+            salmon quant -i {params.genome_dir} -l A -1 {input.fastq[0]} -2 {input.fastq[1]} -p {threads} --validateMappings -o {wildcards.sample}/salmon_mapping/ > {log} 2>&1""")
         else:
             shell("""
-            salmon quant -i {params.genome_dir} -l A -r {input.fastq} -p {threads} --validateMappings -o {wildcards.sample}/salmon_mapping_{wildcards.sample}/ > {log} 2>&1""")
-        shell("""mv {wildcards.sample}/salmon_mapping_{wildcards.sample}/quant.sf {wildcards.sample}/salmon_mapping_{wildcards.sample}/{wildcards.sample}_quant.sf""")
+            salmon quant -i {params.genome_dir} -l A -r {input.fastq} -p {threads} --validateMappings -o {wildcards.sample}/salmon_mapping/ > {log} 2>&1""")
+        shell("""mv {wildcards.sample}/salmon_mapping/quant.sf {output}""")
+        #wildcards.sample}/salmon_mapping_{wildcards.sample}/{wildcards.sample}_quant.sf""")
