@@ -29,7 +29,6 @@ import subprocess
 from sequana.databases import ENADownload
 from easydev import execute, TempFile, Progress, md5, DevTools
 
-from bioservices import EUtils
 from sequana import sequana_config_path
 from sequana.lazy import pandas as pd
 from sequana import logger
@@ -41,6 +40,7 @@ __all__ = ["KrakenBuilder"]
 
 class KrakenBuilderBase():
     def __init__(self, dbname):
+        from bioservices import EUtils
         self.dbname = dbname
         self.eutils = EUtils()
         self.enadb = ENADownload()
