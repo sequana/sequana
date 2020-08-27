@@ -23,7 +23,7 @@ rule feature_counts:
         bam = __feature_counts__input,
         gff = __feature_counts__gff
     output:
-        count = __feature_counts__output_count
+        counts = __feature_counts__output_count
     params:
         mapp = __feature_counts__options
     log:
@@ -32,6 +32,6 @@ rule feature_counts:
         __feature_counts__threads
     run:
         shell("""featureCounts -T {threads} {params.mapp} \
-                 -a {input.gff} -o {output.count} {input.bam} 2> {log}""")
+                 -a {input.gff} -o {output.counts} {input.bam} 2> {log}""")
 
       
