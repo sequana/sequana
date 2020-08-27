@@ -85,25 +85,25 @@ class MultiqcModule(BaseMultiqcModule):
         regexes = {
             'total_reads': r"Total reads:\s*(\d+)",
             'mapped_reads': r"Mapped reads:\s*(\d+)",
-            'mapped_reads_pct': r"Mapped reads:\s*\d+\s+\(([\d\.]+)%\)",
+            'mapped_reads_pct': r"Mapped reads:\s*\d+\s+\((.+)%\)",
             'forward_strand': r"Forward strand:\s*(\d+)",
-            'forward_strand_pct': r"Forward strand:\s*\d+\s+\(([\d\.]+)%\)",
+            'forward_strand_pct': r"Forward strand:\s*\d+\s+\((.+)%\)",
             'reverse_strand': r"Reverse strand:\s*(\d+)",
-            'reverse_strand_pct': r"Reverse strand:\s*\d+\s+\(([\d\.]+)%\)",
+            'reverse_strand_pct': r"Reverse strand:\s*\d+\s+\((.+)%\)",
             'failed_qc': r"Failed QC:\s*(\d+)",
-            'failed_qc_pct': r"Failed QC:\s*\d+\s+\(([\d\.]+)%\)",
+            'failed_qc_pct': r"Failed QC:\s*\d+\s+\((.+)%\)",
             'duplicates': r"Duplicates:\s*(\d+)",
-            'duplicates_pct': r"Duplicates:\s*\d+\s+\(([\d\.]+)%\)",
+            'duplicates_pct': r"Duplicates:\s*\d+\s+\((.+)%\)",
             'paired_end': r"Paired-end reads:\s*(\d+)",
-            'paired_end_pct': r"Paired-end reads:\s*\d+\s+\(([\d\.]+)%\)",
+            'paired_end_pct': r"Paired-end reads:\s*\d+\s+\((.+)%\)",
             'proper_pairs': r"'Proper-pairs'\s*(\d+)",
-            'proper_pairs_pct': r"'Proper-pairs'\s*\d+\s+\(([\d\.]+)%\)",
+            'proper_pairs_pct': r"'Proper-pairs'\s*\d+\s+\((.+)%\)",
             'both_mapped': r"Both pairs mapped:\s*(\d+)",
-            'both_mapped_pct': r"Both pairs mapped:\s*\d+\s+\(([\d\.]+)%\)",
+            'both_mapped_pct': r"Both pairs mapped:\s*\d+\s+\((.+)%\)",
             'read_1': r"Read 1:\s*(\d+)",
             'read_2': r"Read 2:\s*(\d+)",
             'singletons': r"Singletons:\s*(\d+)",
-            'singletons_pct': r"Singletons:\s*\d+\s+\(([\d\.]+)%\)",
+            'singletons_pct': r"Singletons:\s*\d+\s+\((.+)%\)",
         }
 
         import re
@@ -167,8 +167,8 @@ class MultiqcModule(BaseMultiqcModule):
         }
 
         keys = OrderedDict()
-        keys['fwd'] = {'color': '#437bb1', 'name': 'Mapped'}
-        keys['rev'] = {'color': '#b1084c', 'name': 'Unmapped'}
+        keys['fwd'] = {'color': '#437bb1', 'name': 'Forward'}
+        keys['rev'] = {'color': '#b1084c', 'name': 'Reverse'}
 
         self.add_section(
             name = 'Forward/Reverse',
@@ -201,7 +201,6 @@ class MultiqcModule(BaseMultiqcModule):
         for name in self.sequana_data.keys():
             mapped_reads = self.sequana_data[name]["mapped_reads_pct"]
             data[name] = {'mapped_reads_pct': mapped_reads}
-
         pconfig = {
             "title": "Mapped reads (%)",
             "percentages": False,
@@ -298,7 +297,7 @@ class MultiqcModule(BaseMultiqcModule):
                 'min': 0,
                 'max': 100,
                 'scale': 'RdYlGn',
-                'format': '{0:.2f}',
+                'format': '{0:.3f}',
                 'shared_key': 'count',
             }
 
