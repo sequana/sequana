@@ -57,6 +57,7 @@ class SequanaBaseModule(object):
         )
         self.template = env.get_template(template_fn)
         self._init_report()
+        self._fotorama_js_added = False
 
     def _init_report(self):
         """ Create the report directory. All necessary directories are copied
@@ -180,13 +181,6 @@ class SequanaBaseModule(object):
                 '</code></pre></div>')
         return html.format(language, content)
 
-    # will be removed in v > 0.5.2
-    def __dataframe_to_html_table(self, dataframe, **kwargs):
-        """ Convert dataframe in html.
-        """
-        html = HTMLTable(dataframe)
-        return html.to_html(**kwargs)
-
     def include_svg_image(self, filename, alt="undefined"):
         """ Include SVG image in the html.
         """
@@ -223,7 +217,8 @@ class SequanaBaseModule(object):
             html += 'src="data:image/png;base64,{0}"/>'.format(
                 base64.b64encode(buf.getvalue()).decode('utf-8'))
             buf.close()
-        except:
+        except Exception as err:
+            print(err)
             html = "image not created"
         return html
 
@@ -247,3 +242,29 @@ class SequanaBaseModule(object):
         """.format('\n'.join(option_list), html_id)
         return html
 
+    def add_fotorama(self, files, width=600, height=800, loop=True,
+        thumbnails=True, file_thumbnails=None):
+
+        if self._fotorama_js_added is False:
+            script = """
+        <!-- jQuery 1.8 or later, 33 KB -->
+        <!--<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>-->
+        <!-- Fotorama from CDNJS, 19 KB -->
+        <link  href="https://cdnjs.cloudflare.com/ajax/libs/fotorama/4.6.4/fotorama.css" rel="stylesheet">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/fotorama/4.6.4/fotorama.js"></script>
+        """
+            self._fotorama_js_added = True
+        else:
+            script = ""
+
+        script +='<div class="fotorama" fzyz-keyboard="true" '
+        if thumbnails is True:
+            script +=' data-nav="thumbs"'
+        if loop is True:
+            script +=' data-loop="true"'
+        script += ' data-width="{}"  data-height="{}"'.format(width, height)
+        script += ">"
+        for filename in files:
+            script += '<img src="{}">'.format(filename)
+        script +="</div>"
+        return script
