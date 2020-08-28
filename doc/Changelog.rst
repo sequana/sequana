@@ -8,6 +8,7 @@ Changelog
 -----
 
 
+* add salmon module for the rnaseq pipeline
 * fix bug in multiqc plugin for bamtools used in sequana_mapper
 * some rules updates: (1) add_read_group has now the option
 "VALIDATION_STRINGENCY=SILENT" that seem to be required in newer version of

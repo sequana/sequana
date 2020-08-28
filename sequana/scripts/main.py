@@ -90,6 +90,7 @@ def samplesheet(**kwargs):
 @main.command()
 @click.argument("name", type=click.STRING)
 @click.option("--module")
+@click.option("--enrichment-taxon", type=click.INT)
 def summary(**kwargs):
     name = kwargs['name']
     # we will try by monkey patching
@@ -99,11 +100,14 @@ def summary(**kwargs):
 
     module = kwargs['module']
     if module:
-        if module =="bamqc":
+        if module == "bamqc":
             report = BAMQCModule(name, "bamqc.html")
         elif module == "rnadiff":
             data = RNADiffResults(name)
             report = RNAdiffModule(data)
+        elif module == "enrichment":
+            from sequana.modules_report.enrichment import Enrichment
+            report = Enrichment(data, taxon)
     else: # we try everthing
         found = False
         if found is False:
@@ -123,5 +127,28 @@ def summary(**kwargs):
             except:pass
 
 
+@main.command()
+@click.option("--input", required=True,
+    help="The salmon input file.")
+@click.option("--output", required=True,
+    help="The feature counts output file")
+@click.option("--gff", required=True,
+    help="A GFF file compatible with your salmon file")
+@click.option("--attribute", default="ID",
+    help="A valid attribute to be found in the GFF file and salmon input")
+def salmon(**kwargs):
+    """Convert output of Salmon into a feature counts file """
+    from sequana import salmon
+    salmon_input = kwargs['input']
+    output = kwargs["output"]
+    if os.path.exists(salmon_input) is False:
+        logger.critical("Input file does not exists ({})".format(salmon_input))
+    gff = kwargs["gff"]
+    attribute = kwargs['attribute']
+    s = salmon.Salmon(salmon_input)
+    s.save_feature_counts(output, gff, attribute=attribute)
+
+
 if __name__ == "__main__": #pragma: no cover
     main()
+
