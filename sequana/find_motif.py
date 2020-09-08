@@ -69,7 +69,7 @@ class FindMotif():
         X1 = [seq[i:i+window].count(motif) for i in range(len(seq))]
         S = sum([x>=self.local_threshold for x in X1])
         return X1, S
-        
+
 
     def find_motif(self, motif, window=200, figure=False, savefig=False):
 
