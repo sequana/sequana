@@ -89,52 +89,40 @@ def samplesheet(**kwargs):
 
 @main.command()
 @click.argument("name", type=click.STRING)
-@click.option("--module")
+@click.option("--module", required=True, 
+    type=click.Choice(["rnadiff", "bamqc", "enrichment"]))
 @click.option("--enrichment-taxon", type=click.INT)
 def summary(**kwargs):
+    """Create a HTML report for given input
+
+    \b
+    * rnadiff: the output of RNADiff pipeline
+    * enrichment: the output of RNADiff pipeline
+    * bamqc
+    """
     name = kwargs['name']
-    # we will try by monkey patching
-    from sequana.rnadiff import RNADiffResults
-    from sequana.modules_report.rnadiff import RNAdiffModule
-    from sequana.modules_report.bamqc import BAMQCModule
-
     module = kwargs['module']
-    if module:
-        if module == "bamqc":
-            report = BAMQCModule(name, "bamqc.html")
-        elif module == "rnadiff":
-            data = RNADiffResults(name)
-            report = RNAdiffModule(data)
-        elif module == "enrichment":
-            from sequana.modules_report.enrichment import Enrichment
-            report = Enrichment(data, taxon)
-    else: # we try everthing
-        found = False
-        if found is False:
-            try:
-                data = RNADiffResults(name)
-                report = RNAdiffModule(data)
-                found = True
-                print("RNADiff module created ")
-            except Exception as err: 
-                pass
-
-        if found is False:
-            try: 
-                report = BAMQCModule(name, "bamqc.html")
-                found = True
-                print("BAMQC module created in bamqc.html")
-            except:pass
+    if module == "bamqc":
+        from sequana.modules_report.bamqc import BAMQCModule
+        report = BAMQCModule(name, "bamqc.html")
+    elif module == "rnadiff":
+        from sequana.rnadiff import RNADiffResults
+        from sequana.modules_report.rnadiff import RNAdiffModule
+        data = RNADiffResults(name)
+        report = RNAdiffModule(data)
+    elif module == "enrichment":
+        from sequana.modules_report.enrichment import Enrichment
+        report = Enrichment(data, taxon)
 
 
 @main.command()
-@click.option("--input", required=True,
+@click.option("-i", "--input", required=True,
     help="The salmon input file.")
-@click.option("--output", required=True,
+@click.option("-o", "--output", required=True,
     help="The feature counts output file")
-@click.option("--gff", required=True,
+@click.option("-f", "--gff", required=True,
     help="A GFF file compatible with your salmon file")
-@click.option("--attribute", default="ID",
+@click.option("-a", "--attribute", default="ID",
     help="A valid attribute to be found in the GFF file and salmon input")
 def salmon(**kwargs):
     """Convert output of Salmon into a feature counts file """
