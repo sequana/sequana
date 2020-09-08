@@ -137,6 +137,19 @@ def salmon(**kwargs):
     s.save_feature_counts(output, gff, attribute=attribute)
 
 
+@main.command()
+@click.option("-i", "--input", required=True)
+@click.option("-o", "--output", required=True)
+def gtf_fixer(**kwargs):
+    """Reads GTF and fix known issues"""
+    from sequana.gtf import GTFFixer
+    gtf = GTFFixer(kwargs['input'])
+    res = gtf.fix(kwargs['output'])
+    print(res)
+
+
+
+
 if __name__ == "__main__": #pragma: no cover
     main()
 
