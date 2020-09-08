@@ -30,6 +30,8 @@ class RNAdiffModule(SequanaBaseModule):
         """
         super().__init__()
         self.title = "RNAdiff"
+        self.independent_module = True
+        self.module_command = "--module rnadiff"
 
 
         from sequana.rnadiff import RNADiffResults
@@ -74,7 +76,7 @@ class RNAdiffModule(SequanaBaseModule):
                 """
 <p>The final Differententially Gene Expression (DGE) analysis
 led to {} up and {} down genes (total {}). Filtering out the log2 fold change
-below 1 (or -1) gives {} up and {} down (total of {})</p>""".format(S.loc['up'][0],
+below 1 (or -1) gives {} up and {} down (total of {}).</p>""".format(S.loc['up'][0],
 S.loc['down'][0],
 S.loc['all'][0], A, B, A+B)
         })
@@ -94,12 +96,11 @@ clustering of the whole sample set. The data was log-transformed first.
 </p>{}<hr>""".format(
         self.create_embedded_png(dendogram, "filename", style=style))
 
-
         def pca(filename):
             import pylab
             pylab.ioff()
             pylab.clf()
-            self.rnadiff.plot_pca(2)
+            variance = self.rnadiff.plot_pca(2)
             pylab.savefig(filename)
             pylab.close()
         html_pca = """<p>The expriment variability is also represented by a
@@ -107,10 +108,14 @@ principal component analysis as shown here below. The two main components are
 represented </p>{}<hr>""".format(
             self.create_embedded_png(pca, "filename", style=style))
 
+        from plotly import offline
+        fig = self.rnadiff.plot_pca(n_components=3, plotly=True)
+        html_pca_plotly = offline.plot(fig, output_type="div",include_plotlyjs=False)
+
         self.sections.append({
            "name": "Clusterisation",
            "anchor": "table",
-           "content": html_dendogram + html_pca 
+           "content": html_dendogram + html_pca + html_pca_plotly
          })
 
     def add_plot_count_per_sample(self):
@@ -122,10 +127,10 @@ represented </p>{}<hr>""".format(
             self.rnadiff.plot_count_per_sample()
             pylab.savefig(filename)
             pylab.close()
-        html1 = """<p>The following image show the toral number of counted reads
+        html1 = """<p>The following image shows the total number of counted reads
 for each sample. We expect counts to be similar within conditions. They may be
-different across conditions. Variation may happen: different rRNA contamination
-levels, library concentrations, etc)<p>{}<hr>""".format(
+different across conditions. Note that variation may happen (e.g., different rRNA contamination
+levels, library concentrations, etc).<p>{}<hr>""".format(
          self.create_embedded_png(plotter, "filename", style=style))
 
         
@@ -138,8 +143,9 @@ levels, library concentrations, etc)<p>{}<hr>""".format(
             pylab.close()
         
         html_null = """<p>The next image shows the percentage of features with no
-read count in each sample. Features with null read counts in all samples are not
-taken into account in the analysis (black dashed line). fold-change and p-values
+read count in each sample (taken individually). Features with null read counts
+in <b>all</b> samples are not
+taken into account in the analysis (black dashed line). Fold-change and p-values
 will be set to NA in the final results</p> {}<hr>""".format(
             self.create_embedded_png(null_counts, "filename", style=style))
 
@@ -163,7 +169,7 @@ considered.</p> {}<hr>""".format(
             pylab.close()
         html_feature = """<p>In the following figure, we show for each sample the feature that
 capture the highest proportion of the reads considered. This should not impact
-the DESEq2 normalization. We expect consitence across samples within a single
+the DESEq2 normalization. We expect consistence across samples within a single
 conditions</p> {}<hr>""".format(
             self.create_embedded_png(best_count, "filename", style=style))
 
@@ -182,6 +188,11 @@ conditions</p> {}<hr>""".format(
             pylab.ioff()
             pylab.clf()
             self.rnadiff.boxplot_rawdata()
+            ax = pylab.gca()
+            xticklabels = ax.get_xticklabels()
+            ax.set_xticklabels(xticklabels, rotation=45, ha='right')
+            try: pylab.tight_layout()
+            except:pass
             pylab.savefig(filename)
             pylab.close()
         def normedcount(filename):
@@ -189,6 +200,11 @@ conditions</p> {}<hr>""".format(
             pylab.ioff()
             pylab.clf()
             self.rnadiff.boxplot_normeddata()
+            ax = pylab.gca()
+            xticklabels = ax.get_xticklabels()
+            ax.set_xticklabels(xticklabels, rotation=45, ha='right')
+            try: pylab.tight_layout()
+            except:pass
             pylab.savefig(filename)
             pylab.close()
         html_boxplot = """<p>The following image shows a hierarchical
@@ -222,30 +238,31 @@ clustering of the whole sample set. The data was log-transformed first.
 expressed features in red. A volcano plot represents the log of the adjusted P
 value as a function of the log ratio of diﬀerential expression. </p>"""
         img3 = self.create_embedded_png(plot_volcano, "filename", style=style)
-        def plot_volcano2(filename):
-            import pylab; pylab.ioff(); pylab.clf()
-            self.rnadiff.plot_volcano(add_broken_axes=True)
-            pylab.savefig(filename); pylab.close()
-        from pylab import log10
-        M = max(-log10(self.rnadiff.df.padj.dropna()))
-        if M>20:
-            img4 = self.create_embedded_png(plot_volcano2, "filename", style=style)
-        else:
-            img4 = ""
+        #def plot_volcano2(filename):
+        #    import pylab; pylab.ioff(); pylab.clf()
+        #    self.rnadiff.plot_volcano(add_broken_axes=True)
+        #    pylab.savefig(filename); pylab.close()
+        #from pylab import log10
+        #M = max(-log10(self.rnadiff.df.padj.dropna()))
+        #if M>20:
+        #    img4 = self.create_embedded_png(plot_volcano2, "filename", style=style)
+        #else:
+        #    img4 = ""
 
         description = """<p>The distribution of raw p-values computed by the statistical test 
 is expected to be a mixture of a uniform distribution on [0, 1] and a peak
 around 0 corresponding to the diﬀerentially expressed features. </p>"""
         fig = self.rnadiff.plot_volcano(plotly=True)
-        plotly = fig.to_html(include_plotlyjs='cdn')
+        from plotly import offline
+        plotly = offline.plot(fig, output_type="div", include_plotlyjs=False)
+
 
         self.sections.append({
            "name": "Diagnostic plots",
            "anchor": "table",
            "content": description + img1 + img2 + "</hr>" + html_volcano + img3
-+ img4 + "<hr>" + plotly
++ "<hr>" + plotly
          })
-
 
     def add_rnadiff_table(self):
         """ RNADiff.        """

@@ -242,11 +242,12 @@ class RNADiffResults():
             from plotly import express as px
             df = self.df.copy() 
             df['log_adj_pvalue'] = -pylab.log10(self.df.padj)
-            df['color'] = ['significant' if x else "not significant" for x in df.padj<0.05]
+            df['significance'] = ['<0.05' if x else ">=0.05" for x in df.padj<0.05]
             fig = px.scatter(df, x="log2FoldChange", 
                                  y="log_adj_pvalue",
-                                 hover_name="Name" ,log_y=False, color="color", 
-                                 labels={"log_adj_pvalue":"lof adjusted p-value"}
+                                 hover_name="Name" ,log_y=False, color="significance", 
+                                 height=600,
+                                 labels={"log_adj_pvalue":"log adjusted p-value"}
 )
             
             return fig 
@@ -291,7 +292,7 @@ class RNADiffResults():
         bax.axhline(-np.log10(0.05), lw=2, ls="--", color="r", label="pvalue threshold (0.05)")
         return bax
 
-    def plot_pca(self, n_components=2, colors=None):
+    def plot_pca(self, n_components=2, colors=None, plotly=False):
         """
 
         .. plot::
@@ -319,7 +320,30 @@ class RNADiffResults():
             colors = {}
             for sample in self.sample_names:
                 colors[sample] = self.colors[self.get_cond_from_sample(sample)]
-        p.plot(n_components=n_components, colors=colors)
+
+        if plotly is True:
+            assert n_components == 3
+            variance = p.plot(n_components=n_components, colors=colors,
+                show_plot=False)
+            from plotly import express as px
+            df = pd.DataFrame(p.Xr)
+            df.columns = ['PC1', 'PC2', 'PC3']
+            df['names'] = self.sample_names
+            df['colors'] = [colors[x] for x in self.sample_names]
+            df['size'] = [10] * len(df)
+            df['condition'] = [self.get_cond_from_sample(sample) for sample in self.sample_names]
+            fig = px.scatter_3d(df, x="PC1", y="PC2", z="PC3", color="condition",
+                    labels={
+                        "PC1": "PC1 ({}%)".format(round(100*variance[0],2)), 
+                        "PC2": "PC2 ({}%)".format(round(100*variance[1],2)), 
+                        "PC3": "PC3 ({}%)".format(round(100*variance[2],2)), 
+                        }, height=800, text="names"
+                    )
+            return fig
+        else:
+            variance = p.plot(n_components=n_components, colors=colors)
+
+        return variance
 
     def plot_mds(self, n_components=2, colors=None, clf=True):
         from sequana.viz.mds import MDS
@@ -425,7 +449,8 @@ class RNADiffResults():
                 colors.append("#3c5688")
 
         ax = sbn.boxplot(data=self.df[self.sample_names].clip(1), 
-            linewidth=linewidth, fliersize=fliersize, palette=colors, **kwargs);
+            linewidth=linewidth, fliersize=fliersize, palette=colors, 
+            **kwargs);
         ax.set(yscale="log")
 
     def boxplot_normeddata(self, fliersize=2, linewidth=2, **kwargs):
@@ -443,34 +468,36 @@ class RNADiffResults():
         ax.set(yscale="log")
 
 
-    def plot_pvalue_hist(self, bins=60, fontsize=16):
+    def plot_pvalue_hist(self, bins=60, fontsize=16, rotation=0):
         pylab.hist(self.df.pvalue.dropna(), bins=bins, ec="k")
         pylab.grid(True)
         pylab.xlabel("raw p-value", fontsize=fontsize)
         pylab.ylabel("Occurences", fontsize=fontsize)
+        try:pylab.tight_layout()
+        except:pass
 
     def plot_padj_hist(self, bins=60, fontsize=16):
         pylab.hist(self.df.padj.dropna(), bins=bins, ec="k")
         pylab.grid(True)
         pylab.xlabel("Adjusted p-value", fontsize=fontsize)
         pylab.ylabel("Occurences", fontsize=fontsize)
-        pylab.ylabel("Dispersion", fontsize=fontsize)
-        pylab.xlabel("Mean of normalized counts", fontsize=fontsize)
+        try:pylab.tight_layout()
+        except:pass
 
     def plot_dispersion(self):
 
-
-
-        pylab.plot(self.normcounts.mean(axis=1), self.df.dispGeneEst, "ok", 
-            label="Estimate", ms=1)
-        pylab.plot(self.normcounts.mean(axis=1), self.df.dispersion, "ob", 
-            label="final", ms=1)
+        pylab.plot(self.normcounts.mean(axis=1), self.df.dispGeneEst, 
+            "ok", label="Estimate", ms=1)
+        pylab.plot(self.normcounts.mean(axis=1), self.df.dispersion, 
+            "ob",  label="final", ms=1)
         pylab.plot(self.normcounts.mean(axis=1), self.df.dispFit, "or", 
             label="Fit", ms=1)
         pylab.legend()
         ax = pylab.gca()
         ax.set(yscale="log")
         ax.set(xscale="log")
+        pylab.ylabel("Dispersion", fontsize=fontsize)
+        pylab.xlabel("Mean of normalized counts", fontsize=fontsize)
 
 
 
