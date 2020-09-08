@@ -6,8 +6,6 @@
 #
 #  File author(s):
 #      Thomas Cokelaer <thomas.cokelaer@pasteur.fr>
-#      Dimitri Desvillechabrol <dimitri.desvillechabrol@pasteur.fr>, 
-#          <d.desvillechabrol@gmail.com>
 #
 #  Distributed under the terms of the 3-clause BSD license.
 #  The full license is in the LICENSE file, distributed with this software.
@@ -19,7 +17,9 @@
 import pandas as pd
 
 __all__ = ["TRF"]
-
+from sequana import logger
+logger.name = __name__
+from sequana.lazy import pylab
 
 class TRF():   # pragma: no cover
     """Tandem Repeat Finder utilities
@@ -44,9 +44,14 @@ class TRF():   # pragma: no cover
 
     You may use ``-h`` to suppress html output.
 
+    Then, you can use this class to easly identify the pattern you want::
+
+        t = TRF("input.dat")
+        query = "length>100 and period_size==3 and entropy>0 and C>20 and A>20 and G>20"
+        t.df.query(query)
+
     """
     def __init__(self, filename):
-        print('This is a draft class do not use')
         self.filename = filename
         self.df = self.scandata()
 
@@ -86,14 +91,14 @@ class TRF():   # pragma: no cover
             line = fin.readline()
             if line.startswith("Sequence:"):
                 sequence_name = line.split()[1].strip()
-                print("scanning {}".format(sequence_name))
+                logger.info("scanning {}".format(sequence_name))
 
         for line in fin.readlines():
             if len(line.strip()) == 0 or line.startswith("Parameters"):
                 continue
             elif line.startswith('Sequence:'):
                 sequence_name = line.split()[1].strip()
-                print("scanning {}".format(sequence_name))
+                logger.info("scanning {}".format(sequence_name))
             else:
                 this_data = line.split()
                 assert len(this_data) == 15, this_data
@@ -118,6 +123,7 @@ class TRF():   # pragma: no cover
             'entropy': 'float', 
             'period_size': 'float'
             })
+        df['length'] = df['end'] - df['start'] + 1 
 
 
         return df
@@ -133,3 +139,15 @@ class TRF():   # pragma: no cover
         """
         self.df.query("CNV>@CNVmin and seq1 in @motif").CNV.hist(bins=bins, log=log,
             color=color)
+
+    def hist_period_size(self, bins=50):
+        self.df.period_size.hist(bins=bins)
+        pylab.xlabel("repeat length")
+
+    def hist_entropy(self, bins=50):
+        self.df.entropy.hist(bins=bins)
+        pylab.xlabel("entropy")
+
+    
+
+
