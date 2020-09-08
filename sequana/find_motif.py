@@ -3,6 +3,9 @@ from sequana.lazy import pylab
 from sequana.lazy import pandas as pd
 
 
+
+
+
 def find_motif(bamfile, motif="CAGCAG", window=200, savefig=False, 
     local_th=5, global_th=10):
     """
@@ -39,6 +42,8 @@ def find_motif(bamfile, motif="CAGCAG", window=200, savefig=False,
     return alns, found, Ss
 
 
+
+
 class FindMotif():
     """
 
@@ -51,12 +56,25 @@ class FindMotif():
     """
     def __init__(self, bamfile):
         print("DRAFt")
-        self.bamfile = bamfile
+        if bamfile.endswith(".bam"):
+            self.bamfile = bamfile
+            self.fasta = None
+        else:
+            self.fasta = bamfile
+            self.bamfile = None
         self.local_threshold = 5
         self.global_threshold = 10
 
+    def find_motif_from_sequence(self, seq, motif, window=200):
+        X1 = [seq[i:i+window].count(motif) for i in range(len(seq))]
+        S = sum([x>=self.local_threshold for x in X1])
+        return X1, S
+        
+
     def find_motif(self, motif, window=200, figure=False, savefig=False):
 
+        if self.bamfile is None:
+            return
         b1 = BAM(self.bamfile)
 
         df = {
