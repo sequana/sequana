@@ -22,10 +22,27 @@ __all__ = ["TRF"]
 
 
 class TRF():   # pragma: no cover
-    """
+    """Tandem Repeat Finder utilities
 
-    The data is not a CSV. It contains comments in the middle of the file to
+    The input data is the output of trf tool when using the -d option.
+    This is not a CSV file. It contains comments in the middle of the file to
     indicate the name of the contig.
+
+    The output filename has the following filename convention::
+
+        test.fa.2.5.7.80.10.50.2000.dat
+
+    where the numbers indicate the 7 input parameters:
+
+    * Match  = matching weight
+    * Mismatch  = mismatching penalty
+    * Delta = indel penalty
+    * PM = match probability (whole number)
+    * PI = indel probability (whole number)
+    * Minscore = minimum alignment score to report
+    * MaxPeriod = maximum period size to report
+
+    You may use ``-h`` to suppress html output.
 
     """
     def __init__(self, filename):
@@ -34,24 +51,30 @@ class TRF():   # pragma: no cover
         self.df = self.scandata()
 
     def scandata(self):
-        """
+        """scan output of trf and returns a dataframe
 
-        Tandem Repeats Finder Program written by:
+        The format of the output file looks like::
 
-        some info
+            Tandem Repeats Finder Program 
 
-        Sequence: chr1
+            some info
 
-        Parameters: 2 5 7 80 10 50 2000
+            Sequence: chr1
 
-        10001 10468 6 77.2 6 95 3 801 33 51 0 15 1.43 TAACCC TAACCCTA...
+            Parameters: 2 5 7 80 10 50 2000
 
-        Sequence: chr2
+            10001 10468 6 77.2 6 95 3 801 33 51 0 15 1.43 TAACCC TAACCCTA...
+            1 10 6 77.2 6 95 3 801 33 51 0 15 1.43 TAACCC TAACCCTA...
 
-        Parameters: 2 5 7 80 10 50 2000
+            Sequence: chr2
 
-        10001 10468 6 77.2 6 95 3 801 33 51 0 15 1.43 TAACCC TAACCCTA...
+            Parameters: 2 5 7 80 10 50 2000
+    
+            10001 10468 6 77.2 6 95 3 801 33 51 0 15 1.43 TAACCC TAACCCTA...
 
+        The dataframe stores a row for each sequence and each pattern found. For
+        instance, from the example above you will obtain 3 rows, two for the
+        first sequence, and one for the second sequence.
         """
         fin = open(self.filename, "r")
         
@@ -98,7 +121,6 @@ class TRF():   # pragma: no cover
 
 
         return df
-
 
     def hist_cnvs(self, bins=50, CNVmin=10, motif=['CAG', 'AGC', 'GCA'],
             color="r", log=True):
