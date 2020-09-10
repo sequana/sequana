@@ -47,36 +47,67 @@ def find_motif(bamfile, motif="CAGCAG", window=200, savefig=False,
 class FindMotif():
     """
 
-
         fm = FindMotif("cl10/select1.sorted.bam")
         df = fm.find_motif("CAGCAG")
         df.query("hit>10")
 
-
+        local threshold should be window length divided by motif length
+        divided by 2
     """
-    def __init__(self, bamfile):
-        print("DRAFt")
-        if bamfile.endswith(".bam"):
-            self.bamfile = bamfile
-            self.fasta = None
-        else:
-            self.fasta = bamfile
-            self.bamfile = None
-        self.local_threshold = 5
-        self.global_threshold = 10
+    def __init__(self, local_threshold=5, global_threshold=10, window=200):
+        self.local_threshold = local_threshold
+        self.global_threshold = global_threshold
+        self.window = window
 
-    def find_motif_from_sequence(self, seq, motif, window=200):
+    def find_motif_from_sequence(self, seq, motif, window=None,
+            local_threshold=None):
+
+        if local_threshold is None:
+            local_threshold = self.local_threshold
+
+        if window is None:
+            window = self.window
+
+        # This should be improved with a true sliding window
         X1 = [seq[i:i+window].count(motif) for i in range(len(seq))]
-        S = sum([x>=self.local_threshold for x in X1])
+
+        # Number of point crossing the threshold in the sequence
+        # The threshold should be below window/len(motif) if there are no errors
+        S = sum([x>=local_threshold for x in X1])
         return X1, S
 
+    def find_motif_fasta(self, filename, motif, window=200,
+            local_threshold=None, global_threshold=None):
+        from sequana import FastA
+        data = FastA(filename)
+        N = len(data)
+        from easydev import Progress
+        pb = Progress(N)
+        df = {
+            "query_name": [],
+            "hit": [],
+            "length": [],
+            "start": [],
+            "end": []
+        }
+        for i, item in enumerate(data):
+            X1, S = self.find_motif_from_sequence(item.sequence, motif,
+                        window=window, local_threshold=local_threshold
+                        )
+            if S >= self.global_threshold:
+                df['query_name'].append(item.name)
+                df['start'].append(0)
+                df['end'].append(len(item.sequence))
+                df['length'].append(len(item.sequence))
+                df['hit'].append(S)
+            pb.animate(i+1)
+        df = pd.DataFrame(df)
+        return df
 
-    def find_motif(self, motif, window=200, figure=False, savefig=False):
-
-        if self.bamfile is None:
-            return
-        b1 = BAM(self.bamfile)
-
+    def find_motif_bam(self, filename, motif, window=200, figure=False, savefig=False,
+            local_threshold=None, global_threshold=None):
+        from sequana import BAM
+        b1 = BAM(filename)
         df = {
             "query_name": [],
             "hit": [],
@@ -90,8 +121,8 @@ class FindMotif():
                 continue
             seq = a.query_sequence
 
-            X1 = [seq[i:i+window].count(motif) for i in range(len(seq))]
-            S = sum([x>=self.local_threshold for x in X1])
+            X1, S = self.find_motif_from_sequence(seq, motif, window=window,
+                local_threshold=local_threshold)
 
             df['query_name'].append(a.query_name)
             df['start'].append(a.reference_start)

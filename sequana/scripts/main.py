@@ -2,27 +2,34 @@
 
 import os
 import glob
-import json
-import sys
-import colorlog
-import textwrap
-import subprocess
 import click
 from sequana import version
-import pathlib
+import functools
 
 __all__ = ["main"]
 
-from sequana import logger
-logger.level = "INFO"
 
+from sequana import logger
+
+
+# This can be used by all commands as a simple decorator
+def common_logger(func):
+    @click.option("--logger", type=click.Choice(["INFO", "DEBUG", "WARNING", "CRITICAL", "ERROR"]))
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        return func(*args, **kwargs)
+    return wrapper
+
+
+def get_env_vars(ctx, args, incomplete):
+    return [k for k in os.environ.keys() if incomplete in k]
 
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 
 
 import pkg_resources
 pipelines = [item.key for item in pkg_resources.working_set if item.key.startswith("sequana")]
-if len(pipelines): 
+if len(pipelines):
     version +="\nThe following pipelines are installed:\n"
 for item in pkg_resources.working_set:
     if item.key.startswith("sequana") and item.key != 'sequana':
@@ -30,20 +37,27 @@ for item in pkg_resources.working_set:
 
 @click.group(context_settings=CONTEXT_SETTINGS)
 @click.version_option(version=version)
-def main():
-    """This is the main help"""
-    pass
+def main(**kwargs):
+    """\bThis is the main entry point for a set of Sequana applications.
 
+    Pipelines such as sequana_rnaseq, sequana_variant_calling have their own
+    application and help.
+
+    In addition, more advanced tools such as sequana_taxonomy or
+    sequana_coverage have their own standalone.
+
+    """
+    pass
 
 
 @main.command()
 @click.argument('filename', type=click.STRING)
 @click.option("--count-reads", is_flag=True)
-@click.option("-o", "--output", 
+@click.option("-o", "--output",
     help="filename where to save results. to be used with --head, --tail")
-@click.option("--head", type=click.INT, 
+@click.option("--head", type=click.INT,
     help='number of reads to extract from the head')
-@click.option("--tail", type=click.INT, 
+@click.option("--tail", type=click.INT,
     help="number of reads to extract from the tail")
 def fastq(**kwargs):
     """Set of useful utilities for FastQ manipulation.
@@ -55,7 +69,6 @@ def fastq(**kwargs):
 
     # could be simplified calling count_reads only once
     if kwargs['count_reads']:
-        import glob
         for filename in glob.glob(kwargs["filename"]):
             f = FastQ(filename)
             Nreads = f.count_reads()
@@ -65,7 +78,7 @@ def fastq(**kwargs):
     elif kwargs['head']:
         f = FastQ(kwargs['filename'])
         assert kwargs['output']
-        N = kwargs['head'] * 4 
+        N = kwargs['head'] * 4
         f.extract_head(N=N, output_filename=kwargs['output'])
     elif kwargs['tail']: #pragma: no cover
         raise NotImplementedError
@@ -87,13 +100,36 @@ def samplesheet(**kwargs):
     elif kwargs["extract_adapters"]:
         iem.to_fasta()
 
+
+# This will be a complex command to provide HTML summary page for 
+# input files (e.g. bam), or results from pipelines. For each module, 
+# we should have corresponding option that starts with the module's name
 @main.command()
-@click.argument("name", type=click.STRING)
-@click.option("--module", required=True, 
+@click.argument("name", type=click.Path(exists=True))
+@click.option("--module", 
+    required=True,
     type=click.Choice(["rnadiff", "bamqc", "enrichment"]))
-@click.option("--enrichment-taxon", type=click.INT)
+@click.option("--enrichment-taxon", type=click.INT,
+    required=True,
+    help="a valid taxon identifiers")
+@click.option("--enrichment-kegg-id", type=click.INT,
+    default=None,
+    help="a valid KEGG id (automatically filled for 9606 (human) and 10090 (mmusculus)")
+@click.option("--enrichment-log2-foldchange-cutoff", type=click.FLOAT,
+    default=1, 
+    show_default=True, 
+    help="remove events with absolute log2 fold change below this value")
+@click.option("--enrichment-padj-cutoff", type=click.FLOAT,
+    default=0.05, 
+    show_default=True, 
+    help="remove events with pvalue abobe this value default (0.05).")
+@click.option("--enrichment-biomart", type=click.STRING,
+    default="biomart.csv",
+    help="""you may need a biomart mapping of your identifier for the kegg
+pathways analysis. If you do not have this file, you can use 'sequana biomart'
+command""")
 def summary(**kwargs):
-    """Create a HTML report for given input
+    """Create a HTML report for various sequana out
 
     \b
     * rnadiff: the output of RNADiff pipeline
@@ -112,7 +148,48 @@ def summary(**kwargs):
         report = RNAdiffModule(data)
     elif module == "enrichment":
         from sequana.modules_report.enrichment import Enrichment
-        report = Enrichment(data, taxon)
+        taxon = kwargs['enrichment_taxon']
+        keggid = kwargs['enrichment_kegg_id']
+        params = {"padj": kwargs['enrichment_padj_cutoff'],
+                  "log2_fc": kwargs['enrichment_log2_foldchange_cutoff'],
+                  "mapper": kwargs['enrichment_biomart']}
+        report = Enrichment(name, taxon, enrichment_params=params, go_only=True)
+
+@main.command()
+@click.option("--mart", default="ENSEMBL_MART_ENSEMBL",
+    show_default=True, 
+    help="A valid mart name")
+@click.option("--dataset", default="mmusculus_gene_ensembl",
+    show_default=True, 
+    help="A valid dataset name.")
+@click.option("--attributes", type=click.STRING, multiple=True,
+    default=("ensembl_gene_id","go_id","entrezgene_id","mgi_id","external_gene_name"),
+    show_default=True, 
+    help="A list of valid attributes to look for in the dataset")
+@click.option("--output", default=None, 
+    help="""by default save results into a CSV file named 
+    biomart_<dataset>_<YEAR>_<MONTH>_<DAY>.csv""")
+@common_logger
+def biomart(**kwargs):
+    """Retrieve information from biomart and save into CSV file
+    
+    This command uses BioMart from BioServices to introspect a MART service
+    (--mart) and a specific dataset (default to mmusculus_gene_ensembl). Then,
+    for all ensembl IDs, it will fetch the requested attributes (--attributes).
+    Finally, it saves the CSV file into an output file (--output). This takes
+    about 5-10 minutes to retrieve the data depending on the connection.
+
+    """
+    logger.level = kwargs["logger"]
+
+    mart = kwargs['mart']
+    attributes = kwargs['attributes']
+    dataset = kwargs["dataset"]
+
+    from sequana.enrichment import Mart
+    conv = Mart(dataset, mart)
+    df = conv.query(attributes)
+    conv.save(df, filename=kwargs['output'])
 
 
 @main.command()
@@ -148,8 +225,4 @@ def gtf_fixer(**kwargs):
     print(res)
 
 
-
-
-if __name__ == "__main__": #pragma: no cover
-    main()
 

@@ -52,6 +52,7 @@ class RNADiffResults():
         """
         if isinstance(filename, RNADiffResults):
             self.df = filename.df.copy()
+            self.filename = filename.filename
         elif os.path.isdir(filename):
             filenames = glob.glob(filename + "/tables/" + pattern)
             if len(filenames) == 1:

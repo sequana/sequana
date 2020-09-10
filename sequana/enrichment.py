@@ -19,6 +19,7 @@
 from pathlib import Path
 import re
 import os
+import json
 
 from sequana.lazy import pandas as pd
 from sequana.lazy import pylab
@@ -84,7 +85,7 @@ class PantherEnrichment():
 
 
         The number of genes is limited to about 3100 depending (don't ask me
-        why, this seem to be a hard-coded limitation on PantherDB website). 
+        why, this seem to be a hard-coded limitation on PantherDB website).
         In such case, you should add a filter e.g on padj or fold change
 
 
@@ -98,15 +99,12 @@ class PantherEnrichment():
         if fc_threshold is not None:
             log2_fc_threshold = pylab.log2(fc_threshold)
 
-        from bioservices import panther, quickgo, uniprot
+        from bioservices import panther, quickgo
         self.panther = panther.Panther()
         self.valid_taxons = [x['taxon_id'] for x in self.panther.get_supported_genomes()]
 
         self.quickgo = quickgo.QuickGO(cache=True)
-        self.uniprot = uniprot.UniProt(cache=True)
-
         self.quickgo.requests_per_sec = requests_per_sec
-        self.uniprot.requests_per_sec = requests_per_sec
 
         self.ancestors = {"MF": "GO:0003674", "CC": "GO:0005575", "BP": "GO:0008150"}
         self.aspects = {"MF": "molecular_function"}
@@ -144,6 +142,12 @@ class PantherEnrichment():
             len(self.mygenes),
             len(self.mygenes_down),
             len(self.mygenes_up)))
+        self.summary = {
+            "DGE": {
+                "down": len(self.mygenes_down),
+                "up": len(self.mygenes_up)}
+
+            }
 
         # When using ENSEMBL, prefix "gene:"  should be removed to be understood
         # by PantherDB
@@ -156,6 +160,12 @@ class PantherEnrichment():
                 len(self.mygenes),
                 len(self.mygenes_down),
                 len(self.mygenes_up)))
+
+        self.summary["DGE_after_filtering"] = {
+            "up": len(self.mygenes_up),
+            "down": len(self.mygenes_down)
+        }
+
 
     def compute_enrichment(self, mygenes, taxid, ontologies=None,
             enrichment_test="FISHER", correction="FDR", progress=True):
@@ -251,6 +261,9 @@ class PantherEnrichment():
 
     def _get_name_given_accession(self, accession):  #pragma: no cover
         from bioservices import UniProt
+        self.uniprot = uniprot.UniProt(cache=True)
+        self.uniprot.requests_per_sec = 10
+
         acc = [x for x in accession.split("|") if x.startswith("UniProtKB")]
         acc = acc[0].split("=")[1]
         res = self.uniprot.get_df(acc, limit=1)
@@ -373,7 +386,6 @@ class PantherEnrichment():
 
         return df
 
-
     def plot_go_terms(self, ontologies, max_features=50,
         log=False,
         fontsize=8, minimum_genes=0, pvalue=0.05,
@@ -386,7 +398,7 @@ class PantherEnrichment():
         assert sort_by in ['pValue', 'fold_enrichment', 'fdr']
 
         # FIXME: pvalue and fold_enrichment not sorted in same order
-        pylab.clf()
+        pylab.figure(figsize=(10,6))
 
         df = self.get_data(ontologies,
                 include_negative_enrichment=include_negative_enrichment,
@@ -469,8 +481,6 @@ class PantherEnrichment():
         pylab.grid(zorder=-10)
         ax2 = pylab.colorbar(shrink=0.5);
         ax2.ax.set_ylabel('FDR')
-
-
 
         labels = [x if len(x)<50 else x[0:47]+"..." for x in list(subdf.label)]
         ticks = ["{} ({}) {}".format(ID,level, "; " + label.title())
@@ -667,73 +677,100 @@ class PantherEnrichment():
 
 
 class KeggPathwayEnrichment():
-    """DRAFT IN PROGRESS
+    """Kegg Pathways enrichment from DGE results
 
+    DGE = Differentially Gene Expression
 
-    Current input is the output of the rnadiff analysis
-    ::
+    Current input is the output of the RNADiff analysis. This is a file
+    than can be read by RNADiffResults
 
-        pe = PathwayEnrichment("rnadiff", "eco")
-        pe.barplot(pe.enrichment['down'])
+    When performing a GDE analysis, feature counts are computed using an input
+    GFF. Depending on your parameters the gene names may be saved a ensemble
+    identifiers or gene names. If you have gene names understood by Kegg, you
+    simply need to use this code::
 
+        ke = KeggPathwayEnrichment("rnadiff", "eco")
 
-        # Save all deregulated pathways found by the enrichment:
-        up = pe.save_significant_pathways("up")
-        down = pe.save_significant_pathways("down")
+    this calls ke.compute_enrichment() that stores the up, down and all results
+    in the attribute :attr:`enrichment` as a dictionary.
+
+    You can now plot the results::
+
+        ke.barplot('down')
+
+    and save enriched pathways as follows::
+
+        up = ke.save_significant_pathways("up")
+        down = ke.save_significant_pathways("down")
         up.to_csv("kegg_pathway_up_regulated.csv")
         down.to_csv("kegg_pathway_down_regulated.csv")
 
-    # transparent for ecoli. Set the organism to eco
-    # For mus musculus, you will need convert the Gene Input IDs into
-    # kegg identifiers so as to compare them.
+    This class works like a charm for ecoli with GFF that uses gene names.
 
-        from sequana.enrichment import IDConversion
-        conv = IDConversion("mmusculus_gene_ensembl")
-        df = conf.querry()
+    For mus musculus, organism is **mmu** (not **mus*). you will need to have
+    a mapping of the Ensembl ID into Kegg IDs (actually gene name).
+
+    You can perform the conversion using BioServices/BioMart. We have
+    implemented a simple function inside Sequana::
+
+        from sequana.enrichment import Mart
+        conv = Mart("mmusculus_gene_ensembl")
+        df = conf.query()
         conf.save(df)
 
-        df = df.rename({"external_gene_name":"name", "ensembl_gene_id": "ensembl"})   
-        df = df.set_index("ensembl")
+    You can then import the dataframe, as follows using the mapper argument::
+
+        import pandas as pd
+        df = pd.read_csv("biomart.csv")
+        df = df.rename({"external_gene_name":"name", "ensembl_gene_id": "ensembl"}, 
+                axis=1)
+        df = df.set_index("ensembl", inplace=True)
 
         KeggPathwayEnrichment("path_to_rnadiff", "mmu", mapper=df)
 
+    More generally, when starting KeggPathwayEnrichment, we read all pathways.
 
+    This may change with time. So, you can save the pathways::
 
-        df = ke.scatterplot(ke.enrichment['down'])              
-        tight_layout()                                          
-        savefig("B4052_T1vsT0_KE_scatterplot_down.png")         
-        df = ke.scatterplot(ke.enrichment['up'])                
-        savefig("B4052_T1vsT0_KE_scatterplot_up.png")           
+        ke.export_pathways_to_json()
 
+    And read them back::
 
+        ke = KeggPathwayEnrichment("path_to_rnadiff", "mmu", mapper=df,
+            preload_directory="kegg_pathways/mmu")
 
+        df = ke.scatterplot('down')
+        tight_layout()
+        savefig("B4052_T1vsT0_KE_scatterplot_down.png")
+        df = ke.scatterplot('up')
+        savefig("B4052_T1vsT0_KE_scatterplot_up.png")
 
     """
     def __init__(self, folder, organism, alpha=0.05, log2_fc=0, progress=True,
-            mapper=None, background=None):
+            mapper=None, background=None, preload_directory=None):
 
-
-        print("DRAFT in progress")
         from bioservices import KEGG
         self.kegg = KEGG(cache=True)
         self.kegg.organism = organism
         self.summary = Summary("KeggPathwayEnrichment")
         self.summary.add_params({
-            "folder":folder, 
-            "organism": organism, 
+            "folder":folder,
+            "organism": organism,
             "alpha": alpha,
             "log2_fc": log2_fc,
-            "mapper": (True if mapper else False),
+            "mapper": (True if mapper is not None else False),
             "background": background})
 
         self.rnadiff = RNADiffResults(folder ,alpha=alpha, log2_fc=log2_fc)
+
         # some clean up
+        # if identifiers from ensembl are preceeded by gene:, we remove it
+        # FIXME. This should be in the RNADiffResults somehow
         if "ID" in self.rnadiff.df.columns:
             self.rnadiff.df['ID'] = [x.replace("gene:", "") for x in self.rnadiff.df['ID']]
         self.rnadiff.df.index = [x.replace("gene:", "") for x in self.rnadiff.df.index]
         for key, values in self.rnadiff.gene_lists.items():
             self.rnadiff.gene_lists[key] = [x.replace("gene:", "") for x in values]
-
         self.rnadiff.df.index = [x.replace("gene:", "") for x in self.rnadiff.df.index]
 
         choices = list(self.rnadiff.gene_lists.keys())
@@ -744,29 +781,52 @@ class KeggPathwayEnrichment():
             self.background = len(self.kegg.list(self.kegg.organism).split("\n"))
         logger.info("Set number of genes to {}".format(self.background))
 
-        self._load_pathways(progress=progress)
+        self._load_pathways(progress=progress,
+            preload_directory=preload_directory)
 
-        self.mapper = mapper
+        if isinstance(mapper, str):
+            import pandas as pd
+            df = pd.read_csv(mapper)
+            df = df.rename({"external_gene_name":"name", "ensembl_gene_id": "ensembl"}, axis=1)
+            df.set_index("ensembl", inplace=True)
+            self.mapper = df
+
+        else: # a dataframe already container the correct columns and index
+            self.mapper = mapper
 
         try:
             self.compute_enrichment()
-        except Exception:
+        except Exception as err:
+            print(err)
             logger.critical("An error occured while computing enrichments. ")
 
-    def _load_pathways(self, progress=True):
+    def _load_pathways(self, progress=True, preload_directory=None):
         # This is just loading all pathways once for all
-        logger.info("loading all pathways from KEGG. may take time the first time")
         self.pathways = {}
-        from easydev import Progress
-        pb = Progress(len(self.kegg.pathwayIds))
-        for i, ID in enumerate(self.kegg.pathwayIds):
-            self.pathways[ID.replace("path:", "")] = self.kegg.parse(self.kegg.get(ID))
-            if progress:
-                pb.animate(i+1)
+        if preload_directory:
+            # preload is a directory with all pathways in it
+            import glob
+            pathways = glob.glob(preload_directory + "/*json")
+            for i, name in enumerate(pathways):
+                key = name.strip(".json").split("/")[-1]
+                with open(name, "r") as fin:
+                    data = json.load(fin)
+                    self.pathways[key] = data
+        else:
+            logger.info("loading all pathways from KEGG. may take time the first time")
+            from easydev import Progress
+            pb = Progress(len(self.kegg.pathwayIds))
+            for i, ID in enumerate(self.kegg.pathwayIds):
+                self.pathways[ID.replace("path:", "")] = self.kegg.parse(self.kegg.get(ID))
+                if progress:
+                    pb.animate(i+1)
 
-        # Some cleanup
+        # Some cleanup. Note that if we read the json file, this is different
+        # since already cleanup but this code does no harm
         for ID in self.pathways.keys():
-            name = self.pathways[ID]['NAME'][0]
+            name = self.pathways[ID]['NAME']
+            if isinstance(name, list):
+                name = name[0]
             self.pathways[ID]['NAME'] = name.split(" - ", 1)[0]
 
         # save gene sets
@@ -812,6 +872,7 @@ class KeggPathwayEnrichment():
             background = self.background
 
         self.summary.data["missing_genes"] = {}
+        self.summary.data["input_gene_list"] = {}
         self.enrichment = {}
         self.enrichment['up'] = self._enrichr("up", background=background)
         self.enrichment['down'] = self._enrichr("down", background=background)
@@ -827,11 +888,12 @@ class KeggPathwayEnrichment():
         else:
             assert category in ['up', 'down', 'all']
             gene_list = list(self.rnadiff.gene_lists[category])
+            
+        logger.info("Input gene list of {} ids".format(len(gene_list)))
+        self.summary.data['input_gene_list'][category] = len(gene_list)
+        
 
         if self.mapper is not None:
-            logger.info("Input gene list of {} ids".format(len(gene_list)))
-            #gene_list = [x.replace("gene:", "") for x in gene_list]
-
             missing = [x for x in gene_list if x not in self.mapper.index]
             logger.info("Missing genes from mapper dataframe: {}".format(len(missing)))
             self.summary.data['missing_genes'][category] = ",".join(missing)
@@ -864,10 +926,14 @@ class KeggPathwayEnrichment():
             nmax = len(df)
         df = df.iloc[0:nmax]
         df = df.sort_values("Adjusted P-value", ascending=False)
+        df = df.rename({"Term": "pathway_id"}, axis=1)
+        df = df[df.columns]
         return df
 
-    def barplot(self, enrich, cutoff=0.05, nmax=10):
-        df = self._get_final_df(enrich.results, cutoff=cutoff, nmax=nmax)
+    def barplot(self, category, cutoff=0.05, nmax=10):
+        assert category in ['up', 'down', 'all']
+        df = self._get_final_df(self.enrichment[category].results, 
+                cutoff=cutoff, nmax=nmax)
 
         pylab.clf()
         pylab.barh(range(len(df)), -pylab.log10(df['Adjusted P-value']))
@@ -881,8 +947,10 @@ class KeggPathwayEnrichment():
         pylab.tight_layout()
         return df
 
-    def scatterplot(self, enrich, cutoff=0.05, nmax=10, gene_set_size=[]):
-        df = self._get_final_df(enrich.results, cutoff=cutoff, nmax=nmax)
+    def scatterplot(self, category, cutoff=0.05, nmax=10, gene_set_size=[]):
+        assert category in ['up', 'down', 'all']
+        df = self._get_final_df(self.enrichment[category].results, 
+            cutoff=cutoff, nmax=nmax)
 
         pylab.clf()
         pylab.scatter(-pylab.log10(df['Adjusted P-value']), range(len(df)), s=10*df['size'],
@@ -960,7 +1028,7 @@ class KeggPathwayEnrichment():
                     identifiers.append(identifier)
                     new_mapper[identifier] = kegg_id
                 except:
-                    logger.warning("Skipped {}/{}. could not find mapping".format(name, kegg_id))
+                    logger.warning("Skipped {}(kegg ID {}). could not find mapping".format(name, kegg_id))
             mapper = new_mapper
 
         for name, kegg_id in mapper.items():
@@ -968,14 +1036,14 @@ class KeggPathwayEnrichment():
             summary_keggids.append(kegg_id)
 
             if name.lower() in [x.lower() for x in df_down.Name]:
-                pvalue = -pylab.log10(df_down.query("Name==@name").pvalue.values[0])
+                padj = -pylab.log10(df_down.query("Name==@name").padj.values[0])
                 fc = df_down.query("Name==@name").log2FoldChange.values[0]
                 summary_fcs.append(fc)
-                summary_pvalues.append(pvalue)
+                summary_pvalues.append(padj)
                 summary_types.append("-")
             elif name.lower() in [x.lower() for x in df_up.Name]:
-                pvalue = -pylab.log10(df_up.query("Name==@name").pvalue.values[0])
-                summary_pvalues.append(pvalue)
+                padj = -pylab.log10(df_up.query("Name==@name").padj.values[0])
+                summary_pvalues.append(padj)
                 fc = df_up.query("Name==@name").log2FoldChange.values[0]
                 summary_fcs.append(fc)
                 summary_types.append("+")
@@ -987,7 +1055,7 @@ class KeggPathwayEnrichment():
         summary = pd.DataFrame({
                     "type":summary_types,
                     "name": summary_names,
-                    "pvalue": summary_pvalues,
+                    "padj": summary_pvalues,
                     "fc": summary_fcs,
                     "keggid": summary_keggids
                     })
@@ -997,7 +1065,7 @@ class KeggPathwayEnrichment():
     def _get_colors(self, summary):
         colors = {}
         for index, row in summary.iterrows():
-            pvalue = row['pvalue']
+            pvalue = row['padj']
             type_ = row['type']
             kegg_id = row['keggid']
             if type_ == "-":
@@ -1057,7 +1125,7 @@ class KeggPathwayEnrichment():
     def save_all_pathways(self): #pragma: no cover
         # This does not do any enrichment. Just save all pathways once for all
         # with useful information
-        for ID in self.kegg.pathwayIds:
+        for ID in self.pathway.keys():
             self.save_pathway(ID)
 
     def save_significant_pathways(self, mode, cutoff=0.05, nmax=20,
@@ -1113,8 +1181,6 @@ class KeggPathwayEnrichment():
         else:
             logger.info("Found {} in {}".format(gene_name, candidates))
 
-
-
         paths = []
         for key in self.pathways.keys():
             if "GENE" in self.pathways[key]:
@@ -1127,37 +1193,58 @@ class KeggPathwayEnrichment():
                             paths.append(key)
         return list(set(paths))
 
-
     def save_project(self, tag):
+
+
+        for category in ["up", "down", "all"]:
+            self.enrichment[category].results.to_csv("{}_KEGG_GSEA_all.csv")
+            self.enrichment[category].results.query("`Adjusted P-value`<0.05").to_csv(
+                "{}_KEGG_GSEA_significant.csv")
+
         from pylab import savefig
-        for _type in ['down', 'up', 'all']:
-            df = self.barplot(self.enrichment[_type])
+        for category in ['down', 'up', 'all']:
+            df = self.barplot(category)
             savefig("{}_KEGG_{}.png".format(tag, _type), dpi=200)
             df.to_csv("{}_KEGG_{}.csv".format(tag, _type), index=None)
-        self.save_significant_pathways("down", tag=tag)
-        self.save_significant_pathways("up", tag=tag)
+
+    def export_pathways_to_json(self, outdir="kegg_pathways"):
+        # This is useful to keep an exact track of the pathways that were used.
+        # They can be loaded back. If so, we use kegg service only in
+        # :meth:`find_pathways_by_gene` method and
+
+        outdir = outdir + "/" + self.kegg.organism
+        from easydev import mkdirs
+        mkdirs(outdir)
+        import json
+        for key, data in self.pathways.items():
+            with open(f"{outdir}/{key}.json", "w") as fout:
+                json.dump(data, fout)
 
 
-
-class IDConversion():
+# not tested. This is tested trough bioservics and takes a long time
+class Mart(): #pragma: no cover
     """
 
-        conv = IDConversion()
+        conv = Mart()
         df = conv.query()
         df.set_index("ensembl_gene_id")
+        conv.save(df)
+
+    The file can now be loaded in KeggPathwayEnrichment as a mapper of the
+    ensemble identifier to external names understood by Kegg.
 
     """
-    def __init__(self, dataset="mmusculus_gene_ensembl"):
+    def __init__(self, dataset="mmusculus_gene_ensembl",
+                       mart="ENSEMBL_MART_ENSEMBL"):
 
         from bioservices import BioMart
         self.biomart = BioMart()
-        self.datasets = self.biomart.get_datasets("ENSEMBL_MART_ENSEMBL")
+        self.datasets = self.biomart.get_datasets(mart)
         self._dataset = None
-        try: 
+        try:
             self.dataset = dataset
         except:
             logger.critical("Invalid dataset. checks datasets attributse")
-
 
     def _set_dataset(self, dataset):
         if dataset not in self.datasets['name'].values:
@@ -1188,12 +1275,13 @@ class IDConversion():
         # name should be the name used by kegg
         return df
 
-    def save(self, df):
+    def save(self, df, filename=None):
         """df is the output of :meth:`~query`. This function save it keeping
 track of day/month/year and dataset."""
         import time
-        date = time.localtime() 
-        filename = "biomart_{}__{}_{}_{}.csv".format(self.dataset, 
-            date.tm_year, date.tm_mon, date.tm_mday)
+        date = time.localtime()
+        if filename is None:
+            filename = "biomart_{}__{}_{}_{}.csv".format(self.dataset,
+                date.tm_year, date.tm_mon, date.tm_mday)
         logger.info("Saving into {}".format(filename))
         df.to_csv(filename, index=False)
