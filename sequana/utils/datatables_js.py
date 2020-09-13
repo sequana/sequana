@@ -151,6 +151,10 @@ class DataTableFunction(object):
         """ Fill :attr:`DataTableFunction.datatable_columns` with header of
         :param:`DataTableFunction.df`.
         """
+        from pandas import Series
+        if isinstance(df, Series):
+            return {}
+
         if self.index is True:
             columns = [""] + list(df.columns)
         else:
