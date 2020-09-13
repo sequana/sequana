@@ -27,9 +27,6 @@ from sequana import logger
 
 import glob
 
-
-
-
 __all__ = ["RNADiffResults", "RNADiffResultsOld"]
 
 
@@ -53,6 +50,10 @@ class RNADiffResults():
         if isinstance(filename, RNADiffResults):
             self.df = filename.df.copy()
             self.filename = filename.filename
+        elif os.path.exists(filename):
+            # must be a 'complete' file from rnadiff analysis
+            self.filename = filename
+            self.df = pd.read_csv(self.filename, sep, index_col=0)
         elif os.path.isdir(filename):
             filenames = glob.glob(filename + "/tables/" + pattern)
             if len(filenames) == 1:
@@ -60,10 +61,6 @@ class RNADiffResults():
             else:
                 raise IOError("Found several file with the {} pattern. Please be"
                     "more restrictive using the pattern argument")
-            self.df = pd.read_csv(self.filename, sep, index_col=0)
-        elif os.path.exists(filename):
-            # must be a 'complete' file from rnadiff analysis
-            self.filename = filename
             self.df = pd.read_csv(self.filename, sep, index_col=0)
         else:
             raise TypeError("{} does not exists".format(filename))
