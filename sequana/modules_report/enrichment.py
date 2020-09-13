@@ -20,6 +20,8 @@ from sequana.lazy import pylab
 from sequana.modules_report.base_module import SequanaBaseModule
 from sequana.utils.datatables_js import DataTable
 
+from sequana import logger
+logger.name = __name__
 
 
 class Enrichment(SequanaBaseModule):
@@ -29,6 +31,7 @@ class Enrichment(SequanaBaseModule):
     def __init__(self, rnadiff_folder, taxon,
                  kegg_organism=None,
                  enrichment_params={
+                        "padj": 0.05,
                         "log2_fc": 3,
                         "mapper": "biomart.csv",
                         "preload_directory": "kegg_pathways"
@@ -41,8 +44,6 @@ class Enrichment(SequanaBaseModule):
         """
         super().__init__()
         self.title = "Enrichment"
-
-        print(enrichment_params)
 
         self.rnadiff_folder = rnadiff_folder
         self.enrichment_params = enrichment_params
@@ -64,16 +65,16 @@ class Enrichment(SequanaBaseModule):
         from sequana.rnadiff import RNADiffResults
         self.rnadiff = RNADiffResults(self.rnadiff_folder)
 
-        self.create_report_content()
-        self.create_html("enrichment.html", go_only=go_only, kegg_only=kegg_only)
+        self.create_report_content(go_only=go_only, kegg_only=kegg_only)
+        self.create_html("enrichment.html")
 
     def create_report_content(self, go_only=False, kegg_only=True):
         self.sections = list()
         self.summary()
         if kegg_only is True:
-            self.add_go()
-        elif go_only is True:
             self.add_kegg()
+        elif go_only is True:
+            self.add_go()
         else:
             self.add_go()
             self.add_kegg()
@@ -98,46 +99,151 @@ led to {Sup} up and {Sdown} down genes (total {Stotal})</p>
 
 <p>In the following sections, you will find the KEGG Pathway enrichment and GO
 terms enrichment. The input data for those analyis is the output of the RNADiff
-analysis where adjusted p-values above 0.05 are excluded. Moreovoer, we removed 
-candidates with log2 fold change below {log2fc}.
+analysis where adjusted p-values above 0.05 are excluded. Moreover, we removed 
+candidates with log2 fold change below {log2fc}. In the following plots you can
+find the first GO terms that are enriched, keeping a maximum of 50 identifiers. 
 </p>
 
-<p>Input file from the RNADiff analysis downloadable <a href="{link_rnadiff}">here</a></p>
+
+<p>The input file from the RNADiff analysis is downloadable <a
+href="{link_rnadiff}">here</a>.</p>
 """
         })
 
     def add_go(self):
+
+        logger.info("Enrichment module: go term")
         style="width:85%"
-        from sequana import logger
         level = logger.level
         logger.level = "INFO"
         from sequana.enrichment import PantherEnrichment
-        self.pe = PantherEnrichment(self.rnadiff_folder,
+        self.pe = PantherEnrichment(self.rnadiff_folder, self.taxon,
             log2_fc_threshold=self.enrichment_params['log2_fc'])
 
-        def plot_go_terms_down(filename):
-            import pylab
-            self.pe.compute_enrichment(self.pe.mygenes_down, self.taxon)
-            self._df_go_down = self.pe.plot_go_terms(['GO:0003674', 'GO:0008150', 'GO:0005575'])
-            pylab.savefig(filename)
-        img_down = self.create_embedded_png(plot_go_terms_down, "filename", style=style)
-
-        def plot_go_terms_up(filename):
-            import pylab
-            self.pe.compute_enrichment(self.pe.mygenes_up, self.taxon)
-            self._df_go_up = self.pe.plot_go_terms(['GO:0003674', 'GO:0008150', 'GO:0005575'])
-            pylab.savefig(filename)
-        img_up = self.create_embedded_png(plot_go_terms_up, "filename", style=style)
+        # create html table for taxon information
+        _taxon_id = self.pe.taxon_info['taxon_id']
+        _taxon_name = self.pe.taxon_info['long_name']
 
 
-        html = f"{img_down} <hr>{img_up}"
+        html_intro = f"""<div><p>The taxon used is {_taxon_name} (ID {_taxon_id}).<br>"""
+        html_intro += """
+        <br>The user input filter excluded adjusted p-values below {} and fold
+change in the range [{}, {}] keeping a total of {} down genes and {} genes.</p>
+<p>The first plot gather the main molecular function, biological process and
+cellular components altogether while the 3 next plots focus on each of those 3
+categories. </p>
+        </div>
+        """.format(
+                self.pe.summary['padj_threshold'],
+                self.pe.summary['fold_change_range'][0],
+                self.pe.summary['fold_change_range'][1],
+                self.pe.summary['DGE_after_filtering']['down'],
+                self.pe.summary['DGE_after_filtering']['up']
+                )
 
-        self.sections.append({"name": "GO", "anchor": "go", "content": html})
-        print(level)
+        # compute enrichment. This may take time.
+        self.pe.compute_enrichment_down(ontologies=[self.pe.MF, self.pe.BP, self.pe.CC])
+        self.pe.compute_enrichment_up(ontologies=[self.pe.MF, self.pe.BP, self.pe.CC])
+
+        # a utility function to create the proper html table
+        def get_html_table(this_df, identifier):
+            df = this_df.copy()
+            links = ["https://www.ebi.ac.uk/QuickGO/term/{}".format(x) for x in df["id"]]
+            df['links'] = links
+            for x in ['term', 'fdr2', 'abs_log2_fold_enrichment', 'pct_diff_expr']:
+                try:del df[x]
+                except:pass
+
+            first_col = df.pop("id")
+            df.insert(0, "id", first_col)
+            df = df.sort_values(by="fold_enrichment", ascending=False)
+
+            datatable = DataTable(pd.DataFrame(df), identifier)
+            datatable.datatable.set_links_to_column("links", "id")
+            datatable.datatable.datatable_options = {
+                 'scrollX': 'true',
+                 'pageLength': 10,
+                 'scrollCollapse': 'true',
+                 'dom': 'Bfrtip',
+                 'buttons': ['copy', 'csv']
+            }
+            js = datatable.create_javascript_function()
+            html_table = datatable.create_datatable(float_format='%E')
+            return js + html_table
+
+        all_cases = ['GO:0003674', 'GO:0008150', 'GO:0005575']
+        case_names = ['MF_BP_CC', 'MF', 'BP', 'CC']
+
+        # all down cases
+        self._temp_df = {}
+        self._minus = {}
+        self._plus = {}
+
+        html_down = ""
+        for case, case_name in zip([all_cases, self.pe.MF, self.pe.BP, self.pe.CC], case_names):
+            def plot_go_terms_down(filename, ontologies, case_name):
+                df = self.pe.plot_go_terms("down", ontologies=ontologies,
+                                                  compute_levels=False)
+                self._temp_df[case_name] = df.copy()
+                self._plus[case_name] = sum(df.plus_minus == '+')
+                self._minus[case_name] = sum(df.plus_minus == '-')
+                pylab.savefig("Panther_down_{}.png".format(case_name))
+                pylab.savefig(filename)
+                pylab.close()
+            image = self.create_embedded_png(plot_go_terms_down, "filename",
+                                             style=style, ontologies=case,
+                                             case_name=case_name)
+            html_down += "<h4>Down - {}</h4><p>For {} ({}), we found {} go terms. Showing 50 here below (at most). The full list is downlodable from the CSV file hereafter.</p>".format(case_name, case_name, case, 
+                self._plus[case_name]+ self._minus[case_name]) 
+            html_down += image + " <br>"
+            html_down += get_html_table(self._temp_df[case_name], "GO_table_{}".format(case_name))
+        
+        filenames = []
+        for case, case_name in zip([self.pe.MF, self.pe.BP, self.pe.CC], ["MF","BP","CC"]):
+            filename = "Chart_down_{}.png".format(case_name)
+            if len(self._temp_df[case_name]):
+                logger.info("Saving chart for case {} (down)".format(case_name))
+                self.pe.save_chart(self._temp_df[case_name], filename)
+                filenames.append(filename)
+        fotorama_down = "<h4>Charts down</h2>" + self.add_fotorama(filenames)
+        
+        # all up cases
+        self._temp_df = {}
+        self._minus = {}
+        self._plus = {}
+        html_up = ""
+        for case, case_name in zip([all_cases, self.pe.MF, self.pe.BP, self.pe.CC], case_names):
+            def plot_go_terms_up(filename, ontologies, case_name):
+                df = self.pe.plot_go_terms("up", ontologies=ontologies,
+                                                 compute_levels=False)
+                self._temp_df[case_name] = df.copy()
+                self._plus[case_name] = sum(df.plus_minus == '+')
+                self._minus[case_name] = sum(df.plus_minus == '-')
+                pylab.savefig("Panther_up_{}.png".format(case_name))
+                pylab.savefig(filename)
+                pylab.close()
+            image = self.create_embedded_png(plot_go_terms_up, "filename",
+                                             style=style, ontologies=case,
+                                             case_name=case_name)
+            html_up += "<h4>Up - {}</h4><p>For {} ({}), we found {} go terms. Showing 50 here below (at most). The full list is downlodable from the CSV file hereafter.</p>".format(case_name, case_name, case, 
+                self._plus[case_name]+ self._minus[case_name]) 
+            html_up += image + " <br>"
+
+        filenames = []
+        for case, case_name in zip([self.pe.MF, self.pe.BP, self.pe.CC], ["MF","BP","CC"]):
+            filename = "Chart_up_{}.png".format(case_name)
+            if len(self._temp_df[case_name]):
+                logger.info("Saving chart for case {} (up)".format(case_name))
+                self.pe.save_chart(self._temp_df[case_name], filename)
+                filenames.append(filename)
+        fotorama_up = "<h4>Charts up</h2>" + self.add_fotorama(filenames)
+
+        html = f"{html_intro} {html_down} <hr> {fotorama_down}<hr> {html_up} <hr> {fotorama_up}<hr>"
+        self.sections.append({"name": "2 - GO", "anchor": "go", "content": html})
         logger.level = level
 
-
     def add_kegg(self):
+        logger.info("Enrichment module: kegg term")
         style="width:45%"
         from sequana.enrichment import KeggPathwayEnrichment
         ke = KeggPathwayEnrichment(self.rnadiff,
@@ -185,7 +291,7 @@ candidates with log2 fold change below {log2fc}.
             df = ke.save_pathway(ID)
             files.append(ID + ".png")
             pb.animate(i+1)
-        fotorama_down = self.add_fotorama(files)
+        fotorama_down = self.add_fotorama(files, width=800)
 
 
         datatable = DataTable(df_down, 'kegg_down')
@@ -223,7 +329,7 @@ candidates with log2 fold change below {log2fc}.
             df = ke.save_pathway(ID)
             files.append(ID + ".png")
             pb.animate(i+1)
-        fotorama_up = self.add_fotorama(files)
+        fotorama_up = self.add_fotorama(files, width=800)
         logger.level = level
 
         Ndown = len(df_down)

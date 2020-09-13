@@ -243,7 +243,7 @@ class SequanaBaseModule(object):
         return html
 
     def add_fotorama(self, files, width=600, height=800, loop=True,
-        thumbnails=True, file_thumbnails=None):
+        thumbnails=True, file_thumbnails=None, captions=None):
 
         if self._fotorama_js_added is False:
             script = """
@@ -257,6 +257,12 @@ class SequanaBaseModule(object):
         else:
             script = ""
 
+        if captions:
+            if len(files) != len(captions):
+                raise ValueError("captions and files must be of same length with 1-to-1 mapping")
+        else:
+            captions = [filename.split("/")[-1] for filename in files]
+
         script +='<div class="fotorama" fzyz-keyboard="true" '
         if thumbnails is True:
             script +=' data-nav="thumbs"'
@@ -264,7 +270,7 @@ class SequanaBaseModule(object):
             script +=' data-loop="true"'
         script += ' data-width="{}"  data-height="{}"'.format(width, height)
         script += ">"
-        for filename in files:
-            script += '<img src="{}">'.format(filename)
+        for filename, caption in zip(files, captions):
+            script += '<img src="{}" data-caption="{}">'.format(filename, caption)
         script +="</div>"
         return script
