@@ -5,12 +5,11 @@ try:
 except:
     version = ">=0.8.3"
 
+from easydev.logging_tools import Logging
 try:
-    from easydev.logging_tools import Logging
-    logger = Logging("sequana", "WARNING")
+    logger
 except:
-    import colorlog
-    logger = colorlog.getLogger("sequana")
+    logger = Logging("sequana", "WARNING")
 
 
 from easydev import CustomConfig
