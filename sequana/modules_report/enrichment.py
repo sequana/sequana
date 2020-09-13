@@ -11,8 +11,10 @@
 #  documentation: http://sequana.readthedocs.io
 #
 ##############################################################################
-"""Module to write variant calling report"""
+"""Module to write enrichment report"""
 import ast
+import os
+import sys
 
 from sequana.lazy import pandas as pd
 from sequana.lazy import pylab
@@ -33,11 +35,12 @@ class Enrichment(SequanaBaseModule):
                  enrichment_params={
                         "padj": 0.05,
                         "log2_fc": 3,
-                        "mapper": "biomart.csv",
-                        "preload_directory": "kegg_pathways"
+                        "mapper": None,
+                        "preload_directoryr": None,
                         },
                 go_only=False,
                 kegg_only=False,
+                command=""
                 ):
         """.. rubric:: constructor
 
@@ -45,6 +48,7 @@ class Enrichment(SequanaBaseModule):
         super().__init__()
         self.title = "Enrichment"
 
+        self.command = command
         self.rnadiff_folder = rnadiff_folder
         self.enrichment_params = enrichment_params
         self.taxon = taxon
@@ -62,6 +66,13 @@ class Enrichment(SequanaBaseModule):
                 k.organism = kegg_organism # validates the organism name
                 self.organism = kegg_organism
 
+        if self.enrichment_params['preload_directory']:
+            pathname = self.enrichment_params['preload_directory']
+            if os.path.exists(pathname) is False:
+                logger.error("{} does not exist".format(pathname))
+                sys.exit(1)
+
+
         from sequana.rnadiff import RNADiffResults
         self.rnadiff = RNADiffResults(self.rnadiff_folder)
 
@@ -78,6 +89,10 @@ class Enrichment(SequanaBaseModule):
         else:
             self.add_go()
             self.add_kegg()
+        self.sections.append({
+            'name': "4 - Info",
+            'anchor': 'command',
+            'content': self.command})
 
     def summary(self):
         """ Add information of filter."""
@@ -86,7 +101,10 @@ class Enrichment(SequanaBaseModule):
         Sup = S.loc['up'][0]
         Sdown = S.loc['down'][0]
         Stotal = Sup + Sdown
-        link_rnadiff = self.copy_file(self.rnadiff.filename, ".")
+        try: # if it exists already, do not copy 
+            link_rnadiff = self.copy_file(self.rnadiff.filename, ".")
+        except:
+            link_rnadiff = self.rnadiff.filename
         log2fc = self.enrichment_params["log2_fc"]
 
         self.sections.append({
@@ -110,8 +128,11 @@ href="{link_rnadiff}">here</a>.</p>
 """
         })
 
-    def add_go(self):
-
+    def add_go(self):   
+        # somehow, logger used here and in add_kegg must be global. If you call
+        # add_go and then add_kegg, logger becomes an unbound local variable. 
+        # https://stackoverflow.com/questions/10851906/python-3-unboundlocalerror-local-variable-referenced-before-assignment
+        global logger
         logger.info("Enrichment module: go term")
         style="width:85%"
         level = logger.level
@@ -243,14 +264,19 @@ categories. </p>
         logger.level = level
 
     def add_kegg(self):
+        global logger
         logger.info("Enrichment module: kegg term")
         style="width:45%"
         from sequana.enrichment import KeggPathwayEnrichment
+
         ke = KeggPathwayEnrichment(self.rnadiff,
             self.organism,
             mapper=self.enrichment_params["mapper"],
             log2_fc=self.enrichment_params['log2_fc'],
-            preload_directory=self.enrichment_params["preload_directory"] + "/" + self.organism)
+            preload_directory=self.enrichment_params['preload_directory'])
+
+        logger.info("Saving all pathways in kegg_pathways/mmu")
+        ke.export_pathways_to_json()
 
         # Image kegg pathways down
         def plot_barplot_down(filename):
