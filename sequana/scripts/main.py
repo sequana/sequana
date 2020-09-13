@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import sys
 import os
 import glob
 import click
@@ -8,9 +9,10 @@ import functools
 
 __all__ = ["main"]
 
-
+import sequana
 from sequana import logger
 
+logger.level = "INFO"
 
 # This can be used by all commands as a simple decorator
 def common_logger(func):
@@ -34,6 +36,7 @@ if len(pipelines):
 for item in pkg_resources.working_set:
     if item.key.startswith("sequana") and item.key != 'sequana':
         version += "\n - {}, version {}".format(item.key, item.version)
+
 
 @click.group(context_settings=CONTEXT_SETTINGS)
 @click.version_option(version=version)
@@ -101,12 +104,12 @@ def samplesheet(**kwargs):
         iem.to_fasta()
 
 
-# This will be a complex command to provide HTML summary page for 
-# input files (e.g. bam), or results from pipelines. For each module, 
+# This will be a complex command to provide HTML summary page for
+# input files (e.g. bam), or results from pipelines. For each module,
 # we should have corresponding option that starts with the module's name
 @main.command()
 @click.argument("name", type=click.Path(exists=True))
-@click.option("--module", 
+@click.option("--module",
     required=True,
     type=click.Choice(["rnadiff", "bamqc", "enrichment"]))
 @click.option("--enrichment-taxon", type=click.INT,
@@ -116,18 +119,30 @@ def samplesheet(**kwargs):
     default=None,
     help="a valid KEGG id (automatically filled for 9606 (human) and 10090 (mmusculus)")
 @click.option("--enrichment-log2-foldchange-cutoff", type=click.FLOAT,
-    default=1, 
-    show_default=True, 
+    default=1,
+    show_default=True,
     help="remove events with absolute log2 fold change below this value")
 @click.option("--enrichment-padj-cutoff", type=click.FLOAT,
-    default=0.05, 
-    show_default=True, 
+    default=0.05,
+    show_default=True,
     help="remove events with pvalue abobe this value default (0.05).")
 @click.option("--enrichment-biomart", type=click.STRING,
-    default="biomart.csv",
+    default=None,
     help="""you may need a biomart mapping of your identifier for the kegg
 pathways analysis. If you do not have this file, you can use 'sequana biomart'
 command""")
+@click.option("--enrichment-go-only", type=click.BOOL,
+    default=False,
+    is_flag=True,
+    help="""to run only panther db enrichment""")
+@click.option("--enrichment-kegg-only", type=click.BOOL,
+    default=False,
+    is_flag=True,
+    help="""to run only kegg patways enrichment""")
+@click.option("--enrichment-kegg-pathways-directory", type=click.Path(),
+    default=None,
+    help="""a place where to find the pathways for each organism""")
+@common_logger
 def summary(**kwargs):
     """Create a HTML report for various sequana out
 
@@ -135,9 +150,23 @@ def summary(**kwargs):
     * rnadiff: the output of RNADiff pipeline
     * enrichment: the output of RNADiff pipeline
     * bamqc
+
+    Example for the enrichment module:
+
+        sequana summary T1vsT0.complete.xls --module enrichment --enrichment-taxon 10090 
+        --enrichment-log2-foldchange-cutoff 2 --enrichment-kegg-only
+
+    The KEGG pathways are loaded and it may take time. Once done, they are saved
+    in kegg_pathways/organism and be loaded next time:
+
+        sequana summary T1vsT0.complete.xls --module enrichment --enrichment-taxon 10090 
+            --enrichment-log2-foldchange-cutoff 2 --enrichment-kegg-only
+            --enrichment-kegg-pathways-directory keff_pathways
+
     """
     name = kwargs['name']
     module = kwargs['module']
+
     if module == "bamqc":
         from sequana.modules_report.bamqc import BAMQCModule
         report = BAMQCModule(name, "bamqc.html")
@@ -152,27 +181,42 @@ def summary(**kwargs):
         keggid = kwargs['enrichment_kegg_id']
         params = {"padj": kwargs['enrichment_padj_cutoff'],
                   "log2_fc": kwargs['enrichment_log2_foldchange_cutoff'],
-                  "mapper": kwargs['enrichment_biomart']}
-        report = Enrichment(name, taxon, enrichment_params=params, go_only=True)
+                  "mapper": kwargs['enrichment_biomart'],
+                  "preload_directory": kwargs['enrichment_kegg_pathways_directory'],
+                }
+        filename = kwargs['enrichment_biomart']
+        if filename and os.path.exists(filename) is False:
+            logger.error("{} does not exists".format(filename))
+            sys.exit(1)
+        filename = kwargs['enrichment_kegg_pathways_directory']
+        if filename and os.path.exists(filename) is False:
+            logger.error("{} does not exists".format(filename))
+            sys.exit(1)
+
+        report = Enrichment(name, taxon, 
+            enrichment_params=params,
+            go_only=kwargs["enrichment_go_only"],
+            kegg_only=kwargs["enrichment_kegg_only"], 
+            command=" ".join(['sequana'] + sys.argv[1:]))
 
 @main.command()
 @click.option("--mart", default="ENSEMBL_MART_ENSEMBL",
-    show_default=True, 
+    show_default=True,
     help="A valid mart name")
 @click.option("--dataset", default="mmusculus_gene_ensembl",
-    show_default=True, 
+    show_default=True,
     help="A valid dataset name.")
 @click.option("--attributes", type=click.STRING, multiple=True,
     default=("ensembl_gene_id","go_id","entrezgene_id","mgi_id","external_gene_name"),
-    show_default=True, 
+    show_default=True,
     help="A list of valid attributes to look for in the dataset")
-@click.option("--output", default=None, 
-    help="""by default save results into a CSV file named 
+@click.option("--output", default=None,
+    help="""by default save results into a CSV file named
     biomart_<dataset>_<YEAR>_<MONTH>_<DAY>.csv""")
 @common_logger
 def biomart(**kwargs):
     """Retrieve information from biomart and save into CSV file
-    
+
     This command uses BioMart from BioServices to introspect a MART service
     (--mart) and a specific dataset (default to mmusculus_gene_ensembl). Then,
     for all ensembl IDs, it will fetch the requested attributes (--attributes).
