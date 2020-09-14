@@ -42,7 +42,7 @@ from .running_median import RunningMedian
 from .snaketools import *
 from .snpeff import SnpEff
 from .sequence import DNA, RNA, Sequence, Repeats
-
+from .trf import TRF
 
 # The standalone app
 from . import scripts

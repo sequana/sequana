@@ -147,7 +147,7 @@ class PantherEnrichment():
             'SLIM_MF', 'SLIM_BP', 'SLIM_CC', 'PROTEIN', 'PANTHER_PATHWAY',
             'REACTOME_PATHWAY']
 
-        self.rnadiff = RNADiffResults(filename, pattern=None)
+        self.rnadiff = RNADiffResults(filename)
         msg = "Ignoring pvalue adjusted > {} and fold change in [{}, {}]".format(
             padj_threshold, 1/(2**log2_fc_threshold), 2**log2_fc_threshold )
         logger.info(msg)

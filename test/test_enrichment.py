@@ -7,11 +7,11 @@ from easydev import TempFile
 def test_ke():
     RNADIFF_DIR = sequana_data("rnadiff") + "/rnadiff_onecond_1"
     ke = KeggPathwayEnrichment(RNADIFF_DIR, "eco", log2_fc=1)
-    ke.barplot(ke.enrichment['down'])
-    ke.barplot(ke.enrichment['up'])
-    ke.barplot(ke.enrichment['down'])
+    ke.barplot('down')
+    ke.barplot('up')
+    ke.barplot('down')
     ke.plot_genesets_hist()
-    ke.scatterplot(ke.enrichment['down'])
+    ke.scatterplot('down')
     assert ke.find_pathways_by_gene("moaA")
     assert ke.find_pathways_by_gene("moaA", match="exact")
 
@@ -22,11 +22,11 @@ def test_ke():
 
 def test_panther():
     from sequana.enrichment import PantherEnrichment
-    RNADIFF_DIR = sequana_data("rnadiff") + "/rnadiff_onecond_1"
-    pe = PantherEnrichment(RNADIFF_DIR, log2_fc_threshold=0)
-    pe = PantherEnrichment(RNADIFF_DIR, fc_threshold=1)
+    RNADIFF_DIR = sequana_data("/rnadiff/rnadiff_onecond_1/tables")
+    pe = PantherEnrichment(RNADIFF_DIR, log2_fc_threshold=0, taxon=83333)
+    pe = PantherEnrichment(RNADIFF_DIR, fc_threshold=1, taxon=83333)
 
-    pe.compute_enrichment(pe.mygenes_up,  83333, ontologies=["GO:0003674"],
+    pe.compute_enrichment_up(ontologies=["GO:0003674"],
         correction="bonferroni")
 
 
@@ -38,7 +38,7 @@ def test_panther():
 
 
 
-    pe.compute_enrichment(pe.mygenes_up,  83333, ontologies=ontologies)
+    pe.compute_enrichment_up(  ontologies=ontologies)
 
     df = pe.plot_go_terms(ontologies=ontologies, compute_levels=False)
     df = pe.plot_go_terms(ontologies=ontologies, compute_levels=False, log=True)

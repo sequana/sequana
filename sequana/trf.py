@@ -16,10 +16,16 @@
 ##############################################################################
 import pandas as pd
 
-__all__ = ["TRF"]
-from sequana import logger
-logger.name = __name__
+
+
 from sequana.lazy import pylab
+from sequana import logger
+
+logger.name = __name__
+
+
+__all__ = ["TRF"]
+
 
 class TRF():   # pragma: no cover
     """Tandem Repeat Finder utilities
@@ -93,16 +99,15 @@ class TRF():   # pragma: no cover
                 sequence_name = line.split()[1].strip()
                 logger.info("scanning {}".format(sequence_name))
 
+        # If we concatenate several files, we also want to ignore the header
         for line in fin.readlines():
-            if len(line.strip()) == 0 or line.startswith("Parameters"):
-                continue
-            elif line.startswith('Sequence:'):
+            if line.startswith('Sequence:'):
                 sequence_name = line.split()[1].strip()
                 logger.info("scanning {}".format(sequence_name))
             else:
                 this_data = line.split()
-                assert len(this_data) == 15, this_data
-                data.append([sequence_name] + this_data)
+                if len(this_data) == 15:
+                    data.append([sequence_name] + this_data)
 
         df = pd.DataFrame(data)
         df.columns = ['sequence_name', 'start', 'end', 'period_size', 'CNV',
@@ -118,12 +123,12 @@ class TRF():   # pragma: no cover
             'percent_matches': float,
             'percent_indels': float,
             'size_consensus': float,
-            'score': 'float', 
+            'score': 'float',
             'CNV': 'float',
-            'entropy': 'float', 
+            'entropy': 'float',
             'period_size': 'float'
             })
-        df['length'] = df['end'] - df['start'] + 1 
+        df['length'] = df['end'] - df['start'] + 1
 
 
         return df
@@ -148,6 +153,9 @@ class TRF():   # pragma: no cover
         self.df.entropy.hist(bins=bins)
         pylab.xlabel("entropy")
 
-    
 
+    def hist_repet_by_sequence(self):
+        # How many repetiations per sequence 
+        pylab.hist([len(x) for x in self.df.groupby("sequence_name").groups.values()])
+        pylab.xlabel("# repetitions per sequence")
 
