@@ -74,7 +74,7 @@ install:
 
 # # command to run tests, e.g. python setup.py test
 script: 
-  - pytest -v --cov-config=.coveragerc_travis --durations=10  test/ --cov=sequana --cov-report term-missing --timeout 300 
+  - python -m pytest -v --cov-config=.coveragerc_travis --durations=10  test/ --cov=sequana --cov-report term-missing --timeout 300 
 
 after_success:
   coveralls
