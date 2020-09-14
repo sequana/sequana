@@ -4,6 +4,19 @@ Changelog
 .. contents::
     :depth: 2
 
+
+0.9.3
+-----
+
+* finalise the rnadiff HTML report with plotly visualisation
+* finalise the enrichmentf HTML report 
+* add new application in main sequana tool:
+  - biomart: a tool to produce a CSV for a given dataset!mart/set of attributes
+  - summary: a tool to produce HTML for bam, rnadiff results, enrichment for a
+rnadiff result
+  - gtf_fixer that replaces the script sequana_gtf_fixer
+
+
 0.9.2
 -----
 
