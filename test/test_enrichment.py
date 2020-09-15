@@ -40,9 +40,9 @@ def test_panther():
 
     pe.compute_enrichment_up(  ontologies=ontologies)
 
-    df = pe.plot_go_terms(ontologies=ontologies, compute_levels=False)
-    df = pe.plot_go_terms(ontologies=ontologies, compute_levels=False, log=True)
-    df = pe.plot_go_terms(ontologies=ontologies, compute_levels=False, log=True,
+    df = pe.plot_go_terms("up", ontologies=ontologies, compute_levels=False)
+    df = pe.plot_go_terms("up", ontologies=ontologies, compute_levels=False, log=True)
+    df = pe.plot_go_terms("up", ontologies=ontologies, compute_levels=False, log=True,
         include_negative_enrichment=True)
 
     pe.plot_piechart(df) 
