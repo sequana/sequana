@@ -212,7 +212,7 @@ class GFF3():
 
         # Second file (redundant) is also required by the rnadiff pipeline
         for this in fields:
-            data = df.attributes.apply(lambda x: x[this])
+            data = df.attributes.apply(lambda x: x.get(this, "NA"))
             df[this] = data
 
         #df['ID'] = df[ID]
