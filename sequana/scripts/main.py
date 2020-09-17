@@ -16,7 +16,8 @@ logger.level = "INFO"
 
 # This can be used by all commands as a simple decorator
 def common_logger(func):
-    @click.option("--logger", type=click.Choice(["INFO", "DEBUG", "WARNING", "CRITICAL", "ERROR"]))
+    @click.option("--logger", default="INFO",
+        type=click.Choice(["INFO", "DEBUG", "WARNING", "CRITICAL", "ERROR"]))
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
         return func(*args, **kwargs)
@@ -113,11 +114,12 @@ def samplesheet(**kwargs):
     required=True,
     type=click.Choice(["rnadiff", "bamqc", "enrichment"]))
 @click.option("--enrichment-taxon", type=click.INT,
-    required=True,
+    #required=True,
+    default=0,
     help="a valid taxon identifiers")
-@click.option("--enrichment-kegg-id", type=click.INT,
+@click.option("--enrichment-kegg-name", type=click.STRING,
     default=None,
-    help="a valid KEGG id (automatically filled for 9606 (human) and 10090 (mmusculus)")
+    help="a valid KEGG name (automatically filled for 9606 (human) and 10090 (mmusculus)")
 @click.option("--enrichment-log2-foldchange-cutoff", type=click.FLOAT,
     default=1,
     show_default=True,
@@ -142,6 +144,9 @@ command""")
 @click.option("--enrichment-kegg-pathways-directory", type=click.Path(),
     default=None,
     help="""a place where to find the pathways for each organism""")
+@click.option("--enrichment-kegg-background", type=click.INT,
+    default=None,
+    help="""a background for kegg enrichment. If None, set to number of genes found in KEGG""")
 @common_logger
 def summary(**kwargs):
     """Create a HTML report for various sequana out
@@ -178,10 +183,14 @@ def summary(**kwargs):
     elif module == "enrichment":
         from sequana.modules_report.enrichment import Enrichment
         taxon = kwargs['enrichment_taxon']
-        keggid = kwargs['enrichment_kegg_id']
+        if taxon == 0:
+            logger.error("You must provide a taxon with --enrichment_taxon")
+            return
+        keggname = kwargs['enrichment_kegg_name']
         params = {"padj": kwargs['enrichment_padj_cutoff'],
                   "log2_fc": kwargs['enrichment_log2_foldchange_cutoff'],
                   "mapper": kwargs['enrichment_biomart'],
+                  "kegg_background": kwargs['enrichment_kegg_background'],
                   "preload_directory": kwargs['enrichment_kegg_pathways_directory'],
                 }
         filename = kwargs['enrichment_biomart']
@@ -193,7 +202,8 @@ def summary(**kwargs):
             logger.error("{} does not exists".format(filename))
             sys.exit(1)
 
-        report = Enrichment(name, taxon, 
+        report = Enrichment(name, taxon,
+            kegg_organism=keggname, 
             enrichment_params=params,
             go_only=kwargs["enrichment_go_only"],
             kegg_only=kwargs["enrichment_kegg_only"], 
@@ -203,11 +213,10 @@ def summary(**kwargs):
 @click.option("--mart", default="ENSEMBL_MART_ENSEMBL",
     show_default=True,
     help="A valid mart name")
-@click.option("--dataset", default="mmusculus_gene_ensembl",
-    show_default=True,
-    help="A valid dataset name.")
-@click.option("--attributes", type=click.STRING, multiple=True,
-    default=("ensembl_gene_id","go_id","entrezgene_id","mgi_id","external_gene_name"),
+@click.option("--dataset",  required=True,  
+    help="A valid dataset name. e.g. mmusculus_gene_ensembl, hsapiens_gene_ensembl")
+@click.option("--attributes",  multiple=True,
+    default=["ensembl_gene_id","go_id","entrezgene_id","external_gene_name"],
     show_default=True,
     help="A list of valid attributes to look for in the dataset")
 @click.option("--output", default=None,
@@ -224,6 +233,7 @@ def biomart(**kwargs):
     about 5-10 minutes to retrieve the data depending on the connection.
 
     """
+    print(kwargs)
     logger.level = kwargs["logger"]
 
     mart = kwargs['mart']
