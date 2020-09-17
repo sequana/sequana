@@ -247,9 +247,14 @@ class RNADiffResults():
             df = self.df.copy() 
             df['log_adj_pvalue'] = -pylab.log10(self.df.padj)
             df['significance'] = ['<0.05' if x else ">=0.05" for x in df.padj<0.05]
+
+            if 'Name' in self.df.columns:
+                hover_name = 'Name'
+            else:
+                hover_name = 'ID'
             fig = px.scatter(df, x="log2FoldChange", 
                                  y="log_adj_pvalue",
-                                 hover_name="Name" ,log_y=False, color="significance", 
+                                 hover_name=hover_name ,log_y=False, color="significance", 
                                  height=600,
                                  labels={"log_adj_pvalue":"log adjusted p-value"}
 )
@@ -265,6 +270,8 @@ class RNADiffResults():
                 bax = brokenaxes(ylims=((0,br1),(M-10,M)), xlims=None)
             else:
                 bax = pylab
+        else:
+            bax = pylab
 
  
         bax.plot(d1.log2FoldChange, -np.log10(d1.padj), marker="o",
@@ -408,7 +415,11 @@ class RNADiffResults():
         count = 0
         for x, sample in zip(data, self.sample_names):
             index_name = self.df[sample].argmax()
-            name = self.df.iloc[index_name].Name # !! this is the index not the column called Name
+            try:
+                name = self.df.iloc[index_name].Name # !! this is the index not the column called Name
+            except:
+                name = self.df.iloc[index_name]['ID'] # !! this is the index not the column called Name
+            
             pylab.text(x, count, name, fontdict={'ha': 'center', 'va': 'center'}, zorder=20)
             count += 1
         x0, x1 = pylab.xlim()
