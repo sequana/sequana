@@ -160,7 +160,7 @@ class PantherEnrichment():
         Nup = len(self.rnadiff.df.query("padj<0.05 and log2FoldChange>=0"))
         Ndown = len(self.rnadiff.df.query("padj<0.05 and log2FoldChange<0"))
         Nall = len(self.rnadiff.df.query("padj<0.05"))
-        logger.info("Starting with {} genes ({} down; {} up)".format(Nup, Ndown, Nup))
+        logger.info("Starting with {} genes ({} down; {} up)".format(Nup+Ndown, Ndown, Nup))
 
         self.mygenes = self.rnadiff.df.query(
             "padj<=@padj_threshold and (log2FoldChange<=-@fc_threshold or log2FoldChange>=@fc_threshold)")
@@ -283,6 +283,13 @@ class PantherEnrichment():
             logger.info("Computing enrichment for {}".format(ontology))
             results = self.panther.get_enrichment(mygenes, taxid, ontology,
                 enrichment_test=enrichment_test, correction=correction)
+            count = 0
+            while count <2 and results == 404:
+                logger.warning("Panther request failed Trying again")
+                results = self.panther.get_enrichment(mygenes, taxid, ontology,
+                    enrichment_test=enrichment_test, correction=correction)
+                count +=1
+
             if results == 404:
                 logger.warning("Invalid output from pantherdb (too many genes ?). skipping {}".format(ontology))
                 enrichment[ontology] = None
@@ -789,9 +796,18 @@ class PantherEnrichment():
         goids = ",".join(goids)
         # remove obsolets
 
+
         res = self.quickgo.get_go_chart(goids)
-        with open(filename, "wb") as fout:
-            fout.write(res.content)
+
+        if isinstance(res, int): #404 error
+            import shutil
+            logger.warning("Could not create the GO chart. Maybe too many go IDs ({})".format(len(goids.split(","))))
+            from sequana import sequana_data
+            no_data = sequana_data("no_data.png")
+            shutil.copy(no_data, filename)
+        else:
+            with open(filename, "wb") as fout:
+                fout.write(res.content)
 
 
 class KeggPathwayEnrichment():
@@ -865,7 +881,20 @@ class KeggPathwayEnrichment():
 
     """
     def __init__(self, folder, organism, alpha=0.05, log2_fc=0, progress=True,
-            mapper=None, background=None, preload_directory=None):
+            mapper=None, background=None, preload_directory=None, 
+            convert_input_gene_to_upper_case=False):
+        """
+
+
+        In some cases, the input identifiers are converted into names thanks to
+        the input mapper (csv file). Yet, if the external name are from one
+        species and you use another species in kegg, the kegg names may be upper case
+        while your species' name are in lower case. In such situations, you may
+        set input identifiers are upper case setting the
+        convert_input_gene_to_upper_case parameter to True
+        """
+
+        self.convert_input_gene_to_upper_case = convert_input_gene_to_upper_case
 
         from bioservices import KEGG
         self.kegg = KEGG(cache=True)
@@ -1021,6 +1050,9 @@ class KeggPathwayEnrichment():
             self.summary.data['missing_genes'][category] = ",".join(missing)
             gene_list = [x for x in gene_list if x in self.mapper.index]
             identifiers = self.mapper.loc[gene_list]['name'].drop_duplicates().values
+            
+            if self.convert_input_gene_to_upper_case:
+                identifiers = [x.upper() for x in identifiers if isinstance(x, str)]
             logger.info("Mapped gene list of {} ids".format(len(identifiers)))
             gene_list = list(identifiers)
 
@@ -1037,6 +1069,9 @@ class KeggPathwayEnrichment():
         # takes the df and populate the name and size of the found pathways
         # we also sort by adjusted p-value
         # we keep adj p-value <=0.05
+        if len(df) == 0:
+            return df
+
         df = df.copy()
         df['name'] = [self.pathways[x]['NAME'] for x in df.Term]
         df['size'] = [len(x.split(";")) for x in df.Genes]
@@ -1056,6 +1091,8 @@ class KeggPathwayEnrichment():
         assert category in ['up', 'down', 'all']
         df = self._get_final_df(self.enrichment[category].results, 
                 cutoff=cutoff, nmax=nmax)
+        if len(df) == 0:
+            return df
 
         pylab.clf()
         pylab.barh(range(len(df)), -pylab.log10(df['Adjusted P-value']))
@@ -1073,6 +1110,8 @@ class KeggPathwayEnrichment():
         assert category in ['up', 'down', 'all']
         df = self._get_final_df(self.enrichment[category].results, 
             cutoff=cutoff, nmax=nmax)
+        if len(df) == 0:
+            return df
 
         pylab.clf()
         pylab.scatter(-pylab.log10(df['Adjusted P-value']), range(len(df)), s=10*df['size'],
@@ -1106,8 +1145,12 @@ class KeggPathwayEnrichment():
     def _get_summary_pathway(self, pathway_ID):
         genes = self.df_pathways.loc[pathway_ID]['GENE']
         df_down = self.rnadiff.df.query("padj<=0.05 and log2FoldChange<0").copy()
-        df_up = self.rnadiff.df.query("padj<=0.05 and log2FoldChange>0").copy()
+        df_up = self.rnadiff.df.query("padj<=0.05 and log2FoldChange>=0").copy()
 
+        if 'Name' not in df_down.columns:
+            df_down['Name'] = df_down['ID']
+        if 'Name' not in df_up.columns:
+            df_up['Name'] = df_up['ID']
 
         logger.info("{}".format(pathway_ID))
         logger.info("Total down-regulated: {}".format(len(df_down)))
@@ -1346,7 +1389,8 @@ class KeggPathwayEnrichment():
 class Mart(): #pragma: no cover
     """
 
-        conv = Mart()
+        conv = Mart(dataset="mmusculus_gene_ensembl")
+        # you could choose hsapiens_gene_ensembl for instance
         df = conv.query()
         df.set_index("ensembl_gene_id")
         conv.save(df)
@@ -1355,9 +1399,9 @@ class Mart(): #pragma: no cover
     ensemble identifier to external names understood by Kegg.
 
     """
-    def __init__(self, dataset="mmusculus_gene_ensembl",
+    def __init__(self, dataset,
                        mart="ENSEMBL_MART_ENSEMBL"):
-
+        logger.info("Init Mart")
         from bioservices import BioMart
         self.biomart = BioMart()
         self.datasets = self.biomart.get_datasets(mart)
@@ -1378,11 +1422,14 @@ class Mart(): #pragma: no cover
     dataset=property(_get_dataset, _set_dataset)
 
     def query(self, attributes=["ensembl_gene_id", "go_id", "entrezgene_id",
-                                "mgi_id", "external_gene_name"]):
+                                "external_gene_name"]):
         logger.info("Please wait. This may take a while depending on your connection")
         self.biomart.new_query()
         self.biomart.add_dataset_to_xml(self.dataset)
         for attribute in attributes:
+            if attribute not in self.attributes:
+                logger.error("{} not found in the dataset {}".format(attribute, self.dataset))
+                raise ValueError
             self.biomart.add_attribute_to_xml(attribute)
         xml = self.biomart.get_xml()
         results = self.biomart.query(xml)
