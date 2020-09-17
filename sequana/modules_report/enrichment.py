@@ -35,6 +35,7 @@ class Enrichment(SequanaBaseModule):
                  enrichment_params={
                         "padj": 0.05,
                         "log2_fc": 3,
+                        "kegg_background": None,
                         "mapper": None,
                         "preload_directoryr": None,
                         },
@@ -58,6 +59,7 @@ class Enrichment(SequanaBaseModule):
             self.organism = "hsa"
         else:
             if kegg_organism is None:
+                logger.error("You must specify the kegg organism name if not human or mouse: eg., eco for ecoli")
                 # figure out the organism from taxon 
                 raise NotImplementedError
             else:
@@ -273,6 +275,7 @@ categories. </p>
             self.organism,
             mapper=self.enrichment_params["mapper"],
             log2_fc=self.enrichment_params['log2_fc'],
+            background=self.enrichment_params['kegg_background'],
             preload_directory=self.enrichment_params['preload_directory'])
 
         logger.info("Saving all pathways in kegg_pathways/mmu")
