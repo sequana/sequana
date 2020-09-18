@@ -87,9 +87,13 @@ class IEM():
     :references: illumina specifications 970-2017-004.pdf
     """
 
-    def __init__(self, filename):
+    def __init__(self, filename, tryme=False):
         self.filename = filename
-        self._scanner()
+        if tryme:
+            try:self._scanner()
+            except:pass
+        else:
+            self._scanner()
 
     def _line_cleaner(self, line, line_count):
         # We can get rid of EOL and spaces
@@ -228,13 +232,14 @@ class IEM():
 
     def quick_fix(self, output_filename):
 
+        found_data = False
         with open(self.filename) as fin:
              with open(output_filename, "w") as fout:
                  for line in fin.readlines():
 
                      if line.startswith('[Data]'):
                          found_data = True
-
+                    
                      if found_data:
                          line = line.replace(";", ",")
                      else:
