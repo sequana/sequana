@@ -58,10 +58,14 @@ class MultiqcModule(BaseMultiqcModule):
             if self.unique is True:
                  key = data["sample_name"]
             else:
-                key = data["sample_name"]+"/"+ data['data']['chrom_name']
+                # convert into string in case
+                key = data["sample_name"]+"/"+ str(data['data']['chrom_name'])
 
             # in any case, just keep track of key / chrom_name
-            self._maps[key] = data["sample_name"] + "/" + data['data']['chrom_name']
+
+            # sometimes keys/name of chromosomes are just integer, so we need to
+            # convert to string
+            self._maps[key] = data["sample_name"] + "/" + str(data['data']['chrom_name'])
 
             self.sequana_data[key] = data['data']
             self.sequana_desc[key] = data['data_description']
