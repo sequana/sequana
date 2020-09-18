@@ -94,15 +94,27 @@ def fastq(**kwargs):
 @click.argument('name', type=click.STRING)
 @click.option('--check', is_flag=True)
 @click.option('--extract-adapters', is_flag=True)
+@click.option('--quick-fix', is_flag=True)
+@click.option('--output', default=None)
 def samplesheet(**kwargs):
     """Utilities to manipulate sample sheet"""
     name = kwargs['name']
     from sequana.iem import IEM
-    iem = IEM(name)
     if kwargs['check']:
+        iem = IEM(name)
         iem.validate()
+        logger.info("SampleSheet looks correct")
     elif kwargs["extract_adapters"]:
+        iem = IEM(name)
         iem.to_fasta()
+    elif kwargs["quick_fix"]:
+        iem = IEM(name, tryme=True)
+        if kwargs['output']:
+            filename = kwargs['output']
+        else:
+            filename = name + ".fixed"
+        logger.info("Saving fixed version in {}".format(filename))
+        iem.quick_fix(output_filename=filename)
 
 
 # This will be a complex command to provide HTML summary page for
