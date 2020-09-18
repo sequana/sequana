@@ -148,33 +148,36 @@ class IEM():
               wrongly transformed the data into a pure CSV file
             * inconsistent numbers of columns in the [DATA] section, which must be
               CSV-like section
+            * Extra lines at the end are ignored
+
         """
         # could use logger, but simpler for now
         # Note that this code is part of sequana_demultiplex
         prefix = "ERROR  [sequana_pipelines.demultiplex.check_samplesheet]: "
         try:
             with open(self.filename, "r") as fp:
-               line = fp.readline()
-               cnt = 1
-               if line.rstrip().endswith(";") or line.rstrip().endswith(","): #pragma: no cover
-                   sys.exit(prefix + "Unexpected ; or , found at the end of line {} (and possibly others). Please use IEM  to format your SampleSheet. Try sequana_fix_samplesheet for extra ; or , ".format(cnt))
+                line = fp.readline()
+                cnt = 1
+                if line.rstrip().endswith(";") or line.rstrip().endswith(","): #pragma: no cover
+                    sys.exit(prefix + "Unexpected ; or , found at the end of line {} (and possibly others). Please use IEM  to format your SampleSheet. Try sequana_fix_samplesheet for extra ; or , ".format(cnt))
 
-               while line:
-                   line = fp.readline()
-                   cnt += 1
-                   if "[Data]" in line:
-                       line = fp.readline()
-                       cnt += 1
-                       if len(line.split(',')) < 2 or "Sample" not in line: #pragma:  no cover
-                           sys.exit(prefix + ": No header found after [DATA] section")
-                       line = fp.readline()
-                       cnt += 1
-                       nb_col = len(line.split(','))
-                       while line:
-                           if len(line.split(',')) != nb_col:
-                               sys.exit(prefix + "Different number of column in [DATA] section on line: "+str(cnt))
-                           line = fp.readline()
-                           cnt += 1
+                while line:
+                    line = fp.readline()
+                    cnt += 1
+                    if "[Data]" in line:
+                        line = fp.readline()
+                        cnt += 1
+                        if len(line.split(',')) < 2 or "Sample" not in line: #pragma:  no cover
+                            sys.exit(prefix + ": No header found after [DATA] section")
+                        nb_col = len(line.split(','))
+                        # now we read the first line below [Data]
+                        line = fp.readline()
+                        cnt += 1
+                        while line:
+                            if line.strip() and len(line.split(',')) != nb_col:
+                                sys.exit(prefix + "Different number of column in [DATA] section on line: "+str(cnt))
+                            line = fp.readline()
+                            cnt += 1
         except Exception as e: #pragma: no cover
             raise ValueError("type error: " + str(e))
         return 0
