@@ -15,7 +15,8 @@ Changelog
   - summary: a tool to produce HTML for bam, rnadiff results, enrichment for a
 rnadiff result
   - gtf_fixer that replaces the script sequana_gtf_fixer
-
+* add quick_fix for sample sheet errors in iem.IEM class (used in
+  sequana_demultiplex pipeline)
 
 0.9.2
 -----
