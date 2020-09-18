@@ -88,11 +88,10 @@ class IEM():
     """
 
     def __init__(self, filename):
-        logger.warning("Not finalised use with care")
         self.filename = filename
         self._scanner()
 
-    def _line_cleaner(self, line):
+    def _line_cleaner(self, line, line_count):
         # We can get rid of EOL and spaces
         line = line.strip()
 
@@ -100,13 +99,14 @@ class IEM():
         if len(line) == 0:
             return line
 
-        # if we are dealing with a section title, we can cleanup the 
+        # if we are dealing with a section title, we can cleanup the
         # line. A section must start with '[' and ends with ']' but
-        # there could be spaces and commands. 
+        # there could be spaces and commands.
         if line.startswith('['):
             #[Header], ,, ,\n becomes [Header]
             line = line.strip(", ") # note the space AND comma
-            assert line.endswith("]")
+            if line.endswith("]") is False:
+                raise ValueError("Found incorrect syntax on line {}: {}. Maybe an extra character such as ; ".format(line_count, line))
 
         return line
 
@@ -115,8 +115,8 @@ class IEM():
         current_section = None
         data = collections.defaultdict(list)
         with open(self.filename, "r") as fin:
-            for line in fin.readlines():
-                line = self._line_cleaner(line)
+            for line_count, line in enumerate(fin.readlines()):
+                line = self._line_cleaner(line, line_count+1)
                 if len(line) == 0:
                     continue
                 if line.startswith("[") and line.endswith("]"):
@@ -136,7 +136,8 @@ class IEM():
         import pandas as pd
         import io
         df = pd.read_csv(io.StringIO("\n".join(self.data['Data'])))
-        assert len(df.columns)> 1, "Invalid sample sheet in the Data section"
+        if len(df.columns)==0:
+            raise ValueError("Invalid sample sheet in the Data section")
         return df
     df = property(_get_df)
 
@@ -225,6 +226,20 @@ class IEM():
                 print(">{adapter}_index_{name}|name:{name}|seq:{index}".format(**frmt))
                 print(read)
 
+    def quick_fix(self, output_filename):
 
+        with open(self.filename) as fin:
+             with open(output_filename, "w") as fout:
+                 for line in fin.readlines():
 
+                     if line.startswith('[Data]'):
+                         found_data = True
+
+                     if found_data:
+                         line = line.replace(";", ",")
+                     else:
+                         line = line.strip().rstrip(";")
+                         line = line.replace(";", ",")
+                         line = line.strip().rstrip(",")
+                     fout.write(line.strip("\n")+"\n")
 
