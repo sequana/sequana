@@ -26,7 +26,7 @@ def test_iem():
 
     with TempFile() as fh:
 
-        e = IEM(sequana_data("test_expdesign_wrong.csv"), tryme=True)
+        e = IEM(sequana_data("test_expdesign_miseq_illumina_semicommas.csv"), tryme=True)
         e.quick_fix(fh.name)
         e = IEM(fh.name)
 
