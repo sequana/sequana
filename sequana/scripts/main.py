@@ -149,6 +149,9 @@ command""")
     default=False,
     is_flag=True,
     help="""to run only panther db enrichment""")
+@click.option("--enrichment-max-genes", type=click.INT,
+    default=3000,
+    help="""Maximum number of genes (up or down) to use in PantherDB, which is limited to about 3000""")
 @click.option("--enrichment-kegg-only", type=click.BOOL,
     default=False,
     is_flag=True,
@@ -201,6 +204,7 @@ def summary(**kwargs):
         keggname = kwargs['enrichment_kegg_name']
         params = {"padj": kwargs['enrichment_padj_cutoff'],
                   "log2_fc": kwargs['enrichment_log2_foldchange_cutoff'],
+                  "max_entries": kwargs['enrichment_max_genes'],
                   "mapper": kwargs['enrichment_biomart'],
                   "kegg_background": kwargs['enrichment_kegg_background'],
                   "preload_directory": kwargs['enrichment_kegg_pathways_directory'],

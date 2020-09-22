@@ -108,7 +108,7 @@ class PantherEnrichment():
     """
     def __init__(self, filename, taxon, requests_per_sec=10, padj_threshold=0.05,
         log2_fc_threshold=0, fc_threshold=None,
-        enrichment_fdr=0.05):
+        enrichment_fdr=0.05, max_entries=3000):
 
         self.enrichment_fdr = enrichment_fdr
 
@@ -151,6 +151,7 @@ class PantherEnrichment():
         msg = "Ignoring pvalue adjusted > {} and fold change in [{}, {}]".format(
             padj_threshold, 1/(2**log2_fc_threshold), 2**log2_fc_threshold )
         logger.info(msg)
+
         # used in report module
         self.summary['fold_change_range'] = [1/(2**log2_fc_threshold), 2**log2_fc_threshold]
         self.summary['padj_threshold'] = padj_threshold
@@ -169,9 +170,21 @@ class PantherEnrichment():
         self.mygenes_up = self.rnadiff.df.query(
             "padj<=@padj_threshold and log2FoldChange>=@fc_threshold")
 
+        # panth accepts onyl ~2-3000 genes at max. Let us restrict the analysis
+        # to the first 2000 genes based on their log2 fold change 2000 + and
+        # 2000 negatives
+
+
+        # why do we sort by padj ? not used.
         self.mygenes = list(self.mygenes.sort_values('padj').index)
-        self.mygenes_down = list(self.mygenes_down.sort_values('padj').index)
-        self.mygenes_up = list(self.mygenes_up.sort_values('padj').index)
+        # Note that here we sort by log2FoldChange so as to keep the best 2000
+        # significant items. Of course, we take into account the signs. The
+        # reason to keep only first 2000 is that PantherDB has a restrictions
+        self.mygenes_down = list(self.mygenes_down.sort_values(by='log2FoldChange').index)
+        self.mygenes_down = self.mygenes_down[0:max_entries]
+
+        self.mygenes_up = list(self.mygenes_up.sort_values(by='log2FoldChange', ascending=False).index)
+        self.mygenes_up = self.mygenes_up[0:max_entries]
         self.summary['DGE'] ={
                 "down": Ndown,
                 "up": Nup}
@@ -789,6 +802,7 @@ class PantherEnrichment():
         elif "id" in data:
             goids = ",".join(list(data['id'].values))
 
+
         try:
             goids = [x for x in goids.split(',') if x not in self.obsolets]
         except:
@@ -796,18 +810,20 @@ class PantherEnrichment():
         goids = ",".join(goids)
         # remove obsolets
 
-
-        res = self.quickgo.get_go_chart(goids)
-
-        if isinstance(res, int): #404 error
+        try:
+            res = self.quickgo.get_go_chart(goids)
+            if res is None:
+                raise Exception
+        except:
             import shutil
-            logger.warning("Could not create the GO chart. Maybe too many go IDs ({})".format(len(goids.split(","))))
+            logger.warning("Could not create the GO chart. Maybe too many go IDs ({})".format(
+                len(goids.split(","))))
             from sequana import sequana_data
             no_data = sequana_data("no_data.png")
             shutil.copy(no_data, filename)
-        else:
-            with open(filename, "wb") as fout:
-                fout.write(res.content)
+
+        with open(filename, "wb") as fout:
+            fout.write(res.content)
 
 
 class KeggPathwayEnrichment():

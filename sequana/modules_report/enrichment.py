@@ -35,6 +35,7 @@ class Enrichment(SequanaBaseModule):
                  enrichment_params={
                         "padj": 0.05,
                         "log2_fc": 3,
+                        "max_entries": 3000,
                         "kegg_background": None,
                         "mapper": None,
                         "preload_directoryr": None,
@@ -141,6 +142,7 @@ href="{link_rnadiff}">here</a>.</p>
         logger.level = "INFO"
         from sequana.enrichment import PantherEnrichment
         self.pe = PantherEnrichment(self.rnadiff_folder, self.taxon,
+            max_entries=self.enrichment_params['max_entries'],
             log2_fc_threshold=self.enrichment_params['log2_fc'])
 
         # create html table for taxon information
