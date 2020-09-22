@@ -812,8 +812,11 @@ class PantherEnrichment():
 
         try:
             res = self.quickgo.get_go_chart(goids)
+            
             if res is None:
                 raise Exception
+            with open(filename, "wb") as fout:
+                fout.write(res.content)
         except:
             import shutil
             logger.warning("Could not create the GO chart. Maybe too many go IDs ({})".format(
@@ -822,8 +825,6 @@ class PantherEnrichment():
             no_data = sequana_data("no_data.png")
             shutil.copy(no_data, filename)
 
-        with open(filename, "wb") as fout:
-            fout.write(res.content)
 
 
 class KeggPathwayEnrichment():
