@@ -34,6 +34,42 @@ def get_heatmap_df():
     return df
 
 
+def get_clustermap_data():
+    """a simple example to play with and perform test"""
+    import pandas as pd
+
+    df = pd.DataFrame(
+        {
+            "sample_1": [1, 0, 1, 1],
+            "sample_2": [0.9, 0.1, 0.6, 1],
+            "sample_3": [0.5, 0.2, 0, 1],
+            "sample_4": [0.5, 0.2, 0, 1],
+        },
+        index=["gene_A", "gene_B", "gene_C", "gene_D"],
+    )
+    df_sample_groups = pd.DataFrame(
+        {
+            "sample_1": ["a", "1"],
+            "sample_2": ["a", "1"],
+            "sample_3": ["b", "1"],
+            "sample_4": ["b", "1"],
+        },
+        index=["group1", "group2"],
+    ).transpose()
+
+    df_gene_groups = pd.DataFrame(
+        {
+            "gene_A": ["a", "1"],
+            "gene_B": ["a", "1"],
+            "gene_C": ["b", "1"],
+            "gene_D": ["b", "1"],
+        },
+        index=["group1", "group2"],
+    ).transpose()
+
+    return df, df_sample_groups, df_gene_groups
+
+
 # def heatmap(data, *args, **kargs):
 #    """alias to Heatmap class"""
 #    h = Heatmap(data, *args, **kargs)
@@ -43,6 +79,15 @@ def get_heatmap_df():
 
 class Clustermap:
     """ Heatmap and dendrograms based on seaborn Clustermap
+
+    .. plot::
+        :include-source:
+        :width: 80%
+
+        from sequana.viz import heatmap
+        df, sample_groups_df, gene_groups_df = heatmap.get_clustermap_data()
+        h = heatmap.Clustermap(df, sample_groups_df=sample_groups_df, gene_groups_df=gene_groups_df)
+        h.plot()
     """
 
     def __init__(
@@ -54,7 +99,7 @@ class Clustermap:
         gene_groups_df=None,
         gene_groups_sel=[],
         gene_groups_palette=sns.color_palette(desat=0.6),
-        yticklabels=None,
+        yticklabels="auto",
         **kwargs
     ):  # annot):
         """
