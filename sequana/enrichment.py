@@ -71,7 +71,7 @@ class PantherEnrichment():
             df = pe.plot_go_terms("up", pe.MF)
             pe.save_chart(df, "chart_MF_up.png")
 
-            # all 3 main ontology 
+            # all 3 main ontology
             df = pe.plot_go_terms("up")
             pe.save_chart(df, "chart_up.png")
 
@@ -213,7 +213,7 @@ class PantherEnrichment():
 
     def _set_taxon(self, taxon):
         if taxon not in self.valid_taxons:
-            raise ValueError("taxon {} ".format(taxon) + 
+            raise ValueError("taxon {} ".format(taxon) +
                 " not in pantherDB. please check the 'valid_taxons' attribute")
         self.taxon_info = [x for x in self.panther.get_supported_genomes() if x['taxon_id'] == taxon]
         self.taxon_info = self.taxon_info[0]
@@ -254,9 +254,9 @@ class PantherEnrichment():
         The fold enrichment is also called odd-ratio.
         """
 
-        enrichment, stats = self._compute_enrichment(self.mygenes_up, 
-                        taxid=taxid, 
-                        ontologies=ontologies, enrichment_test=enrichment_test, 
+        enrichment, stats = self._compute_enrichment(self.mygenes_up,
+                        taxid=taxid,
+                        ontologies=ontologies, enrichment_test=enrichment_test,
                         correction=correction, progress=progress)
         self.enrichment['up'] = enrichment
         self.stats['up'] = stats
@@ -265,11 +265,20 @@ class PantherEnrichment():
             enrichment_test="FISHER", correction="FDR", progress=True):
 
         enrichment, stats = self._compute_enrichment(self.mygenes_down,
-                        taxid=taxid, 
-                        ontologies=ontologies, enrichment_test=enrichment_test, 
+                        taxid=taxid,
+                        ontologies=ontologies, enrichment_test=enrichment_test,
                         correction=correction, progress=progress)
         self.enrichment['down'] = enrichment
         self.stats['down'] = stats
+
+    def compute_enrichment(self, taxid=None, ontologies=None,
+            enrichment_test="FISHER", correction="FDR", progress=True):
+        self.compute_enrichment_down(taxid=taxid, ontologies=ontologies,
+            enrichment_test=enrichment_test, correction=correction,
+            progress=progress)
+        self.compute_enrichment_up(taxid=taxid, ontologies=ontologies,
+            enrichment_test=enrichment_test, correction=correction,
+            progress=progress)
 
     def _compute_enrichment(self, mygenes, taxid, ontologies=None,
             enrichment_test="FISHER", correction="FDR", progress=True):
@@ -327,9 +336,14 @@ class PantherEnrichment():
             enrichment[ontology] = results
         stats = dict([(k,len(v['result'])) for k,v in enrichment.items()])
         stats['input_genes'] = len(mygenes.split(','))
-        unmapped = enrichment[ontologies[0]]["input_list"]['unmapped_id']
-        stats['unmapped_genes'] = unmapped
-        stats['N_unmapped_genes'] = len(unmapped)
+
+        try:
+            unmapped = enrichment[ontologies[0]]["input_list"]['unmapped_id']
+            stats['unmapped_genes'] = unmapped
+            stats['N_unmapped_genes'] = len(unmapped)
+        except:
+            stats['unmapped_genes'] = []
+            stats['N_unmapped_genes'] = 0
 
         # Here, looking at the FDr, it appears that when using bonferroni,
         # all FDR are set to zeros. Moreover, when using Fisher tests and
@@ -339,7 +353,7 @@ class PantherEnrichment():
         return enrichment, stats
 
     def get_functional_classification(self, mygenes, taxon): #pragma: no cover ; too slow
-        """Mapping information from pantherDB for the lisf of genes 
+        """Mapping information from pantherDB for the lisf of genes
 
         We also store uniprot persistent id
 
@@ -404,7 +418,7 @@ class PantherEnrichment():
 
         if category not in self.enrichment:
             logger.warning("You must call compute_enrichment_{}".format(category))
-            return 
+            return
 
         # First, we select the required ontologies and build a common data set
         all_data = []
@@ -438,7 +452,7 @@ class PantherEnrichment():
         df["pct_diff_expr"] = df['number_in_list'] *100 / df['number_in_reference']
         df["log2_fold_enrichment"] = pylab.log2(df['fold_enrichment'])
         df["abs_log2_fold_enrichment"] = abs(pylab.log2(df['fold_enrichment']))
-        df['expected'] = [int(x) for x in df.expected] 
+        df['expected'] = [int(x) for x in df.expected]
 
         # Some user may want to include GO terms with fold enrichment
         # significanyly below 1 or not.
@@ -453,12 +467,12 @@ class PantherEnrichment():
         return df
 
     def plot_go_terms(self, category, ontologies=None, max_features=50,
-                        log=False, fontsize=9, minimum_genes=0, 
+                        log=False, fontsize=9, minimum_genes=0,
                         pvalue=0.05, cmap="summer_r",
                         sort_by="fold_enrichment",
                         show_pvalues=False,
                         include_negative_enrichment=False,
-                        fdr_threshold=0.05, compute_levels=True, 
+                        fdr_threshold=0.05, compute_levels=True,
                         progress=True):
 
         if ontologies is None:
@@ -536,7 +550,7 @@ class PantherEnrichment():
         max_size = subdf.number_in_list.max()
         # ignore the dummy values
         min_size = min([x for x in subdf.number_in_list.values if x!= 0])
-        # here we define a size for each entry. 
+        # here we define a size for each entry.
         # For the dummy entries, size is null (int(bool(x))) makes sure
         # it is not shown
         sizes = [max(max_size*0.2, x) * int(bool(x))
@@ -586,7 +600,7 @@ class PantherEnrichment():
 
         # define the labels
         max_label_length = 45
-        labels = [x if len(x) < max_label_length else x[0:max_label_length-3]+"..." 
+        labels = [x if len(x) < max_label_length else x[0:max_label_length-3]+"..."
                     for x in list(subdf.label)]
         ticks = []
         for level, ID, label in zip(subdf['level'], subdf.id,   labels):
@@ -629,7 +643,7 @@ class PantherEnrichment():
         else:
             pylab.xlabel("Fold Enrichment")
 
-        # dealwith fold change below 0. 
+        # dealwith fold change below 0.
         if include_negative_enrichment:
             pylab.xlim([-fc_max, fc_max])
         else:
@@ -787,7 +801,7 @@ class PantherEnrichment():
     def save_chart(self, data, filename="chart.png"):
         """
 
-            pe = PantherEnrichment("B4052-V1.T1vsT0.complete.xls", fc_threshold=5, 
+            pe = PantherEnrichment("B4052-V1.T1vsT0.complete.xls", fc_threshold=5,
                 padj_threshold=0.05)
             df = pe.plot_go_terms("down", log=True, compute_levels=False)
             pe.save_chart(df, "chart.png")
@@ -812,7 +826,7 @@ class PantherEnrichment():
 
         try:
             res = self.quickgo.get_go_chart(goids)
-            
+
             if res is None:
                 raise Exception
             with open(filename, "wb") as fout:
@@ -825,6 +839,21 @@ class PantherEnrichment():
             no_data = sequana_data("no_data.png")
             shutil.copy(no_data, filename)
 
+
+class GSEA():
+
+    def __init__(self, species):
+        pass
+
+    def enrichment(self, gene_list, verbose=False, background=None):
+        enr = gseapy.enrichr(
+            gene_list=gene_list,
+            gene_sets=self.gene_sets,
+            verbose=verbose,
+            background=background,
+            outdir="test", no_plot=True)
+
+        return enr
 
 
 class KeggPathwayEnrichment():
@@ -873,7 +902,7 @@ class KeggPathwayEnrichment():
 
         import pandas as pd
         df = pd.read_csv("biomart.csv")
-        df = df.rename({"external_gene_name":"name", "ensembl_gene_id": "ensembl"}, 
+        df = df.rename({"external_gene_name":"name", "ensembl_gene_id": "ensembl"},
                 axis=1)
         df = df.set_index("ensembl", inplace=True)
 
@@ -898,7 +927,7 @@ class KeggPathwayEnrichment():
 
     """
     def __init__(self, folder, organism, alpha=0.05, log2_fc=0, progress=True,
-            mapper=None, background=None, preload_directory=None, 
+            mapper=None, background=None, preload_directory=None,
             convert_input_gene_to_upper_case=False):
         """
 
@@ -1045,7 +1074,7 @@ class KeggPathwayEnrichment():
         if len(self.enrichment['up'].results) == 0 and\
             len(self.enrichment['up'].results) == 0:
             logger.error("Enrichment results are empty. Most probably an incompatible set of gene IDs. Please use BioMart to convert your IDs into external gene names ")
-            
+
 
     def _enrichr(self, category, background=None, verbose=True):
 
@@ -1067,7 +1096,7 @@ class KeggPathwayEnrichment():
             self.summary.data['missing_genes'][category] = ",".join(missing)
             gene_list = [x for x in gene_list if x in self.mapper.index]
             identifiers = self.mapper.loc[gene_list]['name'].drop_duplicates().values
-            
+
             if self.convert_input_gene_to_upper_case:
                 identifiers = [x.upper() for x in identifiers if isinstance(x, str)]
             logger.info("Mapped gene list of {} ids".format(len(identifiers)))
@@ -1106,7 +1135,7 @@ class KeggPathwayEnrichment():
 
     def barplot(self, category, cutoff=0.05, nmax=10):
         assert category in ['up', 'down', 'all']
-        df = self._get_final_df(self.enrichment[category].results, 
+        df = self._get_final_df(self.enrichment[category].results,
                 cutoff=cutoff, nmax=nmax)
         if len(df) == 0:
             return df
@@ -1125,7 +1154,7 @@ class KeggPathwayEnrichment():
 
     def scatterplot(self, category, cutoff=0.05, nmax=10, gene_set_size=[]):
         assert category in ['up', 'down', 'all']
-        df = self._get_final_df(self.enrichment[category].results, 
+        df = self._get_final_df(self.enrichment[category].results,
             cutoff=cutoff, nmax=nmax)
         if len(df) == 0:
             return df
