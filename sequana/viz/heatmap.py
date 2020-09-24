@@ -51,6 +51,9 @@ class Clustermap:
         sample_groups_df=None,
         sample_groups_sel=[],
         sample_groups_palette=sns.color_palette(desat=0.6),
+        gene_groups_df=None,
+        gene_groups_sel=[],
+        gene_groups_palette=sns.color_palette(desat=0.6),
         yticklabels=None,
         **kwargs
     ):  # annot):
@@ -58,7 +61,10 @@ class Clustermap:
         :param data_df: a dataframe.
         :param sample_groups_df: a dataframe with sample id as index (same as in data_df columns) and a group definition per column. Use to produce the x axis color groups.
         :param sample_group_sel: a list of the columns to select from the sample_groups_df.
-        :param sample_groups_palette: the palette to use for color groups.
+        :param sample_groups_palette: the palette to use for sample color groups.
+        :param gene_groups_df: a dataframe with gene id as index (same as in data_df columns) and a group definition per column. Use to produce the y axis color groups.
+        :param gene_group_sel: a list of the columns to select from the gene_groups_df.
+        :param gene_groups_palette: the palette to use for gene color groups.
         :param ytickslabels: "auto" for classical heatmap behaviour, [] for no ticks or a pandas Series giving the mapping between the index (gene names in data_df) and the gene names to be used for the heatmap
         :param **kwargs: All other kwargs are passed to seaborn.Clustermap.
         """
@@ -66,9 +72,18 @@ class Clustermap:
         self.sample_groups_df = sample_groups_df
         self.sample_groups_sel = sample_groups_sel
         self.sample_groups_palette = sample_groups_palette
+        self.gene_groups_df = gene_groups_df
+        self.gene_groups_sel = gene_groups_sel
+        self.gene_groups_palette = gene_groups_palette
         self.kwargs = kwargs
 
-        self.groups_col_df = self._get_group_colors()
+        self.groups_col_df = self._get_group_colors(
+            sample_groups_df, sample_groups_sel, sample_groups_palette
+        )
+        self.gene_groups_df = self._get_group_colors(
+            gene_groups_df, gene_groups_sel, gene_groups_palette
+        )
+
         self.yticklabels = self._convert_gene_names(yticklabels)
 
     def _convert_gene_names(self, yticklabels):
@@ -77,17 +92,15 @@ class Clustermap:
         else:
             return yticklabels
 
-    def _get_group_colors(self):
+    def _get_group_colors(self, groups_df, selection, palette):
 
-        if isinstance(self.sample_groups_df, pd.DataFrame):
+        if isinstance(groups_df, pd.DataFrame):
 
-            if self.sample_groups_sel:
-                groups_df = self.sample_groups_df.loc[:, self.sample_groups_sel]
-            else:
-                groups_df = self.sample_groups_df
+            if selection:
+                groups_df = groups_df.loc[:, selection]
 
             groups = [x for y in groups_df for x in groups_df[y].unique()]
-            col_map = dict(zip(groups, self.sample_groups_palette))
+            col_map = dict(zip(groups, palette))
             groups_col_df = groups_df.apply(lambda x: x.map(col_map))
 
             return groups_col_df
@@ -103,11 +116,9 @@ class Clustermap:
             cmap=cmap,
             col_colors=self.groups_col_df,
             yticklabels=self.yticklabels,
+            row_colors=self.gene_groups_df,
             **self.kwargs,
         )
-        # annot_df = pd.read_csv(annot_file, sep="\t", index_col="gene_id")["Name"]
-        # In clustermap
-        # yticklabels=annot_df.loc[counts_df.index])
 
 
 class Heatmap(Linkage):
