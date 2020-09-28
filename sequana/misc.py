@@ -19,8 +19,9 @@
 """.. rubric:: misc utilities"""
 import os
 import glob
-import numpy as np
+from sequana.lazy import numpy as np
 import platform
+import pathlib
 
 from sequana import logger
 logger.name = __name__
