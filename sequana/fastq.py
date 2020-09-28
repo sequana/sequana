@@ -994,8 +994,8 @@ class FastQC(object):
 
         # other data
         self.qualities = qualities
-        
-        # we may want to skip first rows self.mean_qualities = mean_qualities
+        # we may want to skip first rows 
+        self.mean_qualities = mean_qualities
         self.minimum = int(self.lengths.min())
         self.maximum = int(self.lengths.max())
         self.sequences = sequences
