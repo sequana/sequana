@@ -29,7 +29,8 @@ from sequana.lazy import numpy as np
 from sequana.lazy import pylab
 from pylab import mean as pymean
 
-from sequana.tools import gc_content, genbank_features_parser
+from sequana.tools import gc_content
+from sequana.genbank import GenBank
 from sequana.errors import SequanaException
 from sequana.summary import Summary
 from sequana.stats import evenness
@@ -316,8 +317,9 @@ class GenomeCov(object):
     def genbank_filename(self, genbank_filename):
         if os.path.isfile(genbank_filename):
             self._genbank_filename = os.path.realpath(genbank_filename)
-            self._feature_dict = genbank_features_parser(
-                genbank_filename)
+
+            gbk = GenBank(genbank_filename)
+            self._feature_dict = gbk.genbank_features_parser()
         else:
             logger.error("FileNotFoundError: The genbank file doesn't exist.")
             sys.exit(1)
