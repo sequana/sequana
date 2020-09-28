@@ -38,6 +38,7 @@ install:
   - conda install --yes matplotlib qtconsole atropos pandas samtools
   - conda install --yes xlrd scipy pyVCF 
   - pip install bioservices>=1.7.8
+  - pip install seaborn
 
   # FIXME
   # for bioservices. should be fixed in bioconda itself I suspect
