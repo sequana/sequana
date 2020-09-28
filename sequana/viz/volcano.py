@@ -28,7 +28,7 @@ import pylab
 import pandas as pd
 
 
-__all__ = ['Volcano']
+__all__ = ["Volcano"]
 
 
 class Volcano(object):
@@ -51,51 +51,84 @@ class Volcano(object):
 
     """
 
-    def __init__(self, fold_changes=None, pvalues=None, color=None):
+    def __init__(
+        self,
+        fold_changes=None,
+        pvalues=None,
+        color="auto",
+        pvalue_threshold=1.3,
+        fold_change_threshold=1,
+    ):
         """.. rubric:: constructor
 
 
         :param list fold_changes: 1D array or list
         :param list pvalues: 1D array or list
-        :param df: a dataframe with those column names:
-            fold_changes, pvalues, color (optional)
-
-
+           the threshold provided.
+        :param pvalue_threshold: adds an horizontal dashed line at
+        :param fold_change_threshold: colors in grey the absolute fold
+            changes below a given threshold.
         """
+
         # try to compute the FC now
-        #if self.fold_change is None:
+        # if self.fold_change is None:
         #    self.fold_change = pylab.log2(X1/X0)
 
-        #if pvalue is None:
+        # if pvalue is None:
         #    # assume a normal distribution mean 0 and sigma 1
         #    import scipy.stats
         #    self.pvalue = - pylab.log10(scipy.stats.norm.pdf(abs(self.fold_change), 0,1)),
 
         self.fold_changes = np.array(fold_changes)
         self.pvalues = np.array(pvalues)
+        self.color = color
+        self.pvalue_threshold = pvalue_threshold
+        self.fold_change_threshold = fold_change_threshold
         assert len(self.fold_changes) == len(self.pvalues)
 
-        if color is None:
-            self.color = ['blue'] * len(self.pvalues)
-        elif isinstance(color, str):
-            self.color = [color] * len(self.pvalues)
-        else:
-            self.color = np.array(color)
-        # TODO: check that the 3 columns have same length
-        assert len(self.fold_changes) == len(self.color)
+        self.df = pd.DataFrame(
+            {"fold_change": self.fold_changes, "pvalue": self.pvalues}
+        )
+        self._get_colors()
 
+    def _get_colors(self):
+        """ Add colors according to pvalue and fold change thresholds
+        """
 
-        self.df = pd.DataFrame({"fold_change": self.fold_changes,
-            "pvalue": self.pvalues, 'color': self.color})
-
-    def plot(self, size=10, alpha=0.5, marker='o', fontsize=16,
-            xlabel='fold change', logy=False, 
-            threshold_lines={"color": "black", 'ls': "--"},
-            ylabel='p-value', pvalue_threshold=1.3, fold_change_threshold=1,
-
-            add_broken_axes=False,
-            broken_axes={"ylims": ((0,10), (50,100))}
+        def coloring(row):
+            if (row.fold_change <= -self.fold_change_threshold) and (
+                row.pvalue >= self.pvalue_threshold
             ):
+                return "firebrick"
+            if (row.fold_change >= self.fold_change_threshold) and (
+                row.pvalue >= self.pvalue_threshold
+            ):
+                return "royalblue"
+            if (abs(row.fold_change) < self.fold_change_threshold) and (
+                row.pvalue >= self.pvalue_threshold
+            ):
+                return "black"
+            else:
+                return "lightgrey"
+
+        if self.color == "auto":
+            self.df["color"] = self.df.apply(coloring, axis=1)
+        else:
+            self.df["color"] = self.color
+
+    def plot(
+        self,
+        size=10,
+        alpha=0.7,
+        marker="o",
+        fontsize=16,
+        xlabel="fold change",
+        logy=False,
+        threshold_lines={"color": "black", "ls": "--"},
+        ylabel="p-value",
+        add_broken_axes=False,
+        broken_axes={"ylims": ((0, 10), (50, 100))},
+    ):
         """
 
         :param size: size of the markers
@@ -103,60 +136,56 @@ class Volcano(object):
         :param fontsize:
         :param xlabel:
         :param ylabel:
-        :param pvalue_threshold: adds an horizontal dashed line at
-           the threshold provided.
-        :param fold_change_threshold: colors in grey the absolute fold
-            changes below a given threshold.
-
+        :param center: If centering the x axis
         """
         pylab.clf()
-        mask1 = abs(self.fold_changes) < fold_change_threshold
-        mask2 = abs(self.fold_changes) >= fold_change_threshold
 
-        colors = self.df.color
-
-        if add_broken_axes: 
+        if add_broken_axes:
             from brokenaxes import brokenaxes
+
             _ylims = broken_axes.get("ylims", None)
             _xlims = broken_axes.get("xlims", None)
             bax = brokenaxes(ylims=_ylims, xlims=_xlims)
         else:
             bax = pylab
-        bax.scatter(self.fold_changes[mask1],
-                self.pvalues[mask1],
-                s=size,
-                alpha=alpha,
-                c='grey', marker=marker)
-        bax.scatter(self.fold_changes[mask2],
-                self.pvalues[mask2],
-                s=size,
-                alpha=alpha,
-                c=colors[mask2])
+
+        bax.scatter(
+            self.df.fold_change,
+            self.df.pvalue,
+            s=size,
+            alpha=alpha,
+            c=self.df.color,
+            marker=marker,
+            edgecolors="None",
+        )
 
         bax.grid()
-        #pylab.ylim([0, pylab.ylim()[1]])
-        #M = max(abs(self.fold_change)) * 1.1
-        #pylab.xlim([-M, M])
+        # pylab.ylim([0, pylab.ylim()[1]])
+        # M = max(abs(self.fold_change)) * 1.1
+        # pylab.xlim([-M, M])
         try:
             bax.set_xlabel(xlabel, fontsize=fontsize)
             bax.set_ylabel(ylabel, fontsize=fontsize)
         except:
             bax.xlabel(xlabel, fontsize=fontsize)
             bax.ylabel(ylabel, fontsize=fontsize)
-    
-        bax.axhline(pvalue_threshold, color=threshold_lines['color'], 
-                linestyle=threshold_lines["ls"])
-        bax.axvline(fold_change_threshold, 
-                color=threshold_lines['color'],
-                linestyle=threshold_lines["ls"])
-        bax.axvline(-1*fold_change_threshold,
-                color=threshold_lines['color'],
-                linestyle=threshold_lines["ls"])
+
+        bax.axhline(
+            self.pvalue_threshold,
+            color=threshold_lines["color"],
+            linestyle=threshold_lines["ls"],
+        )
+        bax.axvline(
+            self.fold_change_threshold,
+            color=threshold_lines["color"],
+            linestyle=threshold_lines["ls"],
+        )
+        bax.axvline(
+            -1 * self.fold_change_threshold,
+            color=threshold_lines["color"],
+            linestyle=threshold_lines["ls"],
+        )
 
         if logy is True:
             ax = pylab.gca()
             ax.set(yscale="log")
-            
-
-
-
