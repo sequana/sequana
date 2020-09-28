@@ -144,11 +144,11 @@ class FindMotif():
         return df
 
 
-    def plot_specific_alignment(self, query_name, motif,clf=True,
+    def plot_specific_alignment(self, bamfile, query_name, motif,clf=True,
             windows=[10, 50, 100, 200, 500, 1000]):
 
         found = None
-        bam = BAM(self.bamfile)
+        bam = BAM(bamfile)
         for aln in bam:
             if aln.query_name == query_name:
                 found = aln
@@ -180,12 +180,8 @@ class FindMotif():
             for window in windows:
     """
 
-    def _get_aligments(self, motif, window=200, global_th=10):
-        df = self.find_motif(motif=motif, window=window)
-        df = df.query("hit>@global_th")
-        return df
 
-    def plot_alignment(self, motif, window=200,
+    def plot_alignment(self, bamfile, motif, window=200,
             global_th=10,title=None,legend=True, legend_fontsize=11):
         """
 
@@ -193,19 +189,19 @@ class FindMotif():
         plot alignments that match the motif. 
 
         """
-        df = self._get_aligments(motif=motif, window=window, global_th=global_th)
-        print("Found {} hits".format(len(df)))
-        bam = BAM(self.bamfile)
+
+        #print("Found {} hits".format(len(df)))
+        bam = BAM(bamfile)
         pylab.clf()
         count = 0
         for aln in bam:
-            if aln.query_name in df.query_name.values:
-                seq = aln.query_sequence
-                if seq:
-                    count += 1
-                    X1 = [seq[i:i+window].count(motif) for i in range(len(seq))]
-                    pylab.plot(range(aln.reference_start,
-                        aln.reference_start+len(seq)),X1, label=aln.query_name)
+            #if aln.query_name in df.query_name.values:
+            seq = aln.query_sequence
+            if seq:
+                count += 1
+                X1 = [seq[i:i+window].count(motif) for i in range(len(seq))]
+                pylab.plot(range(aln.reference_start,
+                    aln.reference_start+len(seq)),X1, label=aln.query_name)
 
         max_theo = int(1.2*window / len(motif))
         pylab.ylim([0, max_theo])
@@ -214,7 +210,7 @@ class FindMotif():
         if title:
             pylab.title(title, fontsize=16)
 
-        return df
+        #return df
 
 
 
