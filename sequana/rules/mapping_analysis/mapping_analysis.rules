@@ -49,7 +49,6 @@ rule mapping_analysis:
 
         from sequana import bedtools
         from sequana import BAM
-        from sequana.tools import genbank_features_parser
 
         json_dict = {}
 

@@ -4,7 +4,7 @@ from sequana.lazy import pylab
 import pandas as pd
 
 
-__all__ = ['imshow', 'Imshow']
+__all__ = ['Imshow']
 
 
 class Imshow(VizInputSquare):

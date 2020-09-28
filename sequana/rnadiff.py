@@ -377,13 +377,14 @@ class RNADiffResults():
 
     def get_cond_from_sample(self, sample_name):
         try:
-            candidates = [x for x in self.condition_names if sample_name.startswith(x)]
+            import re
+            candidates = [x for x in self.condition_names if re.findall("^{}\d+".format(x), sample_name)]
             if len(candidates) == 1:
                 return candidates[0]
             else:
                 raise ValueError("ambiguous sample name found in several conditions")
         except:
-            logger.warning("{} not found".format(sample_name))
+            logger.warning("{} not found or ambiguous name".format(sample_name))
             return None
 
     def plot_density(self):

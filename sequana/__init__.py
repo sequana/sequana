@@ -29,6 +29,7 @@ from .coverage import Coverage
 from .expdesign import ExpDesignAdapter
 from .fastq import FastQ, FastQC, Identifier
 from .fasta import FastA
+from .gff3 import GFF3
 from .freebayes_vcf_filter import VCF_freebayes
 from .freebayes_bcf_filter import BCF_freebayes
 from .itol import ITOL
