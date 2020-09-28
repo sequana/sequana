@@ -124,7 +124,7 @@ class Volcano(object):
         fontsize=16,
         xlabel="fold change",
         logy=False,
-        threshold_lines={"color": "black", "ls": "--"},
+        threshold_lines={"color": "black", "ls": "--", "width": 0.5},
         ylabel="p-value",
         add_broken_axes=False,
         broken_axes={"ylims": ((0, 10), (50, 100))},
@@ -174,16 +174,19 @@ class Volcano(object):
             self.pvalue_threshold,
             color=threshold_lines["color"],
             linestyle=threshold_lines["ls"],
+            linewidth=threshold_lines["width"],
         )
         bax.axvline(
             self.fold_change_threshold,
             color=threshold_lines["color"],
             linestyle=threshold_lines["ls"],
+            linewidth=threshold_lines["width"],
         )
         bax.axvline(
             -1 * self.fold_change_threshold,
             color=threshold_lines["color"],
             linestyle=threshold_lines["ls"],
+            linewidth=threshold_lines["width"],
         )
 
         if logy is True:
