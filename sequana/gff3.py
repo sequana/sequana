@@ -18,9 +18,13 @@ import re
 import os
 
 # from bioconvert/io/gff3 and adapted later on
+from sequana.annotations import Annotation
 
 
-class GFF3():
+__all__ = ["GFF3"]
+
+
+class GFF3(Annotation):
     """Read a GFF file, version 3
 
 
@@ -28,14 +32,13 @@ class GFF3():
 
     """
     def __init__(self, filename):
-        self.filename = filename
-        assert os.path.exists(filename)
+        super(GFF3, self).__init__(filename)
 
     def get_types(self):
         """Extract unique GFF types
 
         This is equivalent to awk '{print $3}' | sort | uniq to extract unique GFF
-        types. No sanity check, this is suppose to be fast. 
+        types. No sanity check, this is suppose to be fast.
 
         Less than a few seconds for mammals.
         """
