@@ -40,7 +40,7 @@ def get_most_probable_strand(sample_folder, tolerance=0.10):
     return df
 
 
-def get_most_probable_strand_consensus(rnaseq_folder):
+def get_most_probable_strand_consensus(rnaseq_folder, tolerance=0.t):
     """From a sequana rna-seq run folder get the most probable strand, based on the
     frequecies of counts assigned with '0', '1' or '2' type strandness
     (featureCounts nomenclature)
@@ -52,7 +52,7 @@ def get_most_probable_strand_consensus(rnaseq_folder):
     )
 
     df = pd.concat(
-        [get_most_probable_strand(sample_folder) for sample_folder in sample_folders]
+        [get_most_probable_strand(sample_folder, tolerance) for sample_folder in sample_folders]
     )
 
     logger.info("Strandness probability report:")
