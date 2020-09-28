@@ -1,16 +1,33 @@
+# -*- coding: utf-8 -*-
+#
+#  This file is part of Sequana software
+#
+#  Copyright (c) 2016-2020 - Sequana Development Team
+#
+#  File author(s):
+#      Thomas Cokelaer <thomas.cokelaer@pasteur.fr>
+#      Etienne Kornobis <etienne.kornobis@pasteur.fr>
+#
+#  Distributed under the terms of the 3-clause BSD license.
+#  The full license is in the LICENSE file, distributed with this software.
+#
+#  website: https://github.com/sequana/sequana
+#  documentation: http://sequana.readthedocs.io
+#
+##############################################################################
 """Heatmap and dendograms"""
-import matplotlib
-import pylab
+from sequana.lazy import pylab
+from sequana.lazy import scipy
+from sequana.lazy import numpy as np  
+from sequana.lazy import pandas as pd
+#FIXME speed up this import
 import scipy.cluster.hierarchy as hierarchy
 import scipy.spatial.distance as distance
-import numpy as np  # get rid of this dependence
-import pandas as pd
 
 import easydev
-import colormap
 from sequana.viz.linkage import Linkage
 
-__all__ = ["Heatmap"]
+__all__ = ["Heatmap", "Clustermap"]
 
 
 try:
@@ -84,10 +101,11 @@ class Clustermap:
         :include-source:
         :width: 80%
 
-        from sequana.viz import heatmap
-        df, sample_groups_df, gene_groups_df = heatmap.get_clustermap_data()
-        h = heatmap.Clustermap(df, sample_groups_df=sample_groups_df, gene_groups_df=gene_groups_df)
+        from sequana.viz.heatmap import Clustermap, get_clustermap_data
+        df, sample_groups_df, gene_groups_df = get_clustermap_data()
+        h = Clustermap(df, sample_groups_df=sample_groups_df, gene_groups_df=gene_groups_df)
         h.plot()
+
     """
 
     def __init__(
@@ -102,16 +120,25 @@ class Clustermap:
         yticklabels="auto",
         **kwargs
     ):  # annot):
-        """
+        """.. rubric:: Constructor
+
         :param data_df: a dataframe.
-        :param sample_groups_df: a dataframe with sample id as index (same as in data_df columns) and a group definition per column. Use to produce the x axis color groups.
-        :param sample_group_sel: a list of the columns to select from the sample_groups_df.
+        :param sample_groups_df: a dataframe with sample id as index (same as 
+            in data_df columns) and a group definition per column. Use to 
+            produce the x axis color groups.
+        :param sample_group_sel: a list of the columns to select from the 
+            sample_groups_df.
         :param sample_groups_palette: the palette to use for sample color groups.
-        :param gene_groups_df: a dataframe with gene id as index (same as in data_df columns) and a group definition per column. Use to produce the y axis color groups.
+        :param gene_groups_df: a dataframe with gene id as index (same as in 
+            data_df columns) and a group definition per column. Use to produce 
+            the y axis color groups.
         :param gene_group_sel: a list of the columns to select from the gene_groups_df.
         :param gene_groups_palette: the palette to use for gene color groups.
-        :param ytickslabels: "auto" for classical heatmap behaviour, [] for no ticks or a pandas Series giving the mapping between the index (gene names in data_df) and the gene names to be used for the heatmap
-        :param **kwargs: All other kwargs are passed to seaborn.Clustermap.
+        :param ytickslabels: "auto" for classical heatmap behaviour, [] for no 
+            ticks or a pandas Series giving the mapping between the index (gene 
+            names in data_df) and the gene names to be used for the heatmap
+        :param kwargs: All other kwargs are passed to seaborn.Clustermap.
+
         """
         self.data_df = data_df
         self.sample_groups_df = sample_groups_df
@@ -339,6 +366,7 @@ class Heatmap(Linkage):
         if cmap is None:
             cmap = self.params.cmap
         try:
+            import colormap
             cmap = colormap.cmap_builder(cmap)
         except:
             pass
@@ -347,6 +375,7 @@ class Heatmap(Linkage):
         row_header = self.frame.index
         column_header = self.frame.columns
 
+        import matplotlib 
         # FIXME something clever for the fontsize
         if len(row_header) > 100 or len(column_header) > 100:
             matplotlib.rcParams["font.size"] = 6
