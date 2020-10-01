@@ -52,7 +52,10 @@ def get_most_probable_strand_consensus(rnaseq_folder, tolerance=0.1):
     )
 
     df = pd.concat(
-        [get_most_probable_strand(sample_folder, tolerance) for sample_folder in sample_folders]
+        [
+            get_most_probable_strand(sample_folder, tolerance)
+            for sample_folder in sample_folders
+        ]
     )
 
     logger.info("Strandness probability report:")
@@ -78,6 +81,7 @@ class FeatureCount:
         clean_sample_names=True,
         extra_name_rm=["_Aligned"],
         drop_loc=True,
+        rnadiff_ready=True,
     ):
         """.. rubric:: Constructor
 
@@ -95,19 +99,49 @@ class FeatureCount:
         self.extra_name_rm = extra_name_rm
         self.drop_loc = drop_loc
         self._df = self._get_df()
+        # Count matrix prepared for rnadiff
+        if rnadiff_ready:
+            self.rnadiff_ready_df = self._get_rnadiff_ready_df()
+            self.target_df = self._get_target_df()
+
+    def _get_rnadiff_ready_df(self):
+        """Prepare a count matrix from a multi-sample featureCount file.
+
+        This is in particular add a 'rawCounts_' to column names to not have an
+        import problem in R with labels starting with numbers
+        """
+        df = pd.read_csv(self.filename, sep="\t", comment="#", index_col=0)
+        df.drop(["Chr", "Start", "End", "Strand", "Length"], axis=1, inplace=True)
+        df.columns = [
+            self._clean_sample_names(x, self.extra_name_rm) for x in df.columns
+        ]
+        df.set_index(df.columns[0], inplace=True)
+        return df
+
+    def _get_target_df(self):
+        """ Prepare the table with grouping information for rnadiff
+        """
+        df = pd.DataFrame(
+            {
+                "sample": self.rnadiff_ready_df.columns,
+                "label": self.rnadiff_ready_df.columns.str.replace("rawCounts_", ""),
+                "condition": None,
+            }
+        )
+        df.set_index(df.columns[0], inplace=True)
+        return df
 
     def _get_df(self):
 
         df = pd.read_csv(self.filename, sep="\t", comment="#", index_col=0)
 
+        if self.drop_loc:
+            df.drop(["Chr", "Start", "End", "Strand", "Length"], axis=1, inplace=True)
+
         if self.clean_sample_names:
             df.columns = [
                 self._clean_sample_names(x, self.extra_name_rm) for x in df.columns
             ]
-
-        if self.drop_loc:
-            df.drop(["Chr", "Start", "End", "Strand", "Length"], axis=1, inplace=True)
-
         return df
 
     df = property(_get_df)
