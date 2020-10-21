@@ -271,6 +271,18 @@ class PantherEnrichment():
         self.enrichment['down'] = enrichment
         self.stats['down'] = stats
 
+        
+    def compute_enrichment_all(self, taxid=None, ontologies=None,
+            enrichment_test="FISHER", correction="FDR", progress=True):
+
+        enrichment, stats = self._compute_enrichment(self.mygenes,
+                        taxid=taxid,
+                        ontologies=ontologies, enrichment_test=enrichment_test,
+                        correction=correction, progress=progress)
+        self.enrichment['all'] = enrichment
+        self.stats['all'] = stats
+
+
     def compute_enrichment(self, taxid=None, ontologies=None,
             enrichment_test="FISHER", correction="FDR", progress=True):
         self.compute_enrichment_down(taxid=taxid, ontologies=ontologies,
@@ -279,6 +291,10 @@ class PantherEnrichment():
         self.compute_enrichment_up(taxid=taxid, ontologies=ontologies,
             enrichment_test=enrichment_test, correction=correction,
             progress=progress)
+        self.compute_enrichment_all(taxid=taxid, ontologies=ontologies,
+            enrichment_test=enrichment_test, correction=correction,
+            progress=progress)
+
 
     def _compute_enrichment(self, mygenes, taxid, ontologies=None,
             enrichment_test="FISHER", correction="FDR", progress=True):
