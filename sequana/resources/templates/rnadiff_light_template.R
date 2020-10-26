@@ -25,7 +25,7 @@ register(MulticoreParam({{threads}}))
 check_counts_meta_tables = function(counts, meta){
     # Verify rownames in meta are the same as colnames in counts
     if (!isTRUE(all.equal(rownames(meta),colnames(counts)))){
-    warning("Metadata doesn't seem to fit count matrix. Check both inputs")
+        warning("Metadata doesn't seem to fit count matrix. Check both inputs")
     }
     else {
         message("OK: Count and meta tables seems to correspond")
@@ -91,9 +91,7 @@ target = read.table("{{groups_tsv}}", header=T, row.names=1)
 
 dds = make_DR(counts, target, design={{design}}, fitType="{{fit_type}}", betaPrior={{beta_prior}})
 
-comparisons = {{comparisons}}
-
-res = pairwise_comparison(dds, comparisons , "{{condition}}",
+res = pairwise_comparison(dds, {{comparisons_str}}, "{{condition}}",
                           independentFiltering={{independent_filtering}},
                           cooksCutoff={{cooks_cutoff}})
 

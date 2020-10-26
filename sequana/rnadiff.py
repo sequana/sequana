@@ -68,8 +68,8 @@ class RNADiffAnalysis:
         self.groups_tsv = groups_tsv
         self.condition = condition
         self.comparisons = comparisons
-        self.comparisons_st = (
-            f"list({', '.join(['c' + str(x) for x in self.comparisons])})",
+        self.comparisons_str = (
+            f"list({', '.join(['c' + str(x) for x in self.comparisons])})"
         )
         self.batch = batch
         self.design = f"~{condition + '+' + batch if batch else condition}"
