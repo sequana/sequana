@@ -1,6 +1,7 @@
 from pathlib import Path
 import pandas as pd
 from sequana import logger
+import re
 
 logger.name = __name__
 
@@ -72,7 +73,10 @@ def get_most_probable_strand_consensus(rnaseq_folder, tolerance=0.1):
 
 
 class FeatureCount:
-    """ Read a featureCounts output file.
+    """Read a featureCounts output file.
+
+    #TODO: Test on single and multi featurecounts files and see how self.df and
+    self.rnadiff_ready_df behave.
     """
 
     def __init__(
@@ -87,7 +91,7 @@ class FeatureCount:
 
         Get the featureCounts output as a pandas DataFrame
         :param bool clean_sample_names: if simplifying the sample names in featureCount output columns
-        - extra_name_rm: extra list of strings to remove from samples_names (ignored if clean_sample_name is False)
+        - extra_name_rm: extra list of regex to remove from samples_names (ignored if clean_sample_name is False)
         - drop_loc: if dropping the extrac location columns (ie getting only the count matrix)
         """
 
@@ -153,7 +157,7 @@ class FeatureCount:
         new_name = new_name.split(".")[0]
 
         for pattern in extra_name_rm:
-            new_name = new_name.replace(pattern, "")
+            new_name = re.sub(pattern, "", new_name)
 
         return new_name
 
