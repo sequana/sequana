@@ -1603,8 +1603,13 @@ class KeggPathwayEnrichment:
             results = self.enrichment[category].results
 
             if not results.empty:
-                results.to_csv(outdir / (common_out.name + ".csv"))
-                results.query("`Adjusted P-value`<0.05").to_csv(
+
+                # FIXME: For now fixing a nmax to 10000 to be sure to have all results
+                # (this could be improved by having self.complete_df and self.filtered_df attributes)
+                self._get_final_df(results, cutoff=1, nmax=10000).to_csv(
+                    outdir / (common_out.name + ".csv")
+                )
+                self._get_final_df(results, cutoff=0.05, nmax=10000).to_csv(
                     outdir / (common_out.name + "_significant.csv")
                 )
 
@@ -1619,6 +1624,7 @@ class KeggPathwayEnrichment:
                 #     category, tag=tag, outdir=(outdir / "pathways")
                 # )
 
+            # In case of no enrichment results, create empty files stating so
             else:
                 (outdir / (common_out.name + "_NO_RESULTS")).touch()
 
