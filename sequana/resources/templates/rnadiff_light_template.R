@@ -82,6 +82,20 @@ export_pairwise = function(res, orderCol='padj'){
     }
 }
 
+export_counts = function(dds, prefix=''){
+
+    # Export both raw and VST transformed counts
+
+    ## rlog is accounting for lib size and apparently vst too (see deseq2 manual)
+    ## rlog = rlog(dds, blind=FALSE)
+
+    counts = counts(dds)
+    vst_counts = assay(vst(dds, blind=FALSE))
+
+    write.csv(counts, paste0(prefix, 'counts_raw.csv'))
+    write.csv(vst_counts, paste0(prefix, 'counts_vst_norm.csv'))
+}
+
 ####################
 ## MAIN
 ####################
@@ -96,3 +110,4 @@ res = pairwise_comparison(dds, {{comparisons_str}}, "{{condition}}",
                           cooksCutoff={{cooks_cutoff}})
 
 export_pairwise(res)
+export_counts(dds)
