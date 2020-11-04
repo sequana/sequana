@@ -9,7 +9,9 @@ Changelog
 -----
 
 * finalise the rnadiff HTML report with plotly visualisation
-* finalise the enrichmentf HTML report 
+* finalise the enrichmentf HTML report
+* template for rnadiff (rna differential analysis)
+* method in FastQ to extract some specific reads
 * add new application in main sequana tool:
   - biomart: a tool to produce a CSV for a given dataset!mart/set of attributes
   - summary: a tool to produce HTML for bam, rnadiff results, enrichment for a
