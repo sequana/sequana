@@ -405,6 +405,23 @@ class FastQ(object):
             tozip = False
         return filename, tozip
 
+    def select_reads(self, read_identifiers, output_filename=None, progress=True):
+
+        fastq = pysam.FastxFile(self.filename)
+        if output_filename is None:
+            output_filename = self.filename + ".select"
+        
+        thisN = len(self)
+        pb = Progress(thisN) # since we scan the entire file
+        with open(output_filename, "w") as fh:
+            for i, read in enumerate(fastq):
+                if read.name in read_identifiers:
+                    fh.write(read.__str__() + "\n")
+                else:
+                    pass
+                if progress:
+                    pb.animate(i+1)
+
     def select_random_reads(self, N=None, output_filename="random.fastq"):
         """Select random reads and save in a file
 
