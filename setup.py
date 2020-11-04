@@ -103,7 +103,7 @@ setup(
         'sequana.pipelines' : ['*/*'],
         'sequana.resources.data' : ['*.*'],  # use *.* for files and not ./adapters
         'sequana.resources.data.adapters' : ['*'],
-        'sequana.resources.data.templates' : ['*.R'],
+        'sequana.resources.templates' : ['*.R'],
         'sequana.resources.images' : ['*'],
         'sequana.resources.testing' : ['*'],
         'sequana.resources.testing.rnadiff' : ['*/tables/*'],
