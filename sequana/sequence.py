@@ -602,7 +602,7 @@ class DNA(Sequence):
 
     def entropy(self, sequence):
         # https://www.sciencedirect.com/science/article/pii/S0022519397904938?via%3Dihub
-        pi = [x.count(l)/float(len(x)) for l in 'ACGT']
+        pi = [sequence.count(l)/float(len(sequence)) for l in 'ACGT']
         pi = [x for x in pi if x!=0]
         return -sum(pi*log(pi))
 
