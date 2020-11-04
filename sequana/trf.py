@@ -57,11 +57,11 @@ class TRF():   # pragma: no cover
         t.df.query(query)
 
     """
-    def __init__(self, filename):
+    def __init__(self, filename, verbose=False):
         self.filename = filename
-        self.df = self.scandata()
+        self.df = self.scandata(verbose=verbose)
 
-    def scandata(self):
+    def scandata(self, verbose=True, max_seq_length=20):
         """scan output of trf and returns a dataframe
 
         The format of the output file looks like::
@@ -80,7 +80,7 @@ class TRF():   # pragma: no cover
             Sequence: chr2
 
             Parameters: 2 5 7 80 10 50 2000
-    
+
             10001 10468 6 77.2 6 95 3 801 33 51 0 15 1.43 TAACCC TAACCCTA...
 
         The dataframe stores a row for each sequence and each pattern found. For
@@ -88,7 +88,7 @@ class TRF():   # pragma: no cover
         first sequence, and one for the second sequence.
         """
         fin = open(self.filename, "r")
-        
+
         data = []
 
         sequence_name = None
@@ -97,17 +97,24 @@ class TRF():   # pragma: no cover
             line = fin.readline()
             if line.startswith("Sequence:"):
                 sequence_name = line.split()[1].strip()
-                logger.info("scanning {}".format(sequence_name))
 
+        # now we read the rest of the file
+        count = 0
         # If we concatenate several files, we also want to ignore the header
         for line in fin.readlines():
             if line.startswith('Sequence:'):
                 sequence_name = line.split()[1].strip()
-                logger.info("scanning {}".format(sequence_name))
+                count += 1
+                if count % 100000 == 0:
+                    logger.info("scanned {} sequences".format(count))
+                #logger.info("scanned {} sequences".format(count))
             else:
                 this_data = line.split()
                 if len(this_data) == 15:
+                    this_data[14] = this_data[14][0:max_seq_length]
                     data.append([sequence_name] + this_data)
+        print("ok")
+        fin.close()
 
         df = pd.DataFrame(data)
         df.columns = ['sequence_name', 'start', 'end', 'period_size', 'CNV',
@@ -137,7 +144,7 @@ class TRF():   # pragma: no cover
             color="r", log=True):
         """
 
-        histogram of the CNVs related to a given motif.
+        histogram of the motif found in the list provided by users.
         As an example, this is triplet CAG. Note that we also add the shifted
         version AGC and GCA.
 
