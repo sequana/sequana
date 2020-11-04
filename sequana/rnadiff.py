@@ -37,7 +37,10 @@ class RNADiffAnalysis:
 
     :param counts_tsv: Path to tsv file out of FeatureCount with all samples together.
     :param groups_tsv: Path to tsv file with the definition of the groups for each sample.
-    :param condition: The name of the column from groups_tsv to use as condition. For more advanced design, a R function of the type 'condition*inter' (without the '~') could be specified (not tested yet). Each name in this function should refer to column names in groups_tsv.
+    :param condition: The name of the column from groups_tsv to use as condition. For more 
+        advanced design, a R function of the type 'condition*inter' (without the '~') could 
+        be specified (not tested yet). Each name in this function should refer to column 
+        names in groups_tsv.
     :param comparisons: A list of tupples indicating comparisons to be made e.g A vs B would be [("A", "B")]
     :param batch: None for no batch effect or name of a column in groups_tsv to add a batch effec.
     :param fit_type: Default "parametric".
