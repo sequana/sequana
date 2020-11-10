@@ -26,6 +26,7 @@ from sequana.lazy import pandas as pd
 from sequana.lazy import pylab
 from sequana.lazy import numpy as np
 from sequana import logger
+from sequana.gff3 import GFF3
 
 import glob
 
@@ -81,8 +82,13 @@ class RNADiffAnalysis:
         self.independent_filtering = "TRUE" if independent_filtering else "FALSE"
         self.cooks_cutoff = cooks_cutoff if cooks_cutoff else "TRUE"
         self.threads = threads
+        self.results = None
 
     def run(self):
+        """ Generate a DESeq2 script from template and execute it.
+        """
+
+        logger.info("Starting differential analysis with DESeq2...")
 
         with open("rnadiff_light.R", "w") as f:
             f.write(RNADiffAnalysis.template.render(self.__dict__))
@@ -96,6 +102,21 @@ class RNADiffAnalysis:
             f.write(p.stderr)
         with open("rnadiff.out", "w") as f:
             f.write(p.stdout)
+
+        self.results = [
+            pd.read_csv(f"{x}_VS_{y}_degs_DESeq2.csv", index_col=0)
+            for x, y in self.comparisons
+        ]
+
+        logger.info("DONE")
+
+    def annotate(self, gff):
+        """ Add annotation to deseq results (from mart or gff)
+        **IN DEV**
+        """
+        gff = GFF3(gff)
+        gff_df = gff.get_df()
+        gff_df.to_csv("test.csv")
 
 
 class RNADiffResults:
