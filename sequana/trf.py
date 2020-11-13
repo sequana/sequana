@@ -59,7 +59,17 @@ class TRF():   # pragma: no cover
     """
     def __init__(self, filename, verbose=False):
         self.filename = filename
-        self.df = self.scandata(verbose=verbose)
+        try:
+            self.df = pd.read_csv(filename)
+        except:
+            # input can be the output of TRF or our trf dataframe
+            self.df = self.scandata(verbose=verbose)
+
+    def __repr__(self):
+        N = len(self.df.seq1.unique())
+        msg =  "Number of unique pattern found: {}\n".format(N)
+        msg += "Number of entries: {}".format(len(self.df))
+        return msg
 
     def scandata(self, verbose=True, max_seq_length=20):
         """scan output of trf and returns a dataframe
@@ -113,7 +123,6 @@ class TRF():   # pragma: no cover
                 if len(this_data) == 15:
                     this_data[14] = this_data[14][0:max_seq_length]
                     data.append([sequence_name] + this_data)
-        print("ok")
         fin.close()
 
         df = pd.DataFrame(data)
@@ -151,6 +160,8 @@ class TRF():   # pragma: no cover
         """
         self.df.query("CNV>@CNVmin and seq1 in @motif").CNV.hist(bins=bins, log=log,
             color=color)
+        pylab.xlabel("CNV length (bp)")
+        pylab.ylabel("#")
 
     def hist_period_size(self, bins=50):
         self.df.period_size.hist(bins=bins)
