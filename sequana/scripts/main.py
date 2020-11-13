@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+#-*- coding: utf-8 -*-
 
 import sys
 import os
@@ -120,11 +120,12 @@ def samplesheet(**kwargs):
 # This will be a complex command to provide HTML summary page for
 # input files (e.g. bam), or results from pipelines. For each module,
 # we should have corresponding option that starts with the module's name
+# This can also takes as input various types of data (e.g. FastA)
 @main.command()
-@click.argument("name", type=click.Path(exists=True))
+@click.argument("name", type=click.Path(exists=True), nargs=-1)
 @click.option("--module",
     required=True,
-    type=click.Choice(["rnadiff", "bamqc", "enrichment"]))
+    type=click.Choice(["rnadiff", "bamqc", "enrichment", "fasta"]))
 @click.option("--enrichment-taxon", type=click.INT,
     #required=True,
     default=0,
@@ -184,17 +185,26 @@ def summary(**kwargs):
             --enrichment-kegg-pathways-directory keff_pathways
 
     """
-    name = kwargs['name']
+    names = kwargs['name']
     module = kwargs['module']
 
     if module == "bamqc":
-        from sequana.modules_report.bamqc import BAMQCModule
-        report = BAMQCModule(name, "bamqc.html")
+        for name in names:
+            print(f"Processing {name}")
+            from sequana.modules_report.bamqc import BAMQCModule
+            report = BAMQCModule(name, "bamqc.html")
     elif module == "rnadiff":
-        from sequana.rnadiff import RNADiffResults
-        from sequana.modules_report.rnadiff import RNAdiffModule
-        data = RNADiffResults(name)
-        report = RNAdiffModule(data)
+        for name in names:
+            from sequana.rnadiff import RNADiffResults
+            from sequana.modules_report.rnadiff import RNAdiffModule
+            if name.split(".")[-1] == 'xls':
+                output_filename = name.replace(".xls", ".html")
+            else:
+                output_filename = name + ".html"
+            output_filename = output_filename.split("/")[-1]
+            logger.info(f"Processing {name} into {output_filename}")
+            data = RNADiffResults(name)
+            report = RNAdiffModule(data, output_filename)
     elif module == "enrichment":
         from sequana.modules_report.enrichment import Enrichment
         taxon = kwargs['enrichment_taxon']
@@ -224,6 +234,11 @@ def summary(**kwargs):
             go_only=kwargs["enrichment_go_only"],
             kegg_only=kwargs["enrichment_kegg_only"], 
             command=" ".join(['sequana'] + sys.argv[1:]))
+    elif module == "fasta": # there is no module per se. HEre we just call FastA.summary()
+        from sequana.fasta import FastA
+        for name in names:
+            f = FastA(name)
+            f.summary()
 
 @main.command()
 @click.option("--mart", default="ENSEMBL_MART_ENSEMBL",
