@@ -210,6 +210,30 @@ class FastA(object):
         stats["mean_length"] = mean(self.lengths)
         return stats
 
+    def summary(self, N=10):
+        from pylab import mean, argmax
+        # used by sequana summary fasta
+        summary = {"number_of_contigs": len(self.sequences)}
+        summary["total_contigs_length"] = sum(self.lengths)
+        summary["mean_contig_length"] = mean(self.lengths)
+        summary["max_contig_length"] = max(self.lengths)
+        summary["min_contig_length"] = min(self.lengths)
+        N = 0
+        lengths = self.lengths[:]
+        positions = list(range(len(lengths)))
+        print(f"{self.filename} contains {summary['number_of_contigs']} " + 
+              f"contigs for a total length of {summary['total_contigs_length']}bp")
+        print("contig name, length, count A,C,G,T")
+        while lengths and N<10:
+            N += 1
+            index = argmax(lengths)
+            length = lengths.pop(index)
+            position = positions.pop(index)
+            sequence = self.sequences[position]
+            name = self.names[position]
+            print(name, length, sequence.count('A'), sequence.count('C'),
+                sequence.count('G'), sequence.count('T'))
+
     def reverse_and_save(self, filename):
         with open(filename, "w") as fout:
             for read in self:
