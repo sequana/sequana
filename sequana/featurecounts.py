@@ -57,7 +57,7 @@ def get_most_probable_strand_consensus(rnaseq_folder, tolerance):
         ]
     )
 
-    logger.info("Strandness probability report:")
+    logger.info("Strand guessing for each files (tolerance: {tolerance}):\n {df}")
     logger.info(df)
 
     probable_strands = df.loc[:, "strand"].unique()
@@ -65,7 +65,6 @@ def get_most_probable_strand_consensus(rnaseq_folder, tolerance):
     if len(probable_strands) == 1:
         return probable_strands[0]
     else:
-        print(f"Strand guessing for each files (tolerance: {tolerance}):\n {df}")
         raise IOError(
             f"No consensus on most probable strand found with a tolerance of {tolerance}. \
 Could be: {' or '.join(str(x) for x in probable_strands)}."
