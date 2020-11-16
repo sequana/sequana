@@ -34,13 +34,13 @@ __all__ = ["RNADiffAnalysis", "RNADiffResults"]
 
 
 class RNADiffAnalysis:
-    """ A tool to prepare and run a RNA-seq differential analysis with DESeq2
+    """A tool to prepare and run a RNA-seq differential analysis with DESeq2
 
     :param counts_tsv: Path to tsv file out of FeatureCount with all samples together.
     :param groups_tsv: Path to tsv file with the definition of the groups for each sample.
-    :param condition: The name of the column from groups_tsv to use as condition. For more 
-        advanced design, a R function of the type 'condition*inter' (without the '~') could 
-        be specified (not tested yet). Each name in this function should refer to column 
+    :param condition: The name of the column from groups_tsv to use as condition. For more
+        advanced design, a R function of the type 'condition*inter' (without the '~') could
+        be specified (not tested yet). Each name in this function should refer to column
         names in groups_tsv.
     :param comparisons: A list of tupples indicating comparisons to be made e.g A vs B would be [("A", "B")]
     :param batch: None for no batch effect or name of a column in groups_tsv to add a batch effec.
@@ -76,7 +76,7 @@ class RNADiffAnalysis:
             f"list({', '.join(['c' + str(x) for x in self.comparisons])})"
         )
         self.batch = batch
-        self.design = f"~{condition + '+' + batch if batch else condition}"
+        self.design = f"~{batch + '+' + condition if batch else condition}"
         self.fit_type = fit_type
         self.beta_prior = "TRUE" if beta_prior else "FALSE"
         self.independent_filtering = "TRUE" if independent_filtering else "FALSE"
@@ -85,8 +85,7 @@ class RNADiffAnalysis:
         self.results = None
 
     def run(self):
-        """ Generate a DESeq2 script from template and execute it.
-        """
+        """Generate a DESeq2 script from template and execute it."""
 
         logger.info("Starting differential analysis with DESeq2...")
 
@@ -111,7 +110,7 @@ class RNADiffAnalysis:
         logger.info("DONE")
 
     def annotate(self, gff):
-        """ Add annotation to deseq results (from mart or gff)
+        """Add annotation to deseq results (from mart or gff)
         **IN DEV**
         """
         gff = GFF3(gff)
@@ -244,8 +243,7 @@ class RNADiffResults:
         self.gene_lists = gene_sets
 
     def summary(self):
-        """ Get a summary DataFrame from a RNADiff analysis.
-        """
+        """Get a summary DataFrame from a RNADiff analysis."""
         summary = pd.DataFrame(
             {(x, len(self.gene_lists[x])) for x in self.gene_lists.keys()}
         )
@@ -255,7 +253,7 @@ class RNADiffResults:
         return df
 
     def plot_count_per_sample(self, fontsize=12, sample_list=None):
-        """"Number of mapped reads per sample. Each color for each replicate
+        """ "Number of mapped reads per sample. Each color for each replicate
 
         .. plot::
             :include-source:
@@ -294,13 +292,13 @@ class RNADiffResults:
     def plot_percentage_null_read_counts(self):
         """
 
-        Bars represent the percentage of null counts in each samples. 
-        The dashed horizontal line represents the percentage of 
+        Bars represent the percentage of null counts in each samples.
+        The dashed horizontal line represents the percentage of
         feature counts being equal to zero across all samples.
 
         .. plot::
             :include-source:
-    
+
             from sequana.rnadiff import RNADiffResults
             from sequana import sequana_data
 
@@ -455,7 +453,7 @@ class RNADiffResults:
                 'surexp2':'r',
                 'surexp3':'r',
                 'surexp1': 'b',
-                'surexp2':'b', 
+                'surexp2':'b',
                 'surexp3':'b'}
             r.plot_pca(colors=colors)
 
@@ -548,8 +546,7 @@ class RNADiffResults:
             pylab.xlabel("Raw counts (log10)")
 
     def plot_feature_most_present(self):
-        """
-        """
+        """"""
         _description = "test me"
         N = len(self.sample_names)
 
