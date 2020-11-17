@@ -99,6 +99,13 @@ Groups overview:\n\
 
         return info
 
+    def prepare(self):
+
+        logger.info("Starting differential analysis with DESeq2...")
+
+        with open("rnadiff_light.R", "w") as f:
+            f.write(RNADiffAnalysis.template.render(self.__dict__))
+
     def run(self):
         """Generate a DESeq2 script from template and execute it."""
 
