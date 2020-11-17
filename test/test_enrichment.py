@@ -26,7 +26,7 @@ def test_panther():
     pe = PantherEnrichment(RNADIFF_DIR, log2_fc_threshold=0, taxon=83333)
     pe = PantherEnrichment(RNADIFF_DIR, fc_threshold=1, taxon=83333)
 
-    pe.compute_enrichment_up(ontologies=["GO:0003674"],
+    pe.compute_enrichment(ontologies=["GO:0003674"],
         correction="bonferroni")
 
 
@@ -38,7 +38,7 @@ def test_panther():
 
 
 
-    pe.compute_enrichment_up(  ontologies=ontologies)
+    pe.compute_enrichment(  ontologies=ontologies)
 
     df = pe.plot_go_terms("up", ontologies=ontologies, compute_levels=False)
     df = pe.plot_go_terms("up", ontologies=ontologies, compute_levels=False, log=True)
