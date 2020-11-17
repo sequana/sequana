@@ -70,6 +70,10 @@ class RNADiffAnalysis:
     ):
         self.counts_tsv = counts_tsv
         self.groups_tsv = groups_tsv
+
+        self.counts = pd.read_csv(counts_tsv, sep="\t", index_col="Geneid")
+        self.groups = pd.read_csv(groups_tsv, sep="\t", index_col="label")
+
         self.condition = condition
         self.comparisons = comparisons
         self.comparisons_str = (
@@ -83,6 +87,17 @@ class RNADiffAnalysis:
         self.cooks_cutoff = cooks_cutoff if cooks_cutoff else "TRUE"
         self.threads = threads
         self.results = None
+
+    def __repr__(self):
+        info = f"RNADiffAnalysis object:\n\
+- {self.counts.shape[1]} samples.\n\
+- {len(self.comparisons)} comparisons.\n\n\
+Counts overview:\n\
+{self.counts.head()}\n\n\
+Groups overview:\n\
+{self.groups.head()}"
+
+        return info
 
     def run(self):
         """Generate a DESeq2 script from template and execute it."""
