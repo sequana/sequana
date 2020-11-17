@@ -123,7 +123,6 @@ setup(
            'sequana=sequana.scripts.main:main',
            'sequana_taxonomy=sequana.scripts.taxonomy:main',
            'sequana_coverage=sequana.scripts.coverage:main',
-           'sequana_summary=sequana.scripts.summary:main',
            'sequana_mapping=sequana.scripts.mapping:main',
            'sequana_compressor=sequana.scripts.compressor:main',
            'sequana_report=sequana.scripts.reports:main',

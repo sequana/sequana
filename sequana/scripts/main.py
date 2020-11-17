@@ -153,7 +153,7 @@ def samplesheet(**kwargs):
 @click.argument("name", type=click.Path(exists=True), nargs=-1)
 @click.option("--module",
     required=True,
-    type=click.Choice(["rnadiff", "bamqc", "enrichment", "fasta"]))
+    type=click.Choice(["rnadiff", "bamqc", "bam", "enrichment", "fasta", "fastq"]))
 @click.option("--enrichment-taxon", type=click.INT,
     #required=True,
     default=0,
@@ -267,6 +267,24 @@ def summary(**kwargs):
         for name in names:
             f = FastA(name)
             f.summary()
+    elif module == "fastq": # there is no module per se. HEre we just call FastA.summary()
+        from sequana.fastq import FastQ
+        from sequana import FastQC
+        for filename in names:
+            ff = FastQC(filename, max_sample=1e6, verbose=False)
+            stats = ff.get_stats()
+            print(stats)
+    elif module == "bam": 
+        import pandas as pd
+        from sequana import BAM
+        for filename in names:
+            ff = BAM(filename)
+            stats = ff.get_stats()
+            df = pd.Series(stats).to_frame().T
+            print(df)
+
+
+
 
 @main.command()
 @click.option("--mart", default="ENSEMBL_MART_ENSEMBL",
