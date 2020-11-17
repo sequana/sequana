@@ -3,7 +3,7 @@ import pkg_resources
 try:
     version = pkg_resources.require("sequana")[0].version
 except:
-    version = ">=0.8.3"
+    version = ">=0.9.3"
 
 from easydev.logging_tools import Logging
 try:

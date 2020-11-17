@@ -8,17 +8,21 @@ Changelog
 0.9.3
 -----
 
+* rules: star_index now sets automatically the IndexNbases parameter
 * finalise the rnadiff HTML report with plotly visualisation
 * finalise the enrichmentf HTML report
 * template for rnadiff (rna differential analysis)
 * method in FastQ to extract some specific reads
 * add new application in main sequana tool:
   - biomart: a tool to produce a CSV for a given dataset!mart/set of attributes
-  - summary: a tool to produce HTML for bam, rnadiff results, enrichment for a
-rnadiff result
+  - summary: a tool to produce HTML for bam, fasta/fastq/bam, rnadiff results, enrichment for a rnadiff result
+  - fastq: can now merge several files
   - gtf_fixer that replaces the script sequana_gtf_fixer
+* removed sequana_summary from standalone now in the general sequana CLI
 * add quick_fix for sample sheet errors in iem.IEM class (used in
   sequana_demultiplex pipeline)
+* Fix featurecounts package to include tolerance parameter
+* improved find_motif module with plots, pep8, better API
 
 0.9.2
 -----
