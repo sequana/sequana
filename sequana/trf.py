@@ -60,10 +60,10 @@ class TRF():   # pragma: no cover
     def __init__(self, filename, verbose=False):
         self.filename = filename
         try:
-            self.df = pd.read_csv(filename)
-        except:
             # input can be the output of TRF or our trf dataframe
             self.df = self.scandata(verbose=verbose)
+        except:
+            self.df = pd.read_csv(filename)
 
     def __repr__(self):
         N = len(self.df.seq1.unique())
