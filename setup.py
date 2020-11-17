@@ -119,8 +119,6 @@ setup(
     entry_points = {
         'console_scripts':[
            'sequanix=sequana.gui.sequana_gui:main',
-           #'fastq_head=sequana.scripts.fastq_head:main',
-           #'fastq_count=sequana.scripts.fastq_count:main',
            'sequana_lane_merging=sequana.scripts.lane_merging:main',
            'sequana=sequana.scripts.main:main',
            'sequana_taxonomy=sequana.scripts.taxonomy:main',
