@@ -22,7 +22,7 @@ psutil
 pykwalify>=1.6
 pyopengl
 pyVCF
-pysam>=1.6
+pysam
 ruamel.yaml
 qtconsole
 snakemake
