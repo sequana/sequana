@@ -32,9 +32,7 @@ def get_most_probable_strand(sample_folder, tolerance):
     elif 0.5 - tolerance < strandness and strandness < 0.5 + tolerance:
         res_dict["strand"] = "0"
     else:
-        raise IOError(
-            f"No strandness could be inferred from the count files for '{sample_name}' with a tolerance of {tolerance}. Value of 'strandness': {strandness:.2f}"
-        )
+        res_dict["strand"] = "NA"
 
     df = pd.DataFrame(res_dict, index=[sample_name])
 
@@ -59,7 +57,7 @@ def get_most_probable_strand_consensus(rnaseq_folder, tolerance):
         ]
     )
 
-    logger.info("Strandness probability report:")
+    logger.info("Strand guessing for each files (tolerance: {tolerance}):\n {df}")
     logger.info(df)
 
     probable_strands = df.loc[:, "strand"].unique()
@@ -68,7 +66,8 @@ def get_most_probable_strand_consensus(rnaseq_folder, tolerance):
         return probable_strands[0]
     else:
         raise IOError(
-            f"No consensus on most probable strand. Could be: {probable_strands}"
+            f"No consensus on most probable strand found with a tolerance of {tolerance}. \
+Could be: {' or '.join(str(x) for x in probable_strands)}."
         )
 
 
