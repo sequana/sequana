@@ -25,8 +25,14 @@ rule star_index:
         __star_index__log
     threads:
         config['star_mapping']['threads']
-    shell:
+    run:
         """
-        STAR --runMode genomeGenerate --genomeFastaFiles {input.fasta} --genomeDir {params.wkdir} --runThreadN {threads}
-        samtools faidx {input.fasta}
+        from sequana import FastA
+        ff = FastA(input)
+        genome_length = sum(ff.lengths)
+        import math
+        Nbases = min(14, round(math.log2(genome_length)/2 - 1))
+
+        shell(f"STAR --runMode genomeGenerate --genomeFastaFiles {input.fasta} --genomeDir {params.wkdir} --runThreadN {threads} genomeSAindexNbases {Nbases}")
+        shell(samtools faidx {input.fasta})
         """
