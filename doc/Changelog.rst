@@ -23,6 +23,7 @@ Changelog
   sequana_demultiplex pipeline)
 * Fix featurecounts package to include tolerance parameter
 * improved find_motif module with plots, pep8, better API
+* Fix bug for category in Dendogram
 
 0.9.2
 -----
