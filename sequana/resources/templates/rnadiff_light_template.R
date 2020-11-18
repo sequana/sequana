@@ -50,7 +50,7 @@ pairwise_comparison = function(dds, comps, meta_col_name,
     compa_res = list()
 
     for (comp in comps){
-        compa_name = paste(c(comp[[1]], comp[[2]]), collapse="_VS_")
+        compa_name = paste(c(comp[[1]], comp[[2]]), collapse="_vs_")
         message(compa_name)
         res_i = results(dds, contrast=c(meta_col_name, comp[[1]], comp[[2]]),
                         alpha=0.05, parallel=TRUE,
@@ -75,14 +75,14 @@ export_results = function(res, prefix, orderCol){
     return(res)
 }
 
-export_pairwise = function(res, orderCol='padj'){
+export_pairwise = function(res, outdir, orderCol='padj'){
     ## For pairwise comparisons
     for (compa in names(res)){
-        export_results(res[[compa]], prefix=compa, orderCol=orderCol)
+        export_results(res[[compa]], prefix=paste(outdir, compa, sep="/"), orderCol=orderCol)
     }
 }
 
-export_counts = function(dds, prefix=''){
+export_counts = function(dds, outdir){
 
     # Export both raw and VST transformed counts
 
@@ -92,8 +92,8 @@ export_counts = function(dds, prefix=''){
     counts = counts(dds)
     vst_counts = assay(vst(dds, blind=FALSE))
 
-    write.csv(counts, paste0(prefix, 'counts_raw.csv'))
-    write.csv(vst_counts, paste0(prefix, 'counts_vst_norm.csv'))
+    write.csv(counts, paste(outdir, 'counts_raw.csv', sep="/"))
+    write.csv(vst_counts, paste(outdir, 'counts_vst_norm.csv', sep="/"))
 }
 
 ####################
@@ -109,5 +109,5 @@ res = pairwise_comparison(dds, {{comparisons_str}}, "{{condition}}",
                           independentFiltering={{independent_filtering}},
                           cooksCutoff={{cooks_cutoff}})
 
-export_pairwise(res)
-export_counts(dds)
+export_pairwise(res, "{{outdir}}")
+export_counts(dds, "{{outdir}}")
