@@ -64,8 +64,8 @@ class RNAdiffModule(SequanaBaseModule):
         S = self.rnadiff.summary()
 
 
-        A = len(self.df.query("padj>=0.05 and log2FoldChange>1"))
-        B = len(self.df.query("padj>=0.05 and log2FoldChange<-1"))
+        A = len(self.df.query("padj<=0.05 and log2FoldChange>1"))
+        B = len(self.df.query("padj<=0.05 and log2FoldChange<-1"))
 
         
         self.sections.append({
