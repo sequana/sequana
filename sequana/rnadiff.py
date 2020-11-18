@@ -17,6 +17,7 @@
 ##############################################################################
 
 from pathlib import Path
+import shutil
 import re
 import os
 from jinja2 import Environment, PackageLoader
@@ -67,7 +68,9 @@ class RNADiffAnalysis:
         independent_filtering=True,
         cooks_cutoff=None,
         threads=4,
+        outdir="rnadiff",
     ):
+
         self.counts_tsv = counts_tsv
         self.groups_tsv = groups_tsv
 
@@ -86,6 +89,8 @@ class RNADiffAnalysis:
         self.independent_filtering = "TRUE" if independent_filtering else "FALSE"
         self.cooks_cutoff = cooks_cutoff if cooks_cutoff else "TRUE"
         self.threads = threads
+
+        self.outdir = Path(outdir)
         self.results = None
 
     def __repr__(self):
@@ -100,19 +105,17 @@ Groups overview:\n\
         return info
 
     def prepare(self):
+        """Generate outdir organisation and a DESeq2 script from template for the analysis."""
 
-        logger.info("Starting differential analysis with DESeq2...")
+        self.outdir.mkdir()
 
         with open("rnadiff_light.R", "w") as f:
             f.write(RNADiffAnalysis.template.render(self.__dict__))
 
     def run(self):
-        """Generate a DESeq2 script from template and execute it."""
+        """Execute the created DESeq2 script."""
 
         logger.info("Starting differential analysis with DESeq2...")
-
-        with open("rnadiff_light.R", "w") as f:
-            f.write(RNADiffAnalysis.template.render(self.__dict__))
 
         p = subprocess.run(
             ["Rscript", "rnadiff_light.R"], universal_newlines=True, capture_output=True
@@ -124,12 +127,8 @@ Groups overview:\n\
         with open("rnadiff.out", "w") as f:
             f.write(p.stdout)
 
-        self.results = [
-            pd.read_csv(f"{x}_VS_{y}_degs_DESeq2.csv", index_col=0)
-            for x, y in self.comparisons
-        ]
-
-        logger.info("DONE")
+    def get_results(self):
+        """Import results after run."""
 
     def annotate(self, gff):
         """Add annotation to deseq results (from mart or gff)
@@ -138,6 +137,133 @@ Groups overview:\n\
         gff = GFF3(gff)
         gff_df = gff.get_df()
         gff_df.to_csv("test.csv")
+
+
+class RNADiffTable:
+    def __init__(self, path, alpha=0.05, log2_fc=0):
+        """"""
+        self.path = Path(path)
+        self.name = self.path.name
+
+        self._alpha = alpha
+        self._log2_fc = log2_fc
+
+        self.df = pd.read_csv(self.path, index_col=0)
+
+        self.filt_df = self.filter(self._alpha, self._log2_fc)
+        self.set_gene_lists()
+
+    @property
+    def alpha(self):
+        return self.alpha
+
+    @alpha.setter
+    def alpha(self, value):
+        self._alpha = value
+        self.filt_df = self.filter(self._alpha, self._log2_fc)
+        self.set_gene_lists()
+
+    @property
+    def log2_fc(self):
+        return self._log2_fc
+
+    @log2_fc.setter
+    def log2_fc(self, value):
+        self._log2_fc = value
+        self.filt_df = self.filter(self._alpha, self._log2_fc)
+        self.set_gene_lists()
+
+    def filter(self, alpha, log2_fc):
+        """filter a DESeq2 result with FDR and logFC thresholds"""
+
+        fc_filt = self.df["log2FoldChange"].abs() >= log2_fc
+        fdr_filt = self.df["padj"] <= alpha
+
+        return self.df[fc_filt.values & fdr_filt.values]
+
+    def set_gene_lists(self):
+
+        self.gene_lists = {
+            "up": list(self.filt_df.query("log2FoldChange > 0").index),
+            "down": list(self.filt_df.query("log2FoldChange < 0").index),
+            "all": list(self.filt_df.index),
+        }
+
+    def summary(self):
+
+        return pd.DataFrame(
+            {
+                "log2_fc": self._log2_fc,
+                "alpha": self._alpha,
+                "up": len(self.gene_lists["up"]),
+                "down": len(self.gene_lists["down"]),
+                "all": len(self.gene_lists["all"]),
+            },
+            index=[self.name],
+        )
+
+
+class RNADiffResults2:
+    def __init__(
+        self, rnadiff_folder, pattern="*vs*_degs_DESeq2.csv", alpha=0.05, log2_fc=0
+    ):
+        """"""
+        self.path = rnadiff_folder
+        self.comparisons = [x for x in Path(self.path).glob(pattern)]
+
+        self._alpha = alpha
+        self._log2_fc = log2_fc
+
+        self.results = [
+            RNADiffTable(compa, alpha=self._alpha, log2_fc=self._log2_fc)
+            for compa in self.comparisons
+        ]
+
+        self.df = self._get_total_df()
+        self.filt_df = self._get_total_df(filtered=True)
+
+    @property
+    def alpha(self):
+        return self.alpha
+
+    @alpha.setter
+    def alpha(self, value):
+        self._alpha = value
+        self.results = [
+            RNADiffTable(compa, alpha=self._alpha, log2_fc=self._log2_fc)
+            for compa in self.comparisons
+        ]
+        self.filt_df = self._get_total_df(filtered=True)
+
+    @property
+    def log2_fc(self):
+        return self._log2_fc
+
+    @log2_fc.setter
+    def log2_fc(self, value):
+        self._log2_fc = value
+        self.results = [
+            RNADiffTable(compa, alpha=self._alpha, log2_fc=self._log2_fc)
+            for compa in self.comparisons
+        ]
+        self.filt_df = self._get_total_df(filtered=True)
+
+    def _get_total_df(self, filtered=False):
+        """Concatenate all rnadiff results in a single dataframe."""
+
+        dfs = []
+
+        for res in self.results:
+            df = res.filt_df if filtered else res.df
+            df = df.transpose().reset_index()
+            df["file"] = res.name
+            df = df.set_index(["file", "index"])
+            dfs.append(df)
+
+        return pd.concat(dfs)
+
+    def summary(self):
+        return pd.concat(res.summary() for res in self.results)
 
 
 class RNADiffResults:
