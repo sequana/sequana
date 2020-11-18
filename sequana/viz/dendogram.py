@@ -186,7 +186,8 @@ class Dendogram(Linkage):
             X, Y = gca.get_position().get_points()
             f = pylab.gcf()
             ax = f.add_axes([X[0], X[1], 0.02, Y[1]-X[1]])
-            category= [self.category[self.df.index[i]] for i in idx1]
+
+            category= [self.category[x] for x in self.df.index]
             dr = np.array(category, dtype=int)
             dr.shape = (len(category),1)
             cmap_r = matplotlib.colors.ListedColormap(self.params.side_colors)

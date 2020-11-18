@@ -739,23 +739,29 @@ class RNADiffResults:
         pylab.xlabel("Reads captured by most important feature (%s)")
         pylab.ylabel("Sample")
 
-    def plot_dendogram(self, max_features=5000, transform_method="log"):
-
-        assert transform_method in ["log", "anscombe"]
+    def plot_dendogram(self, max_features=5000, transform_method="log",
+        method="ward", metric="euclidean"):
+ 
+        assert transform_method in ["log", "anscombe", None]
         # first we take the normalised data
         from sequana.viz import clusterisation
         from sequana.viz import dendogram
 
         cluster = clusterisation.Cluster(self.normcounts)
         # cluster = clusterisation.Cluster(self.df[self.sample_names])
-        data = cluster.scale_data(
-            transform_method=transform_method, max_features=max_features
-        )
-        df = pd.DataFrame(data[0])
-        df.index = data[1]
-        df.columns = self.normcounts.columns
+        if transform_method is not None:
+            data = cluster.scale_data(
+                transform_method=transform_method, max_features=max_features
+            )
+            df = pd.DataFrame(data[0])
+            df.index = data[1]
+            df.columns = self.normcounts.columns
+        else:
+            df = pd.DataFrame(self.normcounts)
+            #df.index = data[1]
+            df.columns = self.normcounts.columns
 
-        d = dendogram.Dendogram(df.T)
+        d = dendogram.Dendogram(df.T, metric=metric, method=method)
         d.category = {}
         conditions = list(self.condition_names)
         for sample_name in df.columns:
