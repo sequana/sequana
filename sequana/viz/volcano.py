@@ -6,6 +6,7 @@
 #
 #  File author(s):
 #      Thomas Cokelaer <thomas.cokelaer@pasteur.fr>
+#      Etienne Kornobis <etienne.kornobis@pasteur.fr>
 #
 # This is a copy of the biokit.viz.volcano module (from myself) since
 # biokit will not be maintained in the future (merging its content
@@ -56,7 +57,7 @@ class Volcano(object):
         fold_changes=None,
         pvalues=None,
         color="auto",
-        pvalue_threshold=1.3,
+        pvalue_threshold=0.05,
         fold_change_threshold=1,
     ):
         """.. rubric:: constructor
@@ -92,8 +93,7 @@ class Volcano(object):
         self._get_colors()
 
     def _get_colors(self):
-        """ Add colors according to pvalue and fold change thresholds
-        """
+        """Add colors according to pvalue and fold change thresholds"""
 
         def coloring(row):
             if (row.fold_change <= -self.fold_change_threshold) and (
