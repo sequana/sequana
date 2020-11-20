@@ -95,7 +95,7 @@ export_counts = function(dds, outdir){
 
 
     write.table(counts, paste(outdir, 'counts_raw.tsv', sep="/"), sep="\t")
-    write.table(counts, paste(outdir, 'counts_normed.tsv', sep="/"), sep="\t")
+    write.table(norm_counts, paste(outdir, 'counts_normed.tsv', sep="/"), sep="\t")
     write.table(vst_counts, paste(outdir, 'counts_vst_norm.tsv', sep="/"), sep="\t")
 }
 
