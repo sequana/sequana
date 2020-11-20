@@ -13,12 +13,12 @@ def test_featurecounts():
     assert fc.get_most_probable_strand_consensus(RNASEQ_DIR_1, tolerance=0.1) == "1"
     assert fc.get_most_probable_strand_consensus(RNASEQ_DIR_2, tolerance=0.1) == "2"
 
-    try:
-        assert fc.get_most_probable_strand_consensus(RNASEQ_DIR_undef, tolerance=0.1) == "NA"
+    assert (
+        fc.get_most_probable_strand_consensus(RNASEQ_DIR_undef, tolerance=0.1) == "NA"
+    )
 
     try:
-        fc.get_most_probable_strand_consensus(RNASEQ_DIR_noconsensus,
-tolerance=0.1)
+        fc.get_most_probable_strand_consensus(RNASEQ_DIR_noconsensus, tolerance=0.1)
         assert False
     except IOError:
         assert True
