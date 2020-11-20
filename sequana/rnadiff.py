@@ -741,7 +741,8 @@ class RNADiffResults:
 
     def plot_dendogram(self, max_features=5000, transform_method="log",
         method="ward", metric="euclidean"):
- 
+        # for info about metric and methods: https://tinyurl.com/yyhk9cl8
+
         assert transform_method in ["log", "anscombe", None]
         # first we take the normalised data
         from sequana.viz import clusterisation
