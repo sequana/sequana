@@ -237,10 +237,13 @@ class RNADiffResults2:
 
         self.meta = self._get_meta(meta, sep=sep, group=group, palette=palette)
 
-        self.raw_counts = pd.read_csv(
+        self.counts_raw = pd.read_csv(
             self.path / "counts_raw.tsv", index_col=0, sep=sep
         )
-        self.vst_counts = pd.read_csv(
+        self.counts_norm = pd.read_csv(
+            self.path / "counts_normed.tsv", index_col=0, sep=sep
+        )
+        self.counts_vst = pd.read_csv(
             self.path / "counts_vst_norm.tsv", index_col=0, sep=sep
         )
 
@@ -293,7 +296,7 @@ class RNADiffResults2:
             df = df.set_index(["file", "index"])
             dfs.append(df)
 
-        return pd.concat(dfs)
+        return pd.concat(dfs, sort=True)
 
     def summary(self):
         return pd.concat(res.summary() for res in self.results)
@@ -313,7 +316,7 @@ class RNADiffResults2:
         for each replicate
         """
 
-        df = self.raw_counts.sum().rename("total_counts")
+        df = self.counts_raw.sum().rename("total_counts")
         df = pd.concat([self.meta, df], axis=1)
 
         plt.bar(df.index, df.total_counts, color=df.group_color)
@@ -327,19 +330,75 @@ class RNADiffResults2:
         horizontal line represents the percentage of feature counts being equal
         to zero across all samples"""
 
-        df = (self.raw_counts == 0).sum() / self.raw_counts.shape[0] * 100
+        df = (self.counts_raw == 0).sum() / self.counts_raw.shape[0] * 100
         df = df.rename("percent_null")
         df = pd.concat([self.meta, df], axis=1)
 
         plt.bar(df.index, df.percent_null, color=df.group_color)
 
-        all_null = (self.raw_counts == 0).all(axis=1).sum() / self.raw_counts.shape[0]
+        all_null = (self.counts_raw == 0).all(axis=1).sum() / self.counts_raw.shape[0]
 
         plt.axhline(all_null, ls="--", color="black", alpha=0.5)
 
         plt.xticks(rotation=45, ha="right")
         plt.xlabel("Sample")
         plt.ylabel("Proportion of null counts (%)")
+
+    def plot_pca(self, n_components=2, colors=None, plotly=False):
+        """
+        IN DEV ! NOT FUNCTIONNAL
+
+        .. plot::
+            :include-source:
+
+            from sequana.rnadiff import RNADiffResults
+            from sequana import sequana_data
+
+            path = sequana_data("rnadiff/rnadiff_onecond_1")
+            r = RNADiffResults(path)
+
+            colors = {
+                'surexp1': 'r',
+                'surexp2':'r',
+                'surexp3':'r',
+                'surexp1': 'b',
+                'surexp2':'b',
+                'surexp3':'b'}
+            r.plot_pca(colors=colors)
+        """
+        from sequana.viz import PCA
+
+        p = PCA(self.counts_vst)
+        if plotly is True:
+            assert n_components == 3
+            variance = p.plot(n_components=n_components, colors=colors, show_plot=False)
+            from plotly import express as px
+
+            df = pd.DataFrame(p.Xr)
+            df.columns = ["PC1", "PC2", "PC3"]
+            df["size"] = [10] * len(df)
+            df = pd.concat([df, self.meta], axis=1, ignore_index=True)
+            return df
+
+            fig = px.scatter_3d(
+                df,
+                x="PC1",
+                y="PC2",
+                z="PC3",
+                color="group_color",
+                labels={
+                    "PC1": "PC1 ({}%)".format(round(100 * variance[0], 2)),
+                    "PC2": "PC2 ({}%)".format(round(100 * variance[1], 2)),
+                    "PC3": "PC3 ({}%)".format(round(100 * variance[2], 2)),
+                },
+                height=800,
+                text="names",
+            )
+            return fig
+        else:
+            variance = p.plot(n_components=n_components, colors=self.meta.group_color)
+
+        return variance
 
 
 class RNADiffResults:
