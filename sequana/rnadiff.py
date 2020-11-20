@@ -17,17 +17,18 @@
 ##############################################################################
 
 from pathlib import Path
-import shutil
-import re
 import os
 from jinja2 import Environment, PackageLoader
 import subprocess
+import seaborn as sns
+import matplotlib.pyplot as plt
 
 from sequana.lazy import pandas as pd
 from sequana.lazy import pylab
 from sequana.lazy import numpy as np
 from sequana import logger
 from sequana.gff3 import GFF3
+from sequana.viz import Volcano
 
 import glob
 
@@ -69,13 +70,14 @@ class RNADiffAnalysis:
         cooks_cutoff=None,
         threads=4,
         outdir="rnadiff",
+        sep="\t",
     ):
 
         self.counts_tsv = counts_tsv
         self.groups_tsv = groups_tsv
 
-        self.counts = pd.read_csv(counts_tsv, sep="\t", index_col="Geneid")
-        self.groups = pd.read_csv(groups_tsv, sep="\t", index_col="label")
+        self.counts = pd.read_csv(counts_tsv, sep=sep, index_col="Geneid")
+        self.groups = pd.read_csv(groups_tsv, sep=sep, index_col="label")
 
         self.condition = condition
         self.comparisons = comparisons
@@ -140,7 +142,7 @@ Groups overview:\n\
 
 
 class RNADiffTable:
-    def __init__(self, path, alpha=0.05, log2_fc=0):
+    def __init__(self, path, alpha=0.05, log2_fc=0, sep="\t"):
         """"""
         self.path = Path(path)
         self.name = self.path.name
@@ -148,7 +150,7 @@ class RNADiffTable:
         self._alpha = alpha
         self._log2_fc = log2_fc
 
-        self.df = pd.read_csv(self.path, index_col=0)
+        self.df = pd.read_csv(self.path, index_col=0, sep=sep)
 
         self.filt_df = self.filter(self._alpha, self._log2_fc)
         self.set_gene_lists()
@@ -202,14 +204,45 @@ class RNADiffTable:
             index=[self.name],
         )
 
+    def volcano(self):
+
+        fc = self.df.loc[:, "log2FoldChange"]
+        pvalues = self.df.loc[:, "padj"]
+        Volcano(fc, pvalues).plot()
+        plt.title(self.name)
+
+    def plot_pvalue_hist(self, bins=60, fontsize=16, rotation=0):
+        # TODO
+
+        plt.hist(self.df.pvalue.dropna(), bins=bins, ec="k")
+        plt.xlabel("raw p-value")
+        plt.ylabel("Occurences")
+
 
 class RNADiffResults2:
     def __init__(
-        self, rnadiff_folder, pattern="*vs*_degs_DESeq2.csv", alpha=0.05, log2_fc=0
+        self,
+        rnadiff_folder,
+        meta,
+        pattern="*vs*_degs_DESeq2.tsv",
+        alpha=0.05,
+        log2_fc=0,
+        sep="\t",
+        palette=sns.color_palette(desat=0.6),
+        group="condition",
     ):
         """"""
-        self.path = rnadiff_folder
-        self.comparisons = [x for x in Path(self.path).glob(pattern)]
+        self.path = Path(rnadiff_folder)
+        self.comparisons = [x for x in self.path.glob(pattern)]
+
+        self.meta = self._get_meta(meta, sep=sep, group=group, palette=palette)
+
+        self.raw_counts = pd.read_csv(
+            self.path / "counts_raw.tsv", index_col=0, sep=sep
+        )
+        self.vst_counts = pd.read_csv(
+            self.path / "counts_vst_norm.tsv", index_col=0, sep=sep
+        )
 
         self._alpha = alpha
         self._log2_fc = log2_fc
@@ -264,6 +297,49 @@ class RNADiffResults2:
 
     def summary(self):
         return pd.concat(res.summary() for res in self.results)
+
+    def _get_meta(self, meta_file, sep, group, palette):
+        """Import metadata from a table file and add color groups following the
+        groups defined in the column 'group' of the table file.
+        """
+        meta_df = pd.read_csv(meta_file, sep=sep, index_col=0)
+        col_map = dict(zip(meta_df.loc[:, group].unique(), palette))
+        meta_df["group_color"] = meta_df.loc[:, group].map(col_map)
+
+        return meta_df
+
+    def plot_count_per_sample(self):
+        """Number of mapped and annotated reads (i.e. counts) per sample. Each color
+        for each replicate
+        """
+
+        df = self.raw_counts.sum().rename("total_counts")
+        df = pd.concat([self.meta, df], axis=1)
+
+        plt.bar(df.index, df.total_counts, color=df.group_color)
+
+        plt.xticks(rotation=45, ha="right")
+        plt.xlabel("Sample")
+        plt.ylabel("Total number of counts")
+
+    def plot_percentage_null_read_counts(self):
+        """Bars represent the percentage of null counts in each samples.  The dashed
+        horizontal line represents the percentage of feature counts being equal
+        to zero across all samples"""
+
+        df = (self.raw_counts == 0).sum() / self.raw_counts.shape[0] * 100
+        df = df.rename("percent_null")
+        df = pd.concat([self.meta, df], axis=1)
+
+        plt.bar(df.index, df.percent_null, color=df.group_color)
+
+        all_null = (self.raw_counts == 0).all(axis=1).sum() / self.raw_counts.shape[0]
+
+        plt.axhline(all_null, ls="--", color="black", alpha=0.5)
+
+        plt.xticks(rotation=45, ha="right")
+        plt.xlabel("Sample")
+        plt.ylabel("Proportion of null counts (%)")
 
 
 class RNADiffResults:
@@ -739,8 +815,13 @@ class RNADiffResults:
         pylab.xlabel("Reads captured by most important feature (%s)")
         pylab.ylabel("Sample")
 
-    def plot_dendogram(self, max_features=5000, transform_method="log",
-        method="ward", metric="euclidean"):
+    def plot_dendogram(
+        self,
+        max_features=5000,
+        transform_method="log",
+        method="ward",
+        metric="euclidean",
+    ):
         # for info about metric and methods: https://tinyurl.com/yyhk9cl8
 
         assert transform_method in ["log", "anscombe", None]
@@ -759,7 +840,7 @@ class RNADiffResults:
             df.columns = self.normcounts.columns
         else:
             df = pd.DataFrame(self.normcounts)
-            #df.index = data[1]
+            # df.index = data[1]
             df.columns = self.normcounts.columns
 
         d = dendogram.Dendogram(df.T, metric=metric, method=method)
