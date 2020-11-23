@@ -71,6 +71,7 @@ export_results = function(res, prefix, orderCol){
         res = res[order(res[,orderCol]), ]
     }
     
+    
     write.table(res, file=paste(prefix, 'degs_DESeq2.tsv', sep="_"), row.names=TRUE, sep="\t")
     return(res)
 }
@@ -99,6 +100,11 @@ export_counts = function(dds, outdir){
     write.table(vst_counts, paste(outdir, 'counts_vst_norm.tsv', sep="/"), sep="\t")
 }
 
+export_dds = function(dds, outdir){
+    ## Export full dds table
+    write.table(mcols(dds), paste(outdir, "overall_dds.tsv", sep="/"), sep="\t")
+}
+
 ####################
 ## MAIN
 ####################
@@ -112,5 +118,6 @@ res = pairwise_comparison(dds, {{comparisons_str}}, "{{condition}}",
                           independentFiltering={{independent_filtering}},
                           cooksCutoff={{cooks_cutoff}})
 
+export_dds(dds, "{{outdir}}")
 export_pairwise(res, "{{outdir}}")
 export_counts(dds, "{{outdir}}")

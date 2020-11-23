@@ -106,16 +106,15 @@ Groups overview:\n\
 
         return info
 
-    def prepare(self):
-        """Generate outdir organisation and a DESeq2 script from template for the analysis."""
+    def run(self):
+        """Create outdir and a DESeq2 script from template for analysis. Then execute
+        this script.
+        """
 
         self.outdir.mkdir()
 
         with open("rnadiff_light.R", "w") as f:
             f.write(RNADiffAnalysis.template.render(self.__dict__))
-
-    def run(self):
-        """Execute the created DESeq2 script."""
 
         logger.info("Starting differential analysis with DESeq2...")
 
@@ -204,7 +203,7 @@ class RNADiffTable:
             index=[self.name],
         )
 
-    def volcano(self):
+    def plot_volcano(self):
 
         fc = self.df.loc[:, "log2FoldChange"]
         pvalues = self.df.loc[:, "padj"]
@@ -212,7 +211,6 @@ class RNADiffTable:
         plt.title(self.name)
 
     def plot_pvalue_hist(self, bins=60, fontsize=16, rotation=0):
-        # TODO
 
         plt.hist(self.df.pvalue.dropna(), bins=bins, ec="k")
         plt.xlabel("raw p-value")
@@ -245,6 +243,9 @@ class RNADiffResults2:
         )
         self.counts_vst = pd.read_csv(
             self.path / "counts_vst_norm.tsv", index_col=0, sep=sep
+        )
+        self.dds_stats = pd.read_csv(
+            self.path / "overall_dds.tsv", index_col=0, sep=sep
         )
 
         self._alpha = alpha
@@ -311,6 +312,12 @@ class RNADiffResults2:
 
         return meta_df
 
+    def _format_plot(self, title, xlabel, ylabel):
+        plt.title(title)
+        plt.xticks(rotation=45, ha="right")
+        plt.xlabel(xlabel)
+        plt.ylabel(ylabel)
+
     def plot_count_per_sample(self):
         """Number of mapped and annotated reads (i.e. counts) per sample. Each color
         for each replicate
@@ -321,9 +328,9 @@ class RNADiffResults2:
 
         plt.bar(df.index, df.total_counts, color=df.group_color)
 
-        plt.xticks(rotation=45, ha="right")
-        plt.xlabel("Sample")
-        plt.ylabel("Total number of counts")
+        self._format_plot(
+            title="Total counts", xlabel="Sample", ylabel="Total number of counts"
+        )
 
     def plot_percentage_null_read_counts(self):
         """Bars represent the percentage of null counts in each samples.  The dashed
@@ -344,9 +351,17 @@ class RNADiffResults2:
         plt.xlabel("Sample")
         plt.ylabel("Proportion of null counts (%)")
 
+        self._format_plot(
+            title="Proportion of null counts",
+            xlabel="Sample",
+            ylabel="% of null counts",
+        )
+
     def plot_pca(self, n_components=2, colors=None, plotly=False):
         """
         IN DEV ! NOT FUNCTIONNAL
+
+        TO VERIFY that colors/names indeces actually correspond !!!
 
         .. plot::
             :include-source:
@@ -399,6 +414,177 @@ class RNADiffResults2:
             variance = p.plot(n_components=n_components, colors=self.meta.group_color)
 
         return variance
+
+    def plot_mds(self, n_components=2, colors=None, clf=True):
+        """IN DEV, not functional"""
+
+        from sequana.viz.mds import MDS
+
+        p = MDS(self.counts[self.sample_names])
+        if colors is None:
+            colors = {}
+            for sample in self.sample_names:
+                colors[sample] = self.colors[self.get_cond_from_sample(sample)]
+        p.plot(n_components=n_components, colors=colors, clf=clf)
+
+    def plot_isomap(self, n_components=2, colors=None):
+        """IN DEV, not functional"""
+
+        from sequana.viz.isomap import Isomap
+
+        p = Isomap(self.df[self.sample_names])
+        if colors is None:
+            colors = {}
+            for sample in self.sample_names:
+                colors[sample] = self.colors[self.get_cond_from_sample(sample)]
+        p.plot(n_components=n_components, colors=colors)
+
+    def plot_density(self):
+        import seaborn
+
+        seaborn.set()
+        for sample in self.counts_raw.columns:
+            seaborn.kdeplot(pylab.log10(self.counts_raw[sample].clip(lower=1)))
+
+        self._format_plot(
+            title="Count density distribution",
+            xlabel="Raw counts (log10)",
+            ylabel="Density",
+        )
+
+    def plot_feature_most_present(self):
+        """"""
+        description = "test me"
+
+        df = []
+
+        for x, y in self.counts_raw.idxmax().iteritems():
+
+            most_exp_gene_count = self.counts_raw.stack().loc[y, x]
+            total_sample_count = self.counts_raw.sum().loc[x]
+
+            df.append(
+                {
+                    "label": x,
+                    "gene_id": y,
+                    "count": most_exp_gene_count,
+                    "total_sample_count": total_sample_count,
+                    "most_exp_percent": most_exp_gene_count / total_sample_count * 100,
+                }
+            )
+
+        df = pd.DataFrame(df).set_index("label")
+        df = pd.concat([self.meta, df], axis=1)
+
+        p = plt.bar(df.index, df.most_exp_percent, color=df.group_color)
+
+        for idx, rect in enumerate(p):
+            plt.text(
+                rect.get_x() + rect.get_width() / 2.0,
+                0.95 * rect.get_height(),
+                df.gene_id.iloc[idx],
+                ha="center",
+                va="top",
+                rotation=90,
+            )
+
+        self._format_plot(
+            title="Counts monopolized by the most expressed gene",
+            xlabel="Sample",
+            ylabel="Percent of total reads",
+        )
+
+    def plot_dendogram(
+        self,
+        max_features=5000,
+        transform_method="log",
+        method="ward",
+        metric="euclidean",
+    ):
+        # for info about metric and methods: https://tinyurl.com/yyhk9cl8
+
+        assert transform_method in ["log", "anscombe", None]
+        # first we take the normalised data
+        from sequana.viz import clusterisation
+        from sequana.viz import dendogram
+
+        cluster = clusterisation.Cluster(self.counts_norm)
+        # cluster = clusterisation.Cluster(self.df[self.sample_names])
+        if transform_method is not None:
+            data = cluster.scale_data(
+                transform_method=transform_method, max_features=max_features
+            )
+            df = pd.DataFrame(data[0])
+            df.index = data[1]
+            df.columns = self.counts_norm.columns
+        else:
+            df = pd.DataFrame(self.counts_norm)
+            # df.index = data[1]
+            df.columns = self.counts_norm.columns
+
+        d = dendogram.Dendogram(df.T, metric=metric, method=method)
+
+        # Convert groups into numbers for Dendrogram category
+        group_conv = {group: i for i, group in enumerate(self.meta.condition.unique())}
+        d.category = self.meta.condition.map(group_conv).to_dict()
+        d.plot()
+
+    def plot_boxplot_rawdata(self, fliersize=2, linewidth=2, **kwargs):
+        import seaborn as sbn
+
+        ax = sbn.boxplot(
+            data=self.counts_raw.clip(1),
+            linewidth=linewidth,
+            fliersize=fliersize,
+            palette=self.meta.group_color,
+            **kwargs,
+        )
+        ax.set_yscale("log")
+        self._format_plot(
+            title="Raw count distribution", xlabel="Samples", ylabel="Raw counts"
+        )
+
+    def plot_boxplot_normeddata(self, fliersize=2, linewidth=2, **kwargs):
+        import seaborn as sbn
+
+        ax = sbn.boxplot(
+            data=self.counts_norm.clip(1),
+            linewidth=linewidth,
+            fliersize=fliersize,
+            palette=self.meta.group_color,
+            **kwargs,
+        )
+        ax.set(yscale="log")
+
+    def plot_dispersion(self):
+
+        pylab.plot(
+            self.dds_stats.baseMean,
+            self.dds_stats.dispGeneEst,
+            "ok",
+            label="Estimate",
+            ms=1,
+        )
+        pylab.plot(
+            self.dds_stats.baseMean,
+            self.dds_stats.dispersion,
+            "ob",
+            label="final",
+            ms=1,
+        )
+        pylab.plot(
+            self.dds_stats.baseMean, self.dds_stats.dispFit, "or", label="Fit", ms=1
+        )
+        pylab.legend()
+        ax = pylab.gca()
+        ax.set(yscale="log")
+        ax.set(xscale="log")
+
+        self._format_plot(
+            title="Dispersion estimation",
+            xlabel="Mean of normalized counts",
+            ylabel="Dispersion",
+        )
 
 
 class RNADiffResults:
