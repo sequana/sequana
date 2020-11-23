@@ -1771,7 +1771,7 @@ def build_dynamic_rule(code, directory):
 
 """
 def __add_stats_summary_json(json_list, parser):
-    # used by the denovo pipeline only
+    # used by the denovo pipeline only and quality_control
     if not parser.stats:
         return
     for jfile in json_list:
