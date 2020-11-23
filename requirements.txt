@@ -28,6 +28,7 @@ qtconsole
 snakemake
 scikit-learn
 scipy
+seaborn
 statsmodels
 xlrd
 xml2dict

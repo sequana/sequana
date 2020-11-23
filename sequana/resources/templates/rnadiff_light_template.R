@@ -71,7 +71,8 @@ export_results = function(res, prefix, orderCol){
         res = res[order(res[,orderCol]), ]
     }
     
-    write.csv(res, file=paste(prefix, 'degs_DESeq2.csv', sep="_"), row.names=TRUE)
+    
+    write.table(res, file=paste(prefix, 'degs_DESeq2.tsv', sep="_"), row.names=TRUE, sep="\t")
     return(res)
 }
 
@@ -90,10 +91,18 @@ export_counts = function(dds, outdir){
     ## rlog = rlog(dds, blind=FALSE)
 
     counts = counts(dds)
+    norm_counts = counts(dds, normalized=TRUE)
     vst_counts = assay(vst(dds, blind=FALSE))
 
-    write.csv(counts, paste(outdir, 'counts_raw.csv', sep="/"))
-    write.csv(vst_counts, paste(outdir, 'counts_vst_norm.csv', sep="/"))
+
+    write.table(counts, paste(outdir, 'counts_raw.tsv', sep="/"), sep="\t")
+    write.table(norm_counts, paste(outdir, 'counts_normed.tsv', sep="/"), sep="\t")
+    write.table(vst_counts, paste(outdir, 'counts_vst_norm.tsv', sep="/"), sep="\t")
+}
+
+export_dds = function(dds, outdir){
+    ## Export full dds table
+    write.table(mcols(dds), paste(outdir, "overall_dds.tsv", sep="/"), sep="\t")
 }
 
 ####################
@@ -109,5 +118,6 @@ res = pairwise_comparison(dds, {{comparisons_str}}, "{{condition}}",
                           independentFiltering={{independent_filtering}},
                           cooksCutoff={{cooks_cutoff}})
 
+export_dds(dds, "{{outdir}}")
 export_pairwise(res, "{{outdir}}")
 export_counts(dds, "{{outdir}}")
