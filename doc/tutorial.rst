@@ -11,6 +11,24 @@ pages and can be a complement to this quick overview.
 .. contents::
    :depth: 2
 
+
+The standalone Sequana
+----------------------
+
+New since version 0.9.0. We are a single entry point for a set of tools used in
+pipelines or as standalone applications. You can type::
+
+    sequana --help 
+
+
+to get the list of applications. Would you need completion, this is possible
+using e.g. for bash users::
+
+    eval "$(_SEQUANA_COMPLETE=source_bash sequana)"
+
+
+
+
 Quality Control pipeline
 --------------------------
 
