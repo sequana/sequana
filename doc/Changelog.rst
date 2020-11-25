@@ -5,6 +5,12 @@ Changelog
     :depth: 2
 
 
+0.9.4
+-----
+
+* faster gff module to be used by sequana_rnaseq>=0.9.19
+
+
 0.9.3
 -----
 
