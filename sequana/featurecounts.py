@@ -82,8 +82,7 @@ def get_most_probable_strand_consensus(rnaseq_folder, tolerance):
     logger.info(f"Strand guessing for each files (tolerance: {tolerance}):\n")
     logger.info(df)
 
-    #probable_strands = df.loc[:, "strand"].unique()
-    try: 
+    try:
         most_probable = df['strand'].value_counts().idxmax()
     except:
         # if all events are None, return -1
