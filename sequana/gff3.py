@@ -19,7 +19,7 @@ import os
 
 # from bioconvert/io/gff3 and adapted later on
 from sequana.annotations import Annotation
-
+from easydev import do_profile
 
 __all__ = ["GFF3"]
 
@@ -62,7 +62,6 @@ class GFF3(Annotation):
         count = 0
         with open(self.filename, "r") as reader:
             line = None
-
             for line in reader:
                 # Skip metadata and comments
                 if line.startswith("#"):
@@ -140,8 +139,12 @@ class GFF3(Annotation):
         # split into mutliple attributes
         split = text.split(";")
         for attr in split:
-            #find the separator
+            # make sure there is trailing spaces
+            attr = attr.strip()
+            #find the separator. Sometimes it is spaces, sometimes a = sign
             idx = attr.find("=")
+            if idx == -1:
+                idx = attr.find(" ")
 
             # parse tags and associated values
             value = self.decode_complete(attr[idx+1:])
@@ -153,22 +156,29 @@ class GFF3(Annotation):
 
     @staticmethod
     def decode_small(text):
-        text = re.sub("%09", "\t", text)
-        text = re.sub("%0A", "\n", text)
-        text = re.sub("%0D", "\r", text)
-        text = re.sub("%25", "%", text)
-        return text
+
+        # ugly but tales only 500ns 
+        return text.replace("%09","\t").replace("%0A","\n").replace("%0D","\r").replace("%25","%")
+
+        # 1.5us using 1 calls and a dictionary
+        #replacements = {"%09":"\t", "%0A":"\n", "%0D":"\r", "%25":"%"}
+        #def func(match):
+        #    return replacements.get(match.group(), "")
+        #return re.sub("%09|%0A|%0D|%25", func, text)
+
+        # 6us using 4 calls
+        #text = re.sub("%09", "\t", text)
+        #text = re.sub("%0A", "\n", text)
+        #text = re.sub("%0D", "\r", text)
+        #text = re.sub("%25", "%", text)
+        #return text
 
     @staticmethod
     def decode_complete(text):
         text = GFF3.decode_small(text)
-        text = re.sub("%3B", ";", text)
-        text = re.sub("%3D", "=", text)
-        text = re.sub("%26", "&", text)
-        text = re.sub("%2C", ",", text)
-        return text
+        return text.replace("%3B",";").replace("%3D","=").replace("%26","&").replace("%2C",",")
 
-    def create_files_for_rnadiff(self, outname, genetic_type="gene", 
+    def create_files_for_rnadiff(self, outname, genetic_type="gene",
         ID="Name", fields=['Name']):
         """Creates two files required for the RNADiff analysis following
         sequana_rnaseq pipeline
@@ -178,7 +188,7 @@ class GFF3(Annotation):
             gene (default), CDS, etc
         :param ID: the identifier (key) to be selected from the list of
             attributes found in the GFF for the given type. By default, 'Name'.
-            Used as first column in the two ouptut file. 
+            Used as first column in the two ouptut file.
         :param fields: the fields to be save in the outname_info.tsv file
         :return: nothing
 
@@ -188,19 +198,23 @@ class GFF3(Annotation):
            column 2 with length of the selected type (e.g. gene)
         #. outname_info.tsv first column is the same identifier as in the first
            file and following columns contain the fields of interest (Name by
-           default but could be any attributes to be found in the GFF such as 
+           default but could be any attributes to be found in the GFF such as
            description
 
         """
+        tokeep = []
+        for entry in self.read():
+            if genetic_type == entry['type']:
+                tokeep.append(entry)
 
-        data=list(self.read())
+        if len(tokeep) == 0:
+            raise ValueError("No genetic type {} was found".format(genetic_type))
+
         import pandas as pd
-        df = pd.DataFrame(data)
+        df = pd.DataFrame(tokeep)
 
-        # gene here is the type. could be gene, mRNA
-        # the requested type
-        assert genetic_type in set(df['type'])
-
+        # FIXME surely this is now redundant since we have a loop above that
+        # performs the filtering already.
         df = df.query("type==@genetic_type").copy()
 
         # HERE we could check that ID exists
@@ -218,6 +232,5 @@ class GFF3(Annotation):
             data = df.attributes.apply(lambda x: x.get(this, "NA"))
             df[this] = data
 
-        #df['ID'] = df[ID]
-        df.sort_values('Gene_id')[["Gene_id"] +  fields].to_csv(
-            "{}_info.tsv".format(outname), sep="\t", index=None)
+        data = df.sort_values('Gene_id')[["Gene_id"] +  fields]
+        data.to_csv("{}_info.tsv".format(outname), sep="\t", index=None)
