@@ -1,9 +1,29 @@
+# -*- coding: utf-8 -*-
+#
+#  This file is part of Sequana software
+#
+#  Copyright (c) 2016,2020 - Sequana Development Team
+#
+#  File author(s):
+#      Thomas Cokelaer <thomas.cokelaer@pasteur.fr>
+#      Etienne Kornobis <etienne.kornobis@pasteur.fr>
+#
+#  Distributed under the terms of the 3-clause BSD license.
+#  The full license is in the LICENSE file, distributed with this software.
+#
+#  website: https://github.com/sequana/sequana
+#  documentation: http://sequana.readthedocs.io
+#
+##############################################################################
 from pathlib import Path
 import pandas as pd
 from sequana import logger
 import re
 
 logger.name = __name__
+
+
+__all__ = ['get_most_probable_strand_consensus', 'get_most_probable_strand']
 
 
 def get_most_probable_strand(sample_folder, tolerance):
