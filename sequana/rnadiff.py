@@ -522,7 +522,12 @@ class RNADiffResults2:
             # df.index = data[1]
             df.columns = self.counts_norm.columns
 
-        d = dendogram.Dendogram(df.T, metric=metric, method=method)
+        d = dendogram.Dendogram(
+            df.T,
+            metric=metric,
+            method=method,
+            side_colors=list(self.meta.group_color.unique()),
+        )
 
         # Convert groups into numbers for Dendrogram category
         group_conv = {group: i for i, group in enumerate(self.meta.condition.unique())}
