@@ -199,6 +199,7 @@ def summary(**kwargs):
     * rnadiff: the output of RNADiff pipeline
     * enrichment: the output of RNADiff pipeline
     * bamqc
+    * fastq
 
     Example for the enrichment module:
 
@@ -210,7 +211,7 @@ def summary(**kwargs):
 
         sequana summary T1vsT0.complete.xls --module enrichment --enrichment-taxon 10090 
             --enrichment-log2-foldchange-cutoff 2 --enrichment-kegg-only
-            --enrichment-kegg-pathways-directory keff_pathways
+            --enrichment-kegg-pathways-directory kegg_pathways
 
     """
     names = kwargs['name']

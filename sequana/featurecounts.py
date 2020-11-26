@@ -1,9 +1,29 @@
+# -*- coding: utf-8 -*-
+#
+#  This file is part of Sequana software
+#
+#  Copyright (c) 2016,2020 - Sequana Development Team
+#
+#  File author(s):
+#      Thomas Cokelaer <thomas.cokelaer@pasteur.fr>
+#      Etienne Kornobis <etienne.kornobis@pasteur.fr>
+#
+#  Distributed under the terms of the 3-clause BSD license.
+#  The full license is in the LICENSE file, distributed with this software.
+#
+#  website: https://github.com/sequana/sequana
+#  documentation: http://sequana.readthedocs.io
+#
+##############################################################################
 from pathlib import Path
 import pandas as pd
 from sequana import logger
 import re
 
 logger.name = __name__
+
+
+__all__ = ['get_most_probable_strand_consensus', 'get_most_probable_strand']
 
 
 def get_most_probable_strand(sample_folder, tolerance):
@@ -26,13 +46,13 @@ def get_most_probable_strand(sample_folder, tolerance):
     res_dict["strandness"] = strandness
 
     if strandness < tolerance:
-        res_dict["strand"] = "2"
+        res_dict["strand"] = 2
     elif strandness > 1 - tolerance:
-        res_dict["strand"] = "1"
+        res_dict["strand"] = 1
     elif 0.5 - tolerance < strandness and strandness < 0.5 + tolerance:
-        res_dict["strand"] = "0"
+        res_dict["strand"] = 0
     else:
-        res_dict["strand"] = "NA"
+        res_dict["strand"] = None
 
     df = pd.DataFrame(res_dict, index=[sample_name])
 
@@ -43,6 +63,8 @@ def get_most_probable_strand_consensus(rnaseq_folder, tolerance):
     """From a sequana rna-seq run folder get the most probable strand, based on the
     frequecies of counts assigned with '0', '1' or '2' type strandness
     (featureCounts nomenclature)
+
+    If guess is not possible given the tolerance, fills with None
     """
 
     rnaseq_folder = Path(rnaseq_folder)
@@ -57,18 +79,17 @@ def get_most_probable_strand_consensus(rnaseq_folder, tolerance):
         ]
     )
 
-    logger.info("Strand guessing for each files (tolerance: {tolerance}):\n {df}")
+    logger.info(f"Strand guessing for each files (tolerance: {tolerance}):\n")
     logger.info(df)
 
-    probable_strands = df.loc[:, "strand"].unique()
+    try:
+        most_probable = df['strand'].value_counts().idxmax()
+    except:
+        # if all events are None, return -1
+        most_probable = -1
 
-    if len(probable_strands) == 1:
-        return probable_strands[0]
-    else:
-        raise IOError(
-            f"No consensus on most probable strand found with a tolerance of {tolerance}. \
-Could be: {' or '.join(str(x) for x in probable_strands)}."
-        )
+    return most_probable, df
+
 
 
 class FeatureCount:

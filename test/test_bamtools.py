@@ -143,6 +143,7 @@ def test_cs_in_bam():
          'read_length': {1772: 1, 10779: 1, 13726: 1, 20480: 1}}
     df = b.get_df_concordance()
     import math
+    del df['rname']
     assert math.floor(df.sum().sum()) == 103813  # exact is 103769.5600734975
 
 

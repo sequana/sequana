@@ -194,7 +194,7 @@ class MultiSummary(SequanaBaseModule):
 
         try: self.populate_phix()
         except Exception as err:
-            logger.debug("multi_summary: skip phix")
+            logger.warning("multi_summary: skip phix")
 
         try: self.populate_gc_samples()
         except Exception as err:
@@ -220,7 +220,7 @@ class MultiSummary(SequanaBaseModule):
 
         keys = list(self.df.keys())
         if len(keys) >= 1:
-            df = pd.DataFrame(self.df[keys[0]])
+            df = pd.DataFrame(self.df[keys[0]].copy())
         if len(keys) > 1: # we can merge things
             for key in keys[1:]:
                 df = pd.merge(df, pd.DataFrame(self.df[key]), on=['name', 'url'])
@@ -313,13 +313,14 @@ removal and trimming)</td></tr>
     def populate_output_total_reads(self):
         df = self._get_df("get_output_total_reads")
         self.df['N_final'] = df.copy()
-        self.df['N_final'].columns = ['name', 'url', 'N_final']
+        self.df['N_final'].rename({'value': 'N_final'}, axis=1, inplace=True)
 
     def populate_adapters(self):
         title = "Adapters content"
         df = self._get_df("get_adapters_percent")
         self.df['Adapters'] = df.copy()
-        self.df['Adapters'].columns = ['name', 'url', 'Adapters_content_(%)']
+        self.df['Adapters'].rename({'value': 'Adapters_content_(%)'}, axis=1,
+            inplace=True)
         cb = CanvasBar(df, "Adapters content", "adapters", xlabel="Percentage")
         self.jinja['canvas'] += cb.to_html()
         self.jinja['sections'].append(self._get_div("adapters", title))
@@ -328,7 +329,7 @@ removal and trimming)</td></tr>
         title = "Number of reads"
         df = self._get_df("get_nreads_raw")
         self.df['N_raw'] = df.copy()
-        self.df['N_raw'].columns = ['name', 'url', 'N_raw']
+        self.df['N_raw'].rename({'value': 'N_raw'}, axis=1, inplace=True)
         cb = CanvasBar(df, "Number of reads (raw data)", "nreads_raw",
                     xlabel="Number of reads")
         self.jinja['canvas'] += cb.to_html()
@@ -338,7 +339,8 @@ removal and trimming)</td></tr>
         title = "Mean quality (raw data)"
         df = self._get_df("get_mean_quality_samples")
         self.df['Mean_quality_raw'] = df.copy()
-        self.df['Mean_quality_raw'].columns = ['name', 'url', 'Mean_quality_raw']
+        self.df['Mean_quality_raw'].rename({'value': 'Mean_quality_raw'},
+            axis=1, inplace=True)
         cb = CanvasBar(df, title, "mean_quality", xlabel="mean quality")
         self.jinja['canvas'] += cb.to_html(options={'maxrange':40})
         self.jinja['sections'].append(self._get_div("mean_quality", title))
@@ -347,7 +349,7 @@ removal and trimming)</td></tr>
         title = "GC content (raw)"
         df = self._get_df("get_gc_content_samples")
         self.df['GC_raw'] = df.copy()
-        self.df['GC_raw'].columns = ['name', 'url', 'GC_raw_(%)']
+        self.df['GC_raw'].rename({'value': 'GC_raw_(%)'}, axis=1, inplace=True)
         cb = CanvasBar(df, title, "populate_gc_samples", xlabel="Percentage")
         self.jinja['canvas'] += cb.to_html(options={"maxrange":100})
         self.jinja['sections'].append(self._get_div("populate_gc_samples",title))
@@ -356,7 +358,8 @@ removal and trimming)</td></tr>
         title = "Phix content"
         df = self._get_df("get_phix_percent")
         self.df['Phix'] = df.copy()
-        self.df['Phix'].columns = ['name', 'url', 'Phix_content_(%)']
+        self.df['Phix'].rename({'value': 'Phix_content_(%)'}, inplace=True,
+            axis=1)
         cb = CanvasBar(df, title, "phix", xlabel="Percentage")
         self.jinja['canvas'] += cb.to_html()
         self.jinja['sections'].append(self._get_div("phix", title))
@@ -365,7 +368,8 @@ removal and trimming)</td></tr>
         title = "Trimming (raw data)"
         df = self._get_df("get_trimming_percent")
         self.df['Trimmed'] = df.copy()
-        self.df['Trimmed'].columns = ['name', 'url', 'Trimmed_reads_(%)']
+        self.df['Trimmed'].rename({'value': 'Trimmed_reads_(%)'}, axis=1,
+            inplace=True)
         cb = CanvasBar(df, title, "trimming", xlabel="Percentage")
         self.jinja['canvas'] += cb.to_html()
         self.jinja['sections'].append(self._get_div("trimming", title))

@@ -265,7 +265,7 @@ class SAMBAMbase():
         """
         from sequana import Cigar
         count = 0
-        I, D, M, L, mapq, flags, NM = [], [], [], [], [], [], []
+        I, D, M, L, mapq, flags, NM, rnames = [], [], [], [], [], [], [], []
         S = []
         for i, a in enumerate(self._data):
             # tags and cigar populated  if there is a match
@@ -283,6 +283,7 @@ class SAMBAMbase():
                 NM.append(-1)
 
             flags.append(a.flag)
+            rnames.append(a.reference_name)
 
             if 'cs' in dict(a.tags):
                 cs = CS(dict(a.tags)['cs'])
@@ -312,6 +313,7 @@ class SAMBAMbase():
         D = np.array(D)
         M = np.array(M)
         NM = np.array(NM)
+        rnames = np.array(rnames)
 
         try:
             S = np.array(S)
@@ -323,9 +325,9 @@ class SAMBAMbase():
             computed_S = NM - D - I
             C = 1 - (I + D + computed_S)/(computed_S + I + D + M)
 
-        df = pd.DataFrame([C, L, I, D, M, mapq, flags, NM, S])
+        df = pd.DataFrame([C, L, I, D, M, mapq, flags, NM, S, rnames])
         df = df.T
-        df.columns = ["concordance", 'length', "I", "D", "M", "mapq", "flags", "NM", "mismatch"]
+        df.columns = ["concordance", 'length', "I", "D", "M", "mapq", "flags", "NM", "mismatch", "rname"]
         return df
 
     def __iter__(self):

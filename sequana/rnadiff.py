@@ -1000,7 +1000,7 @@ class RNADiffResults:
             candidates = [
                 x
                 for x in self.condition_names
-                if re.findall("^{}\d+".format(x), sample_name)
+                if re.findall(r"^{}\d+".format(x), sample_name)
             ]
             if len(candidates) == 1:
                 return candidates[0]

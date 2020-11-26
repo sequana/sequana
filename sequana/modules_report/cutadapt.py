@@ -132,9 +132,16 @@ class CutadaptModule(SequanaBaseModule):
             df.loc['Pairs with adapters'] = [
                    self.jinja['%sreads_with_adapters' % prefix],
                    self.jinja['%sreads_with_adapters_percent'% prefix]]
-        df.loc['Pairs too short'] = [
+        try:
+            df.loc['Pairs too short'] = [
                    self.jinja['%sreads_too_short' % prefix],
                    self.jinja['%sreads_too_short_percent'% prefix]]
+        except:
+            # somehow we should use strings because all others fields are made
+            # of strings and multisummary will then try to merge int and strings
+            # otherwise
+            df.loc['Pairs too short'] = ["0","0"]
+
         df.loc['Pairs kept'] = [
                    self.jinja['%sreads_kept' % prefix],
                    self.jinja['%sreads_kept_percent' % prefix]]
@@ -178,19 +185,27 @@ class CutadaptModule(SequanaBaseModule):
             info = adapter['info']
             df.loc[name] = [info['Length'], info['Trimmed'],
                 info['Type'], info['Sequence']]
+
         df.columns = ['Length', 'Trimmed', 'Type', 'Sequence']
-        df['Trimmed'] = df.Trimmed.map(lambda x: int(x.replace("times.", "")))
+        try:
+            df['Trimmed'] = df.Trimmed.map(lambda x: int(x.replace("times.", "")))
+        except:
+            pass
+        try:
+            df['Trimmed'] = df.Trimmed.map(lambda x: int(x.replace("times", "")))
+        except:
+            pass
 
         # df.to_json(self.sample_name + "/cutadapt/cutadapt_stats2.json")
         df.sort_values(by="Trimmed", ascending=False, inplace=True)
 
         datatable = DataTable(df, "adapters", index=True)
         datatable.datatable.datatable_options = {
-            'scrollX': 'true',
-            'pageLength': 15,
-            'scrollCollapse': 'true',
-            'dom': 'frtipB',
-            'buttons': ['copy', 'csv']}
+                'scrollX': 'true',
+                'pageLength': 15,
+                'scrollCollapse': 'true',
+                'dom': 'frtipB',
+                'buttons': ['copy', 'csv']}
         js = datatable.create_javascript_function()
         html_tab = datatable.create_datatable(float_format='%.3g')
         self.jinja['adapters'] = ""
