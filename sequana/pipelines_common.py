@@ -579,6 +579,7 @@ class SequanaManager():
         # define the data path of the pipeline
         self.datapath = self._get_package_location()
 
+
     def exists(self, filename, exit_on_error=True, warning_only=False):
         if os.path.exists(filename) is False:
             if warning_only is False:
@@ -731,6 +732,7 @@ class SequanaManager():
             if stop_on_error:
                 sys.exit(1)
 
+    def check_fastq_files(self):
         from sequana import FastQFactory
         try:
             ff = FastQFactory(cfg.input_directory + os.sep +
@@ -745,12 +747,13 @@ class SequanaManager():
             logger.info("Your input data seems to be made of {}".format(paired))
 
         except:
-            logger.error("""Input data is not fastq-compatible with sequana pipelines. You may want to set the read_tag to empty string or None if you wish
+            logger.error("""Input data is not fastq-compatible with sequana pipelines. You may want to set the read_tag to empty string or None if you wish 
 to analyse non-fastQ files (e.g. BAM)""")
             sys.exit(1)
 
 
-    def teardown(self, check_schema=True, check_input_files=True):
+    def teardown(self, check_schema=True, check_input_files=True,
+            check_fastq_files=True):
         """Save all files required to run the pipeline and perform sanity checks
 
 
@@ -889,7 +892,8 @@ to analyse non-fastQ files (e.g. BAM)""")
         else:
             # we could print a message to use the sequana_completion tools
             # be maybe boring on the long term
-            pass
+            # FIXME
+            logger.info("A completion if possible with sequana_completion --name {}".format(self.name))
 
     def update_config(self, config, options, section_name):
         for option_name in config[section_name]:
