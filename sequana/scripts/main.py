@@ -248,6 +248,11 @@ def summary(**kwargs):
             data = RNADiffResults(name)
             report = RNAdiffModule(data, output_filename)
     elif module == "enrichment":
+        try:
+            name = names[0]
+        except:
+            logger.error()
+            sys.exit(1)
         from sequana.modules_report.enrichment import Enrichment
         taxon = kwargs['enrichment_taxon']
         if taxon == 0:
@@ -270,7 +275,6 @@ def summary(**kwargs):
             logger.error("{} does not exists".format(filename))
             sys.exit(1)
 
-        name = names[0]
         report = Enrichment(name, taxon,
             kegg_organism=keggname, 
             enrichment_params=params,
@@ -364,10 +368,11 @@ def salmon(**kwargs):
 @click.option("-i", "--input", required=True)
 @click.option("-o", "--output", required=True)
 def gtf_fixer(**kwargs):
-    """Reads GTF and fix known issues"""
+    """Reads GTF and fix known issues (exon and genes uniqueness)"""
     from sequana.gtf import GTFFixer
     gtf = GTFFixer(kwargs['input'])
-    res = gtf.fix(kwargs['output'])
+    res = gtf.fix_exons_uniqueness(kwargs['output'])
+    #res = gtf.fix_exons_uniqueness(kwargs['output'])
     print(res)
 
 
