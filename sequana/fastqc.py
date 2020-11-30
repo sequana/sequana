@@ -6,7 +6,12 @@ from sequana.lazy import pandas as pd
 
 
 class FastQC():
-    """A temporary class to manipulate fastqc statistics"""
+    """A temporary class to manipulate fastqc statistics
+
+    This class can also read the output of Falco. Note, however, that 
+    falco has txt file instead of zip file.
+
+    """
 
     def __init__(self):
 
@@ -21,10 +26,14 @@ class FastQC():
         This method was copied from multiqc.modules.fastqc.fastqc modules as a
         temporary hack to read the sample data.
         """
-        zz = zipfile.ZipFile(filename)
-        file_contents = zz.open("{}{}".format(zz.namelist()[0], "fastqc_data.txt")).read().decode('utf8')
+        try:
 
-        #self.add_data_source(f, s_name)
+            zz = zipfile.ZipFile(filename)
+            file_contents = zz.open("{}{}".format(zz.namelist()[0], "fastqc_data.txt")).read().decode('utf8')
+        except:
+            with open(filename, "r") as fin:
+                file_contents = fin.read()
+
         self.fastqc_data[s_name] = { 'statuses': dict() }
 
         # Here below is the code from  multiqc v1.6
@@ -111,20 +120,24 @@ class FastQC():
 
     def plot_sequence_quality(self, max_score=40, ax=None):
 
+        ymax = max_score + 1
+        xmax = 0
         for sample in self.fastqc_data.keys():
             data = {self._avg_bp_from_range(d['base']): d['mean']
                 for d in self.fastqc_data[sample]['per_base_sequence_quality']}
             df = pd.Series(data)
             df.plot(color="k", alpha=0.5)
 
-        ymax = max_score + 1
-        xmax = max(df.index) + 1
+            if df.max() > ymax:
+                ymax = df.max()
+            if df.index.max() > xmax:
+                xmax = df.index.max()
 
         if ax:
             pylab.sca(ax)
         pylab.fill_between([0,xmax], [0,0], [20,20], color='red', alpha=0.4)
         pylab.fill_between([0,xmax], [20,20], [30,30], color='orange', alpha=0.4)
-        pylab.fill_between([0,xmax], [30,30], [41,41], color='green',  alpha=0.4)
+        pylab.fill_between([0,xmax], [30,30], [ymax,ymax], color='green',  alpha=0.4)
 
         X = range(1, xmax + 1)
 
