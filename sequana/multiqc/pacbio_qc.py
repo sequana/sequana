@@ -172,7 +172,7 @@ class MultiqcModule(BaseMultiqcModule):
 
         pconfig = {
             'id': 'sequana_pacbio_hist_length',
-            'title': 'Per Sequence GC Content',
+            'title': 'Read length',
             'ylab': '#',
             'xlab': 'Length',
             'ymin': 0,
@@ -190,7 +190,7 @@ class MultiqcModule(BaseMultiqcModule):
         self.add_section (
             name = 'Read length histograms',
             anchor = 'fastqc_per_sequence_gc_content',
-            description = "GC content (normalised)",
+            description = "Read length histogram",
             plot = linegraph.plot(data, pconfig))
 
     def parse_logs(self, log_dict):
