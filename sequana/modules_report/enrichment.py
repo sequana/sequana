@@ -167,8 +167,8 @@ categories. </p>
                 )
 
         # compute enrichment. This may take time.
-        self.pe.compute_enrichment_down(ontologies=[self.pe.MF, self.pe.BP, self.pe.CC])
-        self.pe.compute_enrichment_up(ontologies=[self.pe.MF, self.pe.BP, self.pe.CC])
+        self.pe.compute_enrichment(ontologies=[self.pe.MF, self.pe.BP, self.pe.CC])
+        #self.pe.compute_enrichment_up(ontologies=[self.pe.MF, self.pe.BP, self.pe.CC])
 
         # a utility function to create the proper html table
         def get_html_table(this_df, identifier):
