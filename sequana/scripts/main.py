@@ -36,7 +36,7 @@ if len(pipelines):
     version +="\nThe following pipelines are installed:\n"
 for item in pkg_resources.working_set:
     if item.key.startswith("sequana") and item.key != 'sequana':
-        version += "\n - {}, version {}".format(item.key, item.version)
+        version += "\n - {} version: {}".format(item.key, item.version)
 
 
 @click.group(context_settings=CONTEXT_SETTINGS)
@@ -92,7 +92,9 @@ def fastq(**kwargs):
     elif kwargs['head']:
         for filename in filenames:
             f = FastQ(filename)
-            assert kwargs['output']
+            if kwargs['output'] is None:
+                logger.error("Please use --output to tell us where to save the results")
+                sys.exit(1)
             N = kwargs['head'] * 4
             f.extract_head(N=N, output_filename=kwargs['output'])
     elif kwargs['tail']: #pragma: no cover
@@ -152,7 +154,7 @@ def samplesheet(**kwargs):
 @main.command()
 @click.argument("name", type=click.Path(exists=True), nargs=-1)
 @click.option("--module",
-    required=True,
+    required=False,
     type=click.Choice(["rnadiff", "bamqc", "bam", "enrichment", "fasta", "fastq"]))
 @click.option("--enrichment-taxon", type=click.INT,
     #required=True,
@@ -217,6 +219,17 @@ def summary(**kwargs):
     names = kwargs['name']
     module = kwargs['module']
 
+    if module is None:
+        if names[0].endswith('fastq.gz') or names[0].endswith('.fastq'):
+            module = "fastq"
+        elif  names[0].endswith('.bam'):
+            module = "bam"
+        elif names[0].endswith('fasta.gz') or names[0].endswith('.fasta'):
+            module = "fasta"
+        else:
+            logger.error("please use --module to tell us about the input fimes")
+            sys.exit(1)
+
     if module == "bamqc":
         for name in names:
             print(f"Processing {name}")
@@ -257,6 +270,7 @@ def summary(**kwargs):
             logger.error("{} does not exists".format(filename))
             sys.exit(1)
 
+        name = names[0]
         report = Enrichment(name, taxon,
             kegg_organism=keggname, 
             enrichment_params=params,
