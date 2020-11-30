@@ -35,7 +35,8 @@ Sequana documentation
 :Python version: Python 3.6, 3.7.3; most modules are Python2.7 compatible.
 :Source: See  `http://github.com/sequana/sequana <https://github.com/sequana/sequana/>`__.
 :Issues: Please fill a report on `github <https://github.com/sequana/sequana/issues>`__
-:How to cite: For Sequana in general including the pipelines, please use
+:How to cite: Citations are important for us to carry on developments.
+    For Sequana library (including the pipelines), please use
 
     Cokelaer et al, (2017), 'Sequana': a Set of Snakemake NGS pipelines, Journal of
     Open Source Software, 2(16), 352, `JOSS DOI doi:10.21105/joss.00352 <http://www.doi2bib.org/bib/10.21105%2Fjoss.00352>`_
@@ -80,10 +81,12 @@ What is Sequana ?
        taxonomy of your FastQ. This requires dedicated databases to be downloaded.
     #. :ref:`Sequanix`, a GUI for Snakemake workflows (hence Sequana pipelines as well)
 
-Currently, the available pipelines cover quality control (e.g. adapters removal,
+The sequana pipelines are various. Since March 2020, they have their own independent life within dedicated github repositories. You may find pipelines for NGS quality control (e.g. adapters removal,
 phix removal, trimming of bad quality bases), variant calling, characterisation
-of the genome coverage, taxonomic classification, de-novo assembly, RNA-seq. See the :ref:`pipelines`
+of the genome coverage, taxonomic classification, de-novo assembly, 
+:ref:`Variant calling <pipeline_variant_calling>`, :ref:`RNA-seq <pipeline_rnaseq>`, etc. See the :ref:`pipelines`
 section for more information.
+
 
 **Sequana** can be used by developers to create new pipelines and by users in the
 form of applications ready for production. Moreover, **Sequanix** can be used to

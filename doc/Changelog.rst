@@ -4,12 +4,20 @@ Changelog
 .. contents::
     :depth: 2
 
+0.9.5
+-----
+
+* rules fastqc: allows handling of bam files. remove sanity checks on empty files. 
+* module snaketools: PipelineManagerGeneric set paired field to "undefined"
+  since this is suppose to deal with bam, or other non-fastq files
+* module fastqc now plots the pacbio phred score on the full y-axis range
+* for developers: In SequanaManager teardown, option to skip check_fastq_files
+
 
 0.9.4
 -----
 
 * faster gff module to be used by sequana_rnaseq>=0.9.19
-
 
 0.9.3
 -----

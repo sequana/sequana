@@ -15,9 +15,8 @@ production.
 Quick Start
 ===========
 
-If **Sequana** is installed
-
-::
+If **Sequana** is installed, installing a pipeline is straightforward. For
+example, to install the variant calling pipeline::
 
     pip install sequana_variant_calling --upgrade
 
@@ -55,6 +54,8 @@ online-tutorials (e.g. http://slowkow.com/notes/snakemake-tutorial/).
     also have a pipeline to analyse several samples in parallel. Therefore the 
     sequana_pipeline_coverage pipeline has no alias.
 
+    Future version will use the short version only. 
+
 
 Installation
 ============
@@ -89,6 +90,7 @@ below.
 
 List pipelines
 ==============
+This is a non-exhaustive list of pipelines
 
 .. toctree::
     :maxdepth: 1
@@ -102,4 +104,4 @@ List pipelines
     pipeline_rnaseq.rst
     pipeline_variant_calling.rst
 
-
+Please see the https://github.com/sequana organisation to get the full list.
