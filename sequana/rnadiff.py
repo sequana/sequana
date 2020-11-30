@@ -832,8 +832,12 @@ class RNADiffResults:
 
             if "Name" in self.df.columns:
                 hover_name = "Name"
-            else:
+            elif "gene_id" in self.df.columns:
+                hover_name = "gene_id"
+            elif "ID" in self.df.columns:
                 hover_name = "ID"
+            else:
+                hover_name = None
             fig = px.scatter(
                 df,
                 x="log2FoldChange",
