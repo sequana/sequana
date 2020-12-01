@@ -8,6 +8,7 @@ Changelog
 -----
 
 * rules fastqc: allows handling of bam files. remove sanity checks on empty files. 
+* rules falco: new rules added (similar to fastqc)
 * module snaketools: PipelineManagerGeneric set paired field to "undefined"
   since this is suppose to deal with bam, or other non-fastq files
 * module fastqc now plots the pacbio phred score on the full y-axis range
