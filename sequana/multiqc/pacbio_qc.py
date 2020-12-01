@@ -46,7 +46,7 @@ class MultiqcModule(BaseMultiqcModule):
 
         info = "<ul>"
         for this in sorted(self.sequana_data.keys()):
-            info += '<li><a href="{}/summary.html">{}</a></li>'.format(this,this,this)
+            info += '<li><a href="../{}/summary.html">{}</a></li>'.format(this,this)
         info += "</ul>"
         href="http://sequana.readthedocs.io/en/master/"
         target = "Sequana"

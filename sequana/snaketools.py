@@ -1197,8 +1197,7 @@ def message(mes):
     meanwhile, one must use this function to print information.
 
     This adds the // -- characters in front of the prin statements."""
-    from easydev.console import purple
-    print("// -- " + purple(mes))
+    logger.info("// -- " + mes)
 
 
 class DOTParser(object):
