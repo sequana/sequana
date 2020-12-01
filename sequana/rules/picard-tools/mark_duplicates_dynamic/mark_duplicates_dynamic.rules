@@ -30,14 +30,14 @@ rule mark_duplicates_%(name)s:
         out = __mark_duplicates_%(name)s__log_std,
         err = __mark_duplicates_%(name)s__log_err
     params:
-        remove = config["mark_duplicates"]["remove"],
+        remove_dup = config["mark_duplicates"]["remove"],
         tmpdir = config["mark_duplicates"]["tmpdir"]
     threads:
         int(config["mark_duplicates"]["threads"])
     shell:
         """
         (picard MarkDuplicates I={input} O={output.bam} \
-            M={output.metrics} REMOVE_DUPLICATES={params.remove} \
+            M={output.metrics} REMOVE_DUPLICATES={params.remove_dup} \
             TMP_DIR={params.tmpdir} && samtools index {output.bam}) \
             > {log.out} 2> {log.err}
         """

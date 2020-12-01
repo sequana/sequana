@@ -18,7 +18,7 @@
 from sequana.lazy import pylab
 from sequana import logger
 
-__all__ = ['PCA']
+__all__ = ['Cluster']
 
 
 class Cluster():
@@ -79,7 +79,7 @@ class Cluster():
         return data, tokeep
 
 
-    def plot(self, n_components=2, transform="log", switch_x=False,
+    def __plot(self, n_components=2, transform="log", switch_x=False,
             switch_y=False, switch_z=False, colors=None,
             max_features=500, show_plot=True):
         """
@@ -95,7 +95,7 @@ class Cluster():
 
         pylab.clf()
 
-        data = self.scale_data(method=transform, max_features=max_features)
+        data = self.scale_data(transform_method=transform, max_features=max_features)
         tokeep = data.index
 
         pca = PCA(n_components)

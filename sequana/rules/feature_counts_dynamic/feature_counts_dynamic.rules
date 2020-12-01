@@ -31,7 +31,7 @@ rule feature_counts_%(name)s:
         bam = __feature_counts__input,
         gff = __feature_counts__gff
     output:
-        count = __feature_counts_%(name)s__output_count
+        counts = __feature_counts_%(name)s__output_count
     params:
         mapp = __feature_counts__options
     log:
@@ -40,10 +40,10 @@ rule feature_counts_%(name)s:
         __feature_counts__threads
     run:
         shell("""featureCounts -T {threads} {params.mapp} \
-                 -a {input.gff} -o {output.count} {input.bam} 2> {log}""")
+                 -a {input.gff} -o {output.counts} {input.bam} 2> {log}""")
         # now we can read the summary file back and add a tag
         sample = "__fc{}_".format(str(%(name)s)) + input.bam.split("/")[0]
-        cmd = 'sed -i "s/Status.*/Status\t{}/g" {}.summary'.format(sample, output.count)
+        cmd = 'sed -i "s/Status.*/Status\t{}/g" {}.summary'.format(sample, output.counts)
         shell(cmd)
 
     '''

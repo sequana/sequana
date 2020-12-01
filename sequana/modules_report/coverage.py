@@ -318,7 +318,8 @@ class ChromosomeCoverageModule(SequanaBaseModule):
         maxpos = self.chromosome.df.pos.iloc[-1]
 
         # create directory
-        chrom_output_dir = os.sep.join([config.output_dir, directory,
+    
+        chrom_output_dir = os.sep.join([config.output_dir, str(directory),
                                        str(name)])
         if not os.path.exists(chrom_output_dir):
             os.makedirs(chrom_output_dir)

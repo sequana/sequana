@@ -3,6 +3,9 @@ from sequana.lazy import pylab
 from sequana.lazy import pandas as pd
 
 
+
+
+
 def find_motif(bamfile, motif="CAGCAG", window=200, savefig=False, 
     local_th=5, global_th=10):
     """
@@ -39,26 +42,72 @@ def find_motif(bamfile, motif="CAGCAG", window=200, savefig=False,
     return alns, found, Ss
 
 
+
+
 class FindMotif():
     """
-
 
         fm = FindMotif("cl10/select1.sorted.bam")
         df = fm.find_motif("CAGCAG")
         df.query("hit>10")
 
-
+        local threshold should be window length divided by motif length
+        divided by 2
     """
-    def __init__(self, bamfile):
-        print("DRAFt")
-        self.bamfile = bamfile
-        self.local_threshold = 5
-        self.global_threshold = 10
+    def __init__(self, local_threshold=5, global_threshold=10, window=200):
+        self.local_threshold = local_threshold
+        self.global_threshold = global_threshold
+        self.window = window
 
-    def find_motif(self, motif, window=200, figure=False, savefig=False):
+    def find_motif_from_sequence(self, seq, motif, window=None,
+            local_threshold=None):
 
-        b1 = BAM(self.bamfile)
+        if local_threshold is None:
+            local_threshold = self.local_threshold
 
+        if window is None:
+            window = self.window
+
+        # This should be improved with a true sliding window
+        X1 = [seq[i:i+window].count(motif) for i in range(len(seq))]
+
+        # Number of point crossing the threshold in the sequence
+        # The threshold should be below window/len(motif) if there are no errors
+        S = sum([x>=local_threshold for x in X1])
+        return X1, S
+
+    def find_motif_fasta(self, filename, motif, window=200,
+            local_threshold=None, global_threshold=None):
+        from sequana import FastA
+        data = FastA(filename)
+        N = len(data)
+        from easydev import Progress
+        pb = Progress(N)
+        df = {
+            "query_name": [],
+            "hit": [],
+            "length": [],
+            "start": [],
+            "end": []
+        }
+        for i, item in enumerate(data):
+            X1, S = self.find_motif_from_sequence(item.sequence, motif,
+                        window=window, local_threshold=local_threshold
+                        )
+            if S >= self.global_threshold:
+                df['query_name'].append(item.name)
+                df['start'].append(0)
+                df['end'].append(len(item.sequence))
+                df['length'].append(len(item.sequence))
+                df['hit'].append(S)
+            pb.animate(i+1)
+        df = pd.DataFrame(df)
+        return df
+
+    def find_motif_bam(self, filename, motif, window=200, figure=False, savefig=False,
+            local_threshold=None, global_threshold=None):
+        from sequana import BAM
+        b1 = BAM(filename)
         df = {
             "query_name": [],
             "hit": [],
@@ -72,8 +121,8 @@ class FindMotif():
                 continue
             seq = a.query_sequence
 
-            X1 = [seq[i:i+window].count(motif) for i in range(len(seq))]
-            S = sum([x>=self.local_threshold for x in X1])
+            X1, S = self.find_motif_from_sequence(seq, motif, window=window,
+                local_threshold=local_threshold)
 
             df['query_name'].append(a.query_name)
             df['start'].append(a.reference_start)
@@ -95,28 +144,37 @@ class FindMotif():
         return df
 
 
-    def plot_specific_alignment(self, query_name, motif,clf=True,
-            windows=[10, 50, 100, 200, 500, 1000]):
+    def plot_specific_alignment(self, bamfile, query_name, motif,clf=True,
+            show_figure=True, authorized_flags=[0,16],
+            windows=[10, 50, 100, 150,200, 250,500, 1000], local_threshold=5):
 
         found = None
-        bam = BAM(self.bamfile)
+        bam = BAM(bamfile)
         for aln in bam:
-            if aln.query_name == query_name:
+            if aln.query_name == query_name and aln.flag in authorized_flags:
                 found = aln
+                break  # we may have several entries. let us pick up the first 
+            
+
+        sizes = []
         if found:
             # Detection
             seq = found.query_sequence
             if clf:pylab.clf()
             for window in windows:
                 X = [seq[i:i+window].count(motif) for i in range(len(seq))]
-                pylab.plot(X, label=window)
-                score = sum([x>window/6 for x in X])
-                print(window, score/3.)
-            pylab.legend()
-            pylab.ylabel("# {} in a given sliding window".format(motif))
-            pylab.title(query_name)
+                if show_figure:
+                    pylab.plot(X, label=window)
+                score = sum([x>local_threshold for x in X])
+                sizes.append(score-window)
+            if show_figure:
+                pylab.legend()
+                pylab.ylabel("# {} in a given sliding window".format(motif))
+                pylab.title(query_name)
         else:
-            print("Not found")
+            print("{} Not found in {} file".format(query_name, bamfile))
+        
+        return sizes
 
     """def find_length(self, query_name, motif, window=200):
         found = None
@@ -131,33 +189,35 @@ class FindMotif():
             for window in windows:
     """
 
-    def _get_aligments(self, motif, window=200, global_th=10):
-        df = self.find_motif(motif=motif, window=window)
-        df = df.query("hit>@global_th")
-        return df
 
-    def plot_alignment(self, motif, window=200,
-            global_th=10,title=None,legend=True, legend_fontsize=11):
+    def plot_alignment(self, bamfile, motif, window=200,
+            global_th=10,title=None,legend=True, legend_fontsize=11,
+            valid_rnames=[],
+            valid_flags=[]):
         """
 
 
         plot alignments that match the motif. 
 
         """
-        df = self._get_aligments(motif=motif, window=window, global_th=global_th)
-        print("Found {} hits".format(len(df)))
-        bam = BAM(self.bamfile)
+
+        bam = BAM(bamfile)
+        print("Found {} hits".format(len(bam)))
         pylab.clf()
         count = 0
         for aln in bam:
-            if aln.query_name in df.query_name.values:
-                seq = aln.query_sequence
-                if seq:
-                    count += 1
-                    X1 = [seq[i:i+window].count(motif) for i in range(len(seq))]
-                    pylab.plot(range(aln.reference_start,
-                        aln.reference_start+len(seq)),X1, label=aln.query_name)
+            if valid_rnames and aln.rname not in valid_rnames:
+                continue
+            if valid_flags and aln.flag not in valid_flags:
+                continue
 
+            seq = aln.query_sequence
+            if seq:
+                count += 1
+                X1 = [seq[i:i+window].count(motif) for i in range(len(seq))]
+                pylab.plot(range(aln.reference_start,
+                    aln.reference_start+len(seq)),X1, label=aln.query_name)
+        print("Showing {} entries after filtering".format(count))
         max_theo = int(1.2*window / len(motif))
         pylab.ylim([0, max_theo])
         if legend and count<15:
@@ -165,7 +225,7 @@ class FindMotif():
         if title:
             pylab.title(title, fontsize=16)
 
-        return df
+        #return df
 
 
 

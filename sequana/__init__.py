@@ -3,14 +3,13 @@ import pkg_resources
 try:
     version = pkg_resources.require("sequana")[0].version
 except:
-    version = ">=0.8.3"
+    version = ">=0.9.3"
 
+from easydev.logging_tools import Logging
 try:
-    from easydev.logging_tools import Logging
-    logger = Logging("sequana", "WARNING")
+    logger
 except:
-    import colorlog
-    logger = colorlog.getLogger("sequana")
+    logger = Logging("sequana", "WARNING")
 
 
 from easydev import CustomConfig
@@ -30,6 +29,7 @@ from .coverage import Coverage
 from .expdesign import ExpDesignAdapter
 from .fastq import FastQ, FastQC, Identifier
 from .fasta import FastA
+from .gff3 import GFF3
 from .freebayes_vcf_filter import VCF_freebayes
 from .freebayes_bcf_filter import BCF_freebayes
 from .itol import ITOL
@@ -43,7 +43,7 @@ from .running_median import RunningMedian
 from .snaketools import *
 from .snpeff import SnpEff
 from .sequence import DNA, RNA, Sequence, Repeats
-
+from .trf import TRF
 
 # The standalone app
 from . import scripts

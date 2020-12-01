@@ -31,14 +31,15 @@ rule sambamba_markdup:
         out = __sambamba_markdup__log_std,
         err = __sambamba_markdup__log_err
     params:
-        remove = config["sambamba_markdup"]["remove"],
+        # remove is now a keywords...
+        __remove = config["sambamba_markdup"]["remove"],
         tmp = config["sambamba_markdup"]["tmp_directory"]
     run:
         cmd = "sambamba markdup %s %s --tmpdir=%s" % (
             input['bam'], output['bam'], params['tmp']
         )
 
-        if params['remove']:
+        if params['__remove']:
             cmd += " --remove-duplicates"
         
         shell('%s > %s 2> %s' % (cmd, log['out'], log['err']))

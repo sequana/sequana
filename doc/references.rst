@@ -59,6 +59,12 @@ Access to online database (e.g. ENA)
     :members:
     :undoc-members:
 
+Enrichment
+----------
+.. automodule:: sequana.enrichment
+    :members:
+    :undoc-members:
+
 
 Experimental design
 ----------------------------

@@ -5,8 +5,10 @@ from sequana import sequana_data
 def test_rnadiff_volcano():
 
     c = RNADiffCompare(
-            sequana_data("rnadiff/rnadiff_onecond_1"),
-            sequana_data("rnadiff/rnadiff_onecond_2"))
+            sequana_data("rnadiff/rnadiff_onecond_1/tables/B3789-v1.surexpvsref.complete.xls"),
+            sequana_data("rnadiff/rnadiff_onecond_2/tables/B0000-v1.surexpvsref.complete.xls"))
+
+
     c.plot_volcano()
 
     c.plot_common_major_counts("down")

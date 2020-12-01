@@ -8,7 +8,7 @@ import glob
 
 _MAJOR               = 0
 _MINOR               = 9
-_MICRO               = 1
+_MICRO               = 5
 version              = '%d.%d.%d' % (_MAJOR, _MINOR, _MICRO)
 release              = '%d.%d' % (_MAJOR, _MINOR)
 
@@ -103,6 +103,7 @@ setup(
         'sequana.pipelines' : ['*/*'],
         'sequana.resources.data' : ['*.*'],  # use *.* for files and not ./adapters
         'sequana.resources.data.adapters' : ['*'],
+        'sequana.resources.templates' : ['*.R'],
         'sequana.resources.images' : ['*'],
         'sequana.resources.testing' : ['*'],
         'sequana.resources.testing.rnadiff' : ['*/tables/*'],
@@ -118,21 +119,16 @@ setup(
     entry_points = {
         'console_scripts':[
            'sequanix=sequana.gui.sequana_gui:main',
-           #'fastq_head=sequana.scripts.fastq_head:main',
-           #'fastq_count=sequana.scripts.fastq_count:main',
            'sequana_lane_merging=sequana.scripts.lane_merging:main',
            'sequana=sequana.scripts.main:main',
            'sequana_taxonomy=sequana.scripts.taxonomy:main',
            'sequana_coverage=sequana.scripts.coverage:main',
-           'sequana_summary=sequana.scripts.summary:main',
            'sequana_mapping=sequana.scripts.mapping:main',
            'sequana_compressor=sequana.scripts.compressor:main',
-           'sequana_report=sequana.scripts.reports:main',
            'sequana_vcf_filter=sequana.scripts.vcf_filter:main', # june 2018
            'sequana_bam_splitter=sequana.scripts.bam_splitter:main', # aug 2018
            'sequana_substractor=sequana.scripts.substractor:main', # march 2019
            'sequana_start_pipeline=sequana.scripts.start_pipeline:main', # dec 2019
-           'sequana_gtf_fixer=sequana.scripts.gtf_fixer:main' # jan 2019
         ],
         'sequana.module':[
             'sequana_coverage=sequana.modules_report.coverage:CoverageModule',

@@ -4,8 +4,8 @@ from sequana import ITOL, sequana_data
 
 
 
-
-def test_itol_format():
+# FIXME need a valid IP and API
+def _test_itol_format():
 
 
     itol = ITOL(sequana_data("test_itol_basic.tree.txt"))

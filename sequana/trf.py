@@ -6,8 +6,6 @@
 #
 #  File author(s):
 #      Thomas Cokelaer <thomas.cokelaer@pasteur.fr>
-#      Dimitri Desvillechabrol <dimitri.desvillechabrol@pasteur.fr>, 
-#          <d.desvillechabrol@gmail.com>
 #
 #  Distributed under the terms of the 3-clause BSD license.
 #  The full license is in the LICENSE file, distributed with this software.
@@ -18,43 +16,89 @@
 ##############################################################################
 import pandas as pd
 
+
+
+from sequana.lazy import pylab
+from sequana import logger
+
+logger.name = __name__
+
+
 __all__ = ["TRF"]
 
 
 class TRF():   # pragma: no cover
-    """
+    """Tandem Repeat Finder utilities
 
-    The data is not a CSV. It contains comments in the middle of the file to
+    The input data is the output of trf tool when using the -d option.
+    This is not a CSV file. It contains comments in the middle of the file to
     indicate the name of the contig.
 
+    The output filename has the following filename convention::
+
+        test.fa.2.5.7.80.10.50.2000.dat
+
+    where the numbers indicate the 7 input parameters:
+
+    * Match  = matching weight
+    * Mismatch  = mismatching penalty
+    * Delta = indel penalty
+    * PM = match probability (whole number)
+    * PI = indel probability (whole number)
+    * Minscore = minimum alignment score to report
+    * MaxPeriod = maximum period size to report
+
+    You may use ``-h`` to suppress html output.
+
+    Then, you can use this class to easly identify the pattern you want::
+
+        t = TRF("input.dat")
+        query = "length>100 and period_size==3 and entropy>0 and C>20 and A>20 and G>20"
+        t.df.query(query)
+
     """
-    def __init__(self, filename):
-        print('This is a draft class do not use')
+    def __init__(self, filename, verbose=False):
         self.filename = filename
-        self.df = self.scandata()
+        try:
+            # input can be the output of TRF or our trf dataframe
+            self.df = self.scandata(verbose=verbose)
+        except:
+            self.df = pd.read_csv(filename)
 
-    def scandata(self):
-        """
+    def __repr__(self):
+        N = len(self.df.seq1.unique())
+        msg =  "Number of unique pattern found: {}\n".format(N)
+        msg += "Number of entries: {}".format(len(self.df))
+        return msg
 
-        Tandem Repeats Finder Program written by:
+    def scandata(self, verbose=True, max_seq_length=20):
+        """scan output of trf and returns a dataframe
 
-        some info
+        The format of the output file looks like::
 
-        Sequence: chr1
+            Tandem Repeats Finder Program 
 
-        Parameters: 2 5 7 80 10 50 2000
+            some info
 
-        10001 10468 6 77.2 6 95 3 801 33 51 0 15 1.43 TAACCC TAACCCTA...
+            Sequence: chr1
 
-        Sequence: chr2
+            Parameters: 2 5 7 80 10 50 2000
 
-        Parameters: 2 5 7 80 10 50 2000
+            10001 10468 6 77.2 6 95 3 801 33 51 0 15 1.43 TAACCC TAACCCTA...
+            1 10 6 77.2 6 95 3 801 33 51 0 15 1.43 TAACCC TAACCCTA...
 
-        10001 10468 6 77.2 6 95 3 801 33 51 0 15 1.43 TAACCC TAACCCTA...
+            Sequence: chr2
 
+            Parameters: 2 5 7 80 10 50 2000
+
+            10001 10468 6 77.2 6 95 3 801 33 51 0 15 1.43 TAACCC TAACCCTA...
+
+        The dataframe stores a row for each sequence and each pattern found. For
+        instance, from the example above you will obtain 3 rows, two for the
+        first sequence, and one for the second sequence.
         """
         fin = open(self.filename, "r")
-        
+
         data = []
 
         sequence_name = None
@@ -63,18 +107,23 @@ class TRF():   # pragma: no cover
             line = fin.readline()
             if line.startswith("Sequence:"):
                 sequence_name = line.split()[1].strip()
-                print("scanning {}".format(sequence_name))
 
+        # now we read the rest of the file
+        count = 0
+        # If we concatenate several files, we also want to ignore the header
         for line in fin.readlines():
-            if len(line.strip()) == 0 or line.startswith("Parameters"):
-                continue
-            elif line.startswith('Sequence:'):
+            if line.startswith('Sequence:'):
                 sequence_name = line.split()[1].strip()
-                print("scanning {}".format(sequence_name))
+                count += 1
+                if count % 100000 == 0:
+                    logger.info("scanned {} sequences".format(count))
+                #logger.info("scanned {} sequences".format(count))
             else:
                 this_data = line.split()
-                assert len(this_data) == 15, this_data
-                data.append([sequence_name] + this_data)
+                if len(this_data) == 15:
+                    this_data[14] = this_data[14][0:max_seq_length]
+                    data.append([sequence_name] + this_data)
+        fin.close()
 
         df = pd.DataFrame(data)
         df.columns = ['sequence_name', 'start', 'end', 'period_size', 'CNV',
@@ -90,24 +139,41 @@ class TRF():   # pragma: no cover
             'percent_matches': float,
             'percent_indels': float,
             'size_consensus': float,
-            'score': 'float', 
+            'score': 'float',
             'CNV': 'float',
-            'entropy': 'float', 
+            'entropy': 'float',
             'period_size': 'float'
             })
+        df['length'] = df['end'] - df['start'] + 1
 
 
         return df
-
 
     def hist_cnvs(self, bins=50, CNVmin=10, motif=['CAG', 'AGC', 'GCA'],
             color="r", log=True):
         """
 
-        histogram of the CNVs related to a given motif.
+        histogram of the motif found in the list provided by users.
         As an example, this is triplet CAG. Note that we also add the shifted
         version AGC and GCA.
 
         """
         self.df.query("CNV>@CNVmin and seq1 in @motif").CNV.hist(bins=bins, log=log,
             color=color)
+        pylab.xlabel("CNV length (bp)")
+        pylab.ylabel("#")
+
+    def hist_period_size(self, bins=50):
+        self.df.period_size.hist(bins=bins)
+        pylab.xlabel("repeat length")
+
+    def hist_entropy(self, bins=50):
+        self.df.entropy.hist(bins=bins)
+        pylab.xlabel("entropy")
+
+
+    def hist_repet_by_sequence(self):
+        # How many repetiations per sequence 
+        pylab.hist([len(x) for x in self.df.groupby("sequence_name").groups.values()])
+        pylab.xlabel("# repetitions per sequence")
+

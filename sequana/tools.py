@@ -384,6 +384,7 @@ def genbank_features_parser(input_filename):
 
     :param str input_filename: genbank formated file
     """
+    logger.warning("deprecated. please use GenBank.genbank_features_parser instead")
     new_feature = {}
     records = {}
     feature_list = []

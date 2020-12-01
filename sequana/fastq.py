@@ -405,6 +405,23 @@ class FastQ(object):
             tozip = False
         return filename, tozip
 
+    def select_reads(self, read_identifiers, output_filename=None, progress=True):
+
+        fastq = pysam.FastxFile(self.filename)
+        if output_filename is None:
+            output_filename = self.filename + ".select"
+        
+        thisN = len(self)
+        pb = Progress(thisN) # since we scan the entire file
+        with open(output_filename, "w") as fh:
+            for i, read in enumerate(fastq):
+                if read.name in read_identifiers:
+                    fh.write(read.__str__() + "\n")
+                else:
+                    pass
+                if progress:
+                    pb.animate(i+1)
+
     def select_random_reads(self, N=None, output_filename="random.fastq"):
         """Select random reads and save in a file
 
@@ -892,7 +909,8 @@ class FastQC(object):
 
 
     """
-    def __init__(self, filename, max_sample=500000, dotile=False, verbose=True):
+    def __init__(self, filename, max_sample=500000, dotile=False, verbose=True,
+                 skip_nrows=0):
         """.. rubric:: constructor
 
         :param filename:
@@ -915,6 +933,9 @@ class FastQC(object):
 
         # Use only max_sample in some of the computation
         self.max_sample = min(max_sample, self.N)
+
+        # we may want to skip first rows 
+        self.skip_nrows = skip_nrows
 
         self.summary = {}
         self.fontsize = 16
@@ -952,6 +973,10 @@ class FastQC(object):
 
         with FastqReader(self.filename) as f:
             for i, record in enumerate(f):
+                if i <self.skip_nrows:
+                    continue
+                if i > self.max_sample + self.skip_nrows:
+                    break
                 N = len(record.sequence)
                 if N == 0:
                     raise ValueError("Read {} has a length equal to zero. Clean your FastQ files".format(i))
@@ -959,11 +984,10 @@ class FastQC(object):
 
                 # we can store all qualities and sequences reads, so
                 # just max_sample are stored:
-                if i < self.max_sample:
-                    quality = [ord(x) -33 for x in record.qualities]
-                    mean_qualities.append(sum(quality) / N)
-                    qualities.append(quality)
-                    sequences.append(record.sequence)
+                quality = [ord(x) -33 for x in record.qualities]
+                mean_qualities.append(sum(quality) / N)
+                qualities.append(quality)
+                sequences.append(record.sequence)
 
                 # store count of all qualities
                 for k in record.qualities:
@@ -987,6 +1011,7 @@ class FastQC(object):
 
         # other data
         self.qualities = qualities
+        # we may want to skip first rows 
         self.mean_qualities = mean_qualities
         self.minimum = int(self.lengths.min())
         self.maximum = int(self.lengths.max())
@@ -1032,11 +1057,12 @@ class FastQC(object):
         qualities = []
         with FastqReader(self.filename) as f:
             for i, record in enumerate(f):
-                if i < self.max_sample:
-                    quality = [ord(x) -33 for x in record.qualities]
-                    qualities.append(quality)
-                else:
+                if i <self.skip_nrows:
+                    continue
+                if i > self.max_sample + self.skip_nrows:
                     break
+                quality = [ord(x) -33 for x in record.qualities]
+                qualities.append(quality)
         return qualities
 
     def boxplot_quality(self, hold=False, ax=None):
@@ -1062,9 +1088,12 @@ class FastQC(object):
         tiles = {}
         with FastqReader(self.filename) as f:
             for i, record in enumerate(f):
-                if i < self.max_sample:
-                    identifier = Identifier(record.name)
-                    identifiers.append(identifier.info)
+                if i <self.skip_nrows:
+                    continue
+                if i > self.max_sample + self.skip_nrows:
+                    break
+                identifier = Identifier(record.name)
+                identifiers.append(identifier.info)
         tiles['x'] = [float(this['x_coordinate']) for this in identifiers]
         tiles['y'] = [float(this['y_coordinate']) for this in identifiers]
         tiles['tiles'] = [this['tile_number'] for this in identifiers]

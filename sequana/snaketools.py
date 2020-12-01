@@ -148,8 +148,7 @@ def plot_stats(inputdir=".", outputdir=".",
         sms = SnakeMakeStats("%s/stats.txt" % inputdir, N=N)
         sms.plot_and_save(outputdir=outputdir, filename=filename)
     except Exception as err:
-        logger.warning(err)
-        logger.warning("Could not process %s/stats.txt file" % inputdir)
+        logger.warning("Could not process stats.txt file. run snakemake with --stats stats.txt next time" )
 
 
 class ModuleFinderSingleton(object):
@@ -909,8 +908,8 @@ class PipelineManagerBase(object):
 
             sms.plot_and_save(outputdir=outputdir, filename=filename)
         except Exception as err:
-            logger.error(err)
-            logger.error("Could not process stats.txt file" )
+            logger.warning(err)
+            logger.warning("Could not process stats.txt file. run snakemake with --stats stats.txt nex time" )
 
     def message(self, msg):
         message(msg)
@@ -1000,6 +999,17 @@ class PipelineManagerBase(object):
 
 
 class PipelineManagerGeneric(PipelineManagerBase):
+    """This pipeline identifies all files that match the input pattern using the
+    FileFactory class.
+
+    Each sample name is a unique ID.
+    THis is not very convenient so, one can pass a function
+    to extract e.g. the filename as the unique key
+
+    def func(filename):
+        return filename.split("/")[-1].split('.', 1)[0]
+
+    """
     def __init__(self, name, config, sample_func=None):
         super(PipelineManagerGeneric, self).__init__(name, config)
 
@@ -1022,7 +1032,6 @@ class PipelineManagerGeneric(PipelineManagerBase):
         self.sample = "{sample}"
         self.basename = "{sample}/%s/{sample}"
         self.samples = None
-
         if sample_func:
             try:
                 self.samples = {sample_func(filename):filename for filename in self.ff.realpaths}
@@ -1030,7 +1039,6 @@ class PipelineManagerGeneric(PipelineManagerBase):
                 self.samples = None
         else:
             self.samples = {str(i+1):filename for i,filename in enumerate(self.ff.realpaths)}
-
 
 class PipelineManagerDirectory(PipelineManagerBase):
     """
@@ -1189,8 +1197,7 @@ def message(mes):
     meanwhile, one must use this function to print information.
 
     This adds the // -- characters in front of the prin statements."""
-    from easydev.console import purple
-    print("// -- " + purple(mes))
+    logger.info("// -- " + mes)
 
 
 class DOTParser(object):
@@ -1680,19 +1687,6 @@ class FastQFactory(FileFactory):
         return len(self.tags)
 
 
-"""class Init:
-    class __OnlyOnce:
-        def __init__(self, filename, namespace, mode="error"):
-            init(filename, namespace, mode=mode)
-    instance = None
-    def __init__(self, filename, namespace, mode="error"):
-        if not Init.instance:
-            Init.__OnlyOnce(filename, namespace, mode=mode)
-            instance = True
-        else:
-            pass
-"""
-
 
 def init(filename, namespace, mode="error"):
     """Defines the global variable __snakefile__ inside snakefiles
@@ -1771,7 +1765,7 @@ def build_dynamic_rule(code, directory):
 
 """
 def __add_stats_summary_json(json_list, parser):
-    # used by the denovo pipeline only
+    # used by the denovo pipeline only and quality_control
     if not parser.stats:
         return
     for jfile in json_list:

@@ -208,7 +208,46 @@ class FastA(object):
         stats = {}
         stats["N"] = len(self.sequences)
         stats["mean_length"] = mean(self.lengths)
+        from sequana.stats import N50, L50
+        stats["N50"] = N50(self.lengths)
+        stats["L50"] = L50(self.lengths)
+        stats["min_length"] = min(self.lengths)
+        stats["max_length"] = max(self.lengths)
         return stats
+
+    def summary(self, max_contigs=-1):
+        from pylab import mean, argmax
+        # used by sequana summary fasta
+        summary = {"number_of_contigs": len(self.sequences)}
+        summary["total_contigs_length"] = sum(self.lengths)
+        summary["mean_contig_length"] = mean(self.lengths)
+        summary["max_contig_length"] = max(self.lengths)
+        summary["min_contig_length"] = min(self.lengths)
+        N = 0
+        lengths = self.lengths[:]
+        positions = list(range(len(lengths)))
+        stats = self.get_stats()
+        print("#sample_name: {}".format(self.filename))
+        print("#N50: {}".format(stats['N50']))
+        print("#Ncontig: {}".format(stats['N']))
+        print("#L50: {}".format(stats['L50']))
+        print("#max_contig_length: {}".format(stats['max_length']))
+        print("#min_contig_length: {}".format(stats['min_length']))
+        print("#mean_contig_length: {}".format(stats['mean_length']))
+
+        print("contig name,length,count A,C,G,T,N")
+        if max_contigs == -1:
+            max_contigs = len(lengths) + 1
+        while lengths and N < max_contigs:
+            N += 1
+            index = argmax(lengths)
+            length = lengths.pop(index)
+            position = positions.pop(index)
+            sequence = self.sequences[position]
+            name = self.names[position]
+            print("{},{},{},{},{},{},{}".format(name, length, sequence.count('A'), sequence.count('C'),
+                sequence.count('G'), sequence.count('T'), sequence.count('N')))
+            
 
     def reverse_and_save(self, filename):
         with open(filename, "w") as fout:

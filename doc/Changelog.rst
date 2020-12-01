@@ -4,6 +4,68 @@ Changelog
 .. contents::
     :depth: 2
 
+0.9.5
+-----
+
+* rules fastqc: allows handling of bam files. remove sanity checks on empty files. 
+* rules falco: new rules added (similar to fastqc)
+* module snaketools: PipelineManagerGeneric set paired field to "undefined"
+  since this is suppose to deal with bam, or other non-fastq files
+* module fastqc now plots the pacbio phred score on the full y-axis range
+* for developers: In SequanaManager teardown, option to skip check_fastq_files
+
+
+0.9.4
+-----
+
+* faster gff module to be used by sequana_rnaseq>=0.9.19
+
+0.9.3
+-----
+
+general
+~~~~~~~~~
+
+* finalise the rnadiff HTML report with plotly visualisation
+* finalise the enrichmentf HTML report
+* template for rnadiff (rna differential analysis)
+* method in FastQ to extract some specific reads
+* add new application in main sequana tool:
+  - biomart: a tool to produce a CSV for a given dataset!mart/set of attributes
+  - summary: a tool to produce HTML for bam, fasta/fastq/bam, rnadiff results, enrichment for a rnadiff result
+  - fastq: can now merge several files
+  - gtf_fixer that replaces the script sequana_gtf_fixer
+* add quick_fix for sample sheet errors in iem.IEM class (used in
+  sequana_demultiplex pipeline)
+* Fix featurecounts package to include tolerance parameter
+* Fix bug for category in Dendogram
+
+for developers
+~~~~~~~~~~~~~~~
+
+* rules: star_index now sets automatically the IndexNbases parameter
+* removed sequana_summary from standalone now in the general sequana CLI
+* improved find_motif module with plots, pep8, better API
+* js: reverse papaparse
+
+0.9.2
+-----
+
+
+* add salmon module for the rnaseq pipeline
+* fix bug in multiqc plugin for bamtools used in sequana_mapper
+* some rules updates: (1) add_read_group has now the option
+"VALIDATION_STRINGENCY=SILENT" that seem to be required in newer version of
+picard. surprising that this error did not appear earlier since the issue seems
+old (https://github.com/Cibiv/NextGenMap/issues/3) (2)  mark_duplicates and
+features_counts rules needed o change some parameters, now keywords in snakemake
+* add new viz module called dendogram
+* add new report module for rnadiff. 
+* add new report module for KeggPathway and Panther
+* Add solution to convert ensembl ID to gene name fr the KeggPathwayEnrichment
+* Sequana main script has now a 'summary' command. Integrated the RNADiff and
+  BAMQC modules for now.
+
 0.9.1
 -----
 * Fix html syntax in the templates

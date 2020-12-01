@@ -51,24 +51,25 @@ rule fastqc_%(name)s:
         fastqc = __fastqc_%(name)s__log
     run:
         # if the content of the file is empty, this will fail. We need to
-        # touch  a file in such case.
-        from sequana import snaketools as sm
-        from sequana import FastQ
+        # touch  a file in such case. 
+        #from sequana import FastQ
         newinput = []
-        for i, this in enumerate(input.fastq):
-            fastq = FastQ(this)
-            # TODO: could just try to iterate once instead of computing the length
-            if len(fastq) != 0:
-                newinput.append(this)
-            else:
-                pass
-
-        if len(newinput):
-            shell(
-            " fastqc -t {threads} --outdir {params.wkdir} -f fastq "
-            " {newinput} {params.kargs} &> {log.fastqc}")
+        if isinstance(input.fastq, str):
+            input_fastq = [input.fastq]
         else:
-            pass
+            input_fastq = input.fastq
+
+        if len(input_fastq) != 0:
+            for this in input_fastq:
+                if this.endswith(".bam") or this.endswith("sam"):
+                    shell(
+                        " fastqc -t {threads} --outdir {params.wkdir} "
+                        " {input_fastq} {params.kargs} &> {log.fastqc}")  
+                else:
+                    shell(
+                        " fastqc -t {threads} --outdir {params.wkdir} -f fastq "
+                        " {input_fastq} {params.kargs} &> {log.fastqc}")
+
     '''
     from sequana.snaketools import build_dynamic_rule
     return build_dynamic_rule(fastqc_code % metadata, manager.pipeline_dir)

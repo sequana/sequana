@@ -27,6 +27,8 @@ rule pacbio_quality:
 
     """
     input: __pacbio_quality__input
+    params:
+        sample_name = __pacbio_quality__sample_name
     output:
         read_len   = "{sample}/images/hist_read_len_{sample}.png",
         GC_content = "{sample}/images/GC_content_{sample}.png",
@@ -86,8 +88,7 @@ rule pacbio_quality:
                     "gc_vs_length": output.GC_vs_len,
                     "hist_zmw": output.ZMW}
                 })
-            sample_name = output.summary[8:].rstrip(".json")
-            summary.update({'sample': sample_name})
+            summary.update({'sample': params.sample_name})
             summary.update({'generator': "sequana_pacbio_quality"})
             json.dump(summary, fh, indent=True, sort_keys=True)
         pylab.close()

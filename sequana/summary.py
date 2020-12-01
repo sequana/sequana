@@ -64,7 +64,7 @@ class Summary(object):
     def __init__(self, name, sample_name="undefined", data={}, caller=None,
             pipeline_version=None):
 
-        if os.path.exists(name):
+        if os.path.exists(name) and name.endswith('json'):
             with open(name, "r") as fin:
                 data = json.loads(fin.read())
                 self._name = data["name"]
@@ -72,6 +72,7 @@ class Summary(object):
                 self._data_description = data["data_description"]
                 self.sample_name = data["sample_name"]
                 self.data = data["data"]
+                self.params = data.get("params", {})
                 if "caller" in data.keys():
                     self.caller = data["caller"]
                 else:
@@ -87,6 +88,7 @@ class Summary(object):
             self.data = data
             self.caller = caller
             self.pipeline_version = pipeline_version
+            self.params = {}
 
     def as_dict(self):
         return {
@@ -96,10 +98,13 @@ class Summary(object):
             "pipeline_version": self.pipeline_version,
             "date": self.date,
             "data": self.data,
+            "params": self.params,
             "description": self.description,
             "data_description": self.data_description,
             "caller": self.caller,
     }
+    def add_params(self, params):
+        self.params = params
 
     def to_json(self, filename):
         import json

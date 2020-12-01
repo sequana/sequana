@@ -10,7 +10,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   <!-- Javascript static files  -->
-  <script src="{{ module.path }}js/jquery-3.2.1.min.js"></script>
+  <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+  <script src="{{ module.path }}js/jquery-3.5.1.min.js"></script>
   <script src="{{ module.path }}js/bootstrap.min.js"></script>
   <script src="{{ module.path }}js/jquery.dropdown.min.js"></script>
   <script src="{{ module.path }}js/jquery.dataTables.min.js"></script>
@@ -18,12 +19,14 @@
   <script src="{{ module.path }}js/buttons.html5.min.js"></script>
   <script src="{{ module.path }}js/papaparse.min.js"></script>
   <script src="{{ module.path }}js/canvasjs.min.js"></script>
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 
   <!-- CSS static files -->
   <link type="text/css" rel="stylesheet" href="{{ module.path }}css/bootstrap.min.css" />
   <link type="text/css" rel="stylesheet" href="{{ module.path }}css/jquery.dropdown.min.css" />
   <link type="text/css" rel="stylesheet" href="{{ module.path }}css/jquery.dataTables.min.css" />
   <link type="text/css" rel="stylesheet" href="{{ module.path }}css/buttons.dataTables.min.css" />
+  <link type="text/css" rel="stylesheet" href="https://raw.githubusercontent.com/sequana/sequana/master/sequana/resources/js/bootstrap.min.js" />
   <link type="text/css" rel="stylesheet" href="{{ module.path }}css/report.css" />
 </head>
 
@@ -48,12 +51,17 @@ and <a href="https://github.com/sequana/sequana_{{ config.pipeline_name}}">sequa
     
   <footer class="footer">
     <div class="container">
+{% if config.pipeline_version %} 
     This pipeline is part of the  <a href="http://sequana.readthedocs.io"
-target="_blank">Sequana project</a>. If you use this report, please consider
-citing us. Visit the  <a href="http://sequana.readthedocs.io">How to cite ?</a>
-section. You may also visit the pipeline 
-page <a
-href="https://github.com/sequana/sequana_{{config.pipeline_name}}/stargazers">{{config.pipeline_name}}</a> and star us.  
+target="_blank">Sequana project</a>. Please consider citing us (<a
+href="http://sequana.readthedocs.io">How to cite?</a> or contribute with new <a
+href="https://github.com/sequana/sequana/issues/new/choose">suggestions</a>)
+
+{% else %}
+Report generated with <b>sequana summary {{ config.module_command }} </b> command. Please consider citing us (<a href="http://sequana.readthedocs.io">How to cite ?</a>). You may also <a href="https://github.com/sequana/sequana_{{config.pipeline_name}}/stargazers">{{config.pipeline_name}}</a> star us or contribute with new <a href="https://github.com/sequana/sequana/issues/new/choose">suggestions.</a>
+
+{% endif %}
+
         <br>Generated with Sequana ({{ config.time_now }})
  
     </div>

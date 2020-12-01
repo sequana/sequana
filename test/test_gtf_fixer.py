@@ -1,4 +1,4 @@
-from sequana.scripts import gtf_fixer
+from sequana.gtf import GTFFixer
 from sequana import sequana_data
 from easydev import TempFile
 
@@ -8,7 +8,8 @@ def test_input():
     filename = sequana_data('test_gtf_fixer.gtf')
 
     with TempFile() as fout:
-        df = gtf_fixer.main([prog, '--input', filename, "--output", fout.name])
+        gtf = GTFFixer(filename)
+        gtf.fix(fout.name)
 
 
 

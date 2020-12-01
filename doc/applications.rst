@@ -74,12 +74,19 @@ sequana_summary
 
 :Description: Prints basic statistics about a set of NGS input files. Currently
     handles Fastq (gzipped or not) or BED files (coverage).
+:Usage:
+
+    sequana summary file1.fastq.gz
 
 
 sequana_mapping
 ------------------
 :Description: a simple application to map reads onto a genome given one or two
     FastQ files (gzipped) and a reference.
+
+    sequana_mapping --file1 H1_R1.fastq.gz --file2 H1_R2.fastq.gz  --reference temp.fa
+
+will map all reads on the reference using bwa.
 
 .. _standalone_sequana_taxonomy:
 
@@ -106,23 +113,20 @@ A database of 8Gb is available. See
 https://github.com/sequana/data/tree/master/sequana_db1 for instructions and
 details (bacteria, viruses, human, organelles, ...).
 
-fastq related: fastq_count
------------------------------
+fastq related
+-------------
 
 :Description: count number of reads and lines
 
-Example::
+::
 
-    fastq_count --input test.fastq.gz
+    sequana fastq test.fastq.gz --count-reads
 
-fastq related: fastq_head
------------------------------
+:Description: extracts head of fastq files
 
-:Description: Extract head of a fastq files (zipped or not)
+::
 
-Example::
-
-    fastq_head --input input.fastq.gz --nlines 10000 --ouput output.fastq.gz
+    sequana fastq test.fastq.gz --head 10000 -o output.fastq.gz
 
 
 sequana_compressor

@@ -15,6 +15,7 @@
 #
 ##############################################################################
 "IEM class"
+import sys
 import collections
 from sequana import logger
 logger.name = __name__
@@ -86,12 +87,15 @@ class IEM():
     :references: illumina specifications 970-2017-004.pdf
     """
 
-    def __init__(self, filename):
-        logger.warning("Not finalised use with care")
+    def __init__(self, filename, tryme=False):
         self.filename = filename
-        self._scanner()
+        if tryme:
+            try:self._scanner()
+            except:pass
+        else:
+            self._scanner()
 
-    def _line_cleaner(self, line):
+    def _line_cleaner(self, line, line_count):
         # We can get rid of EOL and spaces
         line = line.strip()
 
@@ -99,13 +103,14 @@ class IEM():
         if len(line) == 0:
             return line
 
-        # if we are dealing with a section title, we can cleanup the 
+        # if we are dealing with a section title, we can cleanup the
         # line. A section must start with '[' and ends with ']' but
-        # there could be spaces and commads. 
+        # there could be spaces and commands.
         if line.startswith('['):
             #[Header], ,, ,\n becomes [Header]
             line = line.strip(", ") # note the space AND comma
-            assert line.endswith("]")
+            if line.endswith("]") is False:
+                raise ValueError("Found incorrect syntax on line {}: {}. Maybe an extra character such as ; ".format(line_count, line))
 
         return line
 
@@ -114,8 +119,8 @@ class IEM():
         current_section = None
         data = collections.defaultdict(list)
         with open(self.filename, "r") as fin:
-            for line in fin.readlines():
-                line = self._line_cleaner(line)
+            for line_count, line in enumerate(fin.readlines()):
+                line = self._line_cleaner(line, line_count+1)
                 if len(line) == 0:
                     continue
                 if line.startswith("[") and line.endswith("]"):
@@ -124,10 +129,10 @@ class IEM():
                 else:
                     data[current_section] += [line]
 
-        if "Header" not in data.keys():
+        if "Header" not in data.keys(): #pragma: no cover
             logger.warning("Input file must contain [Header]")
 
-        if "Data" not in data.keys():
+        if "Data" not in data.keys(): #pragma: no cover
             logger.warning("Input file must contain [Data]")
         self.data = data
 
@@ -135,12 +140,53 @@ class IEM():
         import pandas as pd
         import io
         df = pd.read_csv(io.StringIO("\n".join(self.data['Data'])))
-        assert len(df.columns)> 1, "Invalid sample sheet in the Data section"
+        if len(df.columns)==0:
+            raise ValueError("Invalid sample sheet in the Data section")
         return df
     df = property(_get_df)
 
     def validate(self):
-        raise NotImplementedError
+        """This method checks whether the sample sheet is correctly formatted
+
+        Checks for:
+            * presence of ; at the end of lines indicated an edition with excel that
+              wrongly transformed the data into a pure CSV file
+            * inconsistent numbers of columns in the [DATA] section, which must be
+              CSV-like section
+            * Extra lines at the end are ignored
+
+        """
+        # could use logger, but simpler for now
+        # Note that this code is part of sequana_demultiplex
+        prefix = "ERROR  [sequana_pipelines.demultiplex.check_samplesheet]: "
+        try:
+            with open(self.filename, "r") as fp:
+                line = fp.readline()
+                cnt = 1
+                if line.rstrip().endswith(";") or line.rstrip().endswith(","): #pragma: no cover
+                    sys.exit(prefix + "Unexpected ; or , found at the end of line {} (and possibly others). Please use IEM  to format your SampleSheet. Try sequana_fix_samplesheet for extra ; or , ".format(cnt))
+
+                while line:
+                    line = fp.readline()
+                    cnt += 1
+                    if "[Data]" in line:
+                        line = fp.readline()
+                        cnt += 1
+                        if len(line.split(',')) < 2 or "Sample" not in line: #pragma:  no cover
+                            sys.exit(prefix + ": No header found after [DATA] section")
+                        nb_col = len(line.split(','))
+                        # now we read the first line below [Data]
+                        line = fp.readline()
+                        cnt += 1
+                        while line:
+                            if line.strip() and len(line.split(',')) != nb_col:
+                                sys.exit(prefix + "Different number of column in [DATA] section on line: "+str(cnt))
+                            line = fp.readline()
+                            cnt += 1
+        except Exception as e: #pragma: no cover
+            raise ValueError("type error: " + str(e))
+        return 0
+
 
     def _get_settings(self):
         data = {}
@@ -166,7 +212,7 @@ class IEM():
             return self.data['Name']
     name = property(_get_name)
 
-    def to_fasta(self, adapter_name):
+    def to_fasta(self, adapter_name=""):
         ar1 = self.settings['Adapter']
         try:ar2 = self.settings['AdapterRead2']
         except: ar2 =""
@@ -184,6 +230,21 @@ class IEM():
                 print(">{adapter}_index_{name}|name:{name}|seq:{index}".format(**frmt))
                 print(read)
 
+    def quick_fix(self, output_filename):
 
+        found_data = False
+        with open(self.filename) as fin:
+             with open(output_filename, "w") as fout:
+                 for line in fin.readlines():
 
+                     if line.startswith('[Data]'):
+                         found_data = True
+                    
+                     if found_data:
+                         line = line.replace(";", ",")
+                     else:
+                         line = line.strip().rstrip(";")
+                         line = line.replace(";", ",")
+                         line = line.strip().rstrip(",")
+                     fout.write(line.strip("\n")+"\n")
 

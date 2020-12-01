@@ -1,0 +1,65 @@
+
+
+def falco_dynamic(name, manager):
+    metadata = {'name':name, "project":manager.sample}
+    falco_code = '''
+
+rule falco_%(name)s:
+    """Calls Falco on input data sets (paired or not)
+
+    This rule is a **dynamic** rule (see developers guide). 
+
+    Required input:
+        - __falco_%(name)s__input_fastq:
+
+    Required output:
+        - __falco_%(name)s__output_done
+
+    Required parameters
+        - __falco_%(name)s__wkdir: the working directory
+
+    Log:
+        - logs/falco_%(name)s/falco.log
+
+    Required configuration:
+        .. code-block:: yaml
+
+            falco:
+                options: "-nogroup"   # a string with falco options
+                #thread:              # optional. if not set, 4 threads are used
+
+    References:
+        - hhttps://f1000research.com/articles/8-1874
+
+    """
+    # we could have a dynamic search or based on config file
+    input:
+        fastq = __falco_%(name)s__input_fastq
+    output:
+        touch(__falco_%(name)s__output_done)
+    params:
+        wkdir = __falco_%(name)s__wkdir,
+        kargs = config['falco']['options']
+    threads: config['falco']['threads'] if 'thread' in config['falco'] else 4
+    log:
+        falco = __falco_%(name)s__log
+    run:
+        # if the content of the file is empty, this will fail. We need to
+        # touch  a file in such case.
+        from sequana import snaketools as sm
+        from sequana import FastQ
+        newinput = []
+        # falco v0.1 process all fastq sequentially and erase the previous one
+        # with new ones
+        fastq_files = list(input.fastq)
+        fastq_file = fastq_files[0]
+        fastq = FastQ(fastq_file)
+        if len(fastq) == 0:
+            pass
+        else:
+            shell(
+            " falco -t {threads} --outdir {params.wkdir} "
+            " {newinput} {params.kargs} &> {log.falco}")
+    '''
+    from sequana.snaketools import build_dynamic_rule
+    return build_dynamic_rule(falco_code % metadata, manager.pipeline_dir)
