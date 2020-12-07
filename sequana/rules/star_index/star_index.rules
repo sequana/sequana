@@ -26,13 +26,10 @@ rule star_index:
     threads:
         config['star_mapping']['threads']
     run:
-        """
         from sequana import FastA
-        ff = FastA(input)
+        ff = FastA(input.fasta)
         genome_length = sum(ff.lengths)
         import math
         Nbases = min(14, round(math.log2(genome_length)/2 - 1))
-
         shell(f"STAR --runMode genomeGenerate --genomeFastaFiles {input.fasta} --genomeDir {params.wkdir} --runThreadN {threads} genomeSAindexNbases {Nbases}")
-        shell(samtools faidx {input.fasta})
-        """
+        shell("samtools faidx {input.fasta}")
