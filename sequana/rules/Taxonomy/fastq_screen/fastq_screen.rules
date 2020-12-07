@@ -23,7 +23,7 @@ rule fastq_screen:
         txt = __fastq_screen__output
     threads: 4
     params:
-        configFile = config['fastq_screen']['conf'],
+        configFile = config['fastq_screen']['config_file'],
         options = config['fastq_screen']['options'],
         aligner = config['fastq_screen']['aligner']
     run:
