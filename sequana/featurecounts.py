@@ -78,6 +78,7 @@ def get_most_probable_strand_consensus(rnaseq_folder, tolerance):
             for sample_folder in sample_folders
         ]
     )
+    df = df[['0','1','2', 'strandness', 'strand']]
 
     logger.info(f"Strand guessing for each files (tolerance: {tolerance}):\n")
     logger.info(df)
