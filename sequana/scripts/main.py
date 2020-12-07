@@ -180,6 +180,14 @@ command""")
     default=False,
     is_flag=True,
     help="""to run only panther db enrichment""")
+@click.option("--enrichment-plot-linearx", type=click.BOOL,
+    default=False,
+    is_flag=True,
+    help="""Default is log2 fold enrichment in the plots. use this to use linear scale""")
+@click.option("--enrichment-compute-levels", type=click.BOOL,
+    default=False,
+    is_flag=True,
+    help="""to compute the GO levels (slow) in the plots""")
 @click.option("--enrichment-max-genes", type=click.INT,
     default=3000,
     help="""Maximum number of genes (up or down) to use in PantherDB, which is limited to about 3000""")
@@ -265,6 +273,8 @@ def summary(**kwargs):
                   "mapper": kwargs['enrichment_biomart'],
                   "kegg_background": kwargs['enrichment_kegg_background'],
                   "preload_directory": kwargs['enrichment_kegg_pathways_directory'],
+                  "plot_logx": not kwargs['enrichment_plot_linearx'],
+                  "plot_compute_levels": kwargs['enrichment_compute_levels'],
                 }
         filename = kwargs['enrichment_biomart']
         if filename and os.path.exists(filename) is False:
