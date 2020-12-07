@@ -208,6 +208,7 @@ class FastA(object):
         stats = {}
         stats["N"] = len(self.sequences)
         stats["mean_length"] = mean(self.lengths)
+        stats["total_length"] = sum(self.lengths)
         from sequana.stats import N50, L50
         stats["N50"] = N50(self.lengths)
         stats["L50"] = L50(self.lengths)
@@ -228,6 +229,7 @@ class FastA(object):
         positions = list(range(len(lengths)))
         stats = self.get_stats()
         print("#sample_name: {}".format(self.filename))
+        print("#total length: {}".format(stats['total_length']))
         print("#N50: {}".format(stats['N50']))
         print("#Ncontig: {}".format(stats['N']))
         print("#L50: {}".format(stats['L50']))
