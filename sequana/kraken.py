@@ -1621,19 +1621,8 @@ class MultiKrakenResults2():
                 data[sample][db] = round(summary[db]['C'] / total * 100,2)
         df = pd.DataFrame(data)
         df = df.fillna(0)
-        df = df.sort_index(ascending=False)
-        df = df.sort_index(ascending=False, axis=1)
-
-
-        # We sort the databases from best to worst. We ignore the nreads columns of
-        # course, which is not related to the ability of each DB to classify the
-        # reads
-        index = df.loc[df.index.drop("nreads")].mean(axis=1).sort_values(ascending=False).index
-        df = df.loc[list(index) + ["nreads"]]
-
-        # sort the columns by sample names
-        #df = df.sort_index(ascending=False, axis=1)
-        #df.sum(axis=1).sort_values(ascending=False).index[0]
+        df = df.loc[["unclassified"]+[x for x in df.index if x!="unclassified"]]
+        df.sort_index(axis=1, inplace=True) 
         return df
 
     def plot_stacked_hist(self, output_filename=None, dpi=200, kind="barh", 
@@ -1646,9 +1635,6 @@ class MultiKrakenResults2():
         :param sorting_method: only by sample name for now
         """
         df = self.get_df(sorting_method=sorting_method)
-
-
-        df = df.loc[["unclassified"]+[x for x in df.index if x!="unclassified"]]
         df = df.T
         del df['nreads']
 
