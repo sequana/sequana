@@ -4,6 +4,24 @@ Changelog
 .. contents::
     :depth: 2
 
+0.9.6
+-----
+
+* BUGS:
+
+    * Fix star_index rule (regression bug) reported in https://github.com/sequana/sequana_rnaseq/issues/7
+    
+
+* IMPROVMENTS/CHANGES:
+
+    * add plot() method in Repeats class
+    * featurecounts: sort the output dataframe columns 
+    * sequana CLI: summary/enrichment sub command allows to switch between log/linear scale + option to compute the GO levels and empty plots are now shown 
+
+
+
+
+
 0.9.5
 -----
 
