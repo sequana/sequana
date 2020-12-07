@@ -888,3 +888,16 @@ class Repeats(object):
         if logy:
             pylab.semilogy()
 
+
+    def plot(self, clf=True):
+        if clf:
+            pylab.clf()
+        M = self.df_shustring.shustring_length.max()
+        print(M)
+        M = int(M / 1000) + 1 
+        for i in range(M):
+            pylab.axhline(i*1000, ls='--', color='grey')
+        pylab.plot(self.df_shustring.shustring_length)
+        pylab.xlabel('position (bp)')
+        pylab.ylabel('Length of repeats')
+        pylab.ylim(bottom=0)
