@@ -322,7 +322,6 @@ class PantherEnrichment:
         progress=True,
     ):
         # taxid=83333 # ecoli
-
         if taxid is None:
             taxid = self.taxon
         if isinstance(mygenes, list):
