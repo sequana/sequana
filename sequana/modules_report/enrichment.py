@@ -39,6 +39,8 @@ class Enrichment(SequanaBaseModule):
                         "kegg_background": None,
                         "mapper": None,
                         "preload_directoryr": None,
+                        'plot_compute_levels': False,
+                        'plot_logx': True
                         },
                 go_only=False,
                 kegg_only=False,
@@ -206,58 +208,69 @@ categories. </p>
 
         html_down = ""
         for case, case_name in zip([all_cases, self.pe.MF, self.pe.BP, self.pe.CC], case_names):
-            def plot_go_terms_down(filename, ontologies, case_name):
+            df = self.pe.plot_go_terms("down", ontologies=case,
+                                              compute_levels=False)
+            def plot_go_terms_down(filename, ontologies, case_name, df):
                 df = self.pe.plot_go_terms("down", ontologies=ontologies,
-                                                  compute_levels=False)
+                                                  compute_levels=self.enrichment_params['plot_compute_levels'],
+                                                  log=self.enrichment_params['plot_logx'])
                 self._temp_df[case_name] = df.copy()
                 self._plus[case_name] = sum(df.plus_minus == '+')
                 self._minus[case_name] = sum(df.plus_minus == '-')
                 pylab.savefig("Panther_down_{}.png".format(case_name))
                 pylab.savefig(filename)
                 pylab.close()
-            image = self.create_embedded_png(plot_go_terms_down, "filename",
+            if len(df):
+                image = self.create_embedded_png(plot_go_terms_down, "filename",
                                              style=style, ontologies=case,
-                                             case_name=case_name)
-            html_down += "<h4>Down - {}</h4><p>For {} ({}), we found {} go terms. Showing 50 here below (at most). The full list is downlodable from the CSV file hereafter.</p>".format(case_name, case_name, case, 
+                                             case_name=case_name, df=df)
+                html_down += "<h4>Down - {}</h4><p>For {} ({}), we found {} go terms. Showing 50 here below (at most). The full list is downlodable from the CSV file hereafter.</p>".format(case_name, case_name, case, 
                 self._plus[case_name]+ self._minus[case_name]) 
-            html_down += image + " <br>"
-            html_down += get_html_table(self._temp_df[case_name], "GO_table_{}".format(case_name))
-        
+                html_down += image + " <br>"
+                html_down += get_html_table(self._temp_df[case_name], "GO_table_{}".format(case_name))
+            else:
+                html_down += "<h4>Down - {}</h4><p>For {} ({}), we found 0 enriched go terms. </p><br>".format(case_name, case_name, case) 
+
         filenames = []
         for case, case_name in zip([self.pe.MF, self.pe.BP, self.pe.CC], ["MF","BP","CC"]):
             filename = "Chart_down_{}.png".format(case_name)
-            if len(self._temp_df[case_name]):
+            if case_name in self._temp_df and len(self._temp_df[case_name]):
                 logger.info("Saving chart for case {} (down)".format(case_name))
                 self.pe.save_chart(self._temp_df[case_name], filename)
                 filenames.append(filename)
         fotorama_down = "<h4>Charts down</h2>" + self.add_fotorama(filenames)
-        
+
         # all up cases
         self._temp_df = {}
         self._minus = {}
         self._plus = {}
         html_up = ""
         for case, case_name in zip([all_cases, self.pe.MF, self.pe.BP, self.pe.CC], case_names):
-            def plot_go_terms_up(filename, ontologies, case_name):
-                df = self.pe.plot_go_terms("up", ontologies=ontologies,
-                                                 compute_levels=False)
+            df = self.pe.plot_go_terms("up", ontologies=case,
+                                                  compute_levels=self.enrichment_params['plot_compute_levels'],
+                                                  log=self.enrichment_params['plot_logx'])
+            def plot_go_terms_up(filename, ontologies, case_name, df):
                 self._temp_df[case_name] = df.copy()
                 self._plus[case_name] = sum(df.plus_minus == '+')
                 self._minus[case_name] = sum(df.plus_minus == '-')
                 pylab.savefig("Panther_up_{}.png".format(case_name))
                 pylab.savefig(filename)
                 pylab.close()
-            image = self.create_embedded_png(plot_go_terms_up, "filename",
+            if len(df):
+                image = self.create_embedded_png(plot_go_terms_up, "filename",
                                              style=style, ontologies=case,
-                                             case_name=case_name)
-            html_up += "<h4>Up - {}</h4><p>For {} ({}), we found {} go terms. Showing 50 here below (at most). The full list is downlodable from the CSV file hereafter.</p>".format(case_name, case_name, case, 
-                self._plus[case_name]+ self._minus[case_name]) 
-            html_up += image + " <br>"
+                                             case_name=case_name,df=df)
+                html_up += "<h4>Up - {}</h4><p>For {} ({}), we found {} go terms. Showing 50 here below (at most). The full list is downlodable from the CSV file hereafter.</p>".format(case_name, case_name, case, 
+                    self._plus[case_name]+ self._minus[case_name]) 
+                html_up += image + " <br>"
+                html_up += get_html_table(self._temp_df[case_name], "GO_table_{}".format(case_name))
+            else:
+                html_up += "<h4>Up - {}</h4><p>For {} ({}), we found 0 enriched go terms. </p>".format(case_name, case_name, case) 
 
         filenames = []
         for case, case_name in zip([self.pe.MF, self.pe.BP, self.pe.CC], ["MF","BP","CC"]):
             filename = "Chart_up_{}.png".format(case_name)
-            if len(self._temp_df[case_name]):
+            if case_name in self._temp_df and len(self._temp_df[case_name]):
                 logger.info("Saving chart for case {} (up)".format(case_name))
                 self.pe.save_chart(self._temp_df[case_name], filename)
                 filenames.append(filename)
@@ -365,6 +378,15 @@ categories. </p>
 
         Ndown = len(df_down)
         Nup = len(df_up)
+
+        if Ndown == 0:
+            img_barplot_down = ""
+            img_scatter_down = ""
+            fotorana_down = ""
+        if Nup == 0:
+            img_barplot_up = ""
+            img_scatter_up = ""
+            fotorana_up = ""
 
         html = f"""
 <h3>2.1 - KEGG pathways down regulated</h3>
