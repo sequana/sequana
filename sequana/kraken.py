@@ -1622,7 +1622,8 @@ class MultiKrakenResults2():
         df = pd.DataFrame(data)
         df = df.fillna(0)
         df = df.loc[["unclassified"]+[x for x in df.index if x!="unclassified"]]
-        df.sort_index(axis=1, inplace=True) 
+        #df = df.sort_index(ascending=False)
+        df = df.sort_index(ascending=False, axis=1)
         return df
 
     def plot_stacked_hist(self, output_filename=None, dpi=200, kind="barh", 
