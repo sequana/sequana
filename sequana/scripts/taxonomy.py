@@ -102,7 +102,7 @@ Issues: http://github.com/sequana/sequana
         self.add_argument("--unclassified-out",
             help="save unclassified sequences to filename")
         self.add_argument("--classified-out",
-            help="save unclassified sequences to filename")
+            help="save classified sequences to filename")
         self.add_argument("--confidence", type=float, default=0, 
             help="confidence (kraken2 DB only)")
         self.add_argument("--update-taxonomy", action="store_true",
