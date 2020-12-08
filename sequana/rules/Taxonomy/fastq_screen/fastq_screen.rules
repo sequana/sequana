@@ -30,7 +30,6 @@ rule fastq_screen:
         import tempfile
         tempdir = tempfile.mkdtemp()
         assert params['aligner'] in ['bowtie2', 'bowtie1']
-        #print("//{} {} {}".format(input[0], log[0], output[0])) 
         shell("fastq_screen --outdir {tempdir} --threads {threads} "
               "--conf {params.configFile} {params.options} --aligner {params.aligner} {input} " 
               " 1> {log[0]} 2>{log[0]}")

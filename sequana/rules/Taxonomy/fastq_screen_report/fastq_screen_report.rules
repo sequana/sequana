@@ -1,7 +1,6 @@
 rule fastq_screen_report:
     """
     fastq_screen_report rule draw a svg plot after fastq_screen. 
-    The database used is dedicated to Biomics Pole (Institut Pasteur)
 
     Required input:
         __fastq_screen_report__input: a output fastq_screen directory
@@ -18,9 +17,6 @@ rule fastq_screen_report:
         __fastq_screen_report__figure
     run:
 
-        print(input[0])
-        print(log[0])
-        print(output[0])
         from re import findall
         import os
         import matplotlib.pyplot as pl
