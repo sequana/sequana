@@ -18,9 +18,10 @@
 """Heatmap and dendograms"""
 from sequana.lazy import pylab
 from sequana.lazy import scipy
-from sequana.lazy import numpy as np  
+from sequana.lazy import numpy as np
 from sequana.lazy import pandas as pd
-#FIXME speed up this import
+
+# FIXME speed up this import
 import scipy.cluster.hierarchy as hierarchy
 import scipy.spatial.distance as distance
 
@@ -95,7 +96,7 @@ def get_clustermap_data():
 
 
 class Clustermap:
-    """ Heatmap and dendrograms based on seaborn Clustermap
+    """Heatmap and dendrograms based on seaborn Clustermap
 
     .. plot::
         :include-source:
@@ -123,19 +124,19 @@ class Clustermap:
         """.. rubric:: Constructor
 
         :param data_df: a dataframe.
-        :param sample_groups_df: a dataframe with sample id as index (same as 
-            in data_df columns) and a group definition per column. Use to 
+        :param sample_groups_df: a dataframe with sample id as index (same as
+            in data_df columns) and a group definition per column. Use to
             produce the x axis color groups.
-        :param sample_group_sel: a list of the columns to select from the 
+        :param sample_group_sel: a list of the columns to select from the
             sample_groups_df.
         :param sample_groups_palette: the palette to use for sample color groups.
-        :param gene_groups_df: a dataframe with gene id as index (same as in 
-            data_df columns) and a group definition per column. Use to produce 
+        :param gene_groups_df: a dataframe with gene id as index (same as in
+            data_df columns) and a group definition per column. Use to produce
             the y axis color groups.
         :param gene_group_sel: a list of the columns to select from the gene_groups_df.
         :param gene_groups_palette: the palette to use for gene color groups.
-        :param ytickslabels: "auto" for classical heatmap behaviour, [] for no 
-            ticks or a pandas Series giving the mapping between the index (gene 
+        :param ytickslabels: "auto" for classical heatmap behaviour, [] for no
+            ticks or a pandas Series giving the mapping between the index (gene
             names in data_df) and the gene names to be used for the heatmap
         :param kwargs: All other kwargs are passed to seaborn.Clustermap.
 
@@ -183,7 +184,7 @@ class Clustermap:
         cmap = sns.diverging_palette(220, 10, as_cmap=True)
         cmap.set_bad("grey", 1.0)
 
-        sns.clustermap(
+        p = sns.clustermap(
             self.data_df,
             cmap=cmap,
             col_colors=self.groups_col_df,
@@ -191,6 +192,8 @@ class Clustermap:
             row_colors=self.gene_groups_df,
             **self.kwargs,
         )
+
+        return p
 
 
 class Heatmap(Linkage):
@@ -236,7 +239,7 @@ class Heatmap(Linkage):
         :param cmap: colormap. any matplotlib accepted or combo of colors as
             defined in colormap package (pypi)
         :param col_side_colors:
-        :param row_side_colors: 
+        :param row_side_colors:
 
 
         """
@@ -367,6 +370,7 @@ class Heatmap(Linkage):
             cmap = self.params.cmap
         try:
             import colormap
+
             cmap = colormap.cmap_builder(cmap)
         except:
             pass
@@ -375,7 +379,8 @@ class Heatmap(Linkage):
         row_header = self.frame.index
         column_header = self.frame.columns
 
-        import matplotlib 
+        import matplotlib
+
         # FIXME something clever for the fontsize
         if len(row_header) > 100 or len(column_header) > 100:
             matplotlib.rcParams["font.size"] = 6
