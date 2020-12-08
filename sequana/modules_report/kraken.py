@@ -91,17 +91,22 @@ Besides, be aware that closely related species may not be classified precisely.
 """.format(extra, self.directory.split(os.sep, 1)[1], 
             self.png_to_embedded_png(pngimage))
 
+        url_ncbi = "https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id={}"
+        df['links'] = [url_ncbi.format(taxon) for taxon in df['taxon']]
         datatable = DataTable(df, "kraken", index=False)
         # add links
         if "ena" in df.columns:
             urlena = "http://www.ebi.ac.uk/ena/data/view/"
             datatable.datatable.set_links_to_column("ena",
                 [urlena + this for this in df['ena']])
+       
+        datatable.datatable.set_links_to_column("links", "taxon")
+
         datatable.datatable.datatable_options = {
             'scrollX': '300px',
             'pageLength': 30,
             'scrollCollapse': 'true',
-            'dom': 'irtpB',
+            'dom': 'Bfrtip',
             "paging": "false",
             "order": [[ 2, "desc"]],
             'buttons': ['copy', 'csv']}
