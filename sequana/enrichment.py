@@ -721,7 +721,7 @@ class PantherEnrichment:
 
         yax = pylab.gca().get_yaxis()
         try:
-            pad = [x.label.get_window_extent().width for x in yax.majorTicks]
+            pad = [x.label1.get_window_extent().width for x in yax.majorTicks]
             yax.set_tick_params(pad=max(pad))
         except:
             yax.set_tick_params(pad=60 * fontsize * 0.7)
