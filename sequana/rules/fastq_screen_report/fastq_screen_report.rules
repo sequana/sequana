@@ -1,0 +1,101 @@
+rule fastq_screen_report:
+    """
+    fastq_screen_report rule draw a svg plot after fastq_screen. 
+
+    Required input:
+        __fastq_screen_report__input: a output fastq_screen directory
+
+    Required output:
+        __fastq_screen_report__figure: fastq_screen plot in svg format
+    """
+
+    input :
+        __fastq_screen_report__input,
+    log :
+        __fastq_screen_report__logs
+    output:
+        __fastq_screen_report__figure
+    run:
+
+        from re import findall
+        import os
+        import matplotlib.pyplot as pl
+        pl.style.use('ggplot')
+        import csv
+        from numpy import array, arange
+
+        species = []
+        ohol = []
+        mhol = []
+        ohml = []
+        mhml = []
+        nohit = ""
+
+        for line in csv.reader(open(input[0], "r"), dialect="excel-tab") :
+            if(len(line) == 0) :
+                continue
+            if(line[0].startswith("#")) :
+                continue
+            if(line[0].startswith("Library")) or (line[0].startswith("Genome")):
+                continue
+            if (line[0].startswith("%Hit")) :
+                ## get the number of no hit
+                nohit = findall(r'\d+\.\d+',str(line))
+                break
+
+            species.append(line[0])
+            ohol.append(float(line[5]))
+            mhol.append(float(line[7]))
+            ohml.append(float(line[9]))
+            mhml.append(float(line[11]))
+        ohol = array(ohol)
+        mhol = array(mhol)
+        ohml = array(ohml)
+        mhml = array(mhml)
+
+        fig = pl.figure(figsize=(24,10))
+        ind = arange(len(species))
+        pl.bar(ind, tuple(ohol),width=0.8, color="#0000FF", label="unique")
+        pl.bar(ind, tuple(mhol),width=0.8, color="#6699FF", 
+            bottom=tuple(ohol), label="multimap")
+        pl.bar(ind, tuple(ohml),width=0.8, color="#FF0000", 
+            bottom=tuple(ohol+mhol), label="conserved")
+        pl.bar(ind, tuple(mhml),width=0.8, color="#FF6347", 
+            bottom=tuple(ohol+mhol+ohml), label="repeat")
+        p5 = pl.bar(32, nohit, color="#6699FF")
+        species.append("no hit")
+        ind = arange(len(species))
+
+        pl.title("%s" % input[0].replace("_screen.txt","").split("/")[-1])
+        pl.ylabel("%")
+        pl.ylim((0,105))
+        pl.xlim(-0.5,32.5)
+        pl.xticks(ind, species, rotation="vertical")
+        pl.yticks(arange(0,110,10))
+        pl.legend( loc='upper right', bbox_to_anchor=(0.99, 0.9), fancybox=True)
+
+        ##add phylum
+        pl.axvspan(-0.5,2.5,facecolor='#008000', alpha=0.3,label="Mammals")
+        pl.annotate('Mammals', xy=(1, 100), xycoords='data')
+
+        pl.axvspan(3.5,8.5,facecolor='#008000', alpha=0.2,label="Fungi")
+        pl.annotate('Fungi', xy=(5, 100), xycoords='data')
+
+        pl.axvspan(8.5,13.5,facecolor='#008000', alpha=0.1,label="Gram+")
+        pl.annotate('Gram+', xy=(10, 100), xycoords='data')
+
+        pl.axvspan(13.5,22.5,facecolor='#ADFF2F', alpha=0.1,label="Gram-")
+        pl.annotate('Gram-', xy=(18, 100), xycoords='data')
+
+        pl.axvspan(22.5,24.5,facecolor='#ADFF2F', alpha=0.2,label="Insects")
+        pl.annotate('Insects', xy=(23, 100), xycoords='data')
+
+        pl.axvspan(24.5,28.5,facecolor='#FFD700', alpha=0.2,label="Protozoa")
+        pl.annotate('Protozoa', xy=(26, 100), xycoords='data')
+
+        pl.axvspan(28.5,31.5,facecolor='#FFD700', alpha=0.3,label="viruses")
+        pl.annotate('Viruses', xy=(30, 100), xycoords='data')
+        pl.tight_layout()
+        fig.savefig(output[0],format='svg')
+        pl.close()
+
