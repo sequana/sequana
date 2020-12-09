@@ -20,6 +20,7 @@ import os
 # from bioconvert/io/gff3 and adapted later on
 from sequana.annotations import Annotation
 from easydev import do_profile
+from sequana import logger
 
 __all__ = ["GFF3"]
 
@@ -179,7 +180,7 @@ class GFF3(Annotation):
         return text.replace("%3B",";").replace("%3D","=").replace("%26","&").replace("%2C",",")
 
     def create_files_for_rnadiff(self, outname, genetic_type="gene",
-        ID="Name", fields=['Name']):
+        ID="Name", fields=['Name'], merge_identical_id=True):
         """Creates two files required for the RNADiff analysis following
         sequana_rnaseq pipeline
 
@@ -190,6 +191,12 @@ class GFF3(Annotation):
             attributes found in the GFF for the given type. By default, 'Name'.
             Used as first column in the two ouptut file.
         :param fields: the fields to be save in the outname_info.tsv file
+        :param merge_identical_id: it may happen that the same gene **Name** has two
+            entries (e.g in e-coli with 2 unique IDs have the same name with an
+            annotation such as  partI and part II). If so, feature
+            counts is clever enough to deal with it. Here, we need to merge the
+            entries and sum the length together. Ideally, one should not use the
+            Name but ID or gene_id or locus_tag.
         :return: nothing
 
         This functions reads the GFF file and creates two files:
@@ -227,6 +234,17 @@ class GFF3(Annotation):
         df.sort_values('Gene_id')[['Gene_id', 'Length']].to_csv(
             "{}_gene_lengths.tsv".format(outname), sep='\t',index=None)
 
+        if merge_identical_id:
+            duplicated = df[df.Gene_id.duplicated()].Gene_id.drop_duplicates()
+            if len(duplicated):
+                logger.warning("Dropping {} duplicated {}(s)".format(len(duplicated), ID))
+            for name in duplicated.values:
+                S = df.query("Gene_id == @name").Length.sum()
+                items = df.query("Gene_id == @name").index
+                df.loc[items,"Length"] = S
+                df.drop_duplicates(subset=["Gene_id"])
+
+
         # Second file (redundant) is also required by the rnadiff pipeline
         for this in fields:
             data = df.attributes.apply(lambda x: x.get(this, "NA"))
@@ -234,3 +252,5 @@ class GFF3(Annotation):
 
         data = df.sort_values('Gene_id')[["Gene_id"] +  fields]
         data.to_csv("{}_info.tsv".format(outname), sep="\t", index=None)
+
+        #return df
