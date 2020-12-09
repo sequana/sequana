@@ -4,7 +4,8 @@ from PyQt5 import QtWidgets as QW
 from easydev import isurl_reachable
 import os
 
-def main(args=None):
+
+def main(args=None): #pragma: no cover
     app = QW.QApplication(sys.argv)
 
     if len(sys.argv) == 2:
