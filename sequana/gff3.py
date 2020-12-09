@@ -231,8 +231,6 @@ class GFF3(Annotation):
         length = df.stop - df.start
         df['Gene_id'] = identifiers
         df['Length'] = df.stop - df.start + 1
-        df.sort_values('Gene_id')[['Gene_id', 'Length']].to_csv(
-            "{}_gene_lengths.tsv".format(outname), sep='\t',index=None)
 
         if merge_identical_id:
             duplicated = df[df.Gene_id.duplicated()].Gene_id.drop_duplicates()
@@ -242,7 +240,10 @@ class GFF3(Annotation):
                 S = df.query("Gene_id == @name").Length.sum()
                 items = df.query("Gene_id == @name").index
                 df.loc[items,"Length"] = S
-                df.drop_duplicates(subset=["Gene_id"])
+            df = df.drop_duplicates(subset=["Gene_id"])
+
+        df.sort_values('Gene_id')[['Gene_id', 'Length']].to_csv(
+            "{}_gene_lengths.tsv".format(outname), sep='\t',index=None)
 
 
         # Second file (redundant) is also required by the rnadiff pipeline
@@ -253,4 +254,4 @@ class GFF3(Annotation):
         data = df.sort_values('Gene_id')[["Gene_id"] +  fields]
         data.to_csv("{}_info.tsv".format(outname), sep="\t", index=None)
 
-        #return df
+        return df
