@@ -113,7 +113,7 @@ class Volcano(object):
 
         if self.color == "auto":
             self.df["color"] = self.df.apply(coloring, axis=1)
-        else:
+        else: #pragma: no cover
             self.df["color"] = self.color
 
     def plot(
@@ -140,7 +140,7 @@ class Volcano(object):
         """
         pylab.clf()
 
-        if add_broken_axes:
+        if add_broken_axes: #pragma: no cover
             from brokenaxes import brokenaxes
 
             _ylims = broken_axes.get("ylims", None)

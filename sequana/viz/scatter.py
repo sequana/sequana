@@ -147,7 +147,7 @@ class ScatterHist(VizInput2D):
             Y0 = offset_y + Hh + gap
             Xoff = offset_x + W + gap
             Yoff = offset_y #Y0 #+ H + gap
-        else:
+        else: #pragma: no cover
             raise ValueError("scatter_position must be 'top left', 'top right', 'bottom left', 'bottom right'")
 
         facecolor = kargs.get('facecolor', 'lightgrey')
@@ -181,7 +181,7 @@ class ScatterHist(VizInput2D):
             ax_scatter.xaxis.set_ticks_position('top')
             ax_hist_y.yaxis.set_ticks_position('right')
             ax_hist_x.xaxis.set_ticks_position('bottom')
-        else:
+        else: #pragma: no cover
             raise ValueError("scatter_position must be 'top left', 'top right', 'bottom left', 'bottom right'")
 
         ax_scatter.scatter(df.x, df.y, **kargs_scatter)

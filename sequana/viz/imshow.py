@@ -1,3 +1,19 @@
+# -*- coding: utf-8 -*-
+#
+#  This file is part of Sequana software
+#
+#  Copyright (c) 2016 - Sequana Development Team
+#
+#  File author(s):
+#      Thomas Cokelaer <thomas.cokelaer@pasteur.fr>
+#
+#  Distributed under the terms of the 3-clause BSD license.
+#  The full license is in the LICENSE file, distributed with this software.
+#
+#  website: https://github.com/sequana/sequana
+#  documentation: http://sequana.readthedocs.io
+#
+##############################################################################
 """Imshow utility"""
 from sequana.viz.core import VizInputSquare
 from sequana.lazy import pylab
@@ -37,7 +53,6 @@ class Imshow(VizInputSquare):
         """
         super(Imshow, self).__init__(x, verbose=verbose)
 
-    
     def plot(self, interpolation='None', aspect='auto', cmap='hot', tight_layout=True,
         colorbar=True, fontsize_x=None, fontsize_y=None, rotation_x=90,
         xticks_on=True, yticks_on=True, **kargs):
@@ -82,16 +97,9 @@ class Imshow(VizInputSquare):
         if tight_layout:
             pylab.tight_layout()
 
-
         # For some reasons, in newest version of python/mpl, this is required
         # for ylim, not for xlim
         y1,y2 = pylab.ylim()
         pylab.ylim([y1+0.5, y2-0.5])
-
-
-
-
-
-
 
 
