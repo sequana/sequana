@@ -1,0 +1,38 @@
+rule fastq_screen:
+    """
+    FastQ Screen allows you to screen a library of sequences in FastQ format against a set of sequence databases so you can see if the composition of the library matches with what you expect.
+
+    Required input:
+        __fastq_screen__input: a output fastq_screen directory
+
+    Required output:
+        __fastq_screen__output: fastq_screen directory results
+
+    Config:
+        .. code-block:: yaml
+
+            fastq_screen:
+                conf:  # a valid path to a fastq_screen config file
+
+    """
+    input:
+        __fastq_screen__input
+    log:
+        __fastq_screen__logs
+    output:
+        txt = __fastq_screen__output
+    threads: 4
+    params:
+        configFile = config['fastq_screen']['config_file'],
+        options = config['fastq_screen']['options'],
+        aligner = config['fastq_screen']['aligner']
+    run:
+        import tempfile
+        tempdir = tempfile.mkdtemp()
+        assert params['aligner'] in ['bowtie2', 'bowtie1']
+        shell("fastq_screen --outdir {tempdir} --threads {threads} "
+              "--conf {params.configFile} {params.options} --aligner {params.aligner} {input} " 
+              " 1> {log[0]} 2>{log[0]}")
+        outdir = output[0].rsplit("/", 1)
+        shell("mv {}/* {}".format(tempdir, outdir[0]))
+
