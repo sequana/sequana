@@ -841,6 +841,8 @@ class RNADiffResults:
                 hover_name = "gene_id"
             elif "ID" in self.df.columns:
                 hover_name = "ID"
+            elif "locus_tag" in self.df.columns:
+                hover_name = "locus_tag"
             else:
                 hover_name = None
             fig = px.scatter(
