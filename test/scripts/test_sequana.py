@@ -33,7 +33,7 @@ def test_sequana_app():
     with TempFile() as fout:
         results = runner.invoke(script.gtf_fixer, 
             ['--input', filename, "--output", fout.name])
-    
+
 
 
 def test_sequana_app_user():
