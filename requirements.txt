@@ -18,6 +18,7 @@ mock
 multiqc
 packaging
 pandas>=0.22
+plotly
 psutil
 pykwalify>=1.6
 pyopengl
