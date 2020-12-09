@@ -15,15 +15,20 @@
 #  documentation: http://sequana.readthedocs.io
 #
 ##############################################################################
-from pathlib import Path
-import pandas as pd
-from sequana import logger
 import re
+from pathlib import Path
+
+import pandas as pd
+
+from sequana.lazy import pylab
+from sequana import logger
 
 logger.name = __name__
 
 
-__all__ = ['get_most_probable_strand_consensus', 'get_most_probable_strand']
+__all__ = ['get_most_probable_strand_consensus', 'get_most_probable_strand',
+    'MultiFeatureCount', 'FeatureCount']
+
 
 
 def get_most_probable_strand(sample_folder, tolerance):
@@ -90,6 +95,37 @@ def get_most_probable_strand_consensus(rnaseq_folder, tolerance):
         most_probable = -1
 
     return most_probable, df
+
+
+
+class MultiFeatureCount():
+    # USED in rnaseq pipeline
+
+    def __init__(self, rnaseq_folder='.', tolerance=0.1):
+        self.tolerance = tolerance
+        self.rnaseq_folder = rnaseq_folder
+
+    def get_most_probable_strand_consensus(self):
+        most_probable, df = get_most_probable_strand_consensus(
+            self.rnaseq_folder,
+            self.tolerance)
+        return most_probable, df
+
+    def plot_strandness(self, fontsize=12, output_filename='strand_summary.png',
+        savefig=False):
+        # USED in rnaseq pipeline
+        most_probable, df = self.get_most_probable_strand_consensus()
+
+        df = df.sort_index(ascending=False)
+        df['strandness'] = df['strandness'].T
+        df['strandness'].plot( kind='barh')
+        pylab.xlim([0, 1])
+        pylab.grid(True)
+        pylab.axvline(self.tolerance, ls='--', color='r')
+        pylab.xlabel("Strandness", fontsize=fontsize)
+        pylab.tight_layout()
+        if savefig:
+            pylab.savefig(output_filename)
 
 
 
@@ -183,24 +219,3 @@ class FeatureCount:
         return new_name
 
 
-class MultiFeatureCount:
-    """ IN DEV. Read multiple features. NOT FUNCTIONAL YET
-    """
-
-    def __init__(
-        self,
-        filenames,
-        clean_sample_names=True,
-        extra_name_rm=["_Aligned"],
-        drop_loc=True,
-    ):
-        self.filenames = filenames
-        self.clean_sample_names = clean_sample_names
-        self.extra_name_rm = extra_name_rm
-        self.drop_loc = drop_loc
-        self._data = []
-
-        self._df = self._get_df()
-
-    def _get_df(self):
-        pass
