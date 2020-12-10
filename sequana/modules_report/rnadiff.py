@@ -63,11 +63,9 @@ class RNAdiffModule(SequanaBaseModule):
         """
         S = self.rnadiff.summary()
 
-
         A = len(self.df.query("padj<=0.05 and log2FoldChange>1"))
         B = len(self.df.query("padj<=0.05 and log2FoldChange<-1"))
 
-        
         self.sections.append({
             'name': "Summary",
             'anchor': 'filters_option',
@@ -79,7 +77,6 @@ below 1 (or -1) gives {} up and {} down (total of {}).</p>""".format(S.loc['up']
 S.loc['down'][0],
 S.loc['all'][0], A, B, A+B)
         })
-
 
     def add_cluster(self):
         style = "width:65%"
@@ -265,21 +262,39 @@ around 0 corresponding to the diﬀerentially expressed features. </p>"""
 
     def add_rnadiff_table(self):
         """ RNADiff.        """
-        datatable = DataTable(self.df, 'rnadiff')
+        from pylab import log10
+        df = self.df.copy()
+        log10padj = -log10(df['padj'])
+        df.insert(df.columns.get_loc('padj')+1, 'log10_padj', log10padj)
+
+
         # set options
-        datatable.datatable.datatable_options = {
-            'scrollX': 'true',
+        options = {'scrollX': 'true',
             'pageLength': 20,
             'scrollCollapse': 'true',
             'dom': 'Bfrtip',
-            'buttons': ['copy', 'csv']
-        }
-        js = datatable.create_javascript_function()
-        html_tab = datatable.create_datatable(float_format='%.3f')
+            'buttons': ['copy', 'csv']}
+
+        datatable = DataTable(df, 'rnadiff_all')
+        datatable.datatable.datatable_options = options
+        js_all = datatable.create_javascript_function()
+        html_tab_all = datatable.create_datatable(float_format='%.3e')
+
+        df_sign = df.query("padj<=0.05 and (log2FoldChange>0.5 or log2FoldChange<-0.5)")
+
+        datatable = DataTable(df_sign, 'rnadiff_sign')
+        datatable.datatable.datatable_options = options
+        js_sign = datatable.create_javascript_function()
+        html_tab_sign = datatable.create_datatable(float_format='%.3e')
+
+
         self.sections.append({
             'name': "Tables",
             'anchor': 'stats',
             'content':
-                "<p>This table gives all DGE results</p>{}{}"
-                .format(js, html_tab)
+                """<p>The following tables give all DGE results. The
+first table contains all significant genes (adjusted p-value below 0.05 and
+absolute fold change of at least 0.5). The following tables contains all results
+without any filtering. </p>{} {} {} {}"""
+                .format(js_sign, html_tab_sign, js_all, html_tab_all)
         })

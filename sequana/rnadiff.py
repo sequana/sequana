@@ -357,11 +357,10 @@ class RNADiffResults2:
             ylabel="% of null counts",
         )
 
-    def plot_pca(self, n_components=2, colors=None, plotly=False):
-        """
-        IN DEV ! NOT FUNCTIONNAL
+    def plot_pca(self, n_components=2, colors=None, plotly=False,
+        max_features=500):
 
-        TO VERIFY that colors/names indeces actually correspond !!!
+        """
 
         .. plot::
             :include-source:
@@ -386,7 +385,8 @@ class RNADiffResults2:
         p = PCA(self.counts_vst)
         if plotly is True:
             assert n_components == 3
-            variance = p.plot(n_components=n_components, colors=colors, show_plot=False)
+            variance = p.plot(n_components=n_components, colors=colors,
+                show_plot=False, max_features=max_features)
             from plotly import express as px
 
             df = pd.DataFrame(p.Xr)
@@ -411,7 +411,8 @@ class RNADiffResults2:
             )
             return fig
         else:
-            variance = p.plot(n_components=n_components, colors=self.meta.group_color)
+            variance = p.plot(n_components=n_components,
+                colors=self.meta.group_color ,max_features=max_features)
 
         return variance
 
@@ -916,7 +917,7 @@ class RNADiffResults:
         )
         return bax
 
-    def plot_pca(self, n_components=2, colors=None, plotly=False):
+    def plot_pca(self, n_components=2, colors=None, plotly=False, max_features=500):
         """
 
         .. plot::
@@ -948,7 +949,8 @@ class RNADiffResults:
 
         if plotly is True:
             assert n_components == 3
-            variance = p.plot(n_components=n_components, colors=colors, show_plot=False)
+            variance = p.plot(n_components=n_components, colors=colors,
+                show_plot=False, max_features=max_features)
             from plotly import express as px
 
             df = pd.DataFrame(p.Xr)
@@ -975,7 +977,8 @@ class RNADiffResults:
             )
             return fig
         else:
-            variance = p.plot(n_components=n_components, colors=colors)
+            variance = p.plot(n_components=n_components, colors=colors,
+                max_features=max_features)
 
         return variance
 
@@ -1006,7 +1009,7 @@ class RNADiffResults:
             candidates = [
                 x
                 for x in self.condition_names
-                if re.findall(r"^{}\d+".format(x), sample_name)
+                if re.findall(r"^{}\d+$".format(x), sample_name)
             ]
             if len(candidates) == 1:
                 return candidates[0]
@@ -1070,6 +1073,9 @@ class RNADiffResults:
         pylab.yticks(range(N), self.sample_names)
         pylab.xlabel("Reads captured by most important feature (%s)")
         pylab.ylabel("Sample")
+        try:
+            pylab.tight_layout()
+        except: pass
 
     def plot_dendogram(
         self,
