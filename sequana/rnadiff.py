@@ -596,9 +596,8 @@ class RNADiffResults2:
 class RNADiffResults:
     """An object representation of results coming from a RNADiff analysis."""
 
-    def __init__(
-        self, filename, alpha=0.05, log2_fc=0, pattern="*complete*xls", sep="\t"
-    ):
+    def __init__(self, filename, alpha=0.05, log2_fc=0, pattern="*complete*xls",
+            sep="\t", annotations="annotations.csv"):
         """.. rubric:: constructor
 
         :param rnadiff_results: can be a folder for a simple comparison, or an
@@ -606,7 +605,6 @@ class RNADiffResults:
         :param alpha:
         :param out_dir:
         :param log2_fc: the log2 fold change to apply
-
 
         Note that if the index or Name/ID columns are made of ensemble ID, they
         may be preceded by the gene: prefix, which is removed
@@ -661,6 +659,40 @@ class RNADiffResults:
         self.set_colors()
 
         self._set_gene_lists_one_condition()
+
+        self.read_annotations(annotations)
+
+    def read_annotations(self, annotation_file):
+        if os.path.exists(annotation_file):
+            annot = pd.read_csv(annotation_file)
+
+            if 'locus_tag' in annot.columns and \
+                len(set(self.df.index).intersection(annot.locus_tag)) == len(self.df.index):
+                key = "locus_tag"
+            elif 'Name' in annot.columns  and \
+                len(set(self.df.index).intersection(annot.Name)) == len(self.df.index):
+                key = "Name"
+            elif 'gene_id' in annot.columns and \
+                len(set(self.df.index).intersection(annot.gene_id)) == len(self.df.index):
+                key = "gene_id"
+            elif 'ID' in annot.columns and\
+                len(set(self.df.index).intersection(annot.ID)) == len(self.df.index):
+                key = "ID"
+            else:
+                logger.critical("Could not find a key to match annotation and DGE result")
+                return
+            # set index and restrict to the DGE entries only
+            annot = annot.set_index(key)
+            annot = annot.loc[self.df.index]
+
+            # now add interesting columns
+            for col in ['locus_tag', 'gene_id', 'ID', 'Name', 'gene_biotype']:
+                if col == key:
+                    continue
+                if col in annot.columns and col not in self.df.columns:
+                    self.df.insert(1, col, annot[col])
+        else:
+            logger.warning("annotation file {} does not exists. Skipping extra annotation in final report".format(annotation_file))
 
     def set_colors(self, colors=None):
         self.colors = {}

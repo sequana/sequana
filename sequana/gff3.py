@@ -128,7 +128,7 @@ class GFF3(Annotation):
 
         try:
             attributes = self.get_attributes()
-            for attribute in ['locus_tag', 'ID', 'Name', 'gene_id', 'description']:
+            for attribute in ['locus_tag', 'ID', 'Name', 'gene_id', 'description', 'gene_biotype']:
                 if attribute in attributes:
                     df[attribute] = [get_attr(x, attribute) for x in df['attributes']]
         except:
