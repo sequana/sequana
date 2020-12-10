@@ -31,6 +31,14 @@ class GFF3(Annotation):
 
     .. seealso:: https://github.com/The-Sequence-Ontology/Specifications/blob/master/gff3.md
 
+
+    ::
+
+        g = GFF3(filename)
+        df = g.get_df()
+        # prints info about duplicated attributes:
+        g.get_duplicated_attributes_per_type(self)
+
     """
     def __init__(self, filename):
         super(GFF3, self).__init__(filename)
@@ -56,6 +64,24 @@ class GFF3(Annotation):
                 L = len(split)
                 if L == 9:
                     types.add(split[2])
+        return sorted(types)
+
+    def get_attributes(self, sep=";"):
+        types = set()
+        with open(self.filename, "r") as reader:
+            for line in reader:
+                # Skip metadata and comments
+                if line.startswith("#"):
+                    continue
+                # Skip empty lines
+                if not line.strip():
+                    continue
+                split = line.rstrip().split("\t")
+                L = len(split)
+                if L == 9:
+                    for item in split[8].split(sep):
+                        item = item.split("=")[0]
+                        types.add(item)
         return sorted(types)
 
     def read(self):
@@ -99,9 +125,36 @@ class GFF3(Annotation):
                 return x[name]
             else:
                 return None
-        df['description'] = [get_attr(x, "description") for x in df['attributes']]
-        df['ID'] = [get_attr(x, 'ID') for x in df['attributes']]
+
+        try:
+            attributes = self.get_attributes()
+            for attribute in ['locus_tag', 'ID', 'Name', 'gene_id', 'description']:
+                if attribute in attributes:
+                    df[attribute] = [get_attr(x, attribute) for x in df['attributes']]
+        except:
+            df['ID'] = [get_attr(x, "ID") for x in df['attributes']]
+            df['description'] = [get_attr(x, "description") for x in df['attributes']]
+
         return df
+
+    def get_duplicated_attributes_per_type(self):
+        df = self.get_df()
+        types =  self.get_types()
+        attributes = self.get_attributes()
+
+        for typ in types:
+            print("{}: {} entries".format(typ, len(df.query("type==@typ"))))
+            for attr in attributes:
+                try: 
+                    dups = df.query("type==@typ")[attr].dropna().duplicated().sum()
+                    if dups > 0:
+                        print("  - {}:{} duplicates".format(attr,dups))
+                except: pass
+
+    def save_annotation_to_csv(self, filename="annotations.csv"):
+        df = self.get_df()
+        df.to_csv(filename, index=False)
+
 
     def _process_main_fields(self, fields):
         annotation = {}

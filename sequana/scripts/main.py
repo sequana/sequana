@@ -155,7 +155,8 @@ def samplesheet(**kwargs):
 @click.argument("name", type=click.Path(exists=True), nargs=-1)
 @click.option("--module",
     required=False,
-    type=click.Choice(["rnadiff", "bamqc", "bam", "enrichment", "fasta", "fastq"]))
+    type=click.Choice(["rnadiff", "bamqc", "bam", "enrichment", "fasta",
+        "fastq", "gff"]))
 @click.option("--enrichment-taxon", type=click.INT,
     #required=True,
     default=0,
@@ -232,6 +233,8 @@ def summary(**kwargs):
             module = "fastq"
         elif  names[0].endswith('.bam'):
             module = "bam"
+        elif  names[0].endswith('.gff') or names[0].endswith('gff3'):
+            module = "gff"
         elif names[0].endswith('fasta.gz') or names[0].endswith('.fasta'):
             module = "fasta"
         else:
@@ -303,7 +306,7 @@ def summary(**kwargs):
             ff = FastQC(filename, max_sample=1e6, verbose=False)
             stats = ff.get_stats()
             print(stats)
-    elif module == "bam": 
+    elif module == "bam":
         import pandas as pd
         from sequana import BAM
         for filename in names:
@@ -311,7 +314,16 @@ def summary(**kwargs):
             stats = ff.get_stats()
             df = pd.Series(stats).to_frame().T
             print(df)
-
+    elif module == "gff":
+        import pandas as pd
+        from sequana import GFF3
+        for filename in names:
+            ff = GFF3(filename)
+            print("#filename: {}".format(filename))
+            print("#Number of entries per genetic type:")
+            print(ff.get_df().value_counts('type').to_string())
+            print("#Number of duplicated attribute (if any) per attribute:")
+            ff.get_duplicated_attributes_per_type()
 
 
 
