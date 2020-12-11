@@ -4,6 +4,21 @@ Changelog
 .. contents::
     :depth: 2
 
+
+0.9.8 (dev)
+-----------
+
+* BUGS:
+
+  * fastqc.FastQC class can now hndle empty samples (no reads... yes it may
+    happen)
+
+* IMPROVEMENTS:
+
+  * CLI sequana summary can parse GFF and print summary information
+  * gff has a new method to export all annotations (atributes) in CSV file, used
+    in the newly update rnadiff modules
+
 0.9.7
 -----
 
