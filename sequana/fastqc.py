@@ -87,10 +87,14 @@ class FastQC():
 
         # TC: may 2020 Here we add the mean quality, which surprisingly is not
         # to be found in the basic statistics.
-        quality_sum = sum([x['quality'] * x['count'] for x in self.fastqc_data[s_name]['per_sequence_quality_scores']])
-        nreads = sum([x['count'] for x in self.fastqc_data[s_name]['per_sequence_quality_scores']])
-        mean_quality = quality_sum / float(nreads)
-        self.fastqc_data[s_name]['basic_statistics']['mean_quality'] = mean_quality
+        try:
+            quality_sum = sum([x['quality'] * x['count'] for x in self.fastqc_data[s_name]['per_sequence_quality_scores']])
+            nreads = sum([x['count'] for x in self.fastqc_data[s_name]['per_sequence_quality_scores']])
+            mean_quality = quality_sum / float(nreads)
+            self.fastqc_data[s_name]['basic_statistics']['mean_quality'] = mean_quality
+        except:
+            # if no sequence to be found; 
+            self.fastqc_data[s_name]['basic_statistics']['mean_quality'] = 0
 
         # Calculate the average sequence length (Basic Statistics gives a range)
         length_bp = 0
