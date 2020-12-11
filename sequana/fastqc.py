@@ -95,6 +95,7 @@ class FastQC():
         except:
             # if no sequence to be found; 
             self.fastqc_data[s_name]['basic_statistics']['mean_quality'] = 0
+            self.fastqc_data[s_name]['basic_statistics']['avg_sequence_length'] = 0
 
         # Calculate the average sequence length (Basic Statistics gives a range)
         length_bp = 0
