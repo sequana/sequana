@@ -127,15 +127,16 @@ class FastQC():
         ymax = max_score + 1
         xmax = 0
         for sample in self.fastqc_data.keys():
-            data = {self._avg_bp_from_range(d['base']): d['mean']
-                for d in self.fastqc_data[sample]['per_base_sequence_quality']}
-            df = pd.Series(data)
-            df.plot(color="k", alpha=0.5)
+            if "per_sequence_quality_scores" in self.fastqc_data[sample]:
+                data = {self._avg_bp_from_range(d['base']): d['mean']
+                    for d in self.fastqc_data[sample]['per_base_sequence_quality']}
+                df = pd.Series(data)
+                df.plot(color="k", alpha=0.5)
 
-            if df.max() > ymax:
-                ymax = df.max()
-            if df.index.max() > xmax:
-                xmax = df.index.max()
+                if df.max() > ymax:
+                    ymax = df.max()
+                if df.index.max() > xmax:
+                    xmax = df.index.max()
 
         if ax:
             pylab.sca(ax)
