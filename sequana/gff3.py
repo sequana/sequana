@@ -128,7 +128,7 @@ class GFF3(Annotation):
 
         try:
             attributes = self.get_attributes()
-            for attribute in ['locus_tag', 'ID', 'Name', 'gene_id', 'description', 'gene_biotype']:
+            for attribute in ['locus_tag', 'ID', 'Name', 'gene', 'gene_id', 'description', 'gene_biotype']:
                 if attribute in attributes:
                     df[attribute] = [get_attr(x, attribute) for x in df['attributes']]
         except:
@@ -154,6 +154,36 @@ class GFF3(Annotation):
     def save_annotation_to_csv(self, filename="annotations.csv"):
         df = self.get_df()
         df.to_csv(filename, index=False)
+
+    def save_gff_filtered(self, filename="filtered.gff", features=['gene'],
+        replace_seqid=None):
+        """
+
+        save_gff_filtered("test.gff", features=['misc_RNA', 'rRNA'], 
+                replace_seqid='locus_tag')
+        """
+        logger.info("Saving into {}".format(filename))
+        with open(filename, "w") as fout:
+
+            fout.write('#gff-version 3\n#Custom gff from sequana\n')
+            count = 0
+            from collections import defaultdict
+            counter = defaultdict(int)
+            df = self.get_df()
+            for x, y in df.iterrows():
+                if y['type'] in features:
+                    if replace_seqid:
+                        y['seqid'] = y['attributes'][replace_seqid]
+                    fout.write("{}\tfeature\tcustom\t{}\t{}\t.\t{}\t{}\t{}\n".format(y['seqid'],
+                            y['start'], y['stop'], y['strand'], 
+                            y['phase'], ";".join([f"{a}={b}" for a, b in  y['attributes'].items()])))
+                    counter[y['type']] += 1 
+                    count +=1
+            print("# kept {} entries".format(count))
+            for feature in features:
+                counter[feature] += 0
+                print("# {}: {} entries".format(feature,counter[feature]))
+
 
 
     def _process_main_fields(self, fields):
@@ -182,9 +212,10 @@ class GFF3(Annotation):
             annotation["strand"] = fields[6]
 
         # Phase
-        if fields[7] != ".":
+        if fields[7] != ".": 
             annotation["phase"] = int(fields[7]) % 3
-
+        else:
+            annotation['phase'] = fields[7]
         return annotation
 
     def _process_attributes(self, text):
