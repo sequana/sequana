@@ -22,6 +22,7 @@ from jinja2 import Environment, PackageLoader
 import subprocess
 import seaborn as sns
 import matplotlib.pyplot as plt
+from itertools import combinations
 
 from sequana.lazy import pandas as pd
 from sequana.lazy import pylab
@@ -50,7 +51,10 @@ class RNADiffAnalysis:
     :param beta_prior: Default False.
     :param independent_filtering: To let DESeq2 perform the independentFiltering or not.
     :param cooks_cutoff: To let DESeq2 decide for the CooksCutoff or specifying a value.
+    :param gff: Path to the corresponding gff3 to add annotations.
     :param threads: Number of threads to use
+    :param outdir: Path to output directory.
+    :param sep: The separator to use in dataframe exports
     """
 
     template_file = "rnadiff_light_template.R"
@@ -68,6 +72,7 @@ class RNADiffAnalysis:
         beta_prior=False,
         independent_filtering=True,
         cooks_cutoff=None,
+        gff=None,
         threads=4,
         outdir="rnadiff",
         sep="\t",
@@ -90,10 +95,11 @@ class RNADiffAnalysis:
         self.beta_prior = "TRUE" if beta_prior else "FALSE"
         self.independent_filtering = "TRUE" if independent_filtering else "FALSE"
         self.cooks_cutoff = cooks_cutoff if cooks_cutoff else "TRUE"
+        self.gff = gff
         self.threads = threads
 
         self.outdir = Path(outdir)
-        self.results = None
+        self.results = self._run()
 
     def __repr__(self):
         info = f"RNADiffAnalysis object:\n\
@@ -106,7 +112,7 @@ Groups overview:\n\
 
         return info
 
-    def run(self):
+    def _run(self):
         """Create outdir and a DESeq2 script from template for analysis. Then execute
         this script.
         """
@@ -128,21 +134,14 @@ Groups overview:\n\
         with open("rnadiff.out", "w") as f:
             f.write(p.stdout)
 
-    def get_results(self):
-        """Import results after run."""
-
-    def annotate(self, gff):
-        """Add annotation to deseq results (from mart or gff)
-        **IN DEV**
-        """
-        gff = GFF3(gff)
-        gff_df = gff.get_df()
-        gff_df.to_csv("test.csv")
+        return RNADiffResults2(
+            self.outdir, self.groups_tsv, group=self.condition, gff=self.gff
+        )
 
 
 class RNADiffTable:
-    def __init__(self, path, alpha=0.05, log2_fc=0, sep="\t"):
-        """"""
+    def __init__(self, path, gff=None, alpha=0.05, log2_fc=0, sep="\t"):
+        """ A representation of the results of a single rnadiff comparison """
         self.path = Path(path)
         self.name = self.path.name
 
@@ -222,6 +221,7 @@ class RNADiffResults2:
         self,
         rnadiff_folder,
         meta,
+        gff=None,
         pattern="*vs*_degs_DESeq2.tsv",
         alpha=0.05,
         log2_fc=0,
@@ -248,13 +248,17 @@ class RNADiffResults2:
             self.path / "overall_dds.tsv", index_col=0, sep=sep
         )
 
+        self.gff = gff
+        if gff:
+            self.annot = GFF3(self.gff).get_df()
+
         self._alpha = alpha
         self._log2_fc = log2_fc
 
-        self.results = [
-            RNADiffTable(compa, alpha=self._alpha, log2_fc=self._log2_fc)
+        self.results = {
+            compa.stem: RNADiffTable(compa, alpha=self._alpha, log2_fc=self._log2_fc)
             for compa in self.comparisons
-        ]
+        }
 
         self.df = self._get_total_df()
         self.filt_df = self._get_total_df(filtered=True)
@@ -266,10 +270,10 @@ class RNADiffResults2:
     @alpha.setter
     def alpha(self, value):
         self._alpha = value
-        self.results = [
-            RNADiffTable(compa, alpha=self._alpha, log2_fc=self._log2_fc)
+        self.results = {
+            compa.stem: RNADiffTable(compa, alpha=self._alpha, log2_fc=self._log2_fc)
             for compa in self.comparisons
-        ]
+        }
         self.filt_df = self._get_total_df(filtered=True)
 
     @property
@@ -279,10 +283,10 @@ class RNADiffResults2:
     @log2_fc.setter
     def log2_fc(self, value):
         self._log2_fc = value
-        self.results = [
-            RNADiffTable(compa, alpha=self._alpha, log2_fc=self._log2_fc)
+        self.results = {
+            compa.stem: RNADiffTable(compa, alpha=self._alpha, log2_fc=self._log2_fc)
             for compa in self.comparisons
-        ]
+        }
         self.filt_df = self._get_total_df(filtered=True)
 
     def _get_total_df(self, filtered=False):
@@ -290,7 +294,7 @@ class RNADiffResults2:
 
         dfs = []
 
-        for res in self.results:
+        for compa, res in self.results.items():
             df = res.filt_df if filtered else res.df
             df = df.transpose().reset_index()
             df["file"] = res.name
@@ -300,7 +304,7 @@ class RNADiffResults2:
         return pd.concat(dfs, sort=True)
 
     def summary(self):
-        return pd.concat(res.summary() for res in self.results)
+        return pd.concat(res.summary() for compa, res in self.results.items())
 
     def _get_meta(self, meta_file, sep, group, palette):
         """Import metadata from a table file and add color groups following the
@@ -317,6 +321,44 @@ class RNADiffResults2:
         plt.xticks(rotation=45, ha="right")
         plt.xlabel(xlabel)
         plt.ylabel(ylabel)
+
+    def get_specific_commons(self, direction, compas=None):
+        """From all the comparisons contained by the object, extract gene lists which
+        are common (but specific, ie a gene appear in a single list) comparing
+        all combinations of comparisons.
+
+        :param direction: The regulation direction (up, down or all) of the gene
+        lists to consider
+
+        :param compas: Specify a list of comparisons to consider (Comparisons
+        names can be found with self.results.keys()).
+        """
+
+        common_specific_dict = {}
+
+        if not compas:
+            compas = self.results.keys()
+
+        for size in range(1, len(compas)):
+            for compa_group in combinations(compas, size):
+                gene_lists = [
+                    self.results[compa].gene_lists[direction] for compa in compa_group
+                ]
+                commons = set.intersection(
+                    *[set(gene_list) for gene_list in gene_lists]
+                )
+
+                other_compas = [compa for compa in compas if compa not in compa_group]
+                genes_in_other_compas = {
+                    x
+                    for other_compa in other_compas
+                    for x in self.results[other_compa].gene_lists[direction]
+                }
+
+                commons = commons - genes_in_other_compas
+                common_specific_dict[compa_group] = commons
+
+        return common_specific_dict
 
     def plot_count_per_sample(self):
         """Number of mapped and annotated reads (i.e. counts) per sample. Each color
@@ -357,8 +399,7 @@ class RNADiffResults2:
             ylabel="% of null counts",
         )
 
-    def plot_pca(self, n_components=2, colors=None, plotly=False,
-        max_features=500):
+    def plot_pca(self, n_components=2, colors=None, plotly=False, max_features=500):
 
         """
 
@@ -385,8 +426,12 @@ class RNADiffResults2:
         p = PCA(self.counts_vst)
         if plotly is True:
             assert n_components == 3
-            variance = p.plot(n_components=n_components, colors=colors,
-                show_plot=False, max_features=max_features)
+            variance = p.plot(
+                n_components=n_components,
+                colors=colors,
+                show_plot=False,
+                max_features=max_features,
+            )
             from plotly import express as px
 
             df = pd.DataFrame(p.Xr)
@@ -411,8 +456,11 @@ class RNADiffResults2:
             )
             return fig
         else:
-            variance = p.plot(n_components=n_components,
-                colors=self.meta.group_color ,max_features=max_features)
+            variance = p.plot(
+                n_components=n_components,
+                colors=self.meta.group_color,
+                max_features=max_features,
+            )
 
         return variance
 
@@ -596,8 +644,15 @@ class RNADiffResults2:
 class RNADiffResults:
     """An object representation of results coming from a RNADiff analysis."""
 
-    def __init__(self, filename, alpha=0.05, log2_fc=0, pattern="*complete*xls",
-            sep="\t", annotations="annotations.csv"):
+    def __init__(
+        self,
+        filename,
+        alpha=0.05,
+        log2_fc=0,
+        pattern="*complete*xls",
+        sep="\t",
+        annotations="annotations.csv",
+    ):
         """.. rubric:: constructor
 
         :param rnadiff_results: can be a folder for a simple comparison, or an
@@ -666,33 +721,43 @@ class RNADiffResults:
         if os.path.exists(annotation_file):
             annot = pd.read_csv(annotation_file)
 
-            if 'locus_tag' in annot.columns and \
-                len(set(self.df.index).intersection(annot.locus_tag)) == len(self.df.index):
+            if "locus_tag" in annot.columns and len(
+                set(self.df.index).intersection(annot.locus_tag)
+            ) == len(self.df.index):
                 key = "locus_tag"
-            elif 'Name' in annot.columns  and \
-                len(set(self.df.index).intersection(annot.Name)) == len(self.df.index):
+            elif "Name" in annot.columns and len(
+                set(self.df.index).intersection(annot.Name)
+            ) == len(self.df.index):
                 key = "Name"
-            elif 'gene_id' in annot.columns and \
-                len(set(self.df.index).intersection(annot.gene_id)) == len(self.df.index):
+            elif "gene_id" in annot.columns and len(
+                set(self.df.index).intersection(annot.gene_id)
+            ) == len(self.df.index):
                 key = "gene_id"
-            elif 'ID' in annot.columns and\
-                len(set(self.df.index).intersection(annot.ID)) == len(self.df.index):
+            elif "ID" in annot.columns and len(
+                set(self.df.index).intersection(annot.ID)
+            ) == len(self.df.index):
                 key = "ID"
             else:
-                logger.critical("Could not find a key to match annotation and DGE result")
+                logger.critical(
+                    "Could not find a key to match annotation and DGE result"
+                )
                 return
             # set index and restrict to the DGE entries only
             annot = annot.set_index(key)
             annot = annot.loc[self.df.index]
 
             # now add interesting columns
-            for col in ['locus_tag', 'gene_id', 'ID', 'Name', 'gene_biotype']:
+            for col in ["locus_tag", "gene_id", "ID", "Name", "gene_biotype"]:
                 if col == key:
                     continue
                 if col in annot.columns and col not in self.df.columns:
                     self.df.insert(1, col, annot[col])
         else:
-            logger.warning("annotation file {} does not exists. Skipping extra annotation in final report".format(annotation_file))
+            logger.warning(
+                "annotation file {} does not exists. Skipping extra annotation in final report".format(
+                    annotation_file
+                )
+            )
 
     def set_colors(self, colors=None):
         self.colors = {}
@@ -981,8 +1046,12 @@ class RNADiffResults:
 
         if plotly is True:
             assert n_components == 3
-            variance = p.plot(n_components=n_components, colors=colors,
-                show_plot=False, max_features=max_features)
+            variance = p.plot(
+                n_components=n_components,
+                colors=colors,
+                show_plot=False,
+                max_features=max_features,
+            )
             from plotly import express as px
 
             df = pd.DataFrame(p.Xr)
@@ -1009,8 +1078,9 @@ class RNADiffResults:
             )
             return fig
         else:
-            variance = p.plot(n_components=n_components, colors=colors,
-                max_features=max_features)
+            variance = p.plot(
+                n_components=n_components, colors=colors, max_features=max_features
+            )
 
         return variance
 
@@ -1107,7 +1177,8 @@ class RNADiffResults:
         pylab.ylabel("Sample")
         try:
             pylab.tight_layout()
-        except: pass
+        except:
+            pass
 
     def plot_dendogram(
         self,
