@@ -52,6 +52,9 @@ class RNADiffAnalysis:
     :param independent_filtering: To let DESeq2 perform the independentFiltering or not.
     :param cooks_cutoff: To let DESeq2 decide for the CooksCutoff or specifying a value.
     :param gff: Path to the corresponding gff3 to add annotations.
+    :param fc_attribute: GFF attribute used in FeatureCounts.
+    :param fc_feature: GFF feaure used in FeatureCounts.
+    :param annot_cols: GFF attributes to use for results annotations
     :param threads: Number of threads to use
     :param outdir: Path to output directory.
     :param sep: The separator to use in dataframe exports
@@ -73,6 +76,9 @@ class RNADiffAnalysis:
         independent_filtering=True,
         cooks_cutoff=None,
         gff=None,
+        fc_attribute=None,
+        fc_feature=None,
+        annot_cols=["ID", "Name", "gene_biotype"],
         threads=4,
         outdir="rnadiff",
         sep="\t",
@@ -96,6 +102,8 @@ class RNADiffAnalysis:
         self.independent_filtering = "TRUE" if independent_filtering else "FALSE"
         self.cooks_cutoff = cooks_cutoff if cooks_cutoff else "TRUE"
         self.gff = gff
+        self.fc_feature = fc_feature
+        self.fc_attribute = fc_attribute
         self.threads = threads
 
         self.outdir = Path(outdir)
@@ -135,7 +143,12 @@ Groups overview:\n\
             f.write(p.stdout)
 
         return RNADiffResults2(
-            self.outdir, self.groups_tsv, group=self.condition, gff=self.gff
+            self.outdir,
+            self.groups_tsv,
+            group=self.condition,
+            gff=self.gff,
+            fc_feature=self.fc_feature,
+            fc_attribute=self.fc_attribute,
         )
 
 
@@ -222,12 +235,15 @@ class RNADiffResults2:
         rnadiff_folder,
         meta,
         gff=None,
+        fc_attribute=None,
+        fc_feature=None,
         pattern="*vs*_degs_DESeq2.tsv",
         alpha=0.05,
         log2_fc=0,
         sep="\t",
         palette=sns.color_palette(desat=0.6),
         group="condition",
+        annot_cols=["ID", "Name", "gene_biotype"],
     ):
         """"""
         self.path = Path(rnadiff_folder)
@@ -249,8 +265,9 @@ class RNADiffResults2:
         )
 
         self.gff = gff
-        if gff:
-            self.annot = GFF3(self.gff).get_df()
+        self.fc_attribute = fc_attribute
+        self.fc_feature = fc_feature
+        self.annot_cols = annot_cols
 
         self._alpha = alpha
         self._log2_fc = log2_fc
@@ -289,6 +306,16 @@ class RNADiffResults2:
         }
         self.filt_df = self._get_total_df(filtered=True)
 
+    def _get_annot(self):
+        """Get a properly formatted dataframe from the gff."""
+
+        df = GFF3(self.gff).get_df()
+        df.set_index(self.fc_feature, inplace=True)
+        df = df.query("type == @self.fc_attribute").loc[:, self.annot_cols]
+        df.columns = pd.MultiIndex.from_product([["annotation"], df.columns])
+
+        return df
+
     def _get_total_df(self, filtered=False):
         """Concatenate all rnadiff results in a single dataframe."""
 
@@ -301,7 +328,17 @@ class RNADiffResults2:
             df = df.set_index(["file", "index"])
             dfs.append(df)
 
-        return pd.concat(dfs, sort=True)
+        df = pd.concat(dfs, sort=True).transpose()
+
+        if self.gff and self.fc_attribute and self.fc_feature:
+            annot = self._get_annot()
+            df = pd.concat([annot, df], axis=1)
+        else:
+            logger.warning(
+                "Missing any of gff, fc_attribute or fc_feature. No annotation will be added."
+            )
+
+        return df
 
     def summary(self):
         return pd.concat(res.summary() for compa, res in self.results.items())
