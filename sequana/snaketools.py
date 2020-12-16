@@ -1884,6 +1884,7 @@ class OnSuccessCleaner(object):
             self.files_to_remove.append("{}.rules".format(pipeline_name))
         self.directories_to_remove = [".snakemake"]
         self.bundle = bundle
+        self.custom_commands = ""
 
     def add_bundle(self, input="*", output="bundle.tar.gz"):
         self.bundle = True
@@ -1895,7 +1896,7 @@ class OnSuccessCleaner(object):
         if self.bundle:
             makefile += "bundle:\n\ttar cvfz {} {}\n".format(
                 self.bundle_output, self.bundle_input)
-        makefile += "clean: clean_files clean_directories\n"
+        makefile += "clean: clean_files clean_directories custom\n"
 
         files = self.files_to_remove + [self.makefile_filename]
         # in case commas are added in the config file
@@ -1905,6 +1906,9 @@ class OnSuccessCleaner(object):
 
         dirs = self.directories_to_remove
         makefile += "clean_directories:\n\trm -rf {}\n".format(" ".join(dirs))
+
+        # custom commands
+        makefile += "custom::\n\t{}\n".format(self.custom_commands)
 
         with open(self.makefile_filename, "w") as fh:
             fh.write(makefile)
