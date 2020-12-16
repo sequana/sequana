@@ -1878,6 +1878,7 @@ class OnSuccessCleaner(object):
             "cluster_config.json",
             "slurm*out",
             "stats.txt",
+            "unlock.sh",
             "schema.yaml"]
         if pipeline_name:
             self.files_to_remove.append("{}.sh".format(pipeline_name))
@@ -1908,7 +1909,7 @@ class OnSuccessCleaner(object):
         makefile += "clean_directories:\n\trm -rf {}\n".format(" ".join(dirs))
 
         # custom commands
-        makefile += "custom::\n\t{}\n".format(self.custom_commands)
+        makefile += "custom:\n\t{}\n".format(self.custom_commands)
 
         with open(self.makefile_filename, "w") as fh:
             fh.write(makefile)

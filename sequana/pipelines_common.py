@@ -853,6 +853,10 @@ to analyse non-fastQ files (e.g. BAM)""")
             cmd1 = os.path.basename(sys.argv[0])
             fout.write(" ".join([cmd1]+sys.argv[1:]))
 
+        # Save unlock.sh
+        with open(self.workdir + "/unlock.sh", "w") as fout:
+            fout.write("#!/bin/sh\nsnakemake -s {}.rules --unlock -j 1".format(self.name))
+
         # save environement
         try:
             cmd = "conda list"
