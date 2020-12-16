@@ -678,19 +678,24 @@ class RNADiffResults:
             elif 'ID' in annot.columns and\
                 len(set(self.df.index).intersection(annot.ID)) == len(self.df.index):
                 key = "ID"
+            elif 'gene' in annot.columns and\
+                len(set(self.df.index).intersection(annot.gene)) == len(self.df.index):
+                key = "gene"
             else:
                 logger.critical("Could not find a key to match annotation and DGE result")
                 return
             # set index and restrict to the DGE entries only
             annot = annot.set_index(key)
             annot = annot.loc[self.df.index]
-
             # now add interesting columns
-            for col in ['locus_tag', 'gene_id', 'ID', 'Name', 'gene_biotype']:
+            for col in ['locus_tag', 'gene_id', 'ID', 'Name', 'gene', 'gene_biotype']:
                 if col == key:
                     continue
                 if col in annot.columns and col not in self.df.columns:
-                    self.df.insert(1, col, annot[col])
+                    print(col)
+                    try:self.df.insert(1, col, annot[col].dropna())
+                    except Exception as err:
+                        print(err)
         else:
             logger.warning("annotation file {} does not exists. Skipping extra annotation in final report".format(annotation_file))
 
@@ -872,10 +877,10 @@ class RNADiffResults:
                 hover_name = "Name"
             elif "gene_id" in self.df.columns:
                 hover_name = "gene_id"
-            elif "ID" in self.df.columns:
-                hover_name = "ID"
             elif "locus_tag" in self.df.columns:
                 hover_name = "locus_tag"
+            elif "ID" in self.df.columns:
+                hover_name = "ID"
             else:
                 hover_name = None
             fig = px.scatter(
