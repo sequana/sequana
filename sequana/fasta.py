@@ -250,6 +250,19 @@ class FastA(object):
             print("{},{},{},{},{},{},{}".format(name, length, sequence.count('A'), sequence.count('C'),
                 sequence.count('G'), sequence.count('T'), sequence.count('N')))
             
+    def GC_content_sequence(self, sequence):
+        GC = sequence.count('G') + sequence.count('g')
+        GC += sequence.count('C') + sequence.count('c')
+        return GC /  len(sequence) * 100
+
+    def GC_content(self):
+        lengths = sum(self.lengths)
+        GC = 0
+        for seq in self.sequences:
+            GC += seq.count('G') + seq.count('g')
+            GC += seq.count('C') + seq.count('c')
+        return GC / lengths * 100
+        
 
     def reverse_and_save(self, filename):
         with open(filename, "w") as fout:
