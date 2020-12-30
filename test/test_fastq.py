@@ -1,4 +1,5 @@
 from sequana import fastq, sequana_data, FastQ
+from sequana.fastq import is_fastq
 from easydev import TempFile
 import os
 from numpy import mean
@@ -8,9 +9,19 @@ data = sequana_data("test.fastq", "testing")
 
 
 def test_basic():
+    assert is_fastq(data) == True
     f = fastq.FastQ(data)
     assert f.stats() == {'N': 250, 'mean_read_length': 101.0, 'sum_read_length': 25250}
+    f.get_lengths()
 
+    ft = TempFile()
+    f.to_fasta(ft.name)
+
+
+def test_select_reads():
+    f = fastq.FastQ(data)
+    ft = TempFile()
+    f.select_reads(["HISEQ:426:C5T65ACXX:5:2302:4953:2090"], output_filename=ft.name)
 
 def test_fastq_unzipped():
 
@@ -46,6 +57,8 @@ def test_fastq_unzipped():
         with TempFile() as fh:
             selection = f.select_random_reads(10, fh.name)
             f.select_random_reads(selection, fh.name)
+        with TempFile() as fh:
+            selection = f.select_random_reads(1000, fh.name)
 
 
 def test_split():
@@ -92,13 +105,16 @@ def test_filter():
         ff = FastQ(fh.name)
         assert len(ff) == 250
 
-
     # keeps nothing
     with TempFile() as fh:
         f.filter(min_bp=80, max_bp=90, output_filename=fh.name)
         assert len(f) == 250
         ff = FastQ(fh.name)
         assert len(ff) == 0
+
+    # keeps nothing
+    with TempFile() as fh:
+        f.filter(output_filename=fh.name)
 
 def remove_files(filenames):
     for filename in filenames:
@@ -152,6 +168,7 @@ def test_fastqc():
     assert GC>0 and GC<100
     qc.imshow_qualities()
     qc.histogram_sequence_lengths()
+    qc.histogram_sequence_lengths(logy=False)
     qc.histogram_sequence_coordinates()
     qc.plot_acgt_content()
 
