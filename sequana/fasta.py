@@ -35,7 +35,7 @@ def is_fasta(filename):
             assert line.startswith(">")
             line = fin.readline()
             return True
-        except:
+        except: #pragma: no cover
             return False
 
 
@@ -46,7 +46,7 @@ class FastA(object):
 
     """
     def __init__(self, filename, verbose=False):
-        if filename.endswith(".gz"):
+        if filename.endswith(".gz"): #pragma: no cover
             raise ValueError("Must be decompressed.")
         self._fasta = FastxFile(filename)
         self.filename = filename
@@ -63,7 +63,7 @@ class FastA(object):
         try:
             d = next(self._fasta)
             return d
-        except KeyboardInterrupt:
+        except KeyboardInterrupt:  #pragma: no cover
             # This should allow developers to break a loop that takes too long
             # through the reads to run forever
             self._fasta.close()
@@ -72,7 +72,6 @@ class FastA(object):
             self._fasta.close()
             self._fasta = FastxFile(self._fasta.filename)
             raise StopIteration
-        return d
 
     def __len__(self):
         if self._N is None:
@@ -120,9 +119,9 @@ class FastA(object):
         # check if directory exist
         output_dir = os.path.dirname(output_file)
         try:
-            if not os.path.exists(output_dir):
+            if not os.path.exists(output_dir): #pragma: no cover
                 os.makedirs(output_dir)
-        except FileNotFoundError:
+        except FileNotFoundError: #pragma: no cover
             pass
 
         n = 1
@@ -138,7 +137,7 @@ class FastA(object):
                 n += 1
 
     def filter(self, output_filename, names_to_keep=None, names_to_exclude=None):
-        if names_to_exclude is None and names_to_keep is None:
+        if names_to_exclude is None and names_to_keep is None: #pragma: no cover
             logger.warning("No ids provided")
             return
 
@@ -181,7 +180,7 @@ class FastA(object):
         import numpy as np
         thisN = len(self)
         if isinstance(N, int):
-            if N > thisN:
+            if N > thisN: 
                 N = thisN
             # create random set of reads to pick up
             cherries = list(range(thisN))
