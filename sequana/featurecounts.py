@@ -30,13 +30,22 @@ __all__ = ['get_most_probable_strand_consensus', 'get_most_probable_strand',
     'MultiFeatureCount', 'FeatureCount']
 
 
-
 def get_most_probable_strand(sample_folder, tolerance):
     """Return total counts by strand from featureCount matrix folder, strandness and
     probable strand for a single sample (using a tolerance threshold for
     strandness). This assumes a single sample by featureCounts file.
-    """
 
+    Possible values include: 0 (unstranded), 1 (stranded) and 2 (reversely stranded).
+
+    We compute the number of counts in case 1 and 2 and compute the variable the
+    RS = stranded / (stranded + reversely stranded ).
+
+    If RS < tolerance, reversely stranded
+    If RS > 1-tolerance, stranded
+    If RS in 0.5+-tolerance: unstranded.
+    Otherwise, we cannot decided.
+
+    """
     sample_folder = Path(sample_folder)
     fc_files = sample_folder.glob("feature_counts_*/*_feature.out")
 
@@ -45,7 +54,12 @@ def get_most_probable_strand(sample_folder, tolerance):
 
     for f in fc_files:
         strand = str(f.parent)[-1]
-        res_dict[strand] = int(FeatureCount(f).df.sum())
+        # Feature counts may have extra columns (not just a Series),
+        # the count is the last columns though. So,
+        # FeatureCounts(f).df[df.columns[-1]] is a time series
+        df = FeatureCount(f).df
+        df = df[df.columns[-1]]
+        res_dict[strand] = int(df.sum())
 
     strandness = res_dict["1"] / (res_dict["1"] + res_dict["2"])
     res_dict["strandness"] = strandness
@@ -97,7 +111,6 @@ def get_most_probable_strand_consensus(rnaseq_folder, tolerance):
     return most_probable, df
 
 
-
 class MultiFeatureCount():
     # USED in rnaseq pipeline
 
@@ -124,9 +137,8 @@ class MultiFeatureCount():
         pylab.axvline(self.tolerance, ls='--', color='r')
         pylab.xlabel("Strandness", fontsize=fontsize)
         pylab.tight_layout()
-        if savefig:
+        if savefig: #pragma: no cover
             pylab.savefig(output_filename)
-
 
 
 class FeatureCount:
@@ -149,10 +161,10 @@ class FeatureCount:
         Get the featureCounts output as a pandas DataFrame
         :param bool clean_sample_names: if simplifying the sample names in featureCount output columns
         - extra_name_rm: extra list of regex to remove from samples_names (ignored if clean_sample_name is False)
-        - drop_loc: if dropping the extrac location columns (ie getting only the count matrix)
+        - drop_loc: if dropping the extra location columns (ie getting only the count matrix)
         """
 
-        if not Path(filename).exists():
+        if not Path(filename).exists(): # pragma: no cover
             raise IOError(f"No file found with path: {filename}")
 
         self.filename = filename

@@ -24,3 +24,9 @@ def test_featurecounts():
     #    assert False
     #except IOError:
     #    assert True
+
+def test_multi_feature_counts():
+    RNASEQ_DIR_0 = sequana_data("featurecounts") + "/rnaseq_0"
+    ff = fc.MultiFeatureCount(RNASEQ_DIR_0, 0.15)
+    ff.get_most_probable_strand_consensus()
+    ff.plot_strandness()
