@@ -14,6 +14,9 @@ def test_format_contigs_denovo():
     contigs.names
     contigs.lengths
     contigs.comments
+    contigs.GC_content()
+    contigs.GC_content_sequence(contigs.sequences[0])
+    contigs.summary()
 
 def test_fasta_filtering():
     filename = sequana_data("test_fasta_filtering.fa") 
@@ -47,6 +50,7 @@ def test_others():
         ff.select_random_reads(4, output_filename=fh.name)
         ff.select_random_reads([1,2,3], output_filename=fh.name)
         ff.select_random_reads({1,2,3}, output_filename=fh.name)
+        ff.select_random_reads(100000, output_filename=fh.name)
     assert ff.get_stats()['N'] == 16
     assert ff.get_stats()['mean_length'] > 454 
     with TempFile(suffix='.fasta') as fh:
