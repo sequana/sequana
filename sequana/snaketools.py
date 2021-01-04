@@ -122,7 +122,7 @@ class SnakeMakeStats(object):
         pylab.xlabel("Seconds (s)", fontsize=fontsize)
         try:
             pylab.tight_layout()
-        except:
+        except:  #pragma: no cover
             pass
 
     def plot_and_save(self, filename="snakemake_stats.png",
@@ -936,8 +936,11 @@ class PipelineManagerBase(object):
             namespace['expected_output'] = []
             namespace['toclean'] = []
 
-        # check requirements
-        Module(self.name).check(mode)
+        try:
+            # check requirements if possible
+            Module(self.name).check(mode)
+        except:
+            pass
 
         if matplotlib:
             import matplotlib as mpl
@@ -1951,7 +1954,7 @@ def get_pipeline_statistics():
     return df
 
 
-def clean_multiqc(filename):
+'''def clean_multiqc(filename):
     print("Deprecated. Use the pipeline manager instead")
     with open(filename, "r") as fin:
         with open(filename + "_tmp_", "w") as fout:
@@ -1965,4 +1968,4 @@ def clean_multiqc(filename):
                 line = fin.readline() # read the next line
     import shutil
     shutil.move(filename +"_tmp_", filename)
-
+'''
