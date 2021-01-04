@@ -58,6 +58,7 @@ class RNAdiffModule(SequanaBaseModule):
         self.add_plot_count_per_sample()
         self.add_cluster()
         self.add_dge()
+        self.add_volcano()
         self.add_rnadiff_table()
 
     def summary(self):
@@ -68,6 +69,27 @@ class RNAdiffModule(SequanaBaseModule):
         A = len(self.df.query("padj<=0.05 and log2FoldChange>1"))
         B = len(self.df.query("padj<=0.05 and log2FoldChange<-1"))
 
+
+ 
+        # set options
+        options = {
+            'scrollX': 'true',
+            'pageLength': 20,
+            'scrollCollapse': 'true',
+        'dom': '',
+            'buttons': []}
+
+        df = pd.DataFrame({
+            'Description': ['Number of DGE (any FC)', 'Number of DGE (|FC| > 1)'],
+            'Down': [S.loc['down'][0], B], 
+            'Up': [S.loc['up'][0], A], 
+            'Total': [S.loc['all'][0], A+B]})
+        df = df[['Description', 'Down', 'Up', 'Total']] 
+        datatable = DataTable(df, 'dge')
+        datatable.datatable.datatable_options = options
+        js_all = datatable.create_javascript_function()
+        html = datatable.create_datatable(float_format='%d')
+
         self.sections.append({
             'name': "Summary",
             'anchor': 'filters_option',
@@ -75,9 +97,9 @@ class RNAdiffModule(SequanaBaseModule):
                 """
 <p>The final Differententially Gene Expression (DGE) analysis
 led to {} up and {} down genes (total {}). Filtering out the log2 fold change
-below 1 (or -1) gives {} up and {} down (total of {}).</p>""".format(S.loc['up'][0],
+(FC) below 1 (or -1) gives {} up and {} down (total of {}). <br> {} {} </p>""".format(S.loc['up'][0],
 S.loc['down'][0],
-S.loc['all'][0], A, B, A+B)
+S.loc['all'][0], A, B, A+B, js_all , html)
         })
 
     def add_cluster(self):
@@ -90,7 +112,9 @@ S.loc['all'][0], A, B, A+B)
             pylab.savefig(filename)
             pylab.close()
         html_dendogram = """<p>The following image shows a hierarchical
-clustering of the whole sample set. The data was log-transformed first.
+clustering of the whole sample set. An euclidean distance is computed between
+samples. The dendogram itself is built using the <a
+href="https://en.wikipedia.org/wiki/Ward%27s_method"> Ward method </a>. The data was log-transformed first.
 </p>{}<hr>""".format(
         self.create_embedded_png(dendogram, "filename", style=style))
 
@@ -103,7 +127,12 @@ clustering of the whole sample set. The data was log-transformed first.
             pylab.close()
         html_pca = """<p>The expriment variability is also represented by a
 principal component analysis as shown here below. The two main components are
-represented </p>{}<hr>""".format(
+represented. We expect the ﬁrst principal component (PC1) o
+separate samples from the diﬀerent biological conditions, meaning that the biological variability is
+the main source of variance in the data. Hereafter is also a 3D representation
+of the PCA where the first 3 components are shwon.
+
+</p>{}<hr>""".format(
             self.create_embedded_png(pca, "filename", style=style))
 
         from plotly import offline
@@ -205,8 +234,17 @@ conditions</p> {}<hr>""".format(
             except:pass
             pylab.savefig(filename)
             pylab.close()
-        html_boxplot = """<p>The following image shows a hierarchical
-clustering of the whole sample set. The data was log-transformed first.
+        html_boxplot = """<p>A normalization of the data is performed to correct
+the systematic technical biases due to different counts across samples. The 
+normalization is performed with DESeq2. It relies on the hypothess that most
+features are not differentially expressed. It computes a scaling factor for each
+sample. Normalizes read counts are obtained by dividing raw read counts by the
+scaling factor associated with the sample they belong to.
+
+Boxplots are often used as a qualitative measure of the quality of the normalization process, asthey show how distributions are globally aﬀected during this process. We expect normalization to
+stabilize distributions across samples.
+In the left figure we show the raw counts while the right figure shows the
+normalised counts. 
 </p>"""
         img1 = self.create_embedded_png(rawcount, "filename", style=style)
         img2 = self.create_embedded_png(normedcount, "filename", style=style)
@@ -222,44 +260,61 @@ clustering of the whole sample set. The data was log-transformed first.
             import pylab; pylab.ioff(); pylab.clf()
             self.rnadiff.plot_pvalue_hist()
             pylab.savefig(filename); pylab.close()
+
         def plot_padj_hist(filename):
             import pylab; pylab.ioff(); pylab.clf()
             self.rnadiff.plot_padj_hist()
             pylab.savefig(filename); pylab.close()
         img1 = self.create_embedded_png(plot_pvalue_hist, "filename", style=style)
         img2 = self.create_embedded_png(plot_padj_hist, "filename", style=style)
+
+        description = """<p>The differential analysis is based on DESeq2. This
+tool aim at fitting one linear model per feature. Given the replicates in
+condition one and the replicates in condition two, a p-value is computed to
+indicate whether the feature (gene) is differentially expressed. Then, all
+p-values are corrected for multiple testing. </p>
+
+<p>It may happen that one sample seems unrelated to the rest. For every feature
+and every model, Cook's distance is computed. It reflects how the sample matches
+the model. A large value indicates an outlier count and p-values are not coputed
+for that feature.</p>
+
+<p>
+In the dispersion estimation and model fitting is done, statistical testing is
+performed. The distribution of raw p-values computed by the statistical test 
+is expected to be a mixture of a uniform distribution on [0, 1] and a peak
+around 0 corresponding to the diﬀerentially expressed features. This may not
+always be the case. </p>"""
+
+        self.sections.append({
+           "name": "Diagnostic plots",
+           "anchor": "table",
+           "content": description + img1 + img2 
+         })
+
+    def add_volcano(self):
+
+        style = "width:45%"
+
         def plot_volcano(filename):
             import pylab; pylab.ioff(); pylab.clf()
             self.rnadiff.plot_volcano()
             pylab.savefig(filename); pylab.close()
         html_volcano = """<p>The volcano plot here below shows the diﬀerentially
-expressed features in red. A volcano plot represents the log of the adjusted P
+expressed features in red. A volcano plot represents the log10 of the adjusted P
 value as a function of the log ratio of diﬀerential expression. </p>"""
         img3 = self.create_embedded_png(plot_volcano, "filename", style=style)
-        #def plot_volcano2(filename):
-        #    import pylab; pylab.ioff(); pylab.clf()
-        #    self.rnadiff.plot_volcano(add_broken_axes=True)
-        #    pylab.savefig(filename); pylab.close()
-        #from pylab import log10
-        #M = max(-log10(self.rnadiff.df.padj.dropna()))
-        #if M>20:
-        #    img4 = self.create_embedded_png(plot_volcano2, "filename", style=style)
-        #else:
-        #    img4 = ""
 
-        description = """<p>The distribution of raw p-values computed by the statistical test 
-is expected to be a mixture of a uniform distribution on [0, 1] and a peak
-around 0 corresponding to the diﬀerentially expressed features. </p>"""
         fig = self.rnadiff.plot_volcano(plotly=True)
         from plotly import offline
         plotly = offline.plot(fig, output_type="div", include_plotlyjs=False)
 
-
         self.sections.append({
-           "name": "Diagnostic plots",
+           "name": "DGE (volcano plots)",
            "anchor": "table",
-           "content": description + img1 + img2 + "</hr>" + html_volcano + img3
-+ "<hr>" + plotly
+           "content":  html_volcano + img3 + "<hr>" +"""<p>The following plot
+contains the same information as above but with an interactive plot. Please
+place the mouse cursor on the feature of interest.</p>""" +plotly
          })
 
     def add_rnadiff_table(self):
@@ -268,6 +323,13 @@ around 0 corresponding to the diﬀerentially expressed features. </p>"""
         df = self.df.copy()
         log10padj = -log10(df['padj'])
         df.insert(df.columns.get_loc('padj')+1, 'log10_padj', log10padj)
+
+        try:
+            del df['dispGeneEst']
+            del df['dispFit']
+            del df['dispMap']
+            del df['dispersion']
+        except:pass
 
 
         # set options
@@ -297,6 +359,22 @@ around 0 corresponding to the diﬀerentially expressed features. </p>"""
                 """<p>The following tables give all DGE results. The
 first table contains all significant genes (adjusted p-value below 0.05 and
 absolute fold change of at least 0.5). The following tables contains all results
-without any filtering. </p>{} {} {} {}"""
+without any filtering. Here is a short explanation for each column:
+<ul>
+<li> baseMean: base mean over all samples</li>
+<li> norm.sampleName: rounded normalized counts per sample</li>
+<li> FC: fold change in natural base</li>
+<li> log2FoldChange: log2 Fold Change estimated by the model. Reflects change
+between the condition versus the reference condition</li>
+<li> stat: Wald statistic for the coefficient (contrast) tested</li>
+<li> pvalue: raw p-value from statistical test</li>
+<li> padj: adjusted pvalue. Used for cutoff at 0.05 </li>
+<li> betaConv: convergence of the coefficients of the model </li>
+<li> maxCooks: maximum Cook's distance of the feature </li>
+<li> outlier: indicate if the feature is an outlier according to Cook's distance
+</li>
+</ul>
+</p>
+{} {} {} {}"""
                 .format(js_sign, html_tab_sign, js_all, html_tab_all)
         })
