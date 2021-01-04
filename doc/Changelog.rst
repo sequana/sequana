@@ -5,19 +5,28 @@ Changelog
     :depth: 2
 
 
-0.9.8 (dev)
------------
+0.9.8
+-----
 
 * BUGS:
 
   * fastqc.FastQC class can now hndle empty samples (no reads... yes it may
     happen)
+  * fastq random read selection  corrected to handle paired data
 
 * IMPROVEMENTS:
 
   * CLI sequana summary can parse GFF and print summary information
-  * gff has a new method to export all annotations (atributes) in CSV file, used
-    in the newly update rnadiff modules
+  * add custom section for Makefiles in pipelines
+  * add an unlock.sh for all pipelines
+  * featurecounts: allow input to use the --extraAttributes option; more tests
+
+* NEWS:
+  * gff 1. add save_gff_filtered method to select interesting features, 2. add
+    gff2gtf conversion
+  * fasta module has GC content method
+  * new rule macs3_dynamic
+
 
 0.9.7
 -----
