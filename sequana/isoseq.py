@@ -274,7 +274,7 @@ class PacbioIsoSeqMappedIsoforms(object):
     no mapping i.e flag ==4). flag of 4 means unmapped and there is no
     ambiguity about it.
 
-    In the data file example, other falgs are 0, 16 (SEQ being reverse
+    In the data file example, other flags are 0, 16 (SEQ being reverse
     complement<F12>) , 2048 (supplementary     segment).
 
     Example of minimap2 command::
@@ -515,7 +515,7 @@ class PacbioIsoSeqMultipleIsoforms(object):
 
     def filter_raw_data(self, quality=0, flags=[256,2048]):
         for i, df in enumerate(self.rawdata):
-            mask = np.logical_or(df.flags & 256, df.flags & 2048)
+            mask = np.logical_or(df['flags'] & 256, df['flags'] & 2048)
             ones = [-1, '-1']
             df = df.query("mapq>=@quality and not @mask and reference_name not in @ones")
             self.rawdata[i] = df
