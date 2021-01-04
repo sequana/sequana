@@ -116,7 +116,14 @@ class PantherEnrichment:
         fc_threshold=None,
         enrichment_fdr=0.05,
         max_entries=3000,
+        rnadiff=None
     ):
+        """
+
+
+        rnadiff if provided, superseeds the input filename. This is useful for
+        debugging
+        """
 
         self.enrichment_fdr = enrichment_fdr
 
@@ -169,7 +176,11 @@ class PantherEnrichment:
             "REACTOME_PATHWAY",
         ]
 
-        self.rnadiff = RNADiffResults(filename)
+        if rnadiff:
+            self.rnadiff = rnadiff
+        else:
+            self.rnadiff = RNADiffResults(filename)
+
         msg = "Ignoring pvalue adjusted > {} and fold change in [{}, {}]".format(
             padj_threshold, 1 / (2 ** log2_fc_threshold), 2 ** log2_fc_threshold
         )
