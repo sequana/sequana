@@ -41,8 +41,8 @@ def get_most_probable_strand(sample_folder, tolerance):
     RS = stranded / (stranded + reversely stranded ).
 
     If RS < tolerance, reversely stranded
-    If RS > 1-tolerance, stranded
     If RS in 0.5+-tolerance: unstranded.
+    If RS > 1-tolerance, stranded
     Otherwise, we cannot decided.
 
     """
@@ -135,6 +135,8 @@ class MultiFeatureCount():
         pylab.xlim([0, 1])
         pylab.grid(True)
         pylab.axvline(self.tolerance, ls='--', color='r')
+        pylab.axvline(1-self.tolerance, ls='--', color='r')
+        pylab.axvline(0.5, ls='--', color='k')
         pylab.xlabel("Strandness", fontsize=fontsize)
         pylab.tight_layout()
         if savefig: #pragma: no cover
