@@ -24,8 +24,11 @@ from sequana import logger
 logger.name = __name__
 
 
-__all__ = ["moving_average", "evenness"]
+__all__ = ["moving_average", "evenness", "runmean"]
 
+
+def runmean(data, n):
+    return moving_average(data, n)
 
 def moving_average(data, n):
     """Compute moving average
@@ -71,7 +74,7 @@ def evenness(data):
 
     C = float(round(coverage.mean()))
     D2 = coverage[coverage<=C]
-    if len(D2) == 0:
+    if len(D2) == 0: #pragma: no cover
         return 1
     else:
 
