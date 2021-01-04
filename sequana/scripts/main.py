@@ -202,6 +202,9 @@ command""")
 @click.option("--enrichment-kegg-background", type=click.INT,
     default=None,
     help="""a background for kegg enrichment. If None, set to number of genes found in KEGG""")
+@click.option("--rnadiff-annotation", type=click.Path(),
+    default=None,
+    help="""The GFF file used to perform the annotation""")
 @common_logger
 def summary(**kwargs):
     """Create a HTML report for various sequana out
@@ -223,6 +226,21 @@ def summary(**kwargs):
         sequana summary T1vsT0.complete.xls --module enrichment --enrichment-taxon 10090 
             --enrichment-log2-foldchange-cutoff 2 --enrichment-kegg-only
             --enrichment-kegg-pathways-directory kegg_pathways
+
+    For the RNADIFF module::
+
+        sequana summary --module rnadiff \
+            --rnadiff-annotation final_annotation.gff `ls ./tables/B4239-v2.*.complete.xls`
+
+    This will process all files in the given pattern (in back quots)
+    sequentially and procude one HTML file per input file.
+
+
+    Other module all work in the same way. For example, for FastQ files::
+
+        sequana summary one_input.fastq
+        sequana summary `ls *fastq` 
+
 
     """
     names = kwargs['name']
@@ -255,6 +273,11 @@ def summary(**kwargs):
             else:
                 output_filename = name + ".html"
             output_filename = output_filename.split("/")[-1]
+
+            if kwargs['rnadiff_annotation']:
+                logger.info(f"Processing annoation file into annotations.csv")
+                from sequana import GFF3
+                GFF3(kwargs['rnadiff_annotation']).save_annotation_to_csv()
             logger.info(f"Processing {name} into {output_filename}")
             data = RNADiffResults(name)
             report = RNAdiffModule(data, output_filename)
