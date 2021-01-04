@@ -87,8 +87,10 @@ class RNADiffAnalysis:
         self.counts_tsv = counts_tsv
         self.groups_tsv = groups_tsv
 
-        self.counts = pd.read_csv(counts_tsv, sep=sep, index_col="Geneid")
-        self.groups = pd.read_csv(groups_tsv, sep=sep, index_col="label")
+        self.counts = pd.read_csv(counts_tsv, sep=sep, index_col="Geneid",
+            comment="#")
+        self.groups = pd.read_csv(groups_tsv, sep=sep, index_col="label",
+            comment="#")
 
         self.condition = condition
         self.comparisons = comparisons
@@ -125,7 +127,8 @@ Groups overview:\n\
         this script.
         """
 
-        self.outdir.mkdir()
+        try:self.outdir.mkdir()
+        except:pass
 
         with open("rnadiff_light.R", "w") as f:
             f.write(RNADiffAnalysis.template.render(self.__dict__))
@@ -782,15 +785,20 @@ class RNADiffResults:
                     "Could not find a key to match annotation and DGE result"
                 )
                 return
+
             # set index and restrict to the DGE entries only
             annot = annot.set_index(key)
             annot = annot.loc[self.df.index]
+            # some index may have duplicates, that need to be removed
+            annot = annot.reset_index().drop_duplicates(subset=[key]).set_index(key)
+
+            # if there are missing ones, we add NA
+
             # now add interesting columns
             for col in ['locus_tag', 'gene_id', 'ID', 'Name', 'gene', 'gene_biotype']:
                 if col == key:
                     continue
                 if col in annot.columns and col not in self.df.columns:
-                    print(col)
                     try:self.df.insert(1, col, annot[col].dropna())
                     except Exception as err:
                         print(err)
@@ -973,7 +981,7 @@ class RNADiffResults:
 
             df = self.df.copy()
             df["log_adj_pvalue"] = -pylab.log10(self.df.padj)
-            df["significance"] = ["<0.05" if x else ">=0.05" for x in df.padj < 0.05]
+            df["significance"] = ["<{}".format(padj) if x else ">={}".format(padj) for x in df.padj < padj]
 
             if "Name" in self.df.columns:
                 hover_name = "Name"
@@ -995,6 +1003,21 @@ class RNADiffResults:
                 height=600,
                 labels={"log_adj_pvalue": "log adjusted p-value"},
             )
+            #axes[0].axhline(
+            # -np.log10(0.05), lw=2, ls="--", color="r", label="pvalue threshold (0.05)"
+            #i)
+            # in future version of plotly, a add_hlines will be available. For
+            # now, this is the only way to add axhline
+            fig.update_layout(
+                shapes=[dict(type='line', 
+                              xref='x', x0=df.log2FoldChange.min(), x1=df.log2FoldChange.max(), 
+                              yref='y', y0=-pylab.log10(padj), y1=-pylab.log10(padj), 
+                            line=dict(
+                                 color="black",
+                                 width=1,
+                                 dash="dash"))
+                       ])
+
 
             return fig
 
