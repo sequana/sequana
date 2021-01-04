@@ -58,7 +58,7 @@ class GFF3(Annotation):
                 if line.startswith("#"):
                     continue
                 # Skip empty lines
-                if not line.strip():
+                if not line.strip(): #pragma: no cover
                     continue
                 split = line.rstrip().split("\t")
                 L = len(split)
@@ -80,7 +80,17 @@ class GFF3(Annotation):
                 L = len(split)
                 if L == 9:
                     for item in split[8].split(sep):
-                        item = item.split("=")[0]
+                        #print("item '{}'".format(item))
+                        if len(item.strip()) == 0: # empty final string #pragma: no cover
+                            continue
+
+                        # Here, some GFF use = some others use spaces... very
+                        # annoying.
+                        item = item.strip()
+                        if "=" in item:
+                            item = item.split("=")[0].strip()
+                        else:
+                            item = item.split()[0].strip()
                         types.add(item)
         return sorted(types)
 
@@ -102,7 +112,7 @@ class GFF3(Annotation):
                 split = line.rstrip().split("\t")
 
                 L = len(split)
-                if L != 9 and L != 0:
+                if L != 9 and L != 0: #pragma: no cover
                     msg = "Incorrect format on line ({}). Expected 9 items, found {}. Skipped"
                     print(msg.format(count, L))
                     print(line.strip())
@@ -122,16 +132,19 @@ class GFF3(Annotation):
         df = pd.DataFrame(data)
         def get_attr(x, name):
             if name in x:
-                return x[name]
+                # some GFF adds " around names
+                return x[name].replace("'", '').replace('"', '')
             else:
                 return None
 
         try:
             attributes = self.get_attributes()
-            for attribute in ['locus_tag', 'ID', 'Name', 'gene', 'gene_id', 'description', 'gene_biotype']:
+            for attribute in ['gene_symbol', 'locus_tag', 'ID', 'Name',
+                              'gene', 'gene_id', 'description', 'gene_biotype']:
                 if attribute in attributes:
                     df[attribute] = [get_attr(x, attribute) for x in df['attributes']]
-        except:
+        except Exception as err:  #pragma: no cover
+            print(err)
             df['ID'] = [get_attr(x, "ID") for x in df['attributes']]
             df['description'] = [get_attr(x, "description") for x in df['attributes']]
 
@@ -145,7 +158,7 @@ class GFF3(Annotation):
         for typ in types:
             print("{}: {} entries".format(typ, len(df.query("type==@typ"))))
             for attr in attributes:
-                try: 
+                try:
                     dups = df.query("type==@typ")[attr].dropna().duplicated().sum()
                     if dups > 0:
                         print("  - {}:{} duplicates".format(attr,dups))
@@ -159,10 +172,9 @@ class GFF3(Annotation):
         replace_seqid=None):
         """
 
-        save_gff_filtered("test.gff", features=['misc_RNA', 'rRNA'], 
+        save_gff_filtered("test.gff", features=['misc_RNA', 'rRNA'],
                 replace_seqid='locus_tag')
         """
-        logger.info("Saving into {}".format(filename))
         with open(filename, "w") as fout:
 
             fout.write('#gff-version 3\n#Custom gff from sequana\n')
@@ -175,16 +187,14 @@ class GFF3(Annotation):
                     if replace_seqid:
                         y['seqid'] = y['attributes'][replace_seqid]
                     fout.write("{}\tfeature\tcustom\t{}\t{}\t.\t{}\t{}\t{}\n".format(y['seqid'],
-                            y['start'], y['stop'], y['strand'], 
+                            y['start'], y['stop'], y['strand'],
                             y['phase'], ";".join([f"{a}={b}" for a, b in  y['attributes'].items()])))
-                    counter[y['type']] += 1 
+                    counter[y['type']] += 1
                     count +=1
-            print("# kept {} entries".format(count))
+            logger.info("# kept {} entries".format(count))
             for feature in features:
                 counter[feature] += 0
-                print("# {}: {} entries".format(feature,counter[feature]))
-
-
+                logger.info("# {}: {} entries".format(feature,counter[feature]))
 
     def _process_main_fields(self, fields):
         annotation = {}
@@ -212,7 +222,7 @@ class GFF3(Annotation):
             annotation["strand"] = fields[6]
 
         # Phase
-        if fields[7] != ".": 
+        if fields[7] != ".":
             annotation["phase"] = int(fields[7]) % 3
         else:
             annotation['phase'] = fields[7]
@@ -242,7 +252,7 @@ class GFF3(Annotation):
     @staticmethod
     def decode_small(text):
 
-        # ugly but tales only 500ns 
+        # ugly but tales only 500ns
         return text.replace("%09","\t").replace("%0A","\n").replace("%0D","\r").replace("%25","%")
 
         # 1.5us using 1 calls and a dictionary
@@ -320,6 +330,7 @@ class GFF3(Annotation):
             duplicated = df[df.Gene_id.duplicated()].Gene_id.drop_duplicates()
             if len(duplicated):
                 logger.warning("Dropping {} duplicated {}(s)".format(len(duplicated), ID))
+
             for name in duplicated.values:
                 S = df.query("Gene_id == @name").Length.sum()
                 items = df.query("Gene_id == @name").index
@@ -328,7 +339,6 @@ class GFF3(Annotation):
 
         df.sort_values('Gene_id')[['Gene_id', 'Length']].to_csv(
             "{}_gene_lengths.tsv".format(outname), sep='\t',index=None)
-
 
         # Second file (redundant) is also required by the rnadiff pipeline
         for this in fields:
@@ -339,3 +349,50 @@ class GFF3(Annotation):
         data.to_csv("{}_info.tsv".format(outname), sep="\t", index=None)
 
         return df
+
+    def to_gtf(self, output_filename="test.gtf", mapper={'ID': '{}_id'}):
+
+        fout = open(output_filename, "w")
+
+        with open(self.filename, "r") as reader:
+            for line in reader:
+                # Skip metadata and comments
+                if line.startswith("#"):
+                    fout.write(line)
+                    continue
+                # Skip empty lines
+                if not line.strip(): #pragma: no cover
+                    continue
+                split = line.rstrip().split("\t")
+                L = len(split)
+
+                name = split[0]
+                source = split[1]
+                feature = split[2]
+                start = split[3]
+                stop = split[4]
+                a = split[5]
+                strand = split[6]
+                b = split[7]
+                attributes = split[8]
+               
+                new_attributes = ""
+                for item in attributes.split(";"):
+                    try:
+                        key, value = item.split("=")
+                        if key in mapper.keys():
+                            key = mapper[key].format(feature)
+                            print(key)
+                        new_attributes +=  '{} "{}";'.format(key, value)
+                    except: pass
+
+                # Here we need some cooking due to gtf/gff clumsy conventiom
+                #1. looks like attributes' values must have "" surrounding their content
+                #2. if feature is e.g. exon, then gtf expects the exon_id attribute
+                msg = f"{name}\t{source}\t{feature}\t{start}\t{stop}\t{a}\t{strand}\t{b}\t{new_attributes}\n"
+                fout.write(msg)
+
+
+        fout.close()
+
+
