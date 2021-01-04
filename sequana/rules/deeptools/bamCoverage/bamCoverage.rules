@@ -1,6 +1,7 @@
 rule bamCoverage:
     """
-    Bam coverage file in bigwig format. Is part of deeptools http://deeptools.readthedocs.io/en/latest/index.html
+    Bam coverage file in bigwig format. 
+    Part of deeptools http://deeptools.readthedocs.io/en/latest/index.html
 
     Required input:
         __bamCoverage__input: list of bam files
