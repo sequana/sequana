@@ -1,10 +1,11 @@
 rule remove_blacklist:
     """
-    The blacklist contains all the regions of the genome that tend to show artificially high signal.
-    The removal of those region eliminate that false signal.
+    The blacklist contains all the regions of the genome that tend to show
+    artificially high signal. The removal of those region eliminate that
+    false signal.
 
     Required input:
-        __remove_blacklist__input: bam file
+        __remove_blacklist__input: input bam file to filter
 
     Required output:
         __remove_blacklist__output: bam file
@@ -14,6 +15,11 @@ rule remove_blacklist:
 
             remove_blacklist:
                 blacklist: path to blacklist of the genome in bed format
+
+    See https://bedtools.readthedocs.io/en/latest/content/tools/intersect.html
+
+    Note that the -b option is used (only report those entries in A that have no overlap in B)
+
     """
     input:
         __remove_blacklist__input
@@ -26,6 +32,6 @@ rule remove_blacklist:
         blacklist = config["remove_blacklist"]["blacklist_file"]
     shell:
         """
-        (intersectBed -v -abam {input} -b {params.blacklist} > {output}) \
+        (bedtools intersect -v -abam {input} -b {params.blacklist} > {output}) \
         && (samtools index {output.bam} > {log.out}) 2> {log.err}
         """
