@@ -157,10 +157,12 @@ class RNADiffTable:
     def __init__(self, path, gff=None, alpha=0.05, log2_fc=0, sep="\t"):
         """ A representation of the results of a single rnadiff comparison """
         self.path = Path(path)
-        self.name = self.path.name
+        self.name = self.path.stem.replace("_degs_DESeq2", "")
 
         self._alpha = alpha
         self._log2_fc = log2_fc
+
+        self.gff = gff
 
         self.df = pd.read_csv(self.path, index_col=0, sep=sep)
 
@@ -273,10 +275,9 @@ class RNADiffResults:
         self._alpha = alpha
         self._log2_fc = log2_fc
 
-        self.results = {
-            compa.stem: RNADiffTable(compa, alpha=self._alpha, log2_fc=self._log2_fc)
-            for compa in self.comparisons
-        }
+        self.annot_df = self._get_annot()
+
+        self.results = self.import_tables()
 
         self.df = self._get_total_df()
         self.filt_df = self._get_total_df(filtered=True)
@@ -288,10 +289,7 @@ class RNADiffResults:
     @alpha.setter
     def alpha(self, value):
         self._alpha = value
-        self.results = {
-            compa.stem: RNADiffTable(compa, alpha=self._alpha, log2_fc=self._log2_fc)
-            for compa in self.comparisons
-        }
+        self.results = self.import_tables()
         self.filt_df = self._get_total_df(filtered=True)
 
     @property
@@ -301,11 +299,17 @@ class RNADiffResults:
     @log2_fc.setter
     def log2_fc(self, value):
         self._log2_fc = value
-        self.results = {
-            compa.stem: RNADiffTable(compa, alpha=self._alpha, log2_fc=self._log2_fc)
+        self.results = self.import_tables()
+        self.filt_df = self._get_total_df(filtered=True)
+
+    def import_tables(self):
+
+        return {
+            compa.stem.replace("_degs_DESeq2", ""): RNADiffTable(
+                compa, alpha=self._alpha, log2_fc=self._log2_fc
+            )
             for compa in self.comparisons
         }
-        self.filt_df = self._get_total_df(filtered=True)
 
     def _get_annot(
         self,
@@ -337,6 +341,7 @@ class RNADiffResults:
         if self.gff and self.fc_attribute and self.fc_feature:
             annot = self._get_annot()
             df = pd.concat([annot, df], axis=1)
+            df
         else:
             logger.warning(
                 "Missing any of gff, fc_attribute or fc_feature. No annotation will be added."
