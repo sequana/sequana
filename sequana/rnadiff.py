@@ -157,7 +157,7 @@ class RNADiffTable:
     def __init__(self, path, gff=None, alpha=0.05, log2_fc=0, sep="\t"):
         """ A representation of the results of a single rnadiff comparison """
         self.path = Path(path)
-        self.name = self.path.stem.replace("_degs_DESeq2", "")
+        self.name = self.path.stem.replace("_degs_DESeq2", "").replace("-", "_")
 
         self._alpha = alpha
         self._log2_fc = log2_fc
@@ -166,7 +166,7 @@ class RNADiffTable:
 
         self.df = pd.read_csv(self.path, index_col=0, sep=sep)
 
-        self.filt_df = self.filter(self._alpha, self._log2_fc)
+        self.filt_df = self.filter()
         self.set_gene_lists()
 
     @property
@@ -176,7 +176,7 @@ class RNADiffTable:
     @alpha.setter
     def alpha(self, value):
         self._alpha = value
-        self.filt_df = self.filter(self._alpha, self._log2_fc)
+        self.filt_df = self.filter()
         self.set_gene_lists()
 
     @property
@@ -186,14 +186,14 @@ class RNADiffTable:
     @log2_fc.setter
     def log2_fc(self, value):
         self._log2_fc = value
-        self.filt_df = self.filter(self._alpha, self._log2_fc)
+        self.filt_df = self.filter()
         self.set_gene_lists()
 
-    def filter(self, alpha, log2_fc):
+    def filter(self):
         """filter a DESeq2 result with FDR and logFC thresholds"""
 
-        fc_filt = self.df["log2FoldChange"].abs() >= log2_fc
-        fdr_filt = self.df["padj"] <= alpha
+        fc_filt = self.df["log2FoldChange"].abs() >= self._log2_fc
+        fdr_filt = self.df["padj"] <= self._alpha
 
         return self.df[fc_filt.values & fdr_filt.values]
 
@@ -250,7 +250,7 @@ class RNADiffResults:
     ):
         """"""
         self.path = Path(rnadiff_folder)
-        self.comparisons = [x for x in self.path.glob(pattern)]
+        self.files = [x for x in self.path.glob(pattern)]
 
         self.meta = self._get_meta(meta, sep=sep, group=group, palette=palette)
 
@@ -277,7 +277,7 @@ class RNADiffResults:
 
         self.annot_df = self._get_annot()
 
-        self.results = self.import_tables()
+        self.comparisons = self.import_tables()
 
         self.df = self._get_total_df()
         self.filt_df = self._get_total_df(filtered=True)
@@ -289,7 +289,7 @@ class RNADiffResults:
     @alpha.setter
     def alpha(self, value):
         self._alpha = value
-        self.results = self.import_tables()
+        self.comparisons = self.import_tables()
         self.filt_df = self._get_total_df(filtered=True)
 
     @property
@@ -299,16 +299,16 @@ class RNADiffResults:
     @log2_fc.setter
     def log2_fc(self, value):
         self._log2_fc = value
-        self.results = self.import_tables()
+        self.comparisons = self.import_tables()
         self.filt_df = self._get_total_df(filtered=True)
 
     def import_tables(self):
 
         return {
-            compa.stem.replace("_degs_DESeq2", ""): RNADiffTable(
+            compa.stem.replace("_degs_DESeq2", "").replace("-", "_"): RNADiffTable(
                 compa, alpha=self._alpha, log2_fc=self._log2_fc
             )
-            for compa in self.comparisons
+            for compa in self.files
         }
 
     def _get_annot(
@@ -329,7 +329,7 @@ class RNADiffResults:
 
         dfs = []
 
-        for compa, res in self.results.items():
+        for compa, res in self.comparisons.items():
             df = res.filt_df if filtered else res.df
             df = df.transpose().reset_index()
             df["file"] = res.name
@@ -350,7 +350,31 @@ class RNADiffResults:
         return df
 
     def summary(self):
-        return pd.concat(res.summary() for compa, res in self.results.items())
+        return pd.concat(res.summary() for compa, res in self.comparisons.items())
+
+    def get_gene_lists(self, annot_col="index"):
+
+        gene_lists_dict = {}
+
+        for compa in self.comparisons.keys():
+            df = self.df.loc[:, ["annotation", compa]].copy()
+            df = df.droplevel(0, axis=1)
+
+            fc_filt = df["log2FoldChange"].abs() >= self._log2_fc
+            fdr_filt = df["padj"] <= self._alpha
+
+            df = df[fc_filt.values & fdr_filt.values]
+            df.reset_index(inplace=True)
+
+            gene_lists = {
+                "up": list(df.query("log2FoldChange > 0").loc[:, annot_col]),
+                "down": list(df.query("log2FoldChange < 0").loc[:, annot_col]),
+                "all": list(df.loc[:, annot_col]),
+            }
+
+            gene_lists_dict[compa] = gene_lists
+
+        return gene_lists_dict
 
     def _get_meta(self, meta_file, sep, group, palette):
         """Import metadata from a table file and add color groups following the
@@ -377,18 +401,19 @@ class RNADiffResults:
         lists to consider
 
         :param compas: Specify a list of comparisons to consider (Comparisons
-        names can be found with self.results.keys()).
+        names can be found with self.comparisons.keys()).
         """
 
         common_specific_dict = {}
 
         if not compas:
-            compas = self.results.keys()
+            compas = self.comparisons.keys()
 
         for size in range(1, len(compas)):
             for compa_group in combinations(compas, size):
                 gene_lists = [
-                    self.results[compa].gene_lists[direction] for compa in compa_group
+                    self.comparisons[compa].gene_lists[direction]
+                    for compa in compa_group
                 ]
                 commons = set.intersection(
                     *[set(gene_list) for gene_list in gene_lists]
@@ -398,7 +423,7 @@ class RNADiffResults:
                 genes_in_other_compas = {
                     x
                     for other_compa in other_compas
-                    for x in self.results[other_compa].gene_lists[direction]
+                    for x in self.comparisons[other_compa].gene_lists[direction]
                 }
 
                 commons = commons - genes_in_other_compas
