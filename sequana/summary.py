@@ -18,12 +18,73 @@
 import time
 import os
 import json
+from pathlib import Path
+
 from sequana import logger
+from sequana.lazy import pandas as pd
 logger.name = __name__
 
 
+from sequana.utils.datatables_js import DataTable
+
 
 __all__ = ["Summary"]
+
+
+
+class MultiSummary(object):
+    """Helper class to read several json and create summary plots and HTML
+content"""
+
+    def __init__(self):
+        self.data = {}
+        self.order = []
+
+    def read_summary(self, filename, label=None):
+        self.filename = filename
+        data = json.load(open(self.filename, "r"))
+        import os
+        if label is None:
+            p = Path(filename)
+            label = p.name
+        self.data[label] = data
+        self.order.append(label)
+
+    def remove_summary(self, label):
+        if label in self.data and label in self.order:
+            del self.data[label] 
+            self.order.pop(label)
+
+    def get_html_table(self, user_key_list):
+        df = self.get_single_data(user_key_list)
+        datatable = DataTable(df, 'name')
+        datatable.datatable.datatable_options = {'pageLength': 15,
+            'scrollCollapse': 'false',
+            'dom': 'Brt',
+            'buttons': ['copy', 'csv']}
+        js = datatable.create_javascript_function()
+        html = datatable.create_datatable(float_format='%.6g')
+        return js + html
+
+    def get_single_data(self, user_key_lists):
+        # first get the requested data
+        data = {}
+        for key in self.data.keys():
+            values = []
+            for user_key in user_key_lists:
+                value = self.data[key]
+                for depth in user_key.split("/"):
+                    value = value[depth]
+                values.append(value)
+            data[key] = values
+
+        df = pd.DataFrame(data.values(), index=data.keys())
+        df.columns = user_key_lists
+        df = df.loc[self.order]
+        df = df.reset_index() # we need at least one index and one value
+
+        return df 
+
 
 
 class Summary(object):
