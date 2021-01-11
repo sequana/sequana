@@ -169,7 +169,7 @@ class RNADiffTable:
 
     @property
     def alpha(self):
-        return self.alpha
+        return self._alpha
 
     @alpha.setter
     def alpha(self, value):
@@ -283,7 +283,7 @@ class RNADiffResults:
 
     @property
     def alpha(self):
-        return self.alpha
+        return self._alpha
 
     @alpha.setter
     def alpha(self, value):
