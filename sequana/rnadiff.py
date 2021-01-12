@@ -28,7 +28,7 @@ from sequana.lazy import pylab
 from sequana import logger
 from sequana.gff3 import GFF3
 from sequana.viz import Volcano
-from sequana.enrichment import PantherEnrichment
+from sequana.enrichment import PantherEnrichment, KeggPathwayEnrichment
 
 import glob
 
@@ -353,9 +353,9 @@ class RNADiffResults:
     def summary(self):
         return pd.concat(res.summary() for compa, res in self.comparisons.items())
 
-    def run_enrichment(self, taxon):
+    def run_enrichment_go(self, taxon, annot_col="Name"):
 
-        gene_lists_dict = self.get_gene_lists(annot_col="Name", Nmax=2000)
+        gene_lists_dict = self.get_gene_lists(annot_col=annot_col, Nmax=2000)
         enrichment = {}
         ontologies = ["GO:0003674", "GO:0008150", "GO:0005575"]
 
@@ -376,14 +376,44 @@ class RNADiffResults:
             ["comparison", "direction", "GO_category", "index"], inplace=True
         )
 
-        self.enrichment = df
+        self.enrichment_go = df
 
         # Export results (should be moved to enrichment.py at some point I think)
         with pd.ExcelWriter("go_enrichment.xlsx") as writer:
-            df = self.enrichment
+            df = self.enrichment_go.copy()
             df.reset_index(inplace=True)
             df.to_excel(writer, "GO_enrichment", index=False)
             ws = writer.sheets["GO_enrichment"]
+            ws.autofilter(0, 0, df.shape[0], df.shape[1] - 1)
+
+    def run_enrichment_kegg(self, organism, annot_col="Name"):
+
+        gene_lists_dict = self.get_gene_lists(annot_col=annot_col)
+        enrichment = {}
+
+        for compa in self.comparisons:
+            gene_lists = gene_lists_dict[compa]
+            ke = KeggPathwayEnrichment(gene_lists, organism, progress=False)
+            ke.compute_enrichment()
+
+            for direction in ["up", "down", "all"]:
+                enrichment[(compa, direction)] = ke._get_final_df(
+                    ke.enrichment[direction].results, nmax=10000
+                )
+
+            logger.info(f"KEGG enrichment for {compa} DONE.")
+
+        df = pd.concat(enrichment).sort_index()
+        df.index.rename(["comparison", "direction", "index"], inplace=True)
+
+        self.enrichment_kegg = df
+
+        # Export results (should be moved to enrichment.py at some point I think)
+        with pd.ExcelWriter("kegg_enrichment.xlsx") as writer:
+            df = self.enrichment_kegg.copy()
+            df.reset_index(inplace=True)
+            df.to_excel(writer, "kegg_enrichment", index=False)
+            ws = writer.sheets["kegg_enrichment"]
             ws.autofilter(0, 0, df.shape[0], df.shape[1] - 1)
 
     def get_gene_lists(self, annot_col="index", Nmax=None):
@@ -416,9 +446,9 @@ class RNADiffResults:
                 )
 
             else:
-                up_genes = (list(df.query("log2FoldChange > 0")[annot_col]),)
-                down_genes = (list(df.query("log2FoldChange < 0")[annot_col]),)
-                all_genes = (list(df.loc[:, annot_col]),)
+                up_genes = list(df.query("log2FoldChange > 0")[annot_col])
+                down_genes = list(df.query("log2FoldChange < 0")[annot_col])
+                all_genes = list(df.loc[:, annot_col])
 
             gene_lists_dict[compa] = {
                 "up": up_genes,
