@@ -33,6 +33,7 @@ from sequana.viz import Volcano
 
 import glob
 
+<<<<<<< HEAD
 __all__ = ["RNADiffAnalysis", "RNADiffResults"]
 
 
@@ -681,6 +682,9 @@ class RNADiffResults2:
             xlabel="Mean of normalized counts",
             ylabel="Dispersion",
         )
+=======
+__all__ = ["RNADiffResults"]
+>>>>>>> 29d6650409776aace26e8e2625df38741b861fde
 
 
 class RNADiffResults:
@@ -780,8 +784,9 @@ class RNADiffResults:
                 set(self.df.index).intersection(annot.ID)
             ) == len(self.df.index):
                 key = "ID"
-            elif 'gene' in annot.columns and\
-                len(set(self.df.index).intersection(annot.gene)) == len(self.df.index):
+            elif "gene" in annot.columns and len(
+                set(self.df.index).intersection(annot.gene)
+            ) == len(self.df.index):
                 key = "gene"
             else:
                 logger.critical(
@@ -798,11 +803,12 @@ class RNADiffResults:
             # if there are missing ones, we add NA
 
             # now add interesting columns
-            for col in ['locus_tag', 'gene_id', 'ID', 'Name', 'gene', 'gene_biotype']:
+            for col in ["locus_tag", "gene_id", "ID", "Name", "gene", "gene_biotype"]:
                 if col == key:
                     continue
                 if col in annot.columns and col not in self.df.columns:
-                    try:self.df.insert(1, col, annot[col].dropna())
+                    try:
+                        self.df.insert(1, col, annot[col].dropna())
                     except Exception as err:
                         print(err)
         else:
@@ -984,7 +990,9 @@ class RNADiffResults:
 
             df = self.df.copy()
             df["log_adj_pvalue"] = -pylab.log10(self.df.padj)
-            df["significance"] = ["<{}".format(padj) if x else ">={}".format(padj) for x in df.padj < padj]
+            df["significance"] = [
+                "<{}".format(padj) if x else ">={}".format(padj) for x in df.padj < padj
+            ]
 
             if "Name" in self.df.columns:
                 hover_name = "Name"
@@ -1006,21 +1014,25 @@ class RNADiffResults:
                 height=600,
                 labels={"log_adj_pvalue": "log adjusted p-value"},
             )
-            #axes[0].axhline(
+            # axes[0].axhline(
             # -np.log10(0.05), lw=2, ls="--", color="r", label="pvalue threshold (0.05)"
-            #i)
+            # i)
             # in future version of plotly, a add_hlines will be available. For
             # now, this is the only way to add axhline
             fig.update_layout(
-                shapes=[dict(type='line', 
-                              xref='x', x0=df.log2FoldChange.min(), x1=df.log2FoldChange.max(), 
-                              yref='y', y0=-pylab.log10(padj), y1=-pylab.log10(padj), 
-                            line=dict(
-                                 color="black",
-                                 width=1,
-                                 dash="dash"))
-                       ])
-
+                shapes=[
+                    dict(
+                        type="line",
+                        xref="x",
+                        x0=df.log2FoldChange.min(),
+                        x1=df.log2FoldChange.max(),
+                        yref="y",
+                        y0=-pylab.log10(padj),
+                        y1=-pylab.log10(padj),
+                        line=dict(color="black", width=1, dash="dash"),
+                    )
+                ]
+            )
 
             return fig
 
