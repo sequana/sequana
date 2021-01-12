@@ -642,8 +642,6 @@ class SequanaConfig(object):
         >>> sc.config.pattern == "*.fastq.gz"
         True
 
-
-
     Empty strings in a config are interpreted as None but SequanaConfig will
     replace  None with empty strings, which is probably what was expected from
     the user. Similarly, in snakemake when settings the config file, one
@@ -799,6 +797,7 @@ class SequanaConfig(object):
         If not, it can be either an http resources or a sequana resources.
 
         """
+    
         if 'requirements' in self._yaml_code.keys():
             for requirement in self._yaml_code['requirements']:
                 if os.path.exists(requirement):
@@ -937,7 +936,8 @@ class PipelineManagerBase(object):
             namespace['toclean'] = []
 
         try:
-            # check requirements if possible
+            # check requirements if possible. This is the standalone application
+            # requirements, not the files possibly provided in the config file
             Module(self.name).check(mode)
         except:
             pass
