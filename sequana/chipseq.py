@@ -260,19 +260,20 @@ ID, type,    condition, replicat
             conditions, otherwise all combos of IP samples.
         """
         # IDR consists in comparing two inputs.
-        comparisons = {}
+        results = {}
         if strict:
-            groups = self.df[c.df['type'] == 'IP'].groupby('condition')
+            groups = self.df[self.df['type'] == 'IP'].groupby('condition')
             for cond, samples in groups.groups.items():
                 if len(samples) == 2:
-                    IDs = self.df.loc[groups.group[cond]].ID.values
+                    IDs = self.df.loc[groups.groups[cond]].ID.values
                     name = "_vs_".join([str(x) for x in IDs])
-                    results[comparison] =  1
+                    results[cond] =  IDs
                 elif len(samples) == 1:
-                    print('condition {} has only 1 replicate. not included in IDR')
+                    print(f'condition {cond} has only 1 replicate. not included in IDR')
                 else:
-                    print('condition {} has more than 2 replicates. Not included in IDR')
+                    print(f'condition {cond} has more than 2 replicates. Not included in IDR')
                     # all combos ?
+        return results
 
     def get_simple_comparisons(self):
 
