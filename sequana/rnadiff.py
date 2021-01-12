@@ -28,6 +28,7 @@ from sequana.lazy import pylab
 from sequana import logger
 from sequana.gff3 import GFF3
 from sequana.viz import Volcano
+from sequana.enrichment import PantherEnrichment
 
 import glob
 
@@ -352,7 +353,40 @@ class RNADiffResults:
     def summary(self):
         return pd.concat(res.summary() for compa, res in self.comparisons.items())
 
-    def get_gene_lists(self, annot_col="index"):
+    def run_enrichment(self, taxon):
+
+        gene_lists_dict = self.get_gene_lists(annot_col="Name", Nmax=2000)
+        enrichment = {}
+        ontologies = ["GO:0003674", "GO:0008150", "GO:0005575"]
+
+        for compa in self.comparisons:
+            gene_lists = gene_lists_dict[compa]
+            pe = PantherEnrichment(gene_lists, taxon)
+            pe.compute_enrichment(ontologies=ontologies)
+
+            for direction in ["up", "down", "all"]:
+                for ontology in ontologies:
+                    enrichment[(compa, direction, ontology)] = pe.get_data(
+                        direction, ontology, include_negative_enrichment=False
+                    )
+            logger.info(f"Panther enrichment for {compa} DONE.")
+
+        df = pd.concat(enrichment).sort_index()
+        df.index.rename(
+            ["comparison", "direction", "GO_category", "index"], inplace=True
+        )
+
+        self.enrichment = df
+
+        # Export results (should be moved to enrichment.py at some point I think)
+        with pd.ExcelWriter("go_enrichment.xlsx") as writer:
+            df = self.enrichment
+            df.reset_index(inplace=True)
+            df.to_excel(writer, "GO_enrichment", index=False)
+            ws = writer.sheets["GO_enrichment"]
+            ws.autofilter(0, 0, df.shape[0], df.shape[1] - 1)
+
+    def get_gene_lists(self, annot_col="index", Nmax=None):
 
         gene_lists_dict = {}
 
@@ -366,13 +400,31 @@ class RNADiffResults:
             df = df[fc_filt.values & fdr_filt.values]
             df.reset_index(inplace=True)
 
-            gene_lists = {
-                "up": list(df.query("log2FoldChange > 0").loc[:, annot_col]),
-                "down": list(df.query("log2FoldChange < 0").loc[:, annot_col]),
-                "all": list(df.loc[:, annot_col]),
-            }
+            if Nmax:
+                df.sort_values("log2FoldChange", ascending=False, inplace=True)
+                up_genes = list(df.query("log2FoldChange > 0")[annot_col])[:Nmax]
 
-            gene_lists_dict[compa] = gene_lists
+                df.sort_values("log2FoldChange", ascending=True, inplace=True)
+                down_genes = list(df.query("log2FoldChange < 0")[annot_col])[:Nmax]
+
+                all_genes = list(
+                    list(
+                        df.sort_values("log2FoldChange", key=abs, ascending=False)[
+                            annot_col
+                        ]
+                    )[:Nmax]
+                )
+
+            else:
+                up_genes = (list(df.query("log2FoldChange > 0")[annot_col]),)
+                down_genes = (list(df.query("log2FoldChange < 0")[annot_col]),)
+                all_genes = (list(df.loc[:, annot_col]),)
+
+            gene_lists_dict[compa] = {
+                "up": up_genes,
+                "down": down_genes,
+                "all": all_genes,
+            }
 
         return gene_lists_dict
 
