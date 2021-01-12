@@ -81,16 +81,18 @@ class RNADiffAnalysis:
         annot_cols=["ID", "Name", "gene_biotype"],
         threads=4,
         outdir="rnadiff",
-        sep="\t",
+        sep_counts="\t",
+        sep_groups="\t",
     ):
 
         self.counts_tsv = counts_tsv
         self.groups_tsv = groups_tsv
 
-        self.counts = pd.read_csv(counts_tsv, sep=sep, index_col="Geneid",
+        self.counts = pd.read_csv(counts_tsv, sep=sep_counts, index_col="Geneid",
             comment="#")
-        self.groups = pd.read_csv(groups_tsv, sep=sep, index_col="label",
+        self.groups = pd.read_csv(groups_tsv, sep=sep_groups, index_col="label",
             comment="#")
+
 
         self.condition = condition
         self.comparisons = comparisons
@@ -755,7 +757,8 @@ class RNADiffResults:
 
         self._set_gene_lists_one_condition()
 
-        self.read_annotations(annotations)
+        try:self.read_annotations(annotations)
+        except:pass
 
     def read_annotations(self, annotation_file):
         if os.path.exists(annotation_file):
