@@ -5,7 +5,7 @@ def macs3_dynamic(name):
     macs3_code = '''
 rule macs3_%(name)s:
     """
-    macs3 peak caller 
+    macs3 peak caller
 
     Required input:
         __macs3_%(name)s__ip_bam: input bam file(s)
@@ -46,7 +46,7 @@ rule macs3_%(name)s:
     run:
         ip_bam = " ".join(input.ip_bam)
         control_bam = " ".join(input.control_bam)
-        # -B is to save fragment pileup useful to save into bigwig later on
+        # -B --SPMR is to save fragment pileup useful to save into bigwig later on
         cmd = "macs3 callpeak -B --SPMR "
         cmd += f" -t {ip_bam} "
         cmd += f" -c {input.control_bam} "
