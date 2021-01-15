@@ -401,9 +401,11 @@ class PantherEnrichment:
         res = self.panther.get_mapping(mygenes, taxon)
         res = res["mapped"]
         N = len(res)
+
         from easydev import Progress
 
         pb = Progress(N)
+
         for i, item in enumerate(res):
             accession = item["accession"]
             res[i]["persistent_id"] = self._get_name_given_accession(accession)
@@ -1278,7 +1280,7 @@ class KeggPathwayEnrichment:
             -pylab.log10(df["Adjusted P-value"]),
             range(len(df)),
             s=10 * df["size"],
-            c=df["size"],
+            c=df["Adjusted P-value"],
         )
 
         pylab.xlabel("Odd ratio")
@@ -1307,6 +1309,7 @@ class KeggPathwayEnrichment:
         ax = pylab.colorbar(pylab.gci())
         return df
 
+    # FIXME rnadiff object is not imported anymore. This function is not functional
     def _get_summary_pathway(self, pathway_ID):
         genes = self.df_pathways.loc[pathway_ID]["GENE"]
         df_down = self.rnadiff.df.query("padj<=0.05 and log2FoldChange<0").copy()

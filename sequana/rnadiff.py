@@ -22,6 +22,7 @@ import subprocess
 import seaborn as sns
 import matplotlib.pyplot as plt
 from itertools import combinations
+import os
 
 from sequana.lazy import pandas as pd
 from sequana.lazy import pylab
@@ -249,7 +250,9 @@ class RNADiffResults:
         group="condition",
         annot_cols=["ID", "Name", "gene_biotype"],
     ):
-        """"""
+        """
+        :rnadiff_folder:
+        """
         self.path = Path(rnadiff_folder)
         self.files = [x for x in self.path.glob(pattern)]
 
@@ -353,7 +356,25 @@ class RNADiffResults:
     def summary(self):
         return pd.concat(res.summary() for compa, res in self.comparisons.items())
 
-    def run_enrichment_go(self, taxon, annot_col="Name"):
+    def report(self):
+
+        template_file = "rnadiff_report.html"
+        template_env = Environment(
+            loader=PackageLoader("sequana", "resources/templates")
+        )
+        template = template_env.get_template(template_file)
+
+        with open("rnadiff_report.html", "w") as f:
+            f.write(
+                template.render(
+                    {"table": self.summary().to_html(classes="table table-striped")}
+                )
+            )
+
+    def run_enrichment_go(self, taxon, annot_col="Name", out_dir="enrichment"):
+
+        out_dir = Path(out_dir) / "figures"
+        out_dir.mkdir(exist_ok=True, parents=True)
 
         gene_lists_dict = self.get_gene_lists(annot_col=annot_col, Nmax=2000)
         enrichment = {}
@@ -362,13 +383,18 @@ class RNADiffResults:
         for compa in self.comparisons:
             gene_lists = gene_lists_dict[compa]
             pe = PantherEnrichment(gene_lists, taxon)
-            pe.compute_enrichment(ontologies=ontologies)
+            pe.compute_enrichment(ontologies=ontologies, progress=False)
 
             for direction in ["up", "down", "all"]:
                 for ontology in ontologies:
                     enrichment[(compa, direction, ontology)] = pe.get_data(
                         direction, ontology, include_negative_enrichment=False
                     )
+                    plt.figure()
+                    pe.plot_go_terms(direction, ontology)
+                    plt.tight_layout()
+                    plt.savefig(out_dir / f"go_{compa}_{direction}_{ontology}.pdf")
+
             logger.info(f"Panther enrichment for {compa} DONE.")
 
         df = pd.concat(enrichment).sort_index()
@@ -379,14 +405,17 @@ class RNADiffResults:
         self.enrichment_go = df
 
         # Export results (should be moved to enrichment.py at some point I think)
-        with pd.ExcelWriter("go_enrichment.xlsx") as writer:
+        with pd.ExcelWriter(out_dir.parent / "enrichment_go.xlsx") as writer:
             df = self.enrichment_go.copy()
             df.reset_index(inplace=True)
-            df.to_excel(writer, "GO_enrichment", index=False)
-            ws = writer.sheets["GO_enrichment"]
+            df.to_excel(writer, "go", index=False)
+            ws = writer.sheets["go"]
             ws.autofilter(0, 0, df.shape[0], df.shape[1] - 1)
 
-    def run_enrichment_kegg(self, organism, annot_col="Name"):
+    def run_enrichment_kegg(self, organism, annot_col="Name", out_dir="enrichment"):
+
+        out_dir = Path(out_dir) / "figures"
+        out_dir.mkdir(exist_ok=True, parents=True)
 
         gene_lists_dict = self.get_gene_lists(annot_col=annot_col)
         enrichment = {}
@@ -400,6 +429,10 @@ class RNADiffResults:
                 enrichment[(compa, direction)] = ke._get_final_df(
                     ke.enrichment[direction].results, nmax=10000
                 )
+                plt.figure()
+                ke.scatterplot(direction)
+                plt.tight_layout()
+                plt.savefig(out_dir / f"kegg_{compa}_{direction}.pdf")
 
             logger.info(f"KEGG enrichment for {compa} DONE.")
 
@@ -409,11 +442,11 @@ class RNADiffResults:
         self.enrichment_kegg = df
 
         # Export results (should be moved to enrichment.py at some point I think)
-        with pd.ExcelWriter("kegg_enrichment.xlsx") as writer:
+        with pd.ExcelWriter(out_dir.parent / "enrichment_kegg.xlsx") as writer:
             df = self.enrichment_kegg.copy()
             df.reset_index(inplace=True)
-            df.to_excel(writer, "kegg_enrichment", index=False)
-            ws = writer.sheets["kegg_enrichment"]
+            df.to_excel(writer, "kegg", index=False)
+            ws = writer.sheets["kegg"]
             ws.autofilter(0, 0, df.shape[0], df.shape[1] - 1)
 
     def get_gene_lists(self, annot_col="index", Nmax=None):
