@@ -342,6 +342,10 @@ class RNADiffResults:
 
         df = pd.concat(dfs, sort=True).transpose()
 
+        # Add statistics
+        num_sign_compa = (df.loc[:, (slice(None), "padj")] < 0.05).sum(axis=1)
+        df.loc[:, ("stats", "num_of_significative_comparisons")] = num_sign_compa
+
         if self.gff and self.fc_attribute and self.fc_feature:
             annot = self._get_annot()
             df = pd.concat([annot, df], axis=1)
