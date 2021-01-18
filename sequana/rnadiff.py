@@ -342,9 +342,21 @@ class RNADiffResults:
 
         df = pd.concat(dfs, sort=True).transpose()
 
-        # Add statistics
+        # Add number of comparisons which are significative for a given gene
         num_sign_compa = (df.loc[:, (slice(None), "padj")] < 0.05).sum(axis=1)
-        df.loc[:, ("stats", "num_of_significative_comparisons")] = num_sign_compa
+        df.loc[:, ("statistics", "num_of_significative_comparisons")] = num_sign_compa
+
+        # Add list of comparisons which are significative for a given gene
+        df_sign_padj = df.loc[:, (slice(None), "padj")] < 0.05
+        sign_compa = df_sign_padj.loc[:, (slice(None), "padj")].apply(
+            (  # Extract column names (comparison names) for significative comparisons
+                lambda row: ", ".join(
+                    [col_name[0] for sign, col_name in zip(row, row.index) if sign]
+                )
+            ),
+            axis=1,
+        )
+        df.loc[:, ("statistics", "significative_comparisons")] = sign_compa
 
         if self.gff and self.fc_attribute and self.fc_feature:
             annot = self._get_annot()
