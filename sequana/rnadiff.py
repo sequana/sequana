@@ -523,19 +523,22 @@ class RNADiffResults:
         plt.xlabel(xlabel)
         plt.ylabel(ylabel)
 
-    def get_specific_commons(self, direction, compas=None):
+    def get_specific_commons(self, direction, compas=None, annot_col="index"):
         """From all the comparisons contained by the object, extract gene lists which
-        are common (but specific, ie a gene appear in a single list) comparing
-        all combinations of comparisons.
+        are common (but specific, ie a gene appear only appears in the
+        combination considered) comparing all combinations of comparisons.
 
         :param direction: The regulation direction (up, down or all) of the gene
         lists to consider
 
         :param compas: Specify a list of comparisons to consider (Comparisons
         names can be found with self.comparisons.keys()).
+
         """
 
         common_specific_dict = {}
+
+        total_gene_lists = self.get_gene_lists(annot_col=annot_col)
 
         if not compas:
             compas = self.comparisons.keys()
@@ -543,8 +546,7 @@ class RNADiffResults:
         for size in range(1, len(compas)):
             for compa_group in combinations(compas, size):
                 gene_lists = [
-                    self.comparisons[compa].gene_lists[direction]
-                    for compa in compa_group
+                    total_gene_lists[compa][direction] for compa in compa_group
                 ]
                 commons = set.intersection(
                     *[set(gene_list) for gene_list in gene_lists]
@@ -554,7 +556,7 @@ class RNADiffResults:
                 genes_in_other_compas = {
                     x
                     for other_compa in other_compas
-                    for x in self.comparisons[other_compa].gene_lists[direction]
+                    for x in total_gene_lists[other_compa][direction]
                 }
 
                 commons = commons - genes_in_other_compas
