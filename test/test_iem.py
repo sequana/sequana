@@ -22,7 +22,7 @@ def test_iem():
         iem.to_fasta("TEST")
         try:iem.validate()
         except:pass
-
+        print(iem)
 
     with TempFile() as fh:
 
@@ -31,3 +31,21 @@ def test_iem():
         e = IEM(fh.name)
 
 
+def test_iem_samplesheets():
+    for filename in ['test_iem_samplesheet_hiseq_single.csv',
+                     'test_iem_samplesheet_miseq_double.csv',
+                     'test_iem_samplesheet_nextseq_single.csv',
+                     'test_iem_samplesheet_iseq100.csv',
+                     'test_iem_samplesheet_misnieq.csv']:
+        iem = IEM(sequana_data(filename))
+        iem.validate()
+        iem.version
+        iem.instrument
+        iem.header
+
+def test_old_samplesheet():
+    for filename in ['test_expdesign_hiseq.csv', 'test_expdesign_hiseq_doubleindex.csv']:
+        iem = IEM(sequana_data(filename))
+        iem.validate()
+        iem.version
+        iem.instrument
