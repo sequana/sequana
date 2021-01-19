@@ -5,6 +5,16 @@ Changelog
     :depth: 2
 
 
+0.9.9
+-----
+
+* CHANGES:
+
+  * removed expdesign module. Improved iem module to cope with old formats. From
+    now on, we wil use IEM formats only for the illumina sample sheets. No more
+    home-made formats will be supported.
+
+
 0.9.8
 -----
 
