@@ -26,7 +26,6 @@ from .bed import BED
 from .bedtools import GenomeCov
 from .cigar import Cigar
 from .coverage import Coverage
-from .expdesign import ExpDesignAdapter
 from .fastq import FastQ, FastQC, Identifier
 from .fasta import FastA
 from .gff3 import GFF3
