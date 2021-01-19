@@ -723,9 +723,9 @@ class CCS(PacbioBAMBase):
     def stats(self):
         data = {}
         data["N"] = len(self.df)
-        data["mean_read_length"] = float(self.df.read_length.mean().round(2))
+        data["mean_read_length"] = float(round(self.df.read_length.mean(),2))
         data["total_bases"] = int(self.df.read_length.sum())
-        data["mean_nb_passes"] = float(self.df.nb_passes.mean().round(2))
+        data["mean_nb_passes"] = float(round(self.df.nb_passes.mean(),2))
         return data
 
     def to_summary(self, filename="sequana_summary_pacbio_ccs.json"):
