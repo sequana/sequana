@@ -33,7 +33,6 @@ from sequana.viz import Volcano
 
 import glob
 
-<<<<<<< HEAD
 __all__ = ["RNADiffAnalysis", "RNADiffResults"]
 
 
@@ -682,9 +681,6 @@ class RNADiffResults2:
             xlabel="Mean of normalized counts",
             ylabel="Dispersion",
         )
-=======
-__all__ = ["RNADiffResults"]
->>>>>>> 29d6650409776aace26e8e2625df38741b861fde
 
 
 class RNADiffResults:
