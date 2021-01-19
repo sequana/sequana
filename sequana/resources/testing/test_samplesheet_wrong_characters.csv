@@ -1,0 +1,21 @@
+[Header]
+IEMFileVersion,4
+Investigator Name,laurence
+Experiment Name,160104-SR-310v2-std
+Date,1/4/2016
+Workflow,GenerateFASTQ
+Application,FASTQ Only
+Assay,NEXTFlex-PCRfree
+Description,
+Chemistry,Default
+
+[Reads]
+315
+
+[Settings]
+Adapter,AGATCGGAAGAGCACACGTCTGAACTCCAGTCA
+AdapterRead2,AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT
+
+[Data]
+Sample_ID,Sample_Name,Sample_Plate,Sample_Well,I7_Index_ID,index,Sample_Project,Description
+pop+1,,,,NF01,CGATGT,,

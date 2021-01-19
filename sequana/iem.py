@@ -95,6 +95,25 @@ class IEM():
         else:
             self._scanner()
 
+    def __repr__(self):
+        txt = " %s entries\n" % (len(self.df))
+        #txt += "adapter type: %s\n" % (self.adapter_type)
+        #txt += "Instrument Type: %s " % (self.instrument)
+        return txt
+
+    """
+HiSeq:
+Lane,Sample_ID,Sample_Name,Sample_Plate,Sample_Well,I7_Index_ID,index,Sample_Project,Description
+ISeq100
+Sample_ID,Sample_Name,Description,index,I7_Index_ID,Sample_Project
+MiSeq
+Sample_ID,Sample_Plate,Sample_Well,Index_Plate_Well,I7_Index_ID,index,I5_Index_ID,index2,Sample_Project,Description
+MiniSeq:
+Sample_ID,Sample_Name,Sample_Plate,Sample_Well,Index_Plate,Index_Plate_Well,I7_Index_ID,index,I5_Index_ID,index2,Sample_Project,Description
+NextSeq
+Sample_ID,Sample_Name,Sample_Plate,Sample_Well,Index_Plate_Well,I7_Index_ID,index,Sample_Project,Description
+"""
+
     def _line_cleaner(self, line, line_count):
         # We can get rid of EOL and spaces
         line = line.strip()
@@ -134,16 +153,69 @@ class IEM():
 
         if "Data" not in data.keys(): #pragma: no cover
             logger.warning("Input file must contain [Data]")
+
         self.data = data
 
     def _get_df(self):
         import pandas as pd
         import io
-        df = pd.read_csv(io.StringIO("\n".join(self.data['Data'])))
-        if len(df.columns)==0:
-            raise ValueError("Invalid sample sheet in the Data section")
+
+        # For official IEM sample sheet:
+        try:
+            df = pd.read_csv(io.StringIO("\n".join(self.data['Data'])))
+            if len(df.columns)==0:
+                raise ValueError("Invalid sample sheet in the Data section")
+        except:
+            # all others are old samplesheet, non official, or si,plied version
+            # Usually just a CSV file where header is the only information
+            # available. The minimal we can have is 4 columns:
+            # sample name, index1 and index2 and possibly a project name
+            try:
+                df = pd.read_csv(self.filename)
+                df.rename({'SampleID': "Sample_ID"}, inplace=True, axis=1)
+
+                df.rename({'sample_name': "Sample_ID"}, inplace=True, axis=1)
+                df.rename({'index1': "Index1_ID"}, inplace=True, axis=1)
+                df.rename({'index2': "Index2_ID"}, inplace=True, axis=1)
+
+                if "Index Seq" in df.columns:
+                    # this is an old HiSeq format used at biomics. If two indices,
+                    # they were separated by a - character
+                    index_seq = df['Index Seq']
+                    index1 = []
+                    index2 = []
+                    for this in df['Index Seq'].values:
+                        if isinstance(this, str):
+                            indices = this.split("-")
+                            index1.append(indices[0])
+                            if len(indices) == 2:
+                                index2.append(indices[1])
+                            else:
+                                index2.append(None)
+                        else:
+                            index1.append(None)
+                            index2.append(None)
+                    df['index'] = index1
+                    if index2: df['index2'] = index2
+                    df.drop("Index Seq", axis=1, inplace=True)
+                #print(df)
+                #df = df.set_index("Sample_ID")
+            except Exception as err:
+                raise(err)
+
         return df
     df = property(_get_df)
+
+    def _get_samples(self):
+        return self.df['Sample_ID'].values
+    samples = property(_get_samples)
+
+    def _get_version(self):
+        try:
+            return self.header['IEMFileVersion']
+        except:
+            return None
+    version = property(_get_version)
 
     def validate(self):
         """This method checks whether the sample sheet is correctly formatted
@@ -154,39 +226,55 @@ class IEM():
             * inconsistent numbers of columns in the [DATA] section, which must be
               CSV-like section
             * Extra lines at the end are ignored
+            * special characters except are forbidden except - and _
 
         """
         # could use logger, but simpler for now
         # Note that this code is part of sequana_demultiplex
         prefix = "ERROR  [sequana_pipelines.demultiplex.check_samplesheet]: "
         try:
+            self._cnt_data = 0
+            self._cnt = 0
             with open(self.filename, "r") as fp:
                 line = fp.readline()
-                cnt = 1
+                self._cnt = 1
                 if line.rstrip().endswith(";") or line.rstrip().endswith(","): #pragma: no cover
-                    sys.exit(prefix + "Unexpected ; or , found at the end of line {} (and possibly others). Please use IEM  to format your SampleSheet. Try sequana_fix_samplesheet for extra ; or , ".format(cnt))
+                    sys.exit(prefix + "Unexpected ; or , found at the end of line {} (and possibly others). Please use IEM  to format your SampleSheet. Try sequana_fix_samplesheet for extra ; or , ".format(self._cnt))
 
                 while line:
                     line = fp.readline()
-                    cnt += 1
+                    self._cnt += 1
                     if "[Data]" in line:
                         line = fp.readline()
-                        cnt += 1
+                        self._cnt += 1
+                        self._cnt_total = self._cnt
                         if len(line.split(',')) < 2 or "Sample" not in line: #pragma:  no cover
                             sys.exit(prefix + ": No header found after [DATA] section")
-                        nb_col = len(line.split(','))
+                        self.nb_col = len(line.split(','))
                         # now we read the first line below [Data]
                         line = fp.readline()
-                        cnt += 1
+                        self._cnt += 1
                         while line:
-                            if line.strip() and len(line.split(',')) != nb_col:
-                                sys.exit(prefix + "Different number of column in [DATA] section on line: "+str(cnt))
+                            self._validate_line(line)
                             line = fp.readline()
-                            cnt += 1
+                            self._cnt += 1
+
         except Exception as e: #pragma: no cover
             raise ValueError("type error: " + str(e))
-        return 0
 
+
+        # Check that the sample Name and ID are alphanumerical
+        for column in ['Sample_ID', 'Sample', 'Sample_Name']:
+            for i, x in enumerate(self.df.Sample_ID.values):
+                print(i, x)
+                status = x.replace("-", "").replace("_", "").isalnum()
+                if status is False:
+                    sys.exit("type error: wrong sample name {} on line {}, which must be alpha numeric except for the _ and - characters".format(x, self._cnt_total + i))
+
+    def _validate_line(self, line):
+        # check number of columns 
+        if line.strip() and len(line.split(',')) != self.nb_col:
+            sys.exit(prefix + "Different number of column in [DATA] section on line: "+str(cnt))
 
     def _get_settings(self):
         data = {}
@@ -200,10 +288,24 @@ class IEM():
     def _get_header(self):
         data = {}
         for line in self.data['Header']:
-            key, value = line.split(",")
+            key, value = line.split(",", 1)
             data[key] = value
         return data
     header =  property(_get_header)
+
+    def _get_instrument(self):
+        try:
+            return self.header['Instrument Type']
+        except:
+            return None
+    instrument = property(_get_instrument)
+
+    def _get_adapter_kit(self):
+        try:
+            return self.header['Index Adapters']
+        except:
+            return None
+    index_adapters = property(_get_adapter_kit)
 
     def _get_name(self):
         if len(self.data['Name']) == 1:
@@ -239,7 +341,7 @@ class IEM():
 
                      if line.startswith('[Data]'):
                          found_data = True
-                    
+
                      if found_data:
                          line = line.replace(";", ",")
                      else:

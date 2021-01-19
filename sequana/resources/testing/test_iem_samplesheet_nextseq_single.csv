@@ -1,0 +1,29 @@
+Header]
+IEMFileVersion,5
+Investigator Name,ZA
+Experiment Name,B3353
+Date,4/6/2020
+Workflow,GenerateFASTQ
+Application,NextSeq FASTQ Only
+Instrument Type,NextSeq/MiniSeq
+Assay,TruSeq Stranded mRNA
+Index Adapters,"IDT-ILMN TruSeq RNA UD Indexes (96 Indexes)"
+Description,RNA
+Chemistry,Default
+
+[Reads]
+76
+
+[Settings]
+Adapter,AGATCGGAAGAGCACACGTCTGAACTCCAGTCA
+AdapterRead2,AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT
+
+[Data]
+Sample_ID,Sample_Name,Sample_Plate,Sample_Well,Index_Plate_Well,I7_Index_ID,index,Sample_Project,Description
+ev1,,,,A10,UDI0073,CAATTAAC,B3353,
+ydiP1,,,,B10,UDI0074,TGGCCGGT,B3353,
+ev2,,,,C10,UDI0075,AGTACTCC,B3353,
+ydiP2,,,,D10,UDI0076,GACGTCTT,B3353,
+ev3,,,,E10,UDI0077,TGCGAGAC,B3353,
+ydiP3,,,,F10,UDI0078,CATAGAGT,B3353,
+

@@ -42,7 +42,7 @@ the :class:`AdapterReader`::
     ar = AdapterReader(filename)
     ar.get_adapter_by_index("N501")
 
-Given a design file (see mod:`sequana.expdesign`), and a name for the type of
+Given a design file (see mod:`sequana.iem`), and a name for the type of
 adapters, one can easily extract the subset of relevant adapters to be used for
 a sample. Currently, the following set of adapters/design are available:
 
@@ -61,8 +61,8 @@ set of Nextera adapters, one would use:
 .. doctest::
 
     >>> from sequana import *
-    >>> filename = sequana_data("test_expdesign_hiseq.csv")
-    >>> design = ExpDesignAdapter(filename)
+    >>> filename = sequana_data("test_iem_samplesheet_iseq100.csv")
+    >>> design = IEM(filename)
     >>> fa = FindAdaptersFromDesign(design, "PCRFree")
     >>> print(fa.sample_names[0])
     '553-iH2-1'
@@ -623,7 +623,7 @@ class FindAdaptersFromDesign(object):
         """.. rubric:: Constructor
 
         :param str design_filename: a CSV file that is compatible
-            with our :class:`sequana.expdesign.ExpDesignAdapter`
+            with our :class:`sequana.iem.IEM`
         :param adapters: the type of adapters (PCRFree, Nextera,
             Rubicon, TruSeq, SMARTer, Small)
 
@@ -639,14 +639,8 @@ class FindAdaptersFromDesign(object):
             from sequana.adapters import _get_registered_adapters
             _get_registered_adapters()
         """
-        from sequana.expdesign import ExpDesignAdapter
-        self.design = ExpDesignAdapter(design_filename)
-
-        if self.design.df.index.name == "Sample_ID" or \
-            "Sample_ID" in self.design.df.columns:
-            self.design.df.set_index("Sample_ID", inplace=True)
-        else:
-            raise ValueError("Incorrect design file. Missing Sample_ID field")
+        from sequana.iem import IEM
+        self.design = IEM(design_filename)
 
         self.adapters = adapters
 
@@ -666,24 +660,26 @@ class FindAdaptersFromDesign(object):
         self._adapters_revc = AdapterReader(file2)  # !!! revcomp
 
     def _get_samples(self):
-        return list(self.design.df.index)
+        return list(self.design.samples)
     sample_names = property(_get_samples,
         doc="return all sample names contained in the design file")
 
     def get_sample(self, sample_name):
         """Return basic info about the sample name (from the design file)"""
-        if sample_name not in self.design.df.index:
-            raise ValueError("%s not valid. Use one of %s" % (sample_name,
-                                                              self.sample_names))
 
-        data = self.design.df.loc[sample_name]
+        if sample_name not in self.design.samples:
+            raise ValueError("%s not valid. Use one of %s" % (sample_name,
+                                                              self.design.samples))
+
+        df = self.design.df.set_index("Sample_ID")
+        data = df.loc[sample_name]
         if data.ndim == 1: # the expected pandas.Series
             return data
         else:
             # Check that we have duplicates
             # Indeed, for HiSeq design with Index1_Seq and Index2_Seq, it may happen
             # that the sample names are duplicated (RNA-seq exp) on  different Lanes.
-            checkme = data.drop_duplicates(["SampleRef", "Index1_Seq", "Index2_Seq"])
+            checkme = data.drop_duplicates(["SampleRef", "index", "index2"])
             if len(checkme) > 1:
                 raise ValueError("Found several instance of sample " +
                         "name {} in the design file".format(sample_name))
@@ -714,25 +710,22 @@ class FindAdaptersFromDesign(object):
         **|seq:** tag in their name will be added; So, here we will also have the
         universal and the two transposases
 
-
         """
         data = self.get_sample(sample_name)
 
         res = {'index1': {}, 'index2': {}}
 
-        # Index1_Seq must always be present. This is part of the API of the
-        # ExpDesignAdapter class. However, Index2_ID may not always be present
-        # In which case index2 remains empty
+        # 'index' must always be present. This is part of the API of the
+        # IEM format. index2 may not always be present
 
-        # Then, two types of design are accepted, using the adapter index
-        # ID or the sequence itself. The sequence is more robust since
-        # experimentalist may change the ID (but not the seq). So we start with
-        # the sequence first.
-
-        for column in ["Index1_Seq", "Index2_Seq"]:
+        for column in ["index", "index2"]:
             if column not in data.index:
                 continue
-            key = column.split("_")[0].lower()
+
+            if column == "index":
+                key = "index1"
+            else:
+                key = "index2"
             index = data.loc[column]
             if index is None:
                 continue

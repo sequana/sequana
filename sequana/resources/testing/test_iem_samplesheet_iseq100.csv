@@ -1,0 +1,21 @@
+[Header]
+Local Run Manager Analysis Id,43043
+Experiment Name,B3202
+Date,2020-01-24
+Module,GenerateFASTQ - 2.0.0
+Workflow,GenerateFASTQ
+Library Prep Kit,Custom
+Description,200123-PE-MP-150
+Chemistry,Default
+
+[Reads]
+151
+151
+
+[Data]
+Sample_ID,Sample_Name,Description,index,I7_Index_ID,Sample_Project
+412,412,,TGACCA,TGACCA,B3202
+LMD666,LMD666,,CATTTT,CATTTT,B3202
+TaoP3,TaoP3,,ACAGTG,ACAGTG,B3202
+TaoP10,TaoP10,,GTGAAA,GTGAAA,B3202
+
