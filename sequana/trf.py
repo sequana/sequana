@@ -71,6 +71,9 @@ class TRF():   # pragma: no cover
         msg += "Number of entries: {}".format(len(self.df))
         return msg
 
+    def __len__(self):
+        return len(self.df)
+
     def scandata(self, verbose=True, max_seq_length=20):
         """scan output of trf and returns a dataframe
 
@@ -164,16 +167,20 @@ class TRF():   # pragma: no cover
         pylab.ylabel("#")
 
     def hist_period_size(self, bins=50):
+        """Length of the repetitions"""
         self.df.period_size.hist(bins=bins)
         pylab.xlabel("repeat length")
 
     def hist_entropy(self, bins=50):
-        self.df.entropy.hist(bins=bins)
-        pylab.xlabel("entropy")
+        """Histogram of the entropy of all found repeats
 
+        """
+        self.df.entropy.hist(bins=bins)
+        pylab.xlabel("Entropy")
+        pylab.ylabel("#")
 
     def hist_repet_by_sequence(self):
-        # How many repetiations per sequence 
+        # How many repetitions per sequence 
         pylab.hist([len(x) for x in self.df.groupby("sequence_name").groups.values()])
         pylab.xlabel("# repetitions per sequence")
 

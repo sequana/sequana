@@ -721,6 +721,8 @@ class SequanaManager():
     def check_input_files(self, stop_on_error=True):
         # Sanity checks
         cfg = self.config.config
+
+
         filenames = glob.glob(cfg.input_directory + os.sep + cfg.input_pattern)
         logger.info("Found {} files matching your input  pattern ({})".format(
             len(filenames), cfg.input_pattern))
