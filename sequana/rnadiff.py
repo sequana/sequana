@@ -408,7 +408,7 @@ class RNADiffResults:
                         direction, ontology, include_negative_enrichment=False
                     )
                     plt.figure()
-                    pe.plot_go_terms(direction, ontology)
+                    pe.plot_go_terms(direction, ontology, compute_levels=False)
                     plt.tight_layout()
                     plt.savefig(out_dir / f"go_{compa}_{direction}_{ontology}.pdf")
 
@@ -552,7 +552,6 @@ class RNADiffResults:
                 commons = set.intersection(
                     *[set(gene_list) for gene_list in gene_lists]
                 )
-
                 other_compas = [compa for compa in compas if compa not in compa_group]
                 genes_in_other_compas = {
                     x
