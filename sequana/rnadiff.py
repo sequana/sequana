@@ -329,7 +329,11 @@ class RNADiffResults:
         return df
 
     def _get_total_df(self, filtered=False):
-        """Concatenate all rnadiff results in a single dataframe."""
+        """Concatenate all rnadiff results in a single dataframe.
+
+        FIXME: Columns relative to significative comparisons are not using
+        self.log2_fc and self.alpha
+        """
 
         dfs = []
 
