@@ -603,7 +603,14 @@ class RNADiffResults:
             ylabel="% of null counts",
         )
 
-    def plot_pca(self, n_components=2, colors=None, plotly=False, max_features=500):
+    def plot_pca(
+        self,
+        n_components=2,
+        colors=None,
+        plotly=False,
+        max_features=500,
+        genes_to_remove=[],
+    ):
 
         """
 
