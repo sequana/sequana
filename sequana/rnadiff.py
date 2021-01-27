@@ -627,7 +627,20 @@ class RNADiffResults:
         """
         from sequana.viz import PCA
 
-        p = PCA(self.counts_vst)
+        # Get most variable genes (n=max_features)
+        top_features = (
+            self.counts_vst.var(axis=1)
+            .sort_values(ascending=False)
+            .index[:max_features]
+        )
+
+        if genes_to_remove:
+            top_features = [x for x in top_features if x not in genes_to_remove]
+
+        counts_top_features = self.counts_vst.loc[top_features, :]
+
+        p = PCA(counts_top_features)
+
         if plotly is True:
             assert n_components == 3
             variance = p.plot(
