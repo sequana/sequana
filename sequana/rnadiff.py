@@ -353,11 +353,8 @@ class RNADiffResults:
         # Add list of comparisons which are significative for a given gene
         df_sign_padj = df.loc[:, (slice(None), "padj")] < 0.05
         sign_compa = df_sign_padj.loc[:, (slice(None), "padj")].apply(
-            (  # Extract column names (comparison names) for significative comparisons
-                lambda row: ", ".join(
-                    [col_name[0] for sign, col_name in zip(row, row.index) if sign]
-                )
-            ),
+            # Extract column names (comparison names) for significative comparisons
+            lambda row: {col_name[0] for sign, col_name in zip(row, row.index) if sign},
             axis=1,
         )
         df.loc[:, ("statistics", "significative_comparisons")] = sign_compa
