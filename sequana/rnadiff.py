@@ -395,22 +395,27 @@ class RNADiffResults:
 
         gene_lists_dict = self.get_gene_lists(annot_col=annot_col, Nmax=2000)
         enrichment = {}
-        ontologies = ["GO:0003674", "GO:0008150", "GO:0005575"]
+        ontologies = {"GO:0003674": "BP", "GO:0008150": "MF", "GO:0005575": "CC"}
 
         for compa in self.comparisons:
             gene_lists = gene_lists_dict[compa]
             pe = PantherEnrichment(gene_lists, taxon)
-            pe.compute_enrichment(ontologies=ontologies, progress=False)
+            pe.compute_enrichment(ontologies=ontologies.keys(), progress=False)
 
             for direction in ["up", "down", "all"]:
-                for ontology in ontologies:
+                for ontology in ontologies.keys():
                     enrichment[(compa, direction, ontology)] = pe.get_data(
                         direction, ontology, include_negative_enrichment=False
                     )
                     plt.figure()
-                    pe.plot_go_terms(direction, ontology, compute_levels=False)
+                    try:
+                        pe.plot_go_terms(direction, ontology, compute_levels=False)
+                    except:
+                        return pe
                     plt.tight_layout()
-                    plt.savefig(out_dir / f"go_{compa}_{direction}_{ontology}.pdf")
+                    plt.savefig(
+                        out_dir / f"go_{compa}_{direction}_{ontologies[ontology]}.pdf"
+                    )
 
             logger.info(f"Panther enrichment for {compa} DONE.")
 

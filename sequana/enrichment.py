@@ -563,6 +563,9 @@ class PantherEnrichment:
         logger.info("Filtering out the 3 parent terms")
         subdf = subdf.query("id not in @self.ontologies")
 
+        if subdf is None or len(subdf) == 0:
+            return subdf
+
         # Keeping only a part of the data, sorting by pValue
         if sort_by == "pValue":
             subdf = subdf.sort_values(by="pValue", ascending=False).iloc[-max_features:]
