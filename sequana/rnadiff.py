@@ -279,7 +279,8 @@ class RNADiffResults:
         self._alpha = alpha
         self._log2_fc = log2_fc
 
-        self.annot_df = self._get_annot()
+        if self.gff:
+            self.annot_df = self._get_annot()
 
         self.comparisons = self.import_tables()
 
@@ -360,9 +361,7 @@ class RNADiffResults:
         df.loc[:, ("statistics", "significative_comparisons")] = sign_compa
 
         if self.gff and self.fc_attribute and self.fc_feature:
-            annot = self._get_annot()
-            df = pd.concat([annot, df], axis=1)
-            df
+            df = pd.concat([self.annot_df, df], axis=1)
         else:
             logger.warning(
                 "Missing any of gff, fc_attribute or fc_feature. No annotation will be added."
