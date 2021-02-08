@@ -1,4 +1,5 @@
 from sequana.scripts import taxonomy
+from sequana import logger
 from sequana import sequana_data
 import os
 import pytest
@@ -62,7 +63,6 @@ def test_analysis(krakendb):
         df = taxonomy.main([prog, '--file1', file1, "--database", database,
             "--file2", file2,  "--output-directory",
             directory.name, "--thread", "1"])
-    from sequana import logger
     logger.info(directory.name)
 
 def test_help():
