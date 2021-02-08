@@ -14,14 +14,11 @@
 #  documentation: http://sequana.readthedocs.io
 #
 ##############################################################################
+from sequana.lazy import pylab
 import pandas as pd
 
-
-
-from sequana.lazy import pylab
-from sequana import logger
-
-logger.name = __name__
+import colorlog
+logger = colorlog.getLogger(__name__)
 
 
 __all__ = ["TRF"]
@@ -57,12 +54,12 @@ class TRF():   # pragma: no cover
         t.df.query(query)
 
     """
-    def __init__(self, filename, verbose=False):
+    def __init__(self, filename, verbose=False, frmt='trf'):
         self.filename = filename
-        try:
+        if frmt == 'trf':
             # input can be the output of TRF or our trf dataframe
             self.df = self.scandata(verbose=verbose)
-        except:
+        else:
             self.df = pd.read_csv(filename)
 
     def __repr__(self):
@@ -164,6 +161,23 @@ class TRF():   # pragma: no cover
         self.df.query("CNV>@CNVmin and seq1 in @motif").CNV.hist(bins=bins, log=log,
             color=color)
         pylab.xlabel("CNV length (bp)")
+        pylab.ylabel("#")
+
+    def hist_length_repetition(self, bins=50, CNVmin=3, motif=['CAG', 'AGC', 'GCA'],
+            color="r", log=True):
+        """
+
+        histogram of the motif found in the list provided by users.
+        As an example, this is triplet CAG. Note that we also add the shifted
+        version AGC and GCA.
+
+        """
+        cnvs = self.df.query("CNV>@CNVmin and seq1 in @motif").CNV
+        repet = self.df.query("CNV>@CNVmin and seq1 in @motif").period_size
+        data = cnvs * repet
+        data.hist(bins=bins, log=log,
+            color=color)
+        pylab.xlabel("Repetition length (bp)")
         pylab.ylabel("#")
 
     def hist_period_size(self, bins=50):
