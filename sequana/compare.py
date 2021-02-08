@@ -23,10 +23,14 @@ import os
 from sequana.lazy import pandas as pd
 from sequana.lazy import pylab
 from sequana.lazy import numpy as np
-from sequana import logger
 from matplotlib_venn import venn2_unweighted, venn3_unweighted
 
 from sequana.rnadiff import RNADiffResults
+
+import colorlog
+logger = colorlog.getLogger(__name__)
+
+
 
 
 __all__ = ["RNADiffCompare"]
@@ -196,6 +200,85 @@ class RNADiffCompare(Compare):
             kargs['data3'] =  self.r3.gene_lists['all']
         self._venn(**kargs)
 
+    def plot_corrplot(self, samples1, samples2, log2=True):
+        from sequana.viz import corrplot
+        df1 = self.r1.df[samples1]
+        df2 = self.r2.df[samples2]
+        df = pd.concat([df1, df2], keys=['r1', 'r2'], axis=1)
+        if log2:
+            df = pylab.log2(df)
+        c = corrplot.Corrplot(df).plot(method='pie')
+        return df.corr()
+
+    def plot_jaccard_distance(self, mode, padjs=[0.0001,0.001,0.01,0.05,0.1],
+            Nfc=50, smooth=False, window=5):
+        assert mode in ['down', 'up', 'all']
+        pylab.clf()
+
+        if mode == "down":
+            m1 = self.r1.df.log2FoldChange.min()
+            m2 = self.r2.df.log2FoldChange.min()
+            minimum = min(m1,m2)
+            print(m1, m2)
+            X = pylab.linspace(0, minimum, Nfc)
+        elif mode == "up":
+            m1 = self.r1.df.log2FoldChange.max()
+            m2 = self.r1.df.log2FoldChange.max()
+            maximum = max(m1,m2)
+            X = pylab.linspace(0, maximum, Nfc)
+        else:
+            minmax1 = self.r1.df.log2FoldChange.abs().max()
+            minmax2 = self.r1.df.log2FoldChange.abs().max()
+            maximum = max(minimax1, minimax2)
+            X = pylab.linspace(0, minmax, Nfc)
+
+        common = {}
+        for padj in padjs:
+            I = []
+            common[padj] = []
+            for x in X:
+                if mode == "down":
+                    # less than a given fold change that is negative
+                    A = set(self.r1.df.query("log2FoldChange<=@x and padj<@padj").index)
+                    B = set(self.r2.df.query("log2FoldChange<=@x and padj<@padj").index)
+                elif mode == "up":
+                    # greater than a given fold change that is positive
+                    A = set(self.r1.df.query("log2FoldChange>=@x and padj<@padj").index)
+                    B = set(self.r2.df.query("log2FoldChange>=@x and padj<@padj").index)
+                else:
+                    A = set(self.r1.df.query("(log2FoldChange>=@x or log2FoldChange<=-@x) and padj<@padj").index)
+                    B = set(self.r2.df.query("(log2FoldChange>=@x or log2FoldChange<=-@x) and padj<@padj").index)
+                if len(A) == 0 or len(B) == 0:
+                    # no overlap yet
+                    I.append(100)
+                else:
+                    res = len(A.intersection(B)) / (len(A) + len(B) - len(A.intersection(B)))  * 100
+                    I.append(res)   
+                common[padj].append(len(A.intersection(B)))
+
+            try:
+                if smooth:
+                    I = pd.Series(I).rolling(window).median().values
+                else:
+                    assert False
+            except:
+                pass
+            pylab.plot(X, I, 'o-', label=str(padj))
+        ax = pylab.gca()
+        ax.set_ylabel("Jaccard similarity (intersection/union)")
+        ax.set_xlabel("Fold change (log2)")
+        ax2 = ax.twinx()
+        for padj in padjs:
+            ax2.plot(X, common[padj], color='orange', ls='--')
+        ax2.set_ylabel("Cardinality of the union ")
+        ax.legend()
+        ax.set_ylim([0,100])
+        #ax2.set_ylim([0,100])
+        if mode == "down":
+            ax.axvline(-2, ls='--', color='r')
+        else:
+            ax.axvline(2, ls='--', color='r')
+
     def plot_common_major_counts(self, mode, labels=None,
             switch_up_down_cond2=False, add_venn=True, xmax=None, 
             title="", fontsize=12, sortby="log2FoldChange"):
@@ -230,6 +313,7 @@ class RNADiffCompare(Compare):
                 by=sortby, ascending=False)
         # sometimes, up and down may be inverted as compared to the other
         # conditions
+
         N = []
         for i in range(1,max(len(A), len(B))):
             a = A.iloc[0:i].index
@@ -276,6 +360,76 @@ class RNADiffCompare(Compare):
                 self.venn_all(ax=ax, title=None, labels=labels,
                     mode="two_only")
 
+    def plot_foldchange(self):
+        mode = "all"
+        A = self.r1.df.loc[self.r1.gene_lists[mode]]
+        B = self.r2.df.loc[self.r2.gene_lists[mode]]
+        AB = set(A.index).intersection(set(B.index))
+        Ao = A.loc[set(A.index).difference(set(B.index))]
+        Bo = B.loc[set(B.index).difference(set(A.index))]
+        Ac = A.loc[AB]
+        Bc = B.loc[AB]
+
+        pylab.plot(self.r1.df.log2FoldChange, self.r2.df.log2FoldChange, 'ko',
+alpha=0.5, markersize=1)
+        pylab.plot(Ac.log2FoldChange, Bc.log2FoldChange, 'or', alpha=0.5)
+        pylab.plot(Ao.log2FoldChange, self.r2.df.loc[Ao.index].log2FoldChange, '*b', alpha=0.5)
+        pylab.plot(Bo.log2FoldChange, self.r1.df.loc[Bo.index].log2FoldChange, 
+            color='cyan', marker="o", lw=0, alpha=0.5)
+
+    
+
+    def plot_volcano_differences(self, mode="all"):
+        cond1, cond2 = "cond1", "cond2"
+        labels = [cond1, cond2]
+        A = self.r1.df.loc[self.r1.gene_lists[mode]]
+        B = self.r2.df.loc[self.r2.gene_lists[mode]]
+        AB = set(A.index).intersection(set(B.index))
+        Aonly = A.loc[set(A.index).difference(set(B.index))]
+        Bonly = B.loc[set(B.index).difference(set(A.index))]
+        Acommon = A.loc[AB]
+        Bcommon = B.loc[AB]
+
+        pylab.clf()
+        pylab.plot(Acommon.log2FoldChange, -np.log10(Acommon.padj), marker="o",
+            alpha=0.5, color="r", lw=0, label="Common in experiment 1", pickradius=4,
+            picker=True)
+        pylab.plot(Bcommon.log2FoldChange, -np.log10(Bcommon.padj), marker="o",
+            alpha=0.5, color="orange", lw=0, label="Common in experiment 2", pickradius=4,
+            picker=True)
+
+        for x in AB:
+            a_l = A.loc[x].log2FoldChange
+            a_p = -np.log10(A.loc[x].padj)
+            b_l = B.loc[x].log2FoldChange
+            b_p = -np.log10(B.loc[x].padj)
+            pylab.plot([a_l, b_l], [a_p, b_p], 'k', alpha=0.5)
+
+        pylab.plot(Bonly.log2FoldChange, -np.log10(Bonly.padj), marker="*",
+            alpha=0.5, color="blue", lw=0, label="In experiment 2 only", pickradius=4,
+            picker=True)
+        pylab.plot(Aonly.log2FoldChange, -np.log10(Aonly.padj), marker="*",
+            alpha=0.5, color="cyan", lw=0, label="In experiment 1 only", pickradius=4,
+            picker=True)
+
+        for name, x in Bonly.iterrows():
+            x1 = x.log2FoldChange
+            y1 = -np.log10(x.padj)
+            x2 = self.r1.df.loc[name].log2FoldChange
+            y2 = -np.log10(self.r1.df.loc[name].padj)
+            pylab.plot( [x1,x2], [y1,y2], ls="--", color='r')
+        for name, x in Aonly.iterrows():
+            x1 = x.log2FoldChange
+            y1 = -np.log10(x.padj)
+            x2 = self.r2.df.loc[name].log2FoldChange
+            y2 = -np.log10(self.r2.df.loc[name].padj)
+            pylab.plot( [x1,x2], [y1,y2], ls="-", color='r')
+
+
+        pylab.legend()
+        pylab.grid(True)
+
+        return Aonly, Bonly, Acommon, Bcommon
 
     def plot_volcano(self, labels=None):
         """Volcano plot of log2 fold change versus log10 of adjusted p-value
@@ -291,10 +445,8 @@ class RNADiffCompare(Compare):
                 sequana_data("rnadiff/rnadiff_onecond_2"))
             c.plot_volcano()
         """
-        #cond1, cond2 = self._get_cond1_cond2()
         cond1, cond2 = "cond1", "cond2"
         if labels is None:
-            #labels = [cond1, cond2]
             labels = [cond1, cond2]
 
         A = self.r1.df.loc[self.r1.gene_lists["all"]]
