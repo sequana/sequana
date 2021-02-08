@@ -44,8 +44,9 @@ except:
     from itertools import zip_longest as izip_longest
 
 
-from sequana import logger
-logger.name == __name__
+import colorlog
+logger = colorlog.getLogger(__name__)
+
 
 
 # for filter fastq files. see below in FastQ for the usage
