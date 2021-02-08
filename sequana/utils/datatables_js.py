@@ -27,7 +27,9 @@
 """
 from collections import OrderedDict
 
-from sequana import logger
+import colorlog
+logger = colorlog.getLogger(__name__)
+
 
 
 class DataTableFunction(object):
