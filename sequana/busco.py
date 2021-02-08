@@ -17,11 +17,12 @@
 import os
 
 from sequana.misc import wget
-from sequana import sequana_config_path, logger
+from sequana import sequana_config_path
 from easydev import DevTools, execute
 
+import colorlog
+logger = colorlog.getLogger(__name__)
 
-logger.name = __name__
 
 
 class BuscoConfig(object):

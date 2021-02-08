@@ -22,9 +22,12 @@
 from collections import Counter
 import json
 
-import numpy as np
-from sequana import logger
-logger.name = __name__
+from sequana.lazy import numpy as np
+
+import colorlog
+logger = colorlog.getLogger(__name__)
+
+
 
 
 def list_to_json_for_barplot(l, logy=False):

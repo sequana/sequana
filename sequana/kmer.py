@@ -17,8 +17,10 @@
 #
 ##############################################################################
 import itertools
-from sequana import logger
-logger.name = __name__
+
+import colorlog
+logger = colorlog.getLogger(__name__)
+
 
 
 def build_kmer(length=6, letters='CG'):

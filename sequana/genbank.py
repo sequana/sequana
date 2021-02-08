@@ -19,8 +19,11 @@
 import re
 from sequana.annotations import Annotation
 from sequana.fasta import FastA
-from sequana import logger
-logger.name = __name__
+
+import colorlog
+logger = colorlog.getLogger(__name__)
+
+
 
 __all__ = ["GenBank"]
 

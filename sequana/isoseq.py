@@ -20,14 +20,16 @@ from collections import Counter
 
 
 from sequana.lazy import  pandas as pd
+from sequana.lazy import  numpy as np
 from sequana import FastQ, FastA
 from sequana.pacbio import PacbioSubreads
 from sequana.lazy import pylab
-from sequana import logger, phred
+from sequana import phred
 
-import numpy as np
 
-logger.name = __name__
+import colorlog
+logger = colorlog.getLogger(__name__)
+
 
 
 __all__ = ["IsoSeqQC", "IsoSeqBAM"]

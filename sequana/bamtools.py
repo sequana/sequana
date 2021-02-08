@@ -50,8 +50,12 @@ from sequana.bed import BED
 from sequana.cigar import fetch_intron, fetch_exon
 
 import pysam
-from sequana import jsontool, logger
-logger.name = __name__
+from sequana import jsontool
+
+import colorlog
+logger = colorlog.getLogger(__name__)
+
+
 """
 #http://www.acgt.me/blog/2014/12/16/understanding-mapq-scores-in-sam-files-does-37-42#
 #http://biofinysics.blogspot.fr/2014/05/how-does-bowtie2-assign-mapq-scores.html
@@ -226,11 +230,13 @@ class SAMBAMbase():
         refnames = []
         querynames = []
         querylengths = []
+        cigar = []
         for i, a in enumerate(self._data):
             flags.append(a.flag)
             starts.append(a.reference_start)
             ends.append(a.reference_end)
             mapqs.append(a.mapq)
+            cigar.append(a.cigarstring)
             try:refnames.append(a.reference_name)
             except:refnames.append(-1)
             querynames.append(a.query_name)

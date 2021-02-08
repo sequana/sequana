@@ -14,10 +14,9 @@
 #  documentation: http://sequana.readthedocs.io
 #
 ##############################################################################
+import colorlog
+logger = colorlog.getLogger(__name__)
 
-
-from sequana import logger
-logger.name = __name__
 
 
 """

@@ -27,9 +27,9 @@ from sequana.lazy import pylab
 
 from sequana.misc import wget
 from sequana import sequana_config_path
-from sequana import logger
+import colorlog
+logger = colorlog.getLogger(__name__)
 
-logger.name = __name__
 
 
 __all__ = ['KrakenResults', "KrakenPipeline", "KrakenAnalysis",

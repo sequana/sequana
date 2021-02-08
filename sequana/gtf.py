@@ -19,8 +19,11 @@ from collections import defaultdict
 import sys
 
 from sequana.fastq import FastQ
-from sequana import logger
-logger.name = __name__
+
+import colorlog
+logger = colorlog.getLogger(__name__)
+
+
 
 
 class GTFFixer():

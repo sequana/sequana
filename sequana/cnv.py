@@ -14,13 +14,14 @@
 #  documentation: http://sequana.readthedocs.io
 #
 ##############################################################################
-
-
-
-import pandas as pd
+from sequana.lazy import pandas as pd
+from sequana.lazy import pylab
 from pylab import plot
-from sequana import logger
-import pylab
+
+import colorlog
+logger = colorlog.getLogger(__name__)
+
+
 
 
 class CNVnator(object):

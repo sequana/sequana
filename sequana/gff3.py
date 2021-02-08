@@ -20,7 +20,10 @@ import os
 # from bioconvert/io/gff3 and adapted later on
 from sequana.annotations import Annotation
 from easydev import do_profile
-from sequana import logger
+
+import colorlog
+logger = colorlog.getLogger(__name__)
+
 
 __all__ = ["GFF3"]
 

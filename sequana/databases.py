@@ -29,8 +29,8 @@ except:
 
 from easydev import AttrDict, execute, Progress
 
-from sequana import logger
-logger.name = __name__
+import colorlog
+logger = colorlog.getLogger(__name__)
 
 
 class EUtilsTools(object):

@@ -21,9 +21,9 @@ import math
 from sequana.lazy import numpy as np
 from sequana.lazy import pandas as pd
 
+import colorlog
+logger = colorlog.getLogger(__name__)
 
-from sequana import logger
-logger.name = __name__
 
 
 __all__ = ["Coverage"]

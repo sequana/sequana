@@ -15,10 +15,10 @@
 #
 ##############################################################################
 import re
-
-from sequana import logger
-logger.name = __name__
 import ruamel.yaml
+
+import colorlog
+logger = colorlog.getLogger(__name__)
 
 __all__ = ["YamlDocParser"]
 

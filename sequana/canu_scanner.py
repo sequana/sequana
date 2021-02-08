@@ -17,12 +17,14 @@
 
 import os
 import glob
-from sequana import version, logger
-import pandas as pd
-import pylab
+from sequana import version
+from sequana.lazy import pandas as pd
+from sequana.pylab import pylab
+
+import colorlog
+logger = colorlog.getLogger(__name__)
 
 
-logger.name = __name__ 
 
 
 class CanuScanner():

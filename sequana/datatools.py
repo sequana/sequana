@@ -21,9 +21,10 @@ import os
 import easydev
 import glob
 import collections
-from sequana import logger
 
-logger.name = __name__
+import colorlog
+logger = colorlog.getLogger(__name__)
+
 
 
 def sequana_data(filename=None, where=None):

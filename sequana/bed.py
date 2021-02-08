@@ -14,6 +14,10 @@
 #  documentation: http://sequana.readthedocs.io
 #
 ##############################################################################
+import colorlog
+logger = colorlog.getLogger(__name__)
+
+
 
 __all__ = ['BED']
 

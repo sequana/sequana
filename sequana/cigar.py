@@ -19,9 +19,10 @@ import re
 """
 Note: could use pysam most probably to improve the speed.
 """
+import colorlog
+logger = colorlog.getLogger(__name__)
 
-from sequana import logger
-logger.name = __name__
+
 
 
 class Cigar(object):
