@@ -28,8 +28,9 @@ import subprocess
 from sequana.snaketools import SequanaConfig, Module
 from sequana.adapters import AdapterReader
 
-from sequana import logger
-logger.name = __name__
+import colorlog
+logger = colorlog.getLogger(__name__)
+
 
 
 __all__ = ["Colors", "InputOptions", "SnakemakeOptions", "SlurmOptions",
@@ -530,11 +531,7 @@ class SequanaManager():
 
         .. todo:: allows options to be None and fill it with miminum contents
         """
-        try:
-            from sequana import logger
-            logger.level = options.level
-        except:
-            pass
+        #logger.setLevel(options.level)
 
         self.options = options
 
