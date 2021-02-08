@@ -21,8 +21,10 @@ import os
 from pysam import FastxFile
 from easydev import Progress
 
-from sequana import logger
-logger.name = __name__
+import colorlog
+logger = colorlog.getLogger(__name__)
+
+
 
 
 __all__ = ["FastA"]
@@ -269,10 +271,14 @@ class FastA(object):
                 fout.write(">{}\t{}\n{}\n".format(read.name, read.comment,
                     read.sequence[::-1]))
 
-    def save_ctg_to_fasta(self, ctgname, outname):
+    def save_ctg_to_fasta(self, ctgname, outname, max_length=-1):
         index = self.names.index(ctgname)
         with open("{}.fa".format(outname), "w") as fout:
-            fout.write(">{}\n{}".format(outname, self.sequences[index]))
+
+            if max_length == -1:
+                fout.write(">{}\n{}".format(outname, self.sequences[index]))
+            else:
+                fout.write(">{}\n{}".format(outname, self.sequences[index][0:max_length]))
 
     def to_fasta(self, outfile, width=80):
         """Save the input FastA file into a new file
@@ -297,6 +303,7 @@ class FastA(object):
                 fout.write("{}\t{}\n".format(k, v))
 
 
+    
 
 
 
