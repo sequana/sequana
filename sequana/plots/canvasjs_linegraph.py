@@ -17,8 +17,11 @@
 ##############################################################################
 """Sequana class to plot a CanvasJS linegraph from an embedded csv file.
 """
-from sequana import logger
 from sequana.plots.canvasjs_base import CanvasJS
+
+import colorlog
+logger = colorlog.getLogger(__name__)
+
 
 
 class CanvasJSLineGraph(CanvasJS):
