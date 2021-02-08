@@ -35,25 +35,21 @@ install:
 
   #- conda install --yes --file requirements.txt
   # to install specific version of multiqc, we install packages manually
-  - conda install --yes matplotlib qtconsole atropos pandas samtools
-  - conda install --yes xlrd scipy pyVCF 
-  - pip install bioservices>=1.7.8
-  - pip install seaborn
+  #- conda install --yes matplotlib qtconsole atropos pandas samtools
+  #- conda install --yes xlrd scipy pyVCF 
+  #- pip install bioservices>=1.7.8
+  #- pip install seaborn
 
   # FIXME
   # for bioservices. should be fixed in bioconda itself I suspect
-  - pip install lxml xmltodict
-  # may be a repetitive reason for failure on travis
-  # - conda install --yes --file requirements_dev.txt
-  # this does not work either
-  # - conda install -y pytest pytest-cov pytest-xdist pytest-timeout pytest-qt
+  #- pip install lxml xmltodict
   - pip install pytest pytest-cov pytest-timeout pytest-qt pytest-xdist pytest-mock pytest-runner
 
   - git clone https://github.com/biomics-pasteur-fr/MultiQC
   - cd MultiQC/
   - git pull origin Feature/RNAseqc2 --no-edit
   - python setup.py install
-  - cd ..
+  #- cd ..
 
   # ideally, we should use requirements_pipelines but this lead to stall on
   # travis because of many dependencies. For testing, we only need those ones
@@ -63,9 +59,9 @@ install:
   - conda install --yes pysam samtools --no-deps
   - conda install --yes bedtools --no-deps
 
-  - pip install pyopengl
-  - pip install itolapi
-  - pip install sklearn statsmodels
+  #- pip install pyopengl
+  #- pip install itolapi
+  #- pip install sklearn statsmodels
   - python setup.py install
   - pip install sequana_quality_control
   - pip install coverage coveralls
