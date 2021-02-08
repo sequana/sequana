@@ -13,7 +13,9 @@ from multiqc.plots import linegraph, table, heatmap, bargraph
 logging.captureWarnings(False)
 
 # Initialise the logger
-log = logging.getLogger('multiqc.sequana/pacbio_qc')
+import colorlog
+logger = colorlog.getLogger(__name__)
+
 
 
 class MultiqcModule(BaseMultiqcModule):
@@ -54,7 +56,7 @@ class MultiqcModule(BaseMultiqcModule):
         self.intro = '<p>{} {}</p>'.format( mname, info)
 
 
-        log.info("Found {} reports".format(len(self.sequana_data)))
+        logger.info("Found {} reports".format(len(self.sequana_data)))
 
         self.populate_columns()
         self.add_count_section()
@@ -121,7 +123,7 @@ class MultiqcModule(BaseMultiqcModule):
             #        data_norm[s_name][gc] = (count / total) * 100
 
         if len(data) == 0:
-            log.debug('no data for the GC content plots')
+            logger.debug('no data for the GC content plots')
             return None
 
         pconfig = {

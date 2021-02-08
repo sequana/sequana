@@ -15,7 +15,9 @@ from multiqc.plots import linegraph, table, heatmap, bargraph
 logging.captureWarnings(False)
 
 # Initialise the logger
-log = logging.getLogger('multiqc.sequana/pacbio_amplicon')
+import colorlog
+logger = colorlog.getLogger(__name__)
+
 
 
 class MultiqcModule(BaseMultiqcModule):

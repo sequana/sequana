@@ -13,7 +13,9 @@ from multiqc.modules.base_module import BaseMultiqcModule
 logging.captureWarnings(False)
 
 # Initialise the logger
-log = logging.getLogger('multiqc.sequana/quality_control')
+import colorlog
+log = colorlog.getLogger(__name__)
+
 
 
 class MultiqcModule(BaseMultiqcModule):

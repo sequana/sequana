@@ -13,7 +13,9 @@ from multiqc.plots import linegraph, table, heatmap, bargraph
 logging.captureWarnings(False)
 
 # Initialise the logger
-log = logging.getLogger('multiqc.sequana/isoseq_qc')
+import colorlog
+log = colorlog.getLogger(__name__)
+
 
 
 class MultiqcModule(BaseMultiqcModule):
