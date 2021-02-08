@@ -53,11 +53,11 @@ from ruamel.yaml import comments
 
 from sequana.misc import wget
 from sequana import version as sequana_version
-from sequana import sequana_data, logger
 from sequana.errors import SequanaException
 
+import colorlog
+logger = colorlog.getLogger(__name__)
 
-logger.name = __name__
 
 
 __all__ = ["DOTParser", "FastQFactory", "FileFactory",

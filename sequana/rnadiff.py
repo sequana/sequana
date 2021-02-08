@@ -27,9 +27,12 @@ from itertools import combinations
 from sequana.lazy import pandas as pd
 from sequana.lazy import pylab
 from sequana.lazy import numpy as np
-from sequana import logger
 from sequana.gff3 import GFF3
 from sequana.viz import Volcano
+
+import colorlog
+logger = colorlog.getLogger(__name__)
+
 
 import glob
 

@@ -18,12 +18,13 @@
 import re
 from pathlib import Path
 
-import pandas as pd
-
+from sequana.lazy import pandas as pd
 from sequana.lazy import pylab
-from sequana import logger
 
-logger.name = __name__
+import colorlog
+logger = colorlog.getLogger(__name__)
+
+
 
 
 __all__ = ['get_most_probable_strand_consensus', 'get_most_probable_strand',

@@ -24,12 +24,13 @@ import json
 from sequana.lazy import pandas as pd
 from sequana.lazy import pylab
 from sequana.lazy import numpy as np
-from sequana import logger
 from matplotlib_venn import venn2_unweighted, venn3_unweighted
 from sequana.rnadiff import RNADiffResults
 from sequana.summary import Summary
 
-logger.name = __name__
+import colorlog
+logger = colorlog.getLogger(__name__)
+
 
 try:
     import gseapy

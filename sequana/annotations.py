@@ -19,6 +19,12 @@ import os
 __all__ = ["Annotation"]
 
 
+import colorlog
+logger = colorlog.getLogger(__name__)
+
+
+
+
 class Annotation():
 
     def __init__(self, filename):
