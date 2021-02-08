@@ -16,11 +16,9 @@
 ##############################################################################
 from sequana.lazy import pylab
 from sequana.lazy import pandas as pd
-
-
 import colorlog
-logger = colorlog.getLogger(__name__)
 
+logger = colorlog.getLogger(__name__)
 
 __all__ = ["BUSCO"]
 
