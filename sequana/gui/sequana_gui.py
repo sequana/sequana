@@ -50,6 +50,8 @@ from sequana import misc
 
 import easydev
 import colorlog
+logger = colorlog.getLogger(__name__)
+
 
 
 def sigint_handler(*args): #pragma: no cover

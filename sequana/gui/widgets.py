@@ -26,8 +26,9 @@ from PyQt5.QtSvg import QSvgWidget
 
 from sequana.gui.file_browser import FileBrowser
 
-from sequana import logger
-logger.name = __name__
+import colorlog
+logger = colorlog.getLogger(__name__)
+
 
 
 __all__ = ["Ruleform", "GeneralOption", "BooleanOption",
