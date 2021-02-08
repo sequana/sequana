@@ -73,11 +73,18 @@ See :class:`FindAdaptersFromDesign` for details.
 """
 import os
 
-from sequana import logger
 from sequana.fasta import FastA
+
+
+import colorlog
+logger = colorlog.getLogger(__name__)
+
+
 from sequana.datatools import sequana_data
 
-logger.name = __name__
+import colorlog
+logger = colorlog.getLogger(__name__)
+
 
 import pysam
 
