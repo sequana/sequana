@@ -6,11 +6,11 @@ except:
     version = ">=0.9.3"
 
 from easydev.logging_tools import Logging
-try:
-    logger
-except:
-    logger = Logging("sequana", "WARNING")
-
+logger = Logging("sequana", "WARNING")
+# To keep the inheritance/propagation of levels. Logging from easydev will do
+# the formatting only.
+import colorlog
+logger = colorlog.getLogger(logger.name)
 
 from easydev import CustomConfig
 configuration = CustomConfig("sequana", verbose=False)
@@ -18,7 +18,6 @@ sequana_config_path = configuration.user_config_dir
 
 # This must be import before all other modules (sequana_data function)
 from .datatools import sequana_data
-
 from .assembly import *
 from .adapters import AdapterReader, FindAdaptersFromDesign, Adapter
 from .bamtools import BAM, SAMFlags, SAM, CRAM
