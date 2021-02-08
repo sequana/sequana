@@ -20,8 +20,10 @@
 from sequana.bamtools import is_bam, is_sam, is_cram
 from sequana.fastq import is_fastq
 from sequana.fasta import is_fasta
-from sequana import logger
-logger.name = __name__
+
+import colorlog
+logger = colorlog.getLogger(__name__)
+
 
 
 def sniffer(filename):

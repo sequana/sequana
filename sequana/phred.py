@@ -65,8 +65,10 @@ In this example, we use :class:`Quality` class where the default offset is 33
 """
 from sequana.lazy import numpy as np
 from sequana.lazy import pylab
-from sequana import logger
-logger.name = __name__
+
+import colorlog
+logger = colorlog.getLogger(__name__)
+
 
 
 quality = r"""!"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOP"""

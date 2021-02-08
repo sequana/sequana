@@ -8,8 +8,11 @@ from sequana.lazy import numpy as np
 from sequana.lazy import pylab
 
 from sequana.sequence import Sequence
-from sequana import logger
-logger.name = __name__
+
+import colorlog
+logger = colorlog.getLogger(__name__)
+
+
 
 __all__ = ["Protein"]
 

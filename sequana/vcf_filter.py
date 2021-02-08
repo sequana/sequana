@@ -21,8 +21,10 @@ import sys
 from sequana.lazy import vcf
 from sequana.lazy import pylab
 from sequana.vcftools import VCFBase
-from sequana import logger
-logger.name = __name__
+
+import colorlog
+logger = colorlog.getLogger(__name__)
+
 
 
 class VCF(object):
@@ -172,7 +174,7 @@ class VCF_mpileup_4dot1(VCFBase):
         Usage example::
 
             from sequana import logger
-            logger.level = "DEBUG"
+            logger.setLevel("DEBUG")
             from sequana import vcf_filter
             v = vcf_filter.VCF(filename)
             v.vcf.apply_indel_filter = True

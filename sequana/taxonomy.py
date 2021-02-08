@@ -18,12 +18,14 @@
 import os
 import re
 from sequana import sequana_config_path
-import pandas as pd
-from sequana import logger
+from sequana.lazy import pandas as pd
 from functools import wraps
-logger.name = __name__
 from sequana.misc import wget
 from easydev import TempFile
+
+import colorlog
+logger = colorlog.getLogger(__name__)
+
 
 __all__ = ['NCBITaxonomy', 'Taxonomy']
 

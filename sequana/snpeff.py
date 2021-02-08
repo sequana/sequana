@@ -25,8 +25,9 @@ import subprocess as sp
 
 from sequana.resources import snpeff
 from sequana import FastA
-from sequana import logger
-logger.name = __name__
+import colorlog
+logger = colorlog.getLogger(__name__)
+
 
 
 class SnpEff(object):

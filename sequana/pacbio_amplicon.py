@@ -19,8 +19,11 @@ import glob
 
 from sequana.freebayes_vcf_filter import VCF_freebayes, Variant
 from sequana import BAM
-from sequana import logger
-logger.name = __name__
+
+import colorlog
+logger = colorlog.getLogger(__name__)
+
+
 
 import pandas as pd
 import pylab

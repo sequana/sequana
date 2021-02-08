@@ -27,8 +27,11 @@
 """
 from bisect import bisect_left, insort
 import numpy as np
-from sequana import logger
-logger.name = __name__
+
+import colorlog
+logger = colorlog.getLogger(__name__)
+
+
 
 
 # blist seems to be unstable on older systems/platforms so we use list by

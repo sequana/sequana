@@ -20,9 +20,10 @@ import os
 import json
 from pathlib import Path
 
-from sequana import logger
 from sequana.lazy import pandas as pd
-logger.name = __name__
+import colorlog
+logger = colorlog.getLogger(__name__)
+
 
 
 from sequana.utils.datatables_js import DataTable

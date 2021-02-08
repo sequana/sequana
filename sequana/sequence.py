@@ -8,9 +8,14 @@ from sequana.lazy import pandas as pd
 from sequana.lazy import numpy as np
 from sequana.lazy import pylab
 
-from sequana import logger
 from easydev import do_profile
-logger.name = __name__
+
+import colorlog
+logger = colorlog.getLogger(__name__)
+
+
+
+
 
 __all__ = ["DNA", "RNA", "Repeats", "Sequence"]
 

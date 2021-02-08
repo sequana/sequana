@@ -9,7 +9,6 @@ from sequana.lazy import pylab
 
 from . import criteria
 
-import numpy as np
 
 half_log_two_pi = 0.5*np.log(2*np.pi)
 
