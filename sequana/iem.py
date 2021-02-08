@@ -17,41 +17,21 @@
 "IEM class"
 import sys
 import collections
-from sequana import logger
-logger.name = __name__
+
+import colorlog
+logger = colorlog.getLogger(__name__)
+
 
 
 __all__ = ["IEM"]
 
 
 class IEM():
-    """!! In progress to replace some of the adapters module classes
-
-    Simple IEM file parser.
-
-    commas are used as delimiter between adajacent fields on the same line
-    If a field contains a comma, use double quotes.
-    If a field contains double quote, the field needs to be wrapped in double
-    quotes.
-
-    Example::
-
-        This is in "quotes", as well as commas
-
-    is represented in the Sample Sheet as::
-
-        "This is in ""quotes"", as well as commas"
-
-    There is no minimum or maximum comma delimiters required on each line.
-
-    The end of the line can be padded with as many commas as desired, which are ignored.
-
-    Empty lines are ignored. Lines made of commas and/or white spaces only are ignored.
+    """Reader and validator of IEM samplesheets
 
     Sections are case-sensitive and denoted by a line starting and ending with square
     brackets. Except for commas and end of line, no extra character after the
-    ending square bracket are authorise.
-
+    ending square bracket are authorised.
 
     Sample sheet must begin with the [Header] section and end with the [Data]
     section. Others can be ordered arbitraly.
@@ -77,12 +57,15 @@ class IEM():
 
     Example of typical Data section to be used with bcl2fastq::
 
+        [Header]
+
         [Data]
         Sample_ID,Sample_Name,I7_Index_ID,index,I5_INdex_ID,index2
         A10001,Sample_A,D701,AATACTCG,D501,TATAGCCT
         A10002,Sample_B,D702,TCCGGAGA,D501,TATAGCCT
         A10003,Sample_C,D703,CGCTCATT,D501,TATAGCCT
         A10004,Sample_D,D704,GAGATTCC,D501,TATAGCCT
+
 
     :references: illumina specifications 970-2017-004.pdf
     """
@@ -100,19 +83,6 @@ class IEM():
         #txt += "adapter type: %s\n" % (self.adapter_type)
         #txt += "Instrument Type: %s " % (self.instrument)
         return txt
-
-    """
-HiSeq:
-Lane,Sample_ID,Sample_Name,Sample_Plate,Sample_Well,I7_Index_ID,index,Sample_Project,Description
-ISeq100
-Sample_ID,Sample_Name,Description,index,I7_Index_ID,Sample_Project
-MiSeq
-Sample_ID,Sample_Plate,Sample_Well,Index_Plate_Well,I7_Index_ID,index,I5_Index_ID,index2,Sample_Project,Description
-MiniSeq:
-Sample_ID,Sample_Name,Sample_Plate,Sample_Well,Index_Plate,Index_Plate_Well,I7_Index_ID,index,I5_Index_ID,index2,Sample_Project,Description
-NextSeq
-Sample_ID,Sample_Name,Sample_Plate,Sample_Well,Index_Plate_Well,I7_Index_ID,index,Sample_Project,Description
-"""
 
     def _line_cleaner(self, line, line_count):
         # We can get rid of EOL and spaces
@@ -198,8 +168,6 @@ Sample_ID,Sample_Name,Sample_Plate,Sample_Well,Index_Plate_Well,I7_Index_ID,inde
                     df['index'] = index1
                     if index2: df['index2'] = index2
                     df.drop("Index Seq", axis=1, inplace=True)
-                #print(df)
-                #df = df.set_index("Sample_ID")
             except Exception as err:
                 raise(err)
 
@@ -266,7 +234,6 @@ Sample_ID,Sample_Name,Sample_Plate,Sample_Well,Index_Plate_Well,I7_Index_ID,inde
         # Check that the sample Name and ID are alphanumerical
         for column in ['Sample_ID', 'Sample', 'Sample_Name']:
             for i, x in enumerate(self.df.Sample_ID.values):
-                print(i, x)
                 status = x.replace("-", "").replace("_", "").isalnum()
                 if status is False:
                     sys.exit("type error: wrong sample name {} on line {}, which must be alpha numeric except for the _ and - characters".format(x, self._cnt_total + i))
