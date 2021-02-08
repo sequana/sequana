@@ -25,7 +25,10 @@ from sequana.modules_report.base_module import SequanaBaseModule
 
 from sequana.lazy import pandas as pd
 from sequana.lazy import pylab
-from sequana import logger
+
+import colorlog
+logger = colorlog.getLogger(__name__)
+
 
 from sequana.utils.datatables_js import DataTable
 

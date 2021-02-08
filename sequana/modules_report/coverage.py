@@ -25,11 +25,14 @@ from sequana.modules_report.base_module import SequanaBaseModule
 from sequana.utils import config
 from sequana.utils.datatables_js import DataTable, DataTableFunction
 from sequana.plots.canvasjs_linegraph import CanvasJSLineGraph
-from sequana import logger
 from sequana.modules_report.summary import SummaryModule
 
+import colorlog
+logger = colorlog.getLogger(__name__)
+
+
+
 __all__ = ["CoverageModule", "ChromosomeCoverageModule"]
-logger.name = __name__
 
 
 class CoverageModule(SequanaBaseModule):

@@ -22,8 +22,9 @@ from sequana.lazy import pylab
 from sequana.modules_report.base_module import SequanaBaseModule
 from sequana.utils.datatables_js import DataTable
 
-from sequana import logger
-logger.name = __name__
+import colorlog
+logger = colorlog.getLogger(__name__)
+
 
 
 class Enrichment(SequanaBaseModule):
@@ -141,7 +142,7 @@ href="{link_rnadiff}">here</a>.</p>
         logger.info("Enrichment module: go term")
         style="width:85%"
         level = logger.level
-        logger.level = "INFO"
+        logger.setLevel(level)
         from sequana.enrichment import PantherEnrichment
         self.pe = PantherEnrichment(self.rnadiff_folder, self.taxon,
             max_entries=self.enrichment_params['max_entries'],
@@ -278,7 +279,7 @@ categories. </p>
 
         html = f"{html_intro} {html_down} <hr> {fotorama_down}<hr> {html_up} <hr> {fotorama_up}<hr>"
         self.sections.append({"name": "2 - GO", "anchor": "go", "content": html})
-        logger.level = level
+        logger.setLevel(level)
 
     def add_kegg(self):
         global logger
@@ -326,8 +327,7 @@ categories. </p>
 
         # save pathways and add fotorama
         from sequana import logger
-        level = logger.level
-        logger.level = "WARNING"
+        logger.setLevel("WARNING")
         from easydev import Progress
         pb = Progress(len(df_down))
         files = []
@@ -374,7 +374,7 @@ categories. </p>
             files.append(ID + ".png")
             pb.animate(i+1)
         fotorama_up = self.add_fotorama(files, width=800)
-        logger.level = level
+        logger.setLevel(level)
 
         Ndown = len(df_down)
         Nup = len(df_up)

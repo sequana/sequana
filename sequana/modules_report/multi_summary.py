@@ -24,9 +24,12 @@ from sequana.modules_report.base_module import SequanaBaseModule
 
 from easydev import DevTools
 from sequana.resources.canvas.bar import CanvasBar
-from sequana import logger
 
 from sequana.lazy import pandas as pd
+
+import colorlog
+logger = colorlog.getLogger(__name__)
+
 
 __all__ = ['SequanaMultipleSummary']
 
@@ -140,9 +143,9 @@ class MultiSummary(SequanaBaseModule):
         super().__init__()
 
         from sequana import logger
-        logger.level = "INFO"
+        logger.setLevel("INFO")
         if verbose is False:
-            logger.level = "WARNING"
+            logger.setLevel("WARNING")
 
         logger.info("Sequana Summary is still a tool in progress and have been " +
               "  tested with the quality_control pipeline only for now.")

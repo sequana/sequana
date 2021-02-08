@@ -26,9 +26,13 @@ from sequana.utils import config
 
 from sequana.lazy import pandas as pd
 from sequana.lazy import pylab
-from sequana import logger, sequana_data
+from sequana import sequana_data
 
 from sequana.utils.datatables_js import DataTable
+
+import colorlog
+logger = colorlog.getLogger(__name__)
+
 
 
 class KrakenModule(SequanaBaseModule):

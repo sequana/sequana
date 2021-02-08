@@ -25,7 +25,9 @@ from jinja2 import Environment, PackageLoader
 
 #from reports import HTMLTable
 from sequana.utils import config
-from sequana import logger
+import colorlog
+logger = colorlog.getLogger(__name__)
+
 
 
 __all__ = ["SequanaBaseModule"]
