@@ -18,8 +18,9 @@ import json
 from sequana.lazy import pylab
 from sequana.lazy import pandas as pd
 
-from sequana import logger
-logger.name = __name__
+import colorlog
+logger = colorlog.getLogger(__name__)
+
 
 
 __all__ = ["StatsFile"]
@@ -125,6 +126,7 @@ class StatsFile(object):
         under = df.query("name=='Undetermined'")
         others = df.query("name!='Undetermined'")
 
+        # we group all lanes
         under = under.groupby("name").sum().reset_index()
         others = others.groupby("name").sum().reset_index()
 
@@ -150,13 +152,15 @@ class StatsFile(object):
         else:
             M = False
 
-        all_data.plot(kind="barh",alpha=alpha, zorder=1, width=width, ec='k')
+        all_data.plot(kind="barh", alpha=alpha, zorder=1, width=width, ec='k')
 
         under.plot(kind="barh", alpha=alpha, color="red", ax=pylab.gca(),
             zorder=1, width=width, ec='k')
-        pylab.ylim([-0.5, len(all_data) + 0.5])
+        self.all_data = all_data
+        self.under = under
         if len(all_data) < 100:
             pylab.yticks(range(len(all_data)), all_data.index)
+        pylab.ylim([0.5, len(all_data) + 0.5])
 
         pylab.legend()
         pylab.grid(True, zorder=-1)
@@ -222,6 +226,16 @@ class StatsFile(object):
         pylab.grid(True)
         pylab.legend(["Lane {}".format(x) for x in range(1, len(df.columns)+1)],
             loc="lower right")
+
+        # here we plot a vertical line corresponding to the median of reads
+        # found in determined indices
+
+        try:
+            N = self.get_data_reads().query('name!="Undetermined"')['count'].median()
+            pylab.axvline(N, ls='--', color='r')
+        except:
+            pass
+
         try:
             pylab.tight_layout()
         except Exception as err:
