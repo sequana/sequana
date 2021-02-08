@@ -28,15 +28,17 @@ from sequana import bedtools, sequana_data
 from sequana.modules_report.coverage import CoverageModule
 from sequana.modules_report.coverage import ChromosomeCoverageModule
 from sequana.utils import config
-from sequana import logger
 from sequana.bedtools import GenomeCov
 
 from easydev import shellcmd, mkdirs
 from easydev.console import purple
 
+from sequana.lazy import pylab
 from pylab import show, figure, savefig
 
-logger.name = __name__
+import colorlog
+logger = colorlog.getLogger(__name__)
+
 
 
 # http://stackoverflow.com/questions/18462610/argumentparser-epilog-and-description-formatting-in-conjunction-with-argumentdef
@@ -263,7 +265,7 @@ def main(args=None):
     else:
         options = user_options.parse_args(args[1:])
 
-    logger.level = options.logging_level
+    logger.setLevel(options.logging_level)
 
     if options.download_reference:
         logger.info("Downloading reference %s from %s\n" %
@@ -355,7 +357,7 @@ def main(args=None):
             # only one contig, so we access to it with index 0
             run_analysis(gc.chr_list[i], options, gc.feature_dict)
             # logging level seems to be reset to warning somewhere
-            logger.level = options.logging_level
+            logger.setLevel(options.logging_level)
 
     if options.skip_multiqc is False:
         logger.info("Creating multiqc report")

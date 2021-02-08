@@ -24,10 +24,11 @@ import sys
 import argparse
 
 from easydev import DevTools
-from sequana import logger
 from sequana.modules_report.kraken import KrakenModule
 
-logger.name = __name__
+import colorlog
+logger = colorlog.getLogger(__name__)
+
 
 
 class Options(argparse.ArgumentParser):
@@ -125,7 +126,7 @@ def main(args=None):
     else:
        options = user_options.parse_args(args[1:])
 
-    logger.level = options.level
+    logger.setLevel(options.level)
 
     if options.update_taxonomy is True:
         from sequana.taxonomy import Taxonomy

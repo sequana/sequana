@@ -10,9 +10,10 @@ import functools
 __all__ = ["main"]
 
 import sequana
-from sequana import logger
 
-logger.level = "INFO"
+import colorlog
+logger = colorlog.getLogger(__name__)
+
 
 # This can be used by all commands as a simple decorator
 def common_logger(func):
@@ -375,7 +376,7 @@ def biomart(**kwargs):
 
     """
     print(kwargs)
-    logger.level = kwargs["logger"]
+    logger.setLevel(kwargs["logger"])
 
     mart = kwargs['mart']
     attributes = kwargs['attributes']

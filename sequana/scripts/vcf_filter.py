@@ -22,7 +22,9 @@ import argparse
 
 from sequana.scripts.tools import SequanaOptions
 
-from sequana import logger
+import colorlog
+logger = colorlog.getLogger(__name__)
+
 from easydev.console import purple
 
 
@@ -167,7 +169,7 @@ def main(args=None):
 
 
     # set the level
-    logger.level = options.level
+    logger.setLevel(options.level)
 
     vcf = VCF(options.input_filename)
     try:

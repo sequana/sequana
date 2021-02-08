@@ -28,7 +28,9 @@ from sequana.scripts.tools import SequanaOptions
 from sequana.bamtools import SAM
 from sequana import FastQ
 from sequana import logger
-logger.name = "sequana.substractor"
+
+import colorlog
+logger = colorlob.getLogger(__name__)
 
 
 class CustomFormatter(argparse.ArgumentDefaultsHelpFormatter,
@@ -213,7 +215,7 @@ def main(args=None):
         sys.exit(0)
 
     options = user_options.parse_args(args[1:])
-    logger.level = options.level
+    logger.setLevel(options.level)
 
     # build the references list
     references = []

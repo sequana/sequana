@@ -23,8 +23,11 @@ from sequana.scripts.tools import SequanaOptions
 
 from easydev.console import purple
 from  collections import Counter
-from sequana import logger
-logger.name = "sequana.bam_splitter"
+
+
+import colorlog
+logger = colorlog.getLogger(__name__)
+
 
 
 
@@ -170,7 +173,7 @@ def main(args=None):
     options = user_options.parse_args(args[1:])
 
     # set the level
-    logger.level = options.level
+    logger.setLevel(options.level)
     logger.info("This SAM/BAM/CRAM splitter is used for paired or un-paired "
                 "reads with perfectly mapped or unmapped reads (flags 0, 4, "
                 "16). Others are dropped.")
