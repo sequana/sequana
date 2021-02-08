@@ -1,4 +1,4 @@
-
+"""This is a MultiQC plugin re-used temporarely here"""
 import zipfile
 import re
 from sequana.lazy import pylab
@@ -148,7 +148,8 @@ class FastQC():
         X = range(1, xmax + 1)
 
         pylab.ylim([0, ymax])
-        pylab.xlim([0, xmax])
+        if xmax!=0:
+            pylab.xlim([0, xmax])
         pylab.title("Quality scores across all bases")
         pylab.xlabel("Position in read (bp)")
         pylab.ylabel("Phred Score", fontsize=12)
