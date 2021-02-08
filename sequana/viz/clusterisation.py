@@ -16,7 +16,9 @@
 ##############################################################################
 
 from sequana.lazy import pylab
-from sequana import logger
+import colorlog
+logger = colorlog.getLogger(__name__)
+
 
 __all__ = ['Cluster']
 

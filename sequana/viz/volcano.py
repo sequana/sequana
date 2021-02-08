@@ -20,13 +20,12 @@
 #  documentation: http://sequana.readthedocs.io
 #
 ##############################################################################
-
-
 """Volcano plot"""
 
-import numpy as np
-import pylab
-import pandas as pd
+from sequana.lazy import pandas as pd
+from sequana.lazy import pylab as pylab
+from sequana.lazy import numpy as np
+
 
 
 __all__ = ["Volcano"]

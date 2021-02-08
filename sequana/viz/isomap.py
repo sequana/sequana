@@ -16,7 +16,9 @@
 ##############################################################################
 
 from sequana.lazy import pylab
-from sequana import logger
+import colorlog
+logger = colorlog.getLogger(__name__)
+
 from sequana.viz import clusterisation
 __all__ = ['Isomap']
 

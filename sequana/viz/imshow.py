@@ -17,7 +17,7 @@
 """Imshow utility"""
 from sequana.viz.core import VizInputSquare
 from sequana.lazy import pylab
-import pandas as pd
+from sequana.lazy import pandas as pd
 
 
 __all__ = ['Imshow']
