@@ -43,7 +43,7 @@ class MultiqcModule(BaseMultiqcModule):
             self.sequana_data[name] = self.parse_logs(myfile["f"])
 
         if len(self.sequana_data) == 0:
-            log.debug("No samples found: sequana_pacbio_qc")
+            logger.debug("No samples found: sequana_pacbio_qc")
             raise UserWarning
 
         info = "<ul>"
@@ -169,7 +169,7 @@ class MultiqcModule(BaseMultiqcModule):
                 pass
 
         if len(data) == 0:
-            log.debug('no data for the read length plots')
+            logger.debug('no data for the read length plots')
             return None
 
         pconfig = {

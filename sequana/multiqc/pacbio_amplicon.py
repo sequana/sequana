@@ -44,11 +44,11 @@ class MultiqcModule(BaseMultiqcModule):
             self.sequana_data[name] = self.parse_logs(myfile["f"])
 
         if len(self.sequana_data) == 0:
-            log.debug("No samples found: sequana_pacbio_amplicon")
+            logger.debug("No samples found: sequana_pacbio_amplicon")
             raise UserWarning
 
 
-        log.info("Found {} reports".format(len(self.sequana_data)))
+        logger.info("Found {} reports".format(len(self.sequana_data)))
 
         self.populate_columns()
         self.add_ccs_reads()
