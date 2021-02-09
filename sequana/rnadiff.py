@@ -17,18 +17,20 @@
 ##############################################################################
 
 from pathlib import Path
-import os
 from jinja2 import Environment, PackageLoader
 import subprocess
 import seaborn as sns
 import matplotlib.pyplot as plt
 from itertools import combinations
+import os
 
 from sequana.lazy import pandas as pd
 from sequana.lazy import pylab
 from sequana.lazy import numpy as np
+
 from sequana.gff3 import GFF3
 from sequana.viz import Volcano
+from sequana.enrichment import PantherEnrichment, KeggPathwayEnrichment
 
 import colorlog
 logger = colorlog.getLogger(__name__)
@@ -132,8 +134,10 @@ Groups overview:\n\
         this script.
         """
 
-        try:self.outdir.mkdir()
-        except:pass
+        try:
+            self.outdir.mkdir()
+        except:
+            pass
 
         with open("rnadiff_light.R", "w") as f:
             f.write(RNADiffAnalysis.template.render(self.__dict__))
@@ -150,7 +154,7 @@ Groups overview:\n\
         with open("rnadiff.out", "w") as f:
             f.write(p.stdout)
 
-        return RNADiffResults2(
+        return RNADiffResults(
             self.outdir,
             self.groups_tsv,
             group=self.condition,
@@ -164,24 +168,26 @@ class RNADiffTable:
     def __init__(self, path, gff=None, alpha=0.05, log2_fc=0, sep="\t"):
         """ A representation of the results of a single rnadiff comparison """
         self.path = Path(path)
-        self.name = self.path.name
+        self.name = self.path.stem.replace("_degs_DESeq2", "").replace("-", "_")
 
         self._alpha = alpha
         self._log2_fc = log2_fc
 
+        self.gff = gff
+
         self.df = pd.read_csv(self.path, index_col=0, sep=sep)
 
-        self.filt_df = self.filter(self._alpha, self._log2_fc)
+        self.filt_df = self.filter()
         self.set_gene_lists()
 
     @property
     def alpha(self):
-        return self.alpha
+        return self._alpha
 
     @alpha.setter
     def alpha(self, value):
         self._alpha = value
-        self.filt_df = self.filter(self._alpha, self._log2_fc)
+        self.filt_df = self.filter()
         self.set_gene_lists()
 
     @property
@@ -191,14 +197,14 @@ class RNADiffTable:
     @log2_fc.setter
     def log2_fc(self, value):
         self._log2_fc = value
-        self.filt_df = self.filter(self._alpha, self._log2_fc)
+        self.filt_df = self.filter()
         self.set_gene_lists()
 
-    def filter(self, alpha, log2_fc):
+    def filter(self):
         """filter a DESeq2 result with FDR and logFC thresholds"""
 
-        fc_filt = self.df["log2FoldChange"].abs() >= log2_fc
-        fdr_filt = self.df["padj"] <= alpha
+        fc_filt = self.df["log2FoldChange"].abs() >= self._log2_fc
+        fdr_filt = self.df["padj"] <= self._alpha
 
         return self.df[fc_filt.values & fdr_filt.values]
 
@@ -237,7 +243,7 @@ class RNADiffTable:
         plt.ylabel("Occurences")
 
 
-class RNADiffResults2:
+class RNADiffResults:
     def __init__(
         self,
         rnadiff_folder,
@@ -253,9 +259,11 @@ class RNADiffResults2:
         group="condition",
         annot_cols=["ID", "Name", "gene_biotype"],
     ):
-        """"""
+        """
+        :rnadiff_folder:
+        """
         self.path = Path(rnadiff_folder)
-        self.comparisons = [x for x in self.path.glob(pattern)]
+        self.files = [x for x in self.path.glob(pattern)]
 
         self.meta = self._get_meta(meta, sep=sep, group=group, palette=palette)
 
@@ -280,25 +288,22 @@ class RNADiffResults2:
         self._alpha = alpha
         self._log2_fc = log2_fc
 
-        self.results = {
-            compa.stem: RNADiffTable(compa, alpha=self._alpha, log2_fc=self._log2_fc)
-            for compa in self.comparisons
-        }
+        if self.gff:
+            self.annot_df = self._get_annot()
+
+        self.comparisons = self.import_tables()
 
         self.df = self._get_total_df()
         self.filt_df = self._get_total_df(filtered=True)
 
     @property
     def alpha(self):
-        return self.alpha
+        return self._alpha
 
     @alpha.setter
     def alpha(self, value):
         self._alpha = value
-        self.results = {
-            compa.stem: RNADiffTable(compa, alpha=self._alpha, log2_fc=self._log2_fc)
-            for compa in self.comparisons
-        }
+        self.comparisons = self.import_tables()
         self.filt_df = self._get_total_df(filtered=True)
 
     @property
@@ -308,28 +313,41 @@ class RNADiffResults2:
     @log2_fc.setter
     def log2_fc(self, value):
         self._log2_fc = value
-        self.results = {
-            compa.stem: RNADiffTable(compa, alpha=self._alpha, log2_fc=self._log2_fc)
-            for compa in self.comparisons
-        }
+        self.comparisons = self.import_tables()
         self.filt_df = self._get_total_df(filtered=True)
 
-    def _get_annot(self):
+    def import_tables(self):
+
+        return {
+            compa.stem.replace("_degs_DESeq2", "").replace("-", "_"): RNADiffTable(
+                compa, alpha=self._alpha, log2_fc=self._log2_fc
+            )
+            for compa in self.files
+        }
+
+    def _get_annot(
+        self,
+    ):
         """Get a properly formatted dataframe from the gff."""
 
         df = GFF3(self.gff).get_df()
-        df.set_index(self.fc_feature, inplace=True)
-        df = df.query("type == @self.fc_attribute").loc[:, self.annot_cols]
+        df = df.query("type == @self.fc_feature").loc[:, self.annot_cols]
+        df.drop_duplicates(inplace=True)
+        df.set_index(self.fc_attribute, inplace=True)
         df.columns = pd.MultiIndex.from_product([["annotation"], df.columns])
 
         return df
 
     def _get_total_df(self, filtered=False):
-        """Concatenate all rnadiff results in a single dataframe."""
+        """Concatenate all rnadiff results in a single dataframe.
+
+        FIXME: Columns relative to significative comparisons are not using
+        self.log2_fc and self.alpha
+        """
 
         dfs = []
 
-        for compa, res in self.results.items():
+        for compa, res in self.comparisons.items():
             df = res.filt_df if filtered else res.df
             df = df.transpose().reset_index()
             df["file"] = res.name
@@ -338,9 +356,21 @@ class RNADiffResults2:
 
         df = pd.concat(dfs, sort=True).transpose()
 
+        # Add number of comparisons which are significative for a given gene
+        num_sign_compa = (df.loc[:, (slice(None), "padj")] < 0.05).sum(axis=1)
+        df.loc[:, ("statistics", "num_of_significative_comparisons")] = num_sign_compa
+
+        # Add list of comparisons which are significative for a given gene
+        df_sign_padj = df.loc[:, (slice(None), "padj")] < 0.05
+        sign_compa = df_sign_padj.loc[:, (slice(None), "padj")].apply(
+            # Extract column names (comparison names) for significative comparisons
+            lambda row: {col_name[0] for sign, col_name in zip(row, row.index) if sign},
+            axis=1,
+        )
+        df.loc[:, ("statistics", "significative_comparisons")] = sign_compa
+
         if self.gff and self.fc_attribute and self.fc_feature:
-            annot = self._get_annot()
-            df = pd.concat([annot, df], axis=1)
+            df = pd.concat([self.annot_df, df], axis=1)
         else:
             logger.warning(
                 "Missing any of gff, fc_attribute or fc_feature. No annotation will be added."
@@ -349,7 +379,147 @@ class RNADiffResults2:
         return df
 
     def summary(self):
-        return pd.concat(res.summary() for compa, res in self.results.items())
+        return pd.concat(res.summary() for compa, res in self.comparisons.items())
+
+    def report(self):
+
+        template_file = "rnadiff_report.html"
+        template_env = Environment(
+            loader=PackageLoader("sequana", "resources/templates")
+        )
+        template = template_env.get_template(template_file)
+
+        with open("rnadiff_report.html", "w") as f:
+            f.write(
+                template.render(
+                    {"table": self.summary().to_html(classes="table table-striped")}
+                )
+            )
+
+    def run_enrichment_go(self, taxon, annot_col="Name", out_dir="enrichment"):
+
+        out_dir = Path(out_dir) / "figures"
+        out_dir.mkdir(exist_ok=True, parents=True)
+
+        gene_lists_dict = self.get_gene_lists(annot_col=annot_col, Nmax=2000)
+        enrichment = {}
+        ontologies = {"GO:0003674": "BP", "GO:0008150": "MF", "GO:0005575": "CC"}
+
+        for compa in self.comparisons:
+            gene_lists = gene_lists_dict[compa]
+            pe = PantherEnrichment(gene_lists, taxon)
+            pe.compute_enrichment(ontologies=ontologies.keys(), progress=False)
+
+            for direction in ["up", "down", "all"]:
+                for ontology in ontologies.keys():
+                    enrichment[(compa, direction, ontology)] = pe.get_data(
+                        direction, ontology, include_negative_enrichment=False
+                    )
+                    plt.figure()
+                    try:
+                        pe.plot_go_terms(direction, ontology, compute_levels=False)
+                    except:
+                        return pe
+                    plt.tight_layout()
+                    plt.savefig(
+                        out_dir / f"go_{compa}_{direction}_{ontologies[ontology]}.pdf"
+                    )
+
+            logger.info(f"Panther enrichment for {compa} DONE.")
+
+        df = pd.concat(enrichment).sort_index()
+        df.index.rename(
+            ["comparison", "direction", "GO_category", "index"], inplace=True
+        )
+
+        self.enrichment_go = df
+
+        # Export results (should be moved to enrichment.py at some point I think)
+        with pd.ExcelWriter(out_dir.parent / "enrichment_go.xlsx") as writer:
+            df = self.enrichment_go.copy()
+            df.reset_index(inplace=True)
+            df.to_excel(writer, "go", index=False)
+            ws = writer.sheets["go"]
+            ws.autofilter(0, 0, df.shape[0], df.shape[1] - 1)
+
+    def run_enrichment_kegg(self, organism, annot_col="Name", out_dir="enrichment"):
+
+        out_dir = Path(out_dir) / "figures"
+        out_dir.mkdir(exist_ok=True, parents=True)
+
+        gene_lists_dict = self.get_gene_lists(annot_col=annot_col)
+        enrichment = {}
+
+        for compa in self.comparisons:
+            gene_lists = gene_lists_dict[compa]
+            ke = KeggPathwayEnrichment(gene_lists, organism, progress=False)
+            ke.compute_enrichment()
+
+            for direction in ["up", "down", "all"]:
+                enrichment[(compa, direction)] = ke._get_final_df(
+                    ke.enrichment[direction].results, nmax=10000
+                )
+                plt.figure()
+                ke.scatterplot(direction)
+                plt.tight_layout()
+                plt.savefig(out_dir / f"kegg_{compa}_{direction}.pdf")
+
+            logger.info(f"KEGG enrichment for {compa} DONE.")
+
+        df = pd.concat(enrichment).sort_index()
+        df.index.rename(["comparison", "direction", "index"], inplace=True)
+
+        self.enrichment_kegg = df
+
+        # Export results (should be moved to enrichment.py at some point I think)
+        with pd.ExcelWriter(out_dir.parent / "enrichment_kegg.xlsx") as writer:
+            df = self.enrichment_kegg.copy()
+            df.reset_index(inplace=True)
+            df.to_excel(writer, "kegg", index=False)
+            ws = writer.sheets["kegg"]
+            ws.autofilter(0, 0, df.shape[0], df.shape[1] - 1)
+
+    def get_gene_lists(self, annot_col="index", Nmax=None):
+
+        gene_lists_dict = {}
+
+        for compa in self.comparisons.keys():
+            df = self.df.loc[:, ["annotation", compa]].copy()
+            df = df.droplevel(0, axis=1)
+
+            fc_filt = df["log2FoldChange"].abs() >= self._log2_fc
+            fdr_filt = df["padj"] <= self._alpha
+
+            df = df[fc_filt.values & fdr_filt.values]
+            df.reset_index(inplace=True)
+
+            if Nmax:
+                df.sort_values("log2FoldChange", ascending=False, inplace=True)
+                up_genes = list(df.query("log2FoldChange > 0")[annot_col])[:Nmax]
+
+                df.sort_values("log2FoldChange", ascending=True, inplace=True)
+                down_genes = list(df.query("log2FoldChange < 0")[annot_col])[:Nmax]
+
+                all_genes = list(
+                    list(
+                        df.sort_values("log2FoldChange", key=abs, ascending=False)[
+                            annot_col
+                        ]
+                    )[:Nmax]
+                )
+
+            else:
+                up_genes = list(df.query("log2FoldChange > 0")[annot_col])
+                down_genes = list(df.query("log2FoldChange < 0")[annot_col])
+                all_genes = list(df.loc[:, annot_col])
+
+            gene_lists_dict[compa] = {
+                "up": up_genes,
+                "down": down_genes,
+                "all": all_genes,
+            }
+
+        return gene_lists_dict
 
     def _get_meta(self, meta_file, sep, group, palette):
         """Import metadata from a table file and add color groups following the
@@ -367,37 +537,39 @@ class RNADiffResults2:
         plt.xlabel(xlabel)
         plt.ylabel(ylabel)
 
-    def get_specific_commons(self, direction, compas=None):
+    def get_specific_commons(self, direction, compas=None, annot_col="index"):
         """From all the comparisons contained by the object, extract gene lists which
-        are common (but specific, ie a gene appear in a single list) comparing
-        all combinations of comparisons.
+        are common (but specific, ie a gene appear only appears in the
+        combination considered) comparing all combinations of comparisons.
 
         :param direction: The regulation direction (up, down or all) of the gene
         lists to consider
 
         :param compas: Specify a list of comparisons to consider (Comparisons
-        names can be found with self.results.keys()).
+        names can be found with self.comparisons.keys()).
+
         """
 
         common_specific_dict = {}
 
+        total_gene_lists = self.get_gene_lists(annot_col=annot_col)
+
         if not compas:
-            compas = self.results.keys()
+            compas = self.comparisons.keys()
 
         for size in range(1, len(compas)):
             for compa_group in combinations(compas, size):
                 gene_lists = [
-                    self.results[compa].gene_lists[direction] for compa in compa_group
+                    total_gene_lists[compa][direction] for compa in compa_group
                 ]
                 commons = set.intersection(
                     *[set(gene_list) for gene_list in gene_lists]
                 )
-
                 other_compas = [compa for compa in compas if compa not in compa_group]
                 genes_in_other_compas = {
                     x
                     for other_compa in other_compas
-                    for x in self.results[other_compa].gene_lists[direction]
+                    for x in total_gene_lists[other_compa][direction]
                 }
 
                 commons = commons - genes_in_other_compas
@@ -444,7 +616,14 @@ class RNADiffResults2:
             ylabel="% of null counts",
         )
 
-    def plot_pca(self, n_components=2, colors=None, plotly=False, max_features=500):
+    def plot_pca(
+        self,
+        n_components=2,
+        colors=None,
+        plotly=False,
+        max_features=500,
+        genes_to_remove=[],
+    ):
 
         """
 
@@ -468,7 +647,20 @@ class RNADiffResults2:
         """
         from sequana.viz import PCA
 
-        p = PCA(self.counts_vst)
+        # Get most variable genes (n=max_features)
+        top_features = (
+            self.counts_vst.var(axis=1)
+            .sort_values(ascending=False)
+            .index[:max_features]
+        )
+
+        if genes_to_remove:
+            top_features = [x for x in top_features if x not in genes_to_remove]
+
+        counts_top_features = self.counts_vst.loc[top_features, :]
+
+        p = PCA(counts_top_features)
+
         if plotly is True:
             assert n_components == 3
             variance = p.plot(
@@ -684,697 +876,3 @@ class RNADiffResults2:
             xlabel="Mean of normalized counts",
             ylabel="Dispersion",
         )
-
-
-class RNADiffResults:
-    """An object representation of results coming from a RNADiff analysis."""
-
-    def __init__(
-        self,
-        filename,
-        alpha=0.05,
-        log2_fc=0,
-        pattern="*complete*xls",
-        sep="\t",
-        annotations="annotations.csv",
-    ):
-        """.. rubric:: constructor
-
-        :param rnadiff_results: can be a folder for a simple comparison, or an
-            output file containing the rseults of a rnadiff analysis
-        :param alpha:
-        :param out_dir:
-        :param log2_fc: the log2 fold change to apply
-
-        Note that if the index or Name/ID columns are made of ensemble ID, they
-        may be preceded by the gene: prefix, which is removed
-        """
-        if isinstance(filename, RNADiffResults):
-            self.df = filename.df.copy()
-            self.filename = filename.filename
-        elif os.path.isfile(filename):
-            # must be a 'complete' file from rnadiff analysis
-            self.filename = filename
-            self.df = pd.read_csv(self.filename, sep, index_col=0)
-        elif os.path.isdir(filename):
-            filenames = glob.glob(filename + "/" + pattern)
-            found_unique = False
-            if len(filenames) == 1:
-                self.filename = filenames[0]
-                found_unique = True
-            else:
-                filenames = glob.glob(filename + "/tables/" + pattern)
-                if len(filenames) == 1:
-                    found_unique = True
-                    self.filename = filenames[0]
-            if found_unique is False:
-                raise IOError(
-                    "Found several file with the {} pattern. Please be"
-                    " more restrictive using the pattern argument"
-                )
-            self.df = pd.read_csv(self.filename, sep, index_col=0)
-        else:
-            raise TypeError("{} does not exists".format(filename))
-
-        # Some cleanup
-        self.df.index = [x.replace("gene:", "") for x in self.df.index]
-        for col in ["ID", "Name"]:
-            if col in self.df.columns:
-                try:
-                    self.df[col] = [x.replace("gene:", "") for x in self.df[col]]
-                except:
-                    pass
-
-        # Just an alias to a subset of the dataframe
-        normed = [x for x in self.df.columns if x.startswith("norm")]
-        self.normcounts = self.df[normed]
-
-        # some parameters/attributes
-        self._alpha = alpha
-        self._log2_fc = log2_fc
-
-        # What are the sample names and condition names
-        self.sample_names = [x.replace("norm.", "") for x in normed]
-        self.condition_names = set([x[0:-1] for x in self.sample_names])
-        self.set_colors()
-
-        self._set_gene_lists_one_condition()
-
-        try:self.read_annotations(annotations)
-        except:pass
-
-    def read_annotations(self, annotation_file):
-        if os.path.exists(annotation_file):
-            annot = pd.read_csv(annotation_file)
-
-            if "locus_tag" in annot.columns and len(
-                set(self.df.index).intersection(annot.locus_tag)
-            ) == len(self.df.index):
-                key = "locus_tag"
-            elif "Name" in annot.columns and len(
-                set(self.df.index).intersection(annot.Name)
-            ) == len(self.df.index):
-                key = "Name"
-            elif "gene_id" in annot.columns and len(
-                set(self.df.index).intersection(annot.gene_id)
-            ) == len(self.df.index):
-                key = "gene_id"
-            elif "ID" in annot.columns and len(
-                set(self.df.index).intersection(annot.ID)
-            ) == len(self.df.index):
-                key = "ID"
-            elif "gene" in annot.columns and len(
-                set(self.df.index).intersection(annot.gene)
-            ) == len(self.df.index):
-                key = "gene"
-            else:
-                logger.critical(
-                    "Could not find a key to match annotation and DGE result"
-                )
-                return
-
-            # set index and restrict to the DGE entries only
-            annot = annot.set_index(key)
-            annot = annot.loc[self.df.index]
-            # some index may have duplicates, that need to be removed
-            annot = annot.reset_index().drop_duplicates(subset=[key]).set_index(key)
-
-            # if there are missing ones, we add NA
-
-            # now add interesting columns
-            for col in ["locus_tag", "gene_id", "ID", "Name", "gene", "gene_biotype"]:
-                if col == key:
-                    continue
-                if col in annot.columns and col not in self.df.columns:
-                    try:
-                        self.df.insert(1, col, annot[col].dropna())
-                    except Exception as err:
-                        print(err)
-        else:
-            logger.warning(
-                "annotation file {} does not exists. Skipping extra annotation in final report".format(
-                    annotation_file
-                )
-            )
-
-    def set_colors(self, colors=None):
-        self.colors = {}
-        if colors is None:
-            colors = ["orange", "b", "r", "y", "k"]
-        for i, name in enumerate(self.condition_names):
-            try:
-                self.colors[name] = colors[i]
-            except:
-                self.colors[name] = colors[len(colors) - 1]
-
-    def _set_log2_fc(self, value):
-        self._log2_fc = value
-        self._set_gene_lists_one_condition()
-
-    def _get_log2_fc(self):
-        return self._log2_fc
-
-    log2_fc = property(_get_log2_fc, _set_log2_fc)
-
-    def _set_alpha(self, value):
-        self._alpha = value
-
-    def _get_alpha(self):
-        return self._alpha
-
-    alpha = property(_get_alpha, _set_alpha)
-
-    def _set_gene_lists_one_condition(self):
-
-        gene_sets = {}
-        key = "vs".join(sorted(self.condition_names))
-        gene_sets = {}
-
-        condition_up = np.logical_and(
-            self.df.log2FoldChange > self.log2_fc, self.df.padj < self.alpha
-        )
-        gene_sets["up"] = set(self.df[condition_up].index)
-
-        condition_down = np.logical_and(
-            self.df.log2FoldChange < -self.log2_fc, self.df.padj < self.alpha
-        )
-        gene_sets["down"] = set(self.df[condition_down].index)
-
-        condition_all = np.logical_or(
-            np.logical_and(
-                self.df.padj < self.alpha, self.df.log2FoldChange > self.log2_fc
-            ),
-            np.logical_and(
-                self.df.padj < self.alpha, self.df.log2FoldChange < -self.log2_fc
-            ),
-        )
-        gene_sets["all"] = set(self.df[condition_all].index)
-
-        self.gene_lists = gene_sets
-
-    def summary(self):
-        """Get a summary DataFrame from a RNADiff analysis."""
-        summary = pd.DataFrame(
-            {(x, len(self.gene_lists[x])) for x in self.gene_lists.keys()}
-        )
-
-        df = summary.set_index(0)
-        df.columns = ["_vs_".join(self.condition_names)]
-        return df
-
-    def plot_count_per_sample(self, fontsize=12, sample_list=None):
-        """ "Number of mapped reads per sample. Each color for each replicate
-
-        .. plot::
-            :include-source:
-
-            from sequana.rnadiff import RNADiffResults
-            from sequana import sequana_data
-
-            r = RNADiffResults(sequana_data("rnadiff/rnadiff_onecond_1"))
-            r.plot_count_per_sample()
-        """
-        sample_names = self.sample_names
-        N = len(sample_names)
-        dd = self.df[sample_names].sum()
-        pylab.clf()
-
-        colors = []
-        for sample in self.sample_names:
-            colors.append(self.colors[self.get_cond_from_sample(sample)])
-
-        pylab.bar(
-            range(N),
-            (dd / 1000000).values,
-            color=colors,
-            alpha=1,
-            zorder=10,
-            lw=1,
-            ec="k",
-            width=0.9,
-        )
-        pylab.xlabel("Samples", fontsize=fontsize)
-        pylab.ylabel("Total read count (millions)", fontsize=fontsize)
-        pylab.grid(True, zorder=0)
-        pylab.title("Total read count per sample", fontsize=fontsize)
-        pylab.xticks(range(N), self.sample_names)
-
-    def plot_percentage_null_read_counts(self):
-        """
-
-        Bars represent the percentage of null counts in each samples.
-        The dashed horizontal line represents the percentage of
-        feature counts being equal to zero across all samples.
-
-        .. plot::
-            :include-source:
-
-            from sequana.rnadiff import RNADiffResults
-            from sequana import sequana_data
-
-            r = RNADiffResults(sequana_data("rnadiff/rnadiff_onecond_1"))
-            r.plot_percentage_null_read_counts()
-
-
-        """
-        N = len(self.sample_names)
-
-        data = (self.df[self.sample_names] == 0).sum()
-        data = data / len(self.df) * 100
-
-        all_null = (self.df[self.sample_names].sum(axis=1) == 0).sum()
-
-        colors = []
-        for sample in self.sample_names:
-            colors.append(self.colors[self.get_cond_from_sample(sample)])
-
-        pylab.clf()
-        pylab.bar(
-            range(N), data, color=colors, alpha=1, zorder=10, lw=1, ec="k", width=0.9
-        )
-        pylab.axhline(
-            all_null / len(self.df) * 100, lw=2, ls="--", color="k", zorder=20
-        )
-        pylab.xticks(range(N), self.sample_names)
-        pylab.xlabel("Sample")
-        pylab.ylabel("Proportion of null counts (%)")
-        pylab.grid(True, zorder=0)
-
-    def plot_volcano(
-        self,
-        padj=0.05,
-        add_broken_axes=False,
-        markersize=4,
-        limit_broken_line=[20, 40],
-        plotly=False,
-    ):
-        """
-
-
-        .. plot::
-            :include-source:
-
-            from sequana.rnadiff import RNADiffResults
-            from sequana import sequana_data
-
-            r = RNADiffResults(sequana_data("rnadiff/rnadiff_onecond_1"))
-            r.plot_volcano()
-
-        """
-        d1 = self.df.query("padj>@padj")
-        d2 = self.df.query("padj<=@padj")
-
-        if plotly:
-            from plotly import express as px
-
-            df = self.df.copy()
-            df["log_adj_pvalue"] = -pylab.log10(self.df.padj)
-            df["significance"] = [
-                "<{}".format(padj) if x else ">={}".format(padj) for x in df.padj < padj
-            ]
-
-            if "Name" in self.df.columns:
-                hover_name = "Name"
-            elif "gene_id" in self.df.columns:
-                hover_name = "gene_id"
-            elif "locus_tag" in self.df.columns:
-                hover_name = "locus_tag"
-            elif "ID" in self.df.columns:
-                hover_name = "ID"
-            else:
-                hover_name = None
-            fig = px.scatter(
-                df,
-                x="log2FoldChange",
-                y="log_adj_pvalue",
-                hover_name=hover_name,
-                log_y=False,
-                color="significance",
-                height=600,
-                labels={"log_adj_pvalue": "log adjusted p-value"},
-            )
-            # axes[0].axhline(
-            # -np.log10(0.05), lw=2, ls="--", color="r", label="pvalue threshold (0.05)"
-            # i)
-            # in future version of plotly, a add_hlines will be available. For
-            # now, this is the only way to add axhline
-            fig.update_layout(
-                shapes=[
-                    dict(
-                        type="line",
-                        xref="x",
-                        x0=df.log2FoldChange.min(),
-                        x1=df.log2FoldChange.max(),
-                        yref="y",
-                        y0=-pylab.log10(padj),
-                        y1=-pylab.log10(padj),
-                        line=dict(color="black", width=1, dash="dash"),
-                    )
-                ]
-            )
-
-            return fig
-
-        from brokenaxes import brokenaxes
-
-        M = max(-pylab.log10(self.df.padj.dropna()))
-
-        br1, br2 = limit_broken_line
-        if M > br1:
-            if add_broken_axes:
-                bax = brokenaxes(ylims=((0, br1), (M - 10, M)), xlims=None)
-            else:
-                bax = pylab
-        else:
-            bax = pylab
-
-        bax.plot(
-            d1.log2FoldChange,
-            -np.log10(d1.padj),
-            marker="o",
-            alpha=0.5,
-            color="k",
-            lw=0,
-            markersize=markersize,
-        )
-        bax.plot(
-            d2.log2FoldChange,
-            -np.log10(d2.padj),
-            marker="o",
-            alpha=0.5,
-            color="r",
-            lw=0,
-            markersize=markersize,
-        )
-
-        bax.grid(True)
-        try:
-            bax.set_xlabel("fold change")
-            bax.set_ylabel("log10 adjusted p-value")
-        except:
-            bax.xlabel("fold change")
-            bax.ylabel("log10 adjusted p-value")
-
-        m1 = abs(min(self.df.log2FoldChange))
-        m2 = max(self.df.log2FoldChange)
-        limit = max(m1, m2)
-        try:
-            bax.set_xlim([-limit, limit])
-        except:
-            bax.xlim([-limit, limit])
-        try:
-            y1, _ = bax.get_ylim()
-            ax1 = bax.axs[0].set_ylim([br2, y1[1] * 1.1])
-        except:
-            y1, y2 = bax.ylim()
-            bax.ylim([0, y2])
-        bax.axhline(
-            -np.log10(0.05), lw=2, ls="--", color="r", label="pvalue threshold (0.05)"
-        )
-        return bax
-
-    def plot_pca(self, n_components=2, colors=None, plotly=False, max_features=500):
-        """
-
-        .. plot::
-            :include-source:
-
-            from sequana.rnadiff import RNADiffResults
-            from sequana import sequana_data
-
-            path = sequana_data("rnadiff/rnadiff_onecond_1")
-            r = RNADiffResults(path)
-
-            colors = {
-                'surexp1': 'r',
-                'surexp2':'r',
-                'surexp3':'r',
-                'surexp1': 'b',
-                'surexp2':'b',
-                'surexp3':'b'}
-            r.plot_pca(colors=colors)
-
-        """
-        from sequana.viz import PCA
-
-        p = PCA(self.df[self.sample_names])
-        if colors is None:
-            colors = {}
-            for sample in self.sample_names:
-                colors[sample] = self.colors[self.get_cond_from_sample(sample)]
-
-        if plotly is True:
-            assert n_components == 3
-            variance = p.plot(
-                n_components=n_components,
-                colors=colors,
-                show_plot=False,
-                max_features=max_features,
-            )
-            from plotly import express as px
-
-            df = pd.DataFrame(p.Xr)
-            df.columns = ["PC1", "PC2", "PC3"]
-            df["names"] = self.sample_names
-            df["colors"] = [colors[x] for x in self.sample_names]
-            df["size"] = [10] * len(df)
-            df["condition"] = [
-                self.get_cond_from_sample(sample) for sample in self.sample_names
-            ]
-            fig = px.scatter_3d(
-                df,
-                x="PC1",
-                y="PC2",
-                z="PC3",
-                color="condition",
-                labels={
-                    "PC1": "PC1 ({}%)".format(round(100 * variance[0], 2)),
-                    "PC2": "PC2 ({}%)".format(round(100 * variance[1], 2)),
-                    "PC3": "PC3 ({}%)".format(round(100 * variance[2], 2)),
-                },
-                height=800,
-                text="names",
-            )
-            return fig
-        else:
-            variance = p.plot(
-                n_components=n_components, colors=colors, max_features=max_features
-            )
-
-        return variance
-
-    def plot_mds(self, n_components=2, colors=None, clf=True):
-        from sequana.viz.mds import MDS
-
-        p = MDS(self.df[self.sample_names])
-        if colors is None:
-            colors = {}
-            for sample in self.sample_names:
-                colors[sample] = self.colors[self.get_cond_from_sample(sample)]
-        p.plot(n_components=n_components, colors=colors, clf=clf)
-
-    def plot_isomap(self, n_components=2, colors=None):
-        from sequana.viz.isomap import Isomap
-
-        p = Isomap(self.df[self.sample_names])
-        if colors is None:
-            colors = {}
-            for sample in self.sample_names:
-                colors[sample] = self.colors[self.get_cond_from_sample(sample)]
-        p.plot(n_components=n_components, colors=colors)
-
-    def get_cond_from_sample(self, sample_name):
-        try:
-            import re
-
-            candidates = [
-                x
-                for x in self.condition_names
-                if re.findall(r"^{}\d+$".format(x), sample_name)
-            ]
-            if len(candidates) == 1:
-                return candidates[0]
-            else:
-                raise ValueError("ambiguous sample name found in several conditions")
-        except:
-            logger.warning("{} not found or ambiguous name".format(sample_name))
-            return None
-
-    def plot_density(self):
-        import seaborn
-
-        seaborn.set()
-        for x in self.sample_names:
-            seaborn.kdeplot(pylab.log10(self.df[x].clip(lower=1)))
-            pylab.ylabel("Density")
-            pylab.xlabel("Raw counts (log10)")
-
-    def plot_feature_most_present(self):
-        """"""
-        _description = "test me"
-        N = len(self.sample_names)
-
-        data = self.df[self.sample_names].max() / self.df[self.sample_names].sum()
-        data = data * 100
-
-        colors = []
-        names = []
-        for sample in self.sample_names:
-            colors.append(self.colors[self.get_cond_from_sample(sample)])
-
-        pylab.clf()
-        pylab.barh(
-            range(0, len(data)),
-            data,
-            color=colors,
-            alpha=1,
-            zorder=10,
-            lw=1,
-            ec="k",
-            height=0.9,
-        )
-        count = 0
-        for x, sample in zip(data, self.sample_names):
-            index_name = self.df[sample].argmax()
-            try:
-                name = self.df.iloc[
-                    index_name
-                ].Name  # !! this is the index not the column called Name
-            except:
-                name = self.df.iloc[index_name][
-                    "ID"
-                ]  # !! this is the index not the column called Name
-
-            pylab.text(
-                x, count, name, fontdict={"ha": "center", "va": "center"}, zorder=20
-            )
-            count += 1
-        x0, x1 = pylab.xlim()
-        pylab.xlim([0, min(100, x1 * 1.2)])
-        pylab.yticks(range(N), self.sample_names)
-        pylab.xlabel("Reads captured by most important feature (%s)")
-        pylab.ylabel("Sample")
-        try:
-            pylab.tight_layout()
-        except:
-            pass
-
-    def plot_dendogram(
-        self,
-        max_features=5000,
-        transform_method="log",
-        method="ward",
-        metric="euclidean",
-    ):
-        # for info about metric and methods: https://tinyurl.com/yyhk9cl8
-
-        assert transform_method in ["log", "anscombe", None]
-        # first we take the normalised data
-        from sequana.viz import clusterisation
-        from sequana.viz import dendogram
-
-        cluster = clusterisation.Cluster(self.normcounts)
-        # cluster = clusterisation.Cluster(self.df[self.sample_names])
-        if transform_method is not None:
-            data = cluster.scale_data(
-                transform_method=transform_method, max_features=max_features
-            )
-            df = pd.DataFrame(data[0])
-            df.index = data[1]
-            df.columns = self.normcounts.columns
-        else:
-            df = pd.DataFrame(self.normcounts)
-            # df.index = data[1]
-            df.columns = self.normcounts.columns
-
-        d = dendogram.Dendogram(df.T, metric=metric, method=method)
-        d.category = {}
-        conditions = list(self.condition_names)
-        for sample_name in df.columns:
-            cond = self.get_cond_from_sample(sample_name.replace("norm.", ""))
-            d.category[sample_name] = conditions.index(cond)
-        d.plot()
-
-    def boxplot_rawdata(self, fliersize=2, linewidth=2, **kwargs):
-        import seaborn as sbn
-
-        sbn.set()
-
-        colors = []
-        for sample in self.sample_names:
-            col = self.colors[self.get_cond_from_sample(sample)]
-            if col == "orange":
-                colors.append("#FFA500")
-            else:
-                colors.append("#3c5688")
-
-        ax = sbn.boxplot(
-            data=self.df[self.sample_names].clip(1),
-            linewidth=linewidth,
-            fliersize=fliersize,
-            palette=colors,
-            **kwargs,
-        )
-        ax.set(yscale="log")
-
-    def boxplot_normeddata(self, fliersize=2, linewidth=2, **kwargs):
-        import seaborn as sbn
-
-        sbn.set()
-        colors = []
-        for sample in self.sample_names:
-            col = self.colors[self.get_cond_from_sample(sample)]
-            if col == "orange":
-                colors.append("#FFA500")
-            else:
-                colors.append("#3c5688")
-        ax = sbn.boxplot(
-            data=self.normcounts.clip(1),
-            linewidth=linewidth,
-            fliersize=fliersize,
-            palette=colors,
-            **kwargs,
-        )
-        ax.set(yscale="log")
-
-    def plot_pvalue_hist(self, bins=60, fontsize=16, rotation=0):
-        pylab.hist(self.df.pvalue.dropna(), bins=bins, ec="k")
-        pylab.grid(True)
-        pylab.xlabel("raw p-value", fontsize=fontsize)
-        pylab.ylabel("Occurences", fontsize=fontsize)
-        try:
-            pylab.tight_layout()
-        except:
-            pass
-
-    def plot_padj_hist(self, bins=60, fontsize=16):
-        pylab.hist(self.df.padj.dropna(), bins=bins, ec="k")
-        pylab.grid(True)
-        pylab.xlabel("Adjusted p-value", fontsize=fontsize)
-        pylab.ylabel("Occurences", fontsize=fontsize)
-        try:
-            pylab.tight_layout()
-        except:
-            pass
-
-    def plot_dispersion(self):
-
-        pylab.plot(
-            self.normcounts.mean(axis=1),
-            self.df.dispGeneEst,
-            "ok",
-            label="Estimate",
-            ms=1,
-        )
-        pylab.plot(
-            self.normcounts.mean(axis=1), self.df.dispersion, "ob", label="final", ms=1
-        )
-        pylab.plot(
-            self.normcounts.mean(axis=1), self.df.dispFit, "or", label="Fit", ms=1
-        )
-        pylab.legend()
-        ax = pylab.gca()
-        ax.set(yscale="log")
-        ax.set(xscale="log")
-        pylab.ylabel("Dispersion", fontsize=fontsize)
-        pylab.xlabel("Mean of normalized counts", fontsize=fontsize)

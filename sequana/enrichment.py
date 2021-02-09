@@ -25,7 +25,8 @@ from sequana.lazy import pandas as pd
 from sequana.lazy import pylab
 from sequana.lazy import numpy as np
 from matplotlib_venn import venn2_unweighted, venn3_unweighted
-from sequana.rnadiff import RNADiffResults
+
+# from sequana.rnadiff import RNADiffResults
 from sequana.summary import Summary
 
 import colorlog
@@ -44,72 +45,72 @@ __all__ = ["PantherEnrichment", "KeggPathwayEnrichment", "Mart"]
 class PantherEnrichment:
     """
 
-        # This will read your rnadiff results and tstore the rlevants genes into
-        # mygenes_u, mygenes_down, mygenes attributes.
+    # This will read your rnadiff results and tstore the rlevants genes into
+    # mygenes_u, mygenes_down, mygenes attributes.
 
-        By default, we keep only the genes with a adjusted pvalue <= 0.05. The
-        fold_change threshold is on a log2 scale and set to 0 (meaning no
-        filtering). Only one value is requested and
-        used to filter out positive and negative fold change (on the log2
-        scale). In other word, a log2 fold change threshold of 2 means that we
-        filter out values between -2 and 2.
+    By default, we keep only the genes with a adjusted pvalue <= 0.05. The
+    fold_change threshold is on a log2 scale and set to 0 (meaning no
+    filtering). Only one value is requested and
+    used to filter out positive and negative fold change (on the log2
+    scale). In other word, a log2 fold change threshold of 2 means that we
+    filter out values between -2 and 2.
 
-        If you prefer to work in natural scale, just set the parameter
-        fc_threshold, which overwrite the log2_fc_threshold parameter.
+    If you prefer to work in natural scale, just set the parameter
+    fc_threshold, which overwrite the log2_fc_threshold parameter.
 
-        ::
+    ::
 
-            pe = PantherEnrichment("input_file.tsv", taxon=10090, log2_fc_threshold=1)
-            # compute enrichment for genes down and up
-            pe.compute_enrichment_down()
-            pe.compute_enrichment_up()
+        pe = PantherEnrichment("input_file.tsv", taxon=10090, log2_fc_threshold=1)
+        # compute enrichment for genes down and up
+        pe.compute_enrichment_down()
+        pe.compute_enrichment_up()
 
-            # Results for up case is stored in pe.enrichment
-            # then, we plot the most mportat go terms
-            df_up = pe.plot_go_terms("up")
+        # Results for up case is stored in pe.enrichment
+        # then, we plot the most mportat go terms
+        df_up = pe.plot_go_terms("up")
 
-            df = pe.plot_go_terms("up", pe.MF)
-            pe.save_chart(df, "chart_MF_up.png")
+        df = pe.plot_go_terms("up", pe.MF)
+        pe.save_chart(df, "chart_MF_up.png")
 
-            # all 3 main ontology
-            df = pe.plot_go_terms("up")
-            pe.save_chart(df, "chart_up.png")
+        # all 3 main ontology
+        df = pe.plot_go_terms("up")
+        pe.save_chart(df, "chart_up.png")
 
-        e.stats contains some statistics. One important is the list of unmapped
-        genes. The results from the GO enrichment are stored in the attributes
-        enrichment. There, we have again adjusted p-value and a fold enrichment,
-        which can in turn be filtered or not.
+    e.stats contains some statistics. One important is the list of unmapped
+    genes. The results from the GO enrichment are stored in the attributes
+    enrichment. There, we have again adjusted p-value and a fold enrichment,
+    which can in turn be filtered or not.
 
-        You can retrieve the cleaned data using the get_data method.
+    You can retrieve the cleaned data using the get_data method.
 
-        You can also plot the GO terms that are significantly enriched using::
+    You can also plot the GO terms that are significantly enriched using::
 
-            e.plot_go_terms(['GO:0003674', 'GO:0008150', 'GO:0005575'])
+        e.plot_go_terms(['GO:0003674', 'GO:0008150', 'GO:0005575'])
 
-        This function returns the dataframe used during the plotting.
+    This function returns the dataframe used during the plotting.
 
-        If you want to look at the up regulated genes only,
+    If you want to look at the up regulated genes only,
 
-            e.compute_enrichment(pe.mygenes_up, 83333)
-            e.plot_go_terms(['GO:0003674', 'GO:0008150', 'GO:0005575'])
-
-
-        df = e.plot_go_terms(['GO:0003674', 'GO:0008150', 'GO:0005575'],
-                log=False, include_negative_enrichment=False,
-                fontsize=8, sort_by='fold_enrichment',
-                show_pvalues=True, fdr_threshold=0.05)
+        e.compute_enrichment(pe.mygenes_up, 83333)
+        e.plot_go_terms(['GO:0003674', 'GO:0008150', 'GO:0005575'])
 
 
-        The number of genes is limited to about 3100 depending (don't ask me
-        why, this seem to be a hard-coded limitation on PantherDB website).
-        In such case, you should add a filter e.g on padj or fold change
+    df = e.plot_go_terms(['GO:0003674', 'GO:0008150', 'GO:0005575'],
+            log=False, include_negative_enrichment=False,
+            fontsize=8, sort_by='fold_enrichment',
+            show_pvalues=True, fdr_threshold=0.05)
+
+
+    The number of genes is limited to about 3100 depending (don't ask me
+    why, this seem to be a hard-coded limitation on PantherDB website).
+    In such case, you should add a filter e.g on padj or fold change
 
 
     """
 
     def __init__(
         self,
-        filename,
+        gene_lists,
         taxon,
         requests_per_sec=10,
         padj_threshold=0.05,
@@ -117,7 +118,7 @@ class PantherEnrichment:
         fc_threshold=None,
         enrichment_fdr=0.05,
         max_entries=3000,
-        rnadiff=None
+        annot_col="Name",
     ):
         """
 
@@ -177,10 +178,13 @@ class PantherEnrichment:
             "REACTOME_PATHWAY",
         ]
 
-        if rnadiff:
-            self.rnadiff = rnadiff
-        else:
-            self.rnadiff = RNADiffResults(filename)
+        # panth accepts onyl ~2-3000 genes at max. Let us restrict the analysis
+        # to the first 2000 genes based on their log2 fold change 2000 + and
+        # 2000 negatives
+
+        self.mygenes = gene_lists["all"]
+        self.mygenes_down = gene_lists["down"]
+        self.mygenes_up = gene_lists["up"]
 
         msg = "Ignoring pvalue adjusted > {} and fold change in [{}, {}]".format(
             padj_threshold, 1 / (2 ** log2_fc_threshold), 2 ** log2_fc_threshold
@@ -196,52 +200,9 @@ class PantherEnrichment:
 
         fc_threshold = log2_fc_threshold
 
-        Nup = len(self.rnadiff.df.query("padj<0.05 and log2FoldChange>=0"))
-        Ndown = len(self.rnadiff.df.query("padj<0.05 and log2FoldChange<0"))
-        Nall = len(self.rnadiff.df.query("padj<0.05"))
         logger.info(
-            "Starting with {} genes ({} down; {} up)".format(Nup + Ndown, Ndown, Nup)
+            f"Starting with {len(self.mygenes)} genes ({len(self.mygenes_down)} down; {len(self.mygenes_up)} up)"
         )
-
-        self.mygenes = self.rnadiff.df.query(
-            "padj<=@padj_threshold and (log2FoldChange<=-@fc_threshold or log2FoldChange>=@fc_threshold)"
-        )
-        self.mygenes_down = self.rnadiff.df.query(
-            "padj<=@padj_threshold and log2FoldChange<=-@fc_threshold"
-        )
-        self.mygenes_up = self.rnadiff.df.query(
-            "padj<=@padj_threshold and log2FoldChange>=@fc_threshold"
-        )
-
-        # panth accepts onyl ~2-3000 genes at max. Let us restrict the analysis
-        # to the first 2000 genes based on their log2 fold change 2000 + and
-        # 2000 negatives
-
-        # why do we sort by padj ? not used.
-        self.mygenes = list(self.mygenes.sort_values("padj").index)
-        # Note that here we sort by log2FoldChange so as to keep the best 2000
-        # significant items. Of course, we take into account the signs. The
-        # reason to keep only first 2000 is that PantherDB has a restrictions
-        self.mygenes_down = list(
-            self.mygenes_down.sort_values(by="log2FoldChange").index
-        )
-        self.mygenes_down = self.mygenes_down[0:max_entries]
-
-        self.mygenes_up = list(
-            self.mygenes_up.sort_values(by="log2FoldChange", ascending=False).index
-        )
-        self.mygenes_up = self.mygenes_up[0:max_entries]
-        self.summary["DGE"] = {"down": Ndown, "up": Nup}
-
-        # When using ENSEMBL, prefix "gene:"  should be removed to be understood
-        # by PantherDB. This is done in RNADiffResults
-
-        if fc_threshold != 0 and padj_threshold != 0.05:
-            logger.info(
-                "Kept {} genes ({} up; {} down)".format(
-                    len(self.mygenes), len(self.mygenes_down), len(self.mygenes_up)
-                )
-            )
 
         Ndown = len(self.mygenes_down)
         Nup = len(self.mygenes_up)
@@ -441,9 +402,11 @@ class PantherEnrichment:
         res = self.panther.get_mapping(mygenes, taxon)
         res = res["mapped"]
         N = len(res)
+
         from easydev import Progress
 
         pb = Progress(N)
+
         for i, item in enumerate(res):
             accession = item["accession"]
             res[i]["persistent_id"] = self._get_name_given_accession(accession)
@@ -600,6 +563,9 @@ class PantherEnrichment:
 
         logger.info("Filtering out the 3 parent terms")
         subdf = subdf.query("id not in @self.ontologies")
+
+        if subdf is None or len(subdf) == 0:
+            return subdf
 
         # Keeping only a part of the data, sorting by pValue
         if sort_by == "pValue":
@@ -934,10 +900,10 @@ class PantherEnrichment:
     def save_chart(self, data, filename="chart.png"):
         """
 
-            pe = PantherEnrichment("B4052-V1.T1vsT0.complete.xls", fc_threshold=5,
-                padj_threshold=0.05)
-            df = pe.plot_go_terms("down", log=True, compute_levels=False)
-            pe.save_chart(df, "chart.png")
+        pe = PantherEnrichment("B4052-V1.T1vsT0.complete.xls", fc_threshold=5,
+            padj_threshold=0.05)
+        df = pe.plot_go_terms("down", log=True, compute_levels=False)
+        pe.save_chart(df, "chart.png")
 
         """
         # if dataframe, get 'id' column, otherwise expect a list or string of go
@@ -1067,7 +1033,7 @@ class KeggPathwayEnrichment:
 
     def __init__(
         self,
-        folder,
+        gene_lists,
         organism,
         alpha=0.05,
         log2_fc=0,
@@ -1097,7 +1063,6 @@ class KeggPathwayEnrichment:
         self.summary = Summary("KeggPathwayEnrichment")
         self.summary.add_params(
             {
-                "folder": folder,
                 "organism": organism,
                 "alpha": alpha,
                 "log2_fc": log2_fc,
@@ -1106,21 +1071,7 @@ class KeggPathwayEnrichment:
             }
         )
 
-        self.rnadiff = RNADiffResults(folder, alpha=alpha, log2_fc=log2_fc)
-
-        # some clean up
-        # if identifiers from ensembl are preceeded by gene:, we remove it
-        # FIXME. This should be in the RNADiffResults somehow
-        if "ID" in self.rnadiff.df.columns:
-            self.rnadiff.df["ID"] = [
-                x.replace("gene:", "") for x in self.rnadiff.df["ID"]
-            ]
-        self.rnadiff.df.index = [x.replace("gene:", "") for x in self.rnadiff.df.index]
-        for key, values in self.rnadiff.gene_lists.items():
-            self.rnadiff.gene_lists[key] = [x.replace("gene:", "") for x in values]
-        self.rnadiff.df.index = [x.replace("gene:", "") for x in self.rnadiff.df.index]
-
-        choices = list(self.rnadiff.gene_lists.keys())
+        self.gene_lists = gene_lists
 
         if background:
             self.background = background
@@ -1250,7 +1201,7 @@ class KeggPathwayEnrichment:
             gene_list = category
         else:
             assert category in ["up", "down", "all"]
-            gene_list = list(self.rnadiff.gene_lists[category])
+            gene_list = self.gene_lists[category]
 
         logger.info("Input gene list of {} ids".format(len(gene_list)))
         self.summary.data["input_gene_list"][category] = len(gene_list)
@@ -1333,7 +1284,7 @@ class KeggPathwayEnrichment:
             -pylab.log10(df["Adjusted P-value"]),
             range(len(df)),
             s=10 * df["size"],
-            c=df["size"],
+            c=df["Adjusted P-value"],
         )
 
         pylab.xlabel("Odd ratio")
@@ -1362,6 +1313,7 @@ class KeggPathwayEnrichment:
         ax = pylab.colorbar(pylab.gci())
         return df
 
+    # FIXME rnadiff object is not imported anymore. This function is not functional
     def _get_summary_pathway(self, pathway_ID):
         genes = self.df_pathways.loc[pathway_ID]["GENE"]
         df_down = self.rnadiff.df.query("padj<=0.05 and log2FoldChange<0").copy()
@@ -1596,13 +1548,12 @@ class KeggPathwayEnrichment:
                         paths.append(key)
                 else:
                     for candidate in candidates:
-                        if candidate in self.pathways[key]["GENE"].keys():
+                        if candicodate in self.pathways[key]["GENE"].keys():
                             paths.append(key)
         return list(set(paths))
 
     def save_project(self, tag, outdir="."):
-        """ Save tables and visualisations of the complete enrichmment analysis.
-        """
+        """Save tables and visualisations of the complete enrichmment analysis."""
         outdir = Path(outdir)
         outdir.mkdir(parents=True, exist_ok=True)
 
@@ -1730,7 +1681,7 @@ class Mart:  # pragma: no cover
 
     def save(self, df, filename=None):
         """df is the output of :meth:`~query`. This function save it keeping
-track of day/month/year and dataset."""
+        track of day/month/year and dataset."""
         import time
 
         date = time.localtime()
