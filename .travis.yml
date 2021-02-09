@@ -62,11 +62,13 @@ install:
   #- pip install pyopengl
   #- pip install itolapi
   #- pip install sklearn statsmodels
-  - python setup.py install
+  #- python setup.py install    # error fev 2021 
+  # error: Jinja2 3.0.0a1 is installed but Jinja2<3.0.0 is required by {'cookiecutter'}
+  # recommended to use pip instead
+  - pip install .
   - pip install sequana_quality_control
   - pip install coverage coveralls
   - pip install sphinx==2.2 # for now, sphinx 3 fails the sphinxext from sequana (april 2020)
-  - pip install .
   #- conda list
 
 # # command to run tests, e.g. python setup.py test
