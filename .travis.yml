@@ -55,9 +55,9 @@ install:
   # travis because of many dependencies. For testing, we only need those ones
   - conda install --yes kraken==1.1 bwa snpeff shustring krona sambamba
   - conda install --yes pigz cutadapt fastqc
-  - conda install --yes freebayes --no-deps
-  - conda install --yes pysam samtools --no-deps
-  - conda install --yes bedtools --no-deps
+  #- conda install --yes freebayes --no-deps
+  - conda install --yes samtools --no-deps
+  #- conda install --yes bedtools --no-deps
 
   #- pip install pyopengl
   #- pip install itolapi
