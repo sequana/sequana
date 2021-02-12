@@ -15,6 +15,7 @@
 #  documentation: http://sequana.readthedocs.io
 #
 ##############################################################################
+"""feature counts related tools"""
 import re
 from pathlib import Path
 
@@ -25,30 +26,35 @@ import colorlog
 logger = colorlog.getLogger(__name__)
 
 
-
-
 __all__ = ['get_most_probable_strand_consensus', 'get_most_probable_strand',
     'MultiFeatureCount', 'FeatureCount']
 
 
-def get_most_probable_strand(sample_folder, tolerance):
-    """Return total counts by strand from featureCount matrix folder, strandness and
+def get_most_probable_strand(sample_folder, tolerance,
+        pattern="feature_counts_*/*_feature.out"):
+    """Return most probable strand from feature counts matrix
+
+    Return the total counts by strand from featureCount matrix folder, strandness and
     probable strand for a single sample (using a tolerance threshold for
     strandness). This assumes a single sample by featureCounts file.
 
-    Possible values include: 0 (unstranded), 1 (stranded) and 2 (reversely stranded).
+    Possible values include: 
+    * 0: unstranded
+    * 1: stranded 
+    * 2: eversely stranded
 
-    We compute the number of counts in case 1 and 2 and compute the variable the
-    RS = stranded / (stranded + reversely stranded ).
+    We compute the number of counts in case 1 and 2 and compute the ratio strand
+    as :math:`RS = stranded / (stranded + reversely stranded )`. Then we decide
+    on the possible strandness with the following criteria:
 
-    If RS < tolerance, reversely stranded
-    If RS in 0.5+-tolerance: unstranded.
-    If RS > 1-tolerance, stranded
-    Otherwise, we cannot decided.
+    * if RS < tolerance, reversely stranded
+    * if RS in 0.5+-tolerance: unstranded.
+    * if RS > 1-tolerance, stranded
+    * otherwise, we cannot decided.
 
     """
     sample_folder = Path(sample_folder)
-    fc_files = sample_folder.glob("feature_counts_*/*_feature.out")
+    fc_files = sample_folder.glob(pattern)
 
     sample_name = sample_folder.stem
     res_dict = {}
@@ -79,17 +85,20 @@ def get_most_probable_strand(sample_folder, tolerance):
     return df
 
 
-def get_most_probable_strand_consensus(rnaseq_folder, tolerance):
+def get_most_probable_strand_consensus(rnaseq_folder, tolerance,
+        pattern="*/feature_counts_[012]"):
     """From a sequana rna-seq run folder get the most probable strand, based on the
     frequecies of counts assigned with '0', '1' or '2' type strandness
     (featureCounts nomenclature)
 
     If guess is not possible given the tolerance, fills with None
+
+    .. seealso: :func:`get_most_probable_strand`
     """
 
     rnaseq_folder = Path(rnaseq_folder)
     sample_folders = list(
-        set([x.parent for x in rnaseq_folder.glob("*/feature_counts_[012]")])
+        set([x.parent for x in rnaseq_folder.glob(pattern)])
     )
 
     df = pd.concat(
@@ -113,9 +122,33 @@ def get_most_probable_strand_consensus(rnaseq_folder, tolerance):
 
 
 class MultiFeatureCount():
+    """Read set of feature counts using different options of strandness
+
+    .. plot::
+        :include-source:
+
+        from sequana import sequana_data
+        from sequana.featurecounts import *
+        directory =  = sequana_data("featurecounts") + "/rnaseq_0"
+        ff = fc.MultiFeatureCount(RNASEQ_DIR_0, 0.15)
+        ff.get_most_probable_strand_consensus()
+        ff.plot_strandness()
+
+
+    .. seealso:: :func:`get_most_probable_strand` for more information about the
+        tolerance parameter and meaning of strandness.
+
+    """
     # USED in rnaseq pipeline
 
     def __init__(self, rnaseq_folder='.', tolerance=0.1):
+        """
+
+        :param str rnaseq_folder:
+        :param int tolerance:  the tolerance between 0 and 0.25
+
+
+        """
         self.tolerance = tolerance
         self.rnaseq_folder = rnaseq_folder
 
@@ -147,8 +180,20 @@ class MultiFeatureCount():
 class FeatureCount:
     """Read a featureCounts output file.
 
-    #TODO: Test on single and multi featurecounts files and see how self.df and
-    self.rnadiff_ready_df behave.
+    The input file is expected to be generated with featurecounts tool. It
+    should be a TSV file such as the following one with the header provided
+    herebelow. Of course input BAM files can be named after your samples::
+
+        Geneid	Chr	Start	End	Strand	Length	WT1	WT2 WT3 KO1 KO2 KO3
+        gene1	NC_010602.1	141	1466	+	1326	11	20	15	13	17	17
+	gene2	NC_010602.1	1713	2831	+	1119	35	54	58	34	53	46
+	gene3	NC_010602.1	2831	3934	+	1104	9	16	16	4	18	18
+
+    ::
+
+        fc = FeatureCount("all_features.out", extra_name_rm=["_S\d+"]
+        fc.rnadiff_df.to_csv("fc.csv")
+
     """
 
     def __init__(
@@ -157,7 +202,7 @@ class FeatureCount:
         clean_sample_names=True,
         extra_name_rm=["_Aligned"],
         drop_loc=True,
-        rnadiff_ready=True,
+        rnadiff=True,
     ):
         """.. rubric:: Constructor
 
@@ -167,49 +212,120 @@ class FeatureCount:
         - drop_loc: if dropping the extra location columns (ie getting only the count matrix)
         """
 
-        if not Path(filename).exists(): # pragma: no cover
-            raise IOError(f"No file found with path: {filename}")
+        if isinstance(filename, list):
+            for ff in filename:
+                if not Path(ff).exists(): # pragma: no cover
+                    raise IOError(f"No file found with path: {filename}")
+        else:
+            if not Path(filename).exists(): # pragma: no cover
+                raise IOError(f"No file found with path: {filename}")
+            filename = [filename]
 
         self.filename = filename
         self.clean_sample_names = clean_sample_names
         self.extra_name_rm = extra_name_rm
         self.drop_loc = drop_loc
-        self._df = self._get_df()
-        # Count matrix prepared for rnadiff
-        if rnadiff_ready:
-            self.rnadiff_ready_df = self._get_rnadiff_ready_df()
-            self.target_df = self._get_target_df()
 
-    def _get_rnadiff_ready_df(self):
+        # populate _raw_df attribute once for all
+        self._read_data()
+
+        # Count matrix prepared for rnadiff
+        if rnadiff:
+            self.rnadiff_df = self._get_rnadiff_df()
+            self.design_df = self._get_design_df()
+
+    def _get_rnadiff_df(self):
         """Prepare a count matrix from a multi-sample featureCount file.
 
         This is in particular add a 'rawCounts_' to column names to not have an
         import problem in R with labels starting with numbers
         """
-        df = pd.read_csv(self.filename, sep="\t", comment="#", index_col=0)
+        df  = self._raw_df.copy()
+        # remove unneeded columns are dropped
         df.drop(["Chr", "Start", "End", "Strand", "Length"], axis=1, inplace=True)
+        # make sure data column names are cleaned
         df.columns = [
             self._clean_sample_names(x, self.extra_name_rm) for x in df.columns
         ]
-        df.set_index(df.columns[0], inplace=True)
         return df
 
-    def _get_target_df(self):
+    def _get_design_df(self):
         """ Prepare the table with grouping information for rnadiff
         """
         df = pd.DataFrame(
             {
-                "sample": self.rnadiff_ready_df.columns,
-                "label": self.rnadiff_ready_df.columns.str.replace("rawCounts_", ""),
+                "sample": self.rnadiff_df.columns,
+                "label": self.rnadiff_df.columns.str.replace("rawCounts_", ""),
                 "condition": None,
             }
         )
         df.set_index(df.columns[0], inplace=True)
+
+        # condition is None since it should be set by the users. Yet in simple
+        # cases, we can try to infer the condition names assuming the condition
+        # is in the name. eg. WT1, WT2, etc
+        try:
+            labels = df['label']
+            conditions = self._guess_conditions(labels)
+        except Exception as err:
+            logger.info("no conditions could be guess. You will need to edit the design file {}".format(err))
+            conditions = None
+        finally:
+            df['condition'] = conditions
         return df
 
-    def _get_df(self):
+    def _guess_conditions(self, labels):
+        """Found possible conditions based on common prefix"""
+        conditions = []
+        # we assume that the first characters can determine the conditions
+        L = min([len(x) for x in labels])
+        candidates = len(labels)
+        i = 0
+        for i in range(L):
+            candidates = set([x[0] for x in labels])
+            if len(candidates) != len(labels):
+                break
 
-        df = pd.read_csv(self.filename, sep="\t", comment="#", index_col=0)
+        for candidate in candidates:
+            names = [x for x in labels if x.startswith(candidate)]
+            # now for this candidate identify all labels that start with it from
+            # which we find the longest prefix
+            N = min([len(x) for x in names])
+            # the first letter is the same by definition, so we start at 1
+            for i in range(1, N):
+                # as soon as there is a difference, we can stop: we found the
+                # common prefix
+                if len(set([x[0:i] for x in names])) != 1:
+                    # if different, we need to ignore the last letter hence the
+                    # -1 here below
+                    conditions.append(names[0][0:i-1])
+                    break
+        # trim trailing _ if any
+        conditions = [x.rstrip('_') for x in conditions]
+        indconds = []
+        for label in labels:
+            for cond in conditions:
+                if label.startswith(cond):
+                    indconds.append(cond)
+                    break
+        if len(indconds):
+            return indconds
+        else:
+            return None
+
+    def _read_data(self):
+        if len(self.filename) > 1:
+            df = pd.read_csv(self.filename[0], sep="\t", comment="#")
+            for ff in self.filename[1:]:
+                other_df = pd.read_csv(ff, sep="\t", comment="#")
+                df = pd.merge(df, other_df)
+            df = df.set_index("Geneid")
+        else:
+            df = pd.read_csv(self.filename[0], sep="\t", comment="#", index_col=0)
+        self._raw_df = df
+
+    def _get_raw_df(self):
+        df  = self._raw_df.copy()
 
         if self.drop_loc:
             df.drop(["Chr", "Start", "End", "Strand", "Length"], axis=1, inplace=True)
@@ -219,8 +335,7 @@ class FeatureCount:
                 self._clean_sample_names(x, self.extra_name_rm) for x in df.columns
             ]
         return df
-
-    df = property(_get_df)
+    df = property(_get_raw_df)
 
     def _clean_sample_names(self, sample_path, extra_name_rm):
         """ Clean sample names in feature count tables """

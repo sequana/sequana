@@ -1314,10 +1314,10 @@ class KeggPathwayEnrichment:
         return df
 
     # FIXME rnadiff object is not imported anymore. This function is not functional
-    def _get_summary_pathway(self, pathway_ID):
+    def _get_summary_pathway(self, pathway_ID, rnadiff):
         genes = self.df_pathways.loc[pathway_ID]["GENE"]
-        df_down = self.rnadiff.df.query("padj<=0.05 and log2FoldChange<0").copy()
-        df_up = self.rnadiff.df.query("padj<=0.05 and log2FoldChange>=0").copy()
+        df_down = rnadiff.df.query("padj<=0.05 and log2FoldChange<0").copy()
+        df_up = rnadiff.df.query("padj<=0.05 and log2FoldChange>=0").copy()
 
         if "Name" not in df_down.columns:
             df_down["Name"] = df_down["ID"]

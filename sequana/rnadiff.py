@@ -15,12 +15,13 @@
 #  documentation: http://sequana.readthedocs.io
 #
 ##############################################################################
+import sys
+import os
 
 from pathlib import Path
 from jinja2 import Environment, PackageLoader
 import subprocess
 import seaborn as sns
-import matplotlib.pyplot as plt
 from itertools import combinations
 import os
 
@@ -38,7 +39,31 @@ logger = colorlog.getLogger(__name__)
 
 import glob
 
-__all__ = ["RNADiffAnalysis", "RNADiffResults"]
+__all__ = ["RNADiffAnalysis", "RNADiffResults", "RNADiffTable"]
+
+
+class RNADesign():
+    """Simple RNA design handler"""
+    def __init__(self, filename, reference=None):
+        self.filename = filename
+        self.df = pd.read_csv(filename, sep=',')
+        self.reference = reference
+
+    def _get_conditions(self):
+        return sorted(self.df.condition.unique())
+    conditions = property(_get_conditions)
+
+    def _get_comparisons(self):
+        conditions = self.conditions
+        if self.reference is None:
+            import itertools
+            comps = list(itertools.combinations(conditions, 2))
+        else:
+            # only those versus reference
+            comps = [(x, self.reference) for x in conditions if x != self.reference]
+        return sorted(comps)
+    comparisons = property(_get_comparisons)
+
 
 
 class RNADiffAnalysis:
@@ -50,7 +75,7 @@ class RNADiffAnalysis:
         advanced design, a R function of the type 'condition*inter' (without the '~') could
         be specified (not tested yet). Each name in this function should refer to column
         names in groups_tsv.
-    :param comparisons: A list of tupples indicating comparisons to be made e.g A vs B would be [("A", "B")]
+    :param comparisons: A list of tuples indicating comparisons to be made e.g A vs B would be [("A", "B")]
     :param batch: None for no batch effect or name of a column in groups_tsv to add a batch effec.
     :param fit_type: Default "parametric".
     :param beta_prior: Default False.
@@ -63,19 +88,28 @@ class RNADiffAnalysis:
     :param threads: Number of threads to use
     :param outdir: Path to output directory.
     :param sep: The separator to use in dataframe exports
+
+    This class reads a :class:`sequana.featurecounts.`
+
+    r = rnadiff.RNADiffAnalysis("counts.csv", "design.csv",
+            condition="condition", comparisons=[(("A", "B"), ('A', "C")],
+            fc_feature="gene",
+            fc_attribute="ID", gff="mygff.gff")
+
+
     """
 
-    template_file = "rnadiff_light_template.R"
-    template_env = Environment(loader=PackageLoader("sequana", "resources/templates"))
-    template = template_env.get_template(template_file)
+    _template_file = "rnadiff_light_template.R"
+    _template_env = Environment(loader=PackageLoader("sequana", "resources/templates"))
+    template = _template_env.get_template(_template_file)
 
     def __init__(
         self,
-        counts_tsv,
-        groups_tsv,
+        counts_file,
+        design_file,
         condition,
         comparisons,
-        batch,
+        batch=None,
         fit_type="parametric",
         beta_prior=False,
         independent_filtering=True,
@@ -83,29 +117,45 @@ class RNADiffAnalysis:
         gff=None,
         fc_attribute=None,
         fc_feature=None,
-        annot_cols=["ID", "Name", "gene_biotype"],
+        annot_cols=None,
+        #annot_cols=["ID", "Name", "gene_biotype"],
         threads=4,
         outdir="rnadiff",
-        sep_counts="\t",
-        sep_groups="\t",
+        sep_counts=",",
+        sep_design=",",
     ):
 
-        self.counts_tsv = counts_tsv
-        self.groups_tsv = groups_tsv
+        self.counts_filename = counts_file
+        self.design_filename = design_file
 
-        self.counts = pd.read_csv(counts_tsv, sep=sep_counts, index_col="Geneid",
+        self.counts = pd.read_csv(counts_file, sep=sep_counts, index_col="Geneid",
             comment="#")
-        self.groups = pd.read_csv(groups_tsv, sep=sep_groups, index_col="label",
+        self.design = pd.read_csv(design_file, sep=sep_design, index_col="label",
             comment="#")
 
-
+        # set condition of the statistical model
+        columns = ",".join(self.design.columns)
+        if condition not in columns:
+            logger.error(f"""Your condition named '{condition}' is expected to
+be in the header of your design file but was not found. Candidates are:
+    {columns}""")
+            sys.exit(1)
         self.condition = condition
         self.comparisons = comparisons
+
+        #let us check the consistenct of the design and comparisons
+        valid_conditions = ",".join(set(self.design[condition].values))
+        for item in [x for y in self.comparisons for x in y]:
+            if item not in self.design[condition].values:
+                logger.error(f"""{item} not found in the design. Fix the design
+or comparisons. possible values are {valid_conditions}""")
+                sys.exit(1)
+
         self.comparisons_str = (
             f"list({', '.join(['c' + str(x) for x in self.comparisons])})"
         )
         self.batch = batch
-        self.design = f"~{batch + '+' + condition if batch else condition}"
+        self.model = f"~{batch + '+' + condition if batch else condition}"
         self.fit_type = fit_type
         self.beta_prior = "TRUE" if beta_prior else "FALSE"
         self.independent_filtering = "TRUE" if independent_filtering else "FALSE"
@@ -116,7 +166,6 @@ class RNADiffAnalysis:
         self.threads = threads
 
         self.outdir = Path(outdir)
-        self.results = self._run()
 
     def __repr__(self):
         info = f"RNADiffAnalysis object:\n\
@@ -124,16 +173,16 @@ class RNADiffAnalysis:
 - {len(self.comparisons)} comparisons.\n\n\
 Counts overview:\n\
 {self.counts.head()}\n\n\
-Groups overview:\n\
-{self.groups.head()}"
+Design overview:\n\
+{self.design.head()}"
 
         return info
 
-    def _run(self):
+    def run(self):
         """Create outdir and a DESeq2 script from template for analysis. Then execute
         this script.
         """
-
+        logger.info("Running DESeq2 analysis. Please wait")
         try:
             self.outdir.mkdir()
         except:
@@ -156,7 +205,7 @@ Groups overview:\n\
 
         return RNADiffResults(
             self.outdir,
-            self.groups_tsv,
+            self.design_filename,
             group=self.condition,
             gff=self.gff,
             fc_feature=self.fc_feature,
@@ -165,7 +214,7 @@ Groups overview:\n\
 
 
 class RNADiffTable:
-    def __init__(self, path, gff=None, alpha=0.05, log2_fc=0, sep="\t"):
+    def __init__(self, path, alpha=0.05, log2_fc=0, sep=",", gff=None):
         """ A representation of the results of a single rnadiff comparison """
         self.path = Path(path)
         self.name = self.path.stem.replace("_degs_DESeq2", "").replace("-", "_")
@@ -173,9 +222,15 @@ class RNADiffTable:
         self._alpha = alpha
         self._log2_fc = log2_fc
 
-        self.gff = gff
-
         self.df = pd.read_csv(self.path, index_col=0, sep=sep)
+
+        # now, we add the annotation if possible
+        try:
+            self.df = pd.concat([self.df, gff], axis=1)
+        except Exception as err:
+            logger.warning("Could not concat the gff annotation to the data")
+            logger.warning(err)
+
 
         self.filt_df = self.filter()
         self.set_gene_lists()
@@ -229,67 +284,281 @@ class RNADiffTable:
             index=[self.name],
         )
 
-    def plot_volcano(self):
+    def plot_volcano(self, padj=0.05, add_broken_axes=False,
+        markersize=4,  limit_broken_line=[20, 40], plotly=False):
+        """
 
-        fc = self.df.loc[:, "log2FoldChange"]
-        pvalues = self.df.loc[:, "padj"]
-        Volcano(fc, pvalues).plot()
-        plt.title(self.name)
+        .. plot::
+            :include-source:
+
+            from sequana.rnadiff import RNADiffResults
+            from sequana import sequana_data
+
+            r = RNADiffResults(sequana_data("rnadiff/rnadiff_onecond_1"))
+            r.plot_volcano()
+
+        """
+        d1 = self.df.query("padj>@padj")
+        d2 = self.df.query("padj<=@padj")
+
+        if plotly:
+            from plotly import express as px
+
+            df = self.df.copy()
+            df["log_adj_pvalue"] = -pylab.log10(self.df.padj)
+            df["significance"] = [
+                "<{}".format(padj) if x else ">={}".format(padj) for x in df.padj < padj
+            ]
+
+            if "Name" in self.df.columns:
+                hover_name = "Name"
+            elif "gene_id" in self.df.columns:
+                hover_name = "gene_id"
+            elif "locus_tag" in self.df.columns:
+                hover_name = "locus_tag"
+            elif "ID" in self.df.columns:
+                hover_name = "ID"
+            else:
+                hover_name = None
+            fig = px.scatter(
+                df,
+                x="log2FoldChange",
+                y="log_adj_pvalue",
+                hover_name=hover_name,
+                hover_data=['baseMean'],
+                log_y=False,
+                opacity=0.5,
+                color="significance",
+                height=600,
+                labels={"log_adj_pvalue": "log adjusted p-value"},
+            )
+            # axes[0].axhline(
+            # -np.log10(0.05), lw=2, ls="--", color="r", label="pvalue threshold (0.05)"
+            # i)
+            # in future version of plotly, a add_hlines will be available. For
+            # now, this is the only way to add axhline
+            fig.update_layout(
+                shapes=[
+                    dict(
+                        type="line",
+                        xref="x",
+                        x0=df.log2FoldChange.min(),
+                        x1=df.log2FoldChange.max(),
+                        yref="y",
+                        y0=-pylab.log10(padj),
+                        y1=-pylab.log10(padj),
+                        line=dict(color="black", width=1, dash="dash"),
+                    )
+                ]
+            )
+
+            return fig
+
+        from brokenaxes import brokenaxes
+
+        M = max(-pylab.log10(self.df.padj.dropna()))
+
+        br1, br2 = limit_broken_line
+        if M > br1:
+            if add_broken_axes:
+                bax = brokenaxes(ylims=((0, br1), (M - 10, M)), xlims=None)
+            else:
+                bax = pylab
+        else:
+            bax = pylab
+
+        bax.plot(
+            d1.log2FoldChange,
+            -np.log10(d1.padj),
+            marker="o",
+            alpha=0.5,
+            color="k",
+            lw=0,
+            markersize=markersize,
+        )
+        bax.plot(
+            d2.log2FoldChange,
+            -np.log10(d2.padj),
+            marker="o",
+            alpha=0.5,
+            color="r",
+            lw=0,
+            markersize=markersize,
+        )
+
+        bax.grid(True)
+        try:
+            bax.set_xlabel("fold change")
+            bax.set_ylabel("log10 adjusted p-value")
+        except:
+            bax.xlabel("fold change")
+            bax.ylabel("log10 adjusted p-value")
+
+        m1 = abs(min(self.df.log2FoldChange))
+        m2 = max(self.df.log2FoldChange)
+        limit = max(m1, m2)
+        try:
+            bax.set_xlim([-limit, limit])
+        except:
+            bax.xlim([-limit, limit])
+        try:
+            y1, _ = bax.get_ylim()
+            ax1 = bax.axs[0].set_ylim([br2, y1[1] * 1.1])
+        except:
+            y1, y2 = bax.ylim()
+            bax.ylim([0, y2])
+        bax.axhline(
+            -np.log10(0.05), lw=2, ls="--", color="r", label="pvalue threshold (0.05)"
+        )
+        return bax
+
+        if colors is None:
+            colors = {}
+            for sample in self.sample_names:
+                colors[sample] = self.colors[self.get_cond_from_sample(sample)]
+
+        if plotly is True:
+            assert n_components == 3
+            variance = p.plot(
+                n_components=n_components,
+                colors=colors,
+                show_plot=False,
+                max_features=max_features,
+            )
+            from plotly import express as px
+
+            df = pd.DataFrame(p.Xr)
+            df.columns = ["PC1", "PC2", "PC3"]
+            df["names"] = self.sample_names
+            df["colors"] = [colors[x] for x in self.sample_names]
+            df["size"] = [10] * len(df)
+            df["condition"] = [
+                self.get_cond_from_sample(sample) for sample in self.sample_names
+            ]
+            fig = px.scatter_3d(
+                df,
+                x="PC1",
+                y="PC2",
+                z="PC3",
+                color="condition",
+                labels={
+                    "PC1": "PC1 ({}%)".format(round(100 * variance[0], 2)),
+                    "PC2": "PC2 ({}%)".format(round(100 * variance[1], 2)),
+                    "PC3": "PC3 ({}%)".format(round(100 * variance[2], 2)),
+                },
+                height=800,
+                text="names",
+            )
+            return fig
+        else:
+            variance = p.plot(
+                n_components=n_components, colors=colors, max_features=max_features
+            )
+
+        return variance
 
     def plot_pvalue_hist(self, bins=60, fontsize=16, rotation=0):
 
-        plt.hist(self.df.pvalue.dropna(), bins=bins, ec="k")
-        plt.xlabel("raw p-value")
-        plt.ylabel("Occurences")
+        pylab.hist(self.df.pvalue.dropna(), bins=bins, ec="k")
+        pylab.xlabel("raw p-value")
+        pylab.ylabel("Occurences")
+
+    def plot_pvalue_hist(self, bins=60, fontsize=16, rotation=0):
+        pylab.hist(self.df.pvalue.dropna(), bins=bins, ec="k")
+        pylab.grid(True)
+        pylab.xlabel("raw p-value", fontsize=fontsize)
+        pylab.ylabel("Occurences", fontsize=fontsize)
+        try:
+            pylab.tight_layout()
+        except:
+            pass
+
+    def plot_padj_hist(self, bins=60, fontsize=16):
+        pylab.hist(self.df.padj.dropna(), bins=bins, ec="k")
+        pylab.grid(True)
+        pylab.xlabel("Adjusted p-value", fontsize=fontsize)
+        pylab.ylabel("Occurences", fontsize=fontsize)
+        try:
+            pylab.tight_layout()
+        except:
+            pass
+
+
 
 
 class RNADiffResults:
     def __init__(
         self,
         rnadiff_folder,
-        meta,
+        design_file=None,
         gff=None,
         fc_attribute=None,
         fc_feature=None,
-        pattern="*vs*_degs_DESeq2.tsv",
+        pattern="*vs*_degs_DESeq2.csv",
         alpha=0.05,
         log2_fc=0,
-        sep="\t",
         palette=sns.color_palette(desat=0.6),
         group="condition",
-        annot_cols=["ID", "Name", "gene_biotype"],
+        annot_cols=None,
+        #annot_cols=["ID", "Name", "gene_biotype"],
     ):
         """
+
         :rnadiff_folder:
+
         """
         self.path = Path(rnadiff_folder)
         self.files = [x for x in self.path.glob(pattern)]
 
-        self.meta = self._get_meta(meta, sep=sep, group=group, palette=palette)
 
-        self.counts_raw = pd.read_csv(
-            self.path / "counts_raw.tsv", index_col=0, sep=sep
-        )
-        self.counts_norm = pd.read_csv(
-            self.path / "counts_normed.tsv", index_col=0, sep=sep
-        )
-        self.counts_vst = pd.read_csv(
-            self.path / "counts_vst_norm.tsv", index_col=0, sep=sep
-        )
-        self.dds_stats = pd.read_csv(
-            self.path / "overall_dds.tsv", index_col=0, sep=sep
-        )
 
-        self.gff = gff
+        self.counts_raw = pd.read_csv(self.path / "counts_raw.csv", 
+            index_col=0, sep=",")
+        self.counts_raw.sort_index(axis=1, inplace=True)
+
+        self.counts_norm = pd.read_csv(self.path / "counts_normed.csv",
+            index_col=0, sep=",")
+        self.counts_norm.sort_index(axis=1, inplace=True)
+
+        self.counts_vst = pd.read_csv(self.path / "counts_vst_norm.csv", 
+            index_col=0, sep=",")
+        self.counts_vst.sort_index(axis=1, inplace=True)
+
+        self.dds_stats = pd.read_csv(self.path / "overall_dds.csv", 
+            index_col=0, sep=",")
+
+        # read different results and sort by sample name all inputs 
+        # TODO make this a function to be reused in RNADiffAnalysis for example
+        if design_file == None:
+            conditions = []
+            labels = self.counts_raw.columns  
+            for label in labels:
+                condition = input(f"Please give use a condition name for the {label} label: ")
+                conditions.append(condition)
+            df = pd.DataFrame({'label':labels, 'condition':conditions})
+            df.set_index('label', inplace=True)
+            df.sort_index(inplace=True)
+            col_map = dict(zip(df.loc[:, group].unique(), palette))
+            df["group_color"] = df.loc[:, group].map(col_map)
+            self.design_df = df
+        else: 
+            self.design_df = self._get_design(design_file, group=group, palette=palette)
+            self.design_df.sort_index(inplace=True)
+            self.design = RNADesign(design_file)
+
+
+        # optional annotation
         self.fc_attribute = fc_attribute
         self.fc_feature = fc_feature
         self.annot_cols = annot_cols
+        if gff:
+            self.annotation = self.read_annot(gff)
+        else:
+            self.annotation = None
 
+        # some filtering attributes
         self._alpha = alpha
         self._log2_fc = log2_fc
-
-        if self.gff:
-            self.annot_df = self._get_annot()
 
         self.comparisons = self.import_tables()
 
@@ -318,20 +587,29 @@ class RNADiffResults:
 
     def import_tables(self):
 
-        return {
+        data ={
             compa.stem.replace("_degs_DESeq2", "").replace("-", "_"): RNADiffTable(
-                compa, alpha=self._alpha, log2_fc=self._log2_fc
-            )
+                compa, alpha=self._alpha, log2_fc=self._log2_fc,
+                gff=self.annotation.annotation)
             for compa in self.files
         }
 
-    def _get_annot(
-        self,
-    ):
+
+        from easydev import AttrDict
+        return AttrDict(**data)
+
+    def read_annot(self, gff_filename):
         """Get a properly formatted dataframe from the gff."""
 
-        df = GFF3(self.gff).get_df()
-        df = df.query("type == @self.fc_feature").loc[:, self.annot_cols]
+        gff = GFF3(gff_filename)
+        df = gff.get_df()
+        if self.annot_cols is None:
+            lol = [list(x.keys()) for x in df.query("type=='gene'")['attributes'].values]
+            annot_cols = list(set([x for item in lol for x in item]))
+        else:
+            annot_cols = self.annot_cols
+
+        df = df.query("type == @self.fc_feature").loc[:, annot_cols]
         df.drop_duplicates(inplace=True)
         df.set_index(self.fc_attribute, inplace=True)
         df.columns = pd.MultiIndex.from_product([["annotation"], df.columns])
@@ -369,8 +647,9 @@ class RNADiffResults:
         )
         df.loc[:, ("statistics", "significative_comparisons")] = sign_compa
 
-        if self.gff and self.fc_attribute and self.fc_feature:
-            df = pd.concat([self.annot_df, df], axis=1)
+
+        if self.annotation is not None and self.fc_attribute and self.fc_feature:
+            df = pd.concat([self.annotation, df], axis=1)
         else:
             logger.warning(
                 "Missing any of gff, fc_attribute or fc_feature. No annotation will be added."
@@ -396,7 +675,7 @@ class RNADiffResults:
                 )
             )
 
-    def run_enrichment_go(self, taxon, annot_col="Name", out_dir="enrichment"):
+    def run_enrichment_go(self, taxon, annot_col="Name", out_dir="enrichment"):#pragma: no cover
 
         out_dir = Path(out_dir) / "figures"
         out_dir.mkdir(exist_ok=True, parents=True)
@@ -415,14 +694,17 @@ class RNADiffResults:
                     enrichment[(compa, direction, ontology)] = pe.get_data(
                         direction, ontology, include_negative_enrichment=False
                     )
-                    plt.figure()
+                    pylab.figure()
                     try:
                         pe.plot_go_terms(direction, ontology, compute_levels=False)
                     except:
                         return pe
-                    plt.tight_layout()
-                    plt.savefig(
+                    pylab.tight_layout()
+                    pylab.savefig(
                         out_dir / f"go_{compa}_{direction}_{ontologies[ontology]}.pdf"
+                    )
+                    pylab.savefig(
+                        out_dir / f"go_{compa}_{direction}_{ontologies[ontology]}.png"
                     )
 
             logger.info(f"Panther enrichment for {compa} DONE.")
@@ -440,9 +722,13 @@ class RNADiffResults:
             df.reset_index(inplace=True)
             df.to_excel(writer, "go", index=False)
             ws = writer.sheets["go"]
-            ws.autofilter(0, 0, df.shape[0], df.shape[1] - 1)
+            try:
+                ws.autofilter(0, 0, df.shape[0], df.shape[1] - 1)
+            except:
+                logger.warning("Fixme")
 
-    def run_enrichment_kegg(self, organism, annot_col="Name", out_dir="enrichment"):
+    def run_enrichment_kegg(self, organism, annot_col="Name",
+        out_dir="enrichment"): #pragma: no cover
 
         out_dir = Path(out_dir) / "figures"
         out_dir.mkdir(exist_ok=True, parents=True)
@@ -459,10 +745,11 @@ class RNADiffResults:
                 enrichment[(compa, direction)] = ke._get_final_df(
                     ke.enrichment[direction].results, nmax=10000
                 )
-                plt.figure()
+                pylab.figure()
                 ke.scatterplot(direction)
-                plt.tight_layout()
-                plt.savefig(out_dir / f"kegg_{compa}_{direction}.pdf")
+                pylab.tight_layout()
+                pylab.savefig(out_dir / f"kegg_{compa}_{direction}.pdf")
+                pylab.savefig(out_dir / f"kegg_{compa}_{direction}.png")
 
             logger.info(f"KEGG enrichment for {compa} DONE.")
 
@@ -477,9 +764,12 @@ class RNADiffResults:
             df.reset_index(inplace=True)
             df.to_excel(writer, "kegg", index=False)
             ws = writer.sheets["kegg"]
-            ws.autofilter(0, 0, df.shape[0], df.shape[1] - 1)
+            try:
+                ws.autofilter(0, 0, df.shape[0], df.shape[1] - 1)
+            except:
+                logger.warning("Fixme")
 
-    def get_gene_lists(self, annot_col="index", Nmax=None):
+    def get_gene_lists(self, annot_col="index", Nmax=None):  #pragma: no cover
 
         gene_lists_dict = {}
 
@@ -521,21 +811,20 @@ class RNADiffResults:
 
         return gene_lists_dict
 
-    def _get_meta(self, meta_file, sep, group, palette):
-        """Import metadata from a table file and add color groups following the
+    def _get_design(self, design_file, group, palette):
+        """Import design from a table file and add color groups following the
         groups defined in the column 'group' of the table file.
         """
-        meta_df = pd.read_csv(meta_file, sep=sep, index_col=0)
-        col_map = dict(zip(meta_df.loc[:, group].unique(), palette))
-        meta_df["group_color"] = meta_df.loc[:, group].map(col_map)
+        df = pd.read_csv(design_file, sep=",", index_col=0)
+        col_map = dict(zip(df.loc[:, group].unique(), palette))
+        df["group_color"] = df.loc[:, group].map(col_map)
+        return df
 
-        return meta_df
-
-    def _format_plot(self, title, xlabel, ylabel):
-        plt.title(title)
-        plt.xticks(rotation=45, ha="right")
-        plt.xlabel(xlabel)
-        plt.ylabel(ylabel)
+    def _format_plot(self, title="", xlabel="", ylabel="", rotation=0):
+        pylab.title(title)
+        pylab.xticks(rotation=rotation, ha="right")
+        pylab.xlabel(xlabel)
+        pylab.ylabel(ylabel)
 
     def get_specific_commons(self, direction, compas=None, annot_col="index"):
         """From all the comparisons contained by the object, extract gene lists which
@@ -577,44 +866,68 @@ class RNADiffResults:
 
         return common_specific_dict
 
-    def plot_count_per_sample(self):
+    def plot_count_per_sample(self, fontsize=12, rotation=45):
         """Number of mapped and annotated reads (i.e. counts) per sample. Each color
         for each replicate
+
+        .. plot::
+            :include-source:
+
+            from sequana.rnadiff import RNADiffResults
+            from sequana import sequana_data
+
+            r = RNADiffResults(sequana_data("rnadiff/rnadiff_onecond_1"))
+            r.plot_count_per_sample()
+
         """
-
+        pylab.clf()
         df = self.counts_raw.sum().rename("total_counts")
-        df = pd.concat([self.meta, df], axis=1)
+        df = pd.concat([self.design_df, df], axis=1)
 
-        plt.bar(df.index, df.total_counts, color=df.group_color)
+        pylab.bar(df.index, df.total_counts/1000000, color=df.group_color, 
+            lw=1, zorder=10, ec='k', width=0.9)
 
-        self._format_plot(
-            title="Total counts", xlabel="Sample", ylabel="Total number of counts"
-        )
+        pylab.xlabel("Samples", fontsize=fontsize)
+        pylab.ylabel("reads (M)", fontsize=fontsize)
+        pylab.grid(True, zorder=0)
+        pylab.title("Total read count per sample", fontsize=fontsize)
+        pylab.xticks(rotation=rotation, ha="right")
+        #pylab.xticks(range(N), self.sample_names)
+        try:pylab.tight_layout()
+        except:pass
 
     def plot_percentage_null_read_counts(self):
         """Bars represent the percentage of null counts in each samples.  The dashed
         horizontal line represents the percentage of feature counts being equal
-        to zero across all samples"""
+        to zero across all samples
 
+        .. plot::
+            :include-source:
+
+            from sequana.rnadiff import RNADiffResults
+            from sequana import sequana_data
+
+            r = RNADiffResults(sequana_data("rnadiff/rnadiff_onecond_1"))
+            r.plot_percentage_null_read_counts()
+
+        """
+        pylab.clf()
+        # how many null counts ?
         df = (self.counts_raw == 0).sum() / self.counts_raw.shape[0] * 100
         df = df.rename("percent_null")
-        df = pd.concat([self.meta, df], axis=1)
+        df = pd.concat([self.design_df, df], axis=1)
 
-        plt.bar(df.index, df.percent_null, color=df.group_color)
+        pylab.bar(df.index, df.percent_null, color=df.group_color, ec="k", lw=1,
+            zorder=10)
 
         all_null = (self.counts_raw == 0).all(axis=1).sum() / self.counts_raw.shape[0]
 
-        plt.axhline(all_null, ls="--", color="black", alpha=0.5)
+        pylab.axhline(all_null, ls="--", color="black", alpha=0.5)
 
-        plt.xticks(rotation=45, ha="right")
-        plt.xlabel("Sample")
-        plt.ylabel("Proportion of null counts (%)")
-
-        self._format_plot(
-            title="Proportion of null counts",
-            xlabel="Sample",
-            ylabel="% of null counts",
-        )
+        pylab.xticks(rotation=45, ha="right")
+        pylab.ylabel("Proportion of null counts (%)")
+        pylab.grid(True, zorder=0)
+        pylab.tight_layout()
 
     def plot_pca(
         self,
@@ -672,10 +985,13 @@ class RNADiffResults:
             from plotly import express as px
 
             df = pd.DataFrame(p.Xr)
+            df.index = p.df.columns
             df.columns = ["PC1", "PC2", "PC3"]
-            df["size"] = [10] * len(df)
-            df = pd.concat([df, self.meta], axis=1, ignore_index=True)
-            return df
+            df["size"] = [10] * len(df)   # same size for all points ?
+
+            df = pd.concat([df, self.design_df], axis=1)
+            df['label'] = df.index
+            df['group_color'] = df['condition']
 
             fig = px.scatter_3d(
                 df,
@@ -689,13 +1005,13 @@ class RNADiffResults:
                     "PC3": "PC3 ({}%)".format(round(100 * variance[2], 2)),
                 },
                 height=800,
-                text="names",
+                text="label",
             )
             return fig
         else:
             variance = p.plot(
                 n_components=n_components,
-                colors=self.meta.group_color,
+                colors=self.design_df.group_color,
                 max_features=max_features,
             )
 
@@ -706,24 +1022,24 @@ class RNADiffResults:
 
         from sequana.viz.mds import MDS
 
-        p = MDS(self.counts[self.sample_names])
-        if colors is None:
-            colors = {}
-            for sample in self.sample_names:
-                colors[sample] = self.colors[self.get_cond_from_sample(sample)]
-        p.plot(n_components=n_components, colors=colors, clf=clf)
+        p = MDS(self.counts_vst) #[self.sample_names])
+        #if colors is None:
+        #    colors = {}
+        #    for sample in self.sample_names:
+        #        colors[sample] = self.colors[self.get_cond_from_sample(sample)]
+        p.plot(n_components=n_components, colors=self.design_df.group_color, clf=clf)
 
     def plot_isomap(self, n_components=2, colors=None):
         """IN DEV, not functional"""
 
         from sequana.viz.isomap import Isomap
 
-        p = Isomap(self.df[self.sample_names])
-        if colors is None:
-            colors = {}
-            for sample in self.sample_names:
-                colors[sample] = self.colors[self.get_cond_from_sample(sample)]
-        p.plot(n_components=n_components, colors=colors)
+        p = Isomap(self.counts_vst)
+        #if colors is None:
+        #    colors = {}
+        #    for sample in self.sample_names:
+        #        colors[sample] = self.colors[self.get_cond_from_sample(sample)]
+        p.plot(n_components=n_components, colors=self.design_df.group_color)
 
     def plot_density(self):
         import seaborn
@@ -740,7 +1056,6 @@ class RNADiffResults:
 
     def plot_feature_most_present(self):
         """"""
-        description = "test me"
 
         df = []
 
@@ -760,25 +1075,30 @@ class RNADiffResults:
             )
 
         df = pd.DataFrame(df).set_index("label")
-        df = pd.concat([self.meta, df], axis=1)
+        df = pd.concat([self.design_df, df], axis=1)
 
-        p = plt.bar(df.index, df.most_exp_percent, color=df.group_color)
+        pylab.clf()
+        p = pylab.barh(df.index, df.most_exp_percent, color=df.group_color,
+                zorder=10, lw=1, ec="k", height=0.9)
 
         for idx, rect in enumerate(p):
-            plt.text(
-                rect.get_x() + rect.get_width() / 2.0,
-                0.95 * rect.get_height(),
+            pylab.text(
+            
+                2,# * rect.get_height(),
+                idx, #rect.get_x() + rect.get_width() / 2.0,
                 df.gene_id.iloc[idx],
                 ha="center",
-                va="top",
-                rotation=90,
+                va="center",
+                rotation=0,
+                zorder=20
             )
 
         self._format_plot(
-            title="Counts monopolized by the most expressed gene",
-            xlabel="Sample",
-            ylabel="Percent of total reads",
+            #title="Counts monopolized by the most expressed gene",
+            #xlabel="Sample",
+            xlabel="Percent of total reads",
         )
+        pylab.tight_layout()
 
     def plot_dendogram(
         self,
@@ -812,40 +1132,46 @@ class RNADiffResults:
             df.T,
             metric=metric,
             method=method,
-            side_colors=list(self.meta.group_color.unique()),
+            side_colors=list(self.design_df.group_color.unique()),
         )
 
         # Convert groups into numbers for Dendrogram category
-        group_conv = {group: i for i, group in enumerate(self.meta.condition.unique())}
-        d.category = self.meta.condition.map(group_conv).to_dict()
+        group_conv = {group: i for i, group in enumerate(self.design_df.condition.unique())}
+        d.category = self.design_df.condition.map(group_conv).to_dict()
         d.plot()
 
-    def plot_boxplot_rawdata(self, fliersize=2, linewidth=2, **kwargs):
+    def plot_boxplot_rawdata(self, fliersize=2, linewidth=2, rotation=0, **kwargs):
         import seaborn as sbn
 
         ax = sbn.boxplot(
             data=self.counts_raw.clip(1),
             linewidth=linewidth,
             fliersize=fliersize,
-            palette=self.meta.group_color,
+            palette=self.design_df.group_color,
             **kwargs,
         )
+        pos, labs = pylab.xticks()
+        pylab.xticks(pos, labs, rotation=rotation)
+        ax.set_ylabel("Counts (raw) in log10 scale")
         ax.set_yscale("log")
-        self._format_plot(
-            title="Raw count distribution", xlabel="Samples", ylabel="Raw counts"
-        )
+        self._format_plot(ylabel="Raw count distribution")
+        pylab.tight_layout()
 
-    def plot_boxplot_normeddata(self, fliersize=2, linewidth=2, **kwargs):
+    def plot_boxplot_normeddata(self, fliersize=2, linewidth=2, rotation=0, **kwargs):
         import seaborn as sbn
 
         ax = sbn.boxplot(
             data=self.counts_norm.clip(1),
             linewidth=linewidth,
             fliersize=fliersize,
-            palette=self.meta.group_color,
+            palette=self.design_df.group_color,
             **kwargs,
         )
+        pos, labs = pylab.xticks()
+        pylab.xticks(pos, labs, rotation=rotation)
         ax.set(yscale="log")
+        self._format_plot(ylabel="Normalised count distribution")
+        pylab.tight_layout()
 
     def plot_dispersion(self):
 
@@ -876,3 +1202,11 @@ class RNADiffResults:
             xlabel="Mean of normalized counts",
             ylabel="Dispersion",
         )
+
+
+    def heatmap(self, comp, log2_fc=1, padj=0.05):
+        assert comp in self.comparisons.keys()
+        from sequana.viz import heatmap
+        h = heatmap.Clustermap(self.counts_norm.loc[self.comparisons[comp].df.query(
+            "(log2FoldChange<-@log2_fc or log2FoldChange>@log2_fc) and padj<@padj").index]).plot()
+

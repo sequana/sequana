@@ -61,19 +61,19 @@ class RNADiffCompare(Compare):
 
     """
 
-    def __init__(self, r1, r2, r3=None):
+    def __init__(self, r1, r2, r3=None, design=None):
 
         if isinstance(r1, RNADiffResults):
             self.r1 = r1
         elif os.path.exists(r1):
-            self.r1 = RNADiffResults(r1)
+            self.r1 = RNADiffResults(r1, design=design)
         else:
             raise NotImplementedError
 
         if isinstance(r2, RNADiffResults):
             self.r2 = r2
         elif os.path.exists(r2):
-            self.r2 = RNADiffResults(r2)
+            self.r2 = RNADiffResults(r2, design=design)
         else:
             raise NotImplementedError
 
@@ -82,12 +82,26 @@ class RNADiffCompare(Compare):
         elif isinstance(r3, RNADiffResults):
             self.r3 = r3
         elif os.path.exists(r3):
-            self.r3 = RNADiffResults(r3)
+            self.r3 = RNADiffResults(r3, design=design)
         else:
             raise NotImplementedError
 
+        comps = list(self.r1.comparisons.keys())
+        if len(comps) == 1:
+            self._comp = comps[0]
+        else:
+            self._comp = None
 
-    def summary(self):
+    def _get_comp(self):
+        return self._comp
+    def _set_comp(self, comp):
+        comps = list(self.r1.comparisons.keys())
+        assert comp in comps
+        self._comp = comp
+    comparison = property(_get_comp, _set_comp)
+        
+
+    """def summary(self):
         conditions = self._get_conditions()
         d1 = self.r1.gene_lists['down']
         d2 = self.r2.gene_lists['down']
@@ -105,23 +119,18 @@ class RNADiffCompare(Compare):
             u3 = self.r3.gene_lists['up']
 
             res['up3'] = len(u3)
-            res['down3'] = len(d3)
-
-        
+            res['down3'] = len(d3) 
         return res
+    """
 
     def _get_conditions(self, cond1=None, cond2=None):
 
-        cond1 = "_vs_".join(sorted(self.r1.condition_names))
-        cond2 = "_vs_".join(sorted(self.r2.condition_names))
-        try:
-            cond3 = "_vs_".join(sorted(self.r3.condition_names))
-            return cond1, cond2, cond3
-        except:
-            return cond1, cond2
+        cond1, cond2 = self.comparison.split("_vs_")
+        return cond1, cond2
 
-    def venn_down_only(self, cond1=None, cond2=None, cond3=None, labels=None, ax=None,
+    def plot_venn_down(self, cond1=None, cond2=None, cond3=None, labels=None, ax=None,
             title="Down expressed genes", mode="all"):
+
         kargs = {}
         kargs['title'] = title
         kargs['labels'] = labels
@@ -129,14 +138,13 @@ class RNADiffCompare(Compare):
         kargs['cond2'] = cond2
         kargs['cond3'] = cond3
         kargs['ax'] = ax
-        kargs['data1'] = self.r1.gene_lists['down']
-        kargs['data2'] = self.r2.gene_lists['down']
+        kargs['data1'] = set(self.r1.get_gene_lists()[self.comparison]['down'])
+        kargs['data2'] = set(self.r2.get_gene_lists()[self.comparison]['down'])
         if self.r3 and mode=="all":
-            kargs['data3'] =  self.r3.gene_lists['down']
+            kargs['data3'] = set(self.r3.get_gene_lists()[self.comparison]['down'])
         self._venn(**kargs)
 
-
-    def venn_up_only(self, cond1=None,cond2=None, cond3=None, labels=None,ax=None,
+    def plot_venn_up(self, cond1=None,cond2=None, cond3=None, labels=None,ax=None,
          title="Up expressed genes", mode="all"):
         """Venn diagram of cond1 from RNADiff result1 vs cond2 in RNADiff
         result 2
@@ -159,10 +167,10 @@ class RNADiffCompare(Compare):
         kargs['cond2'] = cond2
         kargs['cond3'] = cond3
         kargs['ax'] = ax
-        kargs['data1'] = self.r1.gene_lists['up']
-        kargs['data2'] = self.r2.gene_lists['up']
+        kargs['data1'] = set(self.r1.get_gene_lists()[self.comparison]['up'])
+        kargs['data2'] = set(self.r2.get_gene_lists()[self.comparison]['up'])
         if self.r3 and mode=="all":
-            kargs['data3'] =  self.r3.gene_lists['up']
+            kargs['data3'] = set(self.r3.get_gene_lists()[self.comparison]['up'])
         self._venn(**kargs)
 
     def _venn(self, data1, data2, data3=None, cond1=None, cond2=None, cond3=None, labels=None,
@@ -174,6 +182,8 @@ class RNADiffCompare(Compare):
             #cond1, cond2 = self._get_conditions()
             if labels is None:
                 labels = [cond1, cond2]
+
+            print(data1, data2, labels)
             plot_venn([data1, data2],
                 labels=labels, ax=ax, title=title)
         else:
@@ -184,7 +194,7 @@ class RNADiffCompare(Compare):
                 [data1, data2, data3],
                 labels=labels, ax=ax, title=title)
 
-    def venn_all(self, cond1=None, cond2=None, cond3=None, labels=None, ax=None,
+    def plot_venn_all(self, cond1=None, cond2=None, cond3=None, labels=None, ax=None,
         title="all expressed genes", mode="all"):
 
         kargs = {}
@@ -194,20 +204,34 @@ class RNADiffCompare(Compare):
         kargs['cond2'] = cond2
         kargs['cond3'] = cond3
         kargs['ax'] = ax
-        kargs['data1'] = self.r1.gene_lists['all']
-        kargs['data2'] = self.r2.gene_lists['all']
+        kargs['data1'] = set(self.r1.get_gene_lists()[self.comparison]['all'])
+        kargs['data2'] = set(self.r2.get_gene_lists()[self.comparison]['all'])
         if self.r3 and mode=="all":
-            kargs['data3'] =  self.r3.gene_lists['all']
+            kargs['data3'] =  set(self.r3.gene_lists()[self.comparison]['all'])
         self._venn(**kargs)
 
-    def plot_corrplot(self, samples1, samples2, log2=True):
+    def plot_corrplot_counts_raw(self, samples=None, log2=True, lower='pie', upper='text'):
         from sequana.viz import corrplot
-        df1 = self.r1.df[samples1]
-        df2 = self.r2.df[samples2]
+        if samples is None:
+            samples = self.r1.counts_raw.columns
+        df1 = self.r1.counts_raw[samples]
+        df2 = self.r2.counts_raw[samples]
         df = pd.concat([df1, df2], keys=['r1', 'r2'], axis=1)
         if log2:
             df = pylab.log2(df)
-        c = corrplot.Corrplot(df).plot(method='pie')
+        c = corrplot.Corrplot(df).plot(upper=upper,  lower=lower)
+        return df.corr()
+
+    def plot_corrplot_counts_normed(self, samples=None, log2=True, lower='pie', upper='text'):
+        from sequana.viz import corrplot
+        if samples is None:
+            samples = self.r1.counts_raw.columns
+        df1 = self.r1.counts_norm[samples]
+        df2 = self.r2.counts_norm[samples]
+        df = pd.concat([df1, df2], keys=['r1', 'r2'], axis=1)
+        if log2:
+            df = pylab.log2(df)
+        c = corrplot.Corrplot(df).plot(upper=upper,  lower=lower)
         return df.corr()
 
     def plot_jaccard_distance(self, mode, padjs=[0.0001,0.001,0.01,0.05,0.1],
@@ -216,21 +240,21 @@ class RNADiffCompare(Compare):
         pylab.clf()
 
         if mode == "down":
-            m1 = self.r1.df.log2FoldChange.min()
-            m2 = self.r2.df.log2FoldChange.min()
+            m1 = self.r1.comparisons[self.comparison].df.log2FoldChange.min()
+            m2 = self.r2.comparisons[self.comparison].df.log2FoldChange.min()
             minimum = min(m1,m2)
             print(m1, m2)
             X = pylab.linspace(0, minimum, Nfc)
         elif mode == "up":
-            m1 = self.r1.df.log2FoldChange.max()
-            m2 = self.r1.df.log2FoldChange.max()
+            m1 = self.r1.comparisons[self.comparison].df.log2FoldChange.max()
+            m2 = self.r2.comparisons[self.comparison].df.log2FoldChange.max()
             maximum = max(m1,m2)
             X = pylab.linspace(0, maximum, Nfc)
         else:
-            minmax1 = self.r1.df.log2FoldChange.abs().max()
-            minmax2 = self.r1.df.log2FoldChange.abs().max()
-            maximum = max(minimax1, minimax2)
-            X = pylab.linspace(0, minmax, Nfc)
+            minmax1 = self.r1.comparisons[self.comparison].df.log2FoldChange.abs().max()
+            minmax2 = self.r2.comparisons[self.comparison].df.log2FoldChange.abs().max()
+            maximum = max(minmax1, minmax2)
+            X = pylab.linspace(0, maximum, Nfc)
 
         common = {}
         for padj in padjs:
@@ -239,15 +263,15 @@ class RNADiffCompare(Compare):
             for x in X:
                 if mode == "down":
                     # less than a given fold change that is negative
-                    A = set(self.r1.df.query("log2FoldChange<=@x and padj<@padj").index)
-                    B = set(self.r2.df.query("log2FoldChange<=@x and padj<@padj").index)
+                    A = set(self.r1.comparisons[self.comparison].df.query("log2FoldChange<=@x and padj<@padj").index)
+                    B = set(self.r2.comparisons[self.comparison].df.query("log2FoldChange<=@x and padj<@padj").index)
                 elif mode == "up":
                     # greater than a given fold change that is positive
-                    A = set(self.r1.df.query("log2FoldChange>=@x and padj<@padj").index)
-                    B = set(self.r2.df.query("log2FoldChange>=@x and padj<@padj").index)
+                    A = set(self.r1.comparisons[self.comparison].df.query("log2FoldChange>=@x and padj<@padj").index)
+                    B = set(self.r2.comparisons[self.comparison].df.query("log2FoldChange>=@x and padj<@padj").index)
                 else:
-                    A = set(self.r1.df.query("(log2FoldChange>=@x or log2FoldChange<=-@x) and padj<@padj").index)
-                    B = set(self.r2.df.query("(log2FoldChange>=@x or log2FoldChange<=-@x) and padj<@padj").index)
+                    A = set(self.r1.comparisons[self.comparison].df.query("(log2FoldChange>=@x or log2FoldChange<=-@x) and padj<@padj").index)
+                    B = set(self.r2.comparisons[self.comparison].df.query("(log2FoldChange>=@x or log2FoldChange<=-@x) and padj<@padj").index)
                 if len(A) == 0 or len(B) == 0:
                     # no overlap yet
                     I.append(100)
@@ -304,13 +328,15 @@ class RNADiffCompare(Compare):
 
         if mode in ["down"]:
             # Negative values !
-            A = self.r1.df.loc[self.r1.gene_lists[mode]].sort_values(by=sortby)
-            B = self.r2.df.loc[self.r2.gene_lists[mode]].sort_values(by=sortby)
+            gl1 = set(self.r1.get_gene_lists()[self.comparison]['down'])
+            gl2 =  set(self.r2.get_gene_lists()[self.comparison]['down'])
+            A = self.r1.comparisons[self.comparison].df.loc[gl1].sort_values(by=sortby)
+            B = self.r2.comparisons[self.comparison].df.loc[gl1].sort_values(by=sortby)
         else:
-            A = self.r1.df.loc[self.r1.gene_lists[mode]].sort_values(
-                by=sortby, ascending=False)
-            B = self.r2.df.loc[self.r2.gene_lists[mode]].sort_values(
-                by=sortby, ascending=False)
+            gl1 = set(self.r1.get_gene_lists()[self.comparison][mode])
+            gl2 =  set(self.r2.get_gene_lists()[self.comparison][mode])
+            A = self.r1.comparisons[self.comparison].df.loc[gl1].sort_values(by=sortby, ascending=False)
+            B = self.r2.comparisons[self.comparison].df.loc[gl1].sort_values(by=sortby, ascending=False)
         # sometimes, up and down may be inverted as compared to the other
         # conditions
 
@@ -351,39 +377,37 @@ class RNADiffCompare(Compare):
             f = pylab.gcf()
             ax = f.add_axes([0.5,0.5,0.35,0.35], facecolor="grey")
             if mode=="down":
-                self.venn_down_only(ax=ax, title=None, labels=labels,
+                self.plot_venn_down(ax=ax, title=None, labels=labels,
                     mode="two_only")
             elif mode=="up":
-                self.venn_up_only(ax=ax, title=None, labels=labels,
+                self.plot_venn_up(ax=ax, title=None, labels=labels,
                     mode="two_only")
             elif mode=="all":
-                self.venn_all(ax=ax, title=None, labels=labels,
+                self.plot_venn_all(ax=ax, title=None, labels=labels,
                     mode="two_only")
 
     def plot_foldchange(self):
         mode = "all"
-        A = self.r1.df.loc[self.r1.gene_lists[mode]]
-        B = self.r2.df.loc[self.r2.gene_lists[mode]]
+        A = self.r1.comparisons[self.comparison].df.loc[self.r1.get_gene_lists()[self.comparison][mode]]
+        B = self.r2.comparisons[self.comparison].df.loc[self.r2.get_gene_lists()[self.comparison][mode]]
         AB = set(A.index).intersection(set(B.index))
         Ao = A.loc[set(A.index).difference(set(B.index))]
         Bo = B.loc[set(B.index).difference(set(A.index))]
         Ac = A.loc[AB]
         Bc = B.loc[AB]
 
-        pylab.plot(self.r1.df.log2FoldChange, self.r2.df.log2FoldChange, 'ko',
-alpha=0.5, markersize=1)
+        pylab.plot(self.r1.comparisons[self.comparison].df.log2FoldChange, 
+                   self.r2.comparisons[self.comparison].df.log2FoldChange, 'ko', alpha=0.5, markersize=1)
         pylab.plot(Ac.log2FoldChange, Bc.log2FoldChange, 'or', alpha=0.5)
-        pylab.plot(Ao.log2FoldChange, self.r2.df.loc[Ao.index].log2FoldChange, '*b', alpha=0.5)
-        pylab.plot(Bo.log2FoldChange, self.r1.df.loc[Bo.index].log2FoldChange, 
+        pylab.plot(Ao.log2FoldChange, self.r2.comparisons[self.comparison].df.loc[Ao.index].log2FoldChange, '*b', alpha=0.5)
+        pylab.plot(Bo.log2FoldChange, self.r1.comparisons[self.comparison].df.loc[Bo.index].log2FoldChange, 
             color='cyan', marker="o", lw=0, alpha=0.5)
-
-    
 
     def plot_volcano_differences(self, mode="all"):
         cond1, cond2 = "cond1", "cond2"
         labels = [cond1, cond2]
-        A = self.r1.df.loc[self.r1.gene_lists[mode]]
-        B = self.r2.df.loc[self.r2.gene_lists[mode]]
+        A = self.r1.comparisons[self.comparison].df.loc[self.r1.get_gene_lists()[self.comparison][mode]]
+        B = self.r2.comparisons[self.comparison].df.loc[self.r2.get_gene_lists()[self.comparison][mode]]
         AB = set(A.index).intersection(set(B.index))
         Aonly = A.loc[set(A.index).difference(set(B.index))]
         Bonly = B.loc[set(B.index).difference(set(A.index))]
@@ -415,14 +439,14 @@ alpha=0.5, markersize=1)
         for name, x in Bonly.iterrows():
             x1 = x.log2FoldChange
             y1 = -np.log10(x.padj)
-            x2 = self.r1.df.loc[name].log2FoldChange
-            y2 = -np.log10(self.r1.df.loc[name].padj)
+            x2 = self.r1.comparisons[self.comparison].df.loc[name].log2FoldChange
+            y2 = -np.log10(self.r1.comparisons[self.comparison].df.loc[name].padj)
             pylab.plot( [x1,x2], [y1,y2], ls="--", color='r')
         for name, x in Aonly.iterrows():
             x1 = x.log2FoldChange
             y1 = -np.log10(x.padj)
-            x2 = self.r2.df.loc[name].log2FoldChange
-            y2 = -np.log10(self.r2.df.loc[name].padj)
+            x2 = self.r2.comparisons[self.comparison].df.loc[name].log2FoldChange
+            y2 = -np.log10(self.r2.comparisons[self.comparison].df.loc[name].padj)
             pylab.plot( [x1,x2], [y1,y2], ls="-", color='r')
 
 
@@ -449,8 +473,8 @@ alpha=0.5, markersize=1)
         if labels is None:
             labels = [cond1, cond2]
 
-        A = self.r1.df.loc[self.r1.gene_lists["all"]]
-        B = self.r2.df.loc[self.r2.gene_lists["all"]]
+        A = self.r1.comparisons[self.comparison].df.loc[self.r1.get_gene_lists()[self.comparison]["all"]]
+        B = self.r2.comparisons[self.comparison].df.loc[self.r2.get_gene_lists()[self.comparison]["all"]]
 
         if cond1 == cond2:
             cond1 += "(1)"
