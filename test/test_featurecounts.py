@@ -30,3 +30,13 @@ def test_multi_feature_counts():
     ff = fc.MultiFeatureCount(RNASEQ_DIR_0, 0.15)
     ff.get_most_probable_strand_consensus()
     ff.plot_strandness()
+
+
+def test_feature_counts():
+    RNASEQ_DIR = sequana_data("featurecounts/featurecounts_ex1") 
+    fc1 = fc.FeatureCount(RNASEQ_DIR + "/all_features.out")
+    import glob
+    fc2 = fc.FeatureCount(glob.glob(RNASEQ_DIR + "/*feature.out"))
+    assert all(fc1.df == fc2.df)
+    assert all(fc1.rnadiff_df == fc2.rnadiff_df)
+
