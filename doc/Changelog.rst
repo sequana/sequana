@@ -4,6 +4,14 @@ Changelog
 .. contents::
     :depth: 2
 
+0.10.0
+------
+
+MAJOR release merging the rnadiff branch into the dev branch so as to
+finalise the way differential analysis are handle in Sequana with respect to
+RNA-seq analysis
+
+Module concerned: rnadiff, compare, featurecounts and enrichment
 
 0.9.9
 -----
