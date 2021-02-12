@@ -72,7 +72,7 @@ export_results = function(res, prefix, orderCol){
     }
     
     
-    write.table(res, file=paste(prefix, 'degs_DESeq2.tsv', sep="_"), row.names=TRUE, sep="\t")
+    write.table(res, file=paste(prefix, 'degs_DESeq2.csv', sep="_"), row.names=TRUE, sep=",")
     return(res)
 }
 
@@ -95,24 +95,24 @@ export_counts = function(dds, outdir){
     vst_counts = assay(vst(dds, blind=FALSE))
 
 
-    write.table(counts, paste(outdir, 'counts_raw.tsv', sep="/"), sep="\t")
-    write.table(norm_counts, paste(outdir, 'counts_normed.tsv', sep="/"), sep="\t")
-    write.table(vst_counts, paste(outdir, 'counts_vst_norm.tsv', sep="/"), sep="\t")
+    write.table(counts, paste(outdir, 'counts_raw.csv', sep="/"), sep=",")
+    write.table(norm_counts, paste(outdir, 'counts_normed.csv', sep="/"), sep=",")
+    write.table(vst_counts, paste(outdir, 'counts_vst_norm.csv', sep="/"), sep=",")
 }
 
 export_dds = function(dds, outdir){
     ## Export full dds table
-    write.table(mcols(dds), paste(outdir, "overall_dds.tsv", sep="/"), sep="\t")
+    write.table(mcols(dds), paste(outdir, "overall_dds.csv", sep="/"), sep=",")
 }
 
 ####################
 ## MAIN
 ####################
 
-counts = read.table("{{counts_tsv}}", header=T, check.names=F, row.names=1)
-target = read.table("{{groups_tsv}}", header=T, row.names=1)
+counts = read.csv("{{counts_filename}}", header=T, check.names=F, row.names=1)
+target = read.csv("{{design_filename}}", header=T, row.names=1)
 
-dds = make_DR(counts, target, design={{design}}, fitType="{{fit_type}}", betaPrior={{beta_prior}})
+dds = make_DR(counts, target, design={{model}}, fitType="{{fit_type}}", betaPrior={{beta_prior}})
 
 res = pairwise_comparison(dds, {{comparisons_str}}, "{{condition}}",
                           independentFiltering={{independent_filtering}},

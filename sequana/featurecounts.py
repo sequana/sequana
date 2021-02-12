@@ -202,7 +202,7 @@ class FeatureCount:
         clean_sample_names=True,
         extra_name_rm=["_Aligned"],
         drop_loc=True,
-        rnadiff=True,
+        guess_design=False,
     ):
         """.. rubric:: Constructor
 
@@ -230,8 +230,9 @@ class FeatureCount:
         self._read_data()
 
         # Count matrix prepared for rnadiff
-        if rnadiff:
-            self.rnadiff_df = self._get_rnadiff_df()
+        self.rnadiff_df = self._get_rnadiff_df()
+        
+        if guess_design:
             self.design_df = self._get_design_df()
 
     def _get_rnadiff_df(self):
@@ -247,6 +248,8 @@ class FeatureCount:
         df.columns = [
             self._clean_sample_names(x, self.extra_name_rm) for x in df.columns
         ]
+        df.set_index("Geneid", inplace=True)
+        df.sort_index(axis=1, inplace=True)
         return df
 
     def _get_design_df(self):
