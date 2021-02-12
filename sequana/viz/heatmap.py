@@ -27,6 +27,7 @@ import scipy.spatial.distance as distance
 
 import easydev
 from sequana.viz.linkage import Linkage
+import matplotlib.patches as mpatches
 
 __all__ = ["Heatmap", "Clustermap"]
 
@@ -67,20 +68,20 @@ def get_clustermap_data():
     )
     df_sample_groups = pd.DataFrame(
         {
-            "sample_1": ["a", "1"],
-            "sample_2": ["a", "1"],
-            "sample_3": ["b", "1"],
-            "sample_4": ["b", "1"],
+            "sample_1": ["WT", "rep1"],
+            "sample_2": ["WT", "rep2"],
+            "sample_3": ["KO", "rep1"],
+            "sample_4": ["KO", "rep2"],
         },
         index=["group1", "group2"],
     ).transpose()
 
     df_gene_groups = pd.DataFrame(
         {
-            "gene_A": ["a", "1"],
-            "gene_B": ["a", "1"],
-            "gene_C": ["b", "1"],
-            "gene_D": ["b", "1"],
+            "gene_A": ["transcription", "GO1"],
+            "gene_B": ["transcription", "GO2"],
+            "gene_C": ["regulation", "GO1"],
+            "gene_D": ["regulation", "GO2"],
         },
         index=["group1", "group2"],
     ).transpose()
@@ -150,10 +151,10 @@ class Clustermap:
         self.gene_groups_palette = gene_groups_palette
         self.kwargs = kwargs
 
-        self.groups_col_df = self._get_group_colors(
+        self.sample_groups_col_df, self.sample_color_dict = self._get_group_colors(
             sample_groups_df, sample_groups_sel, sample_groups_palette
         )
-        self.gene_groups_df = self._get_group_colors(
+        self.gene_groups_col_df, self.gene_color_dict = self._get_group_colors(
             gene_groups_df, gene_groups_sel, gene_groups_palette
         )
 
@@ -176,9 +177,22 @@ class Clustermap:
             col_map = dict(zip(groups, palette))
             groups_col_df = groups_df.apply(lambda x: x.map(col_map))
 
-            return groups_col_df
+            return groups_col_df, col_map
         else:
-            return None
+            return None, None
+
+    def _do_legend(self, figure, color_dict, bbox_to_anchor):
+        if color_dict:
+            patches = [mpatches.Patch(color=c, label=l) for l, c in color_dict.items()]
+            legend = pylab.legend(
+                loc="upper center",
+                handles=patches,
+                bbox_to_anchor=bbox_to_anchor,
+                frameon=True,
+                title="Sample groups",
+            )
+
+            figure.add_artist(legend)
 
     def plot(self):
         cmap = sns.diverging_palette(220, 10, as_cmap=True)
@@ -187,11 +201,16 @@ class Clustermap:
         p = sns.clustermap(
             self.data_df,
             cmap=cmap,
-            col_colors=self.groups_col_df,
+            col_colors=self.sample_groups_col_df,
             yticklabels=self.yticklabels,
-            row_colors=self.gene_groups_df,
+            row_colors=self.gene_groups_col_df,
             **self.kwargs,
         )
+
+        f = pylab.gca()
+
+        self._do_legend(f, self.sample_color_dict, (12, 2))
+        self._do_legend(f, self.gene_color_dict, (-2, -2))
 
         return p
 
