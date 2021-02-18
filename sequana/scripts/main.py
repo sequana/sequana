@@ -443,49 +443,49 @@ def gtf_fixer(**kwargs):
     #required=True,
     default="Name",
     help="a valid taxon identifiers")
-@click.option("--enrichment-taxon", type=click.INT,
+@click.option("--panther-taxon", type=click.INT,
     #required=True,
     default=0,
     help="a valid taxon identifiers")
-@click.option("--enrichment-kegg-name", type=click.STRING,
+@click.option("--kegg-name", type=click.STRING,
     default=None,
     help="a valid KEGG name (automatically filled for 9606 (human) and 10090 (mmusculus)")
-@click.option("--enrichment-log2-foldchange-cutoff", type=click.FLOAT,
+@click.option("--log2-foldchange-cutoff", type=click.FLOAT,
     default=1,
     show_default=True,
     help="remove events with absolute log2 fold change below this value")
-@click.option("--enrichment-padj-cutoff", type=click.FLOAT,
+@click.option("--padj-cutoff", type=click.FLOAT,
     default=0.05,
     show_default=True,
     help="remove events with pvalue abobe this value default (0.05).")
-@click.option("--enrichment-biomart", type=click.STRING,
+@click.option("--biomart", type=click.STRING,
     default=None,
     help="""you may need a biomart mapping of your identifier for the kegg
 pathways analysis. If you do not have this file, you can use 'sequana biomart'
 command""")
-@click.option("--enrichment-go-only", type=click.BOOL,
+@click.option("--go-only", type=click.BOOL,
     default=False,
     is_flag=True,
     help="""to run only panther db enrichment""")
-@click.option("--enrichment-plot-linearx", type=click.BOOL,
+@click.option("--plot-linearx", type=click.BOOL,
     default=False,
     is_flag=True,
     help="""Default is log2 fold enrichment in the plots. use this to use linear scale""")
-@click.option("--enrichment-compute-levels", type=click.BOOL,
+@click.option("--compute-levels", type=click.BOOL,
     default=False,
     is_flag=True,
     help="""to compute the GO levels (slow) in the plots""")
-@click.option("--enrichment-max-genes", type=click.INT,
+@click.option("--max-genes", type=click.INT,
     default=2000,
     help="""Maximum number of genes (up or down) to use in PantherDB, which is limited to about 3000""")
-@click.option("--enrichment-kegg-only", type=click.BOOL,
+@click.option("--kegg-only", type=click.BOOL,
     default=False,
     is_flag=True,
     help="""to run only kegg patways enrichment""")
-@click.option("--enrichment-kegg-pathways-directory", type=click.Path(),
+@click.option("--kegg-pathways-directory", type=click.Path(),
     default=None,
     help="""a place where to find the pathways for each organism""")
-@click.option("--enrichment-kegg-background", type=click.INT,
+@click.option("--kegg-background", type=click.INT,
     default=None,
     help="""a background for kegg enrichment. If None, set to number of genes found in KEGG""")
 @common_logger
@@ -497,42 +497,42 @@ def enrichment(**kwargs):
 
     Example for the enrichment module:
 
-        sequana enrichment rnadiff --enrichment-taxon 10090 
-        --enrichment-log2-foldchange-cutoff 2 --enrichment-kegg-only
+        sequana enrichment rnadiff.csv --panther-taxon 10090 
+            --log2-foldchange-cutoff 2 --kegg-only
 
     The KEGG pathways are loaded and it may take time. Once done, they are saved
     in kegg_pathways/organism and be loaded next time:
 
-        sequana enrichment rnadiff --module enrichment --enrichment-taxon 189518
-            --enrichment-log2-foldchange-cutoff 2 --enrichment-kegg-only
-            --enrichment-kegg-pathways-directory kegg_pathways
-            --enrichment-kegg-name lbi
-            --annotation
+        sequana enrichment rnadiff/rnadiff.csv 
+            --panther-taxon 189518 \
+            --log2-foldchange-cutoff 2 --kegg-only \
+            --kegg-name lbi\
+            --annotation file.gff 
 
     """
     import pandas as pd
     from sequana.modules_report.enrichment import Enrichment
     logger.setLevel(kwargs['logger'])
 
-    taxon = kwargs['enrichment_taxon']
+    taxon = kwargs['panther_taxon']
     if taxon == 0:
-        logger.error("You must provide a taxon with --enrichment_taxon")
+        logger.error("You must provide a taxon with --panther-taxon")
         return
-    keggname = kwargs['enrichment_kegg_name']
-    params = {"padj": kwargs['enrichment_padj_cutoff'],
-              "log2_fc": kwargs['enrichment_log2_foldchange_cutoff'],
-              "max_entries": kwargs['enrichment_max_genes'],
-              "mapper": kwargs['enrichment_biomart'],
-              "kegg_background": kwargs['enrichment_kegg_background'],
-              "preload_directory": kwargs['enrichment_kegg_pathways_directory'],
-              "plot_logx": not kwargs['enrichment_plot_linearx'],
-              "plot_compute_levels": kwargs['enrichment_compute_levels'],
+    keggname = kwargs['kegg_name']
+    params = {"padj": kwargs['padj_cutoff'],
+              "log2_fc": kwargs['log2_foldchange_cutoff'],
+              "max_entries": kwargs['max_genes'],
+              "mapper": kwargs['biomart'],
+              "kegg_background": kwargs['kegg_background'],
+              "preload_directory": kwargs['kegg_pathways_directory'],
+              "plot_logx": not kwargs['plot_linearx'],
+              "plot_compute_levels": kwargs['compute_levels'],
             }
-    filename = kwargs['enrichment_biomart']
+    filename = kwargs['biomart']
     if filename and os.path.exists(filename) is False:
         logger.error("{} does not exists".format(filename))
         sys.exit(1)
-    filename = kwargs['enrichment_kegg_pathways_directory']
+    filename = kwargs['kegg_pathways_directory']
     if filename and os.path.exists(filename) is False:
         logger.error("{} does not exists".format(filename))
         sys.exit(1)
@@ -544,7 +544,7 @@ def enrichment(**kwargs):
     # now that we have loaded all results from a rnadiff analysis, let us
     # perform the enrichment for each comparison found in the file
     annot_col = kwargs['annotation_attribute']
-    Nmax = kwargs['enrichment_max_genes']
+    Nmax = kwargs['max_genes']
 
     from sequana.utils import config
 
@@ -556,7 +556,6 @@ def enrichment(**kwargs):
             # we add the annotation
             for x in rnadiff['annotation'].columns:
                 df[x] = rnadiff['annotation'][x]
-            print(df)
 
             # now we find the gene lists
             padj = params['padj']
@@ -589,8 +588,8 @@ def enrichment(**kwargs):
             report = Enrichment(gene_dict, taxon, df,
                 kegg_organism=keggname, 
                 enrichment_params=params,
-                go_only=kwargs["enrichment_go_only"],
-                kegg_only=kwargs["enrichment_kegg_only"], 
+                go_only=kwargs["go_only"],
+                kegg_only=kwargs["kegg_only"], 
                 command=" ".join(['sequana'] + sys.argv[1:]))
 
 

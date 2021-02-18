@@ -36,7 +36,6 @@ class RNAdiffModule(SequanaBaseModule):
 
         from sequana.rnadiff import RNADiffResults
 
-
         self.rnadiff = RNADiffResults(folder, design, gff=gff, **kwargs)
 
         # nice layout for the report
@@ -97,7 +96,6 @@ for that feature.</p>
             'buttons': []}
 
         S = pd.concat([Sdefault, S1])
-
 
         N = len(Sdefault)
         df = pd.DataFrame({
@@ -349,7 +347,16 @@ value as a function of the log2 ratio of diﬀerential expression. </p>"""
         # finally, let us add the tables
         from pylab import log10
 
-        df = comp.df.copy().reset_index()
+        df = comp.df.copy()#.reset_index()
+
+        # here we need to add the annotation if possible
+        try:
+            df = pd.concat([df, self.rnadiff.annotation.annotation.loc[comp.df.index]], axis=1)
+        except Exception as err:
+            logger.critical(f"Could not add annotation. {err}")
+
+        df = df.reset_index()
+
         log10padj = -log10(df['padj'])
         df.insert(df.columns.get_loc('padj')+1, 'log10_padj', log10padj)
 
