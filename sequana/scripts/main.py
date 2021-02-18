@@ -507,8 +507,7 @@ def enrichment(**kwargs):
     """
     import pandas as pd
     from sequana.modules_report.enrichment import Enrichment
-
-    print(logger.level)
+    logger.setLevel(kwargs['logger'])
 
     taxon = kwargs['enrichment_taxon']
     if taxon == 0:
@@ -534,7 +533,7 @@ def enrichment(**kwargs):
         sys.exit(1)
 
     rnadiff_file = kwargs['name']
-    logger.info("Reading {rnadiff_file}")
+    logger.info(f"Reading {rnadiff_file}")
     rnadiff = pd.read_csv(rnadiff_file, index_col=0, header=[0,1])
 
     # now that we have loaded all results from a rnadiff analysis, let us
@@ -546,7 +545,7 @@ def enrichment(**kwargs):
 
     for compa in rnadiff.columns.levels[0]:
         if compa not in ['statistics', 'annotation']:
-            # get gene list 
+            # get gene list
             df = rnadiff[compa].copy()
             padj = params['padj']
             log2fc = params['log2_fc']
@@ -573,7 +572,7 @@ def enrichment(**kwargs):
             Ndown = len(down_genes)
             N = Nup + Ndown
             logger.info(f"Computing enrichment for the {compa} case")
-            logger.info(f"Found {Nup} gnes up-regulated, {Ndown} down regulated ({N} in total).")
+            logger.info(f"Found {Nup} genes up-regulated, {Ndown} down regulated ({N} in total).")
             config.output_dir = f"enrichment/{compa}"
             report = Enrichment(gene_dict, taxon, df,
                 kegg_organism=keggname, 
@@ -588,6 +587,9 @@ def enrichment(**kwargs):
 @click.option("--search-kegg", type=click.Path(),
     default=None,
     help="""Search a pattern amongst all KEGG organism""")
+@click.option("--search-panther", type=click.Path(),
+    default=None,
+    help="""Search a pattern amongst all KEGG organism""")
 @common_logger
 def taxonomy(**kwargs):
     """Tool to retrieve taxonomic information.
@@ -595,7 +597,31 @@ def taxonomy(**kwargs):
     sequana taxonomy --search-kegg leptospira
     """
 
-    from sequana.kegg import KEGGHelper
-    k = KEGGHelper()
-    results = k.search(kwargs['search_kegg'].lower())
-    print(results)
+    if kwargs['search_kegg']:
+        from sequana.kegg import KEGGHelper
+        k = KEGGHelper()
+        results = k.search(kwargs['search_kegg'].lower())
+        print(results)
+    elif kwargs['search_panther']:
+        import pandas as pd
+        from sequana import sequana_data
+        df = pd.read_csv(sequana_data("panther.csv"), index_col=0)
+
+        pattern = kwargs['search_panther']
+        f1 = df[[True if pattern in x else False for x in df['name']]]
+        f2 = df[[True if pattern in x else False for x in df.short_name]]
+        f3 = df[[True if pattern in x else False for x in df.long_name]]
+        indices = list(f1.index) + list(f2.index) + list(f3.index)
+ 
+        if len(indices) == 0:
+            # maybe it is a taxon ID ?
+            f4 = df[[True if pattern in str(x) else False for x in df.taxon_id]]
+            indices = list(f4.index)
+        indices = set(indices)
+        print(df.loc[indices])
+ 
+
+
+
+
+
