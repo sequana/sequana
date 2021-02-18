@@ -1150,7 +1150,7 @@ class KeggPathwayEnrichment:
 
                 self.gene_sets[ID] = results
             else:
-                print("SKIPPED (no genes) {}: {}".format(ID, res["NAME"]))
+                logger.debug("SKIPPED (no genes) {}: {}".format(ID, res["NAME"]))
 
         # save all pathways info
         self.df_pathways = pd.DataFrame(self.pathways).T
@@ -1314,10 +1314,10 @@ class KeggPathwayEnrichment:
         return df
 
     # FIXME rnadiff object is not imported anymore. This function is not functional
-    def _get_summary_pathway(self, pathway_ID, rnadiff):
+    def _get_summary_pathway(self, pathway_ID, df):
         genes = self.df_pathways.loc[pathway_ID]["GENE"]
-        df_down = rnadiff.df.query("padj<=0.05 and log2FoldChange<0").copy()
-        df_up = rnadiff.df.query("padj<=0.05 and log2FoldChange>=0").copy()
+        df_down = df.query("padj<=0.05 and log2FoldChange<0").copy()
+        df_up = df.query("padj<=0.05 and log2FoldChange>=0").copy()
 
         if "Name" not in df_down.columns:
             df_down["Name"] = df_down["ID"]
@@ -1434,9 +1434,9 @@ class KeggPathwayEnrichment:
                 colors[kegg_id] = "grey,black"
         return colors
 
-    def save_pathway(self, pathway_ID, scale=None, show=False, filename=None):
+    def save_pathway(self, pathway_ID, df, scale=None, show=False, filename=None):
 
-        summary = self._get_summary_pathway(pathway_ID)
+        summary = self._get_summary_pathway(pathway_ID, df)
         colors = self._get_colors(summary)
 
         logger.info("pathway {} total genes: {}".format(pathway_ID, len(summary)))
