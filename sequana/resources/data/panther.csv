@@ -1,0 +1,143 @@
+,name,taxon_id,short_name,long_name
+0,human,9606,human,homo sapiens
+1,mouse,10090,mouse,mus musculus
+2,rat,10116,rat,rattus norvegicus
+3,chicken,9031,chick,gallus gallus
+4,zebrafish,7955,danre,danio rerio
+5,fruit_fly,7227,drome,drosophila melanogaster
+6,nematode_worm,6239,caeel,caenorhabditis elegans
+7,budding_yeast,559292,yeast,saccharomyces cerevisiae
+8,fission_yeast,284812,schpo,schizosaccharomyces pombe
+9,dictyostelium,44689,dicdi,dictyostelium discoideum
+10,arabidopsis,3702,arath,arabidopsis thaliana
+11,e_coli,83333,ecoli,escherichia coli
+12,aspergillus,227321,emeni,emericella nidulans
+13,amborella,13333,ambtc,amborella trichopoda
+14,lizard,28377,anoca,anolis carolinensis
+15,mosquito,7165,anoga,anopheles gambiae
+16,aquifex,224324,aquae,aquifex aeolicus
+17,ashbya,284811,ashgo,ashbya gossypii
+18,bacillus_cereus,226900,baccr,bacillus cereus
+19,bacillus_subtilis,224308,bacsu,bacillus subtilis
+20,bacteroidetes,226186,bactn,bacteroides thetaiotaomicron
+21,chytrid,684364,batdj,batrachochytrium dendrobatidis
+22,cow,9913,bovin,bos taurus
+23,purple_false_brome,15368,bradi,brachypodium distachyon
+24,bradyrhizobium,224911,bradu,bradyrhizobium diazoefficiens
+25,branchiostoma,7739,brafl,branchiostoma floridae
+26,rape,3708,brana,brassica napus
+27,cabbage,51351,brarp,brassica rapa subsp. pekinensis
+28,c_briggsae,6238,caebr,caenorhabditis briggsae
+29,candida,237561,canal,candida albicans
+30,dog,9615,canlf,canis lupus familiaris
+31,bell pepper,4072,capan,capsicum annuum
+32,chlamydia,272561,chltr,chlamydia trachomatis
+33,green_algae,3055,chlre,chlamydomonas reinhardtii
+34,chloroflexus,324602,chlaa,chloroflexus aurantiacus
+35,ciona,7719,cioin,ciona intestinalis
+36,orange,2711,citsi,citrus sinensis
+37,clostridium,441771,clobh,clostridium botulinum
+38,coxiella,227377,coxbu,coxiella burnetii
+39,cryptococcus,214684,crynj,cryptococcus neoformans
+40,cucumber,3659,cucsa,cucumis sativus
+41,water_flea,6669,dappu,daphnia pulex
+42,deinococcus,243230,deira,deinococcus radiodurans
+43,dictyoglomus,515635,dictd,dictyoglomus turgidum
+44,d_purpureum,5786,dicpu,dictyostelium purpureum
+45,entamoeba,5759,enthi,entamoeba histolytica
+46,horse,9796,horse,equus caballus
+47,yellow monkey flower,4155,erygu,erythranthe guttata
+48,flooded gum,71139,eucgr,eucalyptus grandis
+49,cat,9685,felca,felis catus
+50,fusobacterium,190304,fusnn,fusobacterium nucleatum
+51,geobacter,243231,geosl,geobacter sulfurreducens
+52,giardia,184922,giaic,giardia intestinalis
+53,gloeobacter,251221,glovi,gloeobacter violaceus
+54,soybean,3847,soybn,glycine max
+55,gorilla,9595,gorgo,gorilla gorilla gorilla
+56,cotton,3635,goshi,gossypium hirsutum
+57,h_flu,71421,haein,haemophilus influenzae
+58,halobacterium,64091,halsa,halobacterium salinarum
+59,sunflower,4232,helan,helianthus annuus
+60,h_pylori,85962,helpy,helicobacter pylori
+61,barley,112509,horvv,hordeum vulgare subsp. vulgare
+62,tick,6945,ixosc,ixodes scapularis
+63,english walnut,51240,jugre,juglans regia
+64,korarchaeum,374847,korco,korarchaeum cryptofilum
+65,garden lettuce,4236,lacsa,lactuca sativa
+66,leishmania,5664,leima,leishmania major
+67,leptospira,189518,lepin,leptospira interrogans
+68,listeria,169963,lismo,listeria monocytogenes
+69,macacque,9544,macmu,macaca mulatta
+70,cassava,3983,manes,manihot esculenta
+71,barrel medic,3880,medtr,medicago truncatula
+72,methanocaldococcus,243232,metja,methanocaldococcus jannaschii
+73,methanosarcina,188937,metac,methanosarcina acetivorans
+74,opossum,13616,mondo,monodelphis domestica
+75,monosiga,81824,monbe,monosiga brevicollis
+76,banana,214687,musam,musa acuminata subsp. malaccensis
+77,mycobacterium,83332,myctu,mycobacterium tuberculosis
+78,meningococcus,122586,neimb,neisseria meningitidis serogroup b
+79,sacred lotus,4432,nelnu,nelumbo nucifera
+80,nematostella,45351,nemve,nematostella vectensis
+81,aspergillus,330879,aspfu,neosartorya fumigata
+82,neurospora,367110,neucr,neurospora crassa
+83,tobacco,4097,tobac,nicotiana tabacum
+84,nitrosopumilu,436308,nitms,nitrosopumilus maritimus
+85,platypus,9258,ornan,ornithorhynchus anatinus
+86,rice,39947,orysj,oryza sativa
+87,oryzias,8090,oryla,oryzias latipes
+88,ostreococcus,70448,ostta,ostreococcus tauri
+89,chimpanzee,9598,pantr,pan troglodytes
+90,paramecium,5888,parte,paramecium tetraurelia
+91,phaeosphaeria,321614,phano,phaeosphaeria nodorum
+92,date palm,42345,phodc,phoenix dactylifera
+93,moss,3218,phypa,physcomitrella patens
+94,phytophthora,164328,phyrm,phytophthora ramorum
+95,plasmodium,36329,plaf7,plasmodium falciparum
+96,black_cottonwood,3694,poptr,populus trichocarpa
+97,pristionchus,54126,pripa,pristionchus pacificus
+98,peach,3760,prupe,prunus persica
+99,pseudomonas,208964,pseae,pseudomonas aeruginosa
+100,puccinia,418459,pucgt,puccinia graminis
+101,pyrobaculum,178306,pyrae,pyrobaculum aerophilum
+102,rhodopirellula,243090,rhoba,rhodopirellula baltica
+103,bean,3988,ricco,ricinus communis
+104,salmonella,99287,salty,salmonella typhimurium
+105,sclerotinia,665079,scls1,sclerotinia sclerotiorum
+106,spikemoss,88036,selml,selaginella moellendorffii
+107,millet,4555,setit,setaria italica
+108,shewanella,211586,sheon,shewanella oneidensis
+109,tomato,4081,sollc,solanum lycopersicum
+110,potato,4113,soltu,solanum tuberosum
+111,sorghum,4558,sorbi,sorghum bicolor
+112,spinach,3562,spiol,spinacia oleracea
+113,staph,93061,staa8,staphylococcus aureus
+114,strep,171101,strr6,streptococcus pneumoniae
+115,streptomyces,100226,strco,streptomyces coelicolor
+116,sea_urchin,7668,strpu,strongylocentrotus purpuratus
+117,sulfolobus,273057,sacs2,sulfolobus solfataricus
+118,pig,9823,pig,sus scrofa
+119,synechocystis,1111708,syny3,synechocystis
+120,thalassiosira,35128,thaps,thalassiosira pseudonana
+121,cacao,3641,thecc,theobroma cacao
+122,thermococcus,69014,theko,thermococcus kodakaraensis
+123,thermodesulfovibrio,289376,theyd,thermodesulfovibrio yellowstonii
+124,thermotoga,243274,thema,thermotoga maritima
+125,tribolium,7070,trica,tribolium castaneum
+126,trichomonas,5722,triva,trichomonas vaginalis
+127,trichoplax,10228,triad,trichoplax adhaerens
+128,wheat,4565,wheat,triticum aestivum
+129,t_brucei,185431,tryb2,trypanosoma brucei
+130,ustilago,237631,ustma,ustilago maydis
+131,cholera,243277,vibch,vibrio cholerae
+132,grape,29760,vitvi,vitis vinifera
+133,xanthomonas,190485,xancp,xanthomonas campestris
+134,frog,8364,xentr,xenopus tropicalis
+135,yarrowia,284591,yarli,yarrowia lipolytica
+136,yersinia,632,yerpe,yersinia pestis
+137,maize,4577,maize,zea mays
+138,eelgrass,29655,zosmr,zostera marina
+139,helobdella,6412,helro,helobdella robusta
+140,lepisosteudae,7918,lepoc,lepisosteus oculatus
+141,m_genitalium,243273,mycge,mycoplasma genitalium
