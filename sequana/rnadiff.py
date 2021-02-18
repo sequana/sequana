@@ -40,10 +40,10 @@ logger = colorlog.getLogger(__name__)
 
 import glob
 
-__all__ = ["RNADiffAnalysis", "RNADiffResults", "RNADiffTable"]
+__all__ = ["RNADiffAnalysis", "RNADiffResults", "RNADiffTable", "RNADesign"]
 
 
-class RNADesign:
+class RNADesign():
     """Simple RNA design handler"""
 
     def __init__(self, filename, reference=None):
@@ -122,7 +122,7 @@ class RNADiffAnalysis:
         fc_attribute=None,
         fc_feature=None,
         annot_cols=None,
-        # annot_cols=["ID", "Name", "gene_biotype"],
+        #annot_cols=["ID", "Name", "gene_biotype"],
         threads=4,
         outdir="rnadiff",
         sep_counts=",",
@@ -140,8 +140,10 @@ class RNADiffAnalysis:
         )
 
         # TODO: Check and resorting if necessary
-        if list(self.counts.columns) != list(self.design.index):
+        if sorted(list(self.counts.columns)) != sorted(list(self.design.index)):
             logger.error(f"Counts columns and design rows does not match.")
+            logger.error(self.counts.columns)
+            logger.error(self.design.index)
             sys.exit(1)
 
         # set condition of the statistical model
@@ -196,6 +198,8 @@ Design overview:\n\
     def run(self):
         """Create outdir and a DESeq2 script from template for analysis. Then execute
         this script.
+
+        :return: a :class:`RNADiffResults` instance
         """
         logger.info("Running DESeq2 analysis. Please wait")
         try:
@@ -218,7 +222,7 @@ Design overview:\n\
         with open("rnadiff.out", "w") as f:
             f.write(p.stdout)
 
-        return RNADiffResults(
+        results = RNADiffResults(
             self.outdir,
             self.design_filename,
             group=self.condition,
@@ -226,6 +230,7 @@ Design overview:\n\
             fc_feature=self.fc_feature,
             fc_attribute=self.fc_attribute,
         )
+        return results
 
 
 class RNADiffTable:
@@ -505,6 +510,7 @@ class RNADiffTable:
 
 
 class RNADiffResults:
+    """The output of a RNADiff analysis"""
     def __init__(
         self,
         rnadiff_folder,
@@ -573,6 +579,8 @@ class RNADiffResults:
         self.fc_feature = fc_feature
         self.annot_cols = annot_cols
         if gff:
+            if fc_feature is None or fc_attribute is None:
+                logger.error("Since you provided a GFF filem you must provide the feature and attribute to be used.")
             self.annotation = self.read_annot(gff)
         else:
             self.annotation = None
@@ -606,7 +614,14 @@ class RNADiffResults:
         self.comparisons = self.import_tables()
         self.filt_df = self._get_total_df(filtered=True)
 
+    def to_csv(self, filename):
+        self.df.to_csv(filename)
+
+    def read_csv(self, filename):
+        self.df = pd.read_csv(filename, index_col=0, header=[0,1])
+
     def import_tables(self):
+        from easydev import AttrDict
 
         data = {
             compa.stem.replace("_degs_DESeq2", "").replace("-", "_"): RNADiffTable(
@@ -618,8 +633,6 @@ class RNADiffResults:
             for compa in self.files
         }
 
-        from easydev import AttrDict
-
         return AttrDict(**data)
 
     def read_annot(self, gff_filename):
@@ -627,6 +640,7 @@ class RNADiffResults:
 
         gff = GFF3(gff_filename)
         df = gff.get_df()
+
         if self.annot_cols is None:
             lol = [
                 list(x.keys()) for x in df.query("type=='gene'")["attributes"].values
@@ -752,7 +766,7 @@ class RNADiffResults:
             try:
                 ws.autofilter(0, 0, df.shape[0], df.shape[1] - 1)
             except:
-                logger.warning("Fixme")
+                logger.warning("XLS formatting issue.")
 
     def run_enrichment_kegg(
         self, organism, annot_col="Name", out_dir="enrichment"
