@@ -4,7 +4,6 @@
 #
 #  Copyright (c) 2016-2021 - Sequana Dev Team (https://sequana.readthedocs.io)
 #
-#  File author(s):
 #
 #  Distributed under the terms of the 3-clause BSD license.
 #  The full license is in the LICENSE file, distributed with this software.
@@ -18,11 +17,7 @@
 def bowtie2_index_dynamic(name):
 
     metadata = {"name": name}
-
     bowtie2_index_code = '''
-
-
-
 rule bowtie2_index_%(name)s:
     """
     Genome indexation for Bowtie2 mapper

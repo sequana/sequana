@@ -88,6 +88,12 @@ FASTA module
     :members:
     :undoc-members:
 
+Feature counts module
+----------------------
+.. automodule:: sequana.featurecounts
+    :members:
+    :undoc-members:
+
 Sequence module
 ---------------
 .. automodule:: sequana.sequence

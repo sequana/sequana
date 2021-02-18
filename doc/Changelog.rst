@@ -13,6 +13,11 @@ RNA-seq analysis
 
 Module concerned: rnadiff, compare, featurecounts and enrichment
 
+* NEWS:
+
+   * module kegg and command in sequana (sequana taxonomy) to search for a given
+     name in all KEGG orgnanism so as to easily retrieve the taxon and organism name
+
 0.9.9
 -----
 

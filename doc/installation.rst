@@ -68,6 +68,10 @@ This will install all Python dependencies such as Pandas, Numpy, etc. It will ta
     which must be available to install PyQt. PyQt5, v5.9.2 is known to work.
     v5.15.0 fails (PyQt5.QtWebEngineWidgets)
 
+    With Python 3.6.12, this is compatible::
+
+        pip install "pyqt5<=5.10"
+
 
 pipelines
 ----------
