@@ -621,7 +621,7 @@ class RNADiffResults:
                 compa,
                 alpha=self._alpha,
                 log2_fc=self._log2_fc,
-                gff=self.annotation.annotation,
+                #gff=self.annotation.annotation,
             )
             for compa in self.files
         }

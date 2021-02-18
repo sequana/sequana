@@ -439,6 +439,10 @@ def gtf_fixer(**kwargs):
 @main.command()
 @click.argument("name", type=click.Path(exists=True), 
     nargs=1)
+@click.option("--annotation-attribute", type=click.STRING,
+    #required=True,
+    default="Name",
+    help="a valid taxon identifiers")
 @click.option("--enrichment-taxon", type=click.INT,
     #required=True,
     default=0,
@@ -472,7 +476,7 @@ command""")
     is_flag=True,
     help="""to compute the GO levels (slow) in the plots""")
 @click.option("--enrichment-max-genes", type=click.INT,
-    default=3000,
+    default=2000,
     help="""Maximum number of genes (up or down) to use in PantherDB, which is limited to about 3000""")
 @click.option("--enrichment-kegg-only", type=click.BOOL,
     default=False,
@@ -503,6 +507,7 @@ def enrichment(**kwargs):
             --enrichment-log2-foldchange-cutoff 2 --enrichment-kegg-only
             --enrichment-kegg-pathways-directory kegg_pathways
             --enrichment-kegg-name lbi
+            --annotation
 
     """
     import pandas as pd
@@ -538,8 +543,8 @@ def enrichment(**kwargs):
 
     # now that we have loaded all results from a rnadiff analysis, let us
     # perform the enrichment for each comparison found in the file
-    annot_col = 'Name'
-    Nmax = 2000
+    annot_col = kwargs['annotation_attribute']
+    Nmax = kwargs['enrichment_max_genes']
 
     from sequana.utils import config
 
@@ -547,6 +552,13 @@ def enrichment(**kwargs):
         if compa not in ['statistics', 'annotation']:
             # get gene list
             df = rnadiff[compa].copy()
+
+            # we add the annotation
+            for x in rnadiff['annotation'].columns:
+                df[x] = rnadiff['annotation'][x]
+            print(df)
+
+            # now we find the gene lists
             padj = params['padj']
             log2fc = params['log2_fc']
             df = df.query("(log2FoldChange >=@log2fc or log2FoldChange<=-@log2fc) and padj <= @padj")
