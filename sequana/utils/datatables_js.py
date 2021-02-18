@@ -238,7 +238,7 @@ class DataTableFunction(object):
             return value
         return value
 
-    def set_links_to_column(self, link_col, target_col):
+    def set_links_to_column(self, link_col, target_col, new_page=True):
         """Hide a column with urls and connect it with a column.
 
         :param str link_col: column with your URLs.
@@ -252,10 +252,16 @@ class DataTableFunction(object):
             keys = self.datatable_columns.keys() 
             logger.warning(f"KeyError: Column name '{target_col}' does not exist. Use one of {keys}")
         # function to add link
-        fct = """function(data, type, row, meta){{
-            return '<a href="'+row.{0}+'" target="_blank">'+data+'</a>';
-        }}
-        """.format(link_col)
+        if new_page is True:
+            fct = """function(data, type, row, meta){{
+                return '<a href="'+row.{0}+'" target="_blank">'+data+'</a>';
+            }}
+            """.format(link_col)
+        else:
+            fct = """function(data, type, row, meta){{
+                return '<a href="'+row.{0}+'">'+data+'</a>';
+            }}
+            """.format(link_col)
         try:
             self.datatable_columns[target_col]['render'] = fct
         except KeyError:
