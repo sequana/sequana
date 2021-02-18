@@ -331,11 +331,11 @@ def rnadiff(**kwargs):
                 outdir=outdir,
                 gff=gff)
 
-        logger.info(f"Saving output files into {outdir}")
+        logger.info(f"Saving output files into {outdir}/rnadiff.csv")
         try:
             results = r.run()
             results.to_csv(f"{outdir}/rnadiff.csv")
-        except err:
+        except Exception as err:
             logger.error(err)
             sys.exit(1)
         else:

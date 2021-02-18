@@ -234,7 +234,7 @@ Design overview:\n\
 
 
 class RNADiffTable:
-    def __init__(self, path, alpha=0.05, log2_fc=0, sep=",", gff=None):
+    def __init__(self, path, alpha=0.05, log2_fc=0, sep=","):
         """ A representation of the results of a single rnadiff comparison """
         self.path = Path(path)
         self.name = self.path.stem.replace("_degs_DESeq2", "").replace("-", "_")
@@ -243,13 +243,6 @@ class RNADiffTable:
         self._log2_fc = log2_fc
 
         self.df = pd.read_csv(self.path, index_col=0, sep=sep)
-
-        # now, we add the annotation if possible
-        try:
-            self.df = pd.concat([self.df, gff], axis=1)
-        except Exception as err:
-            logger.warning("Could not concat the gff annotation to the data")
-            logger.warning(err)
 
         self.filt_df = self.filter()
         self.set_gene_lists()
@@ -643,7 +636,7 @@ class RNADiffResults:
 
         if self.annot_cols is None:
             lol = [
-                list(x.keys()) for x in df.query("type=='gene'")["attributes"].values
+                list(x.keys()) for x in df.query("type==@self.fc_feature")["attributes"].values
             ]
             annot_cols = list(set([x for item in lol for x in item]))
         else:
@@ -651,7 +644,15 @@ class RNADiffResults:
 
         df = df.query("type == @self.fc_feature").loc[:, annot_cols]
         df.drop_duplicates(inplace=True)
+
+
         df.set_index(self.fc_attribute, inplace=True)
+
+        # It may happen that a GFF has duplicated IDs ! For instance ecoli 
+        # has 20 duplicated ID that are part 1 and 2 of the same gene
+        df = df[~df.index.duplicated(keep='last')]
+
+
         df.columns = pd.MultiIndex.from_product([["annotation"], df.columns])
 
         return df
