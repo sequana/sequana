@@ -248,7 +248,11 @@ class FeatureCount:
         df.columns = [
             self._clean_sample_names(x, self.extra_name_rm) for x in df.columns
         ]
-        df.set_index("Geneid", inplace=True)
+        try:
+            df.set_index("Geneid", inplace=True)
+        except:
+            logger.warning("get_rnadiff Geneid index issue to be fixed")
+            pass
         df.sort_index(axis=1, inplace=True)
         return df
 
