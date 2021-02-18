@@ -70,7 +70,13 @@ class GFF3(Annotation):
                     types.add(split[2])
         return sorted(types)
 
-    def get_attributes(self, sep=";"):
+    def get_attributes(self, feature=None, sep=";"):
+        """Return list of possible attributes
+
+        If feature is provided, must be valid and used as a filter
+        to keep only entries for that feature.
+
+        """
         types = set()
         with open(self.filename, "r") as reader:
             for line in reader:
@@ -83,6 +89,8 @@ class GFF3(Annotation):
                 split = line.rstrip().split("\t")
                 L = len(split)
                 if L == 9:
+                    if feature and split[2] != feature:
+                        continue
                     for item in split[8].split(sep):
                         # print("item '{}'".format(item))
                         if (
