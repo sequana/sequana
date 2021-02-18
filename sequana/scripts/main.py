@@ -160,76 +160,15 @@ def samplesheet(**kwargs):
 @click.argument("name", type=click.Path(exists=True), nargs=-1)
 @click.option("--module",
     required=False,
-    type=click.Choice(["rnadiff", "bamqc", "bam", "enrichment", "fasta",
-        "fastq", "gff"]))
-@click.option("--enrichment-taxon", type=click.INT,
-    #required=True,
-    default=0,
-    help="a valid taxon identifiers")
-@click.option("--enrichment-kegg-name", type=click.STRING,
-    default=None,
-    help="a valid KEGG name (automatically filled for 9606 (human) and 10090 (mmusculus)")
-@click.option("--enrichment-log2-foldchange-cutoff", type=click.FLOAT,
-    default=1,
-    show_default=True,
-    help="remove events with absolute log2 fold change below this value")
-@click.option("--enrichment-padj-cutoff", type=click.FLOAT,
-    default=0.05,
-    show_default=True,
-    help="remove events with pvalue abobe this value default (0.05).")
-@click.option("--enrichment-biomart", type=click.STRING,
-    default=None,
-    help="""you may need a biomart mapping of your identifier for the kegg
-pathways analysis. If you do not have this file, you can use 'sequana biomart'
-command""")
-@click.option("--enrichment-go-only", type=click.BOOL,
-    default=False,
-    is_flag=True,
-    help="""to run only panther db enrichment""")
-@click.option("--enrichment-plot-linearx", type=click.BOOL,
-    default=False,
-    is_flag=True,
-    help="""Default is log2 fold enrichment in the plots. use this to use linear scale""")
-@click.option("--enrichment-compute-levels", type=click.BOOL,
-    default=False,
-    is_flag=True,
-    help="""to compute the GO levels (slow) in the plots""")
-@click.option("--enrichment-max-genes", type=click.INT,
-    default=3000,
-    help="""Maximum number of genes (up or down) to use in PantherDB, which is limited to about 3000""")
-@click.option("--enrichment-kegg-only", type=click.BOOL,
-    default=False,
-    is_flag=True,
-    help="""to run only kegg patways enrichment""")
-@click.option("--enrichment-kegg-pathways-directory", type=click.Path(),
-    default=None,
-    help="""a place where to find the pathways for each organism""")
-@click.option("--enrichment-kegg-background", type=click.INT,
-    default=None,
-    help="""a background for kegg enrichment. If None, set to number of genes found in KEGG""")
-@common_logger
+    type=click.Choice(["bamqc", "bam", "fasta", "fastq", "gff"]))
 def summary(**kwargs):
-    """Create a HTML report for various sequana out
+    """Create a HTML report for various type of NGS formats.
 
     \b
-    * enrichment: the output of RNADiff pipeline
     * bamqc
     * fastq
 
-    Example for the enrichment module:
-
-        sequana summary T1vsT0.complete.xls --module enrichment --enrichment-taxon 10090 
-        --enrichment-log2-foldchange-cutoff 2 --enrichment-kegg-only
-
-    The KEGG pathways are loaded and it may take time. Once done, they are saved
-    in kegg_pathways/organism and be loaded next time:
-
-        sequana summary T1vsT0.complete.xls --module enrichment --enrichment-taxon 10090 
-            --enrichment-log2-foldchange-cutoff 2 --enrichment-kegg-only
-            --enrichment-kegg-pathways-directory kegg_pathways
-
-
-    This will process all files in the given pattern (in back quots)
+    This will process all files in the given pattern (in back quotes)
     sequentially and procude one HTML file per input file.
 
 
@@ -261,42 +200,6 @@ def summary(**kwargs):
             print(f"Processing {name}")
             from sequana.modules_report.bamqc import BAMQCModule
             report = BAMQCModule(name, "bamqc.html")
-    elif module == "enrichment":
-        try:
-            name = names[0]
-        except:
-            logger.error()
-            sys.exit(1)
-        from sequana.modules_report.enrichment import Enrichment
-        taxon = kwargs['enrichment_taxon']
-        if taxon == 0:
-            logger.error("You must provide a taxon with --enrichment_taxon")
-            return
-        keggname = kwargs['enrichment_kegg_name']
-        params = {"padj": kwargs['enrichment_padj_cutoff'],
-                  "log2_fc": kwargs['enrichment_log2_foldchange_cutoff'],
-                  "max_entries": kwargs['enrichment_max_genes'],
-                  "mapper": kwargs['enrichment_biomart'],
-                  "kegg_background": kwargs['enrichment_kegg_background'],
-                  "preload_directory": kwargs['enrichment_kegg_pathways_directory'],
-                  "plot_logx": not kwargs['enrichment_plot_linearx'],
-                  "plot_compute_levels": kwargs['enrichment_compute_levels'],
-                }
-        filename = kwargs['enrichment_biomart']
-        if filename and os.path.exists(filename) is False:
-            logger.error("{} does not exists".format(filename))
-            sys.exit(1)
-        filename = kwargs['enrichment_kegg_pathways_directory']
-        if filename and os.path.exists(filename) is False:
-            logger.error("{} does not exists".format(filename))
-            sys.exit(1)
-
-        report = Enrichment(name, taxon,
-            kegg_organism=keggname, 
-            enrichment_params=params,
-            go_only=kwargs["enrichment_go_only"],
-            kegg_only=kwargs["enrichment_kegg_only"], 
-            command=" ".join(['sequana'] + sys.argv[1:]))
     elif module == "fasta": # there is no module per se. HEre we just call FastA.summary()
         from sequana.fasta import FastA
         for name in names:
@@ -358,8 +261,6 @@ WT3,WT
 file1,cond1
 fileother,cond1
 """)
-
-
 @click.option("--feature-name",
     default="gene",
     help="""The feature name compatible with your GFF. """)
@@ -372,17 +273,18 @@ fileother,cond1
             involving the reference are ignored.""")
 @click.option("--comparisons", type=click.Path(),
     default=None,
-    help="""Not yet implemented""")
-
-
+    help="""Not yet implemented. By default, all comparisons are computed""")
 @common_logger
 def rnadiff(**kwargs):
-    """For the RNADIFF module::
+    """Create HTML report for the differential analysis of sequana_rnaseq output.
 
-        sequana summary --module rnadiff \
-            --features all_features.out
-            --annotation input.gff
-            --output-directory test
+
+        sequana rnadiff --annotation Lepto.gff  \
+            --design design.csv --features all_features.out \
+             --feature-name gene --attribute-name ID 
+
+
+
     """
     from sequana.featurecounts import FeatureCount
     from sequana.rnadiff import RNADiffAnalysis, RNADesign
@@ -390,24 +292,30 @@ def rnadiff(**kwargs):
 
     logger.setLevel(kwargs['logger'])
 
-    if kwargs['annotation']:
-        gff = kwargs['annotation']
-        logger.info(f"Checking annotation file")
-        from sequana import GFF3
-        GFF3(gff) #.save_annotation_to_csv()
-    else:
-        gff = None
-
     outdir = kwargs['output_directory']
     feature = kwargs['feature_name']
     attribute = kwargs['attribute_name']
     design = kwargs['design']
     reference=kwargs['reference']
 
-    design = RNADesign(design, reference=reference)
+    if kwargs['annotation']:
+        gff = kwargs['annotation']
+        logger.info(f"Checking annotation file")
+        from sequana import GFF3
+        g = GFF3(gff) #.save_annotation_to_csv()
+        if feature not in  g.get_types():
+            logger.critical(f"{feature} not found in the GFF. Most probably a wrong feature name")
+        attributes = g.get_attributes(feature)
+        if attribute not in attributes:
+            logger.critical(f"{attribute} not found in the GFF for the provided feature. Most probably a wrong feature name. Please change --attribute-name option or do not provide any GFF")
+            sys.exit(1)
+    else:
+        gff = None
+
+    design_check = RNADesign(design, reference=reference)
     comparisons = kwargs['comparisons']
     if comparisons is None:
-        comparisons = design.comparisons
+        comparisons = design_check.comparisons
 
     if kwargs['report_only'] is False:
         logger.info(f"Processing features counts and saving into light_counts.csv")
@@ -422,8 +330,11 @@ def rnadiff(**kwargs):
                 fc_attribute=attribute,
                 outdir=outdir,
                 gff=gff)
+
+        logger.info(f"Saving output files into {outdir}")
         try:
-            r.run()
+            results = r.run()
+            results.to_csv(f"{outdir}/rnadiff.csv")
         except err:
             logger.error(err)
             sys.exit(1)
@@ -437,8 +348,8 @@ def rnadiff(**kwargs):
 
     logger.info(f"Reporting. Saving in rnadiff.html")
     report = RNAdiffModule(outdir, kwargs['design'], gff=gff,
-                fc_attribute=feature,
-                fc_feature=attribute,
+                fc_attribute=attribute,
+                fc_feature=feature,
                 alpha=0.05,
                 log2_fc=0,
                 group="condition",
@@ -521,3 +432,170 @@ def gtf_fixer(**kwargs):
 
 
 
+# This will be a complex command to provide HTML summary page for
+# input files (e.g. bam), or results from pipelines. For each module,
+# we should have corresponding option that starts with the module's name
+# This can also takes as input various types of data (e.g. FastA)
+@main.command()
+@click.argument("name", type=click.Path(exists=True), 
+    nargs=1)
+@click.option("--enrichment-taxon", type=click.INT,
+    #required=True,
+    default=0,
+    help="a valid taxon identifiers")
+@click.option("--enrichment-kegg-name", type=click.STRING,
+    default=None,
+    help="a valid KEGG name (automatically filled for 9606 (human) and 10090 (mmusculus)")
+@click.option("--enrichment-log2-foldchange-cutoff", type=click.FLOAT,
+    default=1,
+    show_default=True,
+    help="remove events with absolute log2 fold change below this value")
+@click.option("--enrichment-padj-cutoff", type=click.FLOAT,
+    default=0.05,
+    show_default=True,
+    help="remove events with pvalue abobe this value default (0.05).")
+@click.option("--enrichment-biomart", type=click.STRING,
+    default=None,
+    help="""you may need a biomart mapping of your identifier for the kegg
+pathways analysis. If you do not have this file, you can use 'sequana biomart'
+command""")
+@click.option("--enrichment-go-only", type=click.BOOL,
+    default=False,
+    is_flag=True,
+    help="""to run only panther db enrichment""")
+@click.option("--enrichment-plot-linearx", type=click.BOOL,
+    default=False,
+    is_flag=True,
+    help="""Default is log2 fold enrichment in the plots. use this to use linear scale""")
+@click.option("--enrichment-compute-levels", type=click.BOOL,
+    default=False,
+    is_flag=True,
+    help="""to compute the GO levels (slow) in the plots""")
+@click.option("--enrichment-max-genes", type=click.INT,
+    default=3000,
+    help="""Maximum number of genes (up or down) to use in PantherDB, which is limited to about 3000""")
+@click.option("--enrichment-kegg-only", type=click.BOOL,
+    default=False,
+    is_flag=True,
+    help="""to run only kegg patways enrichment""")
+@click.option("--enrichment-kegg-pathways-directory", type=click.Path(),
+    default=None,
+    help="""a place where to find the pathways for each organism""")
+@click.option("--enrichment-kegg-background", type=click.INT,
+    default=None,
+    help="""a background for kegg enrichment. If None, set to number of genes found in KEGG""")
+@common_logger
+def enrichment(**kwargs):
+    """Create a HTML report for various sequana out
+
+    \b
+    * enrichment: the output of RNADiff pipeline
+
+    Example for the enrichment module:
+
+        sequana enrichment rnadiff --enrichment-taxon 10090 
+        --enrichment-log2-foldchange-cutoff 2 --enrichment-kegg-only
+
+    The KEGG pathways are loaded and it may take time. Once done, they are saved
+    in kegg_pathways/organism and be loaded next time:
+
+        sequana enrichment rnadiff --module enrichment --enrichment-taxon 189518
+            --enrichment-log2-foldchange-cutoff 2 --enrichment-kegg-only
+            --enrichment-kegg-pathways-directory kegg_pathways
+            --enrichment-kegg-name lbi
+
+    """
+    import pandas as pd
+    from sequana.modules_report.enrichment import Enrichment
+
+    print(logger.level)
+
+    taxon = kwargs['enrichment_taxon']
+    if taxon == 0:
+        logger.error("You must provide a taxon with --enrichment_taxon")
+        return
+    keggname = kwargs['enrichment_kegg_name']
+    params = {"padj": kwargs['enrichment_padj_cutoff'],
+              "log2_fc": kwargs['enrichment_log2_foldchange_cutoff'],
+              "max_entries": kwargs['enrichment_max_genes'],
+              "mapper": kwargs['enrichment_biomart'],
+              "kegg_background": kwargs['enrichment_kegg_background'],
+              "preload_directory": kwargs['enrichment_kegg_pathways_directory'],
+              "plot_logx": not kwargs['enrichment_plot_linearx'],
+              "plot_compute_levels": kwargs['enrichment_compute_levels'],
+            }
+    filename = kwargs['enrichment_biomart']
+    if filename and os.path.exists(filename) is False:
+        logger.error("{} does not exists".format(filename))
+        sys.exit(1)
+    filename = kwargs['enrichment_kegg_pathways_directory']
+    if filename and os.path.exists(filename) is False:
+        logger.error("{} does not exists".format(filename))
+        sys.exit(1)
+
+    rnadiff_file = kwargs['name']
+    logger.info("Reading {rnadiff_file}")
+    rnadiff = pd.read_csv(rnadiff_file, index_col=0, header=[0,1])
+
+    # now that we have loaded all results from a rnadiff analysis, let us
+    # perform the enrichment for each comparison found in the file
+    annot_col = 'Name'
+    Nmax = 2000
+
+    from sequana.utils import config
+
+    for compa in rnadiff.columns.levels[0]:
+        if compa not in ['statistics', 'annotation']:
+            # get gene list 
+            df = rnadiff[compa].copy()
+            padj = params['padj']
+            log2fc = params['log2_fc']
+            df = df.query("(log2FoldChange >=@log2fc or log2FoldChange<=-@log2fc) and padj <= @padj")
+            df.reset_index(inplace=True)
+
+            dfup = df.sort_values("log2FoldChange", ascending=False)
+            up_genes = list(dfup.query("log2FoldChange > 0")[annot_col])[:Nmax]
+
+            dfdown = df.sort_values("log2FoldChange", ascending=True)
+            down_genes = list(dfdown.query("log2FoldChange < 0")[annot_col])[:Nmax]
+
+            all_genes = list(
+                df.sort_values("log2FoldChange", key=abs,ascending=False)[annot_col]
+            )[:Nmax]
+
+            gene_dict = {
+                 "up": up_genes,
+                 "down": down_genes,
+                 "all": all_genes,
+             }
+
+            Nup = len(up_genes)
+            Ndown = len(down_genes)
+            N = Nup + Ndown
+            logger.info(f"Computing enrichment for the {compa} case")
+            logger.info(f"Found {Nup} gnes up-regulated, {Ndown} down regulated ({N} in total).")
+            config.output_dir = f"enrichment/{compa}"
+            report = Enrichment(gene_dict, taxon, df,
+                kegg_organism=keggname, 
+                enrichment_params=params,
+                go_only=kwargs["enrichment_go_only"],
+                kegg_only=kwargs["enrichment_kegg_only"], 
+                command=" ".join(['sequana'] + sys.argv[1:]))
+
+
+
+@main.command()
+@click.option("--search-kegg", type=click.Path(),
+    default=None,
+    help="""Search a pattern amongst all KEGG organism""")
+@common_logger
+def taxonomy(**kwargs):
+    """Tool to retrieve taxonomic information.
+
+    sequana taxonomy --search-kegg leptospira
+    """
+
+    from sequana.kegg import KEGGHelper
+    k = KEGGHelper()
+    results = k.search(kwargs['search_kegg'].lower())
+    print(results)
