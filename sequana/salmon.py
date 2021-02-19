@@ -25,18 +25,21 @@ class Salmon():
         df = pd.read_csv(filename, sep='\t')
         self.df = df
 
-    def get_feature_counts(self, gff, attribute="ID"):
+    def get_feature_counts(self, gff, feature="gene", attribute="ID"):
         from sequana.gff3 import GFF3
         gff = GFF3(gff)
         annot = gff.get_df()
-        annot = annot.query("type=='gene'")
+        annot = annot.query("type==@feature").copy()
         names = [x[attribute] for x in annot.attributes]
-        identifiers = [x["ID"] for x in annot.attributes]
+        identifiers = [x[attribute] for x in annot.attributes]
+
         annot['identifiers'] = identifiers
         annot['names'] = names
         annot = annot.set_index("identifiers")
 
-        results = ""
+        ff = self.filename.split("/")[-1]
+        results = f"\nGeneid\tChr\tStart\tEnd\tStrand\tLength\t{ff}"
+
         for name, length in zip(self.df.Name, self.df.Length):
             try:dd = annot.loc[name]
             except: continue
@@ -55,7 +58,7 @@ class Salmon():
                 length2 = (dd.stop - dd.start).sum() + len(dd.stop)
                 new_name = dd['names'].values[0]
 
-            if abs(length - length2) >5:
+            if abs(length - length2) > 5:
                 print(name, length, length2)
                 raise ValueError("length in gff and quant not the same")
             NumReads = int(self.df.query("Name==@name")['NumReads'].values[0])
@@ -70,3 +73,6 @@ class Salmon():
             fout.write("# Program:sequana.salmon v{}; sequana salmon -i {} -o {} -g {}".format(
                 version, self.filename,filename, gff))
             fout.write(data)
+
+
+
