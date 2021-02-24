@@ -1143,7 +1143,11 @@ class PipelineManager(PipelineManagerGeneric):
         self.config.sequana_version = sequana_version
 
     def _get_paired(self):
-        return self.ff.paired
+        try:
+            return self.ff.paired
+        except:
+            logger.warning("cannot figure out wheter paired or not")
+            return False
     paired = property(_get_paired)
 
     def _get_fastq_files(self, glob_dir, read_tag):
