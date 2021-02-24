@@ -236,7 +236,7 @@ categories. </p>
                 html_down += "<h4>Down - {}</h4><p>For {} ({}), we found {} go terms. Showing 50 here below (at most). The full list is downlodable from the CSV file hereafter.</p>".format(case_name, case_name, case, 
                 self._plus[case_name]+ self._minus[case_name]) 
                 html_down += image + " <br>"
-                html_down += get_html_table(self._temp_df[case_name], "GO_table_{}".format(case_name))
+                html_down += get_html_table(self._temp_df[case_name], "GO_table_down_{}".format(case_name))
             else:
                 html_down += "<h4>Down - {}</h4><p>For {} ({}), we found 0 enriched go terms. </p><br>".format(case_name, case_name, case) 
 
@@ -246,7 +246,7 @@ categories. </p>
             if case_name in self._temp_df and len(self._temp_df[case_name]):
                 logger.info("Saving chart for case {} (down)".format(case_name))
                 self.pe.save_chart(self._temp_df[case_name], filename)
-                filenames.append(filename)
+                filenames.append(f"Chart_down_{case_name}.png")
         fotorama_down = "<h4>Charts down</h2>" + self.add_fotorama(filenames)
 
         # all up cases
@@ -272,7 +272,7 @@ categories. </p>
                 html_up += "<h4>Up - {}</h4><p>For {} ({}), we found {} go terms. Showing 50 here below (at most). The full list is downlodable from the CSV file hereafter.</p>".format(case_name, case_name, case, 
                     self._plus[case_name]+ self._minus[case_name]) 
                 html_up += image + " <br>"
-                html_up += get_html_table(self._temp_df[case_name], "GO_table_{}".format(case_name))
+                html_up += get_html_table(self._temp_df[case_name], "GO_table_up{}".format(case_name))
             else:
                 html_up += "<h4>Up - {}</h4><p>For {} ({}), we found 0 enriched go terms. </p>".format(case_name, case_name, case) 
 
@@ -282,7 +282,7 @@ categories. </p>
             if case_name in self._temp_df and len(self._temp_df[case_name]):
                 logger.info("Saving chart for case {} (up)".format(case_name))
                 self.pe.save_chart(self._temp_df[case_name], filename)
-                filenames.append(filename)
+                filenames.append(f"Chart_up_{case_name}.png")
         fotorama_up = "<h4>Charts up</h2>" + self.add_fotorama(filenames)
 
         html = f"{html_intro} {html_down} <hr> {fotorama_down}<hr> {html_up} <hr> {fotorama_up}<hr>"
@@ -340,7 +340,7 @@ categories. </p>
             files = []
             for i, ID in enumerate(df_down['pathway_id']):
                 df = ke.save_pathway(ID, self.data, filename=f"{config.output_dir}/{ID}.png")
-                files.append(f"{config.output_dir}/{ID}.png")
+                files.append(f"{ID}.png")
                 pb.animate(i+1)
             fotorama_down = self.add_fotorama(files, width=800)
 
@@ -379,7 +379,7 @@ categories. </p>
             files = []
             for i, ID in enumerate(df_up['pathway_id']):
                 df = ke.save_pathway(ID, self.data, filename=f"{config.output_dir}/{ID}.png")
-                files.append(f"{config.output_dir}/{ID}.png")
+                files.append(f"{ID}.png")
                 pb.animate(i+1)
             fotorama_up = self.add_fotorama(files, width=800)
             #logger.setLevel(level)
