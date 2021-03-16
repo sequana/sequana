@@ -1614,11 +1614,16 @@ class MultiKrakenResults2():
         for sample, filename in zip(self.sample_names, self.filenames):
             summary = json.loads(open(filename, "r").read())
             total = summary["total"]
+            if "unclassified" not in summary:
+                summary["unclassified"] = 0
             data[sample] = {
                     "unclassified": round(summary['unclassified']/total*100,2), 
                     "nreads": summary['total']}
             for db in summary['databases']:
-                data[sample][db] = round(summary[db]['C'] / total * 100,2)
+                try:
+                    data[sample][db] = round(summary[db]['C'] / total * 100,2)
+                except:
+                    data[sample][db] = 0
         df = pd.DataFrame(data)
         df = df.fillna(0)
         df = df.loc[["unclassified"]+[x for x in df.index if x!="unclassified"]]
