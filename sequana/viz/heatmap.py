@@ -234,6 +234,17 @@ class Heatmap(Linkage):
         h = heatmap.Heatmap(df)
         h.plot()
 
+
+    side colors can be added:
+
+        h = viz.Heatmap(df, col_side_colors=['r', 'g', 'b', 'y', 'k']); 
+        h.category_column = category; 
+        h.category_row = category
+
+    where category is a dictionary with keys as df.columns and values as
+    category defined by you. The number of colors in col_side_colors and
+    row_side_colors should match the number of category 
+
     """
 
     def __init__(
