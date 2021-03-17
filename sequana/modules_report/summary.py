@@ -246,7 +246,8 @@ class SummaryModule2(SummaryBase):
     """ Write summary HTML report of an analysis. It contains all information
     about the pipeline used, input/output files and version of software.
     """
-    def __init__(self, data, intro="", output_filename="summary.html", title=""):
+    def __init__(self, data, intro="", output_filename="summary.html", title="",
+        workflow=True):
         """
         """
         super(SummaryModule2, self).__init__(required_dir=("js", "css"))
@@ -259,10 +260,10 @@ class SummaryModule2(SummaryBase):
             config.pipeline_name = data['name']
         except:
             pass
-        self.create_report_content()
+        self.create_report_content(workflow=workflow)
         self.create_html(output_filename)
 
-    def create_report_content(self):
+    def create_report_content(self, workflow=True):
         """ Create the report content.
         """
         self.sections = list()
@@ -270,7 +271,8 @@ class SummaryModule2(SummaryBase):
         for section in config.summary_sections:
             self.sections.append(section)
 
-        self.workflow()
+        if workflow: 
+            self.workflow()
         self.running_stats()
         self.dependencies()
 
