@@ -204,6 +204,7 @@ class SnpEff(object):
             with open(self.annotation, "r") as fp:
                 line = fp.readline()
                 seq = regex.findall(line)
+
                 for line in fp:
                     if line.strip().startswith(('gene', 'CDS',)):
                         break
@@ -236,11 +237,10 @@ class SnpEff(object):
         """
         fasta_record = FastA(fasta)
         ids_list = self._get_seq_ids()
-
         # check if both files have same number of contigs
         if len(fasta_record) != len(ids_list):
             print("fasta and annotation files don't have the same number of "
-                  "contigs.")
+                  "contigs. Found {} and {}".format(len(fasta_record), len(ids_list)))
             sys.exit(1)
 
         # check if directory exist
