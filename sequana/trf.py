@@ -54,7 +54,14 @@ class TRF():   # pragma: no cover
         t.df.query(query)
 
     """
-    def __init__(self, filename, verbose=False, frmt='trf'):
+    def __init__(self, filename, verbose=False, frmt=None):
+        if frmt is None:
+            if filename.endswith(".csv"):
+                frmt = 'csv'
+            elif filename.endswith('.data'):
+                frmt = 'trf'
+            else:
+                raise ValueError("Please set frmt to 'trf' or 'csv'")
         self.filename = filename
         if frmt == 'trf':
             # input can be the output of TRF or our trf dataframe
