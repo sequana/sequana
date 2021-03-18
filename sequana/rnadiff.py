@@ -74,7 +74,7 @@ class RNADiffAnalysis:
     """A tool to prepare and run a RNA-seq differential analysis with DESeq2
 
     :param counts_file: Path to tsv file out of FeatureCount with all samples together.
-    :param groups_file: Path to tsv file with the definition of the groups for each sample.
+    :param design_file: Path to tsv file with the definition of the groups for each sample.
     :param condition: The name of the column from groups_tsv to use as condition. For more
         advanced design, a R function of the type 'condition*inter' (without the '~') could
         be specified (not tested yet). Each name in this function should refer to column
