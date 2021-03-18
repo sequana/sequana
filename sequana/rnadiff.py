@@ -43,7 +43,7 @@ import glob
 __all__ = ["RNADiffAnalysis", "RNADiffResults", "RNADiffTable", "RNADesign"]
 
 
-class RNADesign():
+class RNADesign:
     """Simple RNA design handler"""
 
     def __init__(self, filename, reference=None):
@@ -73,8 +73,8 @@ class RNADesign():
 class RNADiffAnalysis:
     """A tool to prepare and run a RNA-seq differential analysis with DESeq2
 
-    :param counts_tsv: Path to tsv file out of FeatureCount with all samples together.
-    :param groups_tsv: Path to tsv file with the definition of the groups for each sample.
+    :param counts_file: Path to tsv file out of FeatureCount with all samples together.
+    :param design_file: Path to tsv file with the definition of the groups for each sample.
     :param condition: The name of the column from groups_tsv to use as condition. For more
         advanced design, a R function of the type 'condition*inter' (without the '~') could
         be specified (not tested yet). Each name in this function should refer to column
@@ -122,7 +122,7 @@ class RNADiffAnalysis:
         fc_attribute=None,
         fc_feature=None,
         annot_cols=None,
-        #annot_cols=["ID", "Name", "gene_biotype"],
+        # annot_cols=["ID", "Name", "gene_biotype"],
         threads=4,
         outdir="rnadiff",
         sep_counts=",",
@@ -136,8 +136,11 @@ class RNADiffAnalysis:
             counts_file, sep=sep_counts, index_col="Geneid", comment="#"
         )
         self.design = pd.read_csv(
-            design_file, sep=sep_design, index_col="label", comment="#"
-        )
+            design_file,
+            sep=sep_design,
+            comment="#",
+            dtype={"label": str},
+        ).set_index("label")
 
         # TODO: Check and resorting if necessary
         if sorted(list(self.counts.columns)) != sorted(list(self.design.index)):
@@ -504,6 +507,7 @@ class RNADiffTable:
 
 class RNADiffResults:
     """The output of a RNADiff analysis"""
+
     def __init__(
         self,
         rnadiff_folder,
@@ -573,7 +577,9 @@ class RNADiffResults:
         self.annot_cols = annot_cols
         if gff:
             if fc_feature is None or fc_attribute is None:
-                logger.error("Since you provided a GFF filem you must provide the feature and attribute to be used.")
+                logger.error(
+                    "Since you provided a GFF filem you must provide the feature and attribute to be used."
+                )
             self.annotation = self.read_annot(gff)
         else:
             self.annotation = None
@@ -611,7 +617,7 @@ class RNADiffResults:
         self.df.to_csv(filename)
 
     def read_csv(self, filename):
-        self.df = pd.read_csv(filename, index_col=0, header=[0,1])
+        self.df = pd.read_csv(filename, index_col=0, header=[0, 1])
 
     def import_tables(self):
         from easydev import AttrDict
@@ -621,7 +627,7 @@ class RNADiffResults:
                 compa,
                 alpha=self._alpha,
                 log2_fc=self._log2_fc,
-                #gff=self.annotation.annotation,
+                # gff=self.annotation.annotation,
             )
             for compa in self.files
         }
@@ -636,7 +642,8 @@ class RNADiffResults:
 
         if self.annot_cols is None:
             lol = [
-                list(x.keys()) for x in df.query("type==@self.fc_feature")["attributes"].values
+                list(x.keys())
+                for x in df.query("type==@self.fc_feature")["attributes"].values
             ]
             annot_cols = list(set([x for item in lol for x in item]))
         else:
@@ -645,13 +652,11 @@ class RNADiffResults:
         df = df.query("type == @self.fc_feature").loc[:, annot_cols]
         df.drop_duplicates(inplace=True)
 
-
         df.set_index(self.fc_attribute, inplace=True)
 
-        # It may happen that a GFF has duplicated IDs ! For instance ecoli 
+        # It may happen that a GFF has duplicated IDs ! For instance ecoli
         # has 20 duplicated ID that are part 1 and 2 of the same gene
-        df = df[~df.index.duplicated(keep='last')]
-
+        df = df[~df.index.duplicated(keep="last")]
 
         df.columns = pd.MultiIndex.from_product([["annotation"], df.columns])
 
