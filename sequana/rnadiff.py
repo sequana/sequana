@@ -136,8 +136,11 @@ class RNADiffAnalysis:
             counts_file, sep=sep_counts, index_col="Geneid", comment="#"
         )
         self.design = pd.read_csv(
-            design_file, sep=sep_design, index_col="label", comment="#"
-        )
+            design_file,
+            sep=sep_design,
+            comment="#",
+            dtype={"label": str},
+        ).set_index("label")
 
         # TODO: Check and resorting if necessary
         if sorted(list(self.counts.columns)) != sorted(list(self.design.index)):
