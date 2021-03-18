@@ -56,6 +56,8 @@ install:
   - conda install --yes kraken==1.1 bwa snpeff shustring krona sambamba
   - conda install --yes pigz cutadapt fastqc
   - conda install --yes samtools --no-deps
+  - conda install --yes dsrc # for testing
+  - conda install -c anaconda qt pyqt>5
 
   #- pip install pyopengl
   #- pip install itolapi
