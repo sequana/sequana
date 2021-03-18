@@ -45,19 +45,17 @@ install:
   #- pip install lxml xmltodict
   - pip install pytest pytest-cov pytest-timeout pytest-qt pytest-xdist pytest-mock pytest-runner
 
-  - git clone https://github.com/biomics-pasteur-fr/MultiQC
-  - cd MultiQC/
-  - git pull origin Feature/RNAseqc2 --no-edit
-  - python setup.py install
-  - cd ..
+  #- git clone https://github.com/biomics-pasteur-fr/MultiQC
+  #- cd MultiQC/
+  #- git pull origin Feature/RNAseqc2 --no-edit
+  #- python setup.py install
+  #- cd ..
 
   # ideally, we should use requirements_pipelines but this lead to stall on
   # travis because of many dependencies. For testing, we only need those ones
   - conda install --yes kraken==1.1 bwa snpeff shustring krona sambamba
   - conda install --yes pigz cutadapt fastqc
-  #- conda install --yes freebayes --no-deps
   - conda install --yes samtools --no-deps
-  #- conda install --yes bedtools --no-deps
 
   #- pip install pyopengl
   #- pip install itolapi
