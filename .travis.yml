@@ -57,7 +57,7 @@ install:
   - conda install --yes pigz cutadapt fastqc
   - conda install --yes samtools --no-deps
   - conda install --yes dsrc # for testing
-  - conda install -c anaconda qt pyqt>5
+  - conda install --yes -c anaconda qt pyqt>5
 
   #- pip install pyopengl
   #- pip install itolapi
