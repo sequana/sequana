@@ -91,7 +91,8 @@ class RNADiffAnalysis:
     :param annot_cols: GFF attributes to use for results annotations
     :param threads: Number of threads to use
     :param outdir: Path to output directory.
-    :param sep: The separator to use in dataframe exports
+    :param sep_counts: The separator used in the input count file.
+    :param sep_design: The separator used in the input design file.
 
     This class reads a :class:`sequana.featurecounts.`
 
@@ -129,47 +130,23 @@ class RNADiffAnalysis:
         sep_design=",",
     ):
 
-        self.counts_filename = counts_file
-        self.design_filename = design_file
+        self.outdir = Path(outdir)
 
-        self.counts = pd.read_csv(
-            counts_file, sep=sep_counts, index_col="Geneid", comment="#"
+        self.usr_counts = counts_file
+        self.usr_design = design_file
+
+        self.counts_filename = self.outdir / "counts.csv"
+        self.design_filename = self.outdir / "design.csv"
+
+        self.counts, self.design = self.check_and_save_input_tables(
+            sep_counts, sep_design
         )
-        self.design = pd.read_csv(
-            design_file,
-            sep=sep_design,
-            comment="#",
-            dtype={"label": str},
-        ).set_index("label")
 
-        # TODO: Check and resorting if necessary
-        if sorted(list(self.counts.columns)) != sorted(list(self.design.index)):
-            logger.error(f"Counts columns and design rows does not match.")
-            logger.error(self.counts.columns)
-            logger.error(self.design.index)
-            sys.exit(1)
-
-        # set condition of the statistical model
-        columns = ",".join(self.design.columns)
-        if condition not in columns:
-            logger.error(
-                f"""Your condition named '{condition}' is expected to
-be in the header of your design file but was not found. Candidates are:
-    {columns}"""
-            )
-            sys.exit(1)
         self.condition = condition
-        self.comparisons = comparisons
+        self.check_condition()
 
-        # let us check the consistenct of the design and comparisons
-        valid_conditions = ",".join(set(self.design[condition].values))
-        for item in [x for y in self.comparisons for x in y]:
-            if item not in self.design[condition].values:
-                logger.error(
-                    f"""{item} not found in the design. Fix the design
-or comparisons. possible values are {valid_conditions}"""
-                )
-                sys.exit(1)
+        self.comparisons = comparisons
+        self.check_comparisons()
 
         self.comparisons_str = (
             f"list({', '.join(['c' + str(x) for x in self.comparisons])})"
@@ -185,8 +162,6 @@ or comparisons. possible values are {valid_conditions}"""
         self.fc_attribute = fc_attribute
         self.threads = threads
 
-        self.outdir = Path(outdir)
-
     def __repr__(self):
         info = f"RNADiffAnalysis object:\n\
 - {self.counts.shape[1]} samples.\n\
@@ -198,6 +173,62 @@ Design overview:\n\
 
         return info
 
+    def check_and_save_input_tables(self, sep_counts, sep_design):
+        try:
+            self.outdir.mkdir()
+        except:
+            pass
+
+        counts = pd.read_csv(
+            self.usr_counts, sep=sep_counts, index_col="Geneid", comment="#"
+        ).sort_index(axis=1)
+        design = (
+            pd.read_csv(
+                self.usr_design,
+                sep=sep_design,
+                comment="#",
+                dtype={"label": str},
+            )
+            .set_index("label")
+            .sort_index()
+        )
+
+        if list(counts.columns) != list(design.index):
+            logger.error(
+                f"Counts columns and design rows does not match (after sorting)."
+            )
+            logger.error(counts.columns)
+            logger.error(design.index)
+            sys.exit(1)
+
+        counts.to_csv(self.counts_filename)
+        design.to_csv(self.design_filename)
+
+        return counts, design
+
+    def check_condition(self):
+        # set condition of the statistical model
+
+        columns = ",".join(self.design.columns)
+        if self.condition not in columns:
+            logger.error(
+                f"""Your condition named '{condition}' is expected to
+be in the header of your design file but was not found. Candidates are:
+    {columns}"""
+            )
+            sys.exit(1)
+
+    def check_comparisons(self):
+        # let us check the consistenct of the design and comparisons
+        valid_conditions = ",".join(set(self.design[self.condition].values))
+        for item in [x for y in self.comparisons for x in y]:
+            if item not in self.design[self.condition].values:
+                logger.error(
+                    f"""{item} not found in the design. Fix the design
+or comparisons. possible values are {valid_conditions}"""
+                )
+                sys.exit(1)
+
     def run(self):
         """Create outdir and a DESeq2 script from template for analysis. Then execute
         this script.
@@ -205,24 +236,24 @@ Design overview:\n\
         :return: a :class:`RNADiffResults` instance
         """
         logger.info("Running DESeq2 analysis. Please wait")
-        try:
-            self.outdir.mkdir()
-        except:
-            pass
 
-        with open("rnadiff_light.R", "w") as f:
+        rnadiff_script = self.outdir / "rnadiff_light.R"
+
+        with open(rnadiff_script, "w") as f:
             f.write(RNADiffAnalysis.template.render(self.__dict__))
 
         logger.info("Starting differential analysis with DESeq2...")
 
         p = subprocess.run(
-            ["Rscript", "rnadiff_light.R"], universal_newlines=True, capture_output=True
+            ["Rscript", rnadiff_script],
+            universal_newlines=True,
+            capture_output=True,
         )
 
         # Capture rnadiff output
-        with open("rnadiff.err", "w") as f:
+        with open(self.outdir / "rnadiff.err", "w") as f:
             f.write(p.stderr)
-        with open("rnadiff.out", "w") as f:
+        with open(self.outdir / "rnadiff.out", "w") as f:
             f.write(p.stdout)
 
         results = RNADiffResults(
@@ -273,17 +304,22 @@ class RNADiffTable:
     def filter(self):
         """filter a DESeq2 result with FDR and logFC thresholds"""
 
-        fc_filt = self.df["log2FoldChange"].abs() >= self._log2_fc
-        fdr_filt = self.df["padj"] <= self._alpha
+        fc_filt = self.df["log2FoldChange"].abs() < self._log2_fc
+        fdr_filt = self.df["padj"] > self._alpha
+        outliers = self.df["padj"].isna()
 
-        return self.df[fc_filt.values & fdr_filt.values]
+        filt_df = self.df.copy()
+        filt_df[fc_filt.values | fdr_filt.values | outliers] = np.NaN
+        return filt_df
 
     def set_gene_lists(self):
 
+        only_drgs_df = self.filt_df.dropna(how="all")
+
         self.gene_lists = {
-            "up": list(self.filt_df.query("log2FoldChange > 0").index),
-            "down": list(self.filt_df.query("log2FoldChange < 0").index),
-            "all": list(self.filt_df.index),
+            "up": list(only_drgs_df.query("log2FoldChange > 0").index),
+            "down": list(only_drgs_df.query("log2FoldChange < 0").index),
+            "all": list(only_drgs_df.index),
         }
 
     def summary(self):
