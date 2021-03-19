@@ -105,7 +105,7 @@ setup(
         'sequana.resources.data.adapters' : ['*'],
         'sequana.resources.templates' : ['*.R'],
         'sequana.resources.images' : ['*'],
-        'sequana.resources.testing' : ['*', '*/*', '*/*/*', '*/*/*/*', '*/*/*/⋅/*/*'],
+        'sequana.resources.testing' : ['*', '*/*', '*/*/*', '*/*/*/*', '*/*/*/*/*', '*/*/*/*/*/*'],
         'sequana.resources.busco' : ['*'],
         'sequana.multiqc' : ['*yaml'],
         },
