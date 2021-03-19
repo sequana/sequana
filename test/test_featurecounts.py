@@ -56,8 +56,8 @@ def test_feature_counts():
     fc2 = fc.FeatureCount(glob.glob(RNASEQ_DIR + "/*feature.out"))
 
     # we sort index to avoid error in python 3.6 travis
-    assert (fc1.df == fc2.df).all().all()
-    assert (fc1.rnadiff_df == fc2.rnadiff_df).all().all()
+    assert all(fc1.df[fc1.df.columns] == fc2.df[fc1.df.columns])
+    assert all(fc1.rnadiff_df[fc1.rnadiff_df.columns] == fc2.rnadiff_df[fc1.rnadiff_df.columns])
 
 
 
