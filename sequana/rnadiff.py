@@ -160,6 +160,7 @@ class RNADiffAnalysis:
         self.gff = gff
         self.fc_feature = fc_feature
         self.fc_attribute = fc_attribute
+        self.annot_cols = annot_cols
         self.threads = threads
 
     def __repr__(self):
@@ -263,6 +264,7 @@ or comparisons. possible values are {valid_conditions}"""
             gff=self.gff,
             fc_feature=self.fc_feature,
             fc_attribute=self.fc_attribute,
+            annot_cols=self.annot_cols,
         )
         return results
 
