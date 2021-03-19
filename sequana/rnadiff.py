@@ -244,10 +244,19 @@ or comparisons. possible values are {valid_conditions}"""
 
         logger.info("Starting differential analysis with DESeq2...")
 
+
+        # capture_output is valid for py3.7 and above so we will use
+        # stdout/stderr to be back compatible with py3.6
+        #p = subprocess.run(
+        #    ["Rscript", rnadiff_script],
+        #    universal_newlines=True,
+        #    capture_output=True,
+        #)
         p = subprocess.run(
             ["Rscript", rnadiff_script],
             universal_newlines=True,
-            capture_output=True,
+            stderr=subprocess.PIPE,
+            stdout=subprocess.PIPE,
         )
 
         # Capture rnadiff output
