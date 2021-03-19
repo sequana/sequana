@@ -9,6 +9,8 @@ def test_featurecounts():
     RNASEQ_DIR_undef = sequana_data("featurecounts") + "/rnaseq_undef"
     RNASEQ_DIR_noconsensus = sequana_data("featurecounts") + "/rnaseq_noconsensus"
 
+    print( fc.get_most_probable_strand_consensus(RNASEQ_DIR_0, tolerance=0.1))
+
     assert fc.get_most_probable_strand_consensus(RNASEQ_DIR_0, tolerance=0.1)[0] == 0
     assert fc.get_most_probable_strand_consensus(RNASEQ_DIR_1, tolerance=0.1)[0] == 1
     assert fc.get_most_probable_strand_consensus(RNASEQ_DIR_2, tolerance=0.1)[0] == 2
@@ -37,6 +39,8 @@ def test_feature_counts():
     fc1 = fc.FeatureCount(RNASEQ_DIR + "/all_features.out")
     import glob
     fc2 = fc.FeatureCount(glob.glob(RNASEQ_DIR + "/*feature.out"))
-    assert all(fc1.df == fc2.df)
-    assert all(fc1.rnadiff_df == fc2.rnadiff_df)
+
+    # we sort index to avoid error in python 3.6 travis
+    assert all(fc1.df.sort_index() == fc2.df.sort_index())
+    assert all(fc1.rnadiff_df.sort_index() == fc2.rnadiff_df.sort_index())
 
