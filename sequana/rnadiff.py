@@ -91,7 +91,8 @@ class RNADiffAnalysis:
     :param annot_cols: GFF attributes to use for results annotations
     :param threads: Number of threads to use
     :param outdir: Path to output directory.
-    :param sep: The separator to use in dataframe exports
+    :param sep_counts: The separator used in the input count file.
+    :param sep_design: The separator used in the input design file.
 
     This class reads a :class:`sequana.featurecounts.`
 
