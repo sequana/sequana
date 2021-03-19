@@ -2,6 +2,15 @@ import sequana.featurecounts as fc
 from sequana import sequana_data
 
 
+def test_file():
+    RNASEQ_DIR_0 = sequana_data("featurecounts") + "/rnaseq_0"
+    import os
+    assert os.path.isdir(RNASEQ_DIR_0)
+    assert os.path.isdir(RNASEQ_DIR_0+"/sample1")
+    assert os.path.isdir(RNASEQ_DIR_0+"/sample1/feature_counts_0")
+    import glob
+    print(glob.glob(RNASEQ_DIR_0+"/sample1/feature_counts_0/*"))
+
 def test_featurecounts():
     RNASEQ_DIR_0 = sequana_data("featurecounts") + "/rnaseq_0"
     RNASEQ_DIR_1 = sequana_data("featurecounts") + "/rnaseq_1"
