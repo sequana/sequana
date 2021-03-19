@@ -58,7 +58,7 @@ class TRF():   # pragma: no cover
         if frmt is None:
             if filename.endswith(".csv"):
                 frmt = 'csv'
-            elif filename.endswith('.data'):
+            elif filename.endswith('.dat'):
                 frmt = 'trf'
             else:
                 raise ValueError("Please set frmt to 'trf' or 'csv'")
