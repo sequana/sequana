@@ -318,6 +318,9 @@ always be the case. </p>"""
         img1 = self.create_embedded_png(plot_pvalue_hist, "filename", style=style)
         img2 = self.create_embedded_png(plot_padj_hist, "filename", style=style)
 
+        # FIXME. pvalues adjusted are not relevant so commented for now
+        img2 = ""
+
         self.sections.append({
            "name": f"6.{counter}.a pvalue distribution ({name})",
            "anchor": f"dge_summary",
@@ -334,7 +337,7 @@ The volcano plot represents the log10 of the adjusted P
 value as a function of the log2 ratio of diﬀerential expression. </p>"""
         #img3 = self.create_embedded_png(plot_volcano, "filename", style=style)
         img3=""
-        fig = comp.plot_volcano(plotly=True)
+        fig = comp.plot_volcano(plotly=True, annotations=self.rnadiff.annotation)
         from plotly import offline
         plotly = offline.plot(fig, output_type="div", include_plotlyjs=False)
 

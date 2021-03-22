@@ -245,17 +245,30 @@ or comparisons. possible values are {valid_conditions}"""
 
         logger.info("Starting differential analysis with DESeq2...")
 
-        p = subprocess.run(
-            ["Rscript", rnadiff_script],
-            universal_newlines=True,
-            capture_output=True,
-        )
 
+        # capture_output is valid for py3.7 and above so we will use
+        # stdout/stderr to be back compatible with py3.6
         # Capture rnadiff output
+        p = subprocess.Popen(
+            f"Rscript {rnadiff_script}",
+            shell=True,
+            universal_newlines=True,
+            stderr=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+        )
+        p.wait()
+        stdout, stderr = p.stdout.read(), p.stderr.read()
+
+        # Capture rnadiff output, Unfortunately, R code mixes stdout/stderr
+        # FIXME
         with open(self.outdir / "rnadiff.err", "w") as f:
-            f.write(p.stderr)
+            f.write(stderr)
         with open(self.outdir / "rnadiff.out", "w") as f:
-            f.write(p.stdout)
+            f.write(stdout)
+
+        #if os.path.exists():
+        #    logger.error(f"stderr of R call is not empty: {p.stderr}")
+        #    sys.exit(1)
 
         results = RNADiffResults(
             self.outdir,
@@ -344,6 +357,7 @@ class RNADiffTable:
         markersize=4,
         limit_broken_line=[20, 40],
         plotly=False,
+        annotations=None
     ):
         """
 
@@ -357,25 +371,29 @@ class RNADiffTable:
             r.plot_volcano()
 
         """
-        d1 = self.df.query("padj>@padj")
-        d2 = self.df.query("padj<=@padj")
 
         if plotly:
             from plotly import express as px
 
             df = self.df.copy()
-            df["log_adj_pvalue"] = -pylab.log10(self.df.padj)
+
+            if annotations is not None:
+                try:
+                    df = pd.concat([df, annotations.annotation], axis=1)
+                except Exception as err:
+                    logger.warning(f"Could not merge rnadiff table with annotation. Full error is: {err}")
+            df["log_adj_pvalue"] = -pylab.log10(df.padj)
             df["significance"] = [
                 "<{}".format(padj) if x else ">={}".format(padj) for x in df.padj < padj
             ]
 
-            if "Name" in self.df.columns:
+            if "Name" in df.columns:
                 hover_name = "Name"
-            elif "gene_id" in self.df.columns:
+            elif "gene_id" in df.columns:
                 hover_name = "gene_id"
-            elif "locus_tag" in self.df.columns:
+            elif "locus_tag" in df.columns:
                 hover_name = "locus_tag"
-            elif "ID" in self.df.columns:
+            elif "ID" in df.columns:
                 hover_name = "ID"
             else:
                 hover_name = None
@@ -426,6 +444,8 @@ class RNADiffTable:
         else:
             bax = pylab
 
+        d1 = self.df.query("padj>@padj")
+        d2 = self.df.query("padj<=@padj")
         bax.plot(
             d1.log2FoldChange,
             -np.log10(d1.padj),

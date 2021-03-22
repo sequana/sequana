@@ -1188,8 +1188,10 @@ class KeggPathwayEnrichment:
             len(self.enrichment["up"].results) == 0
             and len(self.enrichment["up"].results) == 0
         ):
-            logger.error(
-                "Enrichment results are empty. Most probably an incompatible set of gene IDs. Please use BioMart to convert your IDs into external gene names "
+            logger.warning(
+                "Enrichment results are empty. Could be real because number of"
+                " deregulated genes is low or  an incompatible set of gene IDs." 
+                " Please use BioMart to convert your IDs into external gene names "
             )
 
     def _enrichr(self, category, background=None, verbose=True):

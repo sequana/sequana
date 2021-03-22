@@ -59,6 +59,8 @@ install:
   - conda install --yes dsrc # for testing
   - conda install --yes -c anaconda qt pyqt>5
 
+  - conda install --yes R=4.0 bioconductor-deseq2=1.30.0 bioconductor-tximportdata bioconductor-tximport bioconductor-genomeinfodb bioconductor-genomeinfodbdata
+
   #- pip install pyopengl
   #- pip install itolapi
   #- pip install sklearn statsmodels
