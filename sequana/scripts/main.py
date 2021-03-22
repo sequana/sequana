@@ -341,9 +341,9 @@ def rnadiff(**kwargs):
         else:
             logger.info(f"DGE done.")
             # cleanup if succesful
-            os.remove("rnadiff.err")
-            os.remove("rnadiff.out")
-            os.remove("rnadiff_light.R")
+            os.remove(f"{outdir}/rnadiff.err")
+            os.remove(f"{outdir}/rnadiff.out")
+            os.remove(f"{outdir}/rnadiff_light.R")
 
 
     logger.info(f"Reporting. Saving in rnadiff.html")
@@ -585,6 +585,8 @@ def enrichment(**kwargs):
             logger.info(f"Computing enrichment for the {compa} case")
             logger.info(f"Found {Nup} genes up-regulated, {Ndown} down regulated ({N} in total).")
             config.output_dir = f"enrichment/{compa}"
+            try:os.mkdir("enrichment")
+            except:pass
             report = Enrichment(gene_dict, taxon, df,
                 kegg_organism=keggname, 
                 enrichment_params=params,
