@@ -73,33 +73,33 @@ class RNADesign:
 class RNADiffAnalysis:
     """A tool to prepare and run a RNA-seq differential analysis with DESeq2
 
-    :param counts_file: Path to tsv file out of FeatureCount with all samples together.
-    :param design_file: Path to tsv file with the definition of the groups for each sample.
-    :param condition: The name of the column from groups_tsv to use as condition. For more
-        advanced design, a R function of the type 'condition*inter' (without the '~') could
-        be specified (not tested yet). Each name in this function should refer to column
-        names in groups_tsv.
-    :param comparisons: A list of tuples indicating comparisons to be made e.g A vs B would be [("A", "B")]
-    :param batch: None for no batch effect or name of a column in groups_tsv to add a batch effec.
-    :param fit_type: Default "parametric".
-    :param beta_prior: Default False.
-    :param independent_filtering: To let DESeq2 perform the independentFiltering or not.
-    :param cooks_cutoff: To let DESeq2 decide for the CooksCutoff or specifying a value.
-    :param gff: Path to the corresponding gff3 to add annotations.
-    :param fc_attribute: GFF attribute used in FeatureCounts.
-    :param fc_feature: GFF feaure used in FeatureCounts.
-    :param annot_cols: GFF attributes to use for results annotations
-    :param threads: Number of threads to use
-    :param outdir: Path to output directory.
-    :param sep_counts: The separator used in the input count file.
-    :param sep_design: The separator used in the input design file.
+        :param counts_file: Path to tsv file out of FeatureCount with all samples together.
+        :param design_file: Path to tsv file with the definition of the groups for each sample.
+        :param condition: The name of the column from groups_tsv to use as condition. For more
+            advanced design, a R function of the type 'condition*inter' (without the '~') could
+            be specified (not tested yet). Each name in this function should refer to column
+            names in groups_tsv.
+        :param comparisons: A list of tuples indicating comparisons to be made e.g A vs B would be [("A", "B")]
+        :param batch: None for no batch effect or name of a column in groups_tsv to add a batch effec.
+        :param fit_type: Default "parametric".
+        :param beta_prior: Default False.
+        :param independent_filtering: To let DESeq2 perform the independentFiltering or not.
+        :param cooks_cutoff: To let DESeq2 decide for the CooksCutoff or specifying a value.
+        :param gff: Path to the corresponding gff3 to add annotations.
+        :param fc_attribute: GFF attribute used in FeatureCounts.
+        :param fc_feature: GFF feaure used in FeatureCounts.
+        :param annot_cols: GFF attributes to use for results annotations
+        :param threads: Number of threads to use
+        :param outdir: Path to output directory.
+        :param sep_counts: The separator used in the input count file.
+        :param sep_design: The separator used in the input design file.
 
-    This class reads a :class:`sequana.featurecounts.`
+        This class reads a :class:`sequana.featurecounts.`
 
-    r = rnadiff.RNADiffAnalysis("counts.csv", "design.csv",
-            condition="condition", comparisons=[(("A", "B"), ('A', "C")],
-            fc_feature="gene",
-            fc_attribute="ID", gff="mygff.gff")
+        r = rnadiff.RNADiffAnalysis("counts.csv", "design.csv",
+    '            condition="condition", comparisons=[(("A", "B"), ('A', "C")],
+                fc_feature="gene",
+                fc_attribute="ID", gff="mygff.gff")
 
 
     """
@@ -245,7 +245,6 @@ or comparisons. possible values are {valid_conditions}"""
 
         logger.info("Starting differential analysis with DESeq2...")
 
-
         # capture_output is valid for py3.7 and above so we will use
         # stdout/stderr to be back compatible with py3.6
         # Capture rnadiff output
@@ -266,7 +265,7 @@ or comparisons. possible values are {valid_conditions}"""
         with open(self.outdir / "rnadiff.out", "w") as f:
             f.write(stdout)
 
-        #if os.path.exists():
+        # if os.path.exists():
         #    logger.error(f"stderr of R call is not empty: {p.stderr}")
         #    sys.exit(1)
 
@@ -357,7 +356,7 @@ class RNADiffTable:
         markersize=4,
         limit_broken_line=[20, 40],
         plotly=False,
-        annotations=None
+        annotations=None,
     ):
         """
 
@@ -381,7 +380,9 @@ class RNADiffTable:
                 try:
                     df = pd.concat([df, annotations.annotation], axis=1)
                 except Exception as err:
-                    logger.warning(f"Could not merge rnadiff table with annotation. Full error is: {err}")
+                    logger.warning(
+                        f"Could not merge rnadiff table with annotation. Full error is: {err}"
+                    )
             df["log_adj_pvalue"] = -pylab.log10(df.padj)
             df["significance"] = [
                 "<{}".format(padj) if x else ">={}".format(padj) for x in df.padj < padj
@@ -785,9 +786,12 @@ class RNADiffResults:
         out_dir = Path(out_dir) / "figures"
         out_dir.mkdir(exist_ok=True, parents=True)
 
-        gene_lists_dict = self.get_gene_lists(annot_col=annot_col, Nmax=2000)
+        gene_lists_dict = self.get_gene_lists(
+            annot_col=annot_col, Nmax=2000, dropna=True
+        )
         enrichment = {}
         ontologies = {"GO:0003674": "BP", "GO:0008150": "MF", "GO:0005575": "CC"}
+        failed_enrichments = []
 
         for compa in self.comparisons:
             gene_lists = gene_lists_dict[compa]
@@ -795,22 +799,46 @@ class RNADiffResults:
             pe.compute_enrichment(ontologies=ontologies.keys(), progress=False)
 
             for direction in ["up", "down", "all"]:
+                if not pe.enrichment[direction]:
+                    logger.warning(
+                        f"No enrichment computed, so no plots computed for {compa} {direction} {ontology}"
+                    )
+                    failed_enrichments.append(
+                        {
+                            "comparison": compa,
+                            "direction": direction,
+                            "GO": "all",
+                            "reason": "no enrichment computed",
+                        }
+                    )
+                    continue
+
                 for ontology in ontologies.keys():
-                    enrichment[(compa, direction, ontology)] = pe.get_data(
-                        direction, ontology, include_negative_enrichment=False
-                    )
                     pylab.figure()
-                    try:
-                        pe.plot_go_terms(direction, ontology, compute_levels=False)
-                    except:
-                        return pe
-                    pylab.tight_layout()
-                    pylab.savefig(
-                        out_dir / f"go_{compa}_{direction}_{ontologies[ontology]}.pdf"
+                    enrichment_df = pe.plot_go_terms(
+                        direction, ontology, compute_levels=False
                     )
-                    pylab.savefig(
-                        out_dir / f"go_{compa}_{direction}_{ontologies[ontology]}.png"
-                    )
+                    if enrichment_df.empty:
+                        failed_enrichments.append(
+                            {
+                                "comparison": compa,
+                                "direction": direction,
+                                "GO": ontology,
+                                "reason": "no enrichment found",
+                            }
+                        )
+                    else:
+                        enrichment[(compa, direction, ontology)] = enrichment_df
+                        pylab.tight_layout()
+                        pylab.savefig(
+                            out_dir
+                            / f"go_{compa}_{direction}_{ontologies[ontology]}.pdf"
+                        )
+                        pe.save_chart(
+                            enrichment_df,
+                            out_dir
+                            / f"chart_{compa}_{direction}_{ontologies[ontology]}.png",
+                        )
 
             logger.info(f"Panther enrichment for {compa} DONE.")
 
@@ -820,6 +848,7 @@ class RNADiffResults:
         )
 
         self.enrichment_go = df
+        self.failed_go_enrichments = pd.DataFrame(failed_enrichments)
 
         # Export results (should be moved to enrichment.py at some point I think)
         with pd.ExcelWriter(out_dir.parent / "enrichment_go.xlsx") as writer:
@@ -839,7 +868,7 @@ class RNADiffResults:
         out_dir = Path(out_dir) / "figures"
         out_dir.mkdir(exist_ok=True, parents=True)
 
-        gene_lists_dict = self.get_gene_lists(annot_col=annot_col)
+        gene_lists_dict = self.get_gene_lists(annot_col=annot_col, dropna=True)
         enrichment = {}
 
         for compa in self.comparisons:
@@ -875,7 +904,9 @@ class RNADiffResults:
             except:
                 logger.warning("Fixme")
 
-    def get_gene_lists(self, annot_col="index", Nmax=None):  # pragma: no cover
+    def get_gene_lists(
+        self, annot_col="index", Nmax=None, dropna=False
+    ):  # pragma: no cover
 
         gene_lists_dict = {}
 
@@ -914,6 +945,17 @@ class RNADiffResults:
                 "down": down_genes,
                 "all": all_genes,
             }
+
+            if dropna:
+                for direction in gene_lists_dict[compa]:
+                    gl = gene_lists_dict[compa][direction]
+                    if not gl:
+                        continue
+                    perc_unannotated = gl.count(None) / len(gl) * 100
+                    logger.warning(
+                        f"{compa} {direction}: Removing {perc_unannotated:.0f}% of the data for enrichment analysis due to missing identifiers in annotation."
+                    )
+                    gene_lists_dict[compa][direction] = [x for x in gl if x != None]
 
         return gene_lists_dict
 
