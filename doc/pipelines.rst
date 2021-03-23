@@ -95,11 +95,8 @@ This is a non-exhaustive list of pipelines
 .. toctree::
     :maxdepth: 1
 
-    pipeline_coverage.rst
-    pipeline_denovo_assembly.rst
     pipeline_demultiplex.rst
     pipeline_fastqc.rst
-    pipeline_mapper.rst
     pipeline_quality_control.rst
     pipeline_rnaseq.rst
     pipeline_variant_calling.rst

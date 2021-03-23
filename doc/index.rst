@@ -183,16 +183,6 @@ User guide and reference
     pipelines
     auto_examples/index
     case_examples
-    applications
-    sequanix.rst
-    developers
-    rules
-    references
-    references_viz
-    references_stats
-    faqs
-    Changelog
-    glossary
 
 
 Indices and tables
