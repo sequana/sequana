@@ -89,16 +89,13 @@ class PantherEnrichment:
 
     This function returns the dataframe used during the plotting.
 
-    If you want to look at the up regulated genes only,
+    If you want to look at the up regulated genes only::
 
         e.compute_enrichment(pe.mygenes_up, 83333)
-        e.plot_go_terms(['GO:0003674', 'GO:0008150', 'GO:0005575'])
-
-
-    df = e.plot_go_terms(['GO:0003674', 'GO:0008150', 'GO:0005575'],
-            log=False, include_negative_enrichment=False,
-            fontsize=8, sort_by='fold_enrichment',
-            show_pvalues=True, fdr_threshold=0.05)
+        df = e.plot_go_terms(['GO:0003674', 'GO:0008150', 'GO:0005575'],
+                log=False, include_negative_enrichment=False,
+                fontsize=8, sort_by='fold_enrichment',
+                show_pvalues=True, fdr_threshold=0.05)
 
 
     The number of genes is limited to about 3100 depending (don't ask me

@@ -129,10 +129,10 @@ for developers
 * add salmon module for the rnaseq pipeline
 * fix bug in multiqc plugin for bamtools used in sequana_mapper
 * some rules updates: (1) add_read_group has now the option
-"VALIDATION_STRINGENCY=SILENT" that seem to be required in newer version of
-picard. surprising that this error did not appear earlier since the issue seems
-old (https://github.com/Cibiv/NextGenMap/issues/3) (2)  mark_duplicates and
-features_counts rules needed o change some parameters, now keywords in snakemake
+  "VALIDATION_STRINGENCY=SILENT" that seem to be required in newer version of
+  picard. surprising that this error did not appear earlier since the issue seems
+  old (https://github.com/Cibiv/NextGenMap/issues/3) (2)  mark_duplicates and
+  features_counts rules needed o change some parameters, now keywords in snakemake
 * add new viz module called dendogram
 * add new report module for rnadiff. 
 * add new report module for KeggPathway and Panther

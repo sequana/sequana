@@ -23,7 +23,7 @@ from sphinx.util.docutils import SphinxDirective
 def get_rule_doc(name):
     """Decode and return the docstring(s) of a sequana/snakemake rule."""
 
-    url = "https://raw.githubusercontent.com/sequana/sequana_{}/master/README.rst".format(name)
+    url = "https://raw.githubusercontent.com/sequana/{}/master/README.rst".format(name)
     data = urllib.request.urlopen(url).read().decode("utf8")
 
     try:
