@@ -101,28 +101,6 @@ class RNADiffCompare(Compare):
     comparison = property(_get_comp, _set_comp)
         
 
-    """def summary(self):
-        conditions = self._get_conditions()
-        d1 = self.r1.gene_lists['down']
-        d2 = self.r2.gene_lists['down']
-        u1 = self.r1.gene_lists['up']
-        u2 = self.r2.gene_lists['up']
-        res = {
-            "up1": len(u1), "up2": len(u2),
-            "down1": len(d1), "down2": len(d2),
-            "common_down_r1_r2": len(set(d1).intersection(set(d2))),
-            "common_up_r1_r2": len(set(u1).intersection(set(u2)))
-        }
-
-        if len(conditions) == 3:
-            d3 = self.r3.gene_lists['down']
-            u3 = self.r3.gene_lists['up']
-
-            res['up3'] = len(u3)
-            res['down3'] = len(d3) 
-        return res
-    """
-
     def _get_conditions(self, cond1=None, cond2=None):
 
         cond1, cond2 = self.comparison.split("_vs_")

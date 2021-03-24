@@ -73,34 +73,34 @@ class RNADesign:
 class RNADiffAnalysis:
     """A tool to prepare and run a RNA-seq differential analysis with DESeq2
 
-        :param counts_file: Path to tsv file out of FeatureCount with all samples together.
-        :param design_file: Path to tsv file with the definition of the groups for each sample.
-        :param condition: The name of the column from groups_tsv to use as condition. For more
-            advanced design, a R function of the type 'condition*inter' (without the '~') could
-            be specified (not tested yet). Each name in this function should refer to column
-            names in groups_tsv.
-        :param comparisons: A list of tuples indicating comparisons to be made e.g A vs B would be [("A", "B")]
-        :param batch: None for no batch effect or name of a column in groups_tsv to add a batch effec.
-        :param fit_type: Default "parametric".
-        :param beta_prior: Default False.
-        :param independent_filtering: To let DESeq2 perform the independentFiltering or not.
-        :param cooks_cutoff: To let DESeq2 decide for the CooksCutoff or specifying a value.
-        :param gff: Path to the corresponding gff3 to add annotations.
-        :param fc_attribute: GFF attribute used in FeatureCounts.
-        :param fc_feature: GFF feaure used in FeatureCounts.
-        :param annot_cols: GFF attributes to use for results annotations
-        :param threads: Number of threads to use
-        :param outdir: Path to output directory.
-        :param sep_counts: The separator used in the input count file.
-        :param sep_design: The separator used in the input design file.
+    :param counts_file: Path to tsv file out of FeatureCount with all samples together.
+    :param design_file: Path to tsv file with the definition of the groups for each sample.
+    :param condition: The name of the column from groups_tsv to use as condition. For more
+        advanced design, a R function of the type 'condition*inter' (without the '~') could
+        be specified (not tested yet). Each name in this function should refer to column
+        names in groups_tsv.
+    :param comparisons: A list of tuples indicating comparisons to be made e.g A vs B would be [("A", "B")]
+    :param batch: None for no batch effect or name of a column in groups_tsv to add a batch effec.
+    :param fit_type: Default "parametric".
+    :param beta_prior: Default False.
+    :param independent_filtering: To let DESeq2 perform the independentFiltering or not.
+    :param cooks_cutoff: To let DESeq2 decide for the CooksCutoff or specifying a value.
+    :param gff: Path to the corresponding gff3 to add annotations.
+    :param fc_attribute: GFF attribute used in FeatureCounts.
+    :param fc_feature: GFF feaure used in FeatureCounts.
+    :param annot_cols: GFF attributes to use for results annotations
+    :param threads: Number of threads to use
+    :param outdir: Path to output directory.
+    :param sep_counts: The separator used in the input count file.
+    :param sep_design: The separator used in the input design file.
 
-        This class reads a :class:`sequana.featurecounts.`
+    This class reads a :class:`sequana.featurecounts.`
+
+
+    ::
 
         r = rnadiff.RNADiffAnalysis("counts.csv", "design.csv",
-    '            condition="condition", comparisons=[(("A", "B"), ('A', "C")],
-                fc_feature="gene",
-                fc_attribute="ID", gff="mygff.gff")
-
+                condition="condition", comparisons=[(("A", "B"), ('A', "C")],
 
     """
 

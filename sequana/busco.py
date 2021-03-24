@@ -142,10 +142,12 @@ class BuscoAnalysis(object):
         :param sample_name: prefix used for all files
         :param outpath: main output path
 
-        mode    = config['busco']['mode_choice'],
-        options = config['busco']['options'],
-        wkdir   =  __busco__workdir,
-        species = config['busco']['species_choice'],
+        ::
+
+            mode    = config['busco']['mode_choice'],
+            options = config['busco']['options'],
+            wkdir   =  __busco__workdir,
+            species = config['busco']['species_choice'],
 
 
         If bin_path or config_path are none, uses CONDA_PREFIX or
