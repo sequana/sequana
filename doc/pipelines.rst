@@ -99,6 +99,5 @@ This is a non-exhaustive list of pipelines
     pipeline_fastqc.rst
     pipeline_quality_control.rst
     pipeline_rnaseq.rst
-    pipeline_variant_calling.rst
 
 Please see the https://github.com/sequana organisation to get the full list.
