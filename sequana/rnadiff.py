@@ -96,10 +96,13 @@ class RNADiffAnalysis:
 
     This class reads a :class:`sequana.featurecounts.`
 
-    r = rnadiff.RNADiffAnalysis("counts.csv", "design.csv",
-            condition="condition", comparisons=[(("A", "B"), ('A', "C")],
-            fc_feature="gene",
-            fc_attribute="ID", gff="mygff.gff")
+
+    ::
+
+        r = rnadiff.RNADiffAnalysis("counts.csv", "design.csv",
+                condition="condition", comparisons=[(("A", "B"), ('A', "C")],
+                fc_feature="gene",
+                fc_attribute="ID", gff="mygff.gff")
 
 
     """
