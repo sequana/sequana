@@ -272,7 +272,7 @@ or comparisons. possible values are {valid_conditions}"""
         results = RNADiffResults(
             self.outdir,
             self.design_filename,
-            group=self.condition,
+            condition=self.condition,
             gff=self.gff,
             fc_feature=self.fc_feature,
             fc_attribute=self.fc_attribute,
@@ -282,7 +282,7 @@ or comparisons. possible values are {valid_conditions}"""
 
 
 class RNADiffTable:
-    def __init__(self, path, alpha=0.05, log2_fc=0, sep=","):
+    def __init__(self, path, alpha=0.05, log2_fc=0, sep=",", condition="condition"):
         """ A representation of the results of a single rnadiff comparison """
         self.path = Path(path)
         self.name = self.path.stem.replace("_degs_DESeq2", "").replace("-", "_")
@@ -291,6 +291,7 @@ class RNADiffTable:
         self._log2_fc = log2_fc
 
         self.df = pd.read_csv(self.path, index_col=0, sep=sep)
+        self.condition = condition
 
         self.filt_df = self.filter()
         self.set_gene_lists()
@@ -512,7 +513,7 @@ class RNADiffTable:
             df["names"] = self.sample_names
             df["colors"] = [colors[x] for x in self.sample_names]
             df["size"] = [10] * len(df)
-            df["condition"] = [
+            df[self.condition] = [
                 self.get_cond_from_sample(sample) for sample in self.sample_names
             ]
             fig = px.scatter_3d(
@@ -520,7 +521,7 @@ class RNADiffTable:
                 x="PC1",
                 y="PC2",
                 z="PC3",
-                color="condition",
+                color=self.condition,
                 labels={
                     "PC1": "PC1 ({}%)".format(round(100 * variance[0], 2)),
                     "PC2": "PC2 ({}%)".format(round(100 * variance[1], 2)),
@@ -578,7 +579,7 @@ class RNADiffResults:
         alpha=0.05,
         log2_fc=0,
         palette=sns.color_palette(desat=0.6),
-        group="condition",
+        condition="condition",
         annot_cols=None,
         # annot_cols=["ID", "Name", "gene_biotype"],
     ):
@@ -608,27 +609,37 @@ class RNADiffResults:
         self.dds_stats = pd.read_csv(
             self.path / "overall_dds.csv", index_col=0, sep=","
         )
+        self.condition = condition
+        self.design_df = self._get_design(
+            design_file, condition=self.condition, palette=palette
+        )
+
+        # FIXME: This block was commented because:
+        # Now RNADiffAnalysis create a sorted design file according to the count matrix
+        # Not sure that creating a design from scratch at this stage is relevant.
 
         # read different results and sort by sample name all inputs
         # TODO make this a function to be reused in RNADiffAnalysis for example
-        if design_file == None:
-            conditions = []
-            labels = self.counts_raw.columns
-            for label in labels:
-                condition = input(
-                    f"Please give use a condition name for the {label} label: "
-                )
-                conditions.append(condition)
-            df = pd.DataFrame({"label": labels, "condition": conditions})
-            df.set_index("label", inplace=True)
-            df.sort_index(inplace=True)
-            col_map = dict(zip(df.loc[:, group].unique(), palette))
-            df["group_color"] = df.loc[:, group].map(col_map)
-            self.design_df = df
-        else:
-            self.design_df = self._get_design(design_file, group=group, palette=palette)
-            self.design_df.sort_index(inplace=True)
-            self.design = RNADesign(design_file)
+        # if design_file == None:
+        #     conditions = []
+        #     labels = self.counts_raw.columns
+        #     for label in labels:
+        #         condition = input(
+        #             f"Please give use a condition name for the {label} label: "
+        #         )
+        #         conditions.append(condition)
+        #     df = pd.DataFrame({"label": labels, "condition": conditions})
+        #     df.set_index("label", inplace=True)
+        #     df.sort_index(inplace=True)
+        #     col_map = dict(zip(df.loc[:, condition].unique(), palette))
+        #     df["group_color"] = df.loc[:, condition].map(col_map)
+        #     self.design_df = df
+        # else:
+        #     self.design_df = self._get_design(
+        #         design_file, condition=condition, palette=palette
+        #     )
+        #     self.design_df.sort_index(inplace=True)
+        #     self.design = RNADesign(design_file)
 
         # optional annotation
         self.fc_attribute = fc_attribute
@@ -686,6 +697,7 @@ class RNADiffResults:
                 compa,
                 alpha=self._alpha,
                 log2_fc=self._log2_fc,
+                condition=self.condition,
                 # gff=self.annotation.annotation,
             )
             for compa in self.files
@@ -959,13 +971,13 @@ class RNADiffResults:
 
         return gene_lists_dict
 
-    def _get_design(self, design_file, group, palette):
+    def _get_design(self, design_file, condition, palette):
         """Import design from a table file and add color groups following the
-        groups defined in the column 'group' of the table file.
+        groups defined in the column 'condition' of the table file.
         """
-        df = pd.read_csv(design_file, sep=",", index_col=0)
-        col_map = dict(zip(df.loc[:, group].unique(), palette))
-        df["group_color"] = df.loc[:, group].map(col_map)
+        df = pd.read_csv(design_file, sep=",", dtype={"label": str}).set_index("label")
+        col_map = dict(zip(df.loc[:, condition].unique(), palette))
+        df["group_color"] = df.loc[:, condition].map(col_map)
         return df
 
     def _format_plot(self, title="", xlabel="", ylabel="", rotation=0):
@@ -1149,7 +1161,7 @@ class RNADiffResults:
 
             df = pd.concat([df, self.design_df], axis=1)
             df["label"] = df.index
-            df["group_color"] = df["condition"]
+            df["group_color"] = df[self.condition]
 
             fig = px.scatter_3d(
                 df,
@@ -1301,9 +1313,9 @@ class RNADiffResults:
 
         # Convert groups into numbers for Dendrogram category
         group_conv = {
-            group: i for i, group in enumerate(self.design_df.condition.unique())
+            group: i for i, group in enumerate(self.design_df[self.condition].unique())
         }
-        d.category = self.design_df.condition.map(group_conv).to_dict()
+        d.category = self.design_df[self.condition].map(group_conv).to_dict()
         d.plot()
 
     def plot_boxplot_rawdata(self, fliersize=2, linewidth=2, rotation=0, **kwargs):
