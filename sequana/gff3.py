@@ -426,7 +426,7 @@ class GFF3(Annotation):
                         key, value = item.split("=")
                         if key in mapper.keys():
                             key = mapper[key].format(feature)
-                            print(key)
+                            #print(key)
                         new_attributes += '{} "{}";'.format(key, value)
                     except:
                         pass
