@@ -5,7 +5,11 @@ Changelog
     :depth: 2
 
 
+0.10.1
+------
 
+* new tools and functionalities for the rnaseq pipeline
+* add binaries attribute in rules handled by snaketools
 
 0.10.0
 -------
