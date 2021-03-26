@@ -65,6 +65,7 @@ __all__ = ["DOTParser", "FastQFactory", "FileFactory",
             "SnakeMakeStats",
            "SequanaConfig", "modules", "pipeline_names"]
 
+
 import snakemake
 """    logger.warning("Snakemake must be installed. Available for Python3 only")
     class MockSnakeMake(object):
@@ -507,6 +508,18 @@ or open a Python shell and type::
             self._requirements = self._get_file("requirements.txt")
             return self._requirements
     requirements = property(_get_requirements, doc="list of requirements")
+
+
+    def _get_required_binaries(self):
+        with open(f"{self.path}/{self.name}.rules", "r") as fout:
+            data = fout.read().split("\n")
+            binaries = [x for x in data if x.startswith('binaries')]
+            if len(binaries):
+                binaries = binaries[0]
+                return eval(binaries.replace("binaries", "").replace("=", ""))
+            else:
+                return []
+    required_binaries = property(_get_required_binaries)
 
     def is_executable(self, verbose=False):
         """Is the module executable
