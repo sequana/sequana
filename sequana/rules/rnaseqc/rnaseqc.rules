@@ -16,7 +16,7 @@
 #  Contributors:  https://github.com/sequana/sequana/graphs/contributors
 ##############################################################################
 
-
+binaries = ['rnaseqc']
 
 rule rnaseqc:
     """
@@ -67,7 +67,6 @@ rule rnaseqc:
         # way is to trick the input GTF file by adding a dummy gene and a dummy
         # exon
         from easydev import TempFile
-
         with TempFile(suffix=".gtf") as fout:
             ff = open(fout.name, "w")
             ff.write('myCHR\tSGD\tgene\t0\t0\t.\t+\t0\tgene_id "dummy";')
