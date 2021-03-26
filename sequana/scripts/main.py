@@ -635,8 +635,6 @@ def taxonomy(**kwargs):
  
 @main.command()
 @click.argument("gff_filename", type=click.Path(exists=True))
-#@click.option("-o", "--output",
-#    help="filename where to save GTF file named after the results. to be used with --head, --tail")
 @common_logger
 def gff2gtf(**kwargs):
     """Convert a GFF file into GTF

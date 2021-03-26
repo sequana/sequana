@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 #  This file is part of Sequana software
 #
@@ -27,14 +26,11 @@ class Reader():
 
 class Bowtie1Reader(Reader):
     def __init__(self, filename):
-        super(Bowtie1Reader, self).__init__(filename)
+        super().__init__(filename)
 
     def plot_bar(self, html_code=False):
 
         import plotly.graph_objects as go
-
-        months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-          'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
         fig = go.Figure()
         fig.add_trace(go.Bar(
@@ -54,7 +50,7 @@ class Bowtie1Reader(Reader):
         fig.update_layout(barmode='stack', xaxis_tickangle=-45, height=400,
             title="Mapping on ribosomal/contaminant")
 
-        if html_code is True:
+        if html_code:
             return fig
         else:
             fig.show()
