@@ -512,13 +512,12 @@ or open a Python shell and type::
 
     def _get_required_binaries(self):
         with open(f"{self.path}/{self.name}.rules", "r") as fout:
-            data = fout.read().split("\n")
-            binaries = [x for x in data if x.startswith('binaries')]
-            if len(binaries):
-                binaries = binaries[0]
-                return eval(binaries.replace("binaries", "").replace("=", ""))
-            else:
-                return []
+            for line in fout.readlines():
+                if line.startswith('binaries'):
+                    line = line.split("=")[1].strip()
+                    binaries = line[1:-1].split(",")
+                    return binaries
+        return []
     required_binaries = property(_get_required_binaries)
 
     def is_executable(self, verbose=False):
