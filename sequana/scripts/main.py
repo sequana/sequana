@@ -642,7 +642,23 @@ def taxonomy(**kwargs):
         indices = set(indices)
         print(df.loc[indices])
  
+@main.command()
+@click.argument("gff_filename", type=click.Path(exists=True))
+@common_logger
+def gff2gtf(**kwargs):
+    """Convert a GFF file into GTF
 
+    This is experimental convertion. Use with care.
+
+    """
+    filename = kwargs["gff_filename"]
+    assert filename.endswith(".gff") or filename.endswith(".gff3")
+    from sequana.gff3 import GFF3
+    g = GFF3(filename)
+    if filename.endswith(".gff"):
+        g.to_gtf(os.path.basename(filename).replace(".gff", ".gtf"))
+    elif filename.endswith(".gff3"):
+        g.to_gtf(os.path.basename(filename).replace(".gff3", ".gtf"))
 
 
 

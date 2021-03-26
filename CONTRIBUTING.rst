@@ -1,19 +1,24 @@
-================================
+===============================
 Sequana contributing guidelines
-================================
+===============================
 
 Issues
-==========
+======
 
 You have an issue ? You found a bug ? Please submit an issue with 
 
 - a description of the problem
-- the version of Sequana used
+- the version of Sequana used (and the pipeline name and version if the issue is related to a pipeline)
 - the error message if any
 
+Issue can be submitted here : https://github.com/sequana/sequana/issues or on the pipeline page itself e.g. https://github.com/sequana/rnaseq/issues.
 
-pull requests
-===================
+FAQs are available on https://sequana.readthedocs.io .
+
+
+
+Pull requests
+==============
 
 Pull requests are always welcome, and the Sequana community appreciates
 any help you give.

@@ -16,6 +16,10 @@
 ##############################################################################
 
 
+
+binaries = ['gffread', 'salmon']
+
+
 rule salmon_index:
     """
     Genome indexation for RNA-STAR mapper
