@@ -24,7 +24,6 @@ from easydev import do_profile
 import colorlog
 logger = colorlog.getLogger(__name__)
 
-
 __all__ = ["GFF3"]
 
 
@@ -154,6 +153,7 @@ class GFF3(Annotation):
                 return None
 
         try:
+            # 10 seconds on mm10
             attributes = self.get_attributes()
             for attribute in attributes:
                 df[attribute] = [get_attr(x, attribute) for x in df["attributes"]]
@@ -395,6 +395,8 @@ class GFF3(Annotation):
         return df
 
     def to_gtf(self, output_filename="test.gtf", mapper={"ID": "{}_id"}):
+        # experimental . used by rnaseq pipeline to convert input gff to gtf,
+        # used by RNA-seqc tools
 
         fout = open(output_filename, "w")
 
@@ -435,5 +437,59 @@ class GFF3(Annotation):
                 # 2. if feature is e.g. exon, then gtf expects the exon_id attribute
                 msg = f"{name}\t{source}\t{feature}\t{start}\t{stop}\t{a}\t{strand}\t{b}\t{new_attributes}\n"
                 fout.write(msg)
+
+        fout.close()
+
+    def to_bed(self, output_filename, attribute_name):
+        # attribute name is the name extractred from last column to be used as
+        # the feature name (e.g., gene name)
+        # prokaryotes case is easy, just get the gene
+        fout = open(output_filename, "w")
+        with open(self.filename, "r") as reader:
+            for line in reader:
+                # Skip metadata and comments
+                if line.startswith("#"):
+                    continue
+                # Skip empty lines
+                if not line.strip():  # pragma: no cover
+                    continue
+                split = line.rstrip().split("\t")
+                L = len(split)
+
+                chrom_name = split[0]
+                source = split[1]
+                feature = split[2]
+                gene_start = int(split[3])
+                gene_stop = int(split[4])
+                cds_start = gene_start
+                cds_stop = gene_stop
+                a = split[5]
+                strand = split[6]
+                b = split[7]
+                attributes = split[8]
+
+                score = 0
+                unknown = 0
+                block_count = 1
+                block_sizes = f"{cds_stop-cds_start},"  # fixme +1 ?
+                block_starts = "0,"   # commas are important at the end. no spaces
+                # according to some code in rseqc (bed.py), the expected bed
+                # format is
+                # chrom, chrom_start, chrom_end, gene name, score, strand, cdsStart, cdsEnd,
+                # blockcunt, blocksizes, blockstarts where blocksizes and blocks
+                # starts are comma separated list
+
+                # chr1	1676716 1678658 NM_001145277 0 +    1676725 1678549 0 4	182,101,105, 0,2960,7198
+
+                if feature == "gene":
+                    gene_name = None
+                    for item in attributes.split(";"):
+                        if item.split("=")[0].strip() == attribute_name:
+                            gene_name = item.split("=")[-1]
+                    assert gene_name
+                    # should be the cds start/stop but for now we use the gene
+                    # info start/stop
+                    msg = f"{chrom_name}\t{gene_start}\t{gene_stop}\t{gene_name}\t{score}\t{strand}\t{cds_start}\t{cds_stop}\t{unknown}\t{block_count}\t{block_sizes}\t{block_starts}\n"
+                    fout.write(msg)
 
         fout.close()

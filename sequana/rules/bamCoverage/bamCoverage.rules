@@ -4,8 +4,6 @@
 #
 #  Copyright (c) 2016-2021 - Sequana Dev Team (https://sequana.readthedocs.io)
 #
-#  File author(s):
-#      Thomas Cokelaer <thomas.cokelaer@pasteur.fr>
 #
 #  Distributed under the terms of the 3-clause BSD license.
 #  The full license is in the LICENSE file, distributed with this software.
@@ -15,6 +13,9 @@
 #  Contributors:  https://github.com/sequana/sequana/graphs/contributors
 ##############################################################################
 
+
+# bamCoverage comes from deeptools
+binaries = ['bamCoverage'] 
 
 
 rule bamCoverage:
