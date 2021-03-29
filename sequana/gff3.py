@@ -441,9 +441,19 @@ class GFF3(Annotation):
         fout.close()
 
     def to_bed(self, output_filename, attribute_name):
-        # attribute name is the name extractred from last column to be used as
-        # the feature name (e.g., gene name)
-        # prokaryotes case is easy, just get the gene
+        """Experimental export to BED format to be used with rseqc scripts
+
+        :param str attribute_name: the attribute_name name to be found in the
+            GFF attributes
+        """
+
+        # rseqc expects a BED12 file. The format is not clear from the
+        # documentation. The first 6 columns are clear (e.g., chromosome name
+        # positions, etc) but last one are not. From the examples, it should be
+        # block sizes, starts of the transcript but they recommend bedops
+        # gff2bed tool that do not extract such information. For now, for
+        # prokaryotes, the block sizes version have been implemented and worked
+        # on a leptospira example. 
         fout = open(output_filename, "w")
         with open(self.filename, "r") as reader:
             for line in reader:
@@ -453,34 +463,36 @@ class GFF3(Annotation):
                 # Skip empty lines
                 if not line.strip():  # pragma: no cover
                     continue
+
+                # a line is read and split on tabulations
                 split = line.rstrip().split("\t")
-                L = len(split)
 
                 chrom_name = split[0]
                 source = split[1]
                 feature = split[2]
                 gene_start = int(split[3])
                 gene_stop = int(split[4])
-                cds_start = gene_start
+                cds_start = gene_start  # for prokaryotes, for now cds=gene
                 cds_stop = gene_stop
-                a = split[5]
+                a = split[5]  # not used apparently 
                 strand = split[6]
-                b = split[7]
-                attributes = split[8]
+                b = split[7]  # not used apparently
+                attributes = split[8] # may be required for eukaryotes
 
-                score = 0
-                unknown = 0
+                score = 0  # in examples for rseqc, the score is always zero
+                unknown = 0 # a field not documented in rseqc
                 block_count = 1
                 block_sizes = f"{cds_stop-cds_start},"  # fixme +1 ?
                 block_starts = "0,"   # commas are important at the end. no spaces
-                # according to some code in rseqc (bed.py), the expected bed
-                # format is
+                # according to rseqc (bed.py) code , the expected bed format is
                 # chrom, chrom_start, chrom_end, gene name, score, strand, cdsStart, cdsEnd,
-                # blockcunt, blocksizes, blockstarts where blocksizes and blocks
-                # starts are comma separated list
-
+                # blockcount, blocksizes, blockstarts where blocksizes and blocks
+                # starts are comma separated list. Here is a line example on
+                # human:
                 # chr1	1676716 1678658 NM_001145277 0 +    1676725 1678549 0 4	182,101,105, 0,2960,7198
 
+                # for now only the feature 'gene' is implemented. We can
+                # generalize this later on.
                 if feature == "gene":
                     gene_name = None
                     for item in attributes.split(";"):
