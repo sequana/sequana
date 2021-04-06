@@ -47,7 +47,7 @@ class Salmon():
         # trs2genes is a dict with one transcript as key and one gene values
         # genes2trs is a dict with one gene sas key and a list of transcripts
 
-    def get_features_counts(self, feature=None, attribute=None):
+    def get_feature_counts(self, feature=None, attribute=None):
 
         if self.df.Name.iloc[0].startswith("transcript:"):
             logger.info("salmon results start with transcript: tag. Eukaryotes mode")
@@ -236,12 +236,12 @@ star:
                 results += f"\n{name}\t{seqid}\t{starts}\t{stops}\t{strands}\t{length}\t{NumReads}"
         return results
 
-    def save_feature_counts(self, filename, gff, feature="gene", attribute="ID"):
+    def save_feature_counts(self, filename, feature="gene", attribute="ID"):
         from sequana import version
-        data = self.get_feature_counts(gff, feature=feature, attribute=attribute)
+        data = self.get_feature_counts(feature=feature, attribute=attribute)
         with open(filename, "w") as fout:
             fout.write(f"# Program:sequana.salmon v{version}; sequana " +
-                       f"salmon -i {self.filename} -o {filename} -g {gff}")
+                       f"salmon -i {self.filename} -o {filename} -g {self.gff.filename}\n")
             fout.write(data)
 
 
