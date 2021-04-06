@@ -37,37 +37,60 @@ class GFF3(Annotation):
     ::
 
         g = GFF3(filename)
-        df = g.get_df()
+        # first call is slow
+        g.df
+        # print info about the different feature types
+        g.features
         # prints info about duplicated attributes:
         g.get_duplicated_attributes_per_type(self)
 
+    On eukaryotes, the reading and processing of the GFF may take a while. 
+    On prokaryotes, it should be pretty fast (a few seconds).
+    To speed up the eukaryotes case, we skip the processing biological_regions
+    (50% of the data in mouse).
+
     """
 
-    def __init__(self, filename):
-        super(GFF3, self).__init__(filename)
+    def __init__(self, filename, skip_types=['biological_region']):
+        self.filename = filename
+        assert os.path.exists(filename)
+        self._df = None
+        self._features = set()
+        self._attributes = set()
+        self.skip_types = skip_types
 
-    def get_types(self):
-        """Extract unique GFF types
+    def _get_features(self):
+        """Extract unique GFF feature types
 
         This is equivalent to awk '{print $3}' | sort | uniq to extract unique GFF
         types. No sanity check, this is suppose to be fast.
 
         Less than a few seconds for mammals.
         """
-        types = set()
-        with open(self.filename, "r") as reader:
-            for line in reader:
-                # Skip metadata and comments
-                if line.startswith("#"):
-                    continue
-                # Skip empty lines
-                if not line.strip():  # pragma: no cover
-                    continue
-                split = line.rstrip().split("\t")
-                L = len(split)
-                if L == 9:
-                    types.add(split[2])
-        return sorted(types)
+        # This is used by the rnaseq pipeline and should be kept fast
+        count = 0
+        if self._features:
+            features = self._features
+        else:
+            features = set()
+            with open(self.filename, "r") as reader:
+                for line in reader:
+                    # Skip metadata and comments
+                    if line.startswith("#"):
+                        continue
+                    # Skip empty lines
+                    if not line.strip():  # pragma: no cover
+                        continue
+                    split = line.rstrip().split("\t")
+                    L = len(split)
+                    if L == 9:
+                        features.add(split[2])
+                    count += 1
+                # FIXME may be overwritten by get_df
+                self._features = features
+        print(count)
+        return sorted(features)
+    features = property(_get_features)
 
     def get_attributes(self, feature=None, sep=";"):
         """Return list of possible attributes
@@ -76,40 +99,101 @@ class GFF3(Annotation):
         to keep only entries for that feature.
 
         """
-        types = set()
+        # This is used by the rnaseq pipeline and should be kept fast
+        if self._attributes:
+            return self._attributes
+
+        attributes = set()
         with open(self.filename, "r") as reader:
             for line in reader:
-                # Skip metadata and comments
-                if line.startswith("#"):
-                    continue
-                # Skip empty lines
-                if not line.strip():
-                    continue
-                split = line.rstrip().split("\t")
-                L = len(split)
-                if L == 9:
-                    if feature and split[2] != feature:
-                        continue
-                    for item in split[8].split(sep):
-                        # print("item '{}'".format(item))
-                        if (
-                            len(item.strip()) == 0
-                        ):  # empty final string #pragma: no cover
-                            continue
 
-                        # Here, some GFF use = some others use spaces... very
-                        # annoying.
-                        item = item.strip()
-                        if "=" in item:
-                            item = item.split("=")[0].strip()
-                        else:
-                            item = item.split()[0].strip()
-                        types.add(item)
-        return sorted(types)
+                # Skip metadata and comments and empty lines
+                if line.startswith("#") or not line.strip():
+                    continue
+
+                split = line.rstrip().split("\t")
+                if feature and split[2] != feature:
+                    continue
+
+                for item in split[8].split(sep):
+                    item = item.strip()
+                    if len(item) == 0:  # empty final string #pragma: no cover
+                        continue
+
+                    # Here, some GFF use = some others use spaces... very
+                    # annoying.
+                    if "=" in item:
+                        item = item.split("=")[0].strip()
+                    else:
+                        item = item.split()[0].strip()
+                    attributes.add(item)
+        self._attributes = sorted(attributes)
+        return self._attributes
+    attributes = property(get_attributes)
+
+    """ THis is a multiprocess version but is twice as slow as normal version...
+
+    keep this code for book-keeping for now
+
+    def _process_chunk(self, chunk, queue):
+        results  = []
+        print('processing')
+        for line in chunk:
+            line = line.strip()
+            if line.startswith("#"):
+                continue
+            # Skip empty lines
+            if not line.strip():
+                continue
+            # Format checking
+            split = line.rstrip().split("\t")
+
+            annotation = self._process_main_fields(split[0:8])
+
+            # + 15 seconds
+            annotation["attributes"] = self._process_attributes(split[8])
+            results.append(annotation)
+        queue.put(results)
+
+    def _queue_reader(self, q):
+        return q.get()
+
+    def read_large_gff(self, chunksize=2000000):
+        from itertools import islice
+        S = 0
+
+        import multiprocessing as mp
+        pool = mp.Pool(4)
+        manager = mp.Manager()
+        queue = manager.Queue()
+
+        count = 0
+        with open(self.filename, "r") as reader:
+            while True:
+                chunk = list(islice(reader, chunksize))
+                count += 1
+                print(len(chunk))
+                mp.Process(target=self._process_chunk, args=(chunk, queue)).start()
+                if len(chunk) < chunksize:
+                    break
+        print(1)
+        readers = []
+        for i in range(count):
+            readers.append(pool.apply_async(self._queue_reader, (queue, )))
+        results = []
+        for r in readers:
+            results.extend(r.get())
+        return results
+    """
 
     def read(self):
         """ Read annotations one by one creating a generator """
         count = 0
+
+        self._features = set()
+        # we could use a yield but gff for eukaryotes can be read on a laptop
+        results = []
+
         with open(self.filename, "r") as reader:
             line = None
             for line in reader:
@@ -124,6 +208,9 @@ class GFF3(Annotation):
                 # Format checking
                 split = line.rstrip().split("\t")
 
+                #if split[2].strip() in self.skip_types:
+                #    continue
+
                 L = len(split)
                 if L != 9 and L != 0:  # pragma: no cover
                     msg = "Incorrect format on line ({}). Expected 9 items, found {}. Skipped"
@@ -131,30 +218,43 @@ class GFF3(Annotation):
                     print(line.strip())
                     count += 1
                     continue
+                # 9 seconds without annotation
+                # + 3 seconds for process_main
 
+                self._features.add(split[2])
                 annotation = self._process_main_fields(split[0:8])
+
+                # + 15 seconds
                 annotation["attributes"] = self._process_attributes(split[8])
-
                 count += 1
-                yield annotation
 
-    def get_df(self):
-        # FIXME: what do we do if no ID found ? skip or fill with NA ?
-        data = list(self.read())
+                results.append(annotation)
+        return results
+
+    def _get_df(self):
+        if self._df is not None:
+            return self._df
+
+        logger.info("Processing GFF file. 1. Reading the input file. Please be patient")
+        # ~ 30 seconds on mouse
+        data = self.read()
+
+        # ~ 6 seconds on mouse
+        logger.info("Processing GFF file. 2. Transforming into dataframe")
         import pandas as pd
-
         df = pd.DataFrame(data)
 
         def get_attr(x, name):
             if name in x:
-                # some GFF adds " around names
+                # some GFF adds " around names which is annoying
                 return x[name].replace("'", "").replace('"', "")
             else:
                 return None
 
+        logger.info("Processing GFF file. 3. Processing attributes")
         try:
             # 10 seconds on mm10
-            attributes = self.get_attributes()
+            attributes = self.attributes
             for attribute in attributes:
                 df[attribute] = [get_attr(x, attribute) for x in df["attributes"]]
         except Exception as err:  # pragma: no cover
@@ -162,26 +262,54 @@ class GFF3(Annotation):
             df["ID"] = [get_attr(x, "ID") for x in df["attributes"]]
             df["description"] = [get_attr(x, "description") for x in df["attributes"]]
 
-        return df
+        self._df = df
+        return self._df
+    df = property(_get_df)
 
     def get_duplicated_attributes_per_type(self):
-        df = self.get_df()
-        types = self.get_types()
-        attributes = self.get_attributes()
 
-        for typ in types:
-            print("{}: {} entries".format(typ, len(df.query("type==@typ"))))
-            for attr in attributes:
-                try:
-                    dups = df.query("type==@typ")[attr].dropna().duplicated().sum()
-                    if dups > 0:
-                        print("  - {}:{} duplicates".format(attr, dups))
-                except:
-                    pass
+        results = {}
+        for typ in self.features:
+            results[typ] = {}
+            print("{}: {} entries".format(typ, len(self.df.query("type==@typ"))))
+            for attr in sorted(self.attributes):
+
+                dups = self.df.query("type==@typ")[attr].dropna().duplicated().sum()
+                if dups > 0:
+                    print("  - {}:{} duplicates".format(attr, dups))
+                else:
+                    print("  - {}:No duplicates".format(attr))
+                results[typ][attr] = dups
+        import pandas as pd
+        df = pd.DataFrame(results)
+        return df
+
+    def transcript_to_gene_mapping(self, feature="all", attribute="transcript_id"):
+        """
+
+        :param feature: not used yet
+        :param attribute: the attribute to be usde. should be transcript_id for
+            salmon compatability but could use soething different.
+        """
+        # entries may have transcripts set to None
+        transcripts = [x for x in self.df[attribute] if x]
+
+        # retrieve only the data with transcript id defined
+        transcripts_df = self.df.set_index(attribute)
+        transcripts_df = transcripts_df.loc[transcripts]
+        transcripts_df = transcripts_df.reset_index()
+
+        results = {}
+        from collections import defaultdict
+        results2 = defaultdict(list)
+        for _id, data in transcripts_df[['ID', 'Parent']].iterrows():
+            results[data.values[0]] = data.values[1]
+            results2[data.values[1]].append(data.values[0])
+
+        return results, results2 
 
     def save_annotation_to_csv(self, filename="annotations.csv"):
-        df = self.get_df()
-        df.to_csv(filename, index=False)
+        self.df.to_csv(filename, index=False)
 
     def save_gff_filtered(
         self, filename="filtered.gff", features=["gene"], replace_seqid=None
@@ -198,8 +326,7 @@ class GFF3(Annotation):
             from collections import defaultdict
 
             counter = defaultdict(int)
-            df = self.get_df()
-            for x, y in df.iterrows():
+            for x, y in self.df.iterrows():
                 if y["type"] in features:
                     if replace_seqid:
                         y["seqid"] = y["attributes"][replace_seqid]
@@ -224,14 +351,14 @@ class GFF3(Annotation):
         annotation = {}
 
         # Unique id of the sequence
-        annotation["seqid"] = self.decode_small(fields[0])
+        annotation["seqid"] = fields[0]
 
         # Optional source
         if fields[1] != ".":
-            annotation["source"] = self.decode_small(fields[1])
+            annotation["source"] = fields[1]
 
         # Annotation type
-        annotation["type"] = self.decode_small(fields[2])
+        annotation["type"] = fields[2]
 
         # Start and stop
         annotation["start"] = int(fields[3])
@@ -255,57 +382,32 @@ class GFF3(Annotation):
     def _process_attributes(self, text):
         attributes = {}
 
+        # double the separators to keep track of them
+        text = text.replace("=", "===").replace(";", ";;;")
+
+        # ugly but fast replacement 
+        text = text.replace("%09", "\t").replace("%0A", "\n").replace("%0D", "\r").replace("%25", "%")
+        text = text.replace("%3B", ";").replace("%3D", "=").replace("%26", "&").replace("%2C", ",")
+
         # split into mutliple attributes
-        split = text.split(";")
+        split = text.split(";;;")
         for attr in split:
-            # make sure there is trailing spaces
+            # make sure there is no trailing spaces
             attr = attr.strip()
+
             # find the separator. Sometimes it is spaces, sometimes a = sign
-            idx = attr.find("=")
+            idx = attr.find("===")
             if idx == -1:
                 idx = attr.find(" ")
 
             # parse tags and associated values
-            value = self.decode_complete(attr[idx + 1 :])
+            #value = self.decode_complete(attr[idx + 1 :])
+            value = attr[idx + 3 :]
             if len(value) == 1:
                 value = value[0]
-            attributes[self.decode_complete(attr[:idx])] = value
-
+            #attributes[self.decode_complete(attr[:idx])] = value
+            attributes[attr[:idx]] = value
         return attributes
-
-    @staticmethod
-    def decode_small(text):
-
-        # ugly but tales only 500ns
-        return (
-            text.replace("%09", "\t")
-            .replace("%0A", "\n")
-            .replace("%0D", "\r")
-            .replace("%25", "%")
-        )
-
-        # 1.5us using 1 calls and a dictionary
-        # replacements = {"%09":"\t", "%0A":"\n", "%0D":"\r", "%25":"%"}
-        # def func(match):
-        #    return replacements.get(match.group(), "")
-        # return re.sub("%09|%0A|%0D|%25", func, text)
-
-        # 6us using 4 calls
-        # text = re.sub("%09", "\t", text)
-        # text = re.sub("%0A", "\n", text)
-        # text = re.sub("%0D", "\r", text)
-        # text = re.sub("%25", "%", text)
-        # return text
-
-    @staticmethod
-    def decode_complete(text):
-        text = GFF3.decode_small(text)
-        return (
-            text.replace("%3B", ";")
-            .replace("%3D", "=")
-            .replace("%26", "&")
-            .replace("%2C", ",")
-        )
 
     def create_files_for_rnadiff(
         self,
