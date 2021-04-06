@@ -46,6 +46,7 @@ rule salmon_index:
         __salmon_index__log
     shell:
         """
+        # with gffread by default only transcripts are processed
         gffread {input.gff} -g {input.fasta} -w {params.wkdir}/salmon_transcript.fa > {log} 2>&1
         salmon index -t {params.wkdir}/salmon_transcript.fa  -i {params.wkdir} >> {log}  2>&1
         touch {output.done}
