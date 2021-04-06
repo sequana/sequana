@@ -50,7 +50,7 @@ rule fastp:
             cmd = f"fastp -i {input.fastq[0]} -o {output.fastq[0]} "
             cmd += f"     -I {input.fastq[1]} -O {output.fastq[1]} "
 
-        cmd += f" -j {output.json} -h {output.html} -w {threads} 1>{log}"
+        cmd += f" -j {output.json} -h {output.html} -w {threads} 1>{log} 2>{log}"
         print(cmd)
         shell(cmd)
 
