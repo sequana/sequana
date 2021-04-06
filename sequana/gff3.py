@@ -88,7 +88,6 @@ class GFF3(Annotation):
                     count += 1
                 # FIXME may be overwritten by get_df
                 self._features = features
-        print(count)
         return sorted(features)
     features = property(_get_features)
 
