@@ -373,6 +373,10 @@ class RNADiffCompare(Compare):
             pylab.plot( [x1,x2], [y1,y2], ls="-", color='r')
 
 
+        pylab.axhline(1.33, alpha=0.5, ls="--", color="r")
+
+        pylab.xlabel("log2 fold Change")
+        pylab.ylabel("log10 adjusted p-values")
         pylab.legend()
         pylab.grid(True)
 
