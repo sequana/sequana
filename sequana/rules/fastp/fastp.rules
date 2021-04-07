@@ -1,0 +1,57 @@
+# -*- coding: utf-8 -*-
+#
+#  This file is part of Sequana software
+#
+#  Copyright (c) 2016-2021 - Sequana Dev Team (https://sequana.readthedocs.io)
+#
+#  File author(s):
+#      Thomas Cokelaer <thomas.cokelaer@pasteur.fr>
+#
+#  Distributed under the terms of the 3-clause BSD license.
+#  The full license is in the LICENSE file, distributed with this software.
+#
+#  Website:       https://github.com/sequana/sequana
+#  Documentation: http://sequana.readthedocs.io
+#  Contributors:  https://github.com/sequana/sequana/graphs/contributors
+##############################################################################
+
+
+
+
+rule fastp:
+    """Calls fastp on input data sets (paired or not)
+
+    Required input:
+        - __fastp__input_fastq:
+
+    Required output:
+        - __fastp__output_R1
+        - __fastp__output_R2
+        - __fastp__output_json
+        - __fastp__output_html
+
+    """
+    # we could have a dynamic search or based on config file
+    input:
+        fastq = __fastp__input_fastq
+    output:
+        fastq=__fastp__output,
+        json=__fastp__output_json,
+        html=__fastp__output_html
+    params:
+        options= config['fastp']['options']
+    threads: config['fastp']['threads'] if 'threads' in config['fastp'] else 4
+    log:
+        fastp = __fastp__log
+    run:
+        if len(input.fastq) == 1:
+            cmd = f"fastp -i {input.fastq[0]} -o {output.fastq[0]} "
+        else:
+            cmd = f"fastp -i {input.fastq[0]} -o {output.fastq[0]} "
+            cmd += f"     -I {input.fastq[1]} -O {output.fastq[1]} "
+
+        cmd += f" -j {output.json} -h {output.html} -w {threads} 1>{log} 2>{log}"
+        print(cmd)
+        shell(cmd)
+
+

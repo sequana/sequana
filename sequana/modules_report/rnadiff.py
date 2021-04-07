@@ -360,16 +360,20 @@ value as a function of the log2 ratio of diﬀerential expression. </p>"""
 
         df = df.reset_index()
 
+        fold_change = 2**df['log2FoldChange']
         log10padj = -log10(df['padj'])
+        df.insert(df.columns.get_loc('log2FoldChange')+1, 'FoldChange', fold_change)
         df.insert(df.columns.get_loc('padj')+1, 'log10_padj', log10padj)
 
         try:
             del df['dispGeneEst']
-            del df['dispFit']
-            del df['dispMap']
-            del df['dispersion']
+            #del df['dispFit']
+            #del df['dispMap']
         except:pass
 
+        for x in ['lfcSE', 'stat', 'dispersion']:
+            try:del df[x]
+            except:pass
         # set options
         options = {'scrollX': 'true',
             'pageLength': 10,

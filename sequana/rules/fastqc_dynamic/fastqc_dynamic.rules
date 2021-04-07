@@ -63,7 +63,7 @@ rule fastqc_%(name)s:
     params:
         wkdir = __fastqc_%(name)s__wkdir,
         kargs = config['fastqc']['options']
-    threads: config['fastqc']['threads'] if 'thread' in config['fastqc'] else 4
+    threads: config['fastqc']['threads'] if 'threads' in config['fastqc'] else 4
     log:
         fastqc = __fastqc_%(name)s__log
     run:

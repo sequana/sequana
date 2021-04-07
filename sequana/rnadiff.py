@@ -43,12 +43,22 @@ import glob
 __all__ = ["RNADiffAnalysis", "RNADiffResults", "RNADiffTable", "RNADesign"]
 
 
+def strip(text):
+    try:
+        return text.strip()
+    except AttributeError:
+        return text
+
 class RNADesign:
     """Simple RNA design handler"""
 
-    def __init__(self, filename, reference=None):
+    def __init__(self, filename, sep="\s*,\s*", reference=None):
         self.filename = filename
-        self.df = pd.read_csv(filename, sep=",")
+        # \s to strip the white spaces
+        self.df = pd.read_csv(filename, sep=sep, engine="python", 
+                comment="#",
+                dtype={"label": str})
+
         self.reference = reference
 
     def _get_conditions(self):
@@ -127,7 +137,7 @@ class RNADiffAnalysis:
         threads=4,
         outdir="rnadiff",
         sep_counts=",",
-        sep_design=",",
+        sep_design="\s*,\s*",
     ):
 
         self.outdir = Path(outdir)
@@ -183,16 +193,10 @@ Design overview:\n\
         counts = pd.read_csv(
             self.usr_counts, sep=sep_counts, index_col="Geneid", comment="#"
         ).sort_index(axis=1)
-        design = (
-            pd.read_csv(
-                self.usr_design,
-                sep=sep_design,
-                comment="#",
-                dtype={"label": str},
-            )
-            .set_index("label")
-            .sort_index()
-        )
+
+
+        design = RNADesign(self.usr_design, sep=sep_design)
+        design = design.df.set_index("label").sort_index()
 
         if list(counts.columns) != list(design.index):
             logger.error(
@@ -709,7 +713,7 @@ class RNADiffResults:
         """Get a properly formatted dataframe from the gff."""
 
         gff = GFF3(gff_filename)
-        df = gff.get_df()
+        df = gff.df
 
         if self.annot_cols is None:
             lol = [
@@ -975,7 +979,9 @@ class RNADiffResults:
         """Import design from a table file and add color groups following the
         groups defined in the column 'condition' of the table file.
         """
-        df = pd.read_csv(design_file, sep=",", dtype={"label": str}).set_index("label")
+
+        df = RNADesign(design_file).df.set_index("label")
+
         col_map = dict(zip(df.loc[:, condition].unique(), palette))
         df["group_color"] = df.loc[:, condition].map(col_map)
         return df
