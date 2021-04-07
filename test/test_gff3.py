@@ -5,13 +5,13 @@ from easydev import TempFile
 
 def test_gff():
     gff = GFF3(sequana_data('test_small.gff3'))
-    df = gff.get_df()
-    assert "telomere" in gff.get_types()
+    df = gff.df
+    assert "telomere" in gff.features
 
 
 def test_gff_rnadiff():
     gff = GFF3(sequana_data('saccer3_truncated.gff'))
-    df = gff.get_df()
+    df = gff.df
     gff.get_duplicated_attributes_per_type()
     with TempFile() as fout:
         gff.create_files_for_rnadiff(fout.name)
