@@ -23,7 +23,6 @@ class Reader():
         self.df = pd.read_csv(self.filename, sep="\t")
 
 
-
 class Bowtie1Reader(Reader):
     def __init__(self, filename):
         super().__init__(filename)
@@ -33,9 +32,13 @@ class Bowtie1Reader(Reader):
         import plotly.graph_objects as go
 
         fig = go.Figure()
+
+        x = self.df['not_aligned_percentage']
+        compx = 100 - x
+    
         fig.add_trace(go.Bar(
             y =self.df['Sample'],
-            x=self.df['reads_aligned_percentage'],
+            x=compx,
             name='Aligned',
             marker_color='#389f1f', orientation="h"
         ))
