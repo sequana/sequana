@@ -16,7 +16,9 @@
 #
 ##############################################################################
 """feature counts related tools"""
+import os
 import re
+import glob
 from pathlib import Path
 
 from sequana.lazy import pandas as pd
@@ -27,7 +29,7 @@ logger = colorlog.getLogger(__name__)
 
 
 __all__ = ['get_most_probable_strand_consensus', 'get_most_probable_strand',
-    'MultiFeatureCount', 'FeatureCount']
+    'MultiFeatureCount', 'FeatureCount', 'FeatureCountMerger']
 
 
 def get_most_probable_strand(sample_folder, tolerance,
@@ -175,6 +177,33 @@ class MultiFeatureCount():
         pylab.tight_layout()
         if savefig: #pragma: no cover
             pylab.savefig(output_filename)
+
+
+class FeatureCountMerger():
+
+    def __init__(self, pattern="*feature.out", fof=[]):
+        if len(fof):
+            self.filenames = fof
+        else:
+            self.filenames = glob.glob(pattern)
+
+        if len(self.filenames) == 0:
+            logger.critical("No valid files provided")
+            sys.exit(1)
+        for x in self.filenames:
+            if os.path.exists(x) is False:
+                logger.critical(f"file x not found")
+                sys.exit(1)
+
+
+        self.df = pd.read_csv(self.filenames[0], sep="\t", skiprows=1)
+        for filename in self.filenames[1:]:
+            other_df = pd.read_csv(filename, sep="\t", skiprows=1)
+            self.df = pd.merge(self.df, other_df)
+
+    def to_tsv(self, output_filename="all_features.out"):
+        self.df.to_csv(output_filename,sep="\t", index=False)
+    
 
 
 class FeatureCount:
