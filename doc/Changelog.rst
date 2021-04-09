@@ -5,7 +5,7 @@ Changelog
     :depth: 2
 
 
-0.10.1
+0.11
 ------
 
 * new tools and functionalities for the rnaseq pipeline
