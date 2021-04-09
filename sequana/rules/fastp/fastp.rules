@@ -4,8 +4,6 @@
 #
 #  Copyright (c) 2016-2021 - Sequana Dev Team (https://sequana.readthedocs.io)
 #
-#  File author(s):
-#      Thomas Cokelaer <thomas.cokelaer@pasteur.fr>
 #
 #  Distributed under the terms of the 3-clause BSD license.
 #  The full license is in the LICENSE file, distributed with this software.
@@ -16,6 +14,7 @@
 ##############################################################################
 
 
+binaries = ["fastp"]
 
 
 rule fastp:
@@ -35,11 +34,11 @@ rule fastp:
     input:
         fastq = __fastp__input_fastq
     output:
-        fastq=__fastp__output,
-        json=__fastp__output_json,
-        html=__fastp__output_html
+        fastq = __fastp__output,
+        json = __fastp__output_json,
+        html = __fastp__output_html
     params:
-        options= config['fastp']['options']
+        config = config['fastp']
     threads: config['fastp']['threads'] if 'threads' in config['fastp'] else 4
     log:
         fastp = __fastp__log
@@ -50,8 +49,32 @@ rule fastp:
             cmd = f"fastp -i {input.fastq[0]} -o {output.fastq[0]} "
             cmd += f"     -I {input.fastq[1]} -O {output.fastq[1]} "
 
-        cmd += f" -j {output.json} -h {output.html} -w {threads} 1>{log} 2>{log}"
-        print(cmd)
+        cmd += f" -j {output.json} -h {output.html} -w {threads} "
+
+        # minimum length required
+        cmd += f" -l {params.config['minimum_length']} "
+
+        # adapters
+        if len(params.config['fwd'].strip()):
+            cmd += f" --adapter_sequence {params.config['fwd']} "
+        if len(params.config['rev'].strip()):
+            cmd += f" --adapter_sequence_r2 {params.config['rev']} "
+
+        # quality filtering
+        cmd += f" --qualified_quality_phred  {params.config['quality']} "
+
+        if params.config["disable_adapter_trimming"]:
+            cmd += " --disable_adapter_trimming "
+
+        if params.config["disable_quality_filtering"]:
+            cmd += " --disable_quality_filtering "
+
+
+        # all other users options
+        cmd += f"  {params.config['options']} "
+
+
+        cmd += " 1>{log} 2>{log} "
         shell(cmd)
 
 
