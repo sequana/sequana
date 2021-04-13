@@ -39,7 +39,7 @@ import matplotlib.sphinxext
 release = version
 author = "Thomas Cokelaer"
 title = "Sequana"
-copyright = author + ", 2016-2017"
+copyright = author + ", 2016-2021"
 project = 'Sequana'
 
 import easydev
