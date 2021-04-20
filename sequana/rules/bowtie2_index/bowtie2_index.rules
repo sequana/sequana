@@ -14,7 +14,7 @@
 
 binaries = ['bowtie2-build', 'samtools']
 
-rule bowtie2_indexs:
+rule bowtie2_index:
     """
     Genome indexation for Bowtie2 mapper
 
@@ -31,7 +31,7 @@ rule bowtie2_indexs:
     input:
         fasta =  __bowtie2_index__fasta
     output:
-        __bowtie2_index___output_done
+        __bowtie2_index__output_done
     params:
         prefix = __bowtie2_index__output_prefix
     log:
