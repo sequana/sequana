@@ -4,6 +4,10 @@ Changelog
 .. contents::
     :depth: 2
 
+0.11.1
+------
+
+* hotfix on rule bowtie2_index
 
 0.11
 ------
