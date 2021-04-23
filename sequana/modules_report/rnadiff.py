@@ -11,8 +11,7 @@
 #  documentation: http://sequana.readthedocs.io
 #
 ##############################################################################
-"""Module to write variant calling report"""
-import ast
+"""Module to write differential regulation analysis report"""
 
 from sequana.lazy import pandas as pd
 
@@ -54,7 +53,7 @@ class RNAdiffModule(SequanaBaseModule):
 tool aim at fitting one linear model per feature. Given the replicates in
 condition one and the replicates in condition two, a p-value is computed to
 indicate whether the feature (gene) is differentially expressed. Then, all
-p-values are corrected for multiple testing. </p>
+p-values are corrected for multiple testing.</p>
 
 <p>It may happen that one sample seems unrelated to the rest. For every feature
 and every model, Cook's distance is computed. It reflects how the sample matches
@@ -120,11 +119,11 @@ for that feature.</p>
             'name': "Summary",
             'anchor': 'filters_option',
             'content':
-                f"""<p>Here below is a summary of thfinal Differententially Gene
+                f"""<p>Here below is a summary of the Differential Gene
 Expression (DGE) analysis. You can find two entries per comparison. The first
 one has no filter except for an adjusted p-value of 0.05. The second shows the
 expressed genes with a filter of the log2 fold change of 1 (factor 2 in a normal
-scale). Clicking on any of the link will lead you to section of the comparison. 
+scale). Clicking on any of the link will lead you to the section of the comparison. 
 {js_all} {html} </p>"""})
 
     def add_dispersion(self):
@@ -167,12 +166,12 @@ href="https://en.wikipedia.org/wiki/Ward%27s_method"> Ward method </a>. The data
             variance = self.rnadiff.plot_pca(2)
             pylab.savefig(filename)
             pylab.close()
-        html_pca = """<p>The expriment variability is also represented by a
+        html_pca = """<p>The experiment variability is also represented by a
 principal component analysis as shown here below. The two main components are
-represented. We expect the ﬁrst principal component (PC1) o
+represented. We expect the ﬁrst principal component (PC1) to
 separate samples from the diﬀerent biological conditions, meaning that the biological variability is
 the main source of variance in the data. Hereafter is also a 3D representation
-of the PCA where the first 3 components are shwon.
+of the PCA where the first 3 components are shown.
 
 </p>{}<hr>""".format(
             self.create_embedded_png(pca, "filename", style=style))
@@ -234,10 +233,10 @@ considered.</p> {}<hr>""".format(
             self.rnadiff.plot_feature_most_present()
             pylab.savefig(filename)
             pylab.close()
-        html_feature = """<p>In the following figure, we show for each sample the feature that
+        html_feature = """<p>The following figure shows for each sample the feature that
 capture the highest proportion of the reads considered. This should not impact
-the DESEq2 normalization. We expect consistence across samples within a single
-conditions</p> {}<hr>""".format(
+the DESeq2 normalization. We expect consistence across samples within a single
+condition</p> {}<hr>""".format(
             self.create_embedded_png(best_count, "filename", style=style))
 
 
@@ -278,13 +277,14 @@ conditions</p> {}<hr>""".format(
 the systematic technical biases due to different counts across samples. The 
 normalization is performed with DESeq2. It relies on the hypothess that most
 features are not differentially expressed. It computes a scaling factor for each
-sample. Normalizes read counts are obtained by dividing raw read counts by the
+sample. Normalized read counts are obtained by dividing raw read counts by the
 scaling factor associated with the sample they belong to.
 
-Boxplots are often used as a qualitative measure of the quality of the normalization process, asthey show how distributions are globally aﬀected during this process. We expect normalization to
+Boxplots are often used as a qualitative measure of the quality of the normalization process,
+as they show how distributions are globally aﬀected during this process. We expect normalization to
 stabilize distributions across samples.
-In the left figure we show the raw counts while the right figure shows the
-normalised counts. 
+The left figure shows the raw counts while the right figure shows the
+normalised counts.
 </p>"""
         img1 = self.create_embedded_png(rawcount, "filename", style=style)
         img2 = self.create_embedded_png(normedcount, "filename", style=style)
@@ -300,7 +300,7 @@ normalised counts.
         style = "width:45%"
 
         description = """<p>
-In the dispersion estimation and model fitting is done, statistical testing is
+When the dispersion estimation and model fitting is done, statistical testing is
 performed. The distribution of raw p-values computed by the statistical test 
 is expected to be a mixture of a uniform distribution on [0, 1] and a peak
 around 0 corresponding to the diﬀerentially expressed features. This may not
@@ -411,7 +411,7 @@ between the condition versus the reference condition</li>
 <li> padj: adjusted pvalue. Used for cutoff at 0.05 </li>
 <li> betaConv: convergence of the coefficients of the model </li>
 <li> maxCooks: maximum Cook's distance of the feature </li>
-<li> outlier: indicate if the feature is an outlier according to Cook's distance
+<li> outlier: indicates if the feature is an outlier according to Cook's distance
 </li>
 </ul>
 </p>
