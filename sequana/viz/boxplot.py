@@ -41,9 +41,6 @@ class Boxplot(object):
         xmax = self.xmax + 1
         if ax:
             pylab.sca(ax)
-        pylab.fill_between([0,xmax], [0,0], [20,20], color='red', alpha=0.3)
-        pylab.fill_between([0,xmax], [20,20], [30,30], color='orange', alpha=0.3)
-        pylab.fill_between([0,xmax], [30,30], [41,41], color='green', alpha=0.3)
 
         if self.X is None:
             X = range(1, self.xmax + 1)
@@ -54,7 +51,18 @@ class Boxplot(object):
             color=color, interpolate=False)
 
         pylab.plot(X, self.df.mean(), color=color_line, lw=lw)
-        pylab.ylim([0, 41])
+
+        if self.df.mean().mean()<40: #illumina
+            pylab.fill_between([0,xmax], [0,0], [20,20], color='red', alpha=0.3)
+            pylab.fill_between([0,xmax], [20,20], [30,30], color='orange', alpha=0.3)
+            pylab.fill_between([0,xmax], [30,30], [41,41], color='green', alpha=0.3)
+            pylab.ylim([0, 41])
+        else:
+            pylab.fill_between([0,xmax], [0,0], [20,20], color='red', alpha=0.3)
+            pylab.fill_between([0,xmax], [20,20], [30,30], color='orange', alpha=0.3)
+            pylab.fill_between([0,xmax], [30,30], [101,101], color='green', alpha=0.3)
+            pylab.ylim([0, 101])
+
         pylab.xlim([0, self.xmax+1])
         pylab.title("Quality scores across all bases")
         pylab.xlabel("Position in read (bp)")
