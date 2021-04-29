@@ -246,8 +246,7 @@ class SummaryModule2(SummaryBase):
     """ Write summary HTML report of an analysis. It contains all information
     about the pipeline used, input/output files and version of software.
     """
-    def __init__(self, data, intro="", output_filename="summary.html", title="",
-        workflow=True):
+    def __init__(self, data, intro="", output_filename="summary.html", title="", workflow=True, Nsamples=1):
         """
         """
         super(SummaryModule2, self).__init__(required_dir=("js", "css"))
@@ -263,6 +262,20 @@ class SummaryModule2(SummaryBase):
         self.create_report_content(workflow=workflow)
         self.create_html(output_filename)
 
+    def running_stats(self):
+
+        filename = ".sequana/snakemake_stats.png"
+        if os.path.exists(filename):
+            
+            png = self.png_to_embedded_png(filename)
+            l, c = self.create_hide_section('Stats', 'collapse/expand', png, True)
+            self.sections.append({
+                'name': "Running Stats {0}".format(
+                    self.add_float_right('<small>{0}</small>'.format(l))
+                ),
+                'anchor': 'stats',
+                'content': c
+            })
     def create_report_content(self, workflow=True):
         """ Create the report content.
         """
