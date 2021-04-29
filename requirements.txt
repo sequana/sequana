@@ -5,7 +5,6 @@ bx-python
 click
 colorlog>=3.1.0
 colormap
-cutadapt
 cookiecutter
 cython
 docutils
