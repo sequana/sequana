@@ -878,6 +878,7 @@ to analyse non-fastQ files (e.g. BAM)""")
                 line = fin.readline()
                 if line.startswith("#version:"):
                     version = line.split("#version:")[1].strip()
+                    version = version.replace(">=", "").replace(">", "")
                     from distutils.version import StrictVersion
                     if StrictVersion(version) <  StrictVersion(self._get_package_version()):
                         msg = (
