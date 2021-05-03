@@ -219,7 +219,7 @@ class FRiP(PandasReader):
     def __init__(self, filename, design=None):
         super(FRiP, self).__init__(filename, sep=",")
         if design:
-            self.design = ChIPExpDesign("design.txt")
+            self.design = ChIPExpDesign(design)
         else:
             self.design = None
 

@@ -1489,6 +1489,7 @@ class MultiKrakenResults():
         data = {}
         for sample, filename in zip(self.sample_names, self.filenames):
             df = pd.read_csv(filename)
+            count = df['count'].sum()
             if "kingdom" not in df.columns:
                 for name in "kingdom,phylum,class,order,family,genus,species,name".split(","):
                     df[name] = "Unclassified"
@@ -1507,14 +1508,13 @@ class MultiKrakenResults():
                 else:
                     df.loc['Unclassified'] = df.loc[' ']
                     df.drop(" ", inplace=True)
+            df['Count'] = count
             data[sample] = df
 
         df = pd.DataFrame(data)
         df = df.fillna(0)
         df = df.sort_index(ascending=False)
-        df = df.sort_index(ascending=False, axis=1)
-
-        #df.sum(axis=1).sort_values(ascending=False).index[0]
+        df = df.sort_index(ascending=True, axis=1)
 
         return df
 
@@ -1578,15 +1578,12 @@ class MultiKrakenResults():
                 pylab.xticks([1], [""])
             pylab.xlim([-0.5, len(df.columns)-0.5])
 
-
         ax.legend(labels, title="kingdom",  bbox_to_anchor=(1,1))
         try:
             pylab.tight_layout()
         except:pass
         if output_filename:
             pylab.savefig(output_filename, dpi=dpi)
-
-
 
 
 class MultiKrakenResults2():
