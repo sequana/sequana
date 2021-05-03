@@ -1515,9 +1515,6 @@ class MultiKrakenResults():
         df = df.fillna(0)
         df = df.sort_index(ascending=False)
         df = df.sort_index(ascending=True, axis=1)
-        # place the 'Count' column first
-        #df = df.loc[['Count'] + [x for x in df.index if x!='Count]']]
-
 
         return df
 
