@@ -500,7 +500,7 @@ class KrakenResults(object):
             elif kingdom == "Archaea":
                 this_cmap = Colormap().cmap_linear("yellow", "yellow", "orange")
             else:
-                this_cmap = c.cmap_linear("light gray", "gray(w3c)", "dark gray")
+                this_cmap = Colormap().cmap_linear("light gray", "gray(w3c)", "dark gray")
 
             kingdom_colors.append(this_cmap(0.8))
             inner_colors.extend(this_cmap(np.linspace(.6,.2, len(y))))
