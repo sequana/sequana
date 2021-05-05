@@ -27,6 +27,9 @@ from sequana.lazy import pylab
 
 from sequana.misc import wget
 from sequana import sequana_config_path
+
+from colormap import Colormap
+
 import colorlog
 logger = colorlog.getLogger(__name__)
 
@@ -224,7 +227,7 @@ class KrakenResults(object):
                     if x[1] == "no rank" and x[0] != 'root':
                         default[ranks[count]] = x[0]
                         count += 1
-                    if count >6:
+                    if count > 6:
                         logger.warning("too many no_rank in taxon{}".format(ids[i]))
                         break
 
@@ -481,7 +484,10 @@ class KrakenResults(object):
             zlabels += list(z1.ratio.index) + [''] * len(z2.ratio)
             Z.extend(z)
 
-            labels.append(kingdom)
+            if kingdom.strip():
+                labels.append("undefined/unknown taxon")
+            else:
+                labels.append(kingdom)
 
             if kingdom == "Eukaryota":
                 this_cmap = plt.cm.Purples
@@ -491,10 +497,10 @@ class KrakenResults(object):
                 this_cmap = plt.cm.Reds
             elif kingdom == "Viruses":
                 this_cmap = plt.cm.Greens
-            elif kingdom == "Archea":
-                this_cmap = plt.cm.Yellows
+            elif kingdom == "Archaea":
+                this_cmap = Colormap().cmap_linear("yellow", "yellow", "orange")
             else:
-                this_cmap = plt.cm.Blues
+                this_cmap = c.cmap_linear("light gray", "gray(w3c)", "dark gray")
 
             kingdom_colors.append(this_cmap(0.8))
             inner_colors.extend(this_cmap(np.linspace(.6,.2, len(y))))
@@ -653,13 +659,39 @@ class KrakenResults(object):
 
         # if paired and kraken2, there are | in length to separate both reads.
         # to simplify, if this is the case, we will just take the first read
-        # length for now. 
+        # length for now.
         df = self.df.copy()
+
         try: # kraken2
             df.length = df.length.apply(lambda x: int(x.split("|")[0]))
         except:
             pass
+
         df[["status", "length"]].groupby('status').boxplot()
+
+        return df
+
+    def histo_classified_vs_read_length(self):
+        """Show distribution of the read length grouped by classified or not"""
+
+        # if paired and kraken2, there are | in length to separate both reads.
+        # to simplify, if this is the case, we will just take the first read
+        # length for now.
+        df = self.df.copy()
+
+        try: # kraken2
+            df.length = df.length.apply(lambda x: int(x.split("|")[0]))
+        except Exception as err:
+            logger.warning(err)
+
+        df = df[["status", "length"]]
+        M = df['length'].max()
+        df.hist(by="status", sharey=True, bins=pylab.linspace(0,M,int(M/5)))
+        axes = pylab.gcf().get_axes()
+        axes[0].set_xlabel("read length")
+        axes[1].set_xlabel("read length")
+        axes[1].grid(True)
+        axes[0].grid(True)
         return df
 
 
@@ -736,11 +768,26 @@ class KrakenPipeline(object):
         # image
         self.kr = KrakenResults(kraken_results, verbose=False)
 
+        # we save the pie chart 
         try:
             self.kr.plot2(kind="pie")
-        except:
+        except Exception as err:
+            logger.warning(err)
             self.kr.plot(kind="pie")
         pylab.savefig(self.output_directory + os.sep + "kraken.png")
+
+        # we save information about the unclassified reads (length)
+        try:
+            self.kr.boxplot_classified_vs_read_length()
+            pylab.savefig(self.output_directory + os.sep + "boxplot_read_length.png")
+        except Exception as err:
+            logger.warning("boxplot read length could not be computed")
+
+        try:
+            self.kr.histo_classified_vs_read_length()
+            pylab.savefig(self.output_directory + os.sep + "hist_read_length.png")
+        except Exception as err:
+            logger.warning("hist read length could not be computed")
 
         prefix = self.output_directory + os.sep
 
@@ -1222,7 +1269,8 @@ class KrakenSequential(object):
         result.to_js("%s%s%s.html" % (self.output_directory, os.sep, output_prefix))
         try:
             result.plot2(kind="pie")
-        except:
+        except Exception as err:
+            logger.warning(err)
             result.plot(kind="pie")
         pylab.savefig(self.output_directory + os.sep + "kraken.png")
         prefix = self.output_directory + os.sep
@@ -1527,6 +1575,9 @@ class MultiKrakenResults():
         """
         df = self.get_df()
 
+        # remove count from the summary graph
+        df.drop('Count', inplace=True)
+
         fig, ax = pylab.subplots(figsize=(9.5,7))
 
         labels = []
@@ -1542,7 +1593,7 @@ class MultiKrakenResults():
             elif kingdom == "Archaea":
                 color="yellow"
             else:
-                color="blue"
+                color="darkblue"
             if kind=="barh":
                 pylab.barh(range(0, len(df.columns)), df.loc[kingdom], height=width,
                         left=df.loc[labels].sum().values, edgecolor=edgecolor,

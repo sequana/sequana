@@ -55,6 +55,7 @@ class KrakenModule(SequanaBaseModule):
         """
         self.sections = list()
         self.add_summary_section()
+        self.add_diagnostics_section()
 
     def _get_stats(self):
         df = pd.read_csv(self.directory + os.sep + "kraken.csv")
@@ -95,6 +96,7 @@ Besides, be aware that closely related species may not be classified precisely.
 """.format(extra, self.directory.split(os.sep, 1)[1], 
             self.png_to_embedded_png(pngimage))
 
+
         url_ncbi = "https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id={}"
         df['links'] = [url_ncbi.format(taxon) for taxon in df['taxon']]
         datatable = DataTable(df, "kraken", index=False)
@@ -122,6 +124,9 @@ Besides, be aware that closely related species may not be classified precisely.
         df['percentage']  = df['percentage'].apply(lambda x: str(round(x,4)))
         #self.jinja['kraken_json'] = df.to_json()"""
 
+
+
+
         return html
 
     def add_summary_section(self):
@@ -131,4 +136,25 @@ Besides, be aware that closely related species may not be classified precisely.
           "anchor": "kraken",
           "content": html
         })
+
+    def add_diagnostics_section(self):
+        html = """<p>Unclassified read may happen either because the databases used
+are not covering the diversity of the sequencing runs, or because reads are of
+poor quality. For instance, they may be too short. Here below are information
+concerning the read length of unclassified reads. Here below C stands for
+classified and U for unclassified reads.</p><div>"""
+        pngimage = self.directory + os.sep + "boxplot_read_length.png"
+        if os.path.exists(pngimage):
+            html += self.png_to_embedded_png(pngimage)
+
+        pngimage = self.directory + os.sep + "hist_read_length.png"
+        if os.path.exists(pngimage):
+            html += self.png_to_embedded_png(pngimage)
+        html += "</div>"
+        self.sections.append({  
+          "name": "Diagnostics",
+          "anchor": "diag",
+          "content": html
+        })
+
 
