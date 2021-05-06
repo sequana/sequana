@@ -484,7 +484,11 @@ class KrakenResults(object):
             zlabels += list(z1.ratio.index) + [''] * len(z2.ratio)
             Z.extend(z)
 
+<<<<<<< HEAD
             if kingdom.strip():
+=======
+            if kingdom.strip() == "":
+>>>>>>> 470c4424adeffc3128e20c4d6fe43b260175ad21
                 labels.append("undefined/unknown taxon")
             else:
                 labels.append(kingdom)
@@ -682,7 +686,11 @@ class KrakenResults(object):
         try: # kraken2
             df.length = df.length.apply(lambda x: int(x.split("|")[0]))
         except Exception as err:
+<<<<<<< HEAD
             logger.warning(err)
+=======
+            print(err)
+>>>>>>> 470c4424adeffc3128e20c4d6fe43b260175ad21
 
         df = df[["status", "length"]]
         M = df['length'].max()
@@ -772,7 +780,11 @@ class KrakenPipeline(object):
         try:
             self.kr.plot2(kind="pie")
         except Exception as err:
+<<<<<<< HEAD
             logger.warning(err)
+=======
+            print(err)
+>>>>>>> 470c4424adeffc3128e20c4d6fe43b260175ad21
             self.kr.plot(kind="pie")
         pylab.savefig(self.output_directory + os.sep + "kraken.png")
 
@@ -1283,7 +1295,11 @@ class KrakenSequential(object):
         try:
             result.plot2(kind="pie")
         except Exception as err:
+<<<<<<< HEAD
             logger.warning(err)
+=======
+            print(err)
+>>>>>>> 470c4424adeffc3128e20c4d6fe43b260175ad21
             result.plot(kind="pie")
         pylab.savefig(self.output_directory + os.sep + "kraken.png")
         prefix = self.output_directory + os.sep
