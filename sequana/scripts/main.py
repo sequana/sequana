@@ -287,6 +287,9 @@ fileother,cond1
 @click.option("--condition", type=str,
     default="condition", help="""The name of the column in design.csv to use as condition 
 for the differential analysis. Default is 'condition'""")
+@click.option("--batch", type=str,
+    default=None, 
+    help="""set the column name (in your design) corresponding to the batch effect """)
 @click.option("--feature-name",
     default="gene",
     help="""The feature name compatible with your GFF. Default is 'gene'""")
@@ -382,11 +385,12 @@ def rnadiff(**kwargs):
         fc.rnadiff_df.to_csv(f"{outdir}/light_counts.csv")
 
         logger.info(f"Differential analysis to be saved into ./{outdir}")
-        for k in sorted(["independent_filtering", "beta_prior", 
+        for k in sorted(["independent_filtering", "beta_prior", "batch" ,
                         "cooks_cutoff", "fit_type", "reference"]):
             logger.info(f"  Parameter {k} set to : {kwargs[k]}")
         r = RNADiffAnalysis(f"{outdir}/light_counts.csv", design,
                 condition=kwargs["condition"],
+                batch=kwargs["batch"],
                 comparisons=comparisons,
                 fc_feature=feature,
                 fc_attribute=attribute,
@@ -407,11 +411,6 @@ def rnadiff(**kwargs):
             sys.exit(1)
         else:
             logger.info(f"DGE done.")
-            # cleanup if succesful
-            os.remove(f"{outdir}/rnadiff.err")
-            os.remove(f"{outdir}/rnadiff.out")
-            os.remove(f"{outdir}/rnadiff_light.R")
-
 
     logger.info(f"Reporting. Saving in rnadiff.html")
     report = RNAdiffModule(outdir, kwargs['design'], gff=gff,
@@ -422,9 +421,6 @@ def rnadiff(**kwargs):
                 condition=kwargs["condition"],
                 annot_cols=None,
                 pattern="*vs*_degs_DESeq2.csv")
-
-
-
 
 
 @main.command()

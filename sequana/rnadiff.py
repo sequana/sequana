@@ -652,7 +652,7 @@ class RNADiffResults:
         if gff:
             if fc_feature is None or fc_attribute is None:
                 logger.error(
-                    "Since you provided a GFF filem you must provide the feature and attribute to be used."
+                    "Since you provided a GFF file, you must provide the feature and attribute to be used."
                 )
             self.annotation = self.read_annot(gff)
         else:

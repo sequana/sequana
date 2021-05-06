@@ -332,9 +332,9 @@ always be the case. </p>"""
             comp.plot_volcano()
             pylab.savefig(filename); pylab.close()
         html_volcano = """<p>The volcano plot here below shows the diﬀerentially
-expressed features with a adjusted p-value below 0.05 (dashed back line). 
-The volcano plot represents the log10 of the adjusted P
-value as a function of the log2 ratio of diﬀerential expression. </p>"""
+expressed features with an adjusted p-value below 0.05 (dashed back line). 
+The volcano plot represents the log10 of the adjusted P-value as a function 
+of the log2 ratio of diﬀerential expression. </p>"""
         #img3 = self.create_embedded_png(plot_volcano, "filename", style=style)
         img3=""
         fig = comp.plot_volcano(plotly=True, annotations=self.rnadiff.annotation)
