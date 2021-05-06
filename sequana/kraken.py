@@ -329,9 +329,6 @@ class KrakenResults(object):
 
     def _get_df_with_taxon(self, dbname):
 
-        # line 14500
-        # >gi|331784|gb|K01711.1|MEANPCG[331784] Measles virus (strain Edmonston), complete genome
-
         df = self.get_taxonomy_db([int(x) for x in self.taxons.index])
         df['count'] = self.taxons.values
         df.reset_index(inplace=True)
@@ -343,8 +340,8 @@ class KrakenResults(object):
         df["percentage"] = df["count"] / df["count"].sum() * 100
 
         # Now get back all annotations from the database itself.
-        # This is not used anymore. let us put a warning for now
         filename = dbname + os.sep + "annotations.csv"
+
         if os.path.exists(filename):
             print("Using _get_df_with_taxon with valid annotation.csv in {}".format(filename))
             annotations = pd.read_csv(filename)
@@ -484,11 +481,7 @@ class KrakenResults(object):
             zlabels += list(z1.ratio.index) + [''] * len(z2.ratio)
             Z.extend(z)
 
-<<<<<<< HEAD
             if kingdom.strip():
-=======
-            if kingdom.strip() == "":
->>>>>>> 470c4424adeffc3128e20c4d6fe43b260175ad21
                 labels.append("undefined/unknown taxon")
             else:
                 labels.append(kingdom)
@@ -686,11 +679,7 @@ class KrakenResults(object):
         try: # kraken2
             df.length = df.length.apply(lambda x: int(x.split("|")[0]))
         except Exception as err:
-<<<<<<< HEAD
             logger.warning(err)
-=======
-            print(err)
->>>>>>> 470c4424adeffc3128e20c4d6fe43b260175ad21
 
         df = df[["status", "length"]]
         M = df['length'].max()
@@ -780,11 +769,7 @@ class KrakenPipeline(object):
         try:
             self.kr.plot2(kind="pie")
         except Exception as err:
-<<<<<<< HEAD
             logger.warning(err)
-=======
-            print(err)
->>>>>>> 470c4424adeffc3128e20c4d6fe43b260175ad21
             self.kr.plot(kind="pie")
         pylab.savefig(self.output_directory + os.sep + "kraken.png")
 
@@ -1295,11 +1280,7 @@ class KrakenSequential(object):
         try:
             result.plot2(kind="pie")
         except Exception as err:
-<<<<<<< HEAD
             logger.warning(err)
-=======
-            print(err)
->>>>>>> 470c4424adeffc3128e20c4d6fe43b260175ad21
             result.plot(kind="pie")
         pylab.savefig(self.output_directory + os.sep + "kraken.png")
         prefix = self.output_directory + os.sep
