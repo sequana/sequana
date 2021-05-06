@@ -19,6 +19,7 @@
 import os
 import re
 import glob
+import sys
 from pathlib import Path
 
 from sequana.lazy import pandas as pd
