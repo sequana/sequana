@@ -34,6 +34,7 @@ from .itol import ITOL
 from .kraken_builder import KrakenBuilder
 from .krona import KronaMerger
 from .kraken import KrakenResults, KrakenPipeline, KrakenAnalysis, KrakenDownload, KrakenSequential
+from .biomart import Mart
 from .pacbio import PacbioSubreads
 from .phred import Quality
 from .rnadiff import RNADiffResults

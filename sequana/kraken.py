@@ -329,9 +329,6 @@ class KrakenResults(object):
 
     def _get_df_with_taxon(self, dbname):
 
-        # line 14500
-        # >gi|331784|gb|K01711.1|MEANPCG[331784] Measles virus (strain Edmonston), complete genome
-
         df = self.get_taxonomy_db([int(x) for x in self.taxons.index])
         df['count'] = self.taxons.values
         df.reset_index(inplace=True)
@@ -484,7 +481,7 @@ class KrakenResults(object):
             zlabels += list(z1.ratio.index) + [''] * len(z2.ratio)
             Z.extend(z)
 
-            if kingdom.strip() == "":
+            if kingdom.strip():
                 labels.append("undefined/unknown taxon")
             else:
                 labels.append(kingdom)
@@ -682,7 +679,7 @@ class KrakenResults(object):
         try: # kraken2
             df.length = df.length.apply(lambda x: int(x.split("|")[0]))
         except Exception as err:
-            print(err)
+            logger.warning(err)
 
         df = df[["status", "length"]]
         M = df['length'].max()
@@ -772,7 +769,7 @@ class KrakenPipeline(object):
         try:
             self.kr.plot2(kind="pie")
         except Exception as err:
-            print(err)
+            logger.warning(err)
             self.kr.plot(kind="pie")
         pylab.savefig(self.output_directory + os.sep + "kraken.png")
 
@@ -1283,7 +1280,7 @@ class KrakenSequential(object):
         try:
             result.plot2(kind="pie")
         except Exception as err:
-            print(err)
+            logger.warning(err)
             result.plot(kind="pie")
         pylab.savefig(self.output_directory + os.sep + "kraken.png")
         prefix = self.output_directory + os.sep

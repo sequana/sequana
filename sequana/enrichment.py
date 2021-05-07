@@ -994,7 +994,7 @@ class KeggPathwayEnrichment:
     You can perform the conversion using BioServices/BioMart. We have
     implemented a simple function inside Sequana::
 
-        from sequana.enrichment import Mart
+        from sequana import Mart
         conv = Mart("mmusculus_gene_ensembl")
         df = conf.query()
         conf.save(df)
@@ -1625,7 +1625,7 @@ class Mart:  # pragma: no cover
     """
 
     def __init__(self, dataset, mart="ENSEMBL_MART_ENSEMBL"):
-        logger.info("Init Mart")
+        logger.warning("Deprecated. Use sequana.mart.Mart instead of sequana.enrichment.Mart")
         from bioservices import BioMart
 
         self.biomart = BioMart()

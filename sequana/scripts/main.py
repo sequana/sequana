@@ -312,6 +312,10 @@ have adjusted pvalues otherwise""")
 @click.option("--beta-prior/--no-beta-prior",
     default=False,
     help="Use beta priori or not. Default is no beta prior")
+@click.option("--batch", type=str,
+    default=None, 
+    help="""set the column name (in your design) corresponding to the batch
+effect to be included in the statistical model as batch ~ condition""")
 @click.option("--fit-type",
     default="parametric",
     help="DESeq2 type of fit. Default is 'parametric'")
@@ -336,6 +340,10 @@ def rnadiff(**kwargs):
         sequana rnadiff --annotation Lepto.gff  
             --design design.csv --features all_features.out 
              --feature-name gene --attribute-name ID 
+
+    Batch effet can be included by adding a column in the design.csv file. For
+    example if called 'day', you can take this information into account using
+    '--batch day'
 
 
     """
@@ -382,11 +390,12 @@ def rnadiff(**kwargs):
         fc.rnadiff_df.to_csv(f"{outdir}/light_counts.csv")
 
         logger.info(f"Differential analysis to be saved into ./{outdir}")
-        for k in sorted(["independent_filtering", "beta_prior", 
+        for k in sorted(["independent_filtering", "beta_prior", "batch", 
                         "cooks_cutoff", "fit_type", "reference"]):
             logger.info(f"  Parameter {k} set to : {kwargs[k]}")
         r = RNADiffAnalysis(f"{outdir}/light_counts.csv", design,
                 condition=kwargs["condition"],
+                batch=kwargs["batch"],
                 comparisons=comparisons,
                 fc_feature=feature,
                 fc_attribute=attribute,
@@ -407,14 +416,13 @@ def rnadiff(**kwargs):
             sys.exit(1)
         else:
             logger.info(f"DGE done.")
-            # cleanup if succesful
-            os.remove(f"{outdir}/rnadiff.err")
-            os.remove(f"{outdir}/rnadiff.out")
-            os.remove(f"{outdir}/rnadiff_light.R")
 
 
     logger.info(f"Reporting. Saving in rnadiff.html")
-    report = RNAdiffModule(outdir, kwargs['design'], gff=gff,
+    report = RNAdiffModule(
+                outdir,
+                kwargs['design'],
+                gff=gff,
                 fc_attribute=attribute,
                 fc_feature=feature,
                 alpha=0.05,
@@ -424,19 +432,17 @@ def rnadiff(**kwargs):
                 pattern="*vs*_degs_DESeq2.csv")
 
 
-
-
-
 @main.command()
 @click.option("--mart", default="ENSEMBL_MART_ENSEMBL",
     show_default=True,
     help="A valid mart name")
 @click.option("--dataset",  required=True,  
     help="A valid dataset name. e.g. mmusculus_gene_ensembl, hsapiens_gene_ensembl")
-@click.option("--attributes",  multiple=True,
-    default=["ensembl_gene_id","go_id","entrezgene_id","external_gene_name"],
+@click.option("--attributes",  
+    default="ensembl_gene_id,go_id,entrezgene_id,external_gene_name",
     show_default=True,
-    help="A list of valid attributes to look for in the dataset")
+    help="""A valid set of attributes to look for in the dataset. Multiple
+attributes are separeted by a comma (no spaces accepted)""")
 @click.option("--output", default=None,
     help="""by default save results into a CSV file named
     biomart_<dataset>_<YEAR>_<MONTH>_<DAY>.csv""")
@@ -450,17 +456,23 @@ def biomart(**kwargs):
     Finally, it saves the CSV file into an output file (--output). This takes
     about 5-10 minutes to retrieve the data depending on the connection.
 
+    Example:
+
+        sequana biomart --mart mmusculus_gene_ensembl --mart ENSEMBL_MART_ENSEMBL \
+            --dataset mmusculus_gene_ensembl \
+            --attributes ensembl_gene_id,external_gene_name,go_id \
+            --output test.csv
+
     """
-    print(kwargs)
     logger.setLevel(kwargs["logger"])
 
     mart = kwargs['mart']
     attributes = kwargs['attributes']
     dataset = kwargs["dataset"]
 
-    from sequana.enrichment import Mart
+    from sequana import Mart
     conv = Mart(dataset, mart)
-    df = conv.query(attributes)
+    df = conv.query(attributes.split(","))
     conv.save(df, filename=kwargs['output'])
 
 
@@ -698,14 +710,14 @@ def taxonomy(**kwargs):
         f2 = df[[True if pattern in x else False for x in df.short_name]]
         f3 = df[[True if pattern in x else False for x in df.long_name]]
         indices = list(f1.index) + list(f2.index) + list(f3.index)
- 
+
         if len(indices) == 0:
             # maybe it is a taxon ID ?
             f4 = df[[True if pattern in str(x) else False for x in df.taxon_id]]
             indices = list(f4.index)
         indices = set(indices)
         print(df.loc[indices])
- 
+
 @main.command()
 @click.argument("gff_filename", type=click.Path(exists=True))
 @common_logger
