@@ -26,10 +26,12 @@ SEQUANA
 :Python version: 3.6, 3.7.3 (below for now)
 :Documentation: `On readthedocs <http://sequana.readthedocs.org/>`_
 :Issues: `On github <https://github.com/sequana/sequana/issues>`_
-:How to cite: 
-    For Sequana in general including the pipelines, please cite the main paper
-    from `JOSS reference (10.21105/joss.00352) <https://joss.theoj.org/papers/10.21105/joss.00352>`_
-  
+:How to cite: Citations are important for us to carry on developments.
+    For Sequana library (including the pipelines), please use
+
+    Cokelaer et al, (2017), 'Sequana': a Set of Snakemake NGS pipelines, Journal of
+    Open Source Software, 2(16), 352, `JOSS DOI doi:10.21105/joss.00352 <https://joss.theoj.org/papers/10.21105/joss.00352>`_
+    
     For the **genome coverage** tool (sequana_coverage):  Dimitri Desvillechabrol,
     Christiane Bouchier, Sean Kennedy, Thomas Cokelaer
     http://biorxiv.org/content/early/2016/12/08/092478
