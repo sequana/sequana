@@ -1,22 +1,38 @@
-#-*- coding: utf-8 -*-
-
-import sys
-import os
+# -*- coding: utf-8 -*-
+#
+#  This file is part of Sequana software
+#
+#  Copyright (c) 2016-2021 - Sequana Development Team
+#
+#  Distributed under the terms of the 3-clause BSD license.
+#  The full license is in the LICENSE file, distributed with this software.
+#
+#  website: https://github.com/sequana/sequana
+#  documentation: http://sequana.readthedocs.io
+#
+##############################################################################
+import functools
 import glob
+import os
+from pathlib import Path
+import pkg_resources
+import shutil
+import subprocess
+import sys
+
 import click
 #import click_completion
-
 #click_completion.init()
 
-from sequana import version
-import functools
-
-__all__ = ["main"]
-
 import sequana
+from sequana.utils import config
+from sequana import version
+from sequana.iem import IEM
 
 import colorlog
 logger = colorlog.getLogger(__name__)
+
+__all__ = ["main"]
 
 
 # This can be used by all commands as a simple decorator
@@ -35,7 +51,6 @@ def get_env_vars(ctx, args, incomplete):
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 
 
-import pkg_resources
 pipelines = [item.key for item in pkg_resources.working_set if item.key.startswith("sequana")]
 if len(pipelines):
     version +="\nThe following pipelines are installed:\n"
@@ -54,6 +69,13 @@ def main(**kwargs):
 
     In addition, more advanced tools such as sequana_taxonomy or
     sequana_coverage have their own standalone.
+
+
+    To setup completion, type this command depending on your shell (bash):
+
+        eval "$(_SEQUANA_COMPLETE=source_bash sequana)"
+        eval "$(_SEQUANA_COMPLETE=source_zsh sequana)"
+        eval (env _SEQUANA_COMPLETE=source_fish sequana)
 
     """
     pass
@@ -105,7 +127,6 @@ def fastq(**kwargs):
     elif kwargs['tail']: #pragma: no cover
         raise NotImplementedError
     elif kwargs['merge']:
-        import subprocess
         # merge all input files (assuming gz extension)
         extensions = [filename.split(".")[-1] for filename in filenames]
         if set(extensions) != set(['gz']):
@@ -134,7 +155,6 @@ def fastq(**kwargs):
 def samplesheet(**kwargs):
     """Utilities to manipulate sample sheet"""
     name = kwargs['name']
-    from sequana.iem import IEM
     if kwargs['check']:
         iem = IEM(name)
         iem.validate()
@@ -232,8 +252,6 @@ def summary(**kwargs):
             ff.get_duplicated_attributes_per_type()
 
 
-
-
 @main.command()
 @click.option("--file1", type=click.Path(),
     default=None, required=True,
@@ -245,12 +263,28 @@ def summary(**kwargs):
 def rnaseq_compare(**kwargs):
     """Compare 2 tables created by the 'sequana rnadiff' command"""
     from sequana.compare import RNADiffCompare
-    c = RNADiffCompare(kwargs['file1'], kwargs['file2'])
-    c.plot_volcano_differences()
     from pylab import savefig
+
+    c = RNADiffCompare(kwargs['file1'], kwargs['file2'])
+    print(c.r1.summary())
+    print(c.r2.summary())
+    c.plot_volcano_differences()
     savefig("sequana_rnaseq_compare_volcano.png", dpi=200)
 
 
+# a dynamic call back function to introspect the design batch column
+from sequana.rnadiff import RNADiffAnalysis, RNADesign
+def rnadiff_auto_batch_column(ctx, args, incomplete):
+    if "--design" in args:
+        dfile = args[args.index('--design')]
+        d = RNADesign(dfile)    
+    else:
+        d = RNADesign("design.csv")    
+    batch = [x for x in d.df.columns if x not in ['label','condition']]
+    if len(batch) == 0:
+        logger.warning("No batch effect included in your design file")
+    else:
+        return [c for c in batch if incomplete in c[0]]
 
 
 @main.command()
@@ -263,7 +297,10 @@ def rnaseq_compare(**kwargs):
     help="""Generate report assuming results are already present""")
 @click.option("--output-directory", type=click.Path(),
     default="rnadiff",
-    help="""Output directory where are saved the results""")
+    help="""Output directory where are saved the results. Use --force if it exists already""")
+@click.option("--force/--no-force",
+    default=False,
+    help="If output directory exists, use this option to erase previous results")
 @click.option("--features", type=click.Path(),
     default="all_features.out",
     help="""The Counts from feature counts. This should be the output of the
@@ -289,10 +326,10 @@ fileother,cond1
 for the differential analysis. Default is 'condition'""")
 @click.option("--feature-name",
     default="gene",
-    help="""The feature name compatible with your GFF. Default is 'gene'""")
+    help="The feature name compatible with your GFF (default is 'gene')")
 @click.option("--attribute-name",
     default="ID",
-    help="""The attribute used as identifier. compatible with your GFF. Default is 'ID'""")
+    help="""The attribute used as identifier. Compatible with your GFF (default is 'ID')""")
 @click.option("--reference", type=click.Path(),
     default=None,
     help="""The reference to test DGE against. If provided, conditions not
@@ -315,14 +352,15 @@ have adjusted pvalues otherwise""")
 @click.option("--batch", type=str,
     default=None, 
     help="""set the column name (in your design) corresponding to the batch
-effect to be included in the statistical model as batch ~ condition""")
+effect to be included in the statistical model as batch ~ condition""",
+    autocompletion=rnadiff_auto_batch_column)
 @click.option("--fit-type",
     default="parametric",
     help="DESeq2 type of fit. Default is 'parametric'")
 
 @common_logger
 def rnadiff(**kwargs):
-    """Perform RNA-seq differential analysis.
+    """Perform RNA-seq differential analysis and reporting.
 
     This command performs the differential analysis of gene expression. The
     analysis is performed on feature counts generated by a RNA-seq analysis 
@@ -351,6 +389,7 @@ def rnadiff(**kwargs):
     from sequana.featurecounts import FeatureCount
     from sequana.rnadiff import RNADiffAnalysis, RNADesign
     from sequana.modules_report.rnadiff import RNAdiffModule
+    from sequana import GFF3
 
     logger.setLevel(kwargs['logger'])
 
@@ -358,18 +397,22 @@ def rnadiff(**kwargs):
     feature = kwargs['feature_name']
     attribute = kwargs['attribute_name']
     design = kwargs['design']
-    reference=kwargs['reference']
+    reference = kwargs['reference']
+
+    if os.path.exists(outdir) and kwargs['force'] is False:
+        logger.error(f"{outdir} exist already. Use --force to overwrite")
+        sys.exit(0)
 
     if kwargs['annotation']:
         gff = kwargs['annotation']
         logger.info(f"Checking annotation file")
-        from sequana import GFF3
         g = GFF3(gff) #.save_annotation_to_csv()
         if feature not in  g.features:
-            logger.critical(f"{feature} not found in the GFF. Most probably a wrong feature name")
+            logger.error(f"{feature} not found in the GFF. Most probably a wrong feature name")
+            sys.exit(1)
         attributes = g.get_attributes(feature)
         if attribute not in attributes:
-            logger.critical(f"{attribute} not found in the GFF for the provided feature. Most probably a wrong feature name. Please change --attribute-name option or do not provide any GFF")
+            logger.error(f"{attribute} not found in the GFF for the provided feature. Most probably a wrong feature name. Please change --attribute-name option or do not provide any GFF")
             sys.exit(1)
     else:
         gff = None
@@ -393,6 +436,7 @@ def rnadiff(**kwargs):
         for k in sorted(["independent_filtering", "beta_prior", "batch", 
                         "cooks_cutoff", "fit_type", "reference"]):
             logger.info(f"  Parameter {k} set to : {kwargs[k]}")
+
         r = RNADiffAnalysis(f"{outdir}/light_counts.csv", design,
                 condition=kwargs["condition"],
                 batch=kwargs["batch"],
@@ -417,8 +461,15 @@ def rnadiff(**kwargs):
         else:
             logger.info(f"DGE done.")
 
+    # copy design.csv into {outdir}
+    shutil.copy(kwargs["design"], Path(outdir) / "design.csv")
+
 
     logger.info(f"Reporting. Saving in rnadiff.html")
+
+    # this define the output directory where rnadiff.html is saved    
+    config.output_dir = outdir
+
     report = RNAdiffModule(
                 outdir,
                 kwargs['design'],
@@ -430,6 +481,10 @@ def rnadiff(**kwargs):
                 condition=kwargs["condition"],
                 annot_cols=None,
                 pattern="*vs*_degs_DESeq2.csv")
+
+    # 
+    # save info.txt with sequana version
+    teardown(outdir)
 
 
 @main.command()
@@ -670,8 +725,10 @@ def enrichment(**kwargs):
             logger.info(f"Computing enrichment for the {compa} case")
             logger.info(f"Found {Nup} genes up-regulated, {Ndown} down regulated ({N} in total).")
             config.output_dir = f"enrichment/{compa}"
-            try:os.mkdir("enrichment")
-            except:pass
+            
+            if os.path.exists("enrichment") is False:
+                os.mkdir("enrichment")
+
             report = Enrichment(gene_dict, taxon, df,
                 kegg_organism=keggname, 
                 enrichment_params=params,
@@ -684,7 +741,7 @@ def enrichment(**kwargs):
 @main.command()
 @click.option("--search-kegg", type=click.Path(),
     default=None,
-    help="""Search a pattern amongst all KEGG organism""")
+    help="""Search a pattern amongst all KEGG organisms""")
 @click.option("--search-panther", type=click.Path(),
     default=None,
     help="""Search a pattern amongst all KEGG organism""")
@@ -736,6 +793,18 @@ def gff2gtf(**kwargs):
     elif filename.endswith(".gff3"):
         g.to_gtf(os.path.basename(filename).replace(".gff3", ".gtf"))
 
+
+def teardown(workdir):
+    # common tools to be used by subcommands
+    from pathlib import Path
+    from easydev import mkdirs
+
+    workdir = Path(workdir)
+    mkdirs(workdir / ".sequana")
+    with open(Path(workdir) / ".sequana" / "info.txt", "w") as fout:
+        from sequana import version
+        fout.write(f"# sequana version: {version}\n")
+        fout.write("".join(["sequana"] + sys.argv[1:]))
 
 
 
