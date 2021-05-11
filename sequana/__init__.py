@@ -9,7 +9,7 @@ from easydev.logging_tools import Logging
 try:
     # new version of easydev logger
     logger = Logging("sequana", "WARNING", text_color='green')
-except:
+except Exception:
     logger = Logging("sequana", "WARNING")
 
 # To keep the inheritance/propagation of levels. Logging from easydev will do
