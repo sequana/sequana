@@ -795,7 +795,7 @@ def gff2gtf(**kwargs):
 
 
 def teardown(workdir):
-    # common tools to be used by subcommands
+    # common function to be used by subcommands to store called command 
     from pathlib import Path
     from easydev import mkdirs
 
@@ -804,7 +804,7 @@ def teardown(workdir):
     with open(Path(workdir) / ".sequana" / "info.txt", "w") as fout:
         from sequana import version
         fout.write(f"# sequana version: {version}\n")
-        fout.write("".join(["sequana"] + sys.argv[1:]))
+        fout.write(" ".join(["sequana"] + sys.argv[1:]))
 
 
 
