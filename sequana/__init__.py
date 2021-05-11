@@ -3,10 +3,15 @@ import pkg_resources
 try:
     version = pkg_resources.require("sequana")[0].version
 except:
-    version = ">=0.9.3"
+    version = ">=0.11.0"
 
 from easydev.logging_tools import Logging
-logger = Logging("sequana", "WARNING")
+try:
+    # new version of easydev logger
+    logger = Logging("sequana", "WARNING", text_color='green')
+except Exception:
+    logger = Logging("sequana", "WARNING")
+
 # To keep the inheritance/propagation of levels. Logging from easydev will do
 # the formatting only.
 import colorlog

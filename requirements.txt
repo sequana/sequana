@@ -8,7 +8,7 @@ colormap
 cookiecutter
 cython
 docutils
-easydev>=0.10
+easydev>=0.11.1
 gseapy
 itolapi
 lxml

@@ -17,6 +17,13 @@ from sequana.lazy import pandas as pd
 
 from sequana.modules_report.base_module import SequanaBaseModule
 from sequana.utils.datatables_js import DataTable
+from sequana.rnadiff import RNADiffResults
+
+import colorlog
+logger = colorlog.getLogger(__name__)
+
+
+__all__ = ['RNAdiffModule']
 
 
 class RNAdiffModule(SequanaBaseModule):
@@ -33,11 +40,10 @@ class RNAdiffModule(SequanaBaseModule):
         self.independent_module = True
         self.module_command = "--module rnadiff"
 
-        from sequana.rnadiff import RNADiffResults
-
         self.rnadiff = RNADiffResults(folder, design, gff=gff, **kwargs)
 
-        # nice layout for the report
+        # nice layout for the report. Use import here to not overload import
+        # time
         import seaborn
         seaborn.set()
 
@@ -45,6 +51,8 @@ class RNAdiffModule(SequanaBaseModule):
         self.create_individual_reports()
 
         self.create_html(output_filename)
+
+        # Fixme not sure this is required to be imported here
         import matplotlib
         matplotlib.rc_file_defaults()
 
