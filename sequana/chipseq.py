@@ -105,7 +105,7 @@ class IDR(PandasReader):
         # add ranks for rep1/rep2
         self.df['rep1_rank'] = self.df['rep1_signal'].rank(ascending=False)
         self.df['rep2_rank'] = self.df['rep2_signal'].rank(ascending=False)
-        self.df['idr'] = 10**-self.df['global_idr']
+        self.df['idr'] = 10**-self.df['local_idr']
 
     def _get_N_significant_peaks(self):
         return len(self.df.query("idr<@self.threshold"))
@@ -174,11 +174,10 @@ class IDR(PandasReader):
 
     def plot_idr_vs_peaks(self, filename=None, savefig=False):
 
-        # global_idr is actually -log10(idr)
         pylab.clf()
         X1 = pylab.linspace(0, self.threshold, 100)
         X2 = pylab.linspace(self.threshold, 1,  100)
-        # convert global idr to proba
+        # convert local idr to proba
 
         df1 = self.df.query("idr<@self.threshold")
         df2 = self.df.query("idr>=@self.threshold")
