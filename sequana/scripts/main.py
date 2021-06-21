@@ -24,7 +24,6 @@ import click
 #import click_completion
 #click_completion.init()
 
-import sequana
 from sequana.utils import config
 from sequana import version
 from sequana.iem import IEM
@@ -292,10 +291,6 @@ def rnadiff_auto_batch_column(ctx, args, incomplete):
 @click.option("--annotation", type=click.Path(),
     default=None,
     help="""The annotation GFF file used to perform the feature count""")
-@click.option("--report-only",
-    is_flag=True,
-    default=False,
-    help="""Generate report assuming results are already present""")
 @click.option("--output-directory", type=click.Path(),
     default="rnadiff",
     help="""Output directory where are saved the results. Use --force if it exists already""")
@@ -350,7 +345,7 @@ for the differential analysis. Default is 'condition'""")
 have adjusted pvalues otherwise""")
 @click.option("--beta-prior/--no-beta-prior",
     default=False,
-    help="Use beta priori or not. Default is no beta prior")
+    help="Use beta prior or not. Default is no beta prior")
 @click.option("--batch", type=str,
     default=None,
     help="""set the column name (in your design) corresponding to the batch
@@ -359,6 +354,11 @@ effect to be included in the statistical model as batch ~ condition""",
 @click.option("--fit-type",
     default="parametric",
     help="DESeq2 type of fit. Default is 'parametric'")
+@click.option("--hover-name",
+    default=None,
+    help="""In volcano plot, we set the hover name to Name if present in the GFF,
+otherwise to gene_id if present, then locus_tag, and finally ID. One can specify
+a hover name to be used with this option""")
 
 @common_logger
 def rnadiff(**kwargs):
@@ -393,6 +393,10 @@ def rnadiff(**kwargs):
     from sequana.modules_report.rnadiff import RNAdiffModule
     from sequana import GFF3
 
+    # FIXME if we use the colorlog logger here, it does not work....
+    # FIXME not clear why so we import again the sequana logger
+    # FIXME looks like it works everywhere but not in the main script
+    from sequana import logger
     logger.setLevel(kwargs['logger'])
 
     outdir = kwargs['output_directory']
@@ -406,13 +410,13 @@ def rnadiff(**kwargs):
         sys.exit(1)
 
     if kwargs['annotation']:
-        gff = kwargs['annotation']
-        logger.info(f"Checking annotation file")
-        g = GFF3(gff)
-        if feature not in g.features:
+        gff_filename = kwargs['annotation']
+        logger.info(f"Checking annotation file (feature and attribute)")
+        gff = GFF3(gff_filename)
+        if feature not in gff.features:
             logger.error(f"{feature} not found in the GFF. Most probably a wrong feature name")
             sys.exit(1)
-        attributes = g.get_attributes(feature)
+        attributes = gff.get_attributes(feature)
         if attribute not in attributes:
             logger.error(f"{attribute} not found in the GFF for the provided feature. Most probably a wrong feature name. Please change --attribute-name option or do not provide any GFF")
             sys.exit(1)
@@ -427,45 +431,41 @@ def rnadiff(**kwargs):
     else:
         comparisons = design_check.comparisons
 
-    if kwargs['report_only'] is False:
-        logger.info(f"Processing features counts and saving into {outdir}/light_counts.csv")
-        fc = FeatureCount(kwargs['features'])
-        from easydev import mkdirs
-        mkdirs(f"{outdir}")
-        fc.rnadiff_df.to_csv(f"{outdir}/light_counts.csv")
+    logger.info(f"Processing features counts and saving into {outdir}/light_counts.csv")
+    fc = FeatureCount(kwargs['features'])
+    from easydev import mkdirs
+    mkdirs(f"{outdir}")
+    fc.rnadiff_df.to_csv(f"{outdir}/light_counts.csv")
 
-        logger.info(f"Differential analysis to be saved into ./{outdir}")
-        for k in sorted(["independent_filtering", "beta_prior", "batch",
-                        "cooks_cutoff", "fit_type", "reference"]):
-            logger.info(f"  Parameter {k} set to : {kwargs[k]}")
+    logger.info(f"Differential analysis to be saved into ./{outdir}")
+    for k in sorted(["independent_filtering", "beta_prior", "batch",
+                    "cooks_cutoff", "fit_type", "reference"]):
+        logger.info(f"  Parameter {k} set to : {kwargs[k]}")
 
-        r = RNADiffAnalysis(f"{outdir}/light_counts.csv", design,
-                condition=kwargs["condition"],
-                batch=kwargs["batch"],
-                comparisons=comparisons,
-                fc_feature=feature,
-                fc_attribute=attribute,
-                outdir=outdir,
-                gff=gff,
-                cooks_cutoff=kwargs.get("cooks_cutoff"),
-                independent_filtering=kwargs.get("independent_filtering"),
-                beta_prior=kwargs.get("beta_prior"),
-                fit_type=kwargs.get('fit_type')
-        )
+    r = RNADiffAnalysis(f"{outdir}/light_counts.csv", design,
+            condition=kwargs["condition"],
+            batch=kwargs["batch"],
+            comparisons=comparisons,
+            fc_feature=feature,
+            fc_attribute=attribute,
+            outdir=outdir,
+            gff=gff,
+            cooks_cutoff=kwargs.get("cooks_cutoff"),
+            independent_filtering=kwargs.get("independent_filtering"),
+            beta_prior=kwargs.get("beta_prior"),
+            fit_type=kwargs.get('fit_type')
+    )
 
-        logger.info(f"Saving output files into {outdir}/rnadiff.csv")
-        try:
-            results = r.run()
-            results.to_csv(f"{outdir}/rnadiff.csv")
-        except Exception as err:
-            logger.error(err)
-            sys.exit(1)
-        else:
-            logger.info(f"DGE done.")
+    try:
+        logger.info(f"Running DGE. Saving results into {outdir}")
+        results = r.run()
+        results.to_csv(f"{outdir}/rnadiff.csv")
+    except Exception as err:
+        logger.error(err)
+        sys.exit(1)
 
     # copy design.csv into {outdir}
     shutil.copy(kwargs["design"], Path(outdir) / "design.csv")
-
 
     logger.info(f"Reporting. Saving in rnadiff.html")
 
@@ -482,7 +482,8 @@ def rnadiff(**kwargs):
                 log2_fc=0,
                 condition=kwargs["condition"],
                 annot_cols=None,
-                pattern="*vs*_degs_DESeq2.csv")
+                pattern="*vs*_degs_DESeq2.csv",
+                hover_name=kwargs['hover_name'])
 
     #
     # save info.txt with sequana version

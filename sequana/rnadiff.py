@@ -17,28 +17,25 @@
 ##############################################################################
 import sys
 import os
-
-from pathlib import Path
-from jinja2 import Environment, PackageLoader
+import glob
 import subprocess
-import seaborn as sns
+from pathlib import Path
 from itertools import combinations
-import os
+
+from jinja2 import Environment, PackageLoader
+import seaborn as sns
 
 from sequana.lazy import pandas as pd
 from sequana.lazy import pylab
 from sequana.lazy import numpy as np
-
 from sequana.gff3 import GFF3
 from sequana.viz import Volcano
 from sequana.enrichment import PantherEnrichment, KeggPathwayEnrichment
 
-import colorlog
 
+import colorlog
 logger = colorlog.getLogger(__name__)
 
-
-import glob
 
 __all__ = ["RNADiffAnalysis", "RNADiffResults", "RNADiffTable", "RNADesign"]
 
@@ -48,6 +45,7 @@ def strip(text):
         return text.strip()
     except AttributeError:
         return text
+
 
 class RNADesign:
     """Simple RNA design handler"""
@@ -105,7 +103,6 @@ class RNADiffAnalysis:
     :param sep_design: The separator used in the input design file.
 
     This class reads a :class:`sequana.featurecounts.`
-
 
     ::
 
@@ -194,7 +191,6 @@ Design overview:\n\
             self.usr_counts, sep=sep_counts, index_col="Geneid", comment="#"
         ).sort_index(axis=1)
 
-
         design = RNADesign(self.usr_design, sep=sep_design)
         design = design.df.set_index("label").sort_index()
 
@@ -269,9 +265,7 @@ or comparisons. possible values are {valid_conditions}"""
         with open(self.outdir / "rnadiff.out", "w") as f:
             f.write(stdout)
 
-        # if os.path.exists():
-        #    logger.error(f"stderr of R call is not empty: {p.stderr}")
-        #    sys.exit(1)
+        logger.info("DGE analysis done.")
 
         results = RNADiffResults(
             self.outdir,
@@ -362,6 +356,7 @@ class RNADiffTable:
         limit_broken_line=[20, 40],
         plotly=False,
         annotations=None,
+        hover_name=None,
     ):
         """
 
@@ -393,16 +388,22 @@ class RNADiffTable:
                 "<{}".format(padj) if x else ">={}".format(padj) for x in df.padj < padj
             ]
 
-            if "Name" in df.columns:
-                hover_name = "Name"
-            elif "gene_id" in df.columns:
-                hover_name = "gene_id"
-            elif "locus_tag" in df.columns:
-                hover_name = "locus_tag"
-            elif "ID" in df.columns:
-                hover_name = "ID"
-            else:
-                hover_name = None
+            
+
+            if hover_name is not None:
+                if hover_name not in df.columns:
+                    logger.warning(f"hover_name {hover_name} not in the GFF attributes. Switching to automatic choice")
+                    hover_name = None
+            if hover_name is None:
+                if "Name" in df.columns:
+                    hover_name = "Name"
+                elif "gene_id" in df.columns:
+                    hover_name = "gene_id"
+                elif "locus_tag" in df.columns:
+                    hover_name = "locus_tag"
+                elif "ID" in df.columns:
+                    hover_name = "ID"
+
             fig = px.scatter(
                 df,
                 x="log2FoldChange",
@@ -586,6 +587,7 @@ class RNADiffResults:
         condition="condition",
         annot_cols=None,
         # annot_cols=["ID", "Name", "gene_biotype"],
+        **kwargs
     ):
         """
 
@@ -617,45 +619,21 @@ class RNADiffResults:
         self.design_df = self._get_design(
             design_file, condition=self.condition, palette=palette
         )
-
-        # FIXME: This block was commented because:
-        # Now RNADiffAnalysis create a sorted design file according to the count matrix
-        # Not sure that creating a design from scratch at this stage is relevant.
-
-        # read different results and sort by sample name all inputs
-        # TODO make this a function to be reused in RNADiffAnalysis for example
-        # if design_file == None:
-        #     conditions = []
-        #     labels = self.counts_raw.columns
-        #     for label in labels:
-        #         condition = input(
-        #             f"Please give use a condition name for the {label} label: "
-        #         )
-        #         conditions.append(condition)
-        #     df = pd.DataFrame({"label": labels, "condition": conditions})
-        #     df.set_index("label", inplace=True)
-        #     df.sort_index(inplace=True)
-        #     col_map = dict(zip(df.loc[:, condition].unique(), palette))
-        #     df["group_color"] = df.loc[:, condition].map(col_map)
-        #     self.design_df = df
-        # else:
-        #     self.design_df = self._get_design(
-        #         design_file, condition=condition, palette=palette
-        #     )
-        #     self.design_df.sort_index(inplace=True)
-        #     self.design = RNADesign(design_file)
-
-        # optional annotation
+        
+        # optional annotation        
         self.fc_attribute = fc_attribute
         self.fc_feature = fc_feature
         self.annot_cols = annot_cols
         if gff:
             if fc_feature is None or fc_attribute is None:
-                logger.error(
+                logger.warning(
                     "Since you provided a GFF file you must provide the feature and attribute to be used."
                 )
             self.annotation = self.read_annot(gff)
         else:
+            logger.warning(
+                "Missing gff input file. No annotation will be added."
+            )
             self.annotation = None
 
         # some filtering attributes
@@ -712,19 +690,23 @@ class RNADiffResults:
     def read_annot(self, gff_filename):
         """Get a properly formatted dataframe from the gff."""
 
-        gff = GFF3(gff_filename)
-        df = gff.df
+        # if gff is already instanciate, we can just make a copy otherwise
+        # we read it indeed.
+        if isinstance(gff_filename, GFF3):
+            gff = gff_filename
+        else:
+            gff = GFF3(gff_filename)
 
         if self.annot_cols is None:
             lol = [
                 list(x.keys())
-                for x in df.query("type==@self.fc_feature")["attributes"].values
+                for x in gff.df.query("type==@self.fc_feature")["attributes"].values
             ]
-            annot_cols = list(set([x for item in lol for x in item]))
+            annot_cols = sorted(list(set([x for item in lol for x in item])))
         else:
             annot_cols = self.annot_cols
 
-        df = df.query("type == @self.fc_feature").loc[:, annot_cols]
+        df = gff.df.query("type == @self.fc_feature").loc[:, annot_cols]
         df.drop_duplicates(inplace=True)
 
         df.set_index(self.fc_attribute, inplace=True)
@@ -770,10 +752,6 @@ class RNADiffResults:
 
         if self.annotation is not None and self.fc_attribute and self.fc_feature:
             df = pd.concat([self.annotation, df], axis=1)
-        else:
-            logger.warning(
-                "Missing any of gff, fc_attribute or fc_feature. No annotation will be added."
-            )
 
         return df
 
