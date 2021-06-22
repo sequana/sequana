@@ -380,7 +380,7 @@ class Module(object):
         self._mf.isvalid(name)
 
         if name not in self._mf.names:
-            raise ValueError("""Sequana error: unknown rule or pipeline '{}'. 
+            raise ValueError("""Sequana error: unknown rule or pipeline '{}'.
 Check the source code at:
 
     https://github.com/sequana/sequana/tree/develop/sequana/pipelines and
@@ -405,7 +405,7 @@ or open a Python shell and type::
         return self._mf.is_pipeline(self._name)
 
     def _get_file(self, name):
-        filename = self._path + os.sep + name
+        filename = os.sep.join((self._path, name))
         if os.path.exists(filename):
             return filename
 
@@ -427,12 +427,10 @@ or open a Python shell and type::
     def _get_version(self):
         if "/" in self.name:
             return self.name.split("/")[1]
-        else:
-            if self.is_pipeline():
-                import pkg_resources
-                ver = pkg_resources.require("sequana_{}".format(self.name))[0].version
-                return ver
-            return None
+        elif self.is_pipeline():
+            import pkg_resources
+            ver = pkg_resources.require("sequana_{}".format(self.name))[0].version
+            return ver
     version = property(_get_version, doc="Get version")
 
     def _get_path(self):
@@ -440,14 +438,14 @@ or open a Python shell and type::
     path = property(_get_path, doc="full path to the module directory")
 
     def _get_config(self):
-        # The default config file for that module
-        filename = self._get_file("config.yaml")
-        if filename is None:
-            # or the sequana default config file
-            filename = self._get_file("../config.yaml")
+        # list of module config file and sequana default config file
+        default_filenames = ("config.yaml", "config.yml", "../config.yaml", "../config.yml")
+        for default_filename in default_filenames:
+            filename = self._get_file(default_filename)
+            if filename:
+                return filename
         return filename
-    config = property(_get_config,
-                      doc="full path to the config file of the module")
+    config = property(_get_config, doc="full path to the config file of the module")
 
     def _get_schema_config(self):
         # The default config file for that module
@@ -456,32 +454,26 @@ or open a Python shell and type::
             # or the sequana default config file
             filename = self._get_file("../schema.yaml")
         return filename
-    schema_config = property(_get_schema_config,
-                      doc="full path to the schema config file of the module")
+    schema_config = property(_get_schema_config, doc="full path to the schema config file of the module")
 
     def _get_multiqc_config(self):
         filename = self._get_file("multiqc_config.yaml")
-        #if filename is None:
         return filename
-    multiqc_config = property(_get_multiqc_config,
-                      doc="full path to the multiqc config file of the module")
+    multiqc_config = property(_get_multiqc_config, doc="full path to the multiqc config file of the module")
 
     def _get_logo(self):
         filename = self._get_file("logo.png")
         return filename
-    logo = property(_get_logo, 
-                doc="full path to the logo of the module")
+    logo = property(_get_logo, doc="full path to the logo of the module")
 
     def _get_cluster_config(self):
         # The default config file for that module
         return self._get_file("cluster_config.json")
-    cluster_config = property(_get_cluster_config,
-                      doc="full path to the config cluster file of the module")
+    cluster_config = property(_get_cluster_config, doc="full path to the config cluster file of the module")
 
     def _get_readme(self):
         return self._get_file("README.rst")
-    readme = property(_get_readme,
-                      doc="full path to the README file of the module")
+    readme = property(_get_readme, doc="full path to the README file of the module")
 
     def _get_overview(self):
         result = "no information. For developers: please fix the pipeline "
@@ -490,31 +482,40 @@ or open a Python shell and type::
             if this.startswith(':Overview:'):
                 try:
                     result = this.split(":Overview:")[1].strip()
-                except:
+                except IndexError:
                     result += "Bad format in :Overview: field"
         return result
     overview = property(_get_overview)
 
     def _get_snakefile(self):
-        if self._snakefile is not None:
+        if self._snakefile:
             return self._snakefile
 
-        if self._get_file("Snakefile"):
-            self._snakefile = self._get_file("Snakefile")
-        elif self._get_file("Snakefile." + self.name):
-            self._snakefile = self._get_file("Snakefile." + self.name)
-        elif self._get_file(self.name + '.rules'):
-            self._snakefile = self._get_file(self.name + ".rules")
-        else:
-            if self.version:
-                name, version = self.name.split("/")
-                name = self._path + os.sep + name + ".rules"
-                self._snakefile = name 
-            pass
-            #print("//Snakefile for %s not found" % self.name)
+        # tuple of all possible snakefiles
+        possible_snakefiles = (
+            "Snakefile",
+            f"Snakefile.{self.name}",
+            f"{self.name}.rules",
+            f"{self.name}.smk"
+        )
+
+        # find the good one
+        for snakefile in possible_snakefiles:
+            self._snakefile = self._get_file(snakefile)
+            if self._snakefile:
+                return self._snakefile
+
+        # find with version
+        if self.version:
+            name, _ = self.name.split("/")
+            name = os.sep.join((self._path, f"{name}.rules"))
+            self._snakefile = name
         return self._snakefile
-    snakefile = property(_get_snakefile,
-                         doc="full path to the Snakefile file of the module")
+    snakefile = property(_get_snakefile, doc="full path to the Snakefile file of the module")
+
+    def _get_rules(self):
+        return self._get_file('rules')
+    rules = property(_get_rules, "full path to the pipeline rules")
 
     def _get_name(self):
         return self._name
@@ -528,9 +529,10 @@ or open a Python shell and type::
             return self._requirements
     requirements = property(_get_requirements, doc="list of requirements")
 
-
     def _get_required_binaries(self):
-        with open(f"{self.path}/{self.name}.rules", "r") as fout:
+        # extension could be .smk or .rules
+        snakefile = next(glob.iglob(f"{self.path}/{self.name}*"))
+        with open(snakefile, "r") as fout:
             for line in fout.readlines():
                 if line.startswith('binaries'):
                     line = line.split("=")[1].strip()
@@ -724,7 +726,7 @@ class SequanaConfig(object):
                     config = yaml.load(fh, Loader=yaml.FullLoader)
 
             else:
-                raise IOError("input string must be an existing file (%s)" % data)
+                raise FileNotFoundError(f"input string must be an existing file {data}")
             self.config = AttrDict(**config)
         elif isinstance(data, SequanaConfig): # else maybe a SequanaConfig ?
             self.config = AttrDict(**data.config)
@@ -923,18 +925,16 @@ class PipelineManagerBase(object):
         """
         if self.samples is None:
             raise ValueError("Define the samples attribute as a dictionary with"
-                "sample names as keys and the corresponding location as values.")
+                             " sample names as keys and the corresponding location as values.")
         return lambda wildcards: self.samples[wildcards.sample]
 
-    def plot_stats(self, outputdir=".sequana",
-                 filename="snakemake_stats.png", N=1):
+    def plot_stats(self, outputdir=".sequana", filename="snakemake_stats.png", N=1):
         logger.info("Creating stats image")
         try:
             from sequana.snaketools import SnakeMakeStats
             sms = SnakeMakeStats("stats.txt", N=N)
-            if sms._parse_data() == {'total_runtime': 0, 
-                'rules': {}, 'files':{}}:
-                return 
+            if sms._parse_data() == {'total_runtime': 0, 'rules': {}, 'files': {}}:
+                return
 
             sms.plot_and_save(outputdir=outputdir, filename=filename)
         except Exception as err:
@@ -944,7 +944,7 @@ class PipelineManagerBase(object):
     def message(self, msg):
         message(msg)
 
-    def setup(self,  namespace, mode="error", matplotlib="Agg"):
+    def setup(self, namespace, mode="error", matplotlib="Agg"):
         """
 
         90% of the errors come from the fact that users did not set a matplotlib
@@ -970,7 +970,7 @@ class PipelineManagerBase(object):
             # check requirements if possible. This is the standalone application
             # requirements, not the files possibly provided in the config file
             Module(self.name).check(mode)
-        except:
+        except ValueError:
             pass
 
         if matplotlib:
@@ -987,17 +987,15 @@ class PipelineManagerBase(object):
                 line = fin.readline()
                 while line:
                     if """<a href="http://multiqc.info" target="_blank">""" in line:
-                        line = fin.readline() # read the image
-                        line = fin.readline() # read the ending </a> tag
+                        line = fin.readline()  # read the image
+                        line = fin.readline()  # read the ending </a> tag
                     else:
                         fout.write(line)
-                    line = fin.readline() # read the next line
+                    line = fin.readline()  # read the next line
         import shutil
-        shutil.move(filename +"_tmp_", filename)
+        shutil.move(filename + "_tmp_", filename)
 
-    def teardown(self, extra_dirs_to_remove=[], extra_files_to_remove=[],
-        plot_stats=True):
-
+    def teardown(self, extra_dirs_to_remove=[], extra_files_to_remove=[], plot_stats=True):
         # create and save the stats plot
         if plot_stats:
             N = len(self.samples.keys())
@@ -1012,24 +1010,25 @@ class PipelineManagerBase(object):
     def get_html_summary(self, float="left", width=30):
         import pandas as pd
         import pkg_resources
+
         vers = pkg_resources.require("sequana_{}".format(self.name))[0].version
-        df_general = pd.DataFrame({
-            "samples": len(self.samples), 
-            "paired": self.paired, 
-            "sequana_{}_version".format(self.name): vers}, 
-            index=["summary"])
+        df_general = pd.DataFrame(
+            {"samples": len(self.samples), "paired": self.paired, "sequana_{}_version".format(self.name): vers},
+            index=["summary"],
+        )
 
         from sequana.utils.datatables_js import DataTable
         datatable = DataTable(df_general.T, 'general', index=True)
-        datatable.datatable.datatable_options = {'paging': 'false',
-                                             'bFilter': 'false',
-                                              'bInfo': 'false',
-                                               'header': 'false',
-                                              'bSort': 'true'}
+        datatable.datatable.datatable_options = {
+            'paging': 'false',
+            'bFilter': 'false',
+            'bInfo': 'false',
+            'header': 'false',
+            'bSort': 'true'
+        }
         js = datatable.create_javascript_function()
-        htmltable = datatable.create_datatable(style="width: 20%; float:left" )
-        contents = """<div style="float:{}; width:{}%">{}</div>""".format(float,
-            width, js + htmltable)
+        htmltable = datatable.create_datatable(style="width: 20%; float:left")
+        contents = """<div style="float:{}; width:{}%">{}</div>""".format(float, width, js + htmltable)
         return contents
 
 
@@ -1069,11 +1068,12 @@ class PipelineManagerGeneric(PipelineManagerBase):
         self.samples = None
         if sample_func:
             try:
-                self.samples = {sample_func(filename):filename for filename in self.ff.realpaths}
-            except:
+                self.samples = {sample_func(filename): filename for filename in self.ff.realpaths}
+            except Exception:
                 self.samples = None
         else:
-            self.samples = {str(i+1):filename for i,filename in enumerate(self.ff.realpaths)}
+            self.samples = {str(i + 1): filename for i, filename in enumerate(self.ff.realpaths)}
+
 
 class PipelineManagerDirectory(PipelineManagerBase):
     """
@@ -1084,7 +1084,6 @@ class PipelineManagerDirectory(PipelineManagerBase):
     """
     def __init__(self, name, config):
         super(PipelineManagerDirectory, self).__init__(name, config)
-
 
 
 class PipelineManager(PipelineManagerGeneric):

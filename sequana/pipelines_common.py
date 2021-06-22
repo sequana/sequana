@@ -32,13 +32,13 @@ import colorlog
 logger = colorlog.getLogger(__name__)
 
 
-
 __all__ = ["Colors", "InputOptions", "SnakemakeOptions", "SlurmOptions",
-    "SequanaManager", "PipelineManager", "GeneralOptions", "print_version", "CutadaptOptions",
-    "KrakenOptions", "init_pipeline", "sequana_epilog", "sequana_prolog"]
+           "SequanaManager", "PipelineManager", "GeneralOptions", "print_version", "CutadaptOptions",
+           "KrakenOptions", "init_pipeline", "sequana_epilog", "sequana_prolog"]
 
 
 deprecated = "This is a deprecated class {}. Please use sequana_pipetools instead of sequana.pipeline_common."
+
 
 class Colors:
     """
@@ -457,6 +457,7 @@ def init_pipeline(NAME):
         print("Those software will be required for the pipeline to work correctly:\n{}".format(data))
         sys.exit(0)
 
+
 sequana_epilog = Colors().purple("""If you use or like the Sequana project,
 please consider citing us (visit sequana.readthedocs.io for details) or use this
 citation:
@@ -481,7 +482,6 @@ sequana_pipelines_{name} --run-mode slurm
 although the pipelines should figure out what to do. A working directory called
 will be created with instructions on how to run the pipeline.
 """
-
 
 
 def print_version(name):
@@ -510,12 +510,7 @@ def get_pipeline_location(pipeline_name):
     return p._get_package_location()
 
 
-
-class SequanaManager():
-    """
-
-    """
-
+class SequanaManager:
     def __init__(self, options, name="undefined"):
         """
         :param options: an instance of :class:`Options`
@@ -551,22 +546,25 @@ class SequanaManager():
         self.module.is_executable()
 
         # If this is a pipeline, let us load its config file
-        # Do we start from an existing project with a valid config file ?
+        # Do we start from an existing project with a valid config file 
+        config_name = os.path.basename(self.module.config)
+        self.config = None
         if "from_project" in dir(options) and options.from_project:
-            cfg_project_filename = None
-            if os.path.exists(options.from_project) and options.from_project.endswith("config.yaml"):
-                cfg_project_filename = options.from_project
-            elif ".sequana" in options.from_project:
-                if os.path.exists(options.from_project + "/config.yaml"):
-                    cfg_project_filename = options.from_project
-            elif os.path.exists(options.from_project + "/.sequana/config.yaml"):
-                cfg_project_filename = options.from_project + "/.sequana/config.yaml"
-
-            if cfg_project_filename is None:
-                raise IOError("Could not find config.yaml in the project specified {}".format(
+            possible_filenames = (
+                options.from_project,  # exact config file path
+                f"{options.from_project}/{config_name}",  # config file in project path
+                f"{options.from_project}/.sequana/{config_name}"  # config file in .sequana dir
+            )
+            for filename in possible_filenames:
+                try:
+                    self.config = SequanaConfig(filename)
+                    logger.info(f"Reading existing config file {filename}")
+                    break
+                except FileNotFoundError:
+                    pass
+            if not self.config:
+                raise FileNotFoundError("Could not find config.yaml in the project specified {}".format(
                     options.from_project))
-            logger.info("Reading existing config file {}".format(cfg_project_filename))
-            self.config = SequanaConfig(cfg_project_filename)
         else:
             self.config = SequanaConfig(self.module.config)
 
@@ -576,15 +574,16 @@ class SequanaManager():
         # define the data path of the pipeline
         self.datapath = self._get_package_location()
 
-
     def exists(self, filename, exit_on_error=True, warning_only=False):
-        if os.path.exists(filename) is False:
-            if warning_only is False:
-                logger.error("{} file does not exists".format(filename))
+        if not os.path.exists(filename):
+            if warning_only:
+                logger.warning(f"{filename} file does not exists")
+            else:
+                logger.error(f"{filename} file does not exists")
                 if exit_on_error:
                     sys.exit(1)
-            elif warning_only is True:
-                logger.warning("{} file does not exists".format(filename))
+            return False
+        return True
 
     def copy_requirements(self):
         # FIXME
@@ -610,13 +609,13 @@ class SequanaManager():
                     sys.exit(1)
 
     def _get_package_location(self):
+        fullname = f"sequana_{self.name}"
         try:
-            fullname = "sequana_{}".format(self.name)
             import pkg_resources
             info = pkg_resources.get_distribution(fullname)
-            sharedir = os.sep.join([info.location , "sequana_pipelines", self.name, 'data'])
-        except pkg_resources.DistributionNotFound as err:
-            logger.error("package provided (%s) not installed." % package)
+            sharedir = os.sep.join([info.location, "sequana_pipelines", self.name, 'data'])
+        except pkg_resources.DistributionNotFound:
+            logger.error(f"package provided ({fullname}) not installed.")
             raise
         return sharedir
 
@@ -626,7 +625,6 @@ class SequanaManager():
         return ver
 
     def _guess_scheduler(self):
-
         from easydev import cmd_exists
         if cmd_exists("sbatch") and cmd_exists("srun"):
             return 'slurm'
@@ -656,8 +654,8 @@ class SequanaManager():
         # parameters for a run on a SLURM scheduler
         logger.info("Welcome to Sequana pipelines suite (sequana.readthedocs.io)")
 
-        cmd = "#!/bin/bash\nsnakemake -s {}.rules --stats stats.txt"
-        self.command = cmd.format(self.name)
+        snakefilename = os.path.basename(self.module.snakefile)
+        self.command = f"#!/bin/bash\nsnakemake -s {snakefilename} --stats stats.txt"
 
         # FIXME a job is not a core. Ideally, we should add a core option
         if self._guess_scheduler() == "local":
@@ -667,8 +665,7 @@ class SequanaManager():
 
         if self.options.run_mode is None:
             self.options.run_mode = self._guess_scheduler()
-            logger.debug("Guessed scheduler is {}".format(
-                self.options.run_mode))
+            logger.debug("Guessed scheduler is {}".format(self.options.run_mode))
 
         if self.options.run_mode == "slurm":
             if self.options.slurm_queue == "common":
@@ -677,17 +674,18 @@ class SequanaManager():
                 slurm_queue = "-A {} --qos {} -p {}".format(
                     self.options.slurm_queue,
                     self.options.slurm_queue,
-                    self.options.slurm_queue)
+                    self.options.slurm_queue
+                )
 
             if self.module.cluster_config:
-                self.command += ' --cluster "sbatch --mem={{cluster.ram}} --cpus-per-task={{threads}}"'.format(
-                    slurm_queue)
+                self.command += ' --cluster "sbatch --mem={{cluster.ram}} --cpus-per-task={{threads}}"'
                 self.command += " --cluster-config cluster_config.json "
             else:
                 self.command += ' --cluster "sbatch --mem {} -c {} {}"'.format(
                     self.options.slurm_memory,
                     self.options.slurm_cores_per_job,
-                    slurm_queue)
+                    slurm_queue
+                )
 
         # This should be in the setup, not in the teardown since we may want to
         # copy files when creating the pipeline. This is the case e.g. in the
@@ -698,14 +696,12 @@ class SequanaManager():
 
     def _create_directories(self):
         # Now we create the directory to store the config/pipeline
-
-        if os.path.exists(self.workdir) is True and self.options.force is False:
-            print(self.colors.failed(
-            "Output path {} exists already. Use --force".format(self.workdir)))
-            sys.exit()
-        elif os.path.exists(self.workdir) is True and self.options.force is True:
-            print(self.colors.warning(
-                "Path {} exists already but you set --force to overwrite it".format(self.workdir)))
+        if os.path.exists(self.workdir):
+            if self.options.force:
+                print(self.colors.warning(f"Path {self.workdir} exists already but you set --force to overwrite it"))
+            else:
+                print(self.colors.failed(f"Output path {self.workdir} exists already. Use --force"))
+                sys.exit()
         else:
             os.mkdir(self.workdir)
 
@@ -719,10 +715,8 @@ class SequanaManager():
         # Sanity checks
         cfg = self.config.config
 
-
         filenames = glob.glob(cfg.input_directory + os.sep + cfg.input_pattern)
-        logger.info("Found {} files matching your input  pattern ({})".format(
-            len(filenames), cfg.input_pattern))
+        logger.info(f"Found {len(filenames)} files matching your input  pattern ({cfg.input_pattern})")
 
         if len(filenames) == 0:
             logger.critical("Found no files with your matching pattern ({})".format(cfg.input_pattern))
@@ -733,26 +727,26 @@ class SequanaManager():
 
     def check_fastq_files(self):
         from sequana import FastQFactory
+        cfg = self.config.config
         try:
-            ff = FastQFactory(cfg.input_directory + os.sep +
-                                    cfg.input_pattern,
-                                  read_tag = cfg.input_readtag)
+            ff = FastQFactory(
+                cfg.input_directory + os.sep + cfg.input_pattern,
+                read_tag=cfg.input_readtag
+            )
 
             # This tells whether the data is paired or not
             if ff.paired:
                 paired = "paired reads"
             else:
                 paired = "single-end reads"
-            logger.info("Your input data seems to be made of {}".format(paired))
+            logger.info(f"Your input data seems to be made of {paired}")
 
-        except:
-            logger.error("""Input data is not fastq-compatible with sequana pipelines. You may want to set the read_tag to empty string or None if you wish 
-to analyse non-fastQ files (e.g. BAM)""")
+        except Exception:
+            logger.error("Input data is not fastq-compatible with sequana pipelines. You may want to set the read_tag"
+                         " to empty string or None if you wish to analyse non-fastQ files (e.g. BAM)")
             sys.exit(1)
 
-
-    def teardown(self, check_schema=True, check_input_files=True,
-            check_fastq_files=True):
+    def teardown(self, check_schema=True, check_input_files=True, check_fastq_files=True):
         """Save all files required to run the pipeline and perform sanity checks
 
 
@@ -777,30 +771,28 @@ to analyse non-fastQ files (e.g. BAM)""")
         are copied in the working directory
 
         """
-
         if check_input_files:
             self.check_input_files()
 
-
         # the config file
         self.config._update_yaml()
-        self.config.save("{}/{}/config.yaml".format(self.workdir , ".sequana"))
+        config_name = os.path.basename(self.module.config)
+        self.config.save(f"{self.workdir}/.sequana/{config_name}")
         try:
-            os.symlink("{}/config.yaml".format(".sequana"),
-                   "{}/config.yaml".format(self.workdir))
-        except:
+            os.symlink(f".sequana/{config_name}", f"{self.workdir}/{config_name}")
+        except FileExistsError:
             pass
 
         # the command
-        with open("{}/{}.sh".format(self.workdir, self.name), "w") as fout:
+        with open(f"{self.workdir}/{self.name}.sh", "w") as fout:
             fout.write(self.command)
 
         # the snakefile
-        shutil.copy(self.module.snakefile, "{}/{}".format(self.workdir, ".sequana"))
+        shutil.copy(self.module.snakefile, f"{self.workdir}/.sequana")
+        snakefilename = os.path.basename(self.module.snakefile)
         try:
-            os.symlink("{}/{}.rules".format(".sequana", self.name), 
-                "{}/{}.rules".format(self.workdir, self.name))
-        except:
+            os.symlink(f".sequana/{snakefilename}", f"{self.workdir}/{snakefilename}")
+        except FileExistsError:
             pass
 
         # the cluster config if any
@@ -814,18 +806,28 @@ to analyse non-fastQ files (e.g. BAM)""")
         # the multiqc if any
         if self.module.multiqc_config:
             shutil.copy(self.module.multiqc_config, "{}".format(self.workdir))
+        
+        # the rules if any
+        if self.module.rules:
+            try:
+                shutil.copytree(self.module.rules, f"{self.workdir}/rules")
+            except FileExistsError:
+                if self.options.force:
+                    shutil.rmtree(f"{self.workdir}/rules")
+                    shutil.copytree(self.module.rules, f"{self.workdir}/rules")
+                pass
 
         # the schema if any
         if self.module.schema_config:
+            schema_name = os.path.basename(self.module.schema_config)
             shutil.copy(self.module.schema_config, "{}".format(self.workdir))
 
             # This is the place where we can check the entire validity of the
             # inputs based on the schema
             if check_schema:
-                #logger.info("Checking config file with schema")
                 from sequana import SequanaConfig
-                cfg = SequanaConfig("{}/config.yaml".format(self.workdir))
-                cfg.check_config_with_schema("{}/schema.yaml".format(self.workdir))
+                cfg = SequanaConfig(f"{self.workdir}/{config_name}")
+                cfg.check_config_with_schema(f"{self.workdir}/{schema_name}")
 
         # finally, we copy the files be found in the requirements section of the
         # config file.
@@ -833,7 +835,7 @@ to analyse non-fastQ files (e.g. BAM)""")
 
         # some information
         msg = "Check the script in {}/{}.sh as well as "
-        msg += "the configuration file in {}/config.yaml.\n"
+        msg += f"the configuration file in {{}}/{config_name}.\n"
         print(self.colors.purple(msg.format(self.workdir, self.name, self.workdir)))
 
         msg = "Once ready, execute the script {}.sh using \n\n\t".format(self.name)
@@ -854,7 +856,7 @@ to analyse non-fastQ files (e.g. BAM)""")
 
         # Save unlock.sh
         with open(self.workdir + "/unlock.sh", "w") as fout:
-            fout.write("#!/bin/sh\nsnakemake -s {}.rules --unlock -j 1".format(self.name))
+            fout.write(f"#!/bin/sh\nsnakemake -s {snakefilename} --unlock -j 1")
 
         # save environement
         try:
@@ -862,7 +864,7 @@ to analyse non-fastQ files (e.g. BAM)""")
             with open("{}/.sequana/env.yml".format(self.workdir), "w") as fout:
                 subprocess.call(cmd.split(), stdout=fout)
             logger.debug("Saved your conda environment into env.yml")
-        except:
+        except Exception:
             cmd = "pip freeze"
             with open("{}/.sequana/pip.yml".format(self.workdir), "w") as fout:
                 subprocess.call(cmd.split(), stdout=fout)
@@ -880,17 +882,14 @@ to analyse non-fastQ files (e.g. BAM)""")
                     version = line.split("#version:")[1].strip()
                     version = version.replace(">=", "").replace(">", "")
                     from distutils.version import StrictVersion
-                    if StrictVersion(version) <  StrictVersion(self._get_package_version()):
+                    if StrictVersion(version) < StrictVersion(self._get_package_version()):
                         msg = (
-                            "The version {} of your completion file for the"
-                            "  {} pipeline seems older than the installed"
-                            " pipeline itself ({}). "
-                            "Please, consider updating the completion file {}"
+                            "The version {} of your completion file for the {} pipeline seems older than the installed"
+                            " pipeline itself ({}). Please, consider updating the completion file {}"
                             " using the following command: \n\t sequana_completion --name {}\n"
-                            "available in the sequana_pipetools package (pip "
-                                "install sequana_completion)")
-                        msg = msg.format(version, self.name, 
-                            self._get_package_version(), completion, self.name)
+                            "available in the sequana_pipetools package (pip install sequana_completion)"
+                        )
+                        msg = msg.format(version, self.name, self._get_package_version(), completion, self.name)
                         logger.info(msg)
 
         else:
@@ -902,9 +901,8 @@ to analyse non-fastQ files (e.g. BAM)""")
     def update_config(self, config, options, section_name):
         for option_name in config[section_name]:
             try:
-                config[section_name][option_name] = getattr(options,
-                    section_name + "_" + option_name)
-            except:
+                config[section_name][option_name] = getattr(options, section_name + "_" + option_name)
+            except AttributeError:
                 logger.debug("update_config. Could not find {}".format(option_name))
 
 
