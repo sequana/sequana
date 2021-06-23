@@ -170,12 +170,13 @@ class GFF3():
                 # we process main fields and attributes. This takes most of the
                 # time
                 self._features.add(split[2])
+
+                # the main first 8 fields
                 annotation = self._process_main_fields(split[0:8])
 
-                XX = self._process_attributes(split[8])
-                annotation['attributes'] = XX
-                for k,v in XX.items():
-                    annotation[k] = v
+                # all attributes as key/values added to all annotations.
+                annotation['attributes'] = self._process_attributes(split[8])
+                annotation.update(annotation['attributes'])
                 count += 1
 
                 results.append(annotation)

@@ -280,6 +280,7 @@ def rnadiff_auto_batch_column(ctx, args, incomplete):
         d = RNADesign(dfile)
     else:
         d = RNADesign("design.csv")
+
     batch = (x for x in d.df.columns if x not in {'label','condition'})
     if len(batch) == 0:
         logger.warning("No batch effect included in your design file")
@@ -387,11 +388,6 @@ def rnadiff(**kwargs):
 
 
     """
-    import pandas as pd
-    from sequana.featurecounts import FeatureCount
-    from sequana.rnadiff import RNADiffAnalysis, RNADesign
-    from sequana.modules_report.rnadiff import RNAdiffModule
-    from sequana import GFF3
 
     # FIXME if we use the colorlog logger here, it does not work....
     # FIXME not clear why so we import again the sequana logger

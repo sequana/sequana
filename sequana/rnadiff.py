@@ -687,15 +687,16 @@ class RNADiffResults:
 
         return AttrDict(**data)
 
-    def read_annot(self, gff_filename):
-        """Get a properly formatted dataframe from the gff."""
+    def read_annot(self, gff):
+        """Get a properly formatted dataframe from the gff.
+
+        :param gff: a input GFF filename or an existing instance of GFF3
+        """
 
         # if gff is already instanciate, we can just make a copy otherwise
         # we read it indeed.
-        if isinstance(gff_filename, GFF3):
-            gff = gff_filename
-        else:
-            gff = GFF3(gff_filename)
+        if hasattr(gff, 'df') is False:
+            gff = GFF3(gff)
 
         if self.annot_cols is None:
             lol = [
