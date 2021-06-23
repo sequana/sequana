@@ -352,9 +352,6 @@ class GFF3():
             idx = attr.find(sep)
             value = attr[idx+1:]
 
-            if len(value) == 1:
-                value = value[0]
-
             # replace " by nothing (GTF case)
             attributes[attr[:idx]] = value.replace('"', '')
         return attributes
