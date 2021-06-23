@@ -27,6 +27,7 @@ import click
 from sequana.utils import config
 from sequana import version
 from sequana.iem import IEM
+from sequana.gff3 import GFF3
 
 import colorlog
 logger = colorlog.getLogger(__name__)
@@ -388,12 +389,17 @@ def rnadiff(**kwargs):
 
 
     """
+    import pandas as pd
+    from sequana.featurecounts import FeatureCount
+    from sequana.rnadiff import RNADiffAnalysis, RNADesign
+    from sequana.modules_report.rnadiff import RNAdiffModule
 
     # FIXME if we use the colorlog logger here, it does not work....
     # FIXME not clear why so we import again the sequana logger
     # FIXME looks like it works everywhere but not in the main script
     from sequana import logger
     logger.setLevel(kwargs['logger'])
+
 
     outdir = kwargs['output_directory']
     feature = kwargs['feature_name']
