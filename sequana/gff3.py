@@ -138,8 +138,6 @@ class GFF3():
         count = 0
 
         self._features = set()
-        # we could use a yield but gff for eukaryotes can be read on a laptop
-        results = []
 
         with open(self.filename, "r") as reader:
             line = None
@@ -179,8 +177,7 @@ class GFF3():
                 annotation.update(annotation['attributes'])
                 count += 1
 
-                results.append(annotation)
-        return results
+                yield annotation
 
     def _get_df(self):
         if self._df is not None:
@@ -188,11 +185,8 @@ class GFF3():
 
         logger.info("Processing GFF file. 1. Reading the input file. Please be patient")
         # ~ 30 seconds on mouse
-        data = self.read()
+        df = pd.DataFrame(self.read())
 
-        # ~ 6-10 seconds on mouse
-        logger.info("Processing GFF file. 2. Transforming into dataframe")
-        df = pd.DataFrame(data)
 
         self._df = df
         return self._df
@@ -319,9 +313,7 @@ class GFF3():
         # - "ID 1;DB 2"     some gtf uses spaces but should be fine
         # - "ID=1;DB=2;Note=some text with ; character " worst case scenario
         # In the later case, there is no easy way to fix this. I believe this is
-        # a non-compatible GFF file. saccer3 example has this issue. let us wait
-        # for more concrete examples. The only case we can solve is when the sep
-        # is "="
+        # a non-compatible GFF file.
 
         # we first figure out whether this is a = or space convention
         sep = None
@@ -334,11 +326,12 @@ class GFF3():
             logger.error(f"Your GFF/GTF does not seem to be correct ({text}). Expected a = or space as separator")
             sys.exit(1)
 
-        # ugly but fast replacement
-        text = text.replace("%09", "\t").replace("%0A", "\n").replace("%0D", "\r").replace("%25", "%")
-        # we do not convert the special %3B into ; to still allow 
-        #text = text.replace("%3B", ";").replace("%3D", "=").replace("%26", "&").replace("%2C", ",")
-        text = text.replace("%3D", "=").replace("%26", "&").replace("%2C", ",")
+        # ugly but fast replacement. not sure how frequent this is. Seen only in
+        # Saccer3 GFF file.
+        text = text.replace("%09", "\t").replace("%0A", "\n").replace("%0D", "\r")
+        text = text.replace("%25", "%").replace("%3D", "=").replace("%26", "&").replace("%2C", ",")
+        text = text.replace("%28", "(").replace("%29",")")  # brackets
+        # we do not convert the special %3B into ;  or %20 into spaces for now
 
         # split into mutliple attributes
         # GTF ends in ; so we need to strip it
@@ -353,7 +346,7 @@ class GFF3():
             value = attr[idx+1:]
 
             # replace " by nothing (GTF case)
-            attributes[attr[:idx]] = value.replace('"', '')
+            attributes[attr[:idx]] = value.replace('"', '').replace("%3B",";").replace("%20", " ")
         return attributes
 
     def create_files_for_rnadiff(
