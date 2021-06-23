@@ -37,7 +37,7 @@ class GenBank():
 
     """
     def __init__(self, filename):
-        pass
+        self.filename = filename
 
     def get_types(self):
 
