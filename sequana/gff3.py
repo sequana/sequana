@@ -14,11 +14,9 @@
 #  documentation: http://sequana.readthedocs.io
 #
 ##############################################################################
-import re
 import os
 
 from easydev import do_profile
-
 import colorlog
 logger = colorlog.getLogger(__name__)
 
@@ -186,7 +184,6 @@ class GFF3():
         logger.info("Processing GFF file. 1. Reading the input file. Please be patient")
         # ~ 30 seconds on mouse
         df = pd.DataFrame(self.read())
-
 
         self._df = df
         return self._df
@@ -403,7 +400,6 @@ class GFF3():
         # This file is required by the RNAdiff pipeline
 
         identifiers = df.attributes.apply(lambda x: x[ID])
-        length = df.stop - df.start
         df["Gene_id"] = identifiers
         df["Length"] = df.stop - df.start + 1
 
@@ -508,7 +504,7 @@ class GFF3():
                 split = line.rstrip().split("\t")
 
                 chrom_name = split[0]
-                source = split[1]
+                #source = split[1]    #keep this code commented for book-keeping
                 feature = split[2]
                 gene_start = int(split[3])
                 gene_stop = int(split[4])
