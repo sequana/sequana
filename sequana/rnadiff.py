@@ -695,7 +695,7 @@ class RNADiffResults:
 
         # if gff is already instanciate, we can just make a copy otherwise
         # we read it indeed.
-        if hasattr(gff, 'df') is False:
+        if not hasattr(gff, 'df'):
             gff = GFF3(gff)
 
         if self.annot_cols is None:
