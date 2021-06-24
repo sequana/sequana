@@ -1556,9 +1556,9 @@ class MultiBAM():
         from collections import Counter
 
         if exclude_secondary:
-            data = [Counter(bam.get_df().query("flag!=4 and flag<256").rname) for bam in bams]
+            data = [Counter(bam.get_df().query("flag!=4 and flag<256").rname) for bam in self.bams]
         else:
-            data = [Counter(bam.get_df().query("flag!=4").rname) for bam in bams]
+            data = [Counter(bam.get_df().query("flag!=4").rname) for bam in self.bams]
 
         df = pd.DataFrame(data)
         # if there is no alignments, it is equal to 0, not NA

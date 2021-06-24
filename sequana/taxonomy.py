@@ -69,8 +69,7 @@ class NCBITaxonomy():
         inherited GC  flag  (1 or 0)        -- 1 if node inherits genetic code from parent
         mitochondrial genetic code id       -- see gencode.dmp file
         inherited MGC flag  (1 or 0)        -- 1 if node inherits mitochondrial gencode from parent
-        GenBank hidden flag (1 or 0)            -- 1 if name is suppressed in
-        GenBank entry lineage
+        GenBank hidden flag (1 or 0)            -- 1 if name is suppressed in GenBank entry lineage
         hidden subtree root flag (1 or 0)       -- 1 if this subtree has no sequence data yet
         comments                -- free-text comments and citations
         """

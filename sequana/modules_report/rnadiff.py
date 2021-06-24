@@ -47,6 +47,9 @@ class RNAdiffModule(SequanaBaseModule):
         import seaborn
         seaborn.set()
 
+        # any user option here
+        self.kwargs = kwargs
+
         self.create_main_report_content()
         self.create_individual_reports()
 
@@ -269,6 +272,7 @@ condition</p> {}<hr>""".format(
             except:pass
             pylab.savefig(filename)
             pylab.close()
+
         def normedcount(filename):
             import pylab
             pylab.ioff()
@@ -340,12 +344,16 @@ always be the case. </p>"""
             comp.plot_volcano()
             pylab.savefig(filename); pylab.close()
         html_volcano = """<p>The volcano plot here below shows the diﬀerentially
-expressed features with a adjusted p-value below 0.05 (dashed back line). 
+expressed features with a adjusted p-value below 0.05 (dashed back line).
 The volcano plot represents the log10 of the adjusted P
 value as a function of the log2 ratio of diﬀerential expression. </p>"""
         #img3 = self.create_embedded_png(plot_volcano, "filename", style=style)
         img3=""
-        fig = comp.plot_volcano(plotly=True, annotations=self.rnadiff.annotation)
+
+        fig = comp.plot_volcano(plotly=True,
+                annotations=self.rnadiff.annotation,
+                hover_name=self.kwargs.get("hover_name", None))
+
         from plotly import offline
         plotly = offline.plot(fig, output_type="div", include_plotlyjs=False)
 

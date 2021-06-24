@@ -14,20 +14,19 @@
 #  documentation: http://sequana.readthedocs.io
 #
 ##############################################################################
-import re
 import os
 
-# from bioconvert/io/gff3 and adapted later on
-from sequana.annotations import Annotation
 from easydev import do_profile
-
 import colorlog
 logger = colorlog.getLogger(__name__)
+
+from sequana.lazy import pandas as pd
+
 
 __all__ = ["GFF3"]
 
 
-class GFF3(Annotation):
+class GFF3():
     """Read a GFF file, version 3
 
 
@@ -97,6 +96,7 @@ class GFF3(Annotation):
         If feature is provided, must be valid and used as a filter
         to keep only entries for that feature.
 
+        ~10 seconds on mouse genome GFF file.
         """
         # This is used by the rnaseq pipeline and should be kept fast
         if self._attributes:
@@ -126,72 +126,16 @@ class GFF3(Annotation):
                     else:
                         item = item.split()[0].strip()
                     attributes.add(item)
+
         self._attributes = sorted(attributes)
         return self._attributes
     attributes = property(get_attributes)
-
-    """ THis is a multiprocess version but is twice as slow as normal version...
-
-    keep this code for book-keeping for now
-
-    def _process_chunk(self, chunk, queue):
-        results  = []
-        print('processing')
-        for line in chunk:
-            line = line.strip()
-            if line.startswith("#"):
-                continue
-            # Skip empty lines
-            if not line.strip():
-                continue
-            # Format checking
-            split = line.rstrip().split("\t")
-
-            annotation = self._process_main_fields(split[0:8])
-
-            # + 15 seconds
-            annotation["attributes"] = self._process_attributes(split[8])
-            results.append(annotation)
-        queue.put(results)
-
-    def _queue_reader(self, q):
-        return q.get()
-
-    def read_large_gff(self, chunksize=2000000):
-        from itertools import islice
-        S = 0
-
-        import multiprocessing as mp
-        pool = mp.Pool(4)
-        manager = mp.Manager()
-        queue = manager.Queue()
-
-        count = 0
-        with open(self.filename, "r") as reader:
-            while True:
-                chunk = list(islice(reader, chunksize))
-                count += 1
-                print(len(chunk))
-                mp.Process(target=self._process_chunk, args=(chunk, queue)).start()
-                if len(chunk) < chunksize:
-                    break
-        print(1)
-        readers = []
-        for i in range(count):
-            readers.append(pool.apply_async(self._queue_reader, (queue, )))
-        results = []
-        for r in readers:
-            results.extend(r.get())
-        return results
-    """
 
     def read(self):
         """ Read annotations one by one creating a generator """
         count = 0
 
         self._features = set()
-        # we could use a yield but gff for eukaryotes can be read on a laptop
-        results = []
 
         with open(self.filename, "r") as reader:
             line = None
@@ -207,8 +151,9 @@ class GFF3(Annotation):
                 # Format checking
                 split = line.rstrip().split("\t")
 
-                #if split[2].strip() in self.skip_types:
-                #    continue
+                # skipping  biological_region saves lots of time
+                if split[2].strip() in self.skip_types:
+                    continue
 
                 L = len(split)
                 if L != 9 and L != 0:  # pragma: no cover
@@ -217,18 +162,20 @@ class GFF3(Annotation):
                     print(line.strip())
                     count += 1
                     continue
-                # 9 seconds without annotation
-                # + 3 seconds for process_main
 
+                # we process main fields and attributes. This takes most of the
+                # time
                 self._features.add(split[2])
+
+                # the main first 8 fields
                 annotation = self._process_main_fields(split[0:8])
 
-                # + 15 seconds
-                annotation["attributes"] = self._process_attributes(split[8])
+                # all attributes as key/values added to all annotations.
+                annotation['attributes'] = self._process_attributes(split[8])
+                annotation.update(annotation['attributes'])
                 count += 1
 
-                results.append(annotation)
-        return results
+                yield annotation
 
     def _get_df(self):
         if self._df is not None:
@@ -236,30 +183,7 @@ class GFF3(Annotation):
 
         logger.info("Processing GFF file. 1. Reading the input file. Please be patient")
         # ~ 30 seconds on mouse
-        data = self.read()
-
-        # ~ 6 seconds on mouse
-        logger.info("Processing GFF file. 2. Transforming into dataframe")
-        import pandas as pd
-        df = pd.DataFrame(data)
-
-        def get_attr(x, name):
-            if name in x:
-                # some GFF adds " around names which is annoying
-                return x[name].replace("'", "").replace('"', "")
-            else:
-                return None
-
-        logger.info("Processing GFF file. 3. Processing attributes")
-        try:
-            # 10 seconds on mm10
-            attributes = self.attributes
-            for attribute in attributes:
-                df[attribute] = [get_attr(x, attribute) for x in df["attributes"]]
-        except Exception as err:  # pragma: no cover
-            print(err)
-            df["ID"] = [get_attr(x, "ID") for x in df["attributes"]]
-            df["description"] = [get_attr(x, "description") for x in df["attributes"]]
+        df = pd.DataFrame(self.read())
 
         self._df = df
         return self._df
@@ -381,31 +305,45 @@ class GFF3(Annotation):
     def _process_attributes(self, text):
         attributes = {}
 
-        # double the separators to keep track of them
-        text = text.replace("=", "===").replace(";", ";;;")
+        # some GFF/GTF use different conventions:
+        # - "ID=1;DB=2"     this is the standard
+        # - "ID 1;DB 2"     some gtf uses spaces but should be fine
+        # - "ID=1;DB=2;Note=some text with ; character " worst case scenario
+        # In the later case, there is no easy way to fix this. I believe this is
+        # a non-compatible GFF file.
 
-        # ugly but fast replacement 
-        text = text.replace("%09", "\t").replace("%0A", "\n").replace("%0D", "\r").replace("%25", "%")
-        text = text.replace("%3B", ";").replace("%3D", "=").replace("%26", "&").replace("%2C", ",")
+        # we first figure out whether this is a = or space convention
+        sep = None
+        text = text.strip()
+        for x in text:
+            if x in ["=", " "]:
+                sep = x
+                break
+        if sep is None:
+            logger.error(f"Your GFF/GTF does not seem to be correct ({text}). Expected a = or space as separator")
+            sys.exit(1)
+
+        # ugly but fast replacement. not sure how frequent this is. Seen only in
+        # Saccer3 GFF file.
+        text = text.replace("%09", "\t").replace("%0A", "\n").replace("%0D", "\r")
+        text = text.replace("%25", "%").replace("%3D", "=").replace("%26", "&").replace("%2C", ",")
+        text = text.replace("%28", "(").replace("%29",")")  # brackets
+        # we do not convert the special %3B into ;  or %20 into spaces for now
 
         # split into mutliple attributes
-        split = text.split(";;;")
+        # GTF ends in ; so we need to strip it
+        split = text.rstrip(";").split(";")
+
         for attr in split:
             # make sure there is no trailing spaces
             attr = attr.strip()
 
             # find the separator. Sometimes it is spaces, sometimes a = sign
-            idx = attr.find("===")
-            if idx == -1:
-                idx = attr.find(" ")
+            idx = attr.find(sep)
+            value = attr[idx+1:]
 
-            # parse tags and associated values
-            #value = self.decode_complete(attr[idx + 1 :])
-            value = attr[idx + 3 :]
-            if len(value) == 1:
-                value = value[0]
-            #attributes[self.decode_complete(attr[:idx])] = value
-            attributes[attr[:idx]] = value
+            # replace " by nothing (GTF case)
+            attributes[attr[:idx]] = value.replace('"', '').replace("%3B",";").replace("%20", " ")
         return attributes
 
     def create_files_for_rnadiff(
@@ -452,8 +390,6 @@ class GFF3(Annotation):
         if len(tokeep) == 0:
             raise ValueError("No genetic type {} was found".format(genetic_type))
 
-        import pandas as pd
-
         df = pd.DataFrame(tokeep)
 
         # FIXME surely this is now redundant since we have a loop above that
@@ -464,7 +400,6 @@ class GFF3(Annotation):
         # This file is required by the RNAdiff pipeline
 
         identifiers = df.attributes.apply(lambda x: x[ID])
-        length = df.stop - df.start
         df["Gene_id"] = identifiers
         df["Length"] = df.stop - df.start + 1
 
@@ -569,7 +504,7 @@ class GFF3(Annotation):
                 split = line.rstrip().split("\t")
 
                 chrom_name = split[0]
-                source = split[1]
+                #source = split[1]    #keep this code commented for book-keeping
                 feature = split[2]
                 gene_start = int(split[3])
                 gene_stop = int(split[4])

@@ -1040,7 +1040,6 @@ class FastQC(object):
         pylab.ylabel("tile number")
 
     def _get_qualities(self):
-        from sequana import logger
         logger.info("Extracting qualities")
         qualities = []
         with FastqReader(self.filename) as f:
