@@ -61,6 +61,9 @@ target/
 #Ipython Notebook
 .ipynb_checkpoints
 
+# IDE stuff
+.vscode
+
 sequana/resources/data/measles.fa.amb
 sequana/resources/data/measles.fa.ann
 sequana/resources/data/measles.fa.bwt
