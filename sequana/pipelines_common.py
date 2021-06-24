@@ -20,7 +20,6 @@
 import os
 import glob
 import sys
-import platform
 import shutil
 import argparse
 import subprocess
@@ -29,16 +28,29 @@ from sequana.snaketools import SequanaConfig, Module
 from sequana.adapters import AdapterReader
 
 import colorlog
+
 logger = colorlog.getLogger(__name__)
 
 
-
-__all__ = ["Colors", "InputOptions", "SnakemakeOptions", "SlurmOptions",
-    "SequanaManager", "PipelineManager", "GeneralOptions", "print_version", "CutadaptOptions",
-    "KrakenOptions", "init_pipeline", "sequana_epilog", "sequana_prolog"]
+__all__ = [
+    "Colors",
+    "InputOptions",
+    "SnakemakeOptions",
+    "SlurmOptions",
+    "SequanaManager",
+    "PipelineManager",
+    "GeneralOptions",
+    "print_version",
+    "CutadaptOptions",
+    "KrakenOptions",
+    "init_pipeline",
+    "sequana_epilog",
+    "sequana_prolog",
+]
 
 
 deprecated = "This is a deprecated class {}. Please use sequana_pipetools instead of sequana.pipeline_common."
+
 
 class Colors:
     """
@@ -49,6 +61,7 @@ class Colors:
         print(color.failed("msg"))
 
     """
+
     PURPLE = "\033[95m"
     BLUE = "\033[94m"
     GREEN = "\033[92m"
@@ -88,7 +101,7 @@ class Colors:
 
 def error(msg, pipeline):
     color = Colors()
-    print(color.error("ERROR [sequana.{}]::".format(pipeline) +  msg), flush=True)
+    print(color.error("ERROR [sequana.{}]::".format(pipeline) + msg), flush=True)
     sys.exit(1)
 
 
@@ -98,13 +111,14 @@ def guess_scheduler():
     If not, we assume a local run is expected.
     """
     from easydev import cmd_exists
+
     if cmd_exists("sbatch") and cmd_exists("srun"):
-        return 'slurm'
+        return "slurm"
     else:
-        return 'local'
+        return "local"
 
 
-class GeneralOptions():
+class GeneralOptions:
     def __init__(self):
         print(deprecated.format("GeneralOptions"))
 
@@ -113,7 +127,7 @@ class GeneralOptions():
             "--run-mode",
             dest="run_mode",
             default=None,
-            choices=['local', 'slurm'],
+            choices=["local", "slurm"],
             help="""run_mode can be either 'local' or 'slurm'. Use local to
                 run the pipeline locally, otherwise use 'slurm' to run on a
                 cluster with SLURM scheduler. Other clusters are not maintained.
@@ -121,21 +135,29 @@ class GeneralOptions():
                 to fulfill your needs. If unset, sequana searches for the sbatch
                 and srun commands. If found, this is set automatically to
                 'slurm', otherwise to 'local'.
-                """)
+                """,
+        )
 
-        parser.add_argument("--version", action="store_true",
-            help="Print the version and quit")
-        parser.add_argument("--deps", action="store_true",
-            help="Show the known dependencies of the pipeline")
-        parser.add_argument("--level", dest="level", default="INFO",
-            choices=['INFO', 'DEBUG', 'WARNING', 'ERROR', 'CRITICAL'],
-            help="logging level in INFO, DEBUG, WARNING, ERROR, CRITICAL")
+        parser.add_argument("--version", action="store_true", help="Print the version and quit")
+        parser.add_argument("--deps", action="store_true", help="Show the known dependencies of the pipeline")
+        parser.add_argument(
+            "--level",
+            dest="level",
+            default="INFO",
+            choices=["INFO", "DEBUG", "WARNING", "ERROR", "CRITICAL"],
+            help="logging level in INFO, DEBUG, WARNING, ERROR, CRITICAL",
+        )
 
 
-class InputOptions():
-    def __init__(self, group_name="data", input_directory=".",
-                 input_pattern="*fastq.gz", add_input_readtag=True,
-                 add_is_paired=True):
+class InputOptions:
+    def __init__(
+        self,
+        group_name="data",
+        input_directory=".",
+        input_pattern="*fastq.gz",
+        add_input_readtag=True,
+        add_is_paired=True,
+    ):
         """
 
         By default, single-end data sets. If paired, set is_paired to True
@@ -151,11 +173,11 @@ class InputOptions():
     def add_options(self, parser):
         self.group = parser.add_argument_group(self.group_name)
         self.group.add_argument(
-             "--input-directory",
-             dest="input_directory",
-             default=self.input_directory,
-             #required=True,
-             help="""Where to find the FastQ files""",
+            "--input-directory",
+            dest="input_directory",
+            default=self.input_directory,
+            # required=True,
+            help="""Where to find the FastQ files""",
         )
         self.group.add_argument(
             "--input-pattern",
@@ -178,14 +200,11 @@ class InputOptions():
 
         if self.add_is_paired:
             self.group.add_argument(
-                "--paired-data",
-                dest="paired_data",
-                action="store_true",
-                help="""NOT IMPLEMENTED YET"""
+                "--paired-data", dest="paired_data", action="store_true", help="""NOT IMPLEMENTED YET"""
             )
 
 
-class KrakenOptions():
+class KrakenOptions:
     def __init__(self, group_name="section_kraken"):
         print(deprecated.format("KrakenOptions"))
         self.group_name = group_name
@@ -193,21 +212,29 @@ class KrakenOptions():
     def add_options(self, parser):
         group = parser.add_argument_group(self.group_name)
 
-        group.add_argument("--skip-kraken", action="store_true",
+        group.add_argument(
+            "--skip-kraken",
+            action="store_true",
             default=False,
             help="""If provided, kraken taxonomy is performed. A database must be
-                provided (see below). """)
+                provided (see below). """,
+        )
 
-        group.add_argument("--kraken-databases", dest="kraken_databases", type=str,
-            nargs="+", default=[],
+        group.add_argument(
+            "--kraken-databases",
+            dest="kraken_databases",
+            type=str,
+            nargs="+",
+            default=[],
             help="""Path to a valid set of Kraken database(s).
                 If you do not have any, please see https://sequana.readthedocs.io
                 or use sequana_taxonomy --download option.
                 You may use several, in which case, an iterative taxonomy is
-                performed as explained in online sequana documentation""")
+                performed as explained in online sequana documentation""",
+        )
 
 
-class CutadaptOptions():
+class CutadaptOptions:
     description = """
     This section allows you to trim bases (--cutadapt-quality) with poor
     quality and/or remove adapters.
@@ -228,8 +255,7 @@ class CutadaptOptions():
 
     """
 
-    adapters_choice = ["none", "universal", "Nextera", "Rubicon", "PCRFree",
-        "TruSeq", "SMARTer", "Small"]
+    adapters_choice = ["none", "universal", "Nextera", "Rubicon", "PCRFree", "TruSeq", "SMARTer", "Small"]
 
     def __init__(self, group_name="section_cutadapt"):
         self.group_name = group_name
@@ -239,21 +265,30 @@ class CutadaptOptions():
 
         group = parser.add_argument_group(self.group_name, self.description)
 
-        group.add_argument("--skip-cutadapt", action="store_true",
+        group.add_argument(
+            "--skip-cutadapt",
+            action="store_true",
             default=False,
-             help="If provided, fastq cleaning and trimming will be skipped")
+            help="If provided, fastq cleaning and trimming will be skipped",
+        )
 
-        group.add_argument("--cutadapt-fwd", dest="cutadapt_fwd",
+        group.add_argument(
+            "--cutadapt-fwd",
+            dest="cutadapt_fwd",
             default="",
             help="""Provide a adapter as a string of stored in a
                 FASTA file. If the file exists, we will store it as expected
-                with a preceeding prefix 'file:'""")
+                with a preceeding prefix 'file:'""",
+        )
 
-        group.add_argument("--cutadapt-rev", dest="cutadapt_rev",
+        group.add_argument(
+            "--cutadapt-rev",
+            dest="cutadapt_rev",
             default="",
             help="""Provide a adapter as a string of stored in a
                 FASTA file. If the file exists, we will store it as expected
-                with a preceeding prefix 'file:'""")
+                with a preceeding prefix 'file:'""",
+        )
 
         def quality(x):
             x = int(x)
@@ -261,37 +296,57 @@ class CutadaptOptions():
                 raise argparse.ArgumentTypeError("quality must be positive")
             return x
 
-        group.add_argument("--cutadapt-quality", dest="cutadapt_quality",
-            default=30, type=quality,
+        group.add_argument(
+            "--cutadapt-quality",
+            dest="cutadapt_quality",
+            default=30,
+            type=quality,
             help="""0  means no trimming, 30 means keep bases with quality
-                above 30""")
+                above 30""",
+        )
 
-        group.add_argument("--cutadapt-tool-choice", dest="cutadapt_tool_choice",
-            default="cutadapt", choices=["cutadapt", "atropos"],
-            help="Select the prefered tool. Default is cutadapt")
+        group.add_argument(
+            "--cutadapt-tool-choice",
+            dest="cutadapt_tool_choice",
+            default="cutadapt",
+            choices=["cutadapt", "atropos"],
+            help="Select the prefered tool. Default is cutadapt",
+        )
 
-        group.add_argument("--cutadapt-adapter-choice",
+        group.add_argument(
+            "--cutadapt-adapter-choice",
             dest="cutadapt_adapter_choice",
-            default=None, choices=self.adapters_choice,
-            help="""Select the adapters used that may possibly still be
-                present in the sequences""")
-
-        group.add_argument("--cutadapt-design-file", dest="cutadapt_design_file",
             default=None,
-            help="A valid CSV file with mapping of adapter index and sample name")
+            choices=self.adapters_choice,
+            help="""Select the adapters used that may possibly still be
+                present in the sequences""",
+        )
 
-        group.add_argument("--cutadapt-mode", dest="cutadapt_mode",
-            default="b", choices=["g", "a", "b"],
+        group.add_argument(
+            "--cutadapt-design-file",
+            dest="cutadapt_design_file",
+            default=None,
+            help="A valid CSV file with mapping of adapter index and sample name",
+        )
+
+        group.add_argument(
+            "--cutadapt-mode",
+            dest="cutadapt_mode",
+            default="b",
+            choices=["g", "a", "b"],
             help="""Mode used to remove adapters. g for 5', a for 3', b for both
-                5'/3' as defined in cutadapt documentation""")
+                5'/3' as defined in cutadapt documentation""",
+        )
 
-        group.add_argument("--cutadapt-options", dest="cutadapt_options",
+        group.add_argument(
+            "--cutadapt-options",
+            dest="cutadapt_options",
             default=" -O 6 --trim-n",
-            help="""additional options understood by cutadapt""")
+            help="""additional options understood by cutadapt""",
+        )
 
     def check_options(self, options):
-        """
-        """
+        """ """
         design = options.cutadapt_design_file
         adapter_choice = options.cutadapt_adapter_choice
         adapter_fwd = options.cutadapt_fwd
@@ -302,23 +357,28 @@ class CutadaptOptions():
                 logger.critical(
                     "When using --cutadapt-design-file, one must not"
                     " set the forward/reverse adapters with --cutadapt-fwd"
-                    " and/or --cutadapt-rev\n\n" + self.description)
+                    " and/or --cutadapt-rev\n\n" + self.description
+                )
                 sys.exit(1)
 
             # otherwise, we just check the format but we need the adapter choice
-            if options.cutadapt_adapter_choice in [None, 'none']:
+            if adapter_choice in [None, "none"]:
                 logger.critical(
                     "When using --cutadapt-design-file, you must also"
                     " provide the type of adapters using --cutadapt-adapter-choice"
-                    " (set to one of %s )" % self.adapters_choice)
+                    " (set to one of %s )" % self.adapters_choice
+                )
                 sys.exit(1)
             from sequana import FindAdaptersFromDesign
-            fa = FindAdaptersFromDesign(design, options.cutadapt_adapter_choice)
+
+            fa = FindAdaptersFromDesign(design, adapter_choice)
             try:
                 fa.check()
-            except:
-                logger.critical("Your design file contains indexes not found "
-                    "in the list of adapters from {}".format(options.cutadapt_adapter_choice))
+            except ValueError:
+                logger.critical(
+                    "Your design file contains indexes not found "
+                    "in the list of adapters from {}".format(adapter_choice)
+                )
                 sys.exit(1)
 
         # No design provided here below
@@ -337,21 +397,19 @@ class CutadaptOptions():
                 # Could be a string or a file. If a file, check the format
                 if os.path.exists(options.cutadapt_fwd):
                     AdapterReader(options.cutadapt_fwd)
-                    options.cutadapt_fwd = "file:{}".format(
-                        os.path.abspath(options.cutadapt_fwd))
+                    options.cutadapt_fwd = "file:{}".format(os.path.abspath(options.cutadapt_fwd))
             if options.cutadapt_rev:
                 # Could be a string or a file. If a file, check the format
                 if os.path.exists(options.cutadapt_rev):
                     AdapterReader(options.cutadapt_rev)
-                    options.cutadapt_rev = "file:{}".format(
-                        os.path.abspath(options.cutadapt_rev))
+                    options.cutadapt_rev = "file:{}".format(os.path.abspath(options.cutadapt_rev))
         elif options.cutadapt_adapter_choice:
-            # nothing to do, the cutadapt rules from sequana will use 
+            # nothing to do, the cutadapt rules from sequana will use
             # the adapter_choice, and fill the fwd/rev automatically
             pass
 
 
-class SnakemakeOptions():
+class SnakemakeOptions:
     def __init__(self, group_name="snakemake", working_directory="analysis"):
         self.group_name = group_name
         self.workdir = working_directory
@@ -372,26 +430,25 @@ class SnakemakeOptions():
             default=self._default_jobs(),
             help="""Number of jobs to run at the same time (default 4 on a local
                 computer, 40 on a SLURM scheduler). This is the --jobs options
-                of Snakemake"""
+                of Snakemake""",
         )
         group.add_argument(
             "--working-directory",
             dest="workdir",
             default=self.workdir,
             help="""where to save the pipeline and its configuration file and
-            where the analyse can be run"""
+            where the analyse can be run""",
         )
         group.add_argument(
             "--force",
             dest="force",
             action="store_true",
             default=False,
-            help="""If the working directory exists, proceed anyway."""
+            help="""If the working directory exists, proceed anyway.""",
         )
 
 
-
-class SlurmOptions():
+class SlurmOptions:
     def __init__(self, group_name="slurm", memory=4000, queue="common", cores=4):
         """
 
@@ -444,6 +501,7 @@ def init_pipeline(NAME):
     This is called even before parsing options
     """
     import sys
+
     print("deprecated use the before_pipeline from sequana_pipetools")
     if "--version" in sys.argv:
         print_version(NAME)
@@ -451,13 +509,16 @@ def init_pipeline(NAME):
 
     if "--deps" in sys.argv:
         from sequana.snaketools import Module
+
         module = Module(NAME)
         with open(module.requirements, "r") as fin:
             data = fin.read()
         print("Those software will be required for the pipeline to work correctly:\n{}".format(data))
         sys.exit(0)
 
-sequana_epilog = Colors().purple("""If you use or like the Sequana project,
+
+sequana_epilog = Colors().purple(
+    """If you use or like the Sequana project,
 please consider citing us (visit sequana.readthedocs.io for details) or use this
 citation:
 
@@ -465,12 +526,13 @@ Cokelaer et al, (2017), ‘Sequana’: a Set of Snakemake NGS pipelines, Journal
 Open Source Software, 2(16), 352, JOSS DOI doi:10.21105/joss.00352
 
 
-""")
+"""
+)
 
 sequana_prolog = """Welcome to Sequana project\nThis script prepares the
 pipeline {name} and stored the pipeline and its configuration in the requested
 working directory. Please check out the documentation carefully. Pipelines can
-be run locally or on cluster. For a local run, 
+be run locally or on cluster. For a local run,
 
 sequana_pipelines_{name} --run-mode local
 
@@ -483,26 +545,29 @@ will be created with instructions on how to run the pipeline.
 """
 
 
-
 def print_version(name):
     from sequana import version
+
     print("Sequana version used: {}".format(version))
     try:
         import pkg_resources
+
         ver = pkg_resources.require("sequana_{}".format(name))[0].version
         print("pipeline sequana_{} version used: {}".format(name, ver))
     except Exception as err:
         print(err)
         print("pipeline sequana_{} version used: ?".format(name))
         sys.exit(1)
-    print(Colors().purple("\nHow to help ?\n- Please, consider citing us (see sequana.readthedocs.io)".format(version)))
+    print(Colors().purple("\nHow to help ?\n- Please, consider citing us (see sequana.readthedocs.io)"))
     print(Colors().purple("- Contribute to the code or documentation"))
     print(Colors().purple("- Fill issues on https://github.com/sequana/sequana/issues/new/choose"))
     print(Colors().purple("- Star us https://github.com/sequana/sequana/stargazers"))
 
 
 def get_pipeline_location(pipeline_name):
-    class Opt():pass
+    class Opt:
+        pass
+
     options = Opt()
     options.workdir = "."
     options.version = False
@@ -510,12 +575,7 @@ def get_pipeline_location(pipeline_name):
     return p._get_package_location()
 
 
-
-class SequanaManager():
-    """
-
-    """
-
+class SequanaManager:
     def __init__(self, options, name="undefined"):
         """
         :param options: an instance of :class:`Options`
@@ -531,7 +591,7 @@ class SequanaManager():
 
         .. todo:: allows options to be None and fill it with miminum contents
         """
-        #logger.setLevel(options.level)
+        # logger.setLevel(options.level)
 
         self.options = options
 
@@ -551,22 +611,26 @@ class SequanaManager():
         self.module.is_executable()
 
         # If this is a pipeline, let us load its config file
-        # Do we start from an existing project with a valid config file ?
+        # Do we start from an existing project with a valid config file
+        config_name = os.path.basename(self.module.config)
+        self.config = None
         if "from_project" in dir(options) and options.from_project:
-            cfg_project_filename = None
-            if os.path.exists(options.from_project) and options.from_project.endswith("config.yaml"):
-                cfg_project_filename = options.from_project
-            elif ".sequana" in options.from_project:
-                if os.path.exists(options.from_project + "/config.yaml"):
-                    cfg_project_filename = options.from_project
-            elif os.path.exists(options.from_project + "/.sequana/config.yaml"):
-                cfg_project_filename = options.from_project + "/.sequana/config.yaml"
-
-            if cfg_project_filename is None:
-                raise IOError("Could not find config.yaml in the project specified {}".format(
-                    options.from_project))
-            logger.info("Reading existing config file {}".format(cfg_project_filename))
-            self.config = SequanaConfig(cfg_project_filename)
+            possible_filenames = (
+                options.from_project,  # exact config file path
+                f"{options.from_project}/{config_name}",  # config file in project path
+                f"{options.from_project}/.sequana/{config_name}",  # config file in .sequana dir
+            )
+            for filename in possible_filenames:
+                try:
+                    self.config = SequanaConfig(filename)
+                    logger.info(f"Reading existing config file {filename}")
+                    break
+                except FileNotFoundError:
+                    pass
+            if not self.config:
+                raise FileNotFoundError(
+                    "Could not find config.yaml in the project specified {}".format(options.from_project)
+                )
         else:
             self.config = SequanaConfig(self.module.config)
 
@@ -576,62 +640,60 @@ class SequanaManager():
         # define the data path of the pipeline
         self.datapath = self._get_package_location()
 
-
     def exists(self, filename, exit_on_error=True, warning_only=False):
-        if os.path.exists(filename) is False:
-            if warning_only is False:
-                logger.error("{} file does not exists".format(filename))
+        if not os.path.exists(filename):
+            if warning_only:
+                logger.warning(f"{filename} file does not exists")
+            else:
+                logger.error(f"{filename} file does not exists")
                 if exit_on_error:
                     sys.exit(1)
-            elif warning_only is True:
-                logger.warning("{} file does not exists".format(filename))
+            return False
+        return True
 
     def copy_requirements(self):
         # FIXME
         # code redundant with snaketools.config.copy_requirements
-        if 'requirements' not in self.config.config:
+        if "requirements" not in self.config.config:
             return
 
         for requirement in self.config.config.requirements:
-            if os.path.exists(requirement):
+            if not requirement.startswith("http"):
                 try:
-                    shutil.copy(requirement, target)
-                except:
-                    pass # the target and input may be the same
-            elif requirement.startswith('http') is False:
-                try:
-                    logger.info('Copying {} from sequana pipeline {}'.format(requirement, self.name))
-                    path = self.datapath + os.sep + requirement
+                    logger.info(f"Copying {requirement} from sequana pipeline {self.name}")
+                    path = os.sep.join((self.datapath, requirement))
                     shutil.copy(path, self.workdir)
                 except Exception as err:
                     print(err)
-                    msg = "This requirement %s was not found in sequana."
+                    msg = f"This requirement {requirement} was not found in sequana."
                     logger.error(msg)
                     sys.exit(1)
 
     def _get_package_location(self):
+        fullname = f"sequana_{self.name}"
         try:
-            fullname = "sequana_{}".format(self.name)
             import pkg_resources
+
             info = pkg_resources.get_distribution(fullname)
-            sharedir = os.sep.join([info.location , "sequana_pipelines", self.name, 'data'])
-        except pkg_resources.DistributionNotFound as err:
-            logger.error("package provided (%s) not installed." % package)
+            sharedir = os.sep.join([info.location, "sequana_pipelines", self.name, "data"])
+        except pkg_resources.DistributionNotFound:
+            logger.error(f"package provided ({fullname}) not installed.")
             raise
         return sharedir
 
     def _get_package_version(self):
         import pkg_resources
+
         ver = pkg_resources.require("sequana_{}".format(self.name))[0].version
         return ver
 
     def _guess_scheduler(self):
-
         from easydev import cmd_exists
+
         if cmd_exists("sbatch") and cmd_exists("srun"):
-            return 'slurm'
+            return "slurm"
         else:
-            return 'local'
+            return "local"
 
     def setup(self):
         """Initialise the pipeline.
@@ -656,8 +718,8 @@ class SequanaManager():
         # parameters for a run on a SLURM scheduler
         logger.info("Welcome to Sequana pipelines suite (sequana.readthedocs.io)")
 
-        cmd = "#!/bin/bash\nsnakemake -s {}.rules --stats stats.txt"
-        self.command = cmd.format(self.name)
+        snakefilename = os.path.basename(self.module.snakefile)
+        self.command = f"#!/bin/bash\nsnakemake -s {snakefilename} --stats stats.txt"
 
         # FIXME a job is not a core. Ideally, we should add a core option
         if self._guess_scheduler() == "local":
@@ -667,27 +729,23 @@ class SequanaManager():
 
         if self.options.run_mode is None:
             self.options.run_mode = self._guess_scheduler()
-            logger.debug("Guessed scheduler is {}".format(
-                self.options.run_mode))
+            logger.debug("Guessed scheduler is {}".format(self.options.run_mode))
 
         if self.options.run_mode == "slurm":
             if self.options.slurm_queue == "common":
                 slurm_queue = ""
             else:
                 slurm_queue = "-A {} --qos {} -p {}".format(
-                    self.options.slurm_queue,
-                    self.options.slurm_queue,
-                    self.options.slurm_queue)
+                    self.options.slurm_queue, self.options.slurm_queue, self.options.slurm_queue
+                )
 
             if self.module.cluster_config:
-                self.command += ' --cluster "sbatch --mem={{cluster.ram}} --cpus-per-task={{threads}}"'.format(
-                    slurm_queue)
+                self.command += ' --cluster "sbatch --mem={{cluster.ram}} --cpus-per-task={{threads}}"'
                 self.command += " --cluster-config cluster_config.json "
             else:
                 self.command += ' --cluster "sbatch --mem {} -c {} {}"'.format(
-                    self.options.slurm_memory,
-                    self.options.slurm_cores_per_job,
-                    slurm_queue)
+                    self.options.slurm_memory, self.options.slurm_cores_per_job, slurm_queue
+                )
 
         # This should be in the setup, not in the teardown since we may want to
         # copy files when creating the pipeline. This is the case e.g. in the
@@ -698,14 +756,12 @@ class SequanaManager():
 
     def _create_directories(self):
         # Now we create the directory to store the config/pipeline
-
-        if os.path.exists(self.workdir) is True and self.options.force is False:
-            print(self.colors.failed(
-            "Output path {} exists already. Use --force".format(self.workdir)))
-            sys.exit()
-        elif os.path.exists(self.workdir) is True and self.options.force is True:
-            print(self.colors.warning(
-                "Path {} exists already but you set --force to overwrite it".format(self.workdir)))
+        if os.path.exists(self.workdir):
+            if self.options.force:
+                print(self.colors.warning(f"Path {self.workdir} exists already but you set --force to overwrite it"))
+            else:
+                print(self.colors.failed(f"Output path {self.workdir} exists already. Use --force"))
+                sys.exit()
         else:
             os.mkdir(self.workdir)
 
@@ -719,10 +775,8 @@ class SequanaManager():
         # Sanity checks
         cfg = self.config.config
 
-
         filenames = glob.glob(cfg.input_directory + os.sep + cfg.input_pattern)
-        logger.info("Found {} files matching your input  pattern ({})".format(
-            len(filenames), cfg.input_pattern))
+        logger.info(f"Found {len(filenames)} files matching your input  pattern ({cfg.input_pattern})")
 
         if len(filenames) == 0:
             logger.critical("Found no files with your matching pattern ({})".format(cfg.input_pattern))
@@ -733,26 +787,26 @@ class SequanaManager():
 
     def check_fastq_files(self):
         from sequana import FastQFactory
+
+        cfg = self.config.config
         try:
-            ff = FastQFactory(cfg.input_directory + os.sep +
-                                    cfg.input_pattern,
-                                  read_tag = cfg.input_readtag)
+            ff = FastQFactory(cfg.input_directory + os.sep + cfg.input_pattern, read_tag=cfg.input_readtag)
 
             # This tells whether the data is paired or not
             if ff.paired:
                 paired = "paired reads"
             else:
                 paired = "single-end reads"
-            logger.info("Your input data seems to be made of {}".format(paired))
+            logger.info(f"Your input data seems to be made of {paired}")
 
-        except:
-            logger.error("""Input data is not fastq-compatible with sequana pipelines. You may want to set the read_tag to empty string or None if you wish 
-to analyse non-fastQ files (e.g. BAM)""")
+        except Exception:
+            logger.error(
+                "Input data is not fastq-compatible with sequana pipelines. You may want to set the read_tag"
+                " to empty string or None if you wish to analyse non-fastQ files (e.g. BAM)"
+            )
             sys.exit(1)
 
-
-    def teardown(self, check_schema=True, check_input_files=True,
-            check_fastq_files=True):
+    def teardown(self, check_schema=True, check_input_files=True, check_fastq_files=True):
         """Save all files required to run the pipeline and perform sanity checks
 
 
@@ -777,30 +831,28 @@ to analyse non-fastQ files (e.g. BAM)""")
         are copied in the working directory
 
         """
-
         if check_input_files:
             self.check_input_files()
 
-
         # the config file
         self.config._update_yaml()
-        self.config.save("{}/{}/config.yaml".format(self.workdir , ".sequana"))
+        config_name = os.path.basename(self.module.config)
+        self.config.save(f"{self.workdir}/.sequana/{config_name}")
         try:
-            os.symlink("{}/config.yaml".format(".sequana"),
-                   "{}/config.yaml".format(self.workdir))
-        except:
+            os.symlink(f".sequana/{config_name}", f"{self.workdir}/{config_name}")
+        except FileExistsError:
             pass
 
         # the command
-        with open("{}/{}.sh".format(self.workdir, self.name), "w") as fout:
+        with open(f"{self.workdir}/{self.name}.sh", "w") as fout:
             fout.write(self.command)
 
         # the snakefile
-        shutil.copy(self.module.snakefile, "{}/{}".format(self.workdir, ".sequana"))
+        shutil.copy(self.module.snakefile, f"{self.workdir}/.sequana")
+        snakefilename = os.path.basename(self.module.snakefile)
         try:
-            os.symlink("{}/{}.rules".format(".sequana", self.name), 
-                "{}/{}.rules".format(self.workdir, self.name))
-        except:
+            os.symlink(f".sequana/{snakefilename}", f"{self.workdir}/{snakefilename}")
+        except FileExistsError:
             pass
 
         # the cluster config if any
@@ -815,17 +867,28 @@ to analyse non-fastQ files (e.g. BAM)""")
         if self.module.multiqc_config:
             shutil.copy(self.module.multiqc_config, "{}".format(self.workdir))
 
+        # the rules if any
+        if self.module.rules:
+            try:
+                shutil.copytree(self.module.rules, f"{self.workdir}/rules")
+            except FileExistsError:
+                if self.options.force:
+                    shutil.rmtree(f"{self.workdir}/rules")
+                    shutil.copytree(self.module.rules, f"{self.workdir}/rules")
+                pass
+
         # the schema if any
         if self.module.schema_config:
+            schema_name = os.path.basename(self.module.schema_config)
             shutil.copy(self.module.schema_config, "{}".format(self.workdir))
 
             # This is the place where we can check the entire validity of the
             # inputs based on the schema
             if check_schema:
-                #logger.info("Checking config file with schema")
                 from sequana import SequanaConfig
-                cfg = SequanaConfig("{}/config.yaml".format(self.workdir))
-                cfg.check_config_with_schema("{}/schema.yaml".format(self.workdir))
+
+                cfg = SequanaConfig(f"{self.workdir}/{config_name}")
+                cfg.check_config_with_schema(f"{self.workdir}/{schema_name}")
 
         # finally, we copy the files be found in the requirements section of the
         # config file.
@@ -833,7 +896,7 @@ to analyse non-fastQ files (e.g. BAM)""")
 
         # some information
         msg = "Check the script in {}/{}.sh as well as "
-        msg += "the configuration file in {}/config.yaml.\n"
+        msg += f"the configuration file in {{}}/{config_name}.\n"
         print(self.colors.purple(msg.format(self.workdir, self.name, self.workdir)))
 
         msg = "Once ready, execute the script {}.sh using \n\n\t".format(self.name)
@@ -847,14 +910,15 @@ to analyse non-fastQ files (e.g. BAM)""")
         with open(self.workdir + "/.sequana/info.txt", "w") as fout:
             #
             from sequana import version
+
             fout.write("# sequana version: {}\n".format(version))
             fout.write("# sequana_{} version: {}\n".format(self.name, self._get_package_version()))
             cmd1 = os.path.basename(sys.argv[0])
-            fout.write(" ".join([cmd1]+sys.argv[1:]))
+            fout.write(" ".join([cmd1] + sys.argv[1:]))
 
         # Save unlock.sh
         with open(self.workdir + "/unlock.sh", "w") as fout:
-            fout.write("#!/bin/sh\nsnakemake -s {}.rules --unlock -j 1".format(self.name))
+            fout.write(f"#!/bin/sh\nsnakemake -s {snakefilename} --unlock -j 1")
 
         # save environement
         try:
@@ -862,7 +926,7 @@ to analyse non-fastQ files (e.g. BAM)""")
             with open("{}/.sequana/env.yml".format(self.workdir), "w") as fout:
                 subprocess.call(cmd.split(), stdout=fout)
             logger.debug("Saved your conda environment into env.yml")
-        except:
+        except Exception:
             cmd = "pip freeze"
             with open("{}/.sequana/pip.yml".format(self.workdir), "w") as fout:
                 subprocess.call(cmd.split(), stdout=fout)
@@ -870,6 +934,7 @@ to analyse non-fastQ files (e.g. BAM)""")
 
         # General information
         from easydev import CustomConfig
+
         configuration = CustomConfig("sequana", verbose=False)
         sequana_config_path = configuration.user_config_dir
         completion = sequana_config_path + "/pipelines/{}.sh".format(self.name)
@@ -880,17 +945,15 @@ to analyse non-fastQ files (e.g. BAM)""")
                     version = line.split("#version:")[1].strip()
                     version = version.replace(">=", "").replace(">", "")
                     from distutils.version import StrictVersion
-                    if StrictVersion(version) <  StrictVersion(self._get_package_version()):
+
+                    if StrictVersion(version) < StrictVersion(self._get_package_version()):
                         msg = (
-                            "The version {} of your completion file for the"
-                            "  {} pipeline seems older than the installed"
-                            " pipeline itself ({}). "
-                            "Please, consider updating the completion file {}"
+                            "The version {} of your completion file for the {} pipeline seems older than the installed"
+                            " pipeline itself ({}). Please, consider updating the completion file {}"
                             " using the following command: \n\t sequana_completion --name {}\n"
-                            "available in the sequana_pipetools package (pip "
-                                "install sequana_completion)")
-                        msg = msg.format(version, self.name, 
-                            self._get_package_version(), completion, self.name)
+                            "available in the sequana_pipetools package (pip install sequana_completion)"
+                        )
+                        msg = msg.format(version, self.name, self._get_package_version(), completion, self.name)
                         logger.info(msg)
 
         else:
@@ -902,9 +965,8 @@ to analyse non-fastQ files (e.g. BAM)""")
     def update_config(self, config, options, section_name):
         for option_name in config[section_name]:
             try:
-                config[section_name][option_name] = getattr(options,
-                    section_name + "_" + option_name)
-            except:
+                config[section_name][option_name] = getattr(options, section_name + "_" + option_name)
+            except AttributeError:
                 logger.debug("update_config. Could not find {}".format(option_name))
 
 
