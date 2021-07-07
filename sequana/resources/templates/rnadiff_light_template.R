@@ -92,8 +92,7 @@ export_counts = function(dds, outdir){
 
     counts = counts(dds)
     norm_counts = counts(dds, normalized=TRUE)
-    vst_counts = assay(vst(dds, blind=FALSE))
-
+    vst_counts = getVarianceStabilizedData(dds)
 
     write.table(counts, paste(outdir, 'counts_raw.csv', sep="/"), sep=",")
     write.table(norm_counts, paste(outdir, 'counts_normed.csv', sep="/"), sep=",")
