@@ -19,6 +19,7 @@ import pkg_resources
 import shutil
 import subprocess
 import sys
+import tempfile
 
 import click
 
@@ -514,7 +515,6 @@ def rnadiff(**kwargs):
     from easydev import mkdirs
 
     mkdirs(f"{outdir}")
-    fc.rnadiff_df.to_csv(f"{outdir}/light_counts.csv")
 
     logger.info(f"Differential analysis to be saved into ./{outdir}")
     for k in sorted(
@@ -529,32 +529,32 @@ def rnadiff(**kwargs):
     ):
         logger.info(f"  Parameter {k} set to : {kwargs[k]}")
 
-    r = RNADiffAnalysis(
-        f"{outdir}/light_counts.csv",
-        design,
-        condition=kwargs["condition"],
-        batch=kwargs["batch"],
-        comparisons=comparisons,
-        fc_feature=feature,
-        fc_attribute=attribute,
-        outdir=outdir,
-        gff=gff,
-        cooks_cutoff=kwargs.get("cooks_cutoff"),
-        independent_filtering=kwargs.get("independent_filtering"),
-        beta_prior=kwargs.get("beta_prior"),
-        fit_type=kwargs.get("fit_type"),
-    )
+    with tempfile.NamedTemporaryFile() as tmpf:
+        fc.rnadiff_df.to_csv(tmpf.name)
 
-    try:
-        logger.info(f"Running DGE. Saving results into {outdir}")
-        results = r.run()
-        results.to_csv(f"{outdir}/rnadiff.csv")
-    except Exception as err:
-        logger.error(err)
-        sys.exit(1)
+        r = RNADiffAnalysis(
+            tmpf.name,
+            design,
+            condition=kwargs["condition"],
+            batch=kwargs["batch"],
+            comparisons=comparisons,
+            fc_feature=feature,
+            fc_attribute=attribute,
+            outdir=outdir,
+            gff=gff,
+            cooks_cutoff=kwargs.get("cooks_cutoff"),
+            independent_filtering=kwargs.get("independent_filtering"),
+            beta_prior=kwargs.get("beta_prior"),
+            fit_type=kwargs.get("fit_type"),
+        )
 
-    # copy design.csv into {outdir}
-    shutil.copy(kwargs["design"], Path(outdir) / "design.csv")
+        try:
+            logger.info(f"Running DGE. Saving results into {outdir}")
+            results = r.run()
+            results.to_csv(f"{outdir}/rnadiff.csv")
+        except Exception as err:
+            logger.error(err)
+            sys.exit(1)
 
     logger.info(f"Reporting. Saving in rnadiff.html")
 
