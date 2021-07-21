@@ -1,4 +1,3 @@
-atropos>=1.1.16
 bioservices>=1.7.8
 brokenaxes
 bx-python
