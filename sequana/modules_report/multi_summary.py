@@ -1,22 +1,12 @@
-# -*- coding: utf-8 -*-
 #
-#  This file is part of Sequana software
+#  Copyright (c) 2016-2021 - Sequana Development Team
 #
-#  Copyright (c) 2016 - Sequana Development Team
-#
-#  File author(s):
-#      Thomas Cokelaer <thomas.cokelaer@pasteur.fr>
-#      Dimitri Desvillechabrol <dimitri.desvillechabrol@pasteur.fr>,
-#          <d.desvillechabrol@gmail.com>
-#
-#  Distributed under the terms of the 3-clause BSD license.
 #  The full license is in the LICENSE file, distributed with this software.
 #
 #  website: https://github.com/sequana/sequana
 #  documentation: http://sequana.readthedocs.io
 #
 ##############################################################################
-import os
 import glob
 import json
 
@@ -31,7 +21,7 @@ import colorlog
 logger = colorlog.getLogger(__name__)
 
 
-__all__ = ['SequanaMultipleSummary']
+__all__ = ["ReadSummary", "MultiSummary"]
 
 
 class ReadSummary(object):
@@ -64,7 +54,7 @@ class ReadSummary(object):
         d = self.get_cutadapt_stats()
         try:
             trimming = d["percent"]["Pairs too short"]
-        except:
+        except KeyError:
             trimming = d["percent"]["Reads too short"]
         return float(trimming.replace("%", "").replace("(","").replace(")","").strip())
 
@@ -147,14 +137,15 @@ class MultiSummary(SequanaBaseModule):
         if verbose is False:
             logger.setLevel("WARNING")
 
-        logger.info("Sequana Summary is still a tool in progress and have been " +
-              "  tested with the quality_control pipeline only for now.")
+        logger.info("Sequana Quality control Summary will not be maintained. Please use sequana_fastqc for QCs, sequana_multitax for Taxonomy.")
         self.title = "Sequana multiple summary"
         self.devtools = DevTools()
 
         self.filenames = list(glob.iglob(pattern, recursive=True))
+
         self.summaries = [ReadSummary(filename) for filename in self.filenames]
-        self.projects = [ReadSummary(filename).data['project'] for filename in self.filenames]
+        self.projects = [s.data['project'] for s in self.summaries]
+
         self.create_report_content()
         self.create_html(output_filename)
 
@@ -178,12 +169,6 @@ class MultiSummary(SequanaBaseModule):
         links = [{'href': filename.replace(".json", ".html"),'caption': project}
                                for filename, project in zip(self.filenames,self.projects)]
         introhtml = "<div><b>Number of samples:</b>{}</div>".format(len(self.summaries))
-        #introhtml += '<div class="multicolumns"><ul>'
-        #for link in links:
-        #    introhtml += ' <li><a href="{}">{}</a></li> '.format(
-        #                                link["href"], link["caption"])
-        #introhtml += '\n</ul>\n</div>'
-
 
         self.jinja['sections'] = []
 
@@ -191,7 +176,8 @@ class MultiSummary(SequanaBaseModule):
         self.df = {}
 
         # The order does not matter here, everything is done in JINJA
-        try:self.populate_nreads_raw()
+        try:
+            self.populate_nreads_raw()
         except Exception as err:
             print(err)
 
