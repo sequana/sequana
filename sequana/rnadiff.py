@@ -34,6 +34,7 @@ from sequana.enrichment import PantherEnrichment, KeggPathwayEnrichment
 
 
 import colorlog
+
 logger = colorlog.getLogger(__name__)
 
 
@@ -53,9 +54,9 @@ class RNADesign:
     def __init__(self, filename, sep="\s*,\s*", reference=None):
         self.filename = filename
         # \s to strip the white spaces
-        self.df = pd.read_csv(filename, sep=sep, engine="python", 
-                comment="#",
-                dtype={"label": str})
+        self.df = pd.read_csv(
+            filename, sep=sep, engine="python", comment="#", dtype={"label": str}
+        )
 
         self.reference = reference
 
@@ -138,12 +139,14 @@ class RNADiffAnalysis:
     ):
 
         self.outdir = Path(outdir)
+        self.counts_dir = self.outdir / "counts"
+        self.code_dir = self.outdir / "code"
 
         self.usr_counts = counts_file
         self.usr_design = design_file
 
-        self.counts_filename = self.outdir / "counts.csv"
-        self.design_filename = self.outdir / "design.csv"
+        self.counts_filename = self.code_dir / "counts.csv"
+        self.design_filename = self.code_dir / "design.csv"
 
         self.counts, self.design = self.check_and_save_input_tables(
             sep_counts, sep_design
@@ -182,10 +185,10 @@ Design overview:\n\
         return info
 
     def check_and_save_input_tables(self, sep_counts, sep_design):
-        try:
-            self.outdir.mkdir()
-        except:
-            pass
+
+        self.outdir.mkdir(exist_ok=True)
+        self.counts_dir.mkdir(exist_ok=True)
+        self.code_dir.mkdir(exist_ok=True)
 
         counts = pd.read_csv(
             self.usr_counts, sep=sep_counts, index_col="Geneid", comment="#"
@@ -238,7 +241,7 @@ or comparisons. possible values are {valid_conditions}"""
         """
         logger.info("Running DESeq2 analysis. Please wait")
 
-        rnadiff_script = self.outdir / "rnadiff_light.R"
+        rnadiff_script = self.code_dir / "rnadiff_light.R"
 
         with open(rnadiff_script, "w") as f:
             f.write(RNADiffAnalysis.template.render(self.__dict__))
@@ -260,9 +263,9 @@ or comparisons. possible values are {valid_conditions}"""
 
         # Capture rnadiff output, Unfortunately, R code mixes stdout/stderr
         # FIXME
-        with open(self.outdir / "rnadiff.err", "w") as f:
+        with open(self.code_dir / "rnadiff.err", "w") as f:
             f.write(stderr)
-        with open(self.outdir / "rnadiff.out", "w") as f:
+        with open(self.code_dir / "rnadiff.out", "w") as f:
             f.write(stdout)
 
         logger.info("DGE analysis done.")
@@ -388,11 +391,11 @@ class RNADiffTable:
                 "<{}".format(padj) if x else ">={}".format(padj) for x in df.padj < padj
             ]
 
-            
-
             if hover_name is not None:
                 if hover_name not in df.columns:
-                    logger.warning(f"hover_name {hover_name} not in the GFF attributes. Switching to automatic choice")
+                    logger.warning(
+                        f"hover_name {hover_name} not in the GFF attributes. Switching to automatic choice"
+                    )
                     hover_name = None
             if hover_name is None:
                 if "Name" in df.columns:
@@ -587,7 +590,7 @@ class RNADiffResults:
         condition="condition",
         annot_cols=None,
         # annot_cols=["ID", "Name", "gene_biotype"],
-        **kwargs
+        **kwargs,
     ):
         """
 
@@ -598,29 +601,29 @@ class RNADiffResults:
         self.files = [x for x in self.path.glob(pattern)]
 
         self.counts_raw = pd.read_csv(
-            self.path / "counts_raw.csv", index_col=0, sep=","
+            self.path / "counts" / "counts_raw.csv", index_col=0, sep=","
         )
         self.counts_raw.sort_index(axis=1, inplace=True)
 
         self.counts_norm = pd.read_csv(
-            self.path / "counts_normed.csv", index_col=0, sep=","
+            self.path / "counts" / "counts_normed.csv", index_col=0, sep=","
         )
         self.counts_norm.sort_index(axis=1, inplace=True)
 
         self.counts_vst = pd.read_csv(
-            self.path / "counts_vst_norm.csv", index_col=0, sep=","
+            self.path / "counts" / "counts_vst_norm.csv", index_col=0, sep=","
         )
         self.counts_vst.sort_index(axis=1, inplace=True)
 
         self.dds_stats = pd.read_csv(
-            self.path / "overall_dds.csv", index_col=0, sep=","
+            self.path / "code" / "overall_dds.csv", index_col=0, sep=","
         )
         self.condition = condition
         self.design_df = self._get_design(
             design_file, condition=self.condition, palette=palette
         )
-        
-        # optional annotation        
+
+        # optional annotation
         self.fc_attribute = fc_attribute
         self.fc_feature = fc_feature
         self.annot_cols = annot_cols
@@ -631,9 +634,7 @@ class RNADiffResults:
                 )
             self.annotation = self.read_annot(gff)
         else:
-            logger.warning(
-                "Missing gff input file. No annotation will be added."
-            )
+            logger.warning("Missing gff input file. No annotation will be added.")
             self.annotation = None
 
         # some filtering attributes
@@ -695,7 +696,7 @@ class RNADiffResults:
 
         # if gff is already instanciate, we can just make a copy otherwise
         # we read it indeed.
-        if not hasattr(gff, 'df'):
+        if not hasattr(gff, "df"):
             gff = GFF3(gff)
 
         if self.annot_cols is None:

@@ -117,6 +117,6 @@ res = pairwise_comparison(dds, {{comparisons_str}}, "{{condition}}",
                           independentFiltering={{independent_filtering}},
                           cooksCutoff={{cooks_cutoff}})
 
-export_dds(dds, "{{outdir}}")
+export_dds(dds, "{{code_dir}}")
 export_pairwise(res, "{{outdir}}")
-export_counts(dds, "{{outdir}}")
+export_counts(dds, "{{counts_dir}}")
