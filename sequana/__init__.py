@@ -24,7 +24,6 @@ sequana_config_path = configuration.user_config_dir
 # This must be import before all other modules (sequana_data function)
 from .datatools import sequana_data
 from .assembly import *
-from .adapters import AdapterReader, FindAdaptersFromDesign, Adapter
 from .bamtools import BAM, SAMFlags, SAM, CRAM
 from .bed import BED
 from .bedtools import GenomeCov

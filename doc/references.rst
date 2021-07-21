@@ -6,12 +6,6 @@ References
 
 .. contents::
 
-Adapters
----------------
-.. automodule:: sequana.adapters
-    :members:
-    :undoc-members:
-
 Assembly related
 -----------------------------
 

@@ -34,8 +34,6 @@ rule cutadapt:
         - __cutadapt__mode, # g for 5' adapter, a for 3' and b 
           for both 5'/3' (see cutadapt doc for details)
         - __cutadapt__wkdir,
-        - __cutadapt__design,
-        - __cutadapt__design_adapter,
         - __cutadapt__sample
 
     Other requirements:
@@ -47,8 +45,6 @@ rule cutadapt:
             cutadapt:
                 do: yes
                 tool_choice: cutadapt
-                design: "%(adapter_design)s"
-                adapter_choice: "%(adapter_type)s"
                 fwd: "%(adapter_fwd)s"
                 rev: "%(adapter_rev)s"
                 m: 20   # cutoff
@@ -71,8 +67,6 @@ rule cutadapt:
         kwargs = __cutadapt__options,
         mode = __cutadapt__mode,
         wkdir = __cutadapt__wkdir,
-        design = __cutadapt__design,
-        design_adapter = __cutadapt__design_adapter,  # TODO this is the adapter kit. to rename
         sample = __cutadapt__sample,
     threads:
         config['cutadapt']['threads']
@@ -81,34 +75,8 @@ rule cutadapt:
         executable = config['cutadapt']['tool_choice'] # could be cutadapt or atropos
 
         # Fill the fwd and revcomp variables depending on the config file
-        if config['cutadapt']['design_file']:
-            from sequana import FindAdaptersFromDesign
-            # sample names are e.g. SAMPLE1_CACGAT and therefore we should split
-            # the real sample name from the index. Unfortunately, users may
-            # call their sample name "SAMPLE1_MYNAME_CAGCGT. How do we know
-            # that the index CAGCCT is not part of the name ? How do we know
-            # how many underscores the users used in its sample name ? There is
-            # no way to know ... so we will try by trial and error
-            underscores = params.sample.count("_")
-            for i, trial in enumerate(range(underscores+1)):
-                sample = params.sample.rsplit("_", i)[0]
-                #print("{} {}".format(sample, i), flush=True)
-                try:
-                    fa = FindAdaptersFromDesign(params.design, params.design_adapter)
-                    fwd, revcomp = fa.save_adapters_to_fasta(sample, output_dir=params.wkdir)
-                    break # we succeed to find the correct name
-                except ValueError:
-                    pass
-            fwd = "file:%s" % fwd
-            revcomp = "file:%s" % revcomp
-        elif params.design_adapter:
-            from sequana.adapters import get_sequana_adapters
-            fwd = "file:%s" % get_sequana_adapters(params.design_adapter, "fwd")
-            revcomp = "file:%s" % get_sequana_adapters(params.design_adapter, "revcomp")
-        else:
-            fwd = params.fwd
-            revcomp = params.rev
-
+        fwd = params.fwd
+        revcomp = params.rev
 
         # For atropos, output must be txt AND json for the module to work.
         #
