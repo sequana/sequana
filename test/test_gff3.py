@@ -21,7 +21,7 @@ def test_gff_rnadiff():
         # changed in 21/07/2021 from 31755 to 29199.
         # not clear why the sum was 31755 before. 291999 check manually in the
         # GFF file
-         assert df1.Length.sum() == 29199
+        assert df1.Length.sum() == 29199
 
 
     with TempFile() as fout:
