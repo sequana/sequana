@@ -117,7 +117,6 @@ setup(
     zip_safe=False,
     entry_points = {
         'console_scripts':[
-           'sequanix=sequana.gui.sequana_gui:main',
            'sequana_lane_merging=sequana.scripts.lane_merging:main',
            'sequana=sequana.scripts.main:main',
            'sequana_taxonomy=sequana.scripts.taxonomy:main',
