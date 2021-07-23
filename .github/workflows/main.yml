@@ -32,8 +32,7 @@ jobs:
         mamba install -c conda-forge -c bioconda --quiet -y kraken dsrc shustring
     - name: Install sequana with pip
       run: |
-        which python3
-        sudo `which python3` -m pip install --ignore-installed ruamel.yaml
+        sudo /usr/share/miniconda/bin/python3 -m pip install --ignore-installed ruamel.yaml
         pip install -r requirements.txt  
         pip install  coveralls pytest pytest-cov
     - name: Test with pytest
