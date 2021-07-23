@@ -8,8 +8,8 @@ SEQUANA
 .. image:: https://badge.fury.io/py/sequana.svg
     :target: https://pypi.python.org/pypi/sequana
 
-.. image:: https://travis-ci.org/sequana/sequana.svg?branch=master
-    :target: https://travis-ci.org/sequana/sequana
+.. image:: https://travis-ci.com/sequana/sequana.svg?branch=master
+    :target: https://travis-ci.com/sequana/sequana
 
 .. image:: https://coveralls.io/repos/github/sequana/sequana/badge.svg?branch=master
     :target: https://coveralls.io/github/sequana/sequana?branch=master 
