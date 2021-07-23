@@ -35,7 +35,7 @@ jobs:
     - name: Install sequana with pip
       run: |       
         pip install -r requirements.txt  
-        pip install  coveralls pytest pytest-cov
+        pip install -r requirements_dev.txt          
         pip install .
     - name: Test with pytest
       run: |
