@@ -20,11 +20,9 @@ pandas>=0.22
 plotly
 psutil
 pykwalify>=1.8
-pyopengl
 pyVCF
 pysam>=0.16
 ruamel.yaml>=0.16.0
-qtconsole
 snakemake
 scikit-learn
 scipy
