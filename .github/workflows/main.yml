@@ -32,8 +32,11 @@ jobs:
         mamba install -c conda-forge -c bioconda --quiet -y kraken dsrc shustring
     - name: Install sequana with pip
       run: |
-        pip install -y -r requirements.txt  --ignore-installed ruamel-yaml
-        pip install -y .
+        pip install  -r requirements.txt  --ignore-installed ruamel-yaml
+        pip install  coveralls pytest pytest-cov
     - name: Test with pytest
       run: |
         pytest --cov-report term --cov=fitter
+    - name: coveralls
+      run: |
+        coveralls
