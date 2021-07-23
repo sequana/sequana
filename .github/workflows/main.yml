@@ -26,11 +26,13 @@ jobs:
       run: |
         # $CONDA is an environment variable pointing to the root of the miniconda directory
         echo $CONDA/bin >> $GITHUB_PATH
-    - name: Install dependencies
+    - name: Install dependencies conda
       run: |
         conda install -c conda-forge mamba --quiet
-        mamba install -c conda-forge -c bioconda --quiet -y --file=requirements.txt --file=requirements_dev.txt
-    
+        mamba install -c conda-forge -c bioconda --quiet -y kraken dsrc shustring
+    - name: Install sequana with pip
+        pip install -r requirements.txt 
+        pip install .
     - name: Test with pytest
       run: |
         pytest --cov-report term --cov=fitter
