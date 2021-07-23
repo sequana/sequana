@@ -31,6 +31,7 @@ jobs:
         conda install -c conda-forge mamba --quiet
         mamba install -c conda-forge -c bioconda --quiet -y kraken dsrc shustring
     - name: Install sequana with pip
+     run: |
         pip install -r requirements.txt 
         pip install .
     - name: Test with pytest
