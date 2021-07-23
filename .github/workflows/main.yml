@@ -36,6 +36,7 @@ jobs:
       run: |       
         pip install -r requirements.txt  
         pip install  coveralls pytest pytest-cov
+        pip install .
     - name: Test with pytest
       run: |
         pytest --cov-report term --cov=sequana
