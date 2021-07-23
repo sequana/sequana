@@ -32,6 +32,7 @@ jobs:
         mamba install -c conda-forge -c bioconda --quiet -y kraken dsrc shustring
     - name: Install sequana with pip
       run: |       
+        python -c "import ruamel; print(ruamel.__path__)"
         rm -rf /usr/local/anaconda3/lib/python?.?/site-packages/ruamel*      
         rm -rf /opt/hostedtoolcache/Python/3.*/x64/lib/site-packages/ruamel*
         pip install -r requirements.txt  
