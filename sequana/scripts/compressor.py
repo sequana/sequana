@@ -150,12 +150,6 @@ def main(args=None):
         raise ValueError('The number of jobs is limited to 20. You can ' +
             'force this limit by using --bypass-job-limit')
 
-    if misc.on_cluster("tars-") and options.unlock is False:
-        if options.cluster is None:
-            raise ValueError("You are on TARS (Institut Pasteur). You " +
-                " must use --cluster option to provide the scheduler " +
-                " options (typically ' --cluster 'sbatch --qos normal' )")
-
     # valid codecs:
     valid_extensions = [("fastq." + ext2).rstrip(".")
                         for ext2 in ['', 'bz2', 'gz', 'dsrc']]
