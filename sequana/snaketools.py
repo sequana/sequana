@@ -52,6 +52,7 @@ from easydev import AttrDict, TempFile
 
 import ruamel.yaml
 from ruamel.yaml import comments
+from ruamel.yaml import YAML
 
 from sequana.misc import wget
 from sequana import version as sequana_version
@@ -718,10 +719,8 @@ class SequanaConfig(object):
             if os.path.exists(data):
                 if data.endswith(".yaml") or data.endswith(".yml"):
                     with open(data, "r") as fh:
-                        from ruamel.yaml import YAML
-
-                        c = YAML()
-                        self._yaml_code = c.load(fh.read())
+                        yaml = ruamel.yaml.YAML(typ="safe")
+                        self._yaml_code = yaml.load(fh.read())
                 else:
                     # read a JSON
                     import yaml
@@ -755,13 +754,13 @@ class SequanaConfig(object):
             self.cleanup()  # changes the config and yaml_code to remove %()s
 
         # get the YAML formatted code and save it
-        newcode = ruamel.yaml.dump(
-            self._yaml_code, Dumper=ruamel.yaml.RoundTripDumper, default_style="", indent=4, block_seq_indent=4
-        )
+        yaml = ruamel.yaml.YAML() 
+        default_style = ""
+        indent = 4 
+        block_seq_indent = 4
 
-        # Finally, save the data
-        with open(filename, "w") as fh:
-            fh.write(newcode)
+        with open(filename, 'w') as fh:
+            yaml.dump(self._yaml_code, fh)
 
     def _recursive_update(self, target, data):
         # recursive update of target using data. Both target and data must have
