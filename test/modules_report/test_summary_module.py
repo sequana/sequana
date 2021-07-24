@@ -16,8 +16,8 @@ def test_summary_module(tmpdir):
                     'outputs': [sequana_data('JB409847.vcf')],
                     'html': [sequana_data('JB409847.vcf')],
                     'rulegraph': sequana_data('test_summary_module.svg'),
-                    'requirements': sequana_data('test_gui_generic_config.yaml'),
-                    'snakefile': sequana_data('test_gui_generic_config.yaml'),
-                    'config': sequana_data('test_gui_generic_config.yaml'),
+                    'requirements': sequana_data('test_summary_module.svg'),
+                    'snakefile': sequana_data('test_summary_module.svg'),
+                    'config': sequana_data('test_summary_module.svg'),
                     'name': 'JB409847'}
     SummaryModule(summary_dict)
