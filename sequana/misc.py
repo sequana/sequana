@@ -27,12 +27,7 @@ import colorlog
 logger = colorlog.getLogger(__name__)
 
 
-
-from docutils import core
-from docutils.writers.html4css1 import Writer,HTMLTranslator
-
-__all__ = ['textwrap', 'rest2html', 'wget', 'findpos', 'on_cluster', 
-    "normpdf"]
+__all__ = ['textwrap', 'wget', 'findpos', "normpdf"]
 
 
 
@@ -89,69 +84,4 @@ def findpos(seq, chr):
     for i, dummy in enumerate(seq):
         if seq[i:i+N] == chr:
             yield i
-
-
-def on_cluster(pattern=["tars-"]):
-    """Used to check if we are on a cluster
-
-    "tars-" is the name of a cluster's hostname.
-    Change or append the argument **pattern** with your cluster's hostname
-
-    :param str pattern: a list of names (strings) or a string
-
-    """
-    if isinstance(pattern, str):
-        pattern = [pattern]
-
-    for this in pattern:
-        if platform.uname().node.startswith(this):
-            return True
-        else:
-            return False
-
-
-class HTMLFragmentTranslator( HTMLTranslator ):
-    def __init__( self, document ):
-        HTMLTranslator.__init__( self, document )
-        #self.head_prefix = ['','','','','']
-        #self.body_prefix = []
-        #self.body_suffix = []
-        #self.stylesheet = []
-    def astext(self):
-        return ''.join(self.body)
-    def visit_document(self,node):
-        self.body.append(self.starttag(node,"div",CLASS="comment"))
-
-html_fragment_writer = Writer()
-html_fragment_writer.translator_class = HTMLFragmentTranslator
-
-
-def rest2html(s):
-    """Converts a restructuredText document into HTML
-
-    Note that the returned object is a bytes so need to be 
-    decoded with decode()"""
-    return core.publish_string( s, writer = html_fragment_writer )
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 

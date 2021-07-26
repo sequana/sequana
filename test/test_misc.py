@@ -22,15 +22,3 @@ def test_wget():
     with TempFile() as fh:
         wget("https://github.com/sequana/sequana/raw/master/README.rst", fh.name)
 
-
-def test_oncluster():
-    assert on_cluster() is False
-
-    import platform
-    name = platform.uname().node
-    assert on_cluster([name]) is True
-    assert on_cluster(name) is True
-
-def test_rest2html():
-    data = rest2html("""Test\n - text""").decode()
-    assert "<li>text</li>" in data

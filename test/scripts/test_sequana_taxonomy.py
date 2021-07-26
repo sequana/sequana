@@ -7,8 +7,7 @@ import pytest
 prog = "sequana_taxonomy"
 
 
-@pytest.fixture
-def krakendb():
+def _krakendb():
     # todo
     try:
         taxonomy.main([prog, '--download', 'toydb'])
@@ -35,7 +34,7 @@ def krakendb():
         pass
 
 
-def test_analysis(krakendb):
+def _test_analysis(krakendb):
     file1 = sequana_data("Hm2_GTGAAA_L005_R1_001.fastq.gz")
     file2 = sequana_data("Hm2_GTGAAA_L005_R2_001.fastq.gz")
 
