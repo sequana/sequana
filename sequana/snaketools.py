@@ -719,7 +719,7 @@ class SequanaConfig(object):
             if os.path.exists(data):
                 if data.endswith(".yaml") or data.endswith(".yml"):
                     with open(data, "r") as fh:
-                        yaml = ruamel.yaml.YAML(typ="safe")
+                        yaml = ruamel.yaml.YAML()
                         self._yaml_code = yaml.load(fh.read())
                 else:
                     # read a JSON

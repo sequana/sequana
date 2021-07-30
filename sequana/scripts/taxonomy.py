@@ -18,8 +18,6 @@
 ##############################################################################
 """Standalone dedicated to taxonomic content (kraken)"""
 import os
-import shutil
-import glob
 import sys
 import argparse
 
@@ -95,11 +93,8 @@ Issues: http://github.com/sequana/sequana
             help="""Results are stored in report/ directory and results are
                 not shown by default""")
         self.add_argument("--download", dest="download", type=str,
-            default=None, choices=["sequana_db1", "toydb", "minikraken"],
-            help="""download an official sequana DB. The sequana_db1 is stored
-                in a dedicated Synapse page (www.synapse.org). minikraken
-                is downloaded from the kraken's author page, and toydb from
-                sequana github.""")
+            default=None, choices=["toydb"],
+            help="""A toydb example to be downloaded.""")
         self.add_argument("--unclassified-out",
             help="save unclassified sequences to filename")
         self.add_argument("--classified-out",
@@ -137,8 +132,7 @@ def main(args=None):
         sys.exit(0)
 
     # We put the import here to make the --help faster
-    from sequana import KrakenPipeline
-    from sequana.kraken import KrakenSequential
+    from sequana import KrakenPipeline, KrakenSequential
     devtools = DevTools()
 
     if options.download:
@@ -163,29 +157,27 @@ def main(args=None):
 
     databases = []
     for database in options.databases:
-        if database == "toydb":
-            database = "kraken_toydb"
-        elif database == "minikraken":
-            database = "minikraken_20141208"
 
-        if os.path.exists(scfg + os.sep + database): # in Sequana path
-            databases.append(scfg + os.sep + database)
+        guess = os.sep.join([scfg, "kraken2_dbs", database])
+        if os.path.exists(guess): # in Sequana path
+            databases.append(guess)
         elif os.path.exists(database): # local database
             databases.append(database)
         else:
-            msg = "Invalid database name (%s). Neither found locally "
-            msg += "or in the sequana path %s; Use the --download option"
-            raise ValueError(msg % (database, scfg))
+            msg = f"Invalid database name {database}. Neither found locally " + \
+                  f"or in the sequana path {scfg}/kraken2_dbs; Use the --download option"
+            logger.error(msg)
+            raise IOError
 
     output_directory = options.directory + os.sep + "kraken"
     devtools.mkdirs(output_directory)
 
     # if there is only one database, use the pipeline else KrakenHierarchical
-    _pathto = lambda x: "{}/kraken/{}".format(options.directory, x) if x else x
+    _pathto = lambda x: f"{options.directory}/kraken/{x}" if x else x
     if len(databases) == 1:
         logger.info("Using 1 database")
         k = KrakenPipeline(fastq, databases[0], threads=options.thread,
-            output_directory=output_directory, confidence=options.confidence)
+            output_directory = output_directory, confidence=options.confidence)
 
         summary = k.run(output_filename_classified=_pathto(options.classified_out),
               output_filename_unclassified=_pathto(options.unclassified_out))
@@ -218,7 +210,7 @@ def main(args=None):
     if options.html is True:
         ss.onweb()
 
+
 if __name__ == "__main__":
-   import sys
    main(sys.argv)
 

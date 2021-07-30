@@ -14,7 +14,6 @@
 #  documentation: http://sequana.readthedocs.io
 #
 ##############################################################################
-
 import os
 import re
 from sequana import sequana_config_path
@@ -170,6 +169,11 @@ class Taxonomy(object):
         >>> t.records[9606] # or just try with the get
         >>> t[9606]
         >>> t.get_lineage(9606)
+
+
+    Possible ranks are various. You may have biotype, clade, etc ub generally speaking 
+    ranks are about lineage. For a given rank, e.g. kingdom, you may have sub division such
+    as superkingdom and subkingdom. order has even more subdivisions (infra, parv, sub, super)
 
     """
     def __init__(self, filename=None, verbose=True, online=True, source="ncbi"):

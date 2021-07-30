@@ -1,13 +1,7 @@
-# -*- coding: utf-8 -*-
-#
 #  This file is part of Sequana software
 #
-#  Copyright (c) 2016 - Sequana Development Team
+#  Copyright (c) 2016-2021 - Sequana Development Team
 #
-#  File author(s):
-#      Thomas Cokelaer <thomas.cokelaer@pasteur.fr>
-#      Dimitri Desvillechabrol <dimitri.desvillechabrol@pasteur.fr>,
-#          <d.desvillechabrol@gmail.com>
 #
 #  Distributed under the terms of the 3-clause BSD license.
 #  The full license is in the LICENSE file, distributed with this software.
@@ -20,10 +14,11 @@ import os
 import sys
 import shutil
 
-from easydev import DevTools, execute, TempFile, md5
+from easydev import execute, TempFile, md5
 
 from sequana.lazy import pandas as pd
 from sequana.lazy import pylab
+from sequana.lazy import numpy as np
 
 from sequana.misc import wget
 from sequana import sequana_config_path
@@ -34,9 +29,8 @@ import colorlog
 logger = colorlog.getLogger(__name__)
 
 
-
 __all__ = ['KrakenResults', "KrakenPipeline", "KrakenAnalysis",
-            "KrakenDownload", "KrakenSequential", "MultiKrakenResults"]
+            "KrakenDownload", "KrakenSequential", 'KrakenDB']
 
 
 class KrakenDB():
@@ -47,32 +41,21 @@ class KrakenDB():
             filename = filename.path
 
         if os.path.exists(filename) is False:
-            possible_path1 = sequana_config_path + "/" + filename
-            possible_path2 = sequana_config_path + "/kraken2_dbs/" + filename
-            possible_path3 = sequana_config_path + "/kraken1_dbs/" + filename
-            if os.path.exists(possible_path1) is True:
-                self.path = possible_path1
-            elif os.path.exists(possible_path2) is True:
-                self.path = possible_path2
-            elif os.path.exists(possible_path3) is True:
-                self.path = possible_path3
+            possible_path = sequana_config_path + "/kraken2_dbs/" + filename
+            if os.path.exists(possible_path) is True:
+                self.path = possible_path
             else:
-                msg = "{} not found locally or in {}. ".format(
-                    filename, sequana_config_path)
+                msg = f"{filename} not found locally or in {sequana_config_path}."
                 raise IOError(msg)
         else:
             self.path = os.path.abspath(filename)
-
         self.name = os.path.basename(self.path)
 
     def _get_database_version(self):
         if os.path.exists(self.path + os.sep + "hash.k2d"):
             return "kraken2"
-        elif os.path.exists(self.path + os.sep + "database.kdb"):
-            return "kraken1"
-        else:
-            logger.error("Looks like an invalid kraken database directory")
-            return None
+        else: #pragma: no cover
+            logger.error("Sequana supports kraken2 only. Looks like an invalid kraken database directory")
     version = property(_get_database_version)
 
     def __repr__(self):
@@ -81,7 +64,6 @@ class KrakenDB():
 
 class KrakenResults(object):
     """Translate Kraken results into a Krona-compatible file
-
 
     If you run a kraken analysis with :class:`KrakenAnalysis`, you will end up
     with a file e.g. named kraken.out (by default).
@@ -146,11 +128,10 @@ class KrakenResults(object):
             from sequana.taxonomy import Taxonomy
             self.tax = Taxonomy(verbose=verbose)
             self.tax.download_taxonomic_file() # make sure it is available locally
-        else:
-            class Taxonomy(object):
+        else: #pragma: no cover
+            class Taxonomy(object): #pragma: no cover
                 from sequana import sequana_data # must be local
-                df = pd.read_csv(sequana_data("test_taxon_rtd.csv"),
-                        index_col=0)
+                df = pd.read_csv(sequana_data("test_taxon_rtd.csv"), index_col=0)
                 def get_lineage_and_rank(self, x):
                     # Note that we add the name as well here
                     ranks = ['kingdom', 'phylum', 'class', 'order',
@@ -162,6 +143,15 @@ class KrakenResults(object):
             # This initialise the data
             self._parse_data()
             self._data_created = False
+
+    def get_hiearchy(self):
+        df = self.get_taxonomy_db([str(x) for x in self.taxons.index])
+        df.loc[self.taxons.index, "ratio"] = self.taxons
+        df.loc[-1 ] = "Unclassified"
+        df.loc[-1, "ratio"] = self.unclassified
+        df.ratio /= df.ratio.sum() / 100
+        return df
+
 
     def get_taxonomy_db(self, ids):
         """Retrieve taxons given a list of taxons
@@ -208,7 +198,7 @@ class KrakenResults(object):
                         default["kingdom"] = entry[0]
 
             # in theory, we have now populated all ranks; 
-            # Yet, there are several cases:
+            # Yet, there are several special cases (need examples):
             # 1. all ranks are filled: perfect
             # 2. some ranks are empty: we fill them with a space.
             # 3. all ranks are empty: 
@@ -234,7 +224,15 @@ class KrakenResults(object):
             # for the name, we take the last entry, which is suppose to be the
             # scientific name found, so the scientific name of the taxon itself.
             # Note that this is not alwyas the species rank name
-            default['name'] = this[-1][0]
+
+            # For instance for the taxon 2509511, the ID correspond to 
+            # a subgenus of Sarbecovirus and has no species entry.
+            last_name, last_rank = this[-1]
+
+            if last_rank not in ["species", "no rank"]:
+                default['name'] = f"{last_rank}:{last_name}"
+            else:
+                default['name'] = ""
             results.append(default)
 
         df = pd.DataFrame.from_records(results)
@@ -259,8 +257,8 @@ class KrakenResults(object):
             # is better than 1000 and still reasonable in memory
             reader = pd.read_csv(self.filename, sep="\t", header=None,
                                usecols=[0,2,3], chunksize=1000000)
-        except pd.errors.EmptyDataError:
-            logger.warning("Empty files. 100% unclassified ?")
+        except pd.errors.EmptyDataError: #pragma: no cover
+            logger.warning("Empty files. 100%% unclassified ?")
             self.unclassified = "?" # size of the input data set
             self.classified = 0
             self._df = pd.DataFrame([], columns=columns)
@@ -285,7 +283,7 @@ class KrakenResults(object):
         if percentage >= 1:
             logger.warning(
                 "Found {} taxons of classified reads with root ID (1) ({} %)".format(
-                    count, round(percentage,2)))
+                    count, round(percentage, 2)))
 
         # This gives the list of taxons as index and their amount
         # above, we select only columns 0, 2, 3  the column are still labelled
@@ -339,32 +337,8 @@ class KrakenResults(object):
         df.rename(columns={"index":"taxon"}, inplace=True)
         df["percentage"] = df["count"] / df["count"].sum() * 100
 
-        # Now get back all annotations from the database itself.
-        # This is not used anymore. let us put a warning for now
-        filename = dbname + os.sep + "annotations.csv"
-        if os.path.exists(filename):
-            print("Using _get_df_with_taxon with valid annotation.csv in {}".format(filename))
-            annotations = pd.read_csv(filename)
-            annotations.set_index("taxon", inplace=True)
-
-            df2 = annotations.loc[df.taxon][['ena', 'gi', 'description']]
-            # There are duplicates so let us keep the first one for now
-            df2 = df2.reset_index().drop_duplicates(subset="taxon",
-                keep="first").set_index("taxon")
-            self.df2 = df2
-            self.df1 = df.set_index("taxon")
-            df = pd.merge(self.df1, df2, left_index=True, right_index=True)
-            df.reset_index(inplace=True)
-            starter = ['percentage', 'name', 'ena', 'taxon', "gi", 'count']
-            df = df[starter + [x for x in df.columns if x not in starter and
-                                x!="description"] +  ["description"]]
-
-            df['gi'] = [int(x) for x in df['gi'].fillna(-1)]
-            from easydev import precision
-            df['percentage'] = [str(precision(x,2)) for x in df['percentage']]
-        else:
-            starter = ['taxon', 'count', 'percentage']
-            df = df[starter + [x for x in df.columns if x not in starter]]
+        starter = ['taxon', 'count', 'percentage']
+        df = df[starter + [x for x in df.columns if x not in starter]]
 
         df.sort_values(by="percentage", inplace=True, ascending=False)
         return df
@@ -398,15 +372,6 @@ class KrakenResults(object):
                 fout.write("%s\t%s" % (self.unclassified, "Unclassified"))
             return False
 
-        # classified reads as root  (1)
-        """try:
-            logger.warning("Removing taxon 1 (%s values) " % self.taxons.iloc[1])
-            logger.info("Found %s taxons " % len(taxon_to_find))
-            taxon_to_find.pop(taxon_to_find.index(1))
-        except:
-            pass
-        """
-
         if len(taxon_to_find) == 0:
             return False
 
@@ -431,7 +396,7 @@ class KrakenResults(object):
         return True
 
     def plot2(self, kind="pie", fontsize=12):
-        import numpy as np
+        """This is the simplified static krona-like plot included in HTML reports"""
         import matplotlib.pyplot as plt
 
         taxons = self.taxons.copy()
@@ -444,7 +409,6 @@ class KrakenResults(object):
             df.loc[-1] = ['Unclassified'] * 8
             taxons[-1] = self.unclassified
         df['ratio'] = taxons / taxons.sum() * 100
-
 
         data_class = df.groupby(['kingdom', 'class']).sum()
         data_species = df.groupby(['kingdom', 'species']).sum()
@@ -482,9 +446,9 @@ class KrakenResults(object):
             Z.extend(z)
 
             if kingdom.strip():
-                labels.append("undefined/unknown taxon")
-            else:
                 labels.append(kingdom)
+            else:
+                labels.append("undefined/unknown taxon")
 
             if kingdom == "Eukaryota":
                 this_cmap = plt.cm.Purples
@@ -550,7 +514,6 @@ class KrakenResults(object):
         
         # this is used to check that everything was okay in the rules   
         return df
-
 
     def plot(self, kind="pie", cmap="tab20c", threshold=1, radius=0.9,
                 textcolor="red", **kargs):
@@ -643,13 +606,10 @@ class KrakenResults(object):
 
         return data
 
-    def to_js(self, output="krona.html", onweb=False):
+    def to_js(self, output="krona.html"):
         if self._data_created == False:
             status = self.kraken_to_krona()
         execute("ktImportText %s -o %s" % (self.output_filename, output))
-        if onweb is True:
-            import easydev
-            easydev.onweb(output)
 
     def boxplot_classified_vs_read_length(self):
         """Show distribution of the read length grouped by classified or not"""
@@ -676,10 +636,8 @@ class KrakenResults(object):
         # length for now.
         df = self.df.copy()
 
-        try: # kraken2
+        if "|" in str(df.length.values[0]):
             df.length = df.length.apply(lambda x: int(x.split("|")[0]))
-        except Exception as err:
-            logger.warning(err)
 
         df = df[["status", "length"]]
         M = df['length'].max()
@@ -732,9 +690,12 @@ class KrakenPipeline(object):
 
         """
         # Set and create output directory
-        self._devtools = DevTools()
         self.output_directory = output_directory
-        self._devtools.mkdir(output_directory)
+        try:
+            os.makedirs(output_directory)
+        except FileExistsError:
+            pass
+
         self.database = database
         self.ka = KrakenAnalysis(fastq, database, threads, confidence=confidence)
 
@@ -829,9 +790,7 @@ class KrakenAnalysis(object):
         kd = KrakenDownload()
         kd.download_kraken_toydb()
 
-    .. seealso:: :class:`KrakenDownload`  for more database and
-        :class:`sequana.kraken_builder.KrakenBuilder` to build your own
-        databases
+    .. seealso:: :class:`KrakenDownload`  for more databases
 
     The path to the database is required to run the analysis. It has been
     stored in the directory ./config/sequana/kraken_toydb under Linux platforms
@@ -851,19 +810,19 @@ class KrakenAnalysis(object):
     This creates a file named *kraken.out*. It can be interpreted with
     :class:`KrakenResults`
     """
-    def __init__(self, fastq, database, threads=4, 
-            confidence=0):
+    def __init__(self, fastq, database, threads=4, confidence=0):
         """.. rubric:: Constructor
 
         :param fastq: either a fastq filename or a list of 2 fastq filenames
         :param database: the path to a valid Kraken database
         :param threads: number of threads to be used by Kraken
-        :param confidence: for kraken2 only
+        :param confidence: parameter used by kraken2
 
         :param return:
 
         """
         self.database = KrakenDB(database)
+
         self.threads = threads
         self.confidence = confidence
 
@@ -892,6 +851,10 @@ class KrakenAnalysis(object):
         :param str output_filename_unclassified: not compressed
 
         """
+        if self.database.version != 'kraken2':
+            logger.error(f"input database is not valid kraken2 database")
+            sys.exit(1)
+
         if output_filename is None:
             self.kraken_output = TempFile().name
         else:
@@ -900,7 +863,7 @@ class KrakenAnalysis(object):
             if os.path.exists(dirname) is False:
                 os.makedirs(dirname)
 
-        # make sure the required output directories exit:
+        # make sure the required output directories exist:
         # and that the output filenames ends in .fastq
         if output_filename_classified:
             assert output_filename_classified.endswith(".fastq")
@@ -926,28 +889,7 @@ class KrakenAnalysis(object):
         if self.paired:
             params["file2"] = self.fastq[1]
 
-        if self.database.version == "kraken2":
-            logger.info("Using kraken2 ")
-            command = "kraken2 --confidence {}".format(self.confidence)
-        elif self.database.version == "kraken1":
-            # for kraken <=1.0 --out-fmt did not exist
-            #command += " --out-fmt legacy"
-            # version 0.8.3 of sequana, we changed the output from legacy to
-            # interleaved. legacy puts R1 and R2 together (separated by a N)
-            # but N's may be present in the reads itself, so we prefer to use
-            # the interleaved now so that it is easy to split the interleaved
-            # R1/R2 into two files R1 and R2
-            # we also added the --fastq-output to be compatible/coherent with kraken2
-            # behaviour
-            logger.info("Using kraken1. You should use version 1.1 ")
-            command = "kraken "
-            # --fastq-output seems to work only if paired
-            # therefore --fastq-output can only be used with --paired and
-            # --out-fmt interleaved makes sense only with --paired and therefore
-            # --fastq-output. Consequently, single end data output will only be
-            # available as fasta
-            if self.paired:
-                command += " --fastq-output --out-fmt interleaved "
+        command = "kraken2 --confidence {}".format(self.confidence)
 
         command += " %(file1)s"
 
@@ -991,16 +933,7 @@ class KrakenAnalysis(object):
             if output_filename_classified:
                 command +=  " --classified-out %(output_filename_classified)s "
 
-        # For kraken1, if paired, we first save into a temporary file as interleaved data
-        # and then split the data. That way, it is compatible with
-        # kraken2 if databases are mixed. If not paired, nothing special to do;
-        # just save the data
-        if self.database.version == "kraken1":
-            if output_filename_unclassified:
-                command +=  " --unclassified-out %(output_filename_unclassified)s "
-            if output_filename_classified:
-                command +=  " --classified-out %(output_filename_classified)s "
-
+        
         # This is for the kraken output, not classified fastq
         if only_classified_output is True:
             # This was a convenient option in kraken1, not available anymore in
@@ -1008,12 +941,11 @@ class KrakenAnalysis(object):
             command += " --only-classified-output"
 
         command = command % params
-        # Somehow there is an error using easydev.execute with pigz
-        from snakemake import shell
         logger.debug(command)
+        from snakemake import shell
         shell(command)
 
-        if self.database.version == "kraken2" and only_classified_output:
+        if only_classified_output:
             # kraken2 has no classified_output option. we mimic it here below
             # just to get a temporary filename
             fout = TempFile()
@@ -1025,9 +957,6 @@ class KrakenAnalysis(object):
                         newfile.write(line)
             newfile.close()
             shutil.move(outname, output_filename)
-            # now let us delete the temp file
-            # The temp file has been moved so no need to delete it
-            # fout.delete()
 
         # a simple utility function
         try:
@@ -1037,29 +966,6 @@ class KrakenAnalysis(object):
         def grouper(iterable):
             args = [iter(iterable)] * 8
             return izip_longest(*args)
-
-        if self.database.version == "kraken1" and self.paired:
-            logger.info("This is kraken1 paired, let us split the interleaved data set")
-            if output_filename_unclassified:
-                f1 = output_filename_unclassified.replace(".fastq", "_1.fastq")
-                f2 = output_filename_unclassified.replace(".fastq", "_2.fastq")
-                with open(f1, "w") as R1, open(f2, "w") as R2:
-                    with open(output_filename_unclassified, "r") as fin:
-                        for lines in grouper(fin):
-                            R1.write("".join(lines[0:4]))
-                            R2.write("".join(lines[4:]))
-                # now we can remove the temporary file
-                os.remove(output_filename_unclassified)
-            if output_filename_classified:
-                f1 = output_filename_classified.replace(".fastq", "_1.fastq")
-                f2 = output_filename_classified.replace(".fastq", "_2.fastq")
-                with open(f1, "w") as R1, open(f2, "w") as R2:
-                    with open(output_filename_classified, "r") as fin:
-                        for lines in grouper(fin):
-                            R1.write("".join(lines[0:4]))
-                            R2.write("".join(lines[4:]))
-                # now we can remove the temporary file
-                os.remove(output_filename_classified)
 
 
 class KrakenSequential(object):
@@ -1106,10 +1012,15 @@ class KrakenSequential(object):
         elif isinstance(fof_databases, list):
             self.databases = fof_databases[:]
         else:
-            raise TypeError("input databases must be a list of valid kraken "
+            raise TypeError("input databases must be a list of valid kraken2 "
                             "databases or a file (see documebntation)")
 
         self.databases = [KrakenDB(x) for x in self.databases]
+
+        for d in self.databases:
+            if d.version != 'kraken2':
+                logger.error(f"input database {d} is not valid kraken2 ")
+                sys.exit(1)
 
         self.threads = threads
         self.output_directory = output_directory
@@ -1154,7 +1065,7 @@ class KrakenSequential(object):
         _pathto = lambda x: self.output_directory + x
 
         # the output is saved in this file
-        if db.version == "kraken2" and self.paired:
+        if self.paired:
             # if paired, kraken2 expect a # and then will create 2 files (1 and 2
             # )
             # Note that kraken adds a _ before the # (1,2) so no need to add one
@@ -1162,21 +1073,9 @@ class KrakenSequential(object):
             file_fastq_unclass = [
                 _pathto("unclassified_%d_1.fastq" % iteration),
                 _pathto("unclassified_%d_2.fastq" % iteration)]
-        elif db.version == "kraken2" and self.paired is False:
+        else:
             output_filename_unclassified = _pathto("unclassified_%d.fastq" % iteration)
             file_fastq_unclass = _pathto("unclassified_%d.fastq" % iteration)
-        elif db.version == "kraken1" and self.paired is False:
-            output_filename_unclassified = _pathto("unclassified_%d.fastq" % iteration)
-            file_fastq_unclass =  _pathto("unclassified_%d.fastq" % iteration)
-        elif db.version == "kraken1" and self.paired is True:
-            # if paired, kraken1 expects 1 file and creates 1 file.
-            # To be compatible with inputs of kraken2, if paired, the output
-            # must be made of two files that will be created by KrakenAnalysis
-            # class by us (using the single file created by kraken1)
-            output_filename_unclassified = _pathto("unclassified_%d.fastq" % iteration)
-            file_fastq_unclass = [
-                _pathto("unclassified_%d_1.fastq" % iteration),
-                _pathto("unclassified_%d_2.fastq" % iteration)]
 
         if iteration == 0:
             inputs = self.inputs
@@ -1332,7 +1231,7 @@ class KrakenSequential(object):
                     for this in f_temp:
                         os.remove(this)
         return summary
-        
+
 
 class KrakenDownload(object):
     """Utility to download Kraken DB and place them in a local directory
@@ -1342,31 +1241,19 @@ class KrakenDownload(object):
         from sequana import KrakenDownload
         kd = KrakenDownload()
         kd.download('toydb')
-        kd.download('minikraken')
 
-    A large database (8Gb) is available on synapse and has the following DOI::
-
-        doi:10.7303/syn6171000
-
-    It can be downloaded manually or if you have a Synapse login
-    (https://www.synapse.org), you can use::
-
-        from sequana import KrakenDownload
-        kd = KrakenDownload()
-        kd.downloaded("sequana_db1")
     """
-    dv = DevTools()
-    def download(self, name, verbose=True):
-        if name == "minikraken":
-            self._download_minikraken(verbose=verbose)
-        elif name == "toydb":
-            self._download_kraken_toydb(verbose=verbose)
-        elif name == "toydb2":
-            self._download_kraken2_toydb(verbose=verbose)
-        elif name == "sequana_db1":
-            self._download_sequana_db1(verbose=verbose)
+    def __init__(self, output_dir=None):
+        if output_dir is None:
+            self.output_dir = f"{sequana_config_path}{os.sep}kraken2_dbs"
         else:
-            raise ValueError("name must be toydb or minikraken, or sequana_db1")
+            self.output_dir = output_dir
+
+    def download(self, name, verbose=True):
+        if name == "toydb":
+            self._download_kraken2_toydb(verbose=verbose)
+        else:
+            raise ValueError("name must be 'toydb' for now")
 
     def _download_kraken2_toydb(self, verbose=True):
         """Download the kraken DB toy example from sequana_data into
@@ -1374,9 +1261,11 @@ class KrakenDownload(object):
 
         Checks the md5 checksums. About 32Mb of data
         """
-        dv = DevTools()
-        base = sequana_config_path + os.sep + "kraken2_dbs/toydb_nomasking"
-        dv.mkdir(base)
+        base = f"{self.output_dir}{os.sep}toydb"
+        try:
+            os.makedirs(base)
+        except FileExistsError:
+            pass
 
         baseurl = "https://github.com/sequana/data/raw/master/"
 
@@ -1394,346 +1283,11 @@ class KrakenDownload(object):
             "taxo.k2d"]
 
         for filename, md5sum in zip(filenames, md5sums):
-            url = baseurl + "kraken2_toydb/%s" % filename
+            url = baseurl + f"kraken2_toydb/{filename}"
             filename = base + os.sep + filename
             if os.path.exists(filename) and md5(filename) == md5sum:
-                logger.warning("%s already present" % filename)
+                logger.warning(f"{filename} already present with good md5sum")
             else:
-                logger.info("Downloading %s" % url)
+                logger.info(f"Downloading {url}")
                 wget(url, filename)
 
-    def _download_kraken_toydb(self, verbose=True):
-        """Download the kraken DB toy example from sequana_data into
-        .config/sequana directory
-
-        Checks the md5 checksums. About 32Mb of data
-        """
-        dv = DevTools()
-        base = sequana_config_path + os.sep + "kraken_toydb"
-        taxondir = base + os.sep + "taxonomy"
-        dv.mkdir(base)
-        dv.mkdir(taxondir)
-
-        baseurl = "https://github.com/sequana/data/raw/master/"
-
-        # download only if required
-        logger.info("Downloading the database into %s" % base)
-
-        md5sums = [
-            "28661f8baf0514105b0c6957bec0fc6e",
-            "97a39d44ed86cadea470352d6f69748d",
-            "d91a0fcbbc0f4bbac918755b6400dea6",
-            "c8bae69565af2170ece194925b5fdeb9"]
-        filenames = [
-            "database.idx",
-            "database.kdb",
-            "taxonomy/names.dmp",
-            "taxonomy/nodes.dmp"]
-
-        for filename, md5sum in zip(filenames, md5sums):
-            url = baseurl + "kraken_toydb/%s" % filename
-            filename = base + os.sep + filename
-            if os.path.exists(filename) and md5(filename) == md5sum:
-                logger.warning("%s already present" % filename)
-            else:
-                logger.info("Downloading %s" % url)
-                wget(url, filename)
-
-    def _download_minikraken(self, verbose=True):
-        dv = DevTools()
-        base = sequana_config_path + os.sep + ""
-        taxondir = base + os.sep + "taxonomy"
-        dv.mkdir(base)
-        dv.mkdir(taxondir)
-
-        logger.info("Downloading minikraken (4Gb)")
-
-        filename = base + os.sep + "minikraken.tgz"
-        if os.path.exists(filename) and md5(filename) == "30eab12118158d0b31718106785195e2":
-            logger.warning("%s already present" % filename)
-        else:
-            wget("https://ccb.jhu.edu/software/kraken/dl/minikraken.tgz", filename)
-        # unzipping. requires tar and gzip
-
-    def _download_from_synapse(self, synid, target_dir):
-        try:
-            from synapseclient import Synapse
-        except ImportError:
-            raise ImportError("Please install synapseclient using 'pip install synapseclient'")
-        try:
-            self._synapse.get(synid, downloadLocation=target_dir)
-        except:
-            self._synapse = Synapse()
-            self._synapse.login()
-            self._synapse.get(synid, downloadLocation=target_dir)
-
-    def _download_sequana_db1(self, verbose=True):
-        dbname = "sequana_db1"
-        from easydev import md5
-        dir1 = sequana_config_path + os.sep + dbname
-        dir2 = dir1 + os.sep + "taxonomy"
-        self.dv.mkdir(dir1)
-        self.dv.mkdir(dir2)
-
-        logger.info("Downloading about 8Gb of data (if not already downloaded) from"
-            " Synapse into %s" % dir1)
-
-        from os.path import exists
-        filename = dir1 + "ena_list.txt"
-        if exists(filename) and md5(filename) == "a9cc6268f3338d1632c4712a412593f2":
-            pass
-        else:
-            self._download_from_synapse('syn6171700', dir1)
-
-        # database.idx
-        filename = dir1 + "database.idx"
-        if exists(filename) and md5(filename) == "2fa4a99a4f52f2f04c5a965adb1534ac":
-            pass
-        else:
-            self._download_from_synapse('syn6171017', dir1)
-
-        # database.kdb ; this one is large (8Gb)
-        filename = dir1 + "database.kdb"
-        if exists(filename) and md5(filename) == "ff698696bfc88fe83bc201937cd9cbdf":
-            pass
-        else:
-            self._download_from_synapse('syn6171107', dir1)
-
-        # Then, the taxonomy directory
-        filename = dir1 + "names.dmp"
-        if exists(filename) and md5(filename) == "10bc7a63c579de02112d125a51fd65d0":
-            pass
-        else:
-            self._download_from_synapse('syn6171286', dir2)
-
-        filename = dir1 + "nodes.dmp"
-        if exists(filename) and md5(filename) == "a68af5a60434e2067c4a0a16df873980":
-            pass
-        else:
-            self._download_from_synapse('syn6171289', dir2)
-
-        filename = dir1 + "taxons.txt"
-        if exists(filename) and md5(filename) == "e78fbb43b3b41cbf4511d6af16c0287f":
-            pass
-        else:
-            self._download_from_synapse('syn6171290', dir2)
-        logger.info('done. You should have a kraken DB in %s' % dir1)
-
-        # The annotations
-        wget("https://github.com/sequana/data/raw/master/sequana_db1/annotations.csv",
-            dir1 + os.sep + "annotations.csv")
-
-
-
-class MultiKrakenResults():
-    """Select several kraken output and creates summary plots
-
-    ::
-
-        import glob
-        mkr = MultiKrakenResults(glob.glob("*/*/kraken.csv"))
-        mkr.plot_stacked_hist()
-
-    """
-    def __init__(self, filenames, sample_names=None):
-        self.filenames = filenames
-        if sample_names is None:
-            self.sample_names = list(range(1,len(filenames)+1))
-        else:
-            self.sample_names = sample_names
-
-    def get_df(self, limit=5):
-        import pandas as pd
-        data = {}
-        for sample, filename in zip(self.sample_names, self.filenames):
-            df = pd.read_csv(filename)
-            count = df['count'].sum()
-            if "kingdom" not in df.columns:
-                for name in "kingdom,phylum,class,order,family,genus,species,name".split(","):
-                    df[name] = "Unclassified"
-
-            df = df.groupby("kingdom")['percentage'].sum()
-            # if a taxon is obsolete, the kingdom is empty. 
-            # We will set the kingdom as Unclassified and raise a warning
-            # if the count is > 5%
-            if " " in df.index:
-                percent = df.loc[" "]
-                if percent > limit:
-                    logger.warning("Found {}% of taxons with no kingdom".format(percent))
-                if "Unclassified" in df.index:
-                    df.loc['Unclassified'] += df.loc[' ']
-                    df.drop(" ", inplace=True)
-                else:
-                    df.loc['Unclassified'] = df.loc[' ']
-                    df.drop(" ", inplace=True)
-            df['Count'] = count
-            data[sample] = df
-
-        df = pd.DataFrame(data)
-        df = df.fillna(0)
-        df = df.sort_index(ascending=False)
-        df = df.sort_index(ascending=True, axis=1)
-
-        return df
-
-    def plot_stacked_hist(self, output_filename=None, dpi=200, kind="barh", 
-        fontsize=10, edgecolor="k", lw=1, width=1, ytick_fontsize=10,
-        max_labels=50):
-
-        """Summary plot of reads classified.
-
-        """
-        df = self.get_df()
-
-        # remove count from the summary graph
-        df.drop('Count', inplace=True)
-
-        fig, ax = pylab.subplots(figsize=(9.5,7))
-
-        labels = []
-        for kingdom in sorted(df.index):
-            if kingdom == "Eukaryota":
-                color="purple"
-            elif kingdom == "Unclassified":
-                color="grey"
-            elif kingdom == "Bacteria":
-                color="red"
-            elif kingdom == "Viruses":
-                color="darkgreen"
-            elif kingdom == "Archaea":
-                color="yellow"
-            else:
-                color="darkblue"
-            if kind=="barh":
-                pylab.barh(range(0, len(df.columns)), df.loc[kingdom], height=width,
-                        left=df.loc[labels].sum().values, edgecolor=edgecolor,
-                        lw=lw, color=color, alpha=0.8)
-            else:
-                pylab.bar(range(0, len(df.columns)), df.loc[kingdom], width=width,
-                        bottom=df.loc[labels].sum().values, edgecolor=edgecolor,
-                        lw=lw,color=color, alpha=0.8)
-            labels.append(kingdom)
-
-
-        positions = pylab.yticks()
-        #ax.set_yticklabel(positions, labels, fontsize=ytick_fontsize)
-
-        if kind == "barh":
-            pylab.xlabel("Percentage (%)", fontsize=fontsize)
-            pylab.ylabel("Sample index/name", fontsize=fontsize)
-            if len(self.sample_names)<max_labels:
-                pylab.yticks(range(len(self.sample_names)), self.sample_names[::-1], 
-                    fontsize=ytick_fontsize)
-            else:
-                pylab.yticks([1], [""])
-            pylab.xlim([0, 100])
-            pylab.ylim([-0.5, len(df.columns)-0.5])
-        else:
-            pylab.ylabel("Percentage (%)", fontsize=fontsize)
-            pylab.xlabel("Sample index/name", fontsize=fontsize)
-            pylab.ylim([0, 100])
-            if len(self.sample_names)<max_labels:
-                pylab.xticks(range(len(self.sample_names)), self.sample_names[::-1], 
-                    fontsize=ytick_fontsize)
-            else:
-                pylab.xticks([1], [""])
-            pylab.xlim([-0.5, len(df.columns)-0.5])
-
-        ax.legend(labels, title="kingdom",  bbox_to_anchor=(1,1))
-        try:
-            pylab.tight_layout()
-        except:pass
-        if output_filename:
-            pylab.savefig(output_filename, dpi=dpi)
-
-
-class MultiKrakenResults2():
-    """Select several kraken output and creates summary plots
-
-    ::
-
-        import glob
-        mkr = MultiKrakenResults2(glob.glob("*/*/summary.json"))
-        mkr.plot_stacked_hist()
-
-    """
-    def __init__(self, filenames, sample_names=None):
-
-        self.filenames = filenames
-        if sample_names is None:
-            self.sample_names = list(range(1,len(filenames)+1))
-        else:
-            self.sample_names = sample_names
-
-    def get_df(self, limit=5, sorting_method="sample_name"):
-        import pandas as pd
-        import json
-        data = {}
-        for sample, filename in zip(self.sample_names, self.filenames):
-            summary = json.loads(open(filename, "r").read())
-            total = summary["total"]
-            if "unclassified" not in summary:
-                summary["unclassified"] = 0
-            data[sample] = {
-                    "unclassified": round(summary['unclassified']/total*100,2), 
-                    "nreads": summary['total']}
-            for db in summary['databases']:
-                try:
-                    data[sample][db] = round(summary[db]['C'] / total * 100,2)
-                except:
-                    data[sample][db] = 0
-        df = pd.DataFrame(data)
-        df = df.fillna(0)
-        df = df.loc[["unclassified"]+[x for x in df.index if x!="unclassified"]]
-        #df = df.sort_index(ascending=False)
-        df = df.sort_index(ascending=False, axis=1)
-        return df
-
-    def plot_stacked_hist(self, output_filename=None, dpi=200, kind="barh", 
-            fontsize=10, edgecolor="k", lw=2, width=1, ytick_fontsize=10,
-            max_labels=50, logx=False, alpha=0.8, colors=None, 
-            cmap="hot_r", sorting_method="sample_name"):
-        """Summary plot of reads classified.
-
-
-        :param sorting_method: only by sample name for now
-        """
-        df = self.get_df(sorting_method=sorting_method)
-        df = df.T
-        del df['nreads']
-
-        fig, ax = pylab.subplots(figsize=(9.5,7))
-
-        labels = []
-        # we will store grey/unclassified first and then other DB with a max of
-        # 10 DBs
-        L = len(df.columns) - 1
-        from matplotlib import cm
-        if colors is None:
-            colors = [cm.get_cmap(cmap)(x) for x in pylab.linspace(0.2,1,L)]
-        colors = ['grey'] + colors
-        df.plot(kind="barh", stacked=True, width=width, 
-                    edgecolor=edgecolor, color=colors, 
-                    lw=lw,  alpha=alpha, ax=ax, legend=False)
-        if logx is True:
-            pylab.semilogx()
-
-
-        positions = pylab.yticks()
-
-        pylab.xlabel("Percentage (%)", fontsize=fontsize)
-        pylab.ylabel("Sample index/name", fontsize=fontsize)
-        if len(self.sample_names)<max_labels:
-            pylab.yticks(range(len(self.sample_names)), df.index, 
-                fontsize=ytick_fontsize)
-        else:
-            pylab.yticks([1], [""])
-        pylab.xlim([0, 100])
-        pylab.ylim([0-0.5, len(df.index)-0.5])  # +1 for the legends
-        ax.legend(df.columns, title="DBs ",  bbox_to_anchor=(1,1))
-        try:
-            pylab.tight_layout()
-        except:pass
-        if output_filename:
-            pylab.savefig(output_filename, dpi=dpi)
-        return df
