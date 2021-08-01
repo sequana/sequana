@@ -23,10 +23,15 @@ import argparse
 
 from easydev import DevTools
 from sequana.modules_report.kraken import KrakenModule
+from sequana import KrakenPipeline, KrakenSequential
+from sequana import KrakenDownload
+from sequana import sequana_config_path as scfg
+from sequana.taxonomy import Taxonomy
+from sequana import sequana_config_path as cfg
+from sequana.utils import config
 
 import colorlog
 logger = colorlog.getLogger(__name__)
-
 
 
 class Options(argparse.ArgumentParser):
@@ -124,19 +129,15 @@ def main(args=None):
     logger.setLevel(options.level)
 
     if options.update_taxonomy is True:
-        from sequana.taxonomy import Taxonomy
         tax = Taxonomy()
-        from sequana import sequana_config_path as cfg
         logger.info("Will overwrite the local database taxonomy.dat in {}".format(cfg))
         tax.download_taxonomic_file(overwrite=True)
         sys.exit(0)
 
     # We put the import here to make the --help faster
-    from sequana import KrakenPipeline, KrakenSequential
     devtools = DevTools()
 
     if options.download:
-        from sequana import KrakenDownload
         kd = KrakenDownload()
         kd.download(options.download)
         sys.exit()
@@ -149,8 +150,6 @@ def main(args=None):
         devtools.check_exists(options.file2)
         fastq.append(options.file2)
 
-
-    from sequana import sequana_config_path as scfg
     if options.databases is None:
         logger.critical("You must provide a database")
         sys.exit(1)
@@ -197,7 +196,6 @@ def main(args=None):
         json.dump( summary, fh, indent=4)
 
     # This statements sets the directory where HTML will be saved
-    from sequana.utils import config
     config.output_dir = options.directory
 
     # output_directory first argument: the directory where to find the data

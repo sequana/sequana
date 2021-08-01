@@ -144,15 +144,6 @@ class KrakenResults(object):
             self._parse_data()
             self._data_created = False
 
-    def get_hiearchy(self):
-        df = self.get_taxonomy_db([str(x) for x in self.taxons.index])
-        df.loc[self.taxons.index, "ratio"] = self.taxons
-        df.loc[-1 ] = "Unclassified"
-        df.loc[-1, "ratio"] = self.unclassified
-        df.ratio /= df.ratio.sum() / 100
-        return df
-
-
     def get_taxonomy_db(self, ids):
         """Retrieve taxons given a list of taxons
 
@@ -751,7 +742,7 @@ class KrakenPipeline(object):
 
         self.kr.kraken_to_json(prefix + "kraken.json", self.dbname)
         self.kr.kraken_to_csv(prefix + "kraken.csv", self.dbname)
-
+        
         # Transform to Krona HTML
         from snakemake import shell
         kraken_html = self.output_directory + os.sep + "kraken.html"
@@ -761,6 +752,8 @@ class KrakenPipeline(object):
         else:
             shell("touch {}".format(kraken_html))
 
+
+        # finally a summary
         database = KrakenDB(self.database)
 
         summary = {"database": [database.name]}
@@ -889,15 +882,15 @@ class KrakenAnalysis(object):
         if self.paired:
             params["file2"] = self.fastq[1]
 
-        command = "kraken2 --confidence {}".format(self.confidence)
-
-        command += " %(file1)s"
+        command = f"kraken2 --confidence {self.confidence}"
+        command += f" {params['file1']}"
 
         if self.paired:
-            command += " %(file2)s --paired"
+            command += f" {params['file2']} --paired"
 
-        command += " --db %(database)s "
-        command += " --threads %(thread)s --output %(kraken_output)s "
+        command += f" --db {params['database']} "
+        command += f" --threads {params['thread']} "
+        command += f" --output {params['kraken_output']} "
 
         # If N is number of reads unclassified 3 cases depending on out-fmt
         # choice
@@ -932,13 +925,6 @@ class KrakenAnalysis(object):
                 command +=  " --unclassified-out %(output_filename_unclassified)s "
             if output_filename_classified:
                 command +=  " --classified-out %(output_filename_classified)s "
-
-        
-        # This is for the kraken output, not classified fastq
-        if only_classified_output is True:
-            # This was a convenient option in kraken1, not available anymore in
-            # kraken2. See later after the command call 
-            command += " --only-classified-output"
 
         command = command % params
         logger.debug(command)
@@ -1100,17 +1086,18 @@ class KrakenSequential(object):
                      only_classified_output=only_classified_output)
 
         # we save information about the unclassified reads (length)
-        try:
-            self.kr.boxplot_classified_vs_read_length()
-            pylab.savefig(self.output_directory + os.sep + "boxplot_read_length.png")
-        except Exception as err:
-            logger.warning("boxplot read length could not be computed")
+        #try:
+        #    self.kr.boxplot_classified_vs_read_length()
+        #    pylab.savefig(self.output_directory + os.sep + "boxplot_read_length.png")
+        #except Exception as err:
+        #    print(err)
+        #    logger.warning("boxplot read length could not be computed")
 
-        try:
-            self.kr.histo_classified_vs_read_length()
-            pylab.savefig(self.output_directory + os.sep + "hist_read_length.png")
-        except Exception as err:
-            logger.warning("hist read length could not be computed")
+        #try:
+        #    self.kr.histo_classified_vs_read_length()
+        #    pylab.savefig(self.output_directory + os.sep + "hist_read_length.png")
+        #except Exception as err:
+        #    logger.warning("hist read length could not be computed")
 
         # save input/output files.
         self._list_kraken_input.append(file_fastq_unclass)
@@ -1132,24 +1119,14 @@ class KrakenSequential(object):
 
         .. note:: the databases are run in the order provided in the constructor.
         """
-        import shutil
         # list of all output to merge at the end
         self._list_kraken_output = []
         self._list_kraken_input = []
 
         # Iteration over the databases
         for iteration in range(len(self.databases)):
-            #kraken_out = self.output_directory + "/kraken_{}.out".format(iteration)
-
             # The analysis itself
             status = self._run_one_analysis(iteration)
-
-            # We save intermediate krona except last one that will be done
-            # anyway
-            if self.keep_temp_files and iteration != len(self.databases) - 1:
-                kraken_out = self._list_kraken_output[-1] 
-                result = KrakenResults(kraken_out, verbose=False)
-                result.to_js("%s/krona_%d.html" %(self.output_directory, iteration))
 
             last_unclassified = self._list_kraken_input[-1]
 
@@ -1174,6 +1151,18 @@ class KrakenSequential(object):
         logger.info("Analysing final results")
         result = KrakenResults(file_output_final, verbose=False)
 
+        try:
+            result.histo_classified_vs_read_length()
+            pylab.savefig(self.output_directory + os.sep + "hist_read_length.png")
+        except Exception as err:
+            logger.warning("hist read length could not be computed")
+
+        try:
+            result.boxplot_classified_vs_read_length()
+            pylab.savefig(self.output_directory + os.sep + "boxplot_read_length.png")
+        except Exception as err:
+            logger.warning("hist read length could not be computed")
+
         # TODO: this looks similar to the code in KrakenPipeline. could be factorised
         result.to_js("%s%s%s.html" % (self.output_directory, os.sep, output_prefix))
         try:
@@ -1189,7 +1178,15 @@ class KrakenSequential(object):
         # remove kraken intermediate files (including unclassified files)
         if self.unclassified_output:
             # Just cp the last unclassified file
-            shutil.copy2(self._list_kraken_input[-1], self.unclassified_output)
+            print(self._list_kraken_input)
+            print(self.unclassified_output)
+            try:
+                # single-end data (one file)
+                shutil.copy2(self._list_kraken_input[-1], self.unclassified_output)
+            except:
+                for i, x in enumerate(self._list_kraken_input[-1]):
+                     
+                    shutil.copy2(x, self.unclassified_output.replace("#", str(i+1)))
 
         if self.classified_output:
             # Just cp the last classified file
