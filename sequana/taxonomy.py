@@ -16,10 +16,14 @@
 ##############################################################################
 import os
 import re
+from collections import Counter
+from functools import wraps
+
 from sequana import sequana_config_path
 from sequana.lazy import pandas as pd
-from functools import wraps
+from sequana.utils.singleton import Singleton
 from sequana.misc import wget
+
 from easydev import TempFile
 
 import colorlog
@@ -143,7 +147,7 @@ def load_taxons(f):
     return wrapper
 
 
-class Taxonomy(object):
+class Taxonomy(metaclass=Singleton):
     """This class should ease the retrieval and manipulation of Taxons
 
     There are many resources to retrieve information about a Taxon.
@@ -182,8 +186,8 @@ class Taxonomy(object):
         :param offline: if you do not have internet, the connction to Ensembl
             may hang for a while and fail. If so, set **offline** to True
         :param from: download taxonomy databases from ncbi
-
         """
+
         assert source in ['ncbi', 'ena']
         self.source = source
 
@@ -203,7 +207,7 @@ class Taxonomy(object):
         self._custom_db = sequana_config_path
         self._custom_db += "/taxonomy/taxonomy_custom.dat"
 
-    def _update_custom_taxonomy_bases(self, taxid):
+    def _update_custom_taxonomy_bases(self, taxid): # pragma: no cover
         """
         """
         taxid = str(taxid)
@@ -221,7 +225,7 @@ class Taxonomy(object):
                 #fout.write("GC ID : {}\n".format(data['']))
                 fout.write("SCIENTIFIC NAME : {}\n".format(data['scientificname']))
 
-    def download_taxonomic_file(self, overwrite=False):
+    def download_taxonomic_file(self, overwrite=False): #pragma: no cover
         """Loads entire flat file from EBI
 
         Do not overwrite the file by default.
@@ -314,7 +318,6 @@ class Taxonomy(object):
         if self.verbose:
             print()
            
-
     def find_taxon(self, taxid, mode="ncbi"):
         taxid = str(taxid)
         if mode == "ncbi":
@@ -324,16 +327,6 @@ class Taxonomy(object):
         else:
             res = self.ensembl.get_taxonomy_by_id(taxid)
         return res
-        """if "error" in res[taxid]:
-            print("not found in NCBI (EUtils)")
-        else:
-            data = res[taxid]
-            fout.write("ID : {}\n".format(taxid))
-            #fout.write("PARENT ID : {}\n".format(taxid))
-            fout.write("RANK : {}\n".format(data['rank']))
-            #fout.write("GC ID : {}\n".format(data['']))
-            fout.write("SCIENTIFIC NAME : {}\n".format(data['scientificname']))
-        """
 
     @load_taxons
     def fetch_by_id(self, taxon):
@@ -368,23 +361,6 @@ class Taxonomy(object):
         """
         res = self.ensembl.get_taxonomy_by_name(name)
         return res
-
-    def on_web(self, taxon):
-        """Open UniProt page for a given taxon"""
-        # Should work for python2 and 3
-        import webbrowser
-        try:
-            from urllib.request import urlopen
-            from urllib.error import HTTPError, URLError
-        except:
-            from urllib2 import urlopen, HTTPError, URLError
-        try:
-            urlopen('http://www.uniprot.org/taxonomy/%s' % taxon)
-            webbrowser.open("http://www.uniprot.org/taxonomy/%s" % taxon)
-        except HTTPError as err:
-            print("Invalid taxon")
-        except URLError as err:
-            print(err.args)
 
     @load_taxons
     def get_lineage(self, taxon):
@@ -463,24 +439,11 @@ class Taxonomy(object):
         return children
 
     @load_taxons
-    def get_family_tree(self, taxon):
-        """root is taxon and we return the corresponding tree"""
-        # should limit the tree size
-        # uniprot flat files has no record about children, so we would
-        # need to reconstruct the tree
-        tree = {}
-        children = self.get_children(taxon)
-        if len(children) == 0:
-            return tree
-        else:
-            return [self.get_family_tree(child) for child in children]
-
-    @load_taxons
     def __getitem__(self, iden):
         return self.records[iden]
 
     @load_taxons
-    def __getitem__(self, iden):
+    def __len__(self):
         return len(self.records)
 
     def append_existing_database(self, filename):

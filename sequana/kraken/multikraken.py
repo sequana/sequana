@@ -39,6 +39,8 @@ class MultiKrakenResults:
             self.sample_names = list(range(1, len(filenames) + 1))
         else:
             self.sample_names = sample_names
+                
+        self.ranks = ["kingdom", "phylum", "class", "order", "family", "genus", "species", "name"]
 
     def get_df(self, limit=5):
         data = {}
@@ -46,9 +48,7 @@ class MultiKrakenResults:
             df = pd.read_csv(filename)
             count = df["count"].sum()
             if "kingdom" not in df.columns:
-                for (
-                    name
-                ) in "kingdom,phylum,class,order,family,genus,species,name".split(","):
+                for name in self.ranks:
                     df[name] = "Unclassified"
 
             df = df.groupby("kingdom")["percentage"].sum()

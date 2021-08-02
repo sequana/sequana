@@ -197,13 +197,12 @@ class ENADownload(object):
 
 class NCBIDownload():
     def __init__(self):
-        self.category = ['archaea', 'bacteria', 'fungi', 'invertebrate',
+        self.category = {'archaea', 'bacteria', 'fungi', 'invertebrate',
             'mitochondrion', 'other', 'plant', 'plasmid', 'plastid', 'protozoa',
-            'vertebrate_mammalian', 'vertebrate_other', 'viral']
+            'vertebrate_mammalian', 'vertebrate_other', 'viral'}
 
-        self.category_genomes = [
-            'archaea', 'bacteria', 'fungi', 'invertebrate', 'plant',
-            'protozoa', 'vertebrate_mammalian', 'vertebrate_other', 'viral']
+        self.category_genomes = {'archaea', 'bacteria', 'fungi', 'invertebrate', 'plant',
+            'protozoa', 'vertebrate_mammalian', 'vertebrate_other', 'viral'}
             
     def download_ncbi_refseq_release(self, category, email="sequana@pasteur.fr"):
         """Download all files of type *fna* from ncbi FTP.
@@ -248,7 +247,7 @@ class NCBIDownload():
         ftp.login("anonymous", "anonymous")
         ftp.cwd(f"genomes/refseq/{category}")
 
-        filename = output if output else "assembly_summary.txt".replace(".txt", f"_{category}.txt") 
+        filename = output if output else f"assembly_summary_{category}.txt" 
             
         logger.info(f"Downloading {filename}")
         ftp.retrbinary(f'RETR assembly_summary.txt', open(filename, "wb").write)
@@ -310,6 +309,7 @@ class NCBITaxonReader():
         n.NCBITaxonReader("names.dmp", "nodes.dmp")
 
     """
+    ftp_url = "ftp.ncbi.nih.gov"
     def __init__(self, names=None, nodes=None):
         """.. rubric:: Constructor
 
@@ -327,6 +327,7 @@ class NCBITaxonReader():
         self.filename_nodes = nodes
 
         self.df_names = pd.read_csv(self.filename_names, sep='\t', header=None)
+        # get rid of the pipes using ::2
         self.df_names = self.df_names.loc[:,::2]
         self.df_names.rename({0: "taxon", 2: "name", 4: 'nothing', 6: "scname"}, axis=1, inplace=True)
 
@@ -343,6 +344,7 @@ class NCBITaxonReader():
         logger.info(f"Reading {nodes}")
 
         self.df_nodes = pd.read_csv(self.filename_nodes, sep='\t', header=None)
+        # get rid of the pipes using ::2
         self.df_nodes = self.df_nodes.loc[:, ::2]
         new_cols = ['taxon', 'parent_taxon', 'rank'] + list(range(0,len(self.df_nodes.columns)-3))
         self.df_nodes.columns = new_cols
@@ -351,9 +353,7 @@ class NCBITaxonReader():
         self._df_nodes_taxon.set_index('taxon', inplace=True)
 
     def download_taxdump(self, outpath="."): #pragma: no cover
-        
-        FTP = "ftp.ncbi.nih.gov"
-        execute(f"wget {FTP}/pub/taxonomy/taxdump.tar.gz --directory-prefix {outpath}")
+        execute(f"wget {self.ftp_url}/pub/taxonomy/taxdump.tar.gz --directory-prefix {outpath}")
         execute(f'tar xvfz {outpath}/taxdump.tar.gz -C {outpath}')
 
     def get_number_taxon(self):
@@ -386,12 +386,14 @@ class NCBITaxonReader():
         """Get all parent taxons"""
         taxons = [1]
         df = self._df_nodes_taxon
+
+        final_links = (0,1)
         while True:
             res = df.loc[taxon]
             taxons.append(taxon)
             taxon = res['parent_taxon']
             # hopefully there is always a family link to 0 or 1
-            if len(res) == 0 or taxon in [0,1]:
+            if len(res) == 0 or taxon in final_links:
                 break
         return taxons
 

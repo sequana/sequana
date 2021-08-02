@@ -1085,20 +1085,6 @@ class KrakenSequential(object):
                      output_filename_unclassified=output_filename_unclassified,
                      only_classified_output=only_classified_output)
 
-        # we save information about the unclassified reads (length)
-        #try:
-        #    self.kr.boxplot_classified_vs_read_length()
-        #    pylab.savefig(self.output_directory + os.sep + "boxplot_read_length.png")
-        #except Exception as err:
-        #    print(err)
-        #    logger.warning("boxplot read length could not be computed")
-
-        #try:
-        #    self.kr.histo_classified_vs_read_length()
-        #    pylab.savefig(self.output_directory + os.sep + "hist_read_length.png")
-        #except Exception as err:
-        #    logger.warning("hist read length could not be computed")
-
         # save input/output files.
         self._list_kraken_input.append(file_fastq_unclass)
         self._list_kraken_output.append(file_kraken_out)
@@ -1178,8 +1164,6 @@ class KrakenSequential(object):
         # remove kraken intermediate files (including unclassified files)
         if self.unclassified_output:
             # Just cp the last unclassified file
-            print(self._list_kraken_input)
-            print(self.unclassified_output)
             try:
                 # single-end data (one file)
                 shutil.copy2(self._list_kraken_input[-1], self.unclassified_output)
