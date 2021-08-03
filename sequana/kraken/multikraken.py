@@ -39,8 +39,17 @@ class MultiKrakenResults:
             self.sample_names = list(range(1, len(filenames) + 1))
         else:
             self.sample_names = sample_names
-                
-        self.ranks = ["kingdom", "phylum", "class", "order", "family", "genus", "species", "name"]
+
+        self.ranks = [
+            "kingdom",
+            "phylum",
+            "class",
+            "order",
+            "family",
+            "genus",
+            "species",
+            "name",
+        ]
 
     def get_df(self, limit=5):
         data = {}
