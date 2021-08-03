@@ -35,9 +35,11 @@ from .gff3 import GFF3
 from .freebayes_vcf_filter import VCF_freebayes
 from .freebayes_bcf_filter import BCF_freebayes
 from .itol import ITOL
-from .kraken_builder import KrakenBuilder
 from .krona import KronaMerger
-from .kraken import KrakenResults, KrakenPipeline, KrakenAnalysis, KrakenDownload, KrakenSequential
+
+from .kraken.analysis import KrakenResults, KrakenPipeline, KrakenAnalysis, KrakenDownload, KrakenSequential, KrakenDB
+from .kraken.multikraken import MultiKrakenResults, MultiKrakenResults2
+
 from .biomart import Mart
 from .pacbio import PacbioSubreads
 from .phred import Quality

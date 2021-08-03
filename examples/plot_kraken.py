@@ -60,7 +60,7 @@ test_file = sequana_data("test_kraken.out", "testing")
 import easydev
 if easydev.cmd_exists("ktImportText"):
     k = KrakenResults(test_file)
-    k.to_js(onweb=False)  # The output filame is krona.html by default
+    k.to_js()  # The output filame is krona.html by default
 
 #######################################################################
 # An example is available in  `Krona example <../_static/krona.html>`_

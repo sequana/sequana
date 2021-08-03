@@ -36,7 +36,7 @@ rule kraken_translate:
         summary = __kraken__output_wkdir + "kraken.out.summary",
         png = __kraken__output_wkdir + "kraken.png",
     run:
-        from sequana.kraken import KrakenResults
+        from sequana import KrakenResults
         k = KrakenResults(input[0])
         k.kraken_to_krona(output_filename=output.summary)
         try:
@@ -101,7 +101,7 @@ rule kraken:
             cmd += " --thread {} --output-directory {}".format(threads, params.wkdir)
         shell(cmd)
 
-        from sequana.kraken import KrakenResults
+        from sequana import KrakenResults
         k = KrakenResults(output.kraken_out)
         k.kraken_to_csv(output.kraken_csv, params.databases[0])
         k.kraken_to_json(output.kraken_json, params.databases[0])

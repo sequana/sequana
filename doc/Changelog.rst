@@ -4,6 +4,20 @@ Changelog
 .. contents::
     :depth: 2
 
+
+0.12.0
+------
+
+* CHANGES
+
+  * databses.ENADownload class removed (the ftp used are deprecated and not maintained
+    by EBI)
+  * kraken refactorisation: kraken1 support removed. kraken_builder.py module not required
+    anymore. Old code still intereting has been moved to databases.py 
+    The kraken.py module was split into analysis.py and multikraken.py into a new sub directory called kraken. 
+    This should be transparent for the user and developer. See PR
+
+
 0.11.1
 ------
 
