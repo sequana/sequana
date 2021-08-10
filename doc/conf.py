@@ -28,8 +28,6 @@ import matplotlib
 matplotlib.use('Agg')
 
 
-
-
 import pkg_resources
 version = pkg_resources.require(pkg_name)[0].version
 
@@ -42,8 +40,6 @@ title = "Sequana"
 copyright = author + ", 2016-2021"
 project = 'Sequana'
 
-import easydev
-from easydev import get_path_sphinx_themes
 
 
 # -- General configuration -----------------------------------------------------
@@ -69,8 +65,9 @@ extensions = [
     'matplotlib.sphinxext.plot_directive',
     'sphinx.ext.autosummary',
     'sphinx_gallery.gen_gallery',
-    "sequana.sphinxext.snakemakerule",
-    "sequana.sphinxext.sequana_pipeline"
+    "sequana_sphinxext.snakemakerule",
+    "sequana_sphinxext.sequana_pipeline",
+    "sequana_sphinxext.wrapper"
     ]
 # note that the numpy directives is buggy. Example: class and init are not recognised as two entities for the autoclass_content=both here below
 
@@ -203,7 +200,6 @@ else:
 # the user theme contains the otpions 'homepage', which is populated here
 #html_theme_options = {'homepage': init_sphinx.url}
 # Add any paths that contain custom themes here, relative to this directory.
-#html_theme_path = [get_path_sphinx_themes()]
 
 
 

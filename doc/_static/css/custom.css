@@ -264,6 +264,8 @@ p.sphx-glr-horizontal {
     margin-top: 2em;
 }
 
+
+
 div.snakemake {
     border-style: solid;
     border-width: 1px 1px 1px 1px;
@@ -281,5 +283,19 @@ border: 2px solid orange;
 }
 
 
+div.sequana_wrapper {
+    border-style: solid;
+    border-color: 2px solid black;
+    border-radius: 2px;
+    padding: 1em;
+    background: white;
+}
 
+
+div.sequana_wrapper .document .literal-block {
+padding:6px;
+font-size:0.9em;
+border: 2px solid red;
+background: orange;
+}
 

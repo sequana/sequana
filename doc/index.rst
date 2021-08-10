@@ -3,59 +3,8 @@ Sequana documentation
 
 |version|, |today|
 
+.. include:: ../README.rst
 
-.. raw:: html
-
-    <div style="width:80%"><p>
-
-
-    <a href="http://bioconda.github.io/recipes/sequana/README.html">
-    <img src="https://img.shields.io/badge/install%20with-bioconda-brightgreen.svg?style=flat-square"></a>
-
-    <a href="https://pypi.python.org/pypi/sequana">
-    <img src="https://badge.fury.io/py/sequana.svg"></a>
-
-    <a href="https://travis-ci.org/sequana/sequana">
-    <img src="https://travis-ci.org/sequana/sequana.svg?branch=master"></a>
-
-    <a href="https://coveralls.io/github/sequana/sequana?branch=master">
-    <img src="https://coveralls.io/repos/github/sequana/sequana/badge.svg?branch=master"></a>
-
-    <a href="http://sequana.readthedocs.org/en/master/?badge=master">
-    <img src="http://readthedocs.org/projects/sequana/badge/?version=master"></a>
-
-    <a href="http://joss.theoj.org/papers/10.21105/joss.00352">
-    <img src="http://joss.theoj.org/papers/10.21105/joss.00352/status.svg"></a>
-
-
-    </p>
-    </div>
-
-
-:Python version: Python 3.6, 3.7.3; most modules are Python2.7 compatible.
-:Source: See  `http://github.com/sequana/sequana <https://github.com/sequana/sequana/>`__.
-:Issues: Please fill a report on `github <https://github.com/sequana/sequana/issues>`__
-:How to cite: Citations are important for us to carry on developments.
-    For Sequana library (including the pipelines), please use
-
-    Cokelaer et al, (2017), 'Sequana': a Set of Snakemake NGS pipelines, Journal of
-    Open Source Software, 2(16), 352, `JOSS DOI doi:10.21105/joss.00352 <https://joss.theoj.org/papers/10.21105/joss.00352>`_
-    
-    For the **genome coverage** tool (sequana_coverage), please cite:
-
-    Dimitri Desvillechabrol, Christiane Bouchier, Sean Kennedy, Thomas Cokelaer
-    *Sequana coverage: detection and characterization of genomic variations 
-    using running median and mixture models*
-    GigaScience, Volume 7, Issue 12, December 2018, giy110,
-    https://doi.org/10.1093/gigascience/giy110
-
-    For **Sequanix** (GUI for Snakemake pipeline), please cite:
-
-    Dimitri Desvillechabrol, Rachel Legendre, Claire Rioualen,
-    Christiane Bouchier, Jacques van Helden, Sean Kennedy, Thomas Cokelaer
-    Sequanix: A Dynamic Graphical Interface for Snakemake Workflows
-    Bioinformatics, bty034, https://doi.org/10.1093/bioinformatics/bty034
-    Also available on bioRxiv(DOI: https://doi.org/10.1101/162701)
 
 Warning
 =======
@@ -186,6 +135,7 @@ User guide and reference
     sequanix.rst
     developers
     rules
+    wrappers
     references
     references_viz
     references_stats
