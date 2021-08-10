@@ -1,12 +1,8 @@
-# coding: utf-8
 #
 #  This file is part of Sequana software
 #
 #  Copyright (c) 2016 - Sequana Development Team
 #
-#  File author(s):
-#      Dimitri Desvillechabrol <dimitri.desvillechabrol@pasteur.fr>,
-#          <d.desvillechabrol@gmail.com>
 #
 #  Distributed under the terms of the 3-clause BSD license.
 #  The full license is in the LICENSE file, distributed with this software.
@@ -25,30 +21,11 @@ import easydev
 from sequana.modules_report.base_module import SequanaBaseModule
 from sequana.utils import config
 from sequana.utils.datatables_js import DataTable
-from sequana.snaketools import SnakeMakeStats
 
 
 class SummaryBase(SequanaBaseModule):
     def __init__(self, required_dir=None):
         super(SummaryBase, self).__init__(required_dir=required_dir)
-
-    def running_stats(self):
-        """ Barplot that shows computing time of each rule.
-        """
-        try:
-            stats = SnakeMakeStats(self.json['stats'])
-        except KeyError:
-            return
-        png = self.create_embedded_png(stats.plot_and_save, 'filename',
-                                       outputdir=None)
-        l, c = self.create_hide_section('Stats', 'collapse/expand', png, True)
-        self.sections.append({
-            'name': "Running Stats {0}".format(
-                self.add_float_right('<small>{0}</small>'.format(l))
-            ),
-            'anchor': 'stats',
-            'content': c
-        })
 
     def dependencies(self):
         """ Table with all python dependencies and a text file with tools
@@ -145,7 +122,6 @@ class SummaryModule(SummaryBase):
             self.sections.append(section)
 
         self.workflow()
-        self.running_stats()
         self.dependencies()
 
     def pipeline_inputs(self):
@@ -262,20 +238,6 @@ class SummaryModule2(SummaryBase):
         self.create_report_content(workflow=workflow)
         self.create_html(output_filename)
 
-    def running_stats(self):
-
-        filename = ".sequana/snakemake_stats.png"
-        if os.path.exists(filename):
-            
-            png = self.png_to_embedded_png(filename)
-            l, c = self.create_hide_section('Stats', 'collapse/expand', png, True)
-            self.sections.append({
-                'name': "Running Stats {0}".format(
-                    self.add_float_right('<small>{0}</small>'.format(l))
-                ),
-                'anchor': 'stats',
-                'content': c
-            })
     def create_report_content(self, workflow=True):
         """ Create the report content.
         """
@@ -286,7 +248,6 @@ class SummaryModule2(SummaryBase):
 
         if workflow: 
             self.workflow()
-        self.running_stats()
         self.dependencies()
 
     def workflow(self):
