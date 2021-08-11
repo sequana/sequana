@@ -21,17 +21,17 @@ def test_ke():
     assert ke.find_pathways_by_gene("moaA")
     assert ke.find_pathways_by_gene("moaA", match="exact")
 
-    #FIXME
-    #with TempFile(suffix=".png") as fout:
-    #    ke.save_pathway(ke.kegg.pathwayIds[0].replace(":", "").replace("path", ""), filename=fout.name)
-
 
 def test_panther():
     up = pd.read_csv(sequana_data("enrichment/ecoli_up_gene.csv"))
     down = pd.read_csv(sequana_data("enrichment/ecoli_down_gene.csv")    )
     up = list(up.Name)
     down = list(down.Name)
-    gene_lists = {'up': up, 'down': down, 'all': up +down}
+
+    up = up[0:200]
+    down = down[0:200]
+
+    gene_lists = {'up': up, 'down': down, 'all': up+down}
 
     pe = PantherEnrichment(gene_lists, log2_fc_threshold=0, taxon=83333)
     pe = PantherEnrichment(gene_lists, fc_threshold=1, taxon=83333)
@@ -39,14 +39,10 @@ def test_panther():
     pe.compute_enrichment(ontologies=["GO:0003674"],
         correction="bonferroni")
 
-
     # too slow or fails ith uniprot 404 from time to time
     #pe.get_functional_classification(pe.mygenes_up, 83333)
 
-
     ontologies = ["GO:0003674", "GO:0008150", "GO:0005575"]
-
-
 
     pe.compute_enrichment(  ontologies=ontologies)
 
@@ -57,6 +53,3 @@ def test_panther():
 
     pe.plot_piechart(df) 
 
-    #with TempFile(suffix=".png") as fout:
-    #    pe.save_chart(df, filename=fout.name)
-    # too slow

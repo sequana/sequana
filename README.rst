@@ -8,9 +8,9 @@ SEQUANA
 .. image:: https://badge.fury.io/py/sequana.svg
     :target: https://pypi.python.org/pypi/sequana
 
-.. image:: https://github.com/sequana/sequana//actions/workflows/main.yml/badge.svg?branch=master
-    :target: https://github.com/sequana/sequana//actions/workflows/main.yml
-    
+.. image:: https://github.com/sequana/sequana/actions/workflows/main.yml/badge.svg?branch=master
+    :target: https://github.com/sequana/sequana/actions/workflows/main.yml
+
 .. image:: https://coveralls.io/repos/github/sequana/sequana/badge.svg?branch=master
     :target: https://coveralls.io/github/sequana/sequana?branch=master 
 
@@ -23,7 +23,7 @@ SEQUANA
    :alt: JOSS (journal of open source software) DOI
 
 
-:Python version: 3.6, 3.7.3 (below for now)
+:Python version: 3.7, 3.8 
 :Documentation: `On readthedocs <http://sequana.readthedocs.org/>`_
 :Issues: `On github <https://github.com/sequana/sequana/issues>`_
 :How to cite: Citations are important for us to carry on developments.
