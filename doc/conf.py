@@ -66,7 +66,7 @@ extensions = [
     'sphinx.ext.autosummary',
     'sphinx_gallery.gen_gallery',
     "sequana_sphinxext.snakemakerule",
-    "sequana_sphinxext.sequana_pipeline",
+    "sequana_sphinxext.pipeline",
     "sequana_sphinxext.wrapper"
     ]
 # note that the numpy directives is buggy. Example: class and init are not recognised as two entities for the autoclass_content=both here below
