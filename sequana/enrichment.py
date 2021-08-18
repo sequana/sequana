@@ -17,7 +17,6 @@
 ##############################################################################
 
 from pathlib import Path
-import re
 import os
 import json
 
@@ -35,7 +34,7 @@ logger = colorlog.getLogger(__name__)
 
 try:
     import gseapy
-except:
+except ImportError:
     pass
 
 
@@ -291,6 +290,7 @@ class PantherEnrichment:
         correction="FDR",
         progress=True,
     ):
+
         # taxid=83333 # ecoli
         if taxid is None:
             taxid = self.taxon
@@ -1050,7 +1050,6 @@ class KeggPathwayEnrichment:
         set input identifiers are upper case setting the
         convert_input_gene_to_upper_case parameter to True
         """
-
         self.convert_input_gene_to_upper_case = convert_input_gene_to_upper_case
 
         from bioservices import KEGG
@@ -1378,13 +1377,13 @@ class KeggPathwayEnrichment:
             summary_names.append(name)
             summary_keggids.append(kegg_id)
 
-            if name.lower() in [x.lower() for x in df_down.Name]:
+            if name.lower() in [x.lower() for x in df_down.Name.fillna("undefined")]:
                 padj = -pylab.log10(df_down.query("Name==@name").padj.values[0])
                 fc = df_down.query("Name==@name").log2FoldChange.values[0]
                 summary_fcs.append(fc)
                 summary_pvalues.append(padj)
                 summary_types.append("-")
-            elif name.lower() in [x.lower() for x in df_up.Name]:
+            elif name.lower() in [x.lower() for x in df_up.Name.fillna("undefined")]:
                 padj = -pylab.log10(df_up.query("Name==@name").padj.values[0])
                 summary_pvalues.append(padj)
                 fc = df_up.query("Name==@name").log2FoldChange.values[0]

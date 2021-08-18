@@ -23,13 +23,14 @@ import tempfile
 
 import click
 
-# import click_completion
-# click_completion.init()
+import click_completion
+click_completion.init()
 
 from sequana.utils import config
 from sequana import version
 from sequana.iem import IEM
-from sequana.gff3 import GFF3
+from sequana import GFF3
+from sequana import FastQ
 
 
 import colorlog
@@ -110,7 +111,6 @@ def fastq(**kwargs):
     Input file can be gzipped or not. The --output-file
 
     """
-    from sequana.fastq import FastQ
 
     filenames = kwargs["filename"]
     # users may provide a wildcards such as "A*gz" or list of files.
@@ -396,7 +396,11 @@ for the differential analysis. Default is 'condition'""",
     "--comparisons",
     type=click.Path(),
     default=None,
-    help="""Not yet implemented. By default, all comparisons are computed""",
+    help="""By default, if a reference is provided, all conditions versus that
+reference are tested. If no reference, the entire combinatory is performed
+(Ncondition * (Ncondition-1) / 2. In both case all condtions found in the
+design file are used. If a comparison file is provided, only conditions found in
+it will be used. """,
 )
 @click.option(
     "--cooks-cutoff",
@@ -413,7 +417,7 @@ have adjusted pvalues otherwise""",
 @click.option(
     "--beta-prior/--no-beta-prior",
     default=False,
-    help="Use beta prior or not. Default is no beta prior",
+    help="Use beta prior or not. Default is no beta prior"
 )
 @click.option(
     "--batch",
@@ -429,10 +433,21 @@ effect to be included in the statistical model as batch ~ condition""",
     help="DESeq2 type of fit. Default is 'parametric'",
 )
 @click.option(
+    "--minimum-mean-reads-per-gene",
+    default=0,
+    help="Filter out fene where the mean number of reads is below this value. By default all genes are kept",
+)
+@click.option(
+    "--keep-all-conditions/--no-keep-all-conditions",
+    default=False,
+    help="""Even though sub set of comparisons are provided, keep all conditions
+in the analysis and report only the provided comparisons"""
+)
+@click.option(
     "--hover-name",
     default=None,
     help="""In volcano plot, we set the hover name to Name if present in the GFF,
-otherwise to gene_id if present, then locus_tag, and finally ID. One can specify
+otherwise to gene_id if present, then locus_tag, and finally ID and gene_name. One can specify
 a hover name to be used with this option""",
 )
 @common_logger
@@ -471,14 +486,19 @@ def rnadiff(**kwargs):
     # FIXME not clear why so we import again the sequana logger
     # FIXME looks like it works everywhere but not in the main script
     from sequana import logger
+    # seems to be fixed in aug 2021
 
     logger.setLevel(kwargs["logger"])
+
+    from easydev import cmd_exists, mkdirs
+    if not cmd_exists("Rscript"):
+        logger.critical("""Rscript not found; You will need R and the DESeq2 package to be installed. 
+You may install it yourself or use damona using the rtools:1.0.0 image """)
+        sys.exit(1)
 
     outdir = kwargs["output_directory"]
     feature = kwargs["feature_name"]
     attribute = kwargs["attribute_name"]
-    design = kwargs["design"]
-    reference = kwargs["reference"]
 
     if os.path.exists(outdir) and not kwargs["force"]:
         logger.error(f"{outdir} exist already. Use --force to overwrite")
@@ -502,19 +522,10 @@ def rnadiff(**kwargs):
     else:
         gff = None
 
-    design_check = RNADesign(design, reference=reference)
-    compa_csv = kwargs["comparisons"]
-    if compa_csv:
-        compa_df = pd.read_csv(compa_csv)
+    comparisons = kwargs["comparisons"]
+    if comparisons:
+        compa_df = pd.read_csv(comparisons)
         comparisons = list(zip(compa_df["alternative"], compa_df["reference"]))
-    else:
-        comparisons = design_check.comparisons
-
-    logger.info(f"Processing features counts and saving into {outdir}/light_counts.csv")
-    fc = FeatureCount(kwargs["features"])
-    from easydev import mkdirs
-
-    mkdirs(f"{outdir}")
 
     logger.info(f"Differential analysis to be saved into ./{outdir}")
     for k in sorted(
@@ -529,41 +540,44 @@ def rnadiff(**kwargs):
     ):
         logger.info(f"  Parameter {k} set to : {kwargs[k]}")
 
-    with tempfile.NamedTemporaryFile() as tmpf:
-        fc.rnadiff_df.to_csv(tmpf.name)
+    # The readl analysis is here
+    r = RNADiffAnalysis(
+        kwargs["features"],
+        kwargs["design"],
+        kwargs["condition"],
+        keep_all_conditions=kwargs['keep_all_conditions'],
+        batch=kwargs["batch"],
+        comparisons=comparisons,
+        reference=kwargs['reference'],
+        fc_feature=feature,
+        fc_attribute=attribute,
+        outdir=outdir,
+        gff=gff,
+        cooks_cutoff=kwargs.get("cooks_cutoff"),
+        independent_filtering=kwargs.get("independent_filtering"),
+        beta_prior=kwargs.get("beta_prior"),
+        fit_type=kwargs.get("fit_type"),
+        minimum_mean_reads_per_gene=kwargs.get("minimum_mean_reads_per_gene"),
+    )
 
-        r = RNADiffAnalysis(
-            tmpf.name,
-            design,
-            condition=kwargs["condition"],
-            batch=kwargs["batch"],
-            comparisons=comparisons,
-            fc_feature=feature,
-            fc_attribute=attribute,
-            outdir=outdir,
-            gff=gff,
-            cooks_cutoff=kwargs.get("cooks_cutoff"),
-            independent_filtering=kwargs.get("independent_filtering"),
-            beta_prior=kwargs.get("beta_prior"),
-            fit_type=kwargs.get("fit_type"),
-        )
-
-        try:
-            logger.info(f"Running DGE. Saving results into {outdir}")
-            results = r.run()
-            results.to_csv(f"{outdir}/rnadiff.csv")
-        except Exception as err:
-            logger.error(err)
-            sys.exit(1)
+    try:
+        logger.info(f"Running DGE. Saving results into {outdir}")
+        results = r.run()
+        results.to_csv(f"{outdir}/rnadiff.csv")
+    except Exception as err:
+        logger.error(err)
+        logger.error(f"please see {outdir}/code/rnadiff.err file for errors")
+        sys.exit(1)
 
     logger.info(f"Reporting. Saving in rnadiff.html")
 
     # this define the output directory where rnadiff.html is saved
     config.output_dir = outdir
 
+    import seaborn as sns
+
     report = RNAdiffModule(
         outdir,
-        kwargs["design"],
         gff=gff,
         fc_attribute=attribute,
         fc_feature=feature,
@@ -572,6 +586,7 @@ def rnadiff(**kwargs):
         condition=kwargs["condition"],
         annot_cols=None,
         pattern="*vs*_degs_DESeq2.csv",
+        palette=sns.color_palette(desat=0.6, n_colors=13),
         hover_name=kwargs["hover_name"],
     )
 
@@ -854,14 +869,13 @@ def enrichment(**kwargs):
             df.reset_index(inplace=True)
 
             dfup = df.sort_values("log2FoldChange", ascending=False)
-            up_genes = list(dfup.query("log2FoldChange > 0")[annot_col])[:Nmax]
+            up_genes = list(dfup.query("log2FoldChange > 0")[annot_col].fillna("undefined"))[:Nmax]
 
             dfdown = df.sort_values("log2FoldChange", ascending=True)
-            down_genes = list(dfdown.query("log2FoldChange < 0")[annot_col])[:Nmax]
+            down_genes = list(dfdown.query("log2FoldChange < 0")[annot_col].fillna("undefined"))[:Nmax]
 
             all_genes = list(
-                df.sort_values("log2FoldChange", key=abs, ascending=False)[annot_col]
-            )[:Nmax]
+                df.sort_values("log2FoldChange", key=abs, ascending=False)[annot_col].dropna())[:Nmax]
 
             gene_dict = {
                 "up": up_genes,
@@ -874,14 +888,14 @@ def enrichment(**kwargs):
             N = Nup + Ndown
             logger.info(f"Computing enrichment for the {compa} case")
             logger.info(
-                f"Found {Nup} genes up-regulated, {Ndown} down regulated ({N} in total)."
+                f"Found {Nup} genes up-regulated, {Ndown} down regulated ({N} in total) based on padj<{padj} and absolute log2 fold change < {log2fc}. Note that if the attribute is not set, some genes may be ignored"
             )
             config.output_dir = f"enrichment/{compa}"
 
             if not os.path.exists("enrichment"):
                 os.mkdir("enrichment")
 
-            report = Enrichment(
+            Enrichment(
                 gene_dict,
                 taxon,
                 df,
@@ -938,11 +952,35 @@ def taxonomy(**kwargs):
         indices = set(indices)
         print(df.loc[indices])
 
+@main.command()
+@click.argument("input", type=click.Path(exists=True))
+@click.argument("output")
+@click.option(
+    "--features",
+    type=click.Path(),
+    default="gene",
+    help="""list of features to be  extracted""",
+)
+@common_logger
+def gff_to_light_gff(**kwargs):
+    """Extract the feature of interest in the input GFF to create a light version
+
+    sequana gff-to-light-gff input.gff output.gff --features gene,exon 
+
+    """
+    from sequana import logger
+    logger.setLevel(kwargs["logger"])
+    filename = kwargs["input"]
+    assert filename.endswith(".gff") or filename.endswith(".gff3")
+
+    g = GFF3(filename)
+    g.read_and_save_selected_features(kwargs["output"], features=kwargs["features"])
+
 
 @main.command()
 @click.argument("gff_filename", type=click.Path(exists=True))
 @common_logger
-def gff2gtf(**kwargs):
+def gff_to_gtf(**kwargs):
     """Convert a GFF file into GTF
 
     This is experimental convertion. Use with care.
@@ -950,7 +988,6 @@ def gff2gtf(**kwargs):
     """
     filename = kwargs["gff_filename"]
     assert filename.endswith(".gff") or filename.endswith(".gff3")
-    from sequana.gff3 import GFF3
 
     g = GFF3(filename)
     if filename.endswith(".gff"):
