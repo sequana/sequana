@@ -18,6 +18,8 @@ def network_available():
         raise err
 
 
+@pytest.mark.xfail(reason="too slow", method="thread")
+@pytest.mark.timeout(10)
 def test_eutils():
     if network_available():
         from sequana.databases import EUtilsTools

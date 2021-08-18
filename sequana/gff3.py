@@ -1,11 +1,7 @@
-# -*- coding: utf-8 -*-
-#
 #  This file is part of Sequana software
 #
-#  Copyright (c) 2016-2020 - Sequana Development Team
+#  Copyright (c) 2016-2021 - Sequana Development Team
 #
-#  File author(s):
-#      Thomas Cokelaer <thomas.cokelaer@pasteur.fr>
 #
 #  Distributed under the terms of the 3-clause BSD license.
 #  The full license is in the LICENSE file, distributed with this software.
@@ -237,8 +233,7 @@ class GFF3():
     def read_and_save_selected_features(self, outfile, features=['gene']):
 
         count = 0
-        with open(self.filename, "r") as fin:
-            with open(outfile, "w") as fout:
+        with open(self.filename, "r") as fin, open(outfile, "w") as fout:
                 for line in fin:
                     split = line.rstrip().split("\t")
                     # skipping  biological_region saves lots of time

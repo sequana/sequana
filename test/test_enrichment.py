@@ -2,7 +2,7 @@ from sequana.enrichment import KeggPathwayEnrichment, PantherEnrichment
 from sequana import sequana_data
 from easydev import TempFile
 import pandas as pd
-
+import pytest
 
 
 def test_ke():
@@ -22,6 +22,7 @@ def test_ke():
     assert ke.find_pathways_by_gene("moaA", match="exact")
 
 
+@pytest.mark.xfail(reason="too slow or service may be down")
 def test_panther():
     up = pd.read_csv(sequana_data("enrichment/ecoli_up_gene.csv"))
     down = pd.read_csv(sequana_data("enrichment/ecoli_down_gene.csv")    )

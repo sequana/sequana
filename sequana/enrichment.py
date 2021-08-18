@@ -24,6 +24,7 @@ from sequana.lazy import pandas as pd
 from sequana.lazy import pylab
 from sequana.lazy import numpy as np
 from matplotlib_venn import venn2_unweighted, venn3_unweighted
+import gseapy
 
 # from sequana.rnadiff import RNADiffResults
 from sequana.summary import Summary
@@ -32,10 +33,6 @@ import colorlog
 logger = colorlog.getLogger(__name__)
 
 
-try:
-    import gseapy
-except ImportError:
-    pass
 
 
 __all__ = ["PantherEnrichment", "KeggPathwayEnrichment", "Mart"]
@@ -216,8 +213,7 @@ class PantherEnrichment:
     def _set_taxon(self, taxon):
         if taxon not in self.valid_taxons:
             raise ValueError(
-                "taxon {} ".format(taxon)
-                + " not in pantherDB. please check the 'valid_taxons' attribute"
+                f"taxon {taxon} not in pantherDB. please use one of {self.valid_taxons}"
             )
         self.taxon_info = [
             x for x in self.panther.get_supported_genomes() if x["taxon_id"] == taxon
@@ -1377,13 +1373,13 @@ class KeggPathwayEnrichment:
             summary_names.append(name)
             summary_keggids.append(kegg_id)
 
-            if name.lower() in [x.lower() for x in df_down.Name.fillna("undefined")]:
+            if name.lower() in {x.lower() for x in df_down.Name.fillna("undefined")}:
                 padj = -pylab.log10(df_down.query("Name==@name").padj.values[0])
                 fc = df_down.query("Name==@name").log2FoldChange.values[0]
                 summary_fcs.append(fc)
                 summary_pvalues.append(padj)
                 summary_types.append("-")
-            elif name.lower() in [x.lower() for x in df_up.Name.fillna("undefined")]:
+            elif name.lower() in {x.lower() for x in df_up.Name.fillna("undefined")}:
                 padj = -pylab.log10(df_up.query("Name==@name").padj.values[0])
                 summary_pvalues.append(padj)
                 fc = df_up.query("Name==@name").log2FoldChange.values[0]

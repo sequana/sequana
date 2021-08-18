@@ -23,8 +23,8 @@ import tempfile
 
 import click
 
-import click_completion
-click_completion.init()
+#import click_completion
+#click_completion.init()
 
 from sequana.utils import config
 from sequana import version

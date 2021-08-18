@@ -172,10 +172,7 @@ class RNADiffAnalysis:
 
         # Read and check the design file. Filtering if comparisons is provided
         self.design = RNADesign(design_file, sep=sep_design, reference=reference)
-        if comparisons is None:
-            comparisons = self.design.comparisons
-        self.comparisons = comparisons
-
+        self.comparisons = comparisons if comparisons else self.design.comparisons
 
         _conditions = {x for comp in comparisons for x in comp}
         if not keep_all_conditions:
@@ -224,9 +221,9 @@ class RNADiffAnalysis:
         self.threads = threads
 
         # sanity check for the R scripts:
-        for attr in {'counts_filename','design_filename', 'fit_type',
+        for attr in ('counts_filename','design_filename', 'fit_type',
             'comparisons_str', 'independent_filtering','cooks_cutoff',
-            'code_dir', 'outdir', 'counts_dir','beta_prior', 'threads'}:
+            'code_dir', 'outdir', 'counts_dir','beta_prior', 'threads'):
             try:
                 getattr(self, attr)
             except AttributeError as err:
@@ -250,7 +247,7 @@ Design overview:\n\
         # class, or (if it fails) a feature count file (tabulated with
         # Chr/Start/Geneid columns)
         try:
-            # low memory is used to avoid warnings (see pandas.read_csv doc)
+            # low memory set to False to avoid warnings (see pandas.read_csv doc)
             counts = pd.read_csv(
                 self.usr_counts, sep=sep_counts, index_col="Geneid", comment="#",
                 low_memory=False)
@@ -1485,20 +1482,44 @@ class RNADiffResults:
             ]
         ).plot()
 
+    def _replace_index_with_annotation(self, df, annot):
+        # ID is unique but annotation_column may not be complete with NA
+        # Let us first get the annotion with index as the data index
+        # and one column (the annotation itself)
+        dd = self.annotation.loc[df.index][annot]
+
+        # Let us replace the possible NA with the ID
+        dd = dd.fillna(dict({(x,x) for x in dd.index}))
+
+        # Now we replace the data index with this annoation
+        df.index = dd.values
+
+        return df
+
     def heatmap_vst_centered_data(self, comp, log2_fc=1, padj=0.05, 
-            xlabel_size=8, ylabel_size=12, figsize=(10,15)):
+            xlabel_size=8, ylabel_size=12, figsize=(10,15),
+            annotation_column=None):
 
         assert comp in self.comparisons.keys()
         from sequana.viz import heatmap
 
+
+        # Select counts based on the log2 fold change and padjusted
         data = self.comparisons[comp].df.query(
                     "(log2FoldChange<-@log2_fc or log2FoldChange>@log2_fc) and padj<@padj"
                 )
+        counts = self.counts_vst.loc[data.index].copy()
 
         logger.info(f"Using {len(data)} DGE genes")
 
+        # replace the indices with the proper annotation if required.
+        if annotation_column:
+            data = self._replace_index_with_annotation(data, annotation_column)
+            counts.index = data.index
+
+        # finally the plots
         h = heatmap.Clustermap(
-            self.counts_vst.loc[data.index],
+            counts,
             figsize=figsize,
             z_score=0,
             center=0
