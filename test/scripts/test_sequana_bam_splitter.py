@@ -54,8 +54,7 @@ def test_output():
         assert F.count(163) == 229
         assert F.count(99) == 220
 
-@skiptravis
-def test_sam_cram():
+def test_sam_bam():
     with TemporaryDirectory() as tmpdir:
         prefix = tmpdir + "/test"
         M, U, F = bam_splitter._main(sequana_data("test_measles.bam"), prefix,
@@ -66,11 +65,14 @@ def test_sam_cram():
         M, U, F = bam_splitter._main(sequana_data("test_measles.sam"), prefix,
             keep_unmapped=True)
 
+@pytest.mark.xfail(reason="cram flaky")
+def test_cram():
     with TemporaryDirectory() as tmpdir:
         prefix = tmpdir + "/test"
         M, U, F = bam_splitter._main(sequana_data("test_measles.cram"), prefix,
             keep_unmapped=True)
 
+def test_fasta():
     with TemporaryDirectory() as tmpdir:
         prefix = tmpdir + "/test"
         try:

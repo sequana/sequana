@@ -644,7 +644,7 @@ def biomart(**kwargs):
     attributes = kwargs["attributes"]
     dataset = kwargs["dataset"]
 
-    from sequana import Mart
+    from sequana.enrichment.mart import Mart
 
     conv = Mart(dataset, mart)
     df = conv.query(attributes.split(","))

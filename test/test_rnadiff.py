@@ -1,5 +1,6 @@
 from sequana.rnadiff import RNADiffResults, RNADiffAnalysis, RNADesign
 from . import test_dir
+import pytest
 
 def test_design():
     d = RNADesign(f"{test_dir}/data/rnadiff/design.csv")
@@ -10,12 +11,11 @@ def test_design():
     assert d.comparisons == [('Complemented_csrA', 'WT'),  ('Mut_csrA', 'WT')]
     assert d.conditions ==  ['Complemented_csrA', 'Mut_csrA', 'WT']
 
+
+@pytest.mark.xfail(reason="too slow or service may be down")
 def test_rnadiff_onefolder():
 
-
-
     # Featurecounts are saved in sequana/resources/testing/rnadiff/rnadiff_onecond_ex1
-
     # generated from Featurecount of the file to be found in 
     # sequana/resources/testing/featurecounts/featurecounts_ex1
 

@@ -1,9 +1,12 @@
 from easydev import TempFile
 from sequana.scripts import main as script
 import subprocess
-
+import pytest
 from sequana import sequana_data
 
+
+
+@pytest.mark.xfail(reason="too slow or service may be down")
 def test_sequana_app():
     from click.testing import CliRunner
     runner = CliRunner()
@@ -35,7 +38,7 @@ def test_sequana_app():
             ['--input', filename, "--output", fout.name])
 
 
-
+@pytest.mark.xfail(reason="too slow or service may be down")
 def test_sequana_app_user():
     filename1 = sequana_data("test.fastq")
     filename2 = sequana_data("test_1_1000.fastq.gz")

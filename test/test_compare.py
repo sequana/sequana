@@ -1,11 +1,11 @@
 from sequana.compare import RNADiffCompare
-from sequana import sequana_data
 
+from . import test_dir
 
 def test_rnadiff_volcano():
 
-    PATH1 = sequana_data("rnadiff/rnadiff_bowtie.csv")
-    PATH2 = sequana_data("rnadiff/rnadiff_salmon.csv")
+    PATH1 = f"{test_dir}/data/rnadiff/rnadiff_bowtie.csv"
+    PATH2 = f"{test_dir}/data/rnadiff/rnadiff_salmon.csv"
     from sequana.rnadiff import RNADiffTable
     r1 = RNADiffTable(PATH1)
     r2 = RNADiffTable(PATH2)

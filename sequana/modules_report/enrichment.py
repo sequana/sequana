@@ -159,7 +159,7 @@ href="{link_rnadiff}">here</a>.</p>
         style = "width:85%"
         # level = logger.level
         # logger.setLevel(level)
-        from sequana.enrichment import PantherEnrichment
+        from sequana.enrichment.panther import PantherEnrichment
 
         self.pe = PantherEnrichment(
             self.gene_lists,
@@ -352,7 +352,7 @@ categories. </p>
     def add_kegg(self):
         logger.info("Enrichment module: kegg term")
         style = "width:45%"
-        from sequana.enrichment import KeggPathwayEnrichment
+        from sequana.enrichment.kegg import KEGGPathwayEnrichment
 
         ke = KeggPathwayEnrichment(
             self.gene_lists,

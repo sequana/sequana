@@ -35,7 +35,7 @@ def test_help():
     else:
         raise Exception
 
-
+@pytest.mark.xfail(reason="too slow or service may be down")
 def test_input(tmpdir):
     import os
     # Download reference in temporary directory so that it is erased if the test

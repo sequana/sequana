@@ -43,7 +43,7 @@ def test_krakenDB(download):
         assert True
 
 
-# @pytest.mark.xfail
+@pytest.mark.xfail(reason="too slow or service may be down")
 def test_run_kraken_analysis(download):
 
     file1 = sequana_data("Hm2_GTGAAA_L005_R1_001.fastq.gz", "data")
@@ -52,7 +52,7 @@ def test_run_kraken_analysis(download):
     kt.run()
 
 
-# @pytest.mark.xfail
+@pytest.mark.xfail(reason="too slow or service may be down")
 def test_kraken_sequential(download):
     p = tempfile.TemporaryDirectory()
 
@@ -73,7 +73,7 @@ def test_kraken_sequential(download):
     p.cleanup()
 
 
-# @pytest.mark.xfail
+@pytest.mark.xfail(reason="too slow or service may be down")
 def test_kraken_results(download):
     k = KrakenResults(f"{test_dir}/data/test_kraken.out")
     df = k.plot(kind="pie")
@@ -98,7 +98,7 @@ def test_kraken_results(download):
     k.histo_classified_vs_read_length()
 
 
-# @pytest.mark.xfail
+@pytest.mark.xfail(reason="too slow or service may be down")
 def test_kraken_pipeline(download):
 
     file1 = sequana_data("Hm2_GTGAAA_L005_R1_001.fastq.gz", "data")
