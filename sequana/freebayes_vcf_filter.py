@@ -66,11 +66,11 @@ class Variant(object):
             'reference': vcf_line.REF,
             'alternative': "; ".join(str(x) for x in vcf_line.ALT),
             'freebayes_score': vcf_line.QUAL,
-            'strand_balance': "; ".join('{0:.2f}'.format(x) for x in
+            'strand_balance': "; ".join('{0:.3f}'.format(x) for x in
                                         strand_bal),
         }
         if len(vcf_line.samples) == 1:
-            line_dict['frequency'] = "; ".join('{0:.2f}'.format(x)
+            line_dict['frequency'] = "; ".join('{0:.3f}'.format(x)
                                                for x in alt_freq)
         else:
             for i, s in enumerate(vcf_line.samples):
@@ -78,16 +78,16 @@ class Variant(object):
                     freq = 0
                     info = '.:None:None'
                 else:
-                    info = '{0}:{1}:{2}'.format(
+                    info = '{0}:{1}:{3}'.format(
                         s.data.GT,
                         s.data.DP,
                         ','.join('{0:.3f}'.format(v) for v in s.data.GL)
                     )
                     try:
-                        freq = "; ".join('{0:.2f}'.format(alt / s.data.DP)
+                        freq = "; ".join('{0:.3f}'.format(alt / s.data.DP)
                                          for alt in s.data.AO)
                     except TypeError:
-                        freq = '{0:.2f}'.format(s.data.AO / s.data.DP)
+                        freq = '{0:.3f}'.format(s.data.AO / s.data.DP)
                 line_dict[s.sample] = freq
                 line_dict['info_{0}'.format(i)] = info
         try:
