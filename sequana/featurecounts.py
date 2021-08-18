@@ -41,9 +41,9 @@ def get_most_probable_strand(sample_folder, tolerance,
     probable strand for a single sample (using a tolerance threshold for
     strandness). This assumes a single sample by featureCounts file.
 
-    Possible values include: 
+    Possible values include:
     * 0: unstranded
-    * 1: stranded 
+    * 1: stranded
     * 2: eversely stranded
 
     We compute the number of counts in case 1 and 2 and compute the ratio strand
@@ -196,7 +196,6 @@ class FeatureCountMerger():
                 logger.critical(f"file x not found")
                 sys.exit(1)
 
-
         self.df = pd.read_csv(self.filenames[0], sep="\t", skiprows=1)
         for filename in self.filenames[1:]:
             other_df = pd.read_csv(filename, sep="\t", skiprows=1)
@@ -204,7 +203,7 @@ class FeatureCountMerger():
 
     def to_tsv(self, output_filename="all_features.out"):
         self.df.to_csv(output_filename,sep="\t", index=False)
-    
+
 
 
 class FeatureCount:
@@ -214,10 +213,10 @@ class FeatureCount:
     should be a TSV file such as the following one with the header provided
     herebelow. Of course input BAM files can be named after your samples::
 
-        Geneid	Chr	Start	End	Strand	Length	WT1	WT2 WT3 KO1 KO2 KO3
-        gene1	NC_010602.1	141	1466	+	1326	11	20	15	13	17	17
-	gene2	NC_010602.1	1713	2831	+	1119	35	54	58	34	53	46
-	gene3	NC_010602.1	2831	3934	+	1104	9	16	16	4	18	18
+        Geneid    Chr    Start    End    Strand    Length    WT1    WT2 WT3 KO1 KO2 KO3
+        gene1    NC_010602.1    141    1466    +    1326    11    20    15    13    17    17
+    gene2    NC_010602.1    1713    2831    +    1119    35    54    58    34    53    46
+    gene3    NC_010602.1    2831    3934    +    1104    9    16    16    4    18    18
 
     ::
 
@@ -261,7 +260,7 @@ class FeatureCount:
 
         # Count matrix prepared for rnadiff
         self.rnadiff_df = self._get_rnadiff_df()
-        
+
         if guess_design:
             self.design_df = self._get_design_df()
 
@@ -278,7 +277,7 @@ class FeatureCount:
         df.columns = [
             self._clean_sample_names(x, self.extra_name_rm) for x in df.columns
         ]
-        
+
         if "Geneid" in df.columns:
             df.set_index("Geneid", inplace=True)
         df.sort_index(axis=1, inplace=True)
@@ -350,13 +349,13 @@ class FeatureCount:
 
     def _read_data(self):
         if len(self.filename) > 1:
-            df = pd.read_csv(self.filename[0], sep="\t", comment="#")
+            df = pd.read_csv(self.filename[0], sep="\t", comment="#", low_memory=False)
             for ff in self.filename[1:]:
-                other_df = pd.read_csv(ff, sep="\t", comment="#")
+                other_df = pd.read_csv(ff, sep="\t", comment="#", low_memory=False)
                 df = pd.merge(df, other_df)
             df = df.set_index("Geneid")
         else:
-            df = pd.read_csv(self.filename[0], sep="\t", comment="#", index_col=0)
+            df = pd.read_csv(self.filename[0], sep="\t", comment="#", index_col=0, low_memory=False)
         self._raw_df = df
 
     def _get_raw_df(self):

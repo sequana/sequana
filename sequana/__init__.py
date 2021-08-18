@@ -44,6 +44,7 @@ from .biomart import Mart
 from .pacbio import PacbioSubreads
 from .phred import Quality
 from .rnadiff import RNADiffResults
+from .featurecounts import FeatureCount
 from .running_median import RunningMedian
 from .snpeff import SnpEff
 from .sequence import DNA, RNA, Sequence, Repeats
