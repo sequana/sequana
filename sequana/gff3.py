@@ -234,6 +234,23 @@ class GFF3():
     def save_annotation_to_csv(self, filename="annotations.csv"):
         self.df.to_csv(filename, index=False)
 
+    def read_and_save_selected_features(self, outfile, features=['gene']):
+
+        count = 0
+        with open(self.filename, "r") as fin:
+            with open(outfile, "w") as fout:
+                for line in fin:
+                    split = line.rstrip().split("\t")
+                    # skipping  biological_region saves lots of time
+                    try:
+                        if split[2].strip() in features:
+                            fout.write(line)
+                            count += 1
+                    except IndexError:
+                        pass
+        logger.info(f"Found {count} entries and saved into {outfile}")
+
+
     def save_gff_filtered(
         self, filename="filtered.gff", features=["gene"], replace_seqid=None
     ):
