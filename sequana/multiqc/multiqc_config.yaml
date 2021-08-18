@@ -108,6 +108,8 @@ sp:
         fn: "sequana_summary_isoseq.json"
     sequana_isoseq_qc:
         fn: "sequana_summary_isoseq_qc.json"
+    sequana_laa:
+        fn: "sequana_laa*.json"
     sequana_pacbio_amplicon:
         fn: "sequana_pacbio_amplicon_*.json"
 
