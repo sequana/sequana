@@ -51,7 +51,6 @@ def sequana_data(filename=None, where=None):
 
         - data
         - testing
-        - data/adapters
         - images
 
     .. note:: this does not handle wildcards. The * means retrieve all files.
@@ -59,7 +58,7 @@ def sequana_data(filename=None, where=None):
     """
     sequana_path = easydev.get_package_location('sequana')
     sharedir = os.sep.join([sequana_path , "sequana", 'resources'])
-    directories = ['data', 'testing', 'data/adapters', 'images', 'scripts']
+    directories = ['data', 'testing', 'examples', 'images', 'scripts']
 
     if filename == "*":
         found = collections.defaultdict(list)
