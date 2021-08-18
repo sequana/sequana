@@ -1,13 +1,12 @@
 from sequana.rnadiff import RNADiffResults, RNADiffAnalysis, RNADesign
-from sequana import sequana_data
-
+from . import test_dir
 
 def test_design():
-    d = RNADesign(sequana_data("rnadiff/design.csv"))
+    d = RNADesign(f"{test_dir}/data/rnadiff/design.csv")
     assert d.comparisons == [('Complemented_csrA', 'Mut_csrA'),  ('Complemented_csrA', 'WT'),  ('Mut_csrA', 'WT')]
     assert d.conditions ==  ['Complemented_csrA', 'Mut_csrA', 'WT']
 
-    d = RNADesign(sequana_data("rnadiff/design.csv"), reference="WT")
+    d = RNADesign(f"{test_dir}/data/rnadiff/design.csv", reference="WT")
     assert d.comparisons == [('Complemented_csrA', 'WT'),  ('Mut_csrA', 'WT')]
     assert d.conditions ==  ['Complemented_csrA', 'Mut_csrA', 'WT']
 
@@ -20,9 +19,9 @@ def test_rnadiff_onefolder():
     # generated from Featurecount of the file to be found in 
     # sequana/resources/testing/featurecounts/featurecounts_ex1
 
-    counts = sequana_data("rnadiff/rnadiff_onecond_ex1/counts.csv")
-    design = sequana_data("rnadiff/rnadiff_onecond_ex1/design.csv")
-    gff = sequana_data("rnadiff/rnadiff_onecond_ex1/Lepto.gff")
+    counts = f"{test_dir}/data/rnadiff/rnadiff_onecond_ex1/counts.csv"
+    design = f"{test_dir}/data/rnadiff/rnadiff_onecond_ex1/design.csv"
+    gff = f"{test_dir}/data/rnadiff/rnadiff_onecond_ex1/Lepto.gff"
 
     an = RNADiffAnalysis(counts, design, 
             condition="condition", comparisons=[("Complemented_csrA", "WT")], 

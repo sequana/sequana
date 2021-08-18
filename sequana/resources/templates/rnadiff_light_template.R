@@ -24,8 +24,9 @@ register(MulticoreParam({{threads}}))
 
 check_counts_meta_tables = function(counts, meta){
     # Verify rownames in meta are the same as colnames in counts
+
     if (!isTRUE(all.equal(rownames(meta),colnames(counts)))){
-        stop("Metadata doesn't seem to fit count matrix. Check both inputs")
+        stop("row names of input design do not match count columns. Check both inputs")
     }
     else {
         message("OK: Count and meta tables seems to correspond")

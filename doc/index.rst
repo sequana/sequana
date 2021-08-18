@@ -6,11 +6,6 @@ Sequana documentation
 .. include:: ../README.rst
 
 
-Warning
-=======
-
-:March 2020: **Important notes for developers**. Major refactoring for  version 0.8 now pushed on master branch. Please use this new branch to create your own branches. If you still want to use the previous version, please checkout the branch master_20_03_2020 instead.  
-
 
 What is Sequana ?
 =====================

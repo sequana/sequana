@@ -27,11 +27,13 @@ from sequana.lazy import pandas as pd
 from sequana.utils.datatables_js import DataTable
 
 import colorlog
+
 logger = colorlog.getLogger(__name__)
 
 
 class KrakenModule(SequanaBaseModule):
-    """ Write HTML report of Kraken results"""
+    """Write HTML report of Kraken results"""
+
     def __init__(self, input_directory, output_filename=None):
         """
         :param input_directory: the directory of the bwa_bam_to_fastq output
@@ -46,8 +48,7 @@ class KrakenModule(SequanaBaseModule):
             self.create_html(output_filename)
 
     def create_report_content(self):
-        """ Generate the sections list to fill the HTML report.
-        """
+        """Generate the sections list to fill the HTML report."""
         self.sections = list()
         self.add_summary_section()
         self.add_table_results_section()
@@ -62,16 +63,25 @@ class KrakenModule(SequanaBaseModule):
         # read the kraken summary results and build a grouped dataframe on ranks
         df = pd.read_csv(self.directory + os.sep + "kraken.csv")
         df = df.fillna("")
-        ranks = ['kingdom', 'phylum', 'class', 'order', 'family', 'genus', 'species', 'name']
+        ranks = [
+            "kingdom",
+            "phylum",
+            "class",
+            "order",
+            "family",
+            "genus",
+            "species",
+            "name",
+        ]
         df = df.groupby(ranks).sum().sort_index(level=["kingdom"])
 
-        # here we do not want the table to be sorted. it is sorted on first column so 
+        # here we do not want the table to be sorted. it is sorted on first column so
         # let us add back the index
         df = df.reset_index()
 
         # we also move the taxon/count/percentage at the beginning
-        df = df[['taxon','count','percentage'] + ranks]
-        df = df.reset_index() # this ensure that order is kept and table not sorted
+        df = df[["taxon", "count", "percentage"] + ranks]
+        df = df.reset_index()  # this ensure that order is kept and table not sorted
 
         # now we fill redundant columns with spaces
         def fix_col(X):
@@ -80,7 +90,7 @@ class KrakenModule(SequanaBaseModule):
             for i, x in enumerate(X):
                 if i == 0:
                     Xp.append(x)
-                elif x == X[i-1]:
+                elif x == X[i - 1]:
                     Xp.append("")
                 else:
                     Xp.append(x)
@@ -89,13 +99,12 @@ class KrakenModule(SequanaBaseModule):
         for rank in ranks:
             df[rank] = fix_col(df[rank])
 
-
-        return df 
+        return df
 
     def _get_summary_section(self):
 
         df = self._get_stats()
-        if len(df) == 1 and df.iloc[0]['taxon'] == -1:
+        if len(df) == 1 and df.iloc[0]["taxon"] == -1:
             pngimage = sequana_data("no_data.jpg")
             extra = "<p> no reads could be identified with the given the database(s)."
         else:
@@ -123,8 +132,11 @@ Besides, be aware that closely related species may not be classified precisely.
     {0}
     <div style="text-align:center"><a href="./{1}/kraken.html"> {2} </a></div>
     <br>
-""".format(extra, self.directory.split(os.sep, 1)[1], 
-            self.png_to_embedded_png(pngimage))
+""".format(
+            extra,
+            self.directory.split(os.sep, 1)[1],
+            self.png_to_embedded_png(pngimage),
+        )
 
         return html
 
@@ -132,21 +144,22 @@ Besides, be aware that closely related species may not be classified precisely.
 
         df = self._get_stats()
         url_ncbi = "https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id={}"
-        df['links'] = [url_ncbi.format(taxon) for taxon in df['taxon']]
+        df["links"] = [url_ncbi.format(taxon) for taxon in df["taxon"]]
         datatable = DataTable(df, "kraken", index=False)
-       
+
         datatable.datatable.set_links_to_column("links", "taxon")
 
         datatable.datatable.datatable_options = {
-            'scrollX': '300px',
-            'pageLength': 30,
-            'scrollCollapse': 'true',
-            'dom': 'Bfrtip',
+            "scrollX": "300px",
+            "pageLength": 30,
+            "scrollCollapse": "true",
+            "dom": "Bfrtip",
             "paging": "false",
-            "order": [[ 2, "desc"]],
-            'buttons': ['copy', 'csv']}
+            "order": [[2, "desc"]],
+            "buttons": ["copy", "csv"],
+        }
         js = datatable.create_javascript_function()
-        html_tab = datatable.create_datatable(float_format='%.3g')
+        html_tab = datatable.create_datatable(float_format="%.3g")
 
         html = f"{html_tab} {js}"
         return html
@@ -154,49 +167,52 @@ Besides, be aware that closely related species may not be classified precisely.
     def _get_table_grouped_results(self):
         df = self._get_df_hierarchy()
         url_ncbi = "https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id={}"
-        df['links'] = [url_ncbi.format(taxon) for taxon in df['taxon']]
+        df["links"] = [url_ncbi.format(taxon) for taxon in df["taxon"]]
         datatable = DataTable(df, "kraken_summary", index=False)
         datatable.datatable.set_links_to_column("links", "taxon")
         datatable.datatable.datatable_options = {
-            'scrollX': '300px',
-            'pageLength': 30,
-            'scrollCollapse': 'true',
-            'dom': 'frtip',
+            "scrollX": "300px",
+            "pageLength": 30,
+            "scrollCollapse": "true",
+            "dom": "frtip",
             "paging": "false",
-            #"order": [[ 0, "desc"]],
-            'buttons': ['copy', 'csv']}
+            # "order": [[ 0, "desc"]],
+            "buttons": ["copy", "csv"],
+        }
         js = datatable.create_javascript_function()
-        html_tab = datatable.create_datatable(float_format='%.3g')
+        html_tab = datatable.create_datatable(float_format="%.3g")
         html = """<p>The following table uses the same data as above. However, 
         we have here a hierarchical representation grouping taxons per common lineage. 
-        <b>DO NOT SORT the table or you will loose the hiearchy</b>""" 
+        <b>DO NOT SORT the table or you will loose the hiearchy</b>"""
         html += f"{html_tab} {js}"
 
         return html
 
     def add_summary_section(self):
         html = self._get_summary_section()
-        self.sections.append({
-          "name": "Taxonomic content",
-          "anchor": "kraken",
-          "content": html
-        })
+        self.sections.append(
+            {"name": "Taxonomic content", "anchor": "kraken", "content": html}
+        )
 
     def add_table_results_section(self):
         html = self._get_table_results()
-        self.sections.append({
-          "name": "Taxonomic Classification",
-          "anchor": "classification",
-          "content": html
-        })
-        
+        self.sections.append(
+            {
+                "name": "Taxonomic Classification",
+                "anchor": "classification",
+                "content": html,
+            }
+        )
+
     def add_table_results_hierarchy_section(self):
         html = self._get_table_grouped_results()
-        self.sections.append({
-          "name": "Taxonomic Classification (grouped by lineage)",
-          "anchor": "grouped_classification",
-          "content": html
-        })
+        self.sections.append(
+            {
+                "name": "Taxonomic Classification (grouped by lineage)",
+                "anchor": "grouped_classification",
+                "content": html,
+            }
+        )
 
     def add_diagnostics_section(self):
         html = """<p>Unclassified read may happen either because the databases used
@@ -212,10 +228,10 @@ classified and U for unclassified reads.</p><div>"""
         if os.path.exists(pngimage):
             html += self.png_to_embedded_png(pngimage)
         html += "</div>"
-        self.sections.append({  
-          "name": "Diagnostics for unclassified reads",
-          "anchor": "diag",
-          "content": html
-        })
-
-
+        self.sections.append(
+            {
+                "name": "Diagnostics for unclassified reads",
+                "anchor": "diag",
+                "content": html,
+            }
+        )

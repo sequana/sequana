@@ -1,11 +1,7 @@
-# -*- coding: utf-8 -*-
-#
 #  This file is part of Sequana software
 #
-#  Copyright (c) 2016-2020 - Sequana Development Team
+#  Copyright (c) 2016-2021 - Sequana Development Team
 #
-#  File author(s):
-#      Thomas Cokelaer <thomas.cokelaer@pasteur.fr>
 #
 #  Distributed under the terms of the 3-clause BSD license.
 #  The full license is in the LICENSE file, distributed with this software.
@@ -18,6 +14,7 @@ import os
 
 from easydev import do_profile
 import colorlog
+
 logger = colorlog.getLogger(__name__)
 
 from sequana.lazy import pandas as pd
@@ -26,7 +23,7 @@ from sequana.lazy import pandas as pd
 __all__ = ["GFF3"]
 
 
-class GFF3():
+class GFF3:
     """Read a GFF file, version 3
 
 
@@ -43,14 +40,14 @@ class GFF3():
         # prints info about duplicated attributes:
         g.get_duplicated_attributes_per_type(self)
 
-    On eukaryotes, the reading and processing of the GFF may take a while. 
+    On eukaryotes, the reading and processing of the GFF may take a while.
     On prokaryotes, it should be pretty fast (a few seconds).
     To speed up the eukaryotes case, we skip the processing biological_regions
     (50% of the data in mouse).
 
     """
 
-    def __init__(self, filename, skip_types=['biological_region']):
+    def __init__(self, filename, skip_types=["biological_region"]):
         self.filename = filename
         assert os.path.exists(filename)
         self._df = None
@@ -88,6 +85,7 @@ class GFF3():
                 # FIXME may be overwritten by get_df
                 self._features = features
         return sorted(features)
+
     features = property(_get_features)
 
     def get_attributes(self, feature=None, sep=";"):
@@ -129,10 +127,11 @@ class GFF3():
 
         self._attributes = sorted(attributes)
         return self._attributes
+
     attributes = property(get_attributes)
 
     def read(self):
-        """ Read annotations one by one creating a generator """
+        """Read annotations one by one creating a generator"""
         count = 0
 
         self._features = set()
@@ -171,8 +170,8 @@ class GFF3():
                 annotation = self._process_main_fields(split[0:8])
 
                 # all attributes as key/values added to all annotations.
-                annotation['attributes'] = self._process_attributes(split[8])
-                annotation.update(annotation['attributes'])
+                annotation["attributes"] = self._process_attributes(split[8])
+                annotation.update(annotation["attributes"])
                 count += 1
 
                 yield annotation
@@ -187,6 +186,7 @@ class GFF3():
 
         self._df = df
         return self._df
+
     df = property(_get_df)
 
     def get_duplicated_attributes_per_type(self):
@@ -204,6 +204,7 @@ class GFF3():
                     print("  - {}:No duplicates".format(attr))
                 results[typ][attr] = dups
         import pandas as pd
+
         df = pd.DataFrame(results)
         return df
 
@@ -224,15 +225,31 @@ class GFF3():
 
         results = {}
         from collections import defaultdict
+
         results2 = defaultdict(list)
-        for _id, data in transcripts_df[['ID', 'Parent']].iterrows():
+        for _id, data in transcripts_df[["ID", "Parent"]].iterrows():
             results[data.values[0]] = data.values[1]
             results2[data.values[1]].append(data.values[0])
 
-        return results, results2 
+        return results, results2
 
     def save_annotation_to_csv(self, filename="annotations.csv"):
         self.df.to_csv(filename, index=False)
+
+    def read_and_save_selected_features(self, outfile, features=["gene"]):
+
+        count = 0
+        with open(self.filename, "r") as fin, open(outfile, "w") as fout:
+            for line in fin:
+                split = line.rstrip().split("\t")
+                # skipping  biological_region saves lots of time
+                try:
+                    if split[2].strip() in features:
+                        fout.write(line)
+                        count += 1
+                except IndexError:
+                    pass
+        logger.info(f"Found {count} entries and saved into {outfile}")
 
     def save_gff_filtered(
         self, filename="filtered.gff", features=["gene"], replace_seqid=None
@@ -320,14 +337,21 @@ class GFF3():
                 sep = x
                 break
         if sep is None:
-            logger.error(f"Your GFF/GTF does not seem to be correct ({text}). Expected a = or space as separator")
+            logger.error(
+                f"Your GFF/GTF does not seem to be correct ({text}). Expected a = or space as separator"
+            )
             sys.exit(1)
 
         # ugly but fast replacement. not sure how frequent this is. Seen only in
         # Saccer3 GFF file.
         text = text.replace("%09", "\t").replace("%0A", "\n").replace("%0D", "\r")
-        text = text.replace("%25", "%").replace("%3D", "=").replace("%26", "&").replace("%2C", ",")
-        text = text.replace("%28", "(").replace("%29",")")  # brackets
+        text = (
+            text.replace("%25", "%")
+            .replace("%3D", "=")
+            .replace("%26", "&")
+            .replace("%2C", ",")
+        )
+        text = text.replace("%28", "(").replace("%29", ")")  # brackets
         # we do not convert the special %3B into ;  or %20 into spaces for now
 
         # split into mutliple attributes
@@ -340,10 +364,12 @@ class GFF3():
 
             # find the separator. Sometimes it is spaces, sometimes a = sign
             idx = attr.find(sep)
-            value = attr[idx+1:]
+            value = attr[idx + 1 :]
 
             # replace " by nothing (GTF case)
-            attributes[attr[:idx]] = value.replace('"', '').replace("%3B",";").replace("%20", " ")
+            attributes[attr[:idx]] = (
+                value.replace('"', "").replace("%3B", ";").replace("%20", " ")
+            )
         return attributes
 
     def create_files_for_rnadiff(
@@ -489,7 +515,7 @@ class GFF3():
         # block sizes, starts of the transcript but they recommend bedops
         # gff2bed tool that do not extract such information. For now, for
         # prokaryotes, the block sizes version have been implemented and worked
-        # on a leptospira example. 
+        # on a leptospira example.
         fout = open(output_filename, "w")
         with open(self.filename, "r") as reader:
             for line in reader:
@@ -504,22 +530,22 @@ class GFF3():
                 split = line.rstrip().split("\t")
 
                 chrom_name = split[0]
-                #source = split[1]    #keep this code commented for book-keeping
+                # source = split[1]    #keep this code commented for book-keeping
                 feature = split[2]
                 gene_start = int(split[3])
                 gene_stop = int(split[4])
                 cds_start = gene_start  # for prokaryotes, for now cds=gene
                 cds_stop = gene_stop
-                a = split[5]  # not used apparently 
+                a = split[5]  # not used apparently
                 strand = split[6]
                 b = split[7]  # not used apparently
-                attributes = split[8] # may be required for eukaryotes
+                attributes = split[8]  # may be required for eukaryotes
 
                 score = 0  # in examples for rseqc, the score is always zero
-                unknown = 0 # a field not documented in rseqc
+                unknown = 0  # a field not documented in rseqc
                 block_count = 1
                 block_sizes = f"{cds_stop-cds_start},"  # fixme +1 ?
-                block_starts = "0,"   # commas are important at the end. no spaces
+                block_starts = "0,"  # commas are important at the end. no spaces
                 # according to rseqc (bed.py) code , the expected bed format is
                 # chrom, chrom_start, chrom_end, gene name, score, strand, cdsStart, cdsEnd,
                 # blockcount, blocksizes, blockstarts where blocksizes and blocks

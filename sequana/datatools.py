@@ -23,8 +23,8 @@ import glob
 import collections
 
 import colorlog
-logger = colorlog.getLogger(__name__)
 
+logger = colorlog.getLogger(__name__)
 
 
 def sequana_data(filename=None, where=None):
@@ -32,7 +32,7 @@ def sequana_data(filename=None, where=None):
 
     :param str filename: a valid filename to be found
     :param str where: one of the registered data directory (see below)
-    :return: the path of file. See also here below in the case where 
+    :return: the path of file. See also here below in the case where
         filename is set to "*".
 
     .. code-block:: python
@@ -41,7 +41,7 @@ def sequana_data(filename=None, where=None):
         filename = sequana_data("test.bam")
 
     Type the function name with "*" parameter to get a list of
-    available files. Withe where argument set, the function returns a 
+    available files. Withe where argument set, the function returns a
     list of files. Without the where argument, a dictionary is returned where
     keys correspond to the registered directories::
 
@@ -51,15 +51,14 @@ def sequana_data(filename=None, where=None):
 
         - data
         - testing
-        - data/adapters
         - images
 
     .. note:: this does not handle wildcards. The * means retrieve all files.
 
     """
-    sequana_path = easydev.get_package_location('sequana')
-    sharedir = os.sep.join([sequana_path , "sequana", 'resources'])
-    directories = ['data', 'testing', 'data/adapters', 'images', 'scripts']
+    sequana_path = easydev.get_package_location("sequana")
+    sharedir = os.sep.join([sequana_path, "sequana", "resources"])
+    directories = ["data", "testing", "examples", "images", "scripts"]
 
     if filename == "*":
         found = collections.defaultdict(list)
@@ -69,30 +68,33 @@ def sequana_data(filename=None, where=None):
             for filename in glob.glob(sharedir + "/%s/*" % thisdir):
                 filename = os.path.split(filename)[1]
                 to_ignore = ["__init__.py", "__pycache__"]
-                if filename.endswith('.pyc') or filename in to_ignore:
+                if filename.endswith(".pyc") or filename in to_ignore:
                     pass
                 else:
                     found[thisdir].append(os.path.split(filename)[1])
-        if where is not None: 
+        if where is not None:
             return found[where]
         return found
 
     if filename is None:
         for thisdir in directories:
-            print('From %s directory:' % thisdir)
+            print("From %s directory:" % thisdir)
             for filename in glob.glob(sharedir + "/%s/*" % thisdir):
                 filename = os.path.split(filename)[1]
                 to_ignore = ["__init__.py", "__pycache__"]
-                if filename.endswith('.pyc') or filename in to_ignore:
+                if filename.endswith(".pyc") or filename in to_ignore:
                     pass
                 else:
-                    print(' - sequana("%s", "%s")' % (os.path.split(filename)[1], thisdir))
+                    print(
+                        ' - sequana("%s", "%s")' % (os.path.split(filename)[1], thisdir)
+                    )
         raise ValueError("Choose a valid file from the list above")
 
-    # in the code one may use / or \ 
+    # in the code one may use / or \
     if where:
         filename = os.sep.join([sharedir, where, filename])
     else:
+
         def _get_valid_file(filename, directory):
             filename = os.sep.join([sharedir, directory, filename])
             if os.path.exists(filename) is False:
@@ -105,7 +107,9 @@ def sequana_data(filename=None, where=None):
         for thisdir in directories:
             if _get_valid_file(filename, thisdir):
                 return _get_valid_file(filename, thisdir)
-        raise Exception("unknown file %s. Type sequana_data() to get a list of valid names" % filename)
+        raise Exception(
+            "unknown file %s. Type sequana_data() to get a list of valid names"
+            % filename
+        )
 
     return filename
-

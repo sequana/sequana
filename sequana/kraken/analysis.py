@@ -569,6 +569,7 @@ class KrakenResults(object):
         threshold=1,
         radius=0.9,
         textcolor="red",
+        delete_krona_file=False,
         **kargs,
     ):
         """A simple non-interactive plot of taxons
@@ -658,6 +659,9 @@ class KrakenResults(object):
         elif kind == "barh":
             ax = data.plot(kind=kind, **kargs)
             pylab.xlabel(" percentage ")
+        if delete_krona_file:
+            os.remove(self.filename + ".summary")
+            
 
         return data
 

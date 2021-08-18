@@ -1,13 +1,7 @@
-# -*- coding: utf-8 -*-
 #
 #  This file is part of Sequana software
 #
-#  Copyright (c) 2016 - Sequana Development Team
-#
-#  File author(s):
-#      Thomas Cokelaer <thomas.cokelaer@pasteur.fr>
-#      Dimitri Desvillechabrol <dimitri.desvillechabrol@pasteur.fr>, 
-#          <d.desvillechabrol@gmail.com>
+#  Copyright (c) 2016-2021 - Sequana Development Team
 #
 #  Distributed under the terms of the 3-clause BSD license.
 #  The full license is in the LICENSE file, distributed with this software.
@@ -40,6 +34,7 @@ logger = colorlog.getLogger(__name__)
 from sequana.lazy import pandas as pd
 from sequana.lazy import numpy as np
 
+
 __all__ = ['Corrplot']
 
 
@@ -69,7 +64,7 @@ class Corrplot(Linkage):
         `notebook <http://nbviewer.ipython.org/github/sequana/sequana/blob/master/notebooks/viz/corrplot.ipynb>`_
 
     """
-    def __init__(self, data, na=0):
+    def __init__(self, data, na=0, compute_correlation=False):
         """.. rubric:: Constructor
 
         Plots the content of square matrix that contains correlation values.
@@ -109,7 +104,7 @@ class Corrplot(Linkage):
 
         if compute_correlation:
             print("Computing correlation")
-            cor = self.df.corr()
+            cor = self.df.fillna(na).corr()
             self.df = cor
 
         # replace NA with zero

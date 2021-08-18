@@ -45,6 +45,19 @@ SEQUANA
 
 **Sequana** includes a set of pipelines related to NGS (new generation sequencing) including quality control, variant calling, coverage, taxonomy, transcriptomics. We also ship **Sequanix**, a graphical user interface for Snakemake pipelines. 
 
++--------------------------+--------------------------+-----------------------+
+| **pipeline or tools**    | **Latest Pypi verison**  |  **Test passing**     |
++--------------------------+--------------------------+-----------------------+
+| pipetools                |     |pipetools_pypi|     | |pipetools_test|      | 
++--------------------------+--------------------------+-----------------------+ 
+
+
+.. |pipetools_pypi| image:: https://badge.fury.io/py/sequana-pipetools.svg
+    :target: https://pypi.python.org/pypi/sequana_pipetools
+
+.. |pipetools_test| image:: https://github.com/sequana/sequana_pipetools/actions/workflows/main.yml/badge.svg?branch=master
+    :target: https://github.com/sequana/sequana_pipetools/actions/workflows/main.yml
+
 **Please see the** `documentation <http://sequana.readthedocs.org>`_ for an
 up-to-date status and documentation.
 

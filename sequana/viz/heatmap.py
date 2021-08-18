@@ -34,7 +34,7 @@ __all__ = ["Heatmap", "Clustermap"]
 
 try:
     import seaborn as sns
-except:
+except ImportError:
     print("You should install seaborn to use sequana.viz.heatmap")
 
 
