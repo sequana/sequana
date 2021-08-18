@@ -20,13 +20,13 @@ from sequana.lazy import vcf
 from sequana.lazy import pandas as pd
 
 import colorlog
+
 logger = colorlog.getLogger(__name__)
 
 
-
 class Variant(object):
-    """ Variant reader and dictionary that stores important variant information
-    """
+    """Variant reader and dictionary that stores important variant information"""
+
     def __init__(self, record):
         """.. rubric:: constructor
 
@@ -53,61 +53,60 @@ class Variant(object):
         return self._samples
 
     def _vcf_line_to_dict(self, vcf_line):
-        """ Convert a VCF line as a dictionnary with the most important
+        """Convert a VCF line as a dictionnary with the most important
         information to detect real variants.
         """
         # Calcul all important information
         alt_freq = compute_frequency(vcf_line)
         strand_bal = compute_strand_balance(vcf_line)
         line_dict = {
-            'chr': vcf_line.CHROM,
-            'position': str(vcf_line.POS),
-            'depth': vcf_line.INFO['DP'],
-            'reference': vcf_line.REF,
-            'alternative': "; ".join(str(x) for x in vcf_line.ALT),
-            'freebayes_score': vcf_line.QUAL,
-            'strand_balance': "; ".join('{0:.3f}'.format(x) for x in
-                                        strand_bal),
+            "chr": vcf_line.CHROM,
+            "position": str(vcf_line.POS),
+            "depth": vcf_line.INFO["DP"],
+            "reference": vcf_line.REF,
+            "alternative": "; ".join(str(x) for x in vcf_line.ALT),
+            "freebayes_score": vcf_line.QUAL,
+            "strand_balance": "; ".join("{0:.3f}".format(x) for x in strand_bal),
         }
         if len(vcf_line.samples) == 1:
-            line_dict['frequency'] = "; ".join('{0:.3f}'.format(x)
-                                               for x in alt_freq)
+            line_dict["frequency"] = "; ".join("{0:.3f}".format(x) for x in alt_freq)
         else:
             for i, s in enumerate(vcf_line.samples):
                 if not s.called:
                     freq = 0
-                    info = '.:None:None'
+                    info = ".:None:None"
                 else:
-                    info = '{0}:{1}:{3}'.format(
+                    info = "{0}:{1}:{3}".format(
                         s.data.GT,
                         s.data.DP,
-                        ','.join('{0:.3f}'.format(v) for v in s.data.GL)
+                        ",".join("{0:.3f}".format(v) for v in s.data.GL),
                     )
                     try:
-                        freq = "; ".join('{0:.3f}'.format(alt / s.data.DP)
-                                         for alt in s.data.AO)
+                        freq = "; ".join(
+                            "{0:.3f}".format(alt / s.data.DP) for alt in s.data.AO
+                        )
                     except TypeError:
-                        freq = '{0:.3f}'.format(s.data.AO / s.data.DP)
+                        freq = "{0:.3f}".format(s.data.AO / s.data.DP)
                 line_dict[s.sample] = freq
-                line_dict['info_{0}'.format(i)] = info
+                line_dict["info_{0}".format(i)] = info
         try:
             # If vcf is annotated by snpEff
-            annotation = vcf_line.INFO['EFF'][0].split('|')
-            effect_type, effect_lvl = annotation[0].split('(')
+            annotation = vcf_line.INFO["EFF"][0].split("|")
+            effect_type, effect_lvl = annotation[0].split("(")
             try:
-                prot_effect, cds_effect = annotation[3].split('/')
+                prot_effect, cds_effect = annotation[3].split("/")
             except ValueError:
                 cds_effect = annotation[3]
-                prot_effect = ''
+                prot_effect = ""
             ann_dict = {
-                'CDS_position': cds_effect[2:],
-                'effect_type': effect_type,
-                'codon_change': annotation[2],
-                'gene_name': annotation[5],
-                'mutation_type': annotation[1],
-                'prot_effect': prot_effect[2:],
-                'prot_size': annotation[4],
-                'effect_impact': effect_lvl,
+                "CDS_position": cds_effect[2:],
+                "effect_type": effect_type,
+                "codon_change": annotation[2],
+                "gene_name": annotation[5],
+                "mutation_type": annotation[1],
+                "prot_effect": prot_effect[2:],
+                "prot_size": annotation[4],
+                "effect_impact": effect_lvl,
             }
             line_dict = dict(line_dict, **ann_dict)
         except KeyError:
@@ -145,13 +144,14 @@ class VCF_freebayes(vcf.Reader):
 
 
 
-    Information about strand bias (aka strand balance, or strand ratio). This 
+    Information about strand bias (aka strand balance, or strand ratio). This
     is a type of sequencing bias in which one DNA strand is favored over the other,
     which can result in incorrect evaluation of the amount of evidence observed for
     one allele vs. the other.
 
 
     """
+
     def __init__(self, filename, **kwargs):
         """.. rubric:: constructor
 
@@ -164,24 +164,22 @@ class VCF_freebayes(vcf.Reader):
             vcf.Reader.__init__(self, fsock=filin, **kwargs)
             self._get_start_index()
         except FileNotFoundError as e:
-            logger.error(
-                "FileNotFoundError({0}): {1}".format(e.errno, e.strerror)
-            )
+            logger.error("FileNotFoundError({0}): {1}".format(e.errno, e.strerror))
             raise FileNotFoundError
         # initiate filters dictionary
         self._filters_params = {
-            'freebayes_score': 0,
-            'frequency': 0,
-            'min_depth': 0,
-            'forward_depth': 0,
-            'reverse_depth': 0,
-            'strand_ratio': 0,
+            "freebayes_score": 0,
+            "frequency": 0,
+            "min_depth": 0,
+            "forward_depth": 0,
+            "reverse_depth": 0,
+            "strand_ratio": 0,
         }
         self._is_joint = self._check_if_joint()
 
     @property
     def filters_params(self):
-        """ Get or set the filters parameters to select variants of interest.
+        """Get or set the filters parameters to select variants of interest.
         Setter take a dictionnary as parameter to update the attribute
         :attr:`VCF_freebayes.filters_params`. Delete will reset different
         variable to 0.
@@ -215,14 +213,14 @@ class VCF_freebayes(vcf.Reader):
 
     @property
     def is_joint(self):
-        """ Get :attr:`VCF_freebayes.is_joint` if the vcf file is a
+        """Get :attr:`VCF_freebayes.is_joint` if the vcf file is a
         joint_freebayes.
         """
         return self._is_joint
 
     def _get_start_index(self):
         self._reader.seek(0)
-        for line in iter(self._reader.readline, ''):
+        for line in iter(self._reader.readline, ""):
             if line.startswith("#"):
                 self._start_index = self._reader.tell()
             else:
@@ -241,8 +239,7 @@ class VCF_freebayes(vcf.Reader):
         return False
 
     def rewind(self):
-        """ Rewind the reader
-        """
+        """Rewind the reader"""
         self._reader.seek(self._start_index)
         self.reader = (line.strip() for line in self._reader if line.strip())
 
@@ -251,7 +248,7 @@ class VCF_freebayes(vcf.Reader):
         return variants
 
     def filter_vcf(self, filter_dict=None):
-        """ Filter variants in the VCF file.
+        """Filter variants in the VCF file.
 
         :param dict filter_dict: dictionary of filters. It updates the
             attribute :attr:`VCF_freebayes.filter_params`
@@ -264,7 +261,7 @@ class VCF_freebayes(vcf.Reader):
         return Filtered_freebayes(variants, self)
 
     def _filter_line(self, vcf_line):
-        """ Filter variant with parameter set in :attr:`VCF_freebayes.filters`.
+        """Filter variant with parameter set in :attr:`VCF_freebayes.filters`.
 
         :param vcf.model._Record vcf_line:
         :return: line if all filters are passed.
@@ -298,8 +295,8 @@ class VCF_freebayes(vcf.Reader):
 
 
 class Filtered_freebayes(object):
-    """ Variants filtered with VCF_freebayes.
-    """
+    """Variants filtered with VCF_freebayes."""
+
     def __init__(self, variants, fb_vcf):
         """.. rubric:: constructor
 
@@ -313,52 +310,51 @@ class Filtered_freebayes(object):
 
     @property
     def variants(self):
-        """ Get the variant list.
-        """
+        """Get the variant list."""
         return self._variants
 
     @property
     def df(self):
-        """ Get the data frame.
-        """
+        """Get the data frame."""
         return self._df
 
     @property
     def vcf(self):
-        """ Get the VCF_freebayes object.
-        """
+        """Get the VCF_freebayes object."""
         return self._vcf
 
     @property
     def columns(self):
-        """ Get columns index.
-        """
+        """Get columns index."""
         return self._columns
 
     def _create_index(self):
-        columns = ['chr', 'position', 'reference', 'alternative', 'depth']
+        columns = ["chr", "position", "reference", "alternative", "depth"]
         if self.vcf.is_joint:
             columns += self.vcf.samples
         else:
-            columns.append('frequency')
-        columns += ['strand_balance', 'freebayes_score']
+            columns.append("frequency")
+        columns += ["strand_balance", "freebayes_score"]
         try:
-            if 'effect_type' in self.variants[0].resume.keys():
-                columns += [ 
-                    'effect_type', 'mutation_type', 'effect_impact',
-                    'gene_name', 'CDS_position', 'codon_change', 'prot_effect',
-                    'prot_size'
+            if "effect_type" in self.variants[0].resume.keys():
+                columns += [
+                    "effect_type",
+                    "mutation_type",
+                    "effect_impact",
+                    "gene_name",
+                    "CDS_position",
+                    "codon_change",
+                    "prot_effect",
+                    "prot_size",
                 ]
         except IndexError:
             pass
         if self.vcf.is_joint:
-            columns += [
-                'info_{0}'.format(i) for i in range(len(self.vcf.samples))
-            ]
+            columns += ["info_{0}".format(i) for i in range(len(self.vcf.samples))]
         return columns
 
     def _vcf_to_df(self):
-        """ Create a data frame with the most important information contained
+        """Create a data frame with the most important information contained
         in the VCF file.
         """
         dict_list = [v.resume for v in self.variants]
@@ -369,13 +365,14 @@ class Filtered_freebayes(object):
             return df
 
     def to_csv(self, output_filename, info_field=False):
-        """ Write DataFrame in CSV format.
+        """Write DataFrame in CSV format.
 
         :params str output_filename: output CSV filename.
         """
         with open(output_filename, "w") as fp:
-            print("# sequana_variant_calling;{0}".format(
-                self.vcf.filters_params), file=fp)
+            print(
+                "# sequana_variant_calling;{0}".format(self.vcf.filters_params), file=fp
+            )
             if self.df.empty:
                 print(",".join(self.columns), file=fp)
             else:
@@ -383,13 +380,11 @@ class Filtered_freebayes(object):
                     self.df.to_csv(fp, index=False)
                 else:
                     self.df.to_csv(
-                        fp,
-                        index=False,       
-                        columns=self.columns[:-len(self.vcf.samples)]
+                        fp, index=False, columns=self.columns[: -len(self.vcf.samples)]
                     )
 
     def to_vcf(self, output_filename):
-        """ Write VCF file in VCF format.
+        """Write VCF file in VCF format.
 
         :params str output_filename: output VCF filename.
         """
@@ -400,8 +395,7 @@ class Filtered_freebayes(object):
 
 
 def strand_ratio(number1, number2):
-    """ Compute ratio between two number. Return result between [0:0.5].
-    """
+    """Compute ratio between two number. Return result between [0:0.5]."""
     try:
         division = float(number1) / (number1 + number2)
         if division > 0.5:
@@ -412,26 +406,24 @@ def strand_ratio(number1, number2):
 
 
 def compute_frequency(vcf_line):
-    """ Compute frequency of alternate allele.
+    """Compute frequency of alternate allele.
         alt_freq = Count Alternate Allele / Depth
 
     :param vcf.model._Record vcf_line: variant record
     """
-    alt_freq = [
-        float(count)/vcf_line.INFO["DP"] for count in vcf_line.INFO["AO"]
-    ]
+    alt_freq = [float(count) / vcf_line.INFO["DP"] for count in vcf_line.INFO["AO"]]
     return alt_freq
 
 
 def compute_strand_balance(vcf_line):
-    """ Compute strand balance of alternate allele include in [0,0.5].
+    """Compute strand balance of alternate allele include in [0,0.5].
     strand_bal = Alt Forward / (Alt Forward + Alt Reverse)
 
     :param vcf.model._Record vcf_line: variant record
 
 
-    FYI: in freebayes, the allele balance (reported under AB), strand 
-    bias counts (SRF, SRR, SAF, SAR) and bias estimate (SAP) 
+    FYI: in freebayes, the allele balance (reported under AB), strand
+    bias counts (SRF, SRR, SAF, SAR) and bias estimate (SAP)
     can be used as well for filtering. Here, we use the strand balance
     computed as SAF / (SAF + SAR)
 

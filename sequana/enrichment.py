@@ -30,9 +30,8 @@ import gseapy
 from sequana.summary import Summary
 
 import colorlog
+
 logger = colorlog.getLogger(__name__)
-
-
 
 
 __all__ = ["PantherEnrichment", "KeggPathwayEnrichment", "Mart"]
@@ -1182,7 +1181,7 @@ class KeggPathwayEnrichment:
         ):
             logger.warning(
                 "Enrichment results are empty. Could be real because number of"
-                " deregulated genes is low or  an incompatible set of gene IDs." 
+                " deregulated genes is low or  an incompatible set of gene IDs."
                 " Please use BioMart to convert your IDs into external gene names "
             )
 
@@ -1620,7 +1619,9 @@ class Mart:  # pragma: no cover
     """
 
     def __init__(self, dataset, mart="ENSEMBL_MART_ENSEMBL"):
-        logger.warning("Deprecated. Use sequana.mart.Mart instead of sequana.enrichment.Mart")
+        logger.warning(
+            "Deprecated. Use sequana.mart.Mart instead of sequana.enrichment.Mart"
+        )
         from bioservices import BioMart
 
         self.biomart = BioMart()

@@ -23,10 +23,9 @@ from sequana.utils import config
 
 
 def QuastModule(data):
-    """ Copy quast directory in report directory.
-    """
+    """Copy quast directory in report directory."""
     quast = data
-    dst = os.path.join(config.output_dir, 'quast')
+    dst = os.path.join(config.output_dir, "quast")
     if os.path.isdir(dst):
         shutil.rmtree(dst)
     elif os.path.isfile(dst):

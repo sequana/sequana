@@ -29,6 +29,7 @@ from sequana.lazy import pylab
 from sequana.lazy import numpy as np
 
 import colorlog
+
 logger = colorlog.getLogger(__name__)
 
 
@@ -36,7 +37,8 @@ from sequana.utils.datatables_js import DataTable
 
 
 class PhixModule(SequanaBaseModule):
-    """ Write HTML report of fastq stats analysis."""
+    """Write HTML report of fastq stats analysis."""
+
     def __init__(self, input_directory, output_filename=None, tag_R1="_R1_"):
         """
         :param input_directory: where to find the json and boxplot image. The
@@ -69,14 +71,14 @@ class PhixModule(SequanaBaseModule):
             self.create_html(output_filename)
 
     def create_report_content(self):
-        """ Generate the sections list to fill the HTML report.
-        """
+        """Generate the sections list to fill the HTML report."""
         self.sections = list()
         self.add_stats()
 
     def _get_files(self, pattern):
-        filenames = glob.glob(os.sep.join([self.directory, self.phix_directory, 
-                                           pattern]))
+        filenames = glob.glob(
+            os.sep.join([self.directory, self.phix_directory, pattern])
+        )
         if len(filenames) == 4:
             mode = "pe"
         elif len(filenames) == 2:
@@ -84,28 +86,43 @@ class PhixModule(SequanaBaseModule):
         elif len(filenames) == 0:
             return
         else:
-            logger.warning("PhixModule: more than 4 files "
-                           "matched the pattern %s" % pattern)
+            logger.warning(
+                "PhixModule: more than 4 files " "matched the pattern %s" % pattern
+            )
             return
         return filenames, mode
 
     def _get_summary(self):
         from sequana.tools import StatsBAM2Mapped
+
         data = StatsBAM2Mapped(self.filename1).data
         return data
 
     def _get_html_summary_section(self):
         from easydev import precision
+
         data = self._get_summary()
-        html = "Percentage of reads found with Phix: %s %%<br>" % precision(data['contamination'], 3)
-        #html += "Unpaired: %s <br>" % data['unpaired']
-        #html += "duplicated: %s <br>" % data['duplicated']
+        html = "Percentage of reads found with Phix: %s %%<br>" % precision(
+            data["contamination"], 3
+        )
+        # html += "Unpaired: %s <br>" % data['unpaired']
+        # html += "duplicated: %s <br>" % data['duplicated']
         return html
 
     def _get_stats(self):
         filenames, mode = self._get_files("*.json")
-        cols = ["A", "C", "G", "T", "N", "n_reads",
-            "mean quality" , "GC content", "average read length", "total bases"]
+        cols = [
+            "A",
+            "C",
+            "G",
+            "T",
+            "N",
+            "n_reads",
+            "mean quality",
+            "GC content",
+            "average read length",
+            "total bases",
+        ]
         N = len(filenames)
         df = pd.DataFrame(np.zeros((N, 10)), columns=cols)
 
@@ -141,18 +158,19 @@ class PhixModule(SequanaBaseModule):
         df = self._get_stats()
         datatable = DataTable(df, "phix_stats", index=True)
         datatable.datatable.datatable_options = {
-            'scrollX': '300px',
-            'pageLength': 30,
-            'scrollCollapse': 'true',
-            'dom': 'tpB',
+            "scrollX": "300px",
+            "pageLength": 30,
+            "scrollCollapse": "true",
+            "dom": "tpB",
             "paging": "false",
-            'buttons': ['copy', 'csv']}
+            "buttons": ["copy", "csv"],
+        }
         js = datatable.create_javascript_function()
         # Important that the columns of type integer are indeed in integer type
         # otherwise the %.3g herebelow would round integers. For instance 123456
         # would appear as 123000. The dtypes must be taken care in _get_stats()
         # method
-        html_tab = datatable.create_datatable(float_format='%.3g')
+        html_tab = datatable.create_datatable(float_format="%.3g")
         html = """<p>We mapped the raw reads on a reference (see config file).
 The reads mapped are removed and the unmapped reads are kept for further
 cleaning (adapter removal). Here below are some statistics about the mapped and unmapped reads.
@@ -160,7 +178,7 @@ cleaning (adapter removal). Here below are some statistics about the mapped and 
 The A, C, G, T, N columns report the percentage of each bases in the overall
 sequences. The GC content column is in percentage. Finally, note that for paired
 data, the number of reads in the mapped files (R1 and R2) may differ due to . However,
-the unmapped reads must agree. </p>""" 
+the unmapped reads must agree. </p>"""
         html += "{} {}".format(html_tab, js)
         return html
 
@@ -170,9 +188,10 @@ the unmapped reads must agree. </p>"""
         return html1 + html2
 
     def add_stats(self):
-        self.sections.append({
-            "name": "Stats inputs",
-            "anchor": "phix_stats",
-            "content": self._get_html()
-        })
-
+        self.sections.append(
+            {
+                "name": "Stats inputs",
+                "anchor": "phix_stats",
+                "content": self._get_html(),
+            }
+        )

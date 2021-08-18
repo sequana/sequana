@@ -28,6 +28,7 @@ from sequana.lazy import pandas as pd
 from sequana.lazy import pylab
 
 import colorlog
+
 logger = colorlog.getLogger(__name__)
 
 
@@ -35,9 +36,11 @@ from sequana.utils.datatables_js import DataTable
 
 
 class FastQStatsModule(SequanaBaseModule):
-    """ Write HTML report of fastq stats analysis."""
-    def __init__(self, input_directory, path_to_fastqc, output_filename=None,
-                 tag_R1="_R1_"):
+    """Write HTML report of fastq stats analysis."""
+
+    def __init__(
+        self, input_directory, path_to_fastqc, output_filename=None, tag_R1="_R1_"
+    ):
         """
         :param input_directory: where to find the json and boxplot image. The
             path where to find the data does not matter since the JSON and PNG
@@ -63,8 +66,7 @@ class FastQStatsModule(SequanaBaseModule):
             self.create_html(output_filename)
 
     def create_report_content(self):
-        """ Generate the sections list to fill the HTML report.
-        """
+        """Generate the sections list to fill the HTML report."""
         self.sections = list()
         self.add_stats()
 
@@ -78,27 +80,42 @@ class FastQStatsModule(SequanaBaseModule):
         elif len(filenames) == 0:
             return
         else:
-            logger.warning("FastQStatsModule: more than 2 files "
-                           "matched the pattern %s" % pattern)
+            logger.warning(
+                "FastQStatsModule: more than 2 files "
+                "matched the pattern %s" % pattern
+            )
             return
         return filenames, mode
 
     def get_stats(self):
         import pandas as pd
+
         filenames, mode = self._get_files("*.json")
         if mode == "pe":
             df1 = pd.read_json(filenames[0])
             df2 = pd.read_json(filenames[1])
-            df  = pd.concat([df1, df2])
+            df = pd.concat([df1, df2])
             # Should have been sorted !
-            df.index = ['R1', 'R2']
+            df.index = ["R1", "R2"]
         else:
             df = pd.read_json(filenames[0])
-            df.index = ['R1']
-        df = df[["A", "C", "G", "T", "N", "n_reads", "mean quality", "GC content",
-                "average read length", "total bases"]]
+            df.index = ["R1"]
+        df = df[
+            [
+                "A",
+                "C",
+                "G",
+                "T",
+                "N",
+                "n_reads",
+                "mean quality",
+                "GC content",
+                "average read length",
+                "total bases",
+            ]
+        ]
         for this in "ACGTN":
-            df[this] /= df["total bases"] 
+            df[this] /= df["total bases"]
             df[this] *= 100
         return df
 
@@ -108,20 +125,23 @@ class FastQStatsModule(SequanaBaseModule):
 
         datatable = DataTable(self.df_stats, tablename, index=True)
         datatable.datatable.datatable_options = {
-            'scrollX': '300px',
-            'pageLength': 15,
-            'scrollCollapse': 'true',
-            'dom': 'rtpB',
+            "scrollX": "300px",
+            "pageLength": 15,
+            "scrollCollapse": "true",
+            "dom": "rtpB",
             "paging": "false",
-            'buttons': ['copy', 'csv']}
+            "buttons": ["copy", "csv"],
+        }
         js = datatable.create_javascript_function()
-        html_tab = datatable.create_datatable(float_format='%.3g')
+        html_tab = datatable.create_datatable(float_format="%.3g")
 
         html = """<p>The following table gives some basic statistics about the data before any filtering.
    The A, C, G, T, N columns report the percentage of each bases in the overall sequences.
    The GC content is provided in percentage as well. </p>
    <div>{} {}</div>
-   <div>""".format(html_tab, js)
+   <div>""".format(
+            html_tab, js
+        )
 
         html += """
    <p>The following figure(s) gives the average quality (red line) of raw reads
@@ -129,34 +149,40 @@ class FastQStatsModule(SequanaBaseModule):
    enveloppe gives the variation of the quality (1 standard deviation).</p>
    <p> Click on the image to jump to a full FastQC report.</p>"""
 
-        if len(filenames)==2: width="49"
-        else: width="65"
+        if len(filenames) == 2:
+            width = "49"
+        else:
+            width = "65"
 
-        filename = os.path.split(filenames[0])[1].replace("_boxplot.png", "_fastqc.html")
+        filename = os.path.split(filenames[0])[1].replace(
+            "_boxplot.png", "_fastqc.html"
+        )
         href = self.path_to_fastqc + os.sep + filename
         html += """
    <figure style="float:left; width:{}%; padding:0px; margin:0px;">
        <a href="{}">{}</a>
    <figcaption style="font-style:italic">Fig1: R1 reads</figcaption>
-   </figure>""".format(width, href, self.png_to_embedded_png(filenames[0]))
+   </figure>""".format(
+            width, href, self.png_to_embedded_png(filenames[0])
+        )
 
         if len(filenames) == 2:
-            filename = os.path.split(filenames[1])[1].replace("_boxplot.png", "_fastqc.html")
+            filename = os.path.split(filenames[1])[1].replace(
+                "_boxplot.png", "_fastqc.html"
+            )
             href = self.path_to_fastqc + os.sep + filename
             html += """
    <figure style="float:right; width:{}%; padding:0px; margin:0px;">
        <a href="{}">{}</a>
    <figcaption style="font-style:italic">Fig2: R2 reads</figcaption>
-   </figure>""".format(width, href, self.png_to_embedded_png(filenames[1]))
-
+   </figure>""".format(
+                width, href, self.png_to_embedded_png(filenames[1])
+            )
 
         return html
 
     def add_stats(self):
         html = self._get_stats_section()
-        self.sections.append({
-            "name": "Stats inputs",
-            "anchor": "stats",
-            "content": html
-        })
-
+        self.sections.append(
+            {"name": "Stats inputs", "anchor": "stats", "content": html}
+        )

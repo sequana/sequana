@@ -57,7 +57,9 @@ class RNADesign:
             filename, sep=sep, engine="python", comment="#", dtype={"label": str}
         )
         if reference and reference not in self.conditions:
-            raise ValueError(f"{reference} condition (for the reference) not found in the conditions of your design file")
+            raise ValueError(
+                f"{reference} condition (for the reference) not found in the conditions of your design file"
+            )
         self.reference = reference
 
     def _get_conditions(self):
@@ -151,7 +153,7 @@ class RNADiffAnalysis:
         outdir="rnadiff",
         sep_counts=",",
         sep_design="\s*,\s*",
-        minimum_mean_reads_per_gene=0
+        minimum_mean_reads_per_gene=0,
     ):
 
         # if set, we can filter genes that have low counts (on average)
@@ -204,7 +206,6 @@ class RNADiffAnalysis:
             f"list({', '.join(['c' + str(x) for x in self.comparisons])})"
         )
 
-
         # For DeSeq2
         self.batch = batch
         self.model = f"~{batch + '+' + condition if batch else condition}"
@@ -221,13 +222,25 @@ class RNADiffAnalysis:
         self.threads = threads
 
         # sanity check for the R scripts:
-        for attr in ('counts_filename','design_filename', 'fit_type',
-            'comparisons_str', 'independent_filtering','cooks_cutoff',
-            'code_dir', 'outdir', 'counts_dir','beta_prior', 'threads'):
+        for attr in (
+            "counts_filename",
+            "design_filename",
+            "fit_type",
+            "comparisons_str",
+            "independent_filtering",
+            "cooks_cutoff",
+            "code_dir",
+            "outdir",
+            "counts_dir",
+            "beta_prior",
+            "threads",
+        ):
             try:
                 getattr(self, attr)
             except AttributeError as err:
-                logger.error(f"Attribute {attr} missing in the RNADiffAnalysis class. cannot go further")
+                logger.error(
+                    f"Attribute {attr} missing in the RNADiffAnalysis class. cannot go further"
+                )
                 raise Exception(err)
 
     def __repr__(self):
@@ -249,8 +262,12 @@ Design overview:\n\
         try:
             # low memory set to False to avoid warnings (see pandas.read_csv doc)
             counts = pd.read_csv(
-                self.usr_counts, sep=sep_counts, index_col="Geneid", comment="#",
-                low_memory=False)
+                self.usr_counts,
+                sep=sep_counts,
+                index_col="Geneid",
+                comment="#",
+                low_memory=False,
+            )
         except ValueError:
             counts = FeatureCount(self.usr_counts).df
 
@@ -340,7 +357,7 @@ or comparisons. possible values are {valid_conditions}"""
 
 class RNADiffTable:
     def __init__(self, path, alpha=0.05, log2_fc=0, sep=",", condition="condition"):
-        """ A representation of the results of a single rnadiff comparison 
+        """A representation of the results of a single rnadiff comparison
 
         Expect to find output of RNADiffAnalysis file named after condt1_vs_cond2_degs_DESeq2.csv
 
@@ -349,7 +366,7 @@ class RNADiffTable:
             from sequana.rnadiff import RNADiffTable
             RNADiffTable("A_vs_B_degs_DESeq2.csv")
 
-        
+
         """
         self.path = Path(path)
         self.name = self.path.stem.replace("_degs_DESeq2", "").replace("-", "_")
@@ -358,7 +375,7 @@ class RNADiffTable:
         self._log2_fc = log2_fc
 
         self.df = pd.read_csv(self.path, index_col=0, sep=sep)
-        self.df.padj[self.df.padj==0] = 1e-50
+        self.df.padj[self.df.padj == 0] = 1e-50
         self.condition = condition
 
         self.filt_df = self.filter()
@@ -702,7 +719,9 @@ class RNADiffResults:
                 )
             self.annotation = self.read_annot(gff)
         else:
-            self.annotation = pd.read_csv(self.path / "rnadiff.csv", index_col=0, header=[0, 1])
+            self.annotation = pd.read_csv(
+                self.path / "rnadiff.csv", index_col=0, header=[0, 1]
+            )
             self.annotation = self.annotation["annotation"]
 
         # some filtering attributes
@@ -1138,7 +1157,6 @@ class RNADiffResults:
         except:
             pass
 
-
     def plot_percentage_null_read_counts(self):
         """Bars represent the percentage of null counts in each samples.  The dashed
         horizontal line represents the percentage of feature counts being equal
@@ -1489,25 +1507,31 @@ class RNADiffResults:
         dd = self.annotation.loc[df.index][annot]
 
         # Let us replace the possible NA with the ID
-        dd = dd.fillna(dict({(x,x) for x in dd.index}))
+        dd = dd.fillna(dict({(x, x) for x in dd.index}))
 
         # Now we replace the data index with this annoation
         df.index = dd.values
 
         return df
 
-    def heatmap_vst_centered_data(self, comp, log2_fc=1, padj=0.05, 
-            xlabel_size=8, ylabel_size=12, figsize=(10,15),
-            annotation_column=None):
+    def heatmap_vst_centered_data(
+        self,
+        comp,
+        log2_fc=1,
+        padj=0.05,
+        xlabel_size=8,
+        ylabel_size=12,
+        figsize=(10, 15),
+        annotation_column=None,
+    ):
 
         assert comp in self.comparisons.keys()
         from sequana.viz import heatmap
 
-
         # Select counts based on the log2 fold change and padjusted
         data = self.comparisons[comp].df.query(
-                    "(log2FoldChange<-@log2_fc or log2FoldChange>@log2_fc) and padj<@padj"
-                )
+            "(log2FoldChange<-@log2_fc or log2FoldChange>@log2_fc) and padj<@padj"
+        )
         counts = self.counts_vst.loc[data.index].copy()
 
         logger.info(f"Using {len(data)} DGE genes")
@@ -1518,12 +1542,7 @@ class RNADiffResults:
             counts.index = data.index
 
         # finally the plots
-        h = heatmap.Clustermap(
-            counts,
-            figsize=figsize,
-            z_score=0,
-            center=0
-        )
+        h = heatmap.Clustermap(counts, figsize=figsize, z_score=0, center=0)
 
         ax = h.plot()
         ax.ax_heatmap.tick_params(labelsize=xlabel_size, axis="x")

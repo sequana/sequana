@@ -26,15 +26,22 @@ from sequana.lazy import pandas as pd
 from sequana.lazy import pylab
 
 import colorlog
+
 logger = colorlog.getLogger(__name__)
 
 
-__all__ = ['get_most_probable_strand_consensus', 'get_most_probable_strand',
-    'MultiFeatureCount', 'FeatureCount', 'FeatureCountMerger']
+__all__ = [
+    "get_most_probable_strand_consensus",
+    "get_most_probable_strand",
+    "MultiFeatureCount",
+    "FeatureCount",
+    "FeatureCountMerger",
+]
 
 
-def get_most_probable_strand(sample_folder, tolerance,
-        pattern="feature_counts_*/*_feature.out"):
+def get_most_probable_strand(
+    sample_folder, tolerance, pattern="feature_counts_*/*_feature.out"
+):
     """Return most probable strand from feature counts matrix
 
     Return the total counts by strand from featureCount matrix folder, strandness and
@@ -88,8 +95,9 @@ def get_most_probable_strand(sample_folder, tolerance,
     return df
 
 
-def get_most_probable_strand_consensus(rnaseq_folder, tolerance,
-        pattern="*/feature_counts_[012]"):
+def get_most_probable_strand_consensus(
+    rnaseq_folder, tolerance, pattern="*/feature_counts_[012]"
+):
     """From a sequana rna-seq run folder get the most probable strand, based on the
     frequecies of counts assigned with '0', '1' or '2' type strandness
     (featureCounts nomenclature)
@@ -100,9 +108,7 @@ def get_most_probable_strand_consensus(rnaseq_folder, tolerance,
     """
 
     rnaseq_folder = Path(rnaseq_folder)
-    sample_folders = list(
-        set([x.parent for x in rnaseq_folder.glob(pattern)])
-    )
+    sample_folders = list(set([x.parent for x in rnaseq_folder.glob(pattern)]))
 
     df = pd.concat(
         [
@@ -110,13 +116,13 @@ def get_most_probable_strand_consensus(rnaseq_folder, tolerance,
             for sample_folder in sample_folders
         ]
     )
-    df = df[['0','1','2', 'strandness', 'strand']]
+    df = df[["0", "1", "2", "strandness", "strand"]]
 
     logger.info(f"Strand guessing for each files (tolerance: {tolerance}):\n")
     logger.info(df)
 
     try:
-        most_probable = df['strand'].value_counts().idxmax()
+        most_probable = df["strand"].value_counts().idxmax()
     except:
         # if all events are None, return -1
         most_probable = -1
@@ -124,7 +130,7 @@ def get_most_probable_strand_consensus(rnaseq_folder, tolerance,
     return most_probable, df
 
 
-class MultiFeatureCount():
+class MultiFeatureCount:
     """Read set of feature counts using different options of strandness
 
     .. plot::
@@ -142,9 +148,10 @@ class MultiFeatureCount():
         tolerance parameter and meaning of strandness.
 
     """
+
     # USED in rnaseq pipeline
 
-    def __init__(self, rnaseq_folder='.', tolerance=0.1):
+    def __init__(self, rnaseq_folder=".", tolerance=0.1):
         """
 
         :param str rnaseq_folder:
@@ -157,31 +164,31 @@ class MultiFeatureCount():
 
     def get_most_probable_strand_consensus(self):
         most_probable, df = get_most_probable_strand_consensus(
-            self.rnaseq_folder,
-            self.tolerance)
+            self.rnaseq_folder, self.tolerance
+        )
         return most_probable, df
 
-    def plot_strandness(self, fontsize=12, output_filename='strand_summary.png',
-        savefig=False):
+    def plot_strandness(
+        self, fontsize=12, output_filename="strand_summary.png", savefig=False
+    ):
         # USED in rnaseq pipeline
         most_probable, df = self.get_most_probable_strand_consensus()
 
         df = df.sort_index(ascending=False)
-        df['strandness'] = df['strandness'].T
-        df['strandness'].plot( kind='barh')
+        df["strandness"] = df["strandness"].T
+        df["strandness"].plot(kind="barh")
         pylab.xlim([0, 1])
         pylab.grid(True)
-        pylab.axvline(self.tolerance, ls='--', color='r')
-        pylab.axvline(1-self.tolerance, ls='--', color='r')
-        pylab.axvline(0.5, ls='--', color='k')
+        pylab.axvline(self.tolerance, ls="--", color="r")
+        pylab.axvline(1 - self.tolerance, ls="--", color="r")
+        pylab.axvline(0.5, ls="--", color="k")
         pylab.xlabel("Strandness", fontsize=fontsize)
         pylab.tight_layout()
-        if savefig: #pragma: no cover
+        if savefig:  # pragma: no cover
             pylab.savefig(output_filename)
 
 
-class FeatureCountMerger():
-
+class FeatureCountMerger:
     def __init__(self, pattern="*feature.out", fof=[]):
         if len(fof):
             self.filenames = fof
@@ -202,8 +209,7 @@ class FeatureCountMerger():
             self.df = pd.merge(self.df, other_df)
 
     def to_tsv(self, output_filename="all_features.out"):
-        self.df.to_csv(output_filename,sep="\t", index=False)
-
+        self.df.to_csv(output_filename, sep="\t", index=False)
 
 
 class FeatureCount:
@@ -243,10 +249,10 @@ class FeatureCount:
 
         if isinstance(filename, list):
             for ff in filename:
-                if not Path(ff).exists(): # pragma: no cover
+                if not Path(ff).exists():  # pragma: no cover
                     raise IOError(f"No file found with path: {filename}")
         else:
-            if not Path(filename).exists(): # pragma: no cover
+            if not Path(filename).exists():  # pragma: no cover
                 raise IOError(f"No file found with path: {filename}")
             filename = [filename]
 
@@ -270,7 +276,7 @@ class FeatureCount:
         This is in particular add a 'rawCounts_' to column names to not have an
         import problem in R with labels starting with numbers
         """
-        df  = self._raw_df.copy()
+        df = self._raw_df.copy()
         # remove unneeded columns are dropped
         df.drop(["Chr", "Start", "End", "Strand", "Length"], axis=1, inplace=True)
         # make sure data column names are cleaned
@@ -284,8 +290,7 @@ class FeatureCount:
         return df
 
     def _get_design_df(self):
-        """ Prepare the table with grouping information for rnadiff
-        """
+        """Prepare the table with grouping information for rnadiff"""
         df = pd.DataFrame(
             {
                 "sample": self.rnadiff_df.columns,
@@ -299,13 +304,17 @@ class FeatureCount:
         # cases, we can try to infer the condition names assuming the condition
         # is in the name. eg. WT1, WT2, etc
         try:
-            labels = df['label']
+            labels = df["label"]
             conditions = self._guess_conditions(labels)
         except Exception as err:
-            logger.info("no conditions could be guess. You will need to edit the design file {}".format(err))
+            logger.info(
+                "no conditions could be guess. You will need to edit the design file {}".format(
+                    err
+                )
+            )
             conditions = None
         finally:
-            df['condition'] = conditions
+            df["condition"] = conditions
         return df
 
     def _guess_conditions(self, labels):
@@ -332,10 +341,10 @@ class FeatureCount:
                 if len(set([x[0:i] for x in names])) != 1:
                     # if different, we need to ignore the last letter hence the
                     # -1 here below
-                    conditions.append(names[0][0:i-1])
+                    conditions.append(names[0][0 : i - 1])
                     break
         # trim trailing _ if any
-        conditions = [x.rstrip('_') for x in conditions]
+        conditions = [x.rstrip("_") for x in conditions]
         indconds = []
         for label in labels:
             for cond in conditions:
@@ -355,11 +364,13 @@ class FeatureCount:
                 df = pd.merge(df, other_df)
             df = df.set_index("Geneid")
         else:
-            df = pd.read_csv(self.filename[0], sep="\t", comment="#", index_col=0, low_memory=False)
+            df = pd.read_csv(
+                self.filename[0], sep="\t", comment="#", index_col=0, low_memory=False
+            )
         self._raw_df = df
 
     def _get_raw_df(self):
-        df  = self._raw_df.copy()
+        df = self._raw_df.copy()
 
         if self.drop_loc:
             df.drop(["Chr", "Start", "End", "Strand", "Length"], axis=1, inplace=True)
@@ -369,10 +380,11 @@ class FeatureCount:
                 self._clean_sample_names(x, self.extra_name_rm) for x in df.columns
             ]
         return df
+
     df = property(_get_raw_df)
 
     def _clean_sample_names(self, sample_path, extra_name_rm):
-        """ Clean sample names in feature count tables """
+        """Clean sample names in feature count tables"""
 
         new_name = str(Path(sample_path).stem)
         new_name = new_name.split(".")[0]
@@ -381,5 +393,3 @@ class FeatureCount:
             new_name = re.sub(pattern, "", new_name)
 
         return new_name
-
-
