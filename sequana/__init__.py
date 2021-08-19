@@ -40,7 +40,13 @@ from .krona import KronaMerger
 from .kraken.analysis import KrakenResults, KrakenPipeline, KrakenAnalysis, KrakenDownload, KrakenSequential, KrakenDB
 from .kraken.multikraken import MultiKrakenResults, MultiKrakenResults2
 
-from .biomart import Mart
+# enrichment
+from .enrichment.mart import Mart
+from .enrichment.kegg import KEGGPathwayEnrichment
+from .enrichment.panther import PantherEnrichment
+from .enrichment.gsea import GSEA
+
+
 from .pacbio import PacbioSubreads
 from .phred import Quality
 from .rnadiff import RNADiffResults

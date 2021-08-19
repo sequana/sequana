@@ -1,31 +1,14 @@
-from sequana.enrichment import KeggPathwayEnrichment, PantherEnrichment
-from sequana import sequana_data
+from sequana import PantherEnrichment
 from easydev import TempFile
 import pandas as pd
 import pytest
 
-
-def test_ke():
-    up = pd.read_csv(sequana_data("enrichment/ecoli_up_gene.csv"))
-    down = pd.read_csv(sequana_data("enrichment/ecoli_down_gene.csv")    )
-    up = list(up.Name)
-    down = list(down.Name)
-    gene_lists = {'up': up, 'down': down, 'all': up +down}
-
-    ke = KeggPathwayEnrichment(gene_lists, "lbi", log2_fc=0)
-    ke.barplot('down')
-    ke.barplot('up')
-    ke.barplot('down')
-    ke.plot_genesets_hist()
-    ke.scatterplot('down')
-    assert ke.find_pathways_by_gene("moaA")
-    assert ke.find_pathways_by_gene("moaA", match="exact")
-
+from . import test_dir
 
 @pytest.mark.xfail(reason="too slow or service may be down")
 def test_panther():
-    up = pd.read_csv(sequana_data("enrichment/ecoli_up_gene.csv"))
-    down = pd.read_csv(sequana_data("enrichment/ecoli_down_gene.csv")    )
+    up = pd.read_csv(f"{test_dir}/data/ecoli_up_gene.csv")
+    down = pd.read_csv(f"{test_dir}data/ecoli_down_gene.csv")  
     up = list(up.Name)
     down = list(down.Name)
 

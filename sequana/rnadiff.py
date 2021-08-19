@@ -28,7 +28,8 @@ from sequana.lazy import pylab
 from sequana.lazy import numpy as np
 from sequana.gff3 import GFF3
 from sequana.viz import Volcano
-from sequana.enrichment import PantherEnrichment, KeggPathwayEnrichment
+from sequana.enrichment import PantherEnrichment
+from sequana.enrichment import KEGGPathwayEnrichment
 from sequana.featurecounts import FeatureCount
 
 
@@ -176,7 +177,8 @@ class RNADiffAnalysis:
         self.design = RNADesign(design_file, sep=sep_design, reference=reference)
         self.comparisons = comparisons if comparisons else self.design.comparisons
 
-        _conditions = {x for comp in comparisons for x in comp}
+    
+        _conditions = {x for comp in self.comparisons for x in comp}
         if not keep_all_conditions:
             self.design.keep_conditions(_conditions)
         logger.info(f"Conditions that are going to be included: ")
@@ -866,7 +868,7 @@ class RNADiffResults:
                 )
             )
 
-    def run_enrichment_go(
+    def __run_enrichment_go(
         self, taxon, annot_col="Name", out_dir="enrichment"
     ):  # pragma: no cover
 
@@ -948,7 +950,7 @@ class RNADiffResults:
             except:
                 logger.warning("XLS formatting issue.")
 
-    def run_enrichment_kegg(
+    def __run_enrichment_kegg(
         self, organism, annot_col="Name", out_dir="enrichment"
     ):  # pragma: no cover
 
