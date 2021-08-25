@@ -66,6 +66,7 @@ Module concerned: rnadiff, compare, featurecounts and enrichment
   * featurecounts: allow input to use the --extraAttributes option; more tests
 
 * NEWS:
+
   * gff 1. add save_gff_filtered method to select interesting features, 2. add
     gff2gtf conversion
   * fasta module has GC content method

@@ -15,7 +15,7 @@ rule **fastq_sampling** looks like:
 
 In order to use a Sequana rule in your pipeline, add this code::
 
-    from sequana import snaketools as sm
+    from sequana_pipetools import snaketools as sm
     include: sm.modules["fastq_sampling"]
 
 This takes care of the physical location of the rule. 
