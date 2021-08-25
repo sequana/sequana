@@ -569,9 +569,9 @@ You may install it yourself or use damona using the rtools:1.0.0 image """)
         logger.error(f"please see {outdir}/code/rnadiff.err file for errors")
         sys.exit(1)
 
-    logger.info(f"Reporting. Saving in rnadiff.html")
+    logger.info(f"Reporting. Saving in summary.html")
 
-    # this define the output directory where rnadiff.html is saved
+    # this define the output directory where summary.html is saved
     config.output_dir = outdir
 
     import seaborn as sns
