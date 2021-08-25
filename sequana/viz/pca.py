@@ -1,11 +1,8 @@
-# -*- coding: utf-8 -*-
 #
 #  This file is part of Sequana software
 #
-#  Copyright (c) 2016-2020 - Sequana Development Team
+#  Copyright (c) 2016-2021 - Sequana Development Team
 #
-#  File author(s):
-#      Thomas Cokelaer <thomas.cokelaer@pasteur.fr>
 #
 #  Distributed under the terms of the 3-clause BSD license.
 #  The full license is in the LICENSE file, distributed with this software.
@@ -16,10 +13,13 @@
 ##############################################################################
 
 from sequana.lazy import pylab
+from sequana.viz import clusterisation
+
+from adjustText import adjust_text
 import colorlog
+
 logger = colorlog.getLogger(__name__)
 
-from sequana.viz import clusterisation
 
 
 __all__ = ['PCA']
@@ -99,7 +99,7 @@ class PCA(clusterisation.Cluster):
 
     def plot(self, n_components=2, transform="log", switch_x=False,
             switch_y=False, switch_z=False, colors=None,
-            max_features=500, show_plot=True):
+            max_features=500, show_plot=True, fontsize=10):
         """
 
         :param n_components: at number starting at 2 or a value below 1
@@ -130,17 +130,32 @@ class PCA(clusterisation.Cluster):
         if switch_z:
             Xr[:,2] *= -1
 
+        def adjust():
+            texts = [x for x in pylab.gca().get_children() 
+                        if "text.Annotation" in str(x.__class__)]
+            adjust_text(texts,
+
+            #arrowprops=dict(arrowstyle="->", color='gray', lw=0.5)
+            )
+
         # PC1 vs PC2
         if show_plot:
             pylab.figure(1)
-            self._plot(Xr, pca=pca, pc1=0,pc2=1, colors=colors)
+            self._plot(Xr, pca=pca, pc1=0,pc2=1, colors=colors,
+                       fontsize=fontsize)
+            adjust()
 
         if len(pca.explained_variance_ratio_) >= 3:
             if show_plot:
                 pylab.figure(2)
-                self._plot(Xr, pca=pca, pc1=0,pc2=2, colors=colors)
+                self._plot(Xr, pca=pca, pc1=0,pc2=2, colors=colors,
+                           fontsize=fontsize)
+                adjust()
+
                 pylab.figure(3)
-                self._plot(Xr, pca=pca, pc1=1,pc2=2, colors=colors)
+                self._plot(Xr, pca=pca, pc1=1,pc2=2, colors=colors,
+                           fontsize=fontsize)
+                adjust()
 
         return pca.explained_variance_ratio_
 

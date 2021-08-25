@@ -80,54 +80,9 @@ class Cluster():
         data = self.scaler.fit_transform(data)
         return data, tokeep
 
+    def _plot(self, Xr, pca=None, pc1=0, pc2=1,
+              colors=None, show_labels=True, fontsize=10):
 
-    def __plot(self, n_components=2, transform="log", switch_x=False,
-            switch_y=False, switch_z=False, colors=None,
-            max_features=500, show_plot=True):
-        """
-
-        :param n_components: at number starting at 2 or a value below 1
-            e.g. 0.95 means select automatically the number of components to
-            capture 95% of the variance
-        :param transform: can be 'log' or 'anscombe', log is just log10. count
-            with zeros, are set to 1
-        """
-        from sklearn.decomposition import PCA
-        import numpy as np
-
-        pylab.clf()
-
-        data = self.scale_data(transform_method=transform, max_features=max_features)
-        tokeep = data.index
-
-        pca = PCA(n_components)
-        pca.fit(data.T)
-
-        Xr = pca.transform(scaler.fit_transform(self.df.loc[tokeep].T))
-        self.Xr = Xr
-
-        if switch_x:
-            Xr[:,0] *= -1
-        if switch_y:
-            Xr[:,1] *= -1
-        if switch_z:
-            Xr[:,2] *= -1
-
-        # PC1 vs PC2
-        if show_plot:
-            pylab.figure(1)
-            self._plot(Xr, pca, 0,1, colors=colors)
-
-        if len(pca.explained_variance_ratio_) >= 3:
-            if show_plot:
-                pylab.figure(2)
-                self._plot(Xr, pca, 0,2, colors=colors)
-                pylab.figure(3)
-                self._plot(Xr, pca, 1,2, colors=colors)
-
-        return pca.explained_variance_ratio_
-
-    def _plot(self, Xr, pca=None, pc1=0, pc2=1, colors=None, show_labels=True):
         if colors is None:
             colors = [self.colors[k] for k in self.labels]
             if len(colors) != len(Xr):
@@ -154,15 +109,17 @@ class Cluster():
             for x,y in zip(Xr[:,pc1], Xr[:,pc2]):
                 x += dX / 40
                 y += dY / 40
-                ax.annotate(self.labels[count], (x,y))
+                ax.annotate(self.labels[count], (x,y), 
+                    color=colors[count], fontsize=fontsize)
                 count += 1
                 if count > 100: 
                     break
         if pca:
             pylab.xlabel("PC{} ({}%)".format(pc1+1,
-                round(pca.explained_variance_ratio_[pc1]*100, 2)))
+                round(pca.explained_variance_ratio_[pc1]*100, 2)),
+                    fontsize=12)
             pylab.ylabel("PC{} ({}%)".format(pc2+1,
-                round(pca.explained_variance_ratio_[pc2]*100, 2)))
+                round(pca.explained_variance_ratio_[pc2]*100, 2)),
+                    fontsize=12)
         pylab.grid(True)
-
 
