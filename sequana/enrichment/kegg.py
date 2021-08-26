@@ -172,7 +172,9 @@ class KEGGPathwayEnrichment:
 
     def _check_category(self, cat):
         if cat not in ["up", "down", "all"]:
-            raise ValueError(f"category must be set to 'up', 'down' or 'all'. You provided {cat}")
+            raise ValueError(
+                f"category must be set to 'up', 'down' or 'all'. You provided {cat}"
+            )
 
     def _load_pathways(self, progress=True, preload_directory=None):
         # This is just loading all pathways once for all

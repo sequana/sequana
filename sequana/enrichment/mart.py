@@ -18,6 +18,7 @@ import io
 from sequana.lazy import pandas as pd
 
 import colorlog
+
 logger = colorlog.getLogger(__name__)
 
 

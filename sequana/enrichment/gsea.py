@@ -31,7 +31,6 @@ logger = colorlog.getLogger(__name__)
 __all__ = ["GSEA"]
 
 
-
 class GSEA:
     def __init__(self, species):
         pass
@@ -47,5 +46,3 @@ class GSEA:
         )
 
         return enr
-
-
