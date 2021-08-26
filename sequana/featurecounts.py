@@ -138,11 +138,10 @@ class MultiFeatureCount:
 
         from sequana import sequana_data
         from sequana.featurecounts import *
-        directory =  = sequana_data("featurecounts") + "/rnaseq_0"
-        ff = fc.MultiFeatureCount(RNASEQ_DIR_0, 0.15)
+        directory = sequana_data("featurecounts") + "/rnaseq_0"
+        ff = MultiFeatureCount(directory, 0.15)
         ff.get_most_probable_strand_consensus()
         ff.plot_strandness()
-
 
     .. seealso:: :func:`get_most_probable_strand` for more information about the
         tolerance parameter and meaning of strandness.
@@ -221,11 +220,12 @@ class FeatureCount:
 
         Geneid    Chr    Start    End    Strand    Length    WT1    WT2 WT3 KO1 KO2 KO3
         gene1    NC_010602.1    141    1466    +    1326    11    20    15    13    17    17
-    gene2    NC_010602.1    1713    2831    +    1119    35    54    58    34    53    46
-    gene3    NC_010602.1    2831    3934    +    1104    9    16    16    4    18    18
+        gene2    NC_010602.1    1713    2831    +    1119    35    54    58    34    53    46
+        gene3    NC_010602.1    2831    3934    +    1104    9    16    16    4    18    18
 
     ::
 
+        from sequana import FeatureCount
         fc = FeatureCount("all_features.out", extra_name_rm=["_S\d+"]
         fc.rnadiff_df.to_csv("fc.csv")
 
@@ -242,9 +242,10 @@ class FeatureCount:
         """.. rubric:: Constructor
 
         Get the featureCounts output as a pandas DataFrame
+
         :param bool clean_sample_names: if simplifying the sample names in featureCount output columns
-        - extra_name_rm: extra list of regex to remove from samples_names (ignored if clean_sample_name is False)
-        - drop_loc: if dropping the extra location columns (ie getting only the count matrix)
+        :param list extra_name_rm: extra list of regex to remove from samples_names (ignored if clean_sample_name is False)
+        :param bool drop_loc: if dropping the extra location columns (ie getting only the count matrix)
         """
 
         if isinstance(filename, list):

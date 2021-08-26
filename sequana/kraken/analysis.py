@@ -83,11 +83,7 @@ class KrakenResults(object):
     into a Krona-compatible file. Here, we take the output from kraken and
     directly transform it to a krona-compatible file.
 
-    If you use sequantial analysis, can you use kraken-translate  or
-    --use-names. what to do with the several outputs?
-
-    kraken1 provides kraken-translate, kraken2 uses the --use-names that needs
-    extra parsing as well.
+    kraken2 uses the --use-names that needs extra parsing.
 
     ::
 
@@ -582,7 +578,7 @@ class KrakenResults(object):
             :include-source:
 
             from sequana import KrakenResults, sequana_data
-            test_file = sequana_data("test_kraken.out", "testing")
+            test_file = sequana_data("kraken.out", "doc")
             k = KrakenResults(test_file)
             df = k.plot(kind='pie')
 
@@ -661,7 +657,6 @@ class KrakenResults(object):
             pylab.xlabel(" percentage ")
         if delete_krona_file:
             os.remove(self.filename + ".summary")
-            
 
         return data
 

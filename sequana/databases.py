@@ -246,10 +246,13 @@ class NCBIDownload:
         ftp.login("anonymous", email)
         ftp.cwd(f"refseq/release/{category}")
 
-        for filename in ftp.nlst():
+        filenames = ftp.nlst()
+
+        for filename in filenames:
             if "genomic.fna" in filename:
                 logger.info(f"Downloading {filename}")
                 ftp.retrbinary(f"RETR {filename}", open(filename, "wb").write)
+        return [x for x in filenames if "genomic.fna" in x]
 
     def download_genomes_from_ncbi(
         self, category, email="sequana@pasteur.fr"
