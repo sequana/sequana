@@ -928,4 +928,3 @@ class PantherEnrichment:
 
             no_data = sequana_data("no_data.png")
             shutil.copy(no_data, filename)
-

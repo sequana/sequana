@@ -61,13 +61,21 @@ def test_NCBITaxonReader():
     assert n.get_taxon_from_scientific_name("Measles morbillivirus").values[0] == 11234
 
 
-@pytest.mark.timeout(10)
+@pytest.mark.timeout(20)
 @pytest.mark.xfail(reason="too slow")
 def test_NCBIDownload(tmpdir):
     path = tmpdir.mkdir("temp").join("summary.txt")
     n = databases.NCBIDownload()
-    n.download_ncbi_refseq_release("mitochondrion")
+    try:
+        filenames = []
+        filenames = n.download_ncbi_refseq_release("mitochondrion")
+    except Exception:
+        assert False
+    finally:
+        for ff in filenames:
+            os.remove(ff)
     n.download_assembly_report("fungi", output=path)
+
 
 
 @pytest.mark.xfail(reason="too slow", method="thread")

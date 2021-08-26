@@ -62,9 +62,6 @@ Enrichment
 
 Experimental design
 ----------------------------
-.. automodule:: sequana.expdesign
-    :members:
-    :undoc-members:
 
 .. automodule:: sequana.iem
     :members:
@@ -101,25 +98,17 @@ Kmer module
     :members:
     :undoc-members:
 
-IOTools module
-----------------
-.. automodule:: sequana.iotools
-    :members:
-    :undoc-members:
 
 Taxonomy related (Kraken - Krona)
 ------------------------------------
-.. automodule:: sequana.kraken
+.. automodule:: sequana.kraken.analysis
     :members:
     :undoc-members:
 
-.. automodule:: sequana.krona
+.. automodule:: sequana.kraken.multikraken
     :members:
     :undoc-members:
 
-.. automodule:: sequana.kraken_builder
-    :members:
-    :undoc-members:
 
 .. automodule:: sequana.taxonomy
     :members:
@@ -155,17 +144,6 @@ Running median
     :members:
     :undoc-members:
 
-Snakemake module
------------------
-.. automodule:: sequana.snaketools
-    :members:
-    :undoc-members:
-
-pipeline related module
------------------------
-.. automodule:: sequana.pipelines_common
-    :members:
-    :undoc-members:
 
 
 Snpeff module

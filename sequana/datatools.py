@@ -1,13 +1,7 @@
-# -*- coding: utf-8 -*-
 #
 #  This file is part of Sequana software
 #
-#  Copyright (c) 2016 - Sequana Development Team
-#
-#  File author(s):
-#      Thomas Cokelaer <thomas.cokelaer@pasteur.fr>
-#      Dimitri Desvillechabrol <dimitri.desvillechabrol@pasteur.fr>,
-#          <d.desvillechabrol@gmail.com>
+#  Copyright (c) 2016-2021 - Sequana Development Team
 #
 #  Distributed under the terms of the 3-clause BSD license.
 #  The full license is in the LICENSE file, distributed with this software.
@@ -108,8 +102,7 @@ def sequana_data(filename=None, where=None):
             if _get_valid_file(filename, thisdir):
                 return _get_valid_file(filename, thisdir)
         raise Exception(
-            "unknown file %s. Type sequana_data() to get a list of valid names"
-            % filename
+            f"unknown file {filename}. Type sequana_data() to get a list of valid names"
         )
 
     return filename

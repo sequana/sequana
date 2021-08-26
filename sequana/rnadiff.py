@@ -455,8 +455,8 @@ class RNADiffTable:
             from sequana.rnadiff import RNADiffResults
             from sequana import sequana_data
 
-            r = RNADiffResults(sequana_data("rnadiff/rnadiff_onecond_1"))
-            r.plot_volcano()
+            r = RNADiffResults(sequana_data("rnadiff/", "doc"))
+            r.comparisons["A_vs_B"].plot_volcano()
 
         """
 
@@ -674,11 +674,11 @@ class RNADiffResults:
     ):
         """
 
-        :rnadiff_folder:
+        :rnadiff_folder: a valid rnadiff folder created by :class:`RNADiffAnalysis`
 
         ::
 
-            RNADiffResults("rnadif/", design_file="design.csv")
+            RNADiffResults("rnadiff/")
 
 
         """
@@ -1070,15 +1070,15 @@ class RNADiffResults:
         pylab.ylabel(ylabel)
 
     def get_specific_commons(self, direction, compas=None, annot_col="index"):
-        """From all the comparisons contained by the object, extract gene lists which
-        are common (but specific, ie a gene appear only appears in the
+        """Extract gene lists for all comparisons. 
+
+        Genes are common (but specific, ie a gene appear only appears in the
         combination considered) comparing all combinations of comparisons.
 
         :param direction: The regulation direction (up, down or all) of the gene
-        lists to consider
-
+            lists to consider
         :param compas: Specify a list of comparisons to consider (Comparisons
-        names can be found with self.comparisons.keys()).
+            names can be found with self.comparisons.keys()).
 
         """
 
@@ -1125,7 +1125,7 @@ class RNADiffResults:
             from sequana.rnadiff import RNADiffResults
             from sequana import sequana_data
 
-            r = RNADiffResults(sequana_data("rnadiff/rnadiff_onecond_1"))
+            r = RNADiffResults(sequana_data("rnadiff/", "doc"))
             r.plot_count_per_sample()
 
         """
@@ -1170,7 +1170,7 @@ class RNADiffResults:
             from sequana.rnadiff import RNADiffResults
             from sequana import sequana_data
 
-            r = RNADiffResults(sequana_data("rnadiff/rnadiff_onecond_1"))
+            r = RNADiffResults(sequana_data("rnadiff/", "doc"))
             r.plot_percentage_null_read_counts()
 
         """
@@ -1211,8 +1211,7 @@ class RNADiffResults:
             from sequana.rnadiff import RNADiffResults
             from sequana import sequana_data
 
-            path = sequana_data("rnadiff/rnadiff_onecond_1")
-            r = RNADiffResults(path)
+            r = RNADiffResults(sequana_data("rnadiff/", "doc"))
 
             colors = {
                 'surexp1': 'r',
