@@ -1,8 +1,5 @@
 Changelog
-=============
-
-.. contents::
-    :depth: 2
+=========
 
 
 0.12.0
@@ -16,6 +13,11 @@ Changelog
     anymore. Old code still intereting has been moved to databases.py 
     The kraken.py module was split into analysis.py and multikraken.py into a new sub directory called kraken. 
     This should be transparent for the user and developer. See PR
+  * All tools related to pipelines have be move to an external Python package (sequana_pipetools, on pypi )
+  * All tools related to sphinx extension have be move to an external Python package (sequana_sphinext, on pypi)
+  * Rules are still in used but will be replaced little by little by an external Python package (sequana-wrappers, on github)
+  * github action now included for a better CI 
+  * Lots of cleanup !
 
 
 0.11.1
