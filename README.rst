@@ -14,9 +14,6 @@ SEQUANA
 .. image:: https://github.com/sequana/sequana/actions/workflows/main.yml/badge.svg?branch=dev
     :target: https://github.com/sequana/sequana/actions/workflows/main.yml
 
-.. image:: https://github.com/sequana/sequana/actions/workflows/main.yml/badge.svg?branch=master
-    :target: http://travis-ci.com/sequana/sequana
-
 .. image:: https://coveralls.io/repos/github/sequana/sequana/badge.svg?branch=master
     :target: https://coveralls.io/github/sequana/sequana?branch=master
 
@@ -55,7 +52,9 @@ SEQUANA
 | **pipeline or tools**    | **Latest Pypi verison**  |  **Test passing**     |
 +--------------------------+--------------------------+-----------------------+
 | pipetools                |     |pipetools_pypi|     | |pipetools_test|      |
++--------------------------+--------------------------+-----------------------+
 | wrappers                 |        not on pypi       | |wrappers_test|       |
++--------------------------+--------------------------+-----------------------+
 | fastqc                   |     |fastqc_pypi|        |  |fastqc_test|        |
 +--------------------------+--------------------------+-----------------------+
 
