@@ -65,7 +65,7 @@ SEQUANA
 .. |pipetools_test| image:: https://github.com/sequana/sequana_pipetools/actions/workflows/main.yml/badge.svg?branch=master
     :target: https://github.com/sequana/sequana_pipetools/actions/workflows/main.yml
 
-.. |wrappers_test| image:: https://github.com/sequana/sequana-wrappers/actions/workflows/main.yml/badge.svg?branch=master
+.. |wrappers_test| image:: https://github.com/sequana/sequana-wrappers/actions/workflows/main.yml/badge.svg
     :target: https://github.com/sequana/sequana-wrappers/actions/workflows/main.yml
 
 .. |fastqc_pypi| image:: https://badge.fury.io/py/sequana-fastqc.svg
