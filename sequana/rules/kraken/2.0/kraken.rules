@@ -1,0 +1,109 @@
+##############################################################################
+#
+#  Copyright (c) 2016-2021 - Sequana Dev Team (https://sequana.readthedocs.io)
+#
+#  File author(s):
+#      Thomas Cokelaer <thomas.cokelaer@pasteur.fr>
+#
+#  Distributed under the terms of the 3-clause BSD license.
+#  The full license is in the LICENSE file, distributed with this software.
+#
+#  Website:       https://github.com/sequana/sequana
+#  Documentation: http://sequana.readthedocs.io
+#  Contributors:  https://github.com/sequana/sequana/graphs/contributors
+##############################################################################
+"""
+This version 2.0 is used by the quality control pipeline
+It is suppose to use kraken2 but is a hacked version of version 1.1 to exlcude 
+the unclassified option. 
+
+I recommend to use the rule sequana_taxonomy used in the pipeline multitax instead.
+
+
+"""
+
+
+rule kraken_to_krona:
+    input: __kraken__output_wkdir + "kraken.out.summary"
+    output: __kraken__output_html
+    run:
+        shell("ktImportText %s -o %s" % (input, output))
+
+
+rule kraken_translate:
+    input: __kraken__output_out
+    output:
+        summary = __kraken__output_wkdir + "kraken.out.summary",
+        png = __kraken__output_wkdir + "kraken.png",
+    run:
+        from sequana import KrakenResults
+        k = KrakenResults(input[0])
+        k.kraken_to_krona(output_filename=output.summary)
+        try:
+            df = k.plot2(kind='pie')
+        except:
+            df = k.plot(kind='pie')
+        if df is not None and len(df):
+            from pylab import savefig
+            savefig(output.png)
+        else:
+            from sequana import sequana_data
+            import shutil
+            filename = sequana_data("no_data.jpg", "images")
+            shutil.copy(filename, output.png)
+
+
+rule kraken:
+    """Kraken taxonomic sequence classification system
+
+    Required input:
+        - __kraken__input
+
+    Required output:
+        - __kraken__output_wkdir: working directory
+        - __kraken__output: the kraken final output
+        - __kraken__output_csv: summary in csv format
+        - __kraken__output_json: summary in json format
+
+    Config:
+        .. code-block:: yaml
+
+            kraken:
+                database_directory:  # a valid path to a Kraken database
+
+    See `KrakenBuilder <http://sequana.readthedocs.io/en/master/references.html#sequana.kraken_builder.KrakenBuilder>`_ to build your own database or visit 
+    https://github.com/sequana/data for a database toy example.
+
+    References:
+        - https://github.com/DerrickWood/kraken
+
+   """
+    input: __kraken__input
+    output:
+        kraken_out = __kraken__output_out,
+        kraken_csv = __kraken__output_csv,
+        kraken_json = __kraken__output_json
+    params:
+        databases = config['kraken']['databases'],
+        store_unclassified = config['kraken'].get('store_unclassified', True),
+        wkdir = __kraken__output_wkdir,
+    threads: config['kraken'].get('threads', 1)
+    run:
+        DB = " ".join(params.databases)
+        outname = "kraken_unclassified.fastq"
+
+        if len(input) == 1:
+            cmd = "sequana_taxonomy --databases {} --file1 {input[0]} ".format(DB)
+            cmd += " --thread {} --output-directory {}".format(threads, params.wkdir)
+        elif len(input) == 2:
+            cmd = "sequana_taxonomy --databases {} ".format(DB)
+            cmd += " --file1 {} --file2 {} ".format(input[0], input[1])
+            cmd += " --thread {} --output-directory {}".format(threads, params.wkdir)
+        shell(cmd)
+
+        from sequana import KrakenResults
+        k = KrakenResults(output.kraken_out)
+        k.kraken_to_csv(output.kraken_csv, params.databases[0])
+        k.kraken_to_json(output.kraken_json, params.databases[0])
+
+

@@ -27,7 +27,6 @@ from sequana.lazy import pylab as pylab
 from sequana.lazy import numpy as np
 
 
-
 __all__ = ["Volcano"]
 
 
@@ -98,11 +97,11 @@ class Volcano(object):
             if (row.fold_change <= -self.fold_change_threshold) and (
                 row.pvalue >= self.pvalue_threshold
             ):
-                return "firebrick"
+                return "royalblue"
             if (row.fold_change >= self.fold_change_threshold) and (
                 row.pvalue >= self.pvalue_threshold
             ):
-                return "royalblue"
+                return "firebrick"
             if (abs(row.fold_change) < self.fold_change_threshold) and (
                 row.pvalue >= self.pvalue_threshold
             ):
@@ -112,7 +111,7 @@ class Volcano(object):
 
         if self.color == "auto":
             self.df["color"] = self.df.apply(coloring, axis=1)
-        else: #pragma: no cover
+        else:  # pragma: no cover
             self.df["color"] = self.color
 
     def plot(
@@ -139,7 +138,7 @@ class Volcano(object):
         """
         pylab.clf()
 
-        if add_broken_axes: #pragma: no cover
+        if add_broken_axes:  # pragma: no cover
             from brokenaxes import brokenaxes
 
             _ylims = broken_axes.get("ylims", None)

@@ -4,6 +4,20 @@ Changelog
 .. contents::
     :depth: 2
 
+
+0.12.0
+------
+
+* CHANGES
+
+  * databses.ENADownload class removed (the ftp used are deprecated and not maintained
+    by EBI)
+  * kraken refactorisation: kraken1 support removed. kraken_builder.py module not required
+    anymore. Old code still intereting has been moved to databases.py 
+    The kraken.py module was split into analysis.py and multikraken.py into a new sub directory called kraken. 
+    This should be transparent for the user and developer. See PR
+
+
 0.11.1
 ------
 
@@ -52,6 +66,7 @@ Module concerned: rnadiff, compare, featurecounts and enrichment
   * featurecounts: allow input to use the --extraAttributes option; more tests
 
 * NEWS:
+
   * gff 1. add save_gff_filtered method to select interesting features, 2. add
     gff2gtf conversion
   * fasta module has GC content method

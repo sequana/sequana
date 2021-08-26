@@ -15,8 +15,6 @@
 #
 ##############################################################################
 """Utilities to manipulate FASTQ and Reads"""
-import io
-import time
 import zlib
 from itertools import islice
 import gzip
@@ -28,15 +26,10 @@ from sequana.lazy import numpy as np
 from sequana.lazy import pandas as pd
 from sequana.lazy import pylab
 from sequana.tools import GZLineCounter
-from easydev import Progress, do_profile
 
-try:
-    from atropos.io.seqio import FastqReader
-except: # version 2.0
-    from atropos.io.readers import FastqReader
+from easydev import Progress
 
 import pysam
-from pysam import qualitystring_to_array
 
 try:
     from itertools import izip_longest
@@ -799,18 +792,18 @@ class FastQ(object):
         """
         # Counter is slow if we apply it on each read.
         # .count is slow as well
-        import collections
+        
         from sequana.kmer import get_kmer
-        counter = collections.Counter()
+        counter = Counter()
         pb = Progress(len(self))
         buffer_ = []
         for i, this in enumerate(self):
             buffer_.extend(list(get_kmer(this['sequence'], k)))
             if len(buffer_) > 100000: #pragma: no cover
-                counter += collections.Counter(buffer_)
+                counter += Counter(buffer_)
                 buffer_ = []
             pb.animate(i)
-        counter += collections.Counter(buffer_)
+        counter += Counter(buffer_)
 
         ts = pd.Series(counter)
         ts.sort_values(inplace=True, ascending=False)
@@ -897,7 +890,7 @@ class FastQC(object):
 
 
     """
-    def __init__(self, filename, max_sample=500000, dotile=False, verbose=True,
+    def __init__(self, filename, max_sample=500000, verbose=True,
                  skip_nrows=0):
         """.. rubric:: constructor
 
@@ -929,9 +922,7 @@ class FastQC(object):
         self.fontsize = 16
 
     def _get_info(self):
-        """Populates the data structures for plotting.
-
-        Will be called on request"""
+        """Populates the data structures for plotting"""
 
         stats = {"A":0, "C":0, "G":0, "T":0, "N":0}
         stats["qualities"] = []
@@ -941,10 +932,12 @@ class FastQC(object):
 
         minimum = 1e6
         maximum = 0
+
         # FIXME this self.N takes time in the cosntructor
         # do we need it ?
-        self.lengths = np.empty(self.N)
+        self.lengths = []
         self.gc_list = []
+
         total_length = 0
         C = defaultdict(int)
         if self.verbose:
@@ -953,104 +946,70 @@ class FastQC(object):
         sequences = []
         mean_qualities = []
         qualities = []
-        # could use multiprocessing
-        # FastxFile has shown some errors while handling gzip files
-        # created with zlib (e.g. from atropos). This is now replaced
-        # by the Atropos FastqReader for now.
-        #fastq = pysam.FastxFile(self.filename)
 
-        with FastqReader(self.filename) as f:
-            for i, record in enumerate(f):
-                if i < self.skip_nrows:
-                    continue
-                if i > self.max_sample + self.skip_nrows:
-                    break
-                N = len(record.sequence)
-                if N == 0:
-                    raise ValueError("Read {} has a length equal to zero. Clean your FastQ files".format(i))
-                self.lengths[i] = N
+        ff = pysam.FastxFile(self.filename)
+        for i, record in enumerate(ff):
+            if i < self.skip_nrows:
+                continue
+            if i > self.max_sample + self.skip_nrows:
+                break
+            N = len(record.sequence)
+            if N == 0:
+                raise ValueError("Read {} has a length equal to zero. Clean your FastQ files".format(i))
+            self.lengths.append(N)
 
-                # we can store all qualities and sequences reads, so
-                # just max_sample are stored:
-                quality = [ord(x) -33 for x in record.qualities]
-                mean_qualities.append(sum(quality) / N)
-                qualities.append(quality)
-                sequences.append(record.sequence)
+            # we cannot store all qualities and sequences reads, so
+            # just max_sample are stored:
+            quality = record.get_quality_array()
+            mean_qualities.append(sum(quality) / N)
+            qualities.append(quality)
+            sequences.append(record.sequence)
 
-                # store count of all qualities
-                for k in record.qualities:
-                    C[k] += 1
+            # store count of all qualities
+            for k in quality:
+                C[k] += 1
 
-                GG = record.sequence.count('G')
-                CC = record.sequence.count('C')
-                self.gc_list.append((GG+CC)/float(N)*100)
+            GG = record.sequence.count('G')
+            CC = record.sequence.count('C')
+            self.gc_list.append((GG+CC)/float(N)*100)
 
-                # not using a counter, or loop speed up the code
-                stats["A"] += record.sequence.count("A")
-                stats["C"] += CC
-                stats["G"] += GG
-                stats["T"] += record.sequence.count("T")
-                stats["N"] += record.sequence.count("N")
+            # not using a counter, or loop speed up the code
+            stats["A"] += record.sequence.count("A")
+            stats["C"] += CC
+            stats["G"] += GG
+            stats["T"] += record.sequence.count("T")
+            stats["N"] += record.sequence.count("N")
 
-                total_length += len(record.sequence)
+            total_length += len(record.sequence)
 
-                if self.verbose:
-                    pb.animate(i+1)
+            if self.verbose:
+                pb.animate(i+1)
 
         # other data
         self.qualities = qualities
-        # we may want to skip first rows
         self.mean_qualities = mean_qualities
+        self.lengths = np.array(self.lengths)
         self.minimum = int(self.lengths.min())
         self.maximum = int(self.lengths.max())
         self.sequences = sequences
         self.gc_content = np.mean(self.gc_list)
         stats['mean_length'] = total_length / float(self.N)
         stats['total_bp'] = stats['A'] + stats['C'] + stats['G'] + stats["T"] + stats['N']
-        stats['mean_quality'] = sum([(ord(k) -33)*v for k,v in C.items()]) / stats['total_bp']
+        stats['mean_quality'] = sum([k*v for k,v in C.items()]) / stats['total_bp']
 
         self.stats = stats
 
-    @run_info
-    def imshow_qualities(self):
-        """Qualities
-
-        ::
-
-            from sequana import sequana_data
-            from sequana import FastQC
-            filename  = sequana_data("test.fastq", "testing")
-            qc = FastQC(filename)
-            qc.imshow_qualities()
-            from pylab import tight_layout; tight_layout()
-
-        """
-        tiles = self._get_tile_info()
-        d = defaultdict(list)
-        for tile, seq in zip(tiles['tiles'], self.qualities):
-            d[tile].append(seq)
-        self.data_imqual = [pd.DataFrame(d[key]).mean().values for key in sorted(d.keys())]
-
-        from sequana.viz import Imshow
-
-        im = Imshow(self.data_imqual)
-        im.plot(xticks_on=False, yticks_on=False, origin='lower')
-        pylab.title("Quality per tile", fontsize=self.fontsize)
-        pylab.xlabel("Position in read (bp)")
-        pylab.ylabel("tile number")
-
     def _get_qualities(self):
-        from sequana import logger
         logger.info("Extracting qualities")
         qualities = []
-        with FastqReader(self.filename) as f:
-            for i, record in enumerate(f):
-                if i <self.skip_nrows:
-                    continue
-                if i > self.max_sample + self.skip_nrows:
-                    break
-                quality = [ord(x) -33 for x in record.qualities]
-                qualities.append(quality)
+
+        ff = pysam.FastxFile(self.filename)
+        for i, rec in enumerate(ff):
+            if i < self.skip_nrows:
+                continue
+            if i > self.max_sample + self.skip_nrows:
+                break
+            qualities.append(rec.get_quality_array())
         return qualities
 
     def boxplot_quality(self, hold=False, ax=None):
@@ -1070,42 +1029,6 @@ class FastQC(object):
             bx.plot(ax=ax)
         except:  #pragma: no cover
             bx.plot()
-
-    def _get_tile_info(self):
-        identifiers = []
-        tiles = {}
-        with FastqReader(self.filename) as f:
-            for i, record in enumerate(f):
-                if i <self.skip_nrows:
-                    continue
-                if i > self.max_sample + self.skip_nrows:
-                    break
-                identifier = Identifier(record.name)
-                identifiers.append(identifier.info)
-        tiles['x'] = [float(this['x_coordinate']) for this in identifiers]
-        tiles['y'] = [float(this['y_coordinate']) for this in identifiers]
-        tiles['tiles'] = [this['tile_number'] for this in identifiers]
-        return tiles
-
-    def histogram_sequence_coordinates(self):
-        """Histogram of the sequence coordinates on the plate
-
-        ::
-
-            from sequana import sequana_data
-            from sequana import FastQC
-            filename  = sequana_data("test.fastq", "testing")
-            qc = FastQC(filename)
-            qc.histogram_sequence_coordinates()
-
-        .. note:: in this data set all points have the same coordinates.
-
-        """
-        tiles = self._get_tile_info()
-        # Distribution of the reads in x-y plane
-        # less reads on the borders ?
-        from sequana.viz import Hist2D
-        Hist2D(tiles['x'], tiles['y']).plot()
 
     @run_info
     def histogram_sequence_lengths(self, logy=True):
@@ -1190,7 +1113,7 @@ class FastQC(object):
 
         # count ACGTN in each columns for all sequences
         Nseq = len(self.sequences)
-        from collections import Counter
+        
         data = []
         for pos in range(max_length):
             # we add empty strings to have all sequences with same lengths

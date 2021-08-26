@@ -6,7 +6,7 @@ Pipeline statistics
 
 ########################################
 # First, let us get the data
-from sequana.snaketools import get_pipeline_statistics
+from sequana_pipetools.snaketools import get_pipeline_statistics
 df = get_pipeline_statistics()
 
 #############################################

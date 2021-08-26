@@ -234,7 +234,7 @@ class IEM():
         # Check that the sample Name and ID are alphanumerical
         for column in ['Sample_ID', 'Sample', 'Sample_Name']:
             for i, x in enumerate(self.df.Sample_ID.values):
-                status = x.replace("-", "").replace("_", "").isalnum()
+                status = str(x).replace("-", "").replace("_", "").isalnum()
                 if status is False:
                     sys.exit("type error: wrong sample name {} on line {}, which must be alpha numeric except for the _ and - characters".format(x, self._cnt_total + i))
 

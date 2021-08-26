@@ -102,7 +102,7 @@ setup(
         'sequana.rules' : ['*/*.rules', "*/*/*.rules", "*/*/*/*.rules"],
         'sequana.pipelines' : ['*/*'],
         'sequana.resources.data' : ['*.*'],  # use *.* for files and not ./adapters
-        'sequana.resources.data.adapters' : ['*'],
+        'sequana.resources.examples' : ['*'],
         'sequana.resources.templates' : ['*.R'],
         'sequana.resources.images' : ['*'],
         'sequana.resources.testing' : ['*', '*/*', '*/*/*', '*/*/*/*', '*/*/*/*/*', '*/*/*/*/*/*'],
@@ -117,13 +117,11 @@ setup(
     zip_safe=False,
     entry_points = {
         'console_scripts':[
-           'sequanix=sequana.gui.sequana_gui:main',
            'sequana_lane_merging=sequana.scripts.lane_merging:main',
            'sequana=sequana.scripts.main:main',
            'sequana_taxonomy=sequana.scripts.taxonomy:main',
            'sequana_coverage=sequana.scripts.coverage:main',
            'sequana_mapping=sequana.scripts.mapping:main',
-           'sequana_compressor=sequana.scripts.compressor:main',
            'sequana_vcf_filter=sequana.scripts.vcf_filter:main', # june 2018
            'sequana_bam_splitter=sequana.scripts.bam_splitter:main', # aug 2018
            'sequana_substractor=sequana.scripts.substractor:main', # march 2019
@@ -141,6 +139,7 @@ setup(
             "sequana_isoseq=sequana.multiqc.isoseq:MultiqcModule",
             "sequana_isoseq_qc=sequana.multiqc.isoseq_qc:MultiqcModule",
             "sequana_bamtools_stats=sequana.multiqc.bamtools_stats:MultiqcModule",
+            "sequana_laa=sequana.multiqc.laa:MultiqcModule",
             "sequana_kraken=sequana.multiqc.kraken:MultiqcModule",
             "sequana_pacbio_amplicon=sequana.multiqc.pacbio_amplicon:MultiqcModule"
         ],

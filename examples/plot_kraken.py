@@ -43,9 +43,9 @@ a standalone application named **sequana_taxonomy**.
 # original toy data files contains 1500 reads mostly related to Measles virus
 #
 from sequana import KrakenResults, sequana_data
-test_file = sequana_data("test_kraken.out", "testing")
+test_file = sequana_data("test_kraken.out", "examples")
 k = KrakenResults(test_file)
-df = k.plot(kind='pie')
+df = k.plot(kind='pie', delete_krona_file=True)
 print(df)
 
 
@@ -60,7 +60,7 @@ test_file = sequana_data("test_kraken.out", "testing")
 import easydev
 if easydev.cmd_exists("ktImportText"):
     k = KrakenResults(test_file)
-    k.to_js(onweb=False)  # The output filame is krona.html by default
+    k.to_js()  # The output filame is krona.html by default
 
 #######################################################################
 # An example is available in  `Krona example <../_static/krona.html>`_

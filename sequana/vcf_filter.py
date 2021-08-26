@@ -173,8 +173,6 @@ class VCF_mpileup_4dot1(VCFBase):
 
         Usage example::
 
-            from sequana import logger
-            logger.setLevel("DEBUG")
             from sequana import vcf_filter
             v = vcf_filter.VCF(filename)
             v.vcf.apply_indel_filter = True

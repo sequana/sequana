@@ -23,6 +23,7 @@
     Alignment
     BAM
     CRAM
+    MultiBAM
     SAM
     SAMFlags
     SAMBAMbase 
@@ -36,8 +37,7 @@ import os
 import json
 import math
 
-from collections import Counter
-from collections import OrderedDict
+from collections import Counter, OrderedDict, defaultdict
 
 from bx.intervals.intersection import Interval, IntervalTree
 from bx.bitset import BinnedBitSet 
@@ -157,6 +157,11 @@ class SAMBAMbase():
         self._N = None
         self.reset()
 
+        # we can accumulate the length of each contig/chromosome as an alias
+        bam = pysam.AlignmentFile(self._filename, mode=self._mode, *self._args)
+        hd = bam.header
+        self.lengths = {r: l for r,l in zip(hd.references, hd.lengths)}
+
     def reset(self):
         try:
             self._data.close()
@@ -198,7 +203,7 @@ class SAMBAMbase():
 
         .. image:: _static/insert_size.png
 
-        Here we show that about 3000 alignements are enough to get a good
+        Here we show that about 3000 alignments are enough to get a good
         estimate of the insert size.
 
         .. plot::
@@ -237,8 +242,10 @@ class SAMBAMbase():
             ends.append(a.reference_end)
             mapqs.append(a.mapq)
             cigar.append(a.cigarstring)
-            try:refnames.append(a.reference_name)
-            except:refnames.append(-1)
+            try:
+                refnames.append(a.reference_name)
+            except:
+                refnames.append(-1)
             querynames.append(a.query_name)
             querylengths.append(a.query_length)
             if max_align!=-1 and i>max_align:
@@ -372,7 +379,6 @@ class SAMBAMbase():
 
         """
         count = 0
-        from collections import defaultdict
         p_strandness = defaultdict(int)
         s_strandness = defaultdict(int)
 
@@ -750,11 +756,18 @@ class SAMBAMbase():
             self._count_item(flag_dict, read.flag)
             if read.is_unmapped is False:
                 self._count_item(read_length_dict, read.reference_length)
-            try:mean_qualities.append(pylab.mean(read.query_qualities))
-            except:mean_qualities.append(read.query_qualities)
+            try:
+                mean_qualities.append(pylab.mean(read.query_qualities))
+            except TypeError:
+                mean_qualities.append(-1)
             count += 1
             if count % 100000 ==0:
                 print(count)
+        # FIXME do we need the try/except if so, add Exception
+        try:
+            mq = pylab.mean(mean_qualities)
+        except:
+            mq = 0
         self._summary = {"mapq": mapq_dict,
                          "read_length": read_length_dict,
                          "flags": flag_dict,
@@ -793,7 +806,6 @@ class SAMBAMbase():
         M = pylab.mean([abs(x) for x in data])
         pylab.hist(data, bins=bins)
         return M
-
 
     def plot_read_length(self):
         """Plot occurences of aligned read lengths
@@ -962,8 +974,10 @@ class SAMBAMbase():
                     insert_size_sum_square += A * A
 
             # If NM is provided, not always the case though
-            try:mismatches += aln.get_tag('NM')
-            except:pass
+            try:
+                mismatches += aln.get_tag('NM')
+            except:
+                pass
 
             if total_aln % 100000 == 0:
                 print(total_aln)
@@ -1235,7 +1249,7 @@ SN	pairs on different chromosomes:	0
         .. seealso:: :meth:`plot_gc_content`
 
         """
-        data = [(f.seq.count("C") + f.seq.count('G')) / len(f.seq)*100. for f in self]
+        data = [(f.seq.count("C") + f.seq.count('G')) / len(f.seq)*100. for f in self if f.seq]
         return data
 
     @_reset
@@ -1295,7 +1309,7 @@ SN	pairs on different chromosomes:	0
 
         """
         qualities = self._get_qualities(max_sample)
-        df = pd.DataFrame(qualities)
+        df = pd.DataFrame([x for x in qualities if x])
         from sequana.viz.boxplot import Boxplot
         bx = Boxplot(df)
         try:
@@ -1303,28 +1317,45 @@ SN	pairs on different chromosomes:	0
         except:
             bx.plot()
 
+    #FIXME: why not a property ? Same comments for coverage attribute
     def _set_alignments(self):
         # this scans the alignments once for all
         self.alignments = [this for this in self]
 
     @_reset
     def _set_coverage(self):
-        try: self.alignments
-        except: self._set_alignments()
+        try:
+            self.alignments
+        except AttributeError:
+            self._set_alignments()
+        ref_start = defaultdict(list)
+        ref_end = defaultdict(list)
+        
+        for aln in self.alignments:
+            # Of course, we must have a valid reference name and start/end position not set to None
+            if aln.flag not in [4] and aln.rname != -1 and aln.reference_end and aln.reference_start:
+                ref_start[aln.rname].append(aln.reference_start)
+                ref_end[aln.rname].append(aln.reference_end)
 
-        reference_start = [this.reference_start for this in self.alignments if this.reference_start]
-        reference_end = [this.reference_end for this in self.alignments if this.reference_start]
-        N = max([this for this in reference_end if this])
+        self.coverage = {}
 
-        self.coverage = np.zeros(N)
-        for x, y in zip(reference_start, reference_end):
-            if y and x>=0 and y>=0: self.coverage[x:y] += 1
-            else: pass
+        for rname in ref_start.keys():
+            print(rname)
+            print(None in ref_end[rname])
+            N = max(ref_end[rname])
+            self.coverage[rname] = np.zeros(N)
+            for x, y in zip(ref_start[rname], ref_end[rname]):
+                if y and x>=0 and y>=0:
+                    self.coverage[rname][x:y] += 1
+                else:
+                    pass
 
     @_reset
     def _set_indels(self):
-        try: self.alignments
-        except: self._set_alignments()
+        try:
+            self.alignments
+        except:
+            self._set_alignments()
 
         self.insertions = []
         self.deletions = []
@@ -1335,7 +1366,7 @@ SN	pairs on different chromosomes:	0
                 if "D" in this.cigarstring:
                     self.deletions.extend([x[1] for x in this.cigartuples if x[0] == 2])
 
-    def plot_coverage(self):
+    def plot_coverage(self, chrom=None):
         """Please use :class:`GenomeCov` for more sophisticated
         tools to plot the genome coverage
 
@@ -1347,12 +1378,18 @@ SN	pairs on different chromosomes:	0
             b.plot_coverage()
 
         """
-        try: self.coverage
-        except: self._set_coverage()
-        pylab.plot(self.coverage)
+        try:
+            self.coverage
+        except AttributeError:
+            self._set_coverage()
+
+        if chrom is None and len(self.coverage.keys()) == 1:
+            chrom = list(self.coverage.keys())[0]
+
+        pylab.plot(self.coverage[chrom])
         pylab.xlabel("Coverage")
 
-    def hist_coverage(self, bins=100):
+    def hist_coverage(self, chrom=None, bins=100):
         """
 
         .. plot::
@@ -1362,9 +1399,15 @@ SN	pairs on different chromosomes:	0
             b = BAM(sequana_data("measles.fa.sorted.bam"))
             b.hist_coverage()
         """
-        try: self.coverage
-        except: self._set_coverage()
-        pylab.hist(self.coverage, bins=bins)
+        try:
+            self.coverage
+        except AttributeError:
+            self._set_coverage()
+
+        if chrom is None and len(self.coverage.keys()) == 1:
+            chrom = list(self.coverage.keys())[0]
+
+        pylab.hist(self.coverage[chrom], bins=bins)
         pylab.xlabel("Coverage")
         pylab.ylabel("Number of mapped bases")
         pylab.grid()
@@ -1445,14 +1488,11 @@ SN	pairs on different chromosomes:	0
         pylab.ylabel("#", fontsize=16)
 
 
-
-
-
-
 class SAM(SAMBAMbase):
     """SAM Reader. See :class:`~samtools.bamtools.SAMBAMbase` for details"""
     def __init__(self, filename, *args):
         super(SAM, self).__init__(filename, mode="r", *args)
+
 
 class CRAM(SAMBAMbase):
     """CRAM Reader. See :class:`~sequana.bamtools.SAMBAMbase` for details"""
@@ -1466,8 +1506,104 @@ class BAM(SAMBAMbase):
         super(BAM, self).__init__(filename, mode="rb", *args)
 
 
+class MultiBAM():
+    """Convenient structure to store several BAM files
 
+    ::
 
+        mb = MultiBAM()
+        mb.add_bam("file1.sorted.bam", group="A")
+        mb.add_bam("file2.sorted.bam", group="B")
+
+    """
+    def __init__(self):
+        self.bams = []
+        self.tags = []
+        self.groups = defaultdict(list)
+        self._df = None
+        self.lengths = {}
+
+    def add_bam(self, filename, tag=None, group=None):
+        from pathlib import Path
+        if tag is None:
+            tag = Path(filename).stem
+        if group:
+            self.groups[group].append(tag)
+        if self.groups and group is None:
+            raise ValueError('if a group was provided, it must be provided for each sample. Please provide one or create a new isntance of MultiBAM')
+
+        bam = BAM(filename)
+        self.bams.append(bam)
+        self.tags.append(tag)
+
+        # let us gather the lengths/references
+        # Names must be unique and agree
+        for k,v in bam.lengths.items():
+            if k in self.lengths and v != self.lengths[k]:
+                logger.warning("BAM reference/length incompatible with "
+                    "previously loaded BAM file. Proceed but results may "
+                    "be incorrect")
+            self.lengths[k] = v
+
+    def _get_df(self):
+        if self._df is None:
+            df = self.run()
+            self._df = df
+        return self._df
+    df = property(_get_df)
+
+    def run(self, exclude_secondary=True):
+        from collections import Counter
+
+        if exclude_secondary:
+            data = [Counter(bam.get_df().query("flag!=4 and flag<256").rname) for bam in self.bams]
+        else:
+            data = [Counter(bam.get_df().query("flag!=4").rname) for bam in self.bams]
+
+        df = pd.DataFrame(data)
+        # if there is no alignments, it is equal to 0, not NA
+        df = df.fillna(0)
+
+        # let us sort the index
+        df.index = self.tags
+        df = df.sort_index()
+        return df
+
+    def plot_alignments_per_sample(self):
+        pylab.grid(True, zorder=-1)
+        if self.groups:
+            N = 0
+            for k, v in self.groups.items():
+                data = self.df.sum(axis=1).loc[v]
+                X = range(N, N+len(data))
+                pylab.bar(X, data.values, label=k, ec='k', zorder=1)
+                N += len(v)
+            pylab.legend()
+        else:
+            self.df.sum(axis=1).plot(kind='bar')
+        pylab.ylabel("Number of reads", fontsize=14)
+        pylab.title("Number of mapped reads per sample", fontsize=14)
+        pylab.tight_layout()
+
+    def plot_alignments_per_chromosome(self):
+        # on a given sample, let us keep total number of alignments (for
+        # normalisation)
+        S = self.df.sum(axis=1)
+
+        # normalise and take mean number of entries per chromosomes
+        mean_per_chrom = self.df.divide(S, axis=0).mean()
+
+        # We should normalise by chromosome length. We can also simply show
+        # the expected proportion for each chromosome.
+        total_length = sum(list(self.lengths.values()))
+        expected = [self.lengths[x]/total_length for x in mean_per_chrom.index]
+
+        pylab.bar(range(len(expected)), expected, color='red', alpha=0.2, zorder=2)
+        mean_per_chrom.plot(kind='bar', zorder=3)
+        pylab.grid(True, zorder=1)
+        pylab.legend(['Expected', 'Observed'])
+        pylab.ylabel('Proportion alignements per chromosome', fontsize=14)
+        return mean_per_chrom, expected
 
 class Alignment(object):
     """Helper class to retrieve info about Alignment

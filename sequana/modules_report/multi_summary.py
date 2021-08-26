@@ -1,22 +1,12 @@
-# -*- coding: utf-8 -*-
 #
-#  This file is part of Sequana software
+#  Copyright (c) 2016-2021 - Sequana Development Team
 #
-#  Copyright (c) 2016 - Sequana Development Team
-#
-#  File author(s):
-#      Thomas Cokelaer <thomas.cokelaer@pasteur.fr>
-#      Dimitri Desvillechabrol <dimitri.desvillechabrol@pasteur.fr>,
-#          <d.desvillechabrol@gmail.com>
-#
-#  Distributed under the terms of the 3-clause BSD license.
 #  The full license is in the LICENSE file, distributed with this software.
 #
 #  website: https://github.com/sequana/sequana
 #  documentation: http://sequana.readthedocs.io
 #
 ##############################################################################
-import os
 import glob
 import json
 
@@ -28,10 +18,11 @@ from sequana.resources.canvas.bar import CanvasBar
 from sequana.lazy import pandas as pd
 
 import colorlog
+
 logger = colorlog.getLogger(__name__)
 
 
-__all__ = ['SequanaMultipleSummary']
+__all__ = ["ReadSummary", "MultiSummary"]
 
 
 class ReadSummary(object):
@@ -40,7 +31,7 @@ class ReadSummary(object):
         self.data = json.load(open(self.filename, "r"))
 
     def get_phix_percent(self):
-        return self.data['phix_section']['contamination']
+        return self.data["phix_section"]["contamination"]
 
     def get_cutadapt_stats(self):
         return self.data["cutadapt_json"]
@@ -50,23 +41,25 @@ class ReadSummary(object):
 
     def get_mean_quality_samples(self):
         this = self.data["fastq_stats_samples_json"]
-        return this["mean quality"]['R1']
+        return this["mean quality"]["R1"]
 
     def get_nreads_raw(self):
         this = self.data["fastq_stats_samples_json"]
-        return this["n_reads"]['R1']
+        return this["n_reads"]["R1"]
 
     def get_average_read_length(self):
         this = self.data["fastq_stats_samples_json"]
-        return this["average read length"]['R1']
+        return this["average read length"]["R1"]
 
     def get_trimming_percent(self):
         d = self.get_cutadapt_stats()
         try:
             trimming = d["percent"]["Pairs too short"]
-        except:
+        except KeyError:
             trimming = d["percent"]["Reads too short"]
-        return float(trimming.replace("%", "").replace("(","").replace(")","").strip())
+        return float(
+            trimming.replace("%", "").replace("(", "").replace(")", "").strip()
+        )
 
     def get_adapters_percent(self):
         d = self.get_cutadapt_stats()
@@ -77,9 +70,9 @@ class ReadSummary(object):
             try:
                 read2 = d["percent"]["Read2 with adapters"]
                 read2 = float(read2.strip("%)").strip("("))
-                read1 = (read1 + read2 ) /2. # FIXME crude approximation
+                read1 = (read1 + read2) / 2.0  # FIXME crude approximation
             except:
-                pass # single-end
+                pass  # single-end
         except:
             read1 = d["percent"]["Reads with adapters"]
             read1 = float(read1.strip("%)").strip("("))
@@ -106,7 +99,7 @@ class ReadSummary(object):
             trimming = d["Number of reads"]["Pairs kept"]
         except:
             trimming = d["Number of reads"]["Reads kept"]
-        try: # previous version stored strings in the json; TODO add test
+        try:  # previous version stored strings in the json; TODO add test
             trimming = trimming.strip()
             for this in [",", "(", ")", "%"]:
                 trimming = trimming.replace(this, "")
@@ -138,23 +131,29 @@ class MultiSummary(SequanaBaseModule):
     3: update the jinja file report_multiple_summay
 
     """
-    def __init__(self, pattern="**/summary.json", output_filename=None,
-                 verbose=True, **kargs):
+
+    def __init__(
+        self, pattern="**/summary.json", output_filename=None, verbose=True, **kargs
+    ):
         super().__init__()
 
         from sequana import logger
+
         logger.setLevel("INFO")
         if verbose is False:
             logger.setLevel("WARNING")
 
-        logger.info("Sequana Summary is still a tool in progress and have been " +
-              "  tested with the quality_control pipeline only for now.")
+        logger.info(
+            "Sequana Quality control Summary will not be maintained. Please use sequana_fastqc for QCs, sequana_multitax for Taxonomy."
+        )
         self.title = "Sequana multiple summary"
         self.devtools = DevTools()
 
         self.filenames = list(glob.iglob(pattern, recursive=True))
+
         self.summaries = [ReadSummary(filename) for filename in self.filenames]
-        self.projects = [ReadSummary(filename).data['project'] for filename in self.filenames]
+        self.projects = [s.data["project"] for s in self.summaries]
+
         self.create_report_content()
         self.create_html(output_filename)
 
@@ -169,53 +168,60 @@ class MultiSummary(SequanaBaseModule):
 
         self.jinja = {}
 
-        self.jinja['canvas'] = '<script type="text/javascript" src="js/canvasjs.min.js"></script>'
-        self.jinja['canvas'] += """<script type="text/javascript">
+        self.jinja[
+            "canvas"
+        ] = '<script type="text/javascript" src="js/canvasjs.min.js"></script>'
+        self.jinja[
+            "canvas"
+        ] += """<script type="text/javascript">
             window.onload = function () {"""
 
         # Information to put on top of the page (added later in a module.intro)
         # We should get the link name from the project name contained in the json
-        links = [{'href': filename.replace(".json", ".html"),'caption': project}
-                               for filename, project in zip(self.filenames,self.projects)]
+        links = [
+            {"href": filename.replace(".json", ".html"), "caption": project}
+            for filename, project in zip(self.filenames, self.projects)
+        ]
         introhtml = "<div><b>Number of samples:</b>{}</div>".format(len(self.summaries))
-        #introhtml += '<div class="multicolumns"><ul>'
-        #for link in links:
-        #    introhtml += ' <li><a href="{}">{}</a></li> '.format(
-        #                                link["href"], link["caption"])
-        #introhtml += '\n</ul>\n</div>'
 
-
-        self.jinja['sections'] = []
+        self.jinja["sections"] = []
 
         # This will used to stored all information
         self.df = {}
 
         # The order does not matter here, everything is done in JINJA
-        try:self.populate_nreads_raw()
+        try:
+            self.populate_nreads_raw()
         except Exception as err:
             print(err)
 
-        try: self.populate_phix()
+        try:
+            self.populate_phix()
         except Exception as err:
             logger.warning("multi_summary: skip phix")
 
-        try: self.populate_gc_samples()
+        try:
+            self.populate_gc_samples()
         except Exception as err:
             logger.debug("multi_summary: skip gc samples")
 
-        try: self.populate_trimming()
+        try:
+            self.populate_trimming()
         except Exception as err:
             logger.debug("multi_summary: skip trimming")
 
-        try: self.populate_mean_quality()
+        try:
+            self.populate_mean_quality()
         except Exception as err:
             logger.debug("multi_summary: skip mean quality")
 
-        try: self.populate_adapters()
+        try:
+            self.populate_adapters()
         except Exception as err:
             logger.debug("multi_summary: skip adapters")
 
-        try: self.populate_output_total_reads()
+        try:
+            self.populate_output_total_reads()
         except Exception as err:
             logger.debug("multi_summary: skip total reads")
 
@@ -224,44 +230,48 @@ class MultiSummary(SequanaBaseModule):
         keys = list(self.df.keys())
         if len(keys) >= 1:
             df = pd.DataFrame(self.df[keys[0]].copy())
-        if len(keys) > 1: # we can merge things
+        if len(keys) > 1:  # we can merge things
             for key in keys[1:]:
-                df = pd.merge(df, pd.DataFrame(self.df[key]), on=['name', 'url'])
+                df = pd.merge(df, pd.DataFrame(self.df[key]), on=["name", "url"])
 
         # For the quality_control pipeline
         columns = []
-        for this in ["name",
-                    "url",
-                    "N_raw",
-                    "GC_raw_(%)",
-                    "Mean_quality_raw",
-                    'Phix_content_(%)',
-                    "Adapters_content_(%)",
-                    "Trimmed_reads_(%)",
-                    "N_final"
-                    ]:
+        for this in [
+            "name",
+            "url",
+            "N_raw",
+            "GC_raw_(%)",
+            "Mean_quality_raw",
+            "Phix_content_(%)",
+            "Adapters_content_(%)",
+            "Trimmed_reads_(%)",
+            "N_final",
+        ]:
             if this in df.columns:
                 columns.append(this)
         df = df[columns]
         df.rename(columns={"name": "Sample name"}, inplace=True)
 
-
         from sequana.utils.datatables_js import DataTable
+
         datatable = DataTable(df, "multi_summary")
         datatable.datatable.datatable_options = {
-            'scrollX': '300px',
-            'pageLength': 30,
-            'scrollCollapse': 'true',
-            'dom': 'rtpB',
+            "scrollX": "300px",
+            "pageLength": 30,
+            "scrollCollapse": "true",
+            "dom": "rtpB",
             "paging": "false",
-            'buttons': ['copy', 'csv']}
+            "buttons": ["copy", "csv"],
+        }
 
         datatable.datatable.set_links_to_column("url", "Sample name")
         js = datatable.create_javascript_function()
-        html_tab = datatable.create_datatable(float_format='%.3g')
+        html_tab = datatable.create_datatable(float_format="%.3g")
         html = "{} {}".format(html_tab, js)
 
-        self.jinja['canvas'] += """
+        self.jinja[
+            "canvas"
+        ] += """
     function onClick(e){
         window.open(e.dataPoint.url)
     }
@@ -287,101 +297,106 @@ phix and adapter removal)</td></tr>
 removal and trimming)</td></tr>
     </table>
 """
-        infohtml = self.create_hide_section('information', 
-            '(Show information)', caption, True)
+        infohtml = self.create_hide_section(
+            "information", "(Show information)", caption, True
+        )
         infohtml = "\n".join(infohtml)
 
-        self.intro = introhtml + """ <hr><b>Summary</b>: """ + infohtml +html
+        self.intro = introhtml + """ <hr><b>Summary</b>: """ + infohtml + html
 
-        self.sections.append({
-            'name': None,
-            'anchor': None,
-            'content': self.jinja['canvas'] + "\n".join(self.jinja['sections'])
-        })
+        self.sections.append(
+            {
+                "name": None,
+                "anchor": None,
+                "content": self.jinja["canvas"] + "\n".join(self.jinja["sections"]),
+            }
+        )
 
     def _get_div(self, name, title):
-        div = "<h2>%s</h2>" %  title
+        div = "<h2>%s</h2>" % title
         div += '<div id="chartContainer' + name
         div += '" style="height: 300px; width: 90%;"></div></hr>'
         return div
 
     def _get_df(self, method_name):
         data = getattr(self, method_name)()
-        df = pd.DataFrame({
-            "name": self.get_projects(),
-            "value": data,
-            "url": self.get_urls()})
+        df = pd.DataFrame(
+            {"name": self.get_projects(), "value": data, "url": self.get_urls()}
+        )
         return df
 
     def populate_output_total_reads(self):
         df = self._get_df("get_output_total_reads")
-        self.df['N_final'] = df.copy()
-        self.df['N_final'].rename({'value': 'N_final'}, axis=1, inplace=True)
+        self.df["N_final"] = df.copy()
+        self.df["N_final"].rename({"value": "N_final"}, axis=1, inplace=True)
 
     def populate_adapters(self):
         title = "Adapters content"
         df = self._get_df("get_adapters_percent")
-        self.df['Adapters'] = df.copy()
-        self.df['Adapters'].rename({'value': 'Adapters_content_(%)'}, axis=1,
-            inplace=True)
+        self.df["Adapters"] = df.copy()
+        self.df["Adapters"].rename(
+            {"value": "Adapters_content_(%)"}, axis=1, inplace=True
+        )
         cb = CanvasBar(df, "Adapters content", "adapters", xlabel="Percentage")
-        self.jinja['canvas'] += cb.to_html()
-        self.jinja['sections'].append(self._get_div("adapters", title))
+        self.jinja["canvas"] += cb.to_html()
+        self.jinja["sections"].append(self._get_div("adapters", title))
 
     def populate_nreads_raw(self):
         title = "Number of reads"
         df = self._get_df("get_nreads_raw")
-        self.df['N_raw'] = df.copy()
-        self.df['N_raw'].rename({'value': 'N_raw'}, axis=1, inplace=True)
-        cb = CanvasBar(df, "Number of reads (raw data)", "nreads_raw",
-                    xlabel="Number of reads")
-        self.jinja['canvas'] += cb.to_html()
-        self.jinja['sections'].append(self._get_div("nreads_raw",title))
+        self.df["N_raw"] = df.copy()
+        self.df["N_raw"].rename({"value": "N_raw"}, axis=1, inplace=True)
+        cb = CanvasBar(
+            df, "Number of reads (raw data)", "nreads_raw", xlabel="Number of reads"
+        )
+        self.jinja["canvas"] += cb.to_html()
+        self.jinja["sections"].append(self._get_div("nreads_raw", title))
 
     def populate_mean_quality(self):
         title = "Mean quality (raw data)"
         df = self._get_df("get_mean_quality_samples")
-        self.df['Mean_quality_raw'] = df.copy()
-        self.df['Mean_quality_raw'].rename({'value': 'Mean_quality_raw'},
-            axis=1, inplace=True)
+        self.df["Mean_quality_raw"] = df.copy()
+        self.df["Mean_quality_raw"].rename(
+            {"value": "Mean_quality_raw"}, axis=1, inplace=True
+        )
         cb = CanvasBar(df, title, "mean_quality", xlabel="mean quality")
-        self.jinja['canvas'] += cb.to_html(options={'maxrange':40})
-        self.jinja['sections'].append(self._get_div("mean_quality", title))
+        self.jinja["canvas"] += cb.to_html(options={"maxrange": 40})
+        self.jinja["sections"].append(self._get_div("mean_quality", title))
 
     def populate_gc_samples(self):
         title = "GC content (raw)"
         df = self._get_df("get_gc_content_samples")
-        self.df['GC_raw'] = df.copy()
-        self.df['GC_raw'].rename({'value': 'GC_raw_(%)'}, axis=1, inplace=True)
+        self.df["GC_raw"] = df.copy()
+        self.df["GC_raw"].rename({"value": "GC_raw_(%)"}, axis=1, inplace=True)
         cb = CanvasBar(df, title, "populate_gc_samples", xlabel="Percentage")
-        self.jinja['canvas'] += cb.to_html(options={"maxrange":100})
-        self.jinja['sections'].append(self._get_div("populate_gc_samples",title))
+        self.jinja["canvas"] += cb.to_html(options={"maxrange": 100})
+        self.jinja["sections"].append(self._get_div("populate_gc_samples", title))
 
     def populate_phix(self):
         title = "Phix content"
         df = self._get_df("get_phix_percent")
-        self.df['Phix'] = df.copy()
-        self.df['Phix'].rename({'value': 'Phix_content_(%)'}, inplace=True,
-            axis=1)
+        self.df["Phix"] = df.copy()
+        self.df["Phix"].rename({"value": "Phix_content_(%)"}, inplace=True, axis=1)
         cb = CanvasBar(df, title, "phix", xlabel="Percentage")
-        self.jinja['canvas'] += cb.to_html()
-        self.jinja['sections'].append(self._get_div("phix", title))
+        self.jinja["canvas"] += cb.to_html()
+        self.jinja["sections"].append(self._get_div("phix", title))
 
     def populate_trimming(self):
         title = "Trimming (raw data)"
         df = self._get_df("get_trimming_percent")
-        self.df['Trimmed'] = df.copy()
-        self.df['Trimmed'].rename({'value': 'Trimmed_reads_(%)'}, axis=1,
-            inplace=True)
+        self.df["Trimmed"] = df.copy()
+        self.df["Trimmed"].rename({"value": "Trimmed_reads_(%)"}, axis=1, inplace=True)
         cb = CanvasBar(df, title, "trimming", xlabel="Percentage")
-        self.jinja['canvas'] += cb.to_html()
-        self.jinja['sections'].append(self._get_div("trimming", title))
+        self.jinja["canvas"] += cb.to_html()
+        self.jinja["sections"].append(self._get_div("trimming", title))
 
     def get_projects(self):
-        return [x.data['project'] for x in self.summaries]
+        return [x.data["project"] for x in self.summaries]
 
     def get_urls(self):
-        return [x.replace("summary.json", "summary.html") for x in self.get_unique_names()]
+        return [
+            x.replace("summary.json", "summary.html") for x in self.get_unique_names()
+        ]
 
     def get_unique_names(self):
         """reduce the filenames length removing the common suffix
@@ -406,7 +421,7 @@ removal and trimming)</td></tr>
         return [x.get_phix_percent() for x in self.summaries]
 
     def get_gc_content_samples(self):
-        return [x.get_fastq_stats_samples()['GC content']["R1"] for x in self.summaries]
+        return [x.get_fastq_stats_samples()["GC content"]["R1"] for x in self.summaries]
 
     def get_trimming_percent(self):
         return [x.get_trimming_percent() for x in self.summaries]
@@ -419,4 +434,3 @@ removal and trimming)</td></tr>
 
     def parse(self):
         pass
-

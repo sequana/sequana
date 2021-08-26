@@ -24,8 +24,9 @@ register(MulticoreParam({{threads}}))
 
 check_counts_meta_tables = function(counts, meta){
     # Verify rownames in meta are the same as colnames in counts
+
     if (!isTRUE(all.equal(rownames(meta),colnames(counts)))){
-        stop("Metadata doesn't seem to fit count matrix. Check both inputs")
+        stop("row names of input design do not match count columns. Check both inputs")
     }
     else {
         message("OK: Count and meta tables seems to correspond")
@@ -92,8 +93,7 @@ export_counts = function(dds, outdir){
 
     counts = counts(dds)
     norm_counts = counts(dds, normalized=TRUE)
-    vst_counts = assay(vst(dds, blind=FALSE))
-
+    vst_counts = getVarianceStabilizedData(dds)
 
     write.table(counts, paste(outdir, 'counts_raw.csv', sep="/"), sep=",")
     write.table(norm_counts, paste(outdir, 'counts_normed.csv', sep="/"), sep=",")
@@ -118,6 +118,6 @@ res = pairwise_comparison(dds, {{comparisons_str}}, "{{condition}}",
                           independentFiltering={{independent_filtering}},
                           cooksCutoff={{cooks_cutoff}})
 
-export_dds(dds, "{{outdir}}")
+export_dds(dds, "{{code_dir}}")
 export_pairwise(res, "{{outdir}}")
-export_counts(dds, "{{outdir}}")
+export_counts(dds, "{{counts_dir}}")

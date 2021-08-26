@@ -62,7 +62,8 @@ rule rulegraph:
         # third solution (this one) is to call *cd* the shell commands
 
         import os
-        from sequana import SequanaConfig, DOTParser
+        from sequana_pipetools import SequanaConfig
+        from sequana_pipetools.snaketools import DOTParser
 
         # change relative path to absolute path
         def parse_path(dico):

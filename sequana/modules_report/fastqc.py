@@ -27,6 +27,7 @@ from sequana.lazy import pandas as pd
 from sequana.lazy import pylab
 
 import colorlog
+
 logger = colorlog.getLogger(__name__)
 
 
@@ -34,11 +35,12 @@ from sequana.utils.datatables_js import DataTable
 
 
 class FastQCModule(SequanaBaseModule):
-    """ Write HTML report for fastqc.
+    """Write HTML report for fastqc.
 
     Searches for _fastqc.html files
 
     """
+
     def __init__(self, output_filename="fastqc.html", pattern="*/*_fastqc.html"):
         """
 
@@ -57,34 +59,35 @@ class FastQCModule(SequanaBaseModule):
 
     def add_main_section(self):
         links = glob.glob("{}".format(self.pattern))
-        names = [filename.rsplit('/',1)[1].split('.html')[0] for filename in links]
+        names = [filename.rsplit("/", 1)[1].split(".html")[0] for filename in links]
 
-        df = pd.DataFrame({
-            "names": names,
-            "links": [link.split(os.sep,1)[1] for link in links]
-        })
-        df.sort_values(by='names')
+        df = pd.DataFrame(
+            {"names": names, "links": [link.split(os.sep, 1)[1] for link in links]}
+        )
+        df.sort_values(by="names")
 
         datatable = DataTable(df, "fastqc", index=False)
         datatable.datatable.set_links_to_column("links", "names")
 
         datatable.datatable.datatable_options = {
-            'scrollX': '300px',
-            'pageLength': 30,
-            'scrollCollapse': 'true',
-            'dom': 'rtpB',
+            "scrollX": "300px",
+            "pageLength": 30,
+            "scrollCollapse": "true",
+            "dom": "rtpB",
             "paging": "false",
-            'buttons': ['copy', 'csv']}
+            "buttons": ["copy", "csv"],
+        }
         js = datatable.create_javascript_function()
         html_tab = datatable.create_datatable()
 
         html = "{} {}".format(html_tab, js)
 
-        self.sections.append({
-             "name": "FastQC report(s)",
-             "anchor": "fastqc",
-             "content": "<p> Here below are link(s) to original FastQC report. "
-                        "Please click on one of the links to jump to the main "
-                        "report.  {} </p>".format(html)
-        })
-
+        self.sections.append(
+            {
+                "name": "FastQC report(s)",
+                "anchor": "fastqc",
+                "content": "<p> Here below are link(s) to original FastQC report. "
+                "Please click on one of the links to jump to the main "
+                "report.  {} </p>".format(html),
+            }
+        )

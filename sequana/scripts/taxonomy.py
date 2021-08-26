@@ -18,17 +18,20 @@
 ##############################################################################
 """Standalone dedicated to taxonomic content (kraken)"""
 import os
-import shutil
-import glob
 import sys
 import argparse
 
 from easydev import DevTools
 from sequana.modules_report.kraken import KrakenModule
+from sequana import KrakenPipeline, KrakenSequential
+from sequana import KrakenDownload
+from sequana import sequana_config_path as scfg
+from sequana.taxonomy import Taxonomy
+from sequana import sequana_config_path as cfg
+from sequana.utils import config
 
 import colorlog
 logger = colorlog.getLogger(__name__)
-
 
 
 class Options(argparse.ArgumentParser):
@@ -95,11 +98,8 @@ Issues: http://github.com/sequana/sequana
             help="""Results are stored in report/ directory and results are
                 not shown by default""")
         self.add_argument("--download", dest="download", type=str,
-            default=None, choices=["sequana_db1", "toydb", "minikraken"],
-            help="""download an official sequana DB. The sequana_db1 is stored
-                in a dedicated Synapse page (www.synapse.org). minikraken
-                is downloaded from the kraken's author page, and toydb from
-                sequana github.""")
+            default=None, choices=["toydb"],
+            help="""A toydb example to be downloaded.""")
         self.add_argument("--unclassified-out",
             help="save unclassified sequences to filename")
         self.add_argument("--classified-out",
@@ -129,20 +129,15 @@ def main(args=None):
     logger.setLevel(options.level)
 
     if options.update_taxonomy is True:
-        from sequana.taxonomy import Taxonomy
         tax = Taxonomy()
-        from sequana import sequana_config_path as cfg
         logger.info("Will overwrite the local database taxonomy.dat in {}".format(cfg))
         tax.download_taxonomic_file(overwrite=True)
         sys.exit(0)
 
     # We put the import here to make the --help faster
-    from sequana import KrakenPipeline
-    from sequana.kraken import KrakenSequential
     devtools = DevTools()
 
     if options.download:
-        from sequana import KrakenDownload
         kd = KrakenDownload()
         kd.download(options.download)
         sys.exit()
@@ -155,37 +150,33 @@ def main(args=None):
         devtools.check_exists(options.file2)
         fastq.append(options.file2)
 
-
-    from sequana import sequana_config_path as scfg
     if options.databases is None:
         logger.critical("You must provide a database")
         sys.exit(1)
 
     databases = []
     for database in options.databases:
-        if database == "toydb":
-            database = "kraken_toydb"
-        elif database == "minikraken":
-            database = "minikraken_20141208"
 
-        if os.path.exists(scfg + os.sep + database): # in Sequana path
-            databases.append(scfg + os.sep + database)
+        guess = os.sep.join([scfg, "kraken2_dbs", database])
+        if os.path.exists(guess): # in Sequana path
+            databases.append(guess)
         elif os.path.exists(database): # local database
             databases.append(database)
         else:
-            msg = "Invalid database name (%s). Neither found locally "
-            msg += "or in the sequana path %s; Use the --download option"
-            raise ValueError(msg % (database, scfg))
+            msg = f"Invalid database name {database}. Neither found locally " + \
+                  f"or in the sequana path {scfg}/kraken2_dbs; Use the --download option"
+            logger.error(msg)
+            raise IOError
 
     output_directory = options.directory + os.sep + "kraken"
     devtools.mkdirs(output_directory)
 
     # if there is only one database, use the pipeline else KrakenHierarchical
-    _pathto = lambda x: "{}/kraken/{}".format(options.directory, x) if x else x
+    _pathto = lambda x: f"{options.directory}/kraken/{x}" if x else x
     if len(databases) == 1:
         logger.info("Using 1 database")
         k = KrakenPipeline(fastq, databases[0], threads=options.thread,
-            output_directory=output_directory, confidence=options.confidence)
+            output_directory = output_directory, confidence=options.confidence)
 
         summary = k.run(output_filename_classified=_pathto(options.classified_out),
               output_filename_unclassified=_pathto(options.unclassified_out))
@@ -205,7 +196,6 @@ def main(args=None):
         json.dump( summary, fh, indent=4)
 
     # This statements sets the directory where HTML will be saved
-    from sequana.utils import config
     config.output_dir = options.directory
 
     # output_directory first argument: the directory where to find the data
@@ -218,7 +208,7 @@ def main(args=None):
     if options.html is True:
         ss.onweb()
 
+
 if __name__ == "__main__":
-   import sys
    main(sys.argv)
 

@@ -17,7 +17,6 @@
 #
 ##############################################################################
 import re
-from sequana.annotations import Annotation
 from sequana.fasta import FastA
 
 import colorlog
@@ -29,7 +28,7 @@ __all__ = ["GenBank"]
 
 
 # TODO: we should factorise gff and genbank in a parent class (Annotation)
-class GenBank(Annotation):
+class GenBank():
     """
     ::
 
@@ -38,7 +37,7 @@ class GenBank(Annotation):
 
     """
     def __init__(self, filename):
-        super(GenBank, self).__init__(filename)
+        self.filename = filename
 
     def get_types(self):
 

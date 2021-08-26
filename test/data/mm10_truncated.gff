@@ -1,0 +1,178 @@
+##gff-version 3
+#!genome-build Ensembl GRCm38.p6
+#!genome-version GRCm38
+#!genome-date 2012-01
+#!genome-build-accession NCBI:GCA_000001635.8
+#!genebuild-last-updated 2018-01
+1	Ensembl	chromosome	1	195471971	.	.	.	ID=chromosome:1;Alias=CM000994.2,NC_000067.6,chr1
+###
+1	.	biological_region	3003629	3003751	0.629	-	.	external_name=rank %3D 1;logic_name=firstef
+1	NCBI	biological_region	3009957	3010783	.	+	.	external_name=CH29-168G11 (start);logic_name=mouse_ch29_clones
+1	NCBI	biological_region	3009969	3010627	.	+	.	external_name=CH29-168H10 (start);logic_name=mouse_ch29_clones
+1	NCBI	biological_region	3028057	3028936	.	+	.	external_name=DN-332C11 (end);logic_name=mouse_dn_clones
+1	NCBI	biological_region	3031055	3031498	.	+	.	external_name=WI1-408L1 (end);logic_name=mouse_wi1_clones
+1	NCBI	biological_region	3045372	3046053	.	+	.	external_name=CH29-573J4 (start);logic_name=mouse_ch29_clones
+1	NCBI	biological_region	3049732	3050154	.	+	.	external_name=RP24-86G11 (start);logic_name=mouse_rp24_clones
+1	NCBI	biological_region	3051577	3052653	.	+	.	external_name=B6Ng01-203D22 (start);logic_name=mouse_b6ng01_clones
+1	NCBI	biological_region	3054488	3055154	.	+	.	external_name=MHPP-378N8 (end);logic_name=mouse_mhpp_clones
+1	NCBI	biological_region	3054488	3055174	.	+	.	external_name=MHPP-378N7 (end);logic_name=mouse_mhpp_clones
+1	NCBI	biological_region	3058779	3059273	.	+	.	external_name=WI1-1392L15 (end);logic_name=mouse_wi1_clones
+1	NCBI	biological_region	3061762	3062311	.	-	.	external_name=MHPP-378N8 (start);logic_name=mouse_mhpp_clones
+1	NCBI	biological_region	3061866	3062311	.	-	.	external_name=MHPP-378N7 (start);logic_name=mouse_mhpp_clones
+1	NCBI	biological_region	3062374	3062861	.	+	.	external_name=RP24-144B20 (start);logic_name=mouse_rp24_clones
+1	tRNAscan	biological_region	3063453	3063524	34.6	-	.	external_name=Pseudo;logic_name=trnascan
+1	NCBI	biological_region	3071231	3072117	.	+	.	external_name=B6Ng01-24I7 (start);logic_name=mouse_b6ng01_clones
+1	havana	gene	3073253	3074322	.	+	.	ID=gene:ENSMUSG00000102693;Name=4933401J01Rik;biotype=TEC;description=RIKEN cDNA 4933401J01 gene [Source:MGI Symbol%3BAcc:MGI:1918292];gene_id=ENSMUSG00000102693;logic_name=havana;version=1
+1	havana	transcript	3073253	3074322	.	+	.	ID=transcript:ENSMUST00000193812;Parent=gene:ENSMUSG00000102693;Name=4933401J01Rik-201;biotype=TEC;tag=basic;transcript_id=ENSMUST00000193812;transcript_support_level=NA;version=1
+1	havana	exon	3073253	3074322	.	+	.	Parent=transcript:ENSMUST00000193812;Name=ENSMUSE00001343744;constitutive=1;ensembl_end_phase=-1;ensembl_phase=-1;exon_id=ENSMUSE00001343744;rank=1;version=1
+###
+1	NCBI	biological_region	3075835	3076309	.	-	.	external_name=WI1-408L1 (start);logic_name=mouse_wi1_clones
+1	NCBI	biological_region	3079880	3080529	.	+	.	external_name=WI1-1202N15 (end);logic_name=mouse_wi1_clones
+1	NCBI	biological_region	3086689	3086945	.	+	.	external_name=WI1-1319D4 (start);logic_name=mouse_wi1_clones
+1	NCBI	biological_region	3097178	3097571	.	-	.	external_name=WI1-1392L15 (start);logic_name=mouse_wi1_clones
+1	ensembl	ncRNA_gene	3102016	3102125	.	+	.	ID=gene:ENSMUSG00000064842;Name=Gm26206;biotype=snRNA;description=predicted gene%2C 26206 [Source:MGI Symbol%3BAcc:MGI:5455983];gene_id=ENSMUSG00000064842;logic_name=ncrna;version=1
+1	ensembl	snRNA	3102016	3102125	.	+	.	ID=transcript:ENSMUST00000082908;Parent=gene:ENSMUSG00000064842;Name=Gm26206-201;biotype=snRNA;tag=basic;transcript_id=ENSMUST00000082908;transcript_support_level=NA;version=1
+1	ensembl	exon	3102016	3102125	.	+	.	Parent=transcript:ENSMUST00000082908;Name=ENSMUSE00000522066;constitutive=1;ensembl_end_phase=-1;ensembl_phase=-1;exon_id=ENSMUSE00000522066;rank=1;version=1
+###
+1	NCBI	biological_region	3102781	3103536	.	+	.	external_name=MSMg01-427A9 (end);logic_name=mouse_msmg01_clones
+1	NCBI	biological_region	3105846	3106660	.	+	.	external_name=CH29-33N21 (end);logic_name=mouse_ch29_clones
+1	NCBI	biological_region	3118596	3119228	.	+	.	external_name=WI1-180B7 (end);logic_name=mouse_wi1_clones
+1	NCBI	biological_region	3119244	3119735	.	+	.	external_name=MSMg01-466J16 (end);logic_name=mouse_msmg01_clones
+1	NCBI	biological_region	3119492	3120225	.	+	.	external_name=RP24-388F15 (start);logic_name=mouse_rp24_clones
+1	NCBI	biological_region	3120851	3121445	.	-	.	external_name=WI1-1202N15 (start);logic_name=mouse_wi1_clones
+1	NCBI	biological_region	3123015	3123496	.	-	.	external_name=WI1-1319D4 (end);logic_name=mouse_wi1_clones
+1	NCBI	biological_region	3127652	3128780	.	+	.	external_name=B6Ng01-99I9 (end);logic_name=mouse_b6ng01_clones
+1	NCBI	biological_region	3127823	3128472	.	+	.	external_name=RP24-315L11 (start);logic_name=mouse_rp24_clones
+1	NCBI	biological_region	3131130	3131885	.	+	.	external_name=BMQ-261D23 (start);logic_name=mouse_bmq_clones
+1	NCBI	biological_region	3135505	3136264	.	+	.	external_name=BMQ-457G20 (end);logic_name=mouse_bmq_clones
+1	NCBI	biological_region	3135643	3136253	.	+	.	external_name=WI1-1382D20 (end);logic_name=mouse_wi1_clones
+1	NCBI	biological_region	3147641	3148495	.	-	.	external_name=DN-332C11 (start);logic_name=mouse_dn_clones
+1	NCBI	biological_region	3157841	3158464	.	-	.	external_name=WI1-180B7 (start);logic_name=mouse_wi1_clones
+1	NCBI	biological_region	3166588	3167763	.	-	.	external_name=B6Ng01-203D22 (end);logic_name=mouse_b6ng01_clones
+1	NCBI	biological_region	3167797	3168621	.	+	.	external_name=DN-389F17 (start);logic_name=mouse_dn_clones
+1	NCBI	biological_region	3167804	3168531	.	+	.	external_name=CH29-76N2 (start);logic_name=mouse_ch29_clones
+1	NCBI	biological_region	3170406	3170830	.	+	.	external_name=MSMg01-198H12 (end);logic_name=mouse_msmg01_clones
+1	NCBI	biological_region	3181289	3181906	.	-	.	external_name=WI1-1382D20 (start);logic_name=mouse_wi1_clones
+1	NCBI	biological_region	3181447	3182206	.	-	.	external_name=BMQ-261D23 (end);logic_name=mouse_bmq_clones
+1	NCBI	biological_region	3181808	3182131	.	+	.	external_name=WI1-2568J5 (start);logic_name=mouse_wi1_clones
+1	.	biological_region	3185195	3185469	0.857	+	.	external_name=rank %3D 1;logic_name=firstef
+1	NCBI	biological_region	3186930	3187510	.	+	.	external_name=WI1-2092G21 (start);logic_name=mouse_wi1_clones
+1	NCBI	biological_region	3187205	3187766	.	+	.	external_name=RP23-317L18 (end);logic_name=mouse_rp23_clones
+1	NCBI	biological_region	3199782	3200139	.	+	.	external_name=DN-25F22 (start);logic_name=mouse_dn_clones
+1	NCBI	biological_region	3204849	3205477	.	+	.	external_name=WI1-1183G6 (end);logic_name=mouse_wi1_clones
+1	ensembl_havana	gene	3205901	3671498	.	-	.	ID=gene:ENSMUSG00000051951;Name=Xkr4;biotype=protein_coding;description=X-linked Kx blood group related 4 [Source:MGI Symbol%3BAcc:MGI:3528744];gene_id=ENSMUSG00000051951;logic_name=ensembl_havana_gene;version=5
+1	havana	lnc_RNA	3205901	3216344	.	-	.	ID=transcript:ENSMUST00000162897;Parent=gene:ENSMUSG00000051951;Name=Xkr4-203;biotype=processed_transcript;transcript_id=ENSMUST00000162897;transcript_support_level=1;version=1
+1	havana	exon	3205901	3207317	.	-	.	Parent=transcript:ENSMUST00000162897;Name=ENSMUSE00000866652;constitutive=0;ensembl_end_phase=-1;ensembl_phase=-1;exon_id=ENSMUSE00000866652;rank=2;version=1
+1	havana	exon	3213609	3216344	.	-	.	Parent=transcript:ENSMUST00000162897;Name=ENSMUSE00000858910;constitutive=0;ensembl_end_phase=-1;ensembl_phase=-1;exon_id=ENSMUSE00000858910;rank=1;version=1
+1	havana	lnc_RNA	3206523	3215632	.	-	.	ID=transcript:ENSMUST00000159265;Parent=gene:ENSMUSG00000051951;Name=Xkr4-202;biotype=processed_transcript;transcript_id=ENSMUST00000159265;transcript_support_level=1;version=1
+1	havana	exon	3206523	3207317	.	-	.	Parent=transcript:ENSMUST00000159265;Name=ENSMUSE00000867897;constitutive=0;ensembl_end_phase=-1;ensembl_phase=-1;exon_id=ENSMUSE00000867897;rank=2;version=1
+1	havana	exon	3213439	3215632	.	-	.	Parent=transcript:ENSMUST00000159265;Name=ENSMUSE00000863980;constitutive=0;ensembl_end_phase=-1;ensembl_phase=-1;exon_id=ENSMUSE00000863980;rank=1;version=1
+1	ensembl_havana	mRNA	3214482	3671498	.	-	.	ID=transcript:ENSMUST00000070533;Parent=gene:ENSMUSG00000051951;Name=Xkr4-201;biotype=protein_coding;ccdsid=CCDS14803.1;tag=basic;transcript_id=ENSMUST00000070533;transcript_support_level=1;version=4
+1	ensembl_havana	three_prime_UTR	3214482	3216021	.	-	.	Parent=transcript:ENSMUST00000070533
+1	ensembl_havana	exon	3214482	3216968	.	-	.	Parent=transcript:ENSMUST00000070533;Name=ENSMUSE00000448840;constitutive=0;ensembl_end_phase=-1;ensembl_phase=1;exon_id=ENSMUSE00000448840;rank=3;version=2
+1	ensembl_havana	CDS	3216022	3216968	.	-	2	ID=CDS:ENSMUSP00000070648;Parent=transcript:ENSMUST00000070533;protein_id=ENSMUSP00000070648
+1	ensembl_havana	exon	3421702	3421901	.	-	.	Parent=transcript:ENSMUST00000070533;Name=ENSMUSE00000449517;constitutive=0;ensembl_end_phase=1;ensembl_phase=2;exon_id=ENSMUSE00000449517;rank=2;version=3
+1	ensembl_havana	CDS	3421702	3421901	.	-	1	ID=CDS:ENSMUSP00000070648;Parent=transcript:ENSMUST00000070533;protein_id=ENSMUSP00000070648
+1	ensembl_havana	CDS	3670552	3671348	.	-	0	ID=CDS:ENSMUSP00000070648;Parent=transcript:ENSMUST00000070533;protein_id=ENSMUSP00000070648
+1	ensembl_havana	exon	3670552	3671498	.	-	.	Parent=transcript:ENSMUST00000070533;Name=ENSMUSE00000485541;constitutive=0;ensembl_end_phase=2;ensembl_phase=-1;exon_id=ENSMUSE00000485541;rank=1;version=3
+1	ensembl_havana	five_prime_UTR	3671349	3671498	.	-	.	Parent=transcript:ENSMUST00000070533
+###
+1	NCBI	biological_region	3208979	3209655	.	+	.	external_name=WI1-590O20 (end);logic_name=mouse_wi1_clones
+1	NCBI	biological_region	3210488	3211310	.	-	.	external_name=CH29-573J4 (end);logic_name=mouse_ch29_clones
+1	NCBI	biological_region	3212312	3212854	.	+	.	external_name=WI1-2122J4 (end);logic_name=mouse_wi1_clones
+1	NCBI	biological_region	3213696	3214231	.	-	.	external_name=RP24-86G11 (end);logic_name=mouse_rp24_clones
+1	NCBI	biological_region	3214077	3214826	.	+	.	external_name=C3H-106K12 (end);logic_name=mouse_c3h_clones
+1	NCBI	biological_region	3215274	3215362	.	+	.	external_name=WI1-221K10 (start);logic_name=mouse_wi1_clones
+1	NCBI	biological_region	3215674	3216712	.	-	.	external_name=B6Ng01-24I7 (end);logic_name=mouse_b6ng01_clones
+1	NCBI	biological_region	3216624	3216996	.	+	.	external_name=WI1-1463G3 (end);logic_name=mouse_wi1_clones
+1	NCBI	biological_region	3216624	3217257	.	+	.	external_name=WI1-1463K17 (end);logic_name=mouse_wi1_clones
+1	NCBI	biological_region	3216707	3217721	.	+	.	external_name=B6Ng01-185N2 (end);logic_name=mouse_b6ng01_clones
+1	NCBI	biological_region	3217650	3218242	.	+	.	external_name=WI1-2290O22 (start);logic_name=mouse_wi1_clones
+1	NCBI	biological_region	3217876	3218596	.	+	.	external_name=C3H-192E22 (start);logic_name=mouse_c3h_clones
+1	NCBI	biological_region	3219073	3219755	.	-	.	external_name=WI1-2568J5 (end);logic_name=mouse_wi1_clones
+1	NCBI	biological_region	3220660	3221342	.	+	.	external_name=MHPN-287L5 (end);logic_name=mouse_mhpn_clones
+1	NCBI	biological_region	3228718	3229536	.	-	.	external_name=MHPN-287L5 (start);logic_name=mouse_mhpn_clones
+1	NCBI	biological_region	3229076	3229613	.	-	.	external_name=WI1-2092G21 (end);logic_name=mouse_wi1_clones
+1	NCBI	biological_region	3229536	3230230	.	+	.	external_name=MSMg01-378D2 (start);logic_name=mouse_msmg01_clones
+1	NCBI	biological_region	3245338	3246064	.	-	.	external_name=CH29-168G11 (end);logic_name=mouse_ch29_clones
+1	NCBI	biological_region	3245343	3246102	.	-	.	external_name=CH29-168H10 (end);logic_name=mouse_ch29_clones
+1	NCBI	biological_region	3245345	3246148	.	-	.	external_name=DN-389F17 (end);logic_name=mouse_dn_clones
+1	NCBI	biological_region	3245492	3246194	.	-	.	external_name=WI1-590O20 (start);logic_name=mouse_wi1_clones
+1	NCBI	biological_region	3245683	3246494	.	-	.	external_name=RP24-144B20 (end);logic_name=mouse_rp24_clones
+1	NCBI	biological_region	3246194	3247020	.	+	.	external_name=DN-194I16 (end);logic_name=mouse_dn_clones
+1	NCBI	biological_region	3246202	3247128	.	+	.	external_name=DN-157F12 (end);logic_name=mouse_dn_clones
+1	NCBI	biological_region	3247562	3248053	.	-	.	external_name=WI1-1183G6 (start);logic_name=mouse_wi1_clones
+1	NCBI	biological_region	3252131	3252592	.	-	.	external_name=WI1-221K10 (end);logic_name=mouse_wi1_clones
+1	havana	pseudogene	3252757	3253236	.	+	.	ID=gene:ENSMUSG00000102851;Name=Gm18956;biotype=processed_pseudogene;description=predicted gene%2C 18956 [Source:MGI Symbol%3BAcc:MGI:5011141];gene_id=ENSMUSG00000102851;logic_name=havana;version=1
+1	havana	pseudogenic_transcript	3252757	3253236	.	+	.	ID=transcript:ENSMUST00000192857;Parent=gene:ENSMUSG00000102851;Name=Gm18956-201;biotype=processed_pseudogene;tag=basic;transcript_id=ENSMUST00000192857;transcript_support_level=NA;version=1
+1	havana	exon	3252757	3253236	.	+	.	Parent=transcript:ENSMUST00000192857;Name=ENSMUSE00001339323;constitutive=1;ensembl_end_phase=-1;ensembl_phase=-1;exon_id=ENSMUSE00001339323;rank=1;version=1
+###
+1	NCBI	biological_region	3253121	3253753	.	-	.	external_name=WI1-2290O22 (end);logic_name=mouse_wi1_clones
+1	NCBI	biological_region	3254244	3254820	.	-	.	external_name=WI1-2122J4 (start);logic_name=mouse_wi1_clones
+1	NCBI	biological_region	3254830	3255930	.	+	.	external_name=B6Ng01-25M6 (start);logic_name=mouse_b6ng01_clones
+1	NCBI	biological_region	3258174	3258759	.	-	.	external_name=WI1-1463K17 (start);logic_name=mouse_wi1_clones
+1	NCBI	biological_region	3258379	3258728	.	-	.	external_name=WI1-1463G3 (start);logic_name=mouse_wi1_clones
+1	NCBI	biological_region	3268388	3268953	.	-	.	external_name=B6Ng01-99I9 (start);logic_name=mouse_b6ng01_clones
+1	NCBI	biological_region	3268773	3269371	.	-	.	external_name=MSMg01-427A9 (start);logic_name=mouse_msmg01_clones
+1	NCBI	biological_region	3269108	3269371	.	-	.	external_name=MSMg01-466J16 (start);logic_name=mouse_msmg01_clones
+1	NCBI	biological_region	3269366	3270027	.	+	.	external_name=MSMg01-301C1 (end);logic_name=mouse_msmg01_clones
+1	NCBI	biological_region	3269736	3270424	.	-	.	external_name=MSMg01-198H12 (start);logic_name=mouse_msmg01_clones
+1	NCBI	biological_region	3270440	3271322	.	+	.	external_name=DN-251L4 (end);logic_name=mouse_dn_clones
+1	NCBI	biological_region	3270447	3270825	.	+	.	external_name=CH29-547O5 (start);logic_name=mouse_ch29_clones
+1	NCBI	biological_region	3273103	3273720	.	-	.	external_name=RP24-388F15 (end);logic_name=mouse_rp24_clones
+1	.	biological_region	3274410	3274526	0.799	-	.	external_name=rank %3D 1;logic_name=firstef
+1	NCBI	biological_region	3282929	3283211	.	+	.	external_name=WI1-1105G2 (start);logic_name=mouse_wi1_clones
+1	NCBI	biological_region	3286889	3287299	.	+	.	external_name=B6Ng01-296H18 (end);logic_name=mouse_b6ng01_clones
+1	NCBI	biological_region	3291730	3292841	.	+	.	external_name=B6Ng01-106B2 (start);logic_name=mouse_b6ng01_clones
+1	NCBI	biological_region	3291807	3292614	.	+	.	external_name=DN-397I19 (start);logic_name=mouse_dn_clones
+1	NCBI	biological_region	3295892	3296527	.	+	.	external_name=C3H-226D24 (start);logic_name=mouse_c3h_clones
+1	NCBI	biological_region	3297391	3298236	.	-	.	external_name=BMQ-457G20 (start);logic_name=mouse_bmq_clones
+1	NCBI	biological_region	3323736	3323893	.	-	.	external_name=WI1-1105G2 (end);logic_name=mouse_wi1_clones
+1	NCBI	biological_region	3328908	3329095	.	+	.	external_name=WI1-235C2 (start);logic_name=mouse_wi1_clones
+1	NCBI	biological_region	3329470	3330144	.	-	.	external_name=CH29-33N21 (start);logic_name=mouse_ch29_clones
+1	NCBI	biological_region	3329688	3330164	.	-	.	external_name=MSMg01-378D2 (end);logic_name=mouse_msmg01_clones
+1	NCBI	biological_region	3330170	3330949	.	+	.	external_name=DN-491O24 (end);logic_name=mouse_dn_clones
+1	NCBI	biological_region	3331329	3331812	.	+	.	external_name=RP24-100L11 (start);logic_name=mouse_rp24_clones
+1	NCBI	biological_region	3332460	3333159	.	+	.	external_name=MSMg01-544N17 (start);logic_name=mouse_msmg01_clones
+1	NCBI	biological_region	3334873	3335084	.	+	.	external_name=C3H-111M12 (end);logic_name=mouse_c3h_clones
+1	NCBI	biological_region	3337679	3338361	.	-	.	external_name=RP24-315L11 (end);logic_name=mouse_rp24_clones
+1	NCBI	biological_region	3339428	3340215	.	-	.	external_name=C3H-106K12 (start);logic_name=mouse_c3h_clones
+1	NCBI	biological_region	3349597	3350770	.	+	.	external_name=B6Ng01-264L6 (end);logic_name=mouse_b6ng01_clones
+1	NCBI	biological_region	3351156	3351796	.	+	.	external_name=MSMg01-133A2 (end);logic_name=mouse_msmg01_clones
+1	NCBI	biological_region	3356053	3356540	.	+	.	external_name=WI1-2818P22 (start);logic_name=mouse_wi1_clones
+1	NCBI	biological_region	3356328	3356533	.	+	.	external_name=WI1-1282J8 (start);logic_name=mouse_wi1_clones
+1	NCBI	biological_region	3356329	3356561	.	+	.	external_name=WI1-1886H8 (start);logic_name=mouse_wi1_clones
+1	NCBI	biological_region	3357536	3358333	.	-	.	external_name=DN-25F22 (end);logic_name=mouse_dn_clones
+1	NCBI	biological_region	3358349	3359552	.	+	.	external_name=B6Ng01-260D3 (end);logic_name=mouse_b6ng01_clones
+1	NCBI	biological_region	3358381	3358880	.	+	.	external_name=RP23-136L22 (start);logic_name=mouse_rp23_clones
+1	NCBI	biological_region	3359281	3359939	.	+	.	external_name=RP24-271O22 (start);logic_name=mouse_rp24_clones
+1	NCBI	biological_region	3360809	3361606	.	+	.	external_name=CH29-547D4 (end);logic_name=mouse_ch29_clones
+1	NCBI	biological_region	3365551	3366329	.	-	.	external_name=C3H-192E22 (end);logic_name=mouse_c3h_clones
+1	havana	gene	3365731	3368549	.	-	.	ID=gene:ENSMUSG00000103377;Name=Gm37180;biotype=TEC;description=predicted gene%2C 37180 [Source:MGI Symbol%3BAcc:MGI:5610408];gene_id=ENSMUSG00000103377;logic_name=havana;version=1
+1	havana	transcript	3365731	3368549	.	-	.	ID=transcript:ENSMUST00000195335;Parent=gene:ENSMUSG00000103377;Name=Gm37180-201;biotype=TEC;tag=basic;transcript_id=ENSMUST00000195335;transcript_support_level=NA;version=1
+1	havana	exon	3365731	3368549	.	-	.	Parent=transcript:ENSMUST00000195335;Name=ENSMUSE00001343189;constitutive=1;ensembl_end_phase=-1;ensembl_phase=-1;exon_id=ENSMUSE00001343189;rank=1;version=1
+###
+1	NCBI	biological_region	3366120	3366380	.	-	.	external_name=WI1-235C2 (end);logic_name=mouse_wi1_clones
+1	NCBI	biological_region	3368117	3368228	.	+	.	external_name=WI1-915B16 (end);logic_name=mouse_wi1_clones
+1	NCBI	biological_region	3375056	3375281	.	+	.	external_name=WI1-1775C24 (end);logic_name=mouse_wi1_clones
+1	havana	gene	3375556	3377788	.	-	.	ID=gene:ENSMUSG00000104017;Name=Gm37363;biotype=TEC;description=predicted gene%2C 37363 [Source:MGI Symbol%3BAcc:MGI:5610591];gene_id=ENSMUSG00000104017;logic_name=havana;version=1
+1	havana	transcript	3375556	3377788	.	-	.	ID=transcript:ENSMUST00000192336;Parent=gene:ENSMUSG00000104017;Name=Gm37363-201;biotype=TEC;tag=basic;transcript_id=ENSMUST00000192336;transcript_support_level=NA;version=1
+1	havana	exon	3375556	3377788	.	-	.	Parent=transcript:ENSMUST00000192336;Name=ENSMUSE00001343686;constitutive=1;ensembl_end_phase=-1;ensembl_phase=-1;exon_id=ENSMUSE00001343686;rank=1;version=1
+###
+1	NCBI	biological_region	3376433	3377214	.	+	.	external_name=CH29-33D18 (end);logic_name=mouse_ch29_clones
+1	NCBI	biological_region	3383067	3383547	.	+	.	external_name=RP24-265O12 (start);logic_name=mouse_rp24_clones
+1	NCBI	biological_region	3384054	3384530	.	-	.	external_name=RP23-317L18 (start);logic_name=mouse_rp23_clones
+1	NCBI	biological_region	3384560	3385137	.	+	.	external_name=MSMg01-412K8 (start);logic_name=mouse_msmg01_clones
+1	NCBI	biological_region	3384566	3385271	.	+	.	external_name=MSMg01-546C18 (start);logic_name=mouse_msmg01_clones
+1	NCBI	biological_region	3384581	3385244	.	+	.	external_name=DN-257M14 (end);logic_name=mouse_dn_clones
+1	NCBI	biological_region	3384601	3384990	.	+	.	external_name=RP23-115C1 (end);logic_name=mouse_rp23_clones
+1	NCBI	biological_region	3384601	3385000	.	+	.	external_name=RP23-115I1 (end);logic_name=mouse_rp23_clones
+1	NCBI	biological_region	3387454	3387815	.	+	.	external_name=WI1-2303O15 (start);logic_name=mouse_wi1_clones
+1	NCBI	biological_region	3392794	3393378	.	-	.	external_name=WI1-2818P22 (end);logic_name=mouse_wi1_clones
+1	NCBI	biological_region	3394781	3395708	.	-	.	external_name=B6Ng01-106B2 (end);logic_name=mouse_b6ng01_clones
+1	NCBI	biological_region	3395702	3396262	.	+	.	external_name=MSMg01-521A17 (end);logic_name=mouse_msmg01_clones
+1	NCBI	biological_region	3395727	3396083	.	+	.	external_name=RP23-103A4 (end);logic_name=mouse_rp23_clones
+1	NCBI	biological_region	3395730	3396673	.	+	.	external_name=CH29-604H5 (start);logic_name=mouse_ch29_clones
+1	NCBI	biological_region	3395740	3396604	.	+	.	external_name=CH29-604H4 (start);logic_name=mouse_ch29_clones
+1	NCBI	biological_region	3397733	3398155	.	-	.	external_name=WI1-1886H8 (end);logic_name=mouse_wi1_clones
+1	NCBI	biological_region	3397991	3398140	.	-	.	external_name=WI1-1282J8 (end);logic_name=mouse_wi1_clones

@@ -16,29 +16,27 @@
 #
 ##############################################################################
 import sys
-import os
-
-from pathlib import Path
-from jinja2 import Environment, PackageLoader
 import subprocess
-import seaborn as sns
+from pathlib import Path
 from itertools import combinations
-import os
+
+from jinja2 import Environment, PackageLoader
+import seaborn as sns
 
 from sequana.lazy import pandas as pd
 from sequana.lazy import pylab
 from sequana.lazy import numpy as np
-
 from sequana.gff3 import GFF3
 from sequana.viz import Volcano
-from sequana.enrichment import PantherEnrichment, KeggPathwayEnrichment
+from sequana.enrichment import PantherEnrichment
+from sequana.enrichment import KEGGPathwayEnrichment
+from sequana.featurecounts import FeatureCount
+
 
 import colorlog
 
 logger = colorlog.getLogger(__name__)
 
-
-import glob
 
 __all__ = ["RNADiffAnalysis", "RNADiffResults", "RNADiffTable", "RNADesign"]
 
@@ -49,16 +47,20 @@ def strip(text):
     except AttributeError:
         return text
 
+
 class RNADesign:
     """Simple RNA design handler"""
 
     def __init__(self, filename, sep="\s*,\s*", reference=None):
         self.filename = filename
         # \s to strip the white spaces
-        self.df = pd.read_csv(filename, sep=sep, engine="python", 
-                comment="#",
-                dtype={"label": str})
-
+        self.df = pd.read_csv(
+            filename, sep=sep, engine="python", comment="#", dtype={"label": str}
+        )
+        if reference and reference not in self.conditions:
+            raise ValueError(
+                f"{reference} condition (for the reference) not found in the conditions of your design file"
+            )
         self.reference = reference
 
     def _get_conditions(self):
@@ -79,6 +81,9 @@ class RNADesign:
 
     comparisons = property(_get_comparisons)
 
+    def keep_conditions(self, conditions):
+        self.df = self.df.query("condition in @conditions")
+
 
 class RNADiffAnalysis:
     """A tool to prepare and run a RNA-seq differential analysis with DESeq2
@@ -91,6 +96,10 @@ class RNADiffAnalysis:
         names in groups_tsv.
     :param comparisons: A list of tuples indicating comparisons to be made e.g A vs B would be [("A", "B")]
     :param batch: None for no batch effect or name of a column in groups_tsv to add a batch effec.
+    :param keep_all_conditions: if user set comparisons, it means will only want
+        to include some comparisons and therefore their conditions. Yet,
+        sometimes, you may still want to keep all conditions in the diffential
+        analysis. If some set this flag to True.
     :param fit_type: Default "parametric".
     :param beta_prior: Default False.
     :param independent_filtering: To let DESeq2 perform the independentFiltering or not.
@@ -106,11 +115,16 @@ class RNADiffAnalysis:
 
     This class reads a :class:`sequana.featurecounts.`
 
-
     ::
 
         r = rnadiff.RNADiffAnalysis("counts.csv", "design.csv",
                 condition="condition", comparisons=[(("A", "B"), ('A', "C")],
+
+
+    For developers: the rnadiff_template.R script behind the scene expects those
+    attributes to be found in the RNADiffAnalysis class: counts_filename,
+    design_filename, fit_type, fonction, comparison_str, independent_filtering,
+    cooks_cutoff, code_dir, outdir, counts_dir, beta_prior, threads
 
     """
 
@@ -123,7 +137,9 @@ class RNADiffAnalysis:
         counts_file,
         design_file,
         condition,
-        comparisons,
+        keep_all_conditions=False,
+        reference=None,
+        comparisons=None,
         batch=None,
         fit_type="parametric",
         beta_prior=False,
@@ -138,40 +154,96 @@ class RNADiffAnalysis:
         outdir="rnadiff",
         sep_counts=",",
         sep_design="\s*,\s*",
+        minimum_mean_reads_per_gene=0,
     ):
 
+        # if set, we can filter genes that have low counts (on average)
+        self.minimum_mean_reads_per_gene = minimum_mean_reads_per_gene
+
+        # define some output directory and create them
         self.outdir = Path(outdir)
+        self.counts_dir = self.outdir / "counts"
+        self.code_dir = self.outdir / "code"
+
+        self.outdir.mkdir(exist_ok=True)
+        self.code_dir.mkdir(exist_ok=True)
+        self.counts_dir.mkdir(exist_ok=True)
 
         self.usr_counts = counts_file
-        self.usr_design = design_file
 
-        self.counts_filename = self.outdir / "counts.csv"
-        self.design_filename = self.outdir / "design.csv"
+        self.counts_filename = self.code_dir / "counts.csv"
 
-        self.counts, self.design = self.check_and_save_input_tables(
-            sep_counts, sep_design
-        )
+        # Read and check the design file. Filtering if comparisons is provided
+        self.design = RNADesign(design_file, sep=sep_design, reference=reference)
+        self.comparisons = comparisons if comparisons else self.design.comparisons
 
+    
+        _conditions = {x for comp in self.comparisons for x in comp}
+        if not keep_all_conditions:
+            self.design.keep_conditions(_conditions)
+        logger.info(f"Conditions that are going to be included: ")
+        for x in self.design.conditions:
+            logger.info(f" - {x}")
+        # we do not sort the design but the user order. Important for plotting
+        self.design = self.design.df.set_index("label")
+
+        # save the design file keeping track of its name
+        self.design_filename = self.code_dir / "design.csv"
+        self.design.to_csv(self.design_filename)
+
+        # Reads and check the count file
+        self.counts = self.check_and_save_input_tables(sep_counts)
+
+        # the name of the condition in the design file
         self.condition = condition
         self.check_condition()
 
-        self.comparisons = comparisons
+        # check comparisons and print information
         self.check_comparisons()
 
+        logger.info(f"Comparisons to be included:")
+        for x in self.comparisons:
+            logger.info(f" - {x}")
         self.comparisons_str = (
             f"list({', '.join(['c' + str(x) for x in self.comparisons])})"
         )
+
+        # For DeSeq2
         self.batch = batch
         self.model = f"~{batch + '+' + condition if batch else condition}"
         self.fit_type = fit_type
         self.beta_prior = "TRUE" if beta_prior else "FALSE"
         self.independent_filtering = "TRUE" if independent_filtering else "FALSE"
         self.cooks_cutoff = cooks_cutoff if cooks_cutoff else "TRUE"
+
+        # for metadata
         self.gff = gff
         self.fc_feature = fc_feature
         self.fc_attribute = fc_attribute
         self.annot_cols = annot_cols
         self.threads = threads
+
+        # sanity check for the R scripts:
+        for attr in (
+            "counts_filename",
+            "design_filename",
+            "fit_type",
+            "comparisons_str",
+            "independent_filtering",
+            "cooks_cutoff",
+            "code_dir",
+            "outdir",
+            "counts_dir",
+            "beta_prior",
+            "threads",
+        ):
+            try:
+                getattr(self, attr)
+            except AttributeError as err:
+                logger.error(
+                    f"Attribute {attr} missing in the RNADiffAnalysis class. cannot go further"
+                )
+                raise Exception(err)
 
     def __repr__(self):
         info = f"RNADiffAnalysis object:\n\
@@ -184,32 +256,35 @@ Design overview:\n\
 
         return info
 
-    def check_and_save_input_tables(self, sep_counts, sep_design):
+    def check_and_save_input_tables(self, sep_counts):
+
+        # input may be an existing rnadiff.csv file create with FeatureCount
+        # class, or (if it fails) a feature count file (tabulated with
+        # Chr/Start/Geneid columns)
         try:
-            self.outdir.mkdir()
-        except:
-            pass
-
-        counts = pd.read_csv(
-            self.usr_counts, sep=sep_counts, index_col="Geneid", comment="#"
-        ).sort_index(axis=1)
-
-
-        design = RNADesign(self.usr_design, sep=sep_design)
-        design = design.df.set_index("label").sort_index()
-
-        if list(counts.columns) != list(design.index):
-            logger.error(
-                f"Counts columns and design rows does not match (after sorting)."
+            # low memory set to False to avoid warnings (see pandas.read_csv doc)
+            counts = pd.read_csv(
+                self.usr_counts,
+                sep=sep_counts,
+                index_col="Geneid",
+                comment="#",
+                low_memory=False,
             )
-            logger.error(counts.columns)
-            logger.error(design.index)
-            sys.exit(1)
+        except ValueError:
+            counts = FeatureCount(self.usr_counts).df
+
+        counts = counts[counts.mean(axis=1) > self.minimum_mean_reads_per_gene]
+
+        # filter count based on the design and the comparisons provide in the
+        # constructor so that columns match as expected by a DESeq2 analysis.
+
+        counts = counts[self.design.index]
+
+        # Save this sub count file
 
         counts.to_csv(self.counts_filename)
-        design.to_csv(self.design_filename)
 
-        return counts, design
+        return counts
 
     def check_condition(self):
         # set condition of the statistical model
@@ -242,7 +317,7 @@ or comparisons. possible values are {valid_conditions}"""
         """
         logger.info("Running DESeq2 analysis. Please wait")
 
-        rnadiff_script = self.outdir / "rnadiff_light.R"
+        rnadiff_script = self.code_dir / "rnadiff_light.R"
 
         with open(rnadiff_script, "w") as f:
             f.write(RNADiffAnalysis.template.render(self.__dict__))
@@ -264,18 +339,15 @@ or comparisons. possible values are {valid_conditions}"""
 
         # Capture rnadiff output, Unfortunately, R code mixes stdout/stderr
         # FIXME
-        with open(self.outdir / "rnadiff.err", "w") as f:
+        with open(self.code_dir / "rnadiff.err", "w") as f:
             f.write(stderr)
-        with open(self.outdir / "rnadiff.out", "w") as f:
+        with open(self.code_dir / "rnadiff.out", "w") as f:
             f.write(stdout)
 
-        # if os.path.exists():
-        #    logger.error(f"stderr of R call is not empty: {p.stderr}")
-        #    sys.exit(1)
+        logger.info("DGE analysis done.")
 
         results = RNADiffResults(
             self.outdir,
-            self.design_filename,
             condition=self.condition,
             gff=self.gff,
             fc_feature=self.fc_feature,
@@ -287,7 +359,17 @@ or comparisons. possible values are {valid_conditions}"""
 
 class RNADiffTable:
     def __init__(self, path, alpha=0.05, log2_fc=0, sep=",", condition="condition"):
-        """ A representation of the results of a single rnadiff comparison """
+        """A representation of the results of a single rnadiff comparison
+
+        Expect to find output of RNADiffAnalysis file named after condt1_vs_cond2_degs_DESeq2.csv
+
+        ::
+
+            from sequana.rnadiff import RNADiffTable
+            RNADiffTable("A_vs_B_degs_DESeq2.csv")
+
+
+        """
         self.path = Path(path)
         self.name = self.path.stem.replace("_degs_DESeq2", "").replace("-", "_")
 
@@ -295,6 +377,7 @@ class RNADiffTable:
         self._log2_fc = log2_fc
 
         self.df = pd.read_csv(self.path, index_col=0, sep=sep)
+        self.df.padj[self.df.padj == 0] = 1e-50
         self.condition = condition
 
         self.filt_df = self.filter()
@@ -362,6 +445,7 @@ class RNADiffTable:
         limit_broken_line=[20, 40],
         plotly=False,
         annotations=None,
+        hover_name=None,
     ):
         """
 
@@ -371,8 +455,8 @@ class RNADiffTable:
             from sequana.rnadiff import RNADiffResults
             from sequana import sequana_data
 
-            r = RNADiffResults(sequana_data("rnadiff/rnadiff_onecond_1"))
-            r.plot_volcano()
+            r = RNADiffResults(sequana_data("rnadiff/", "doc"))
+            r.comparisons["A_vs_B"].plot_volcano()
 
         """
 
@@ -393,16 +477,17 @@ class RNADiffTable:
                 "<{}".format(padj) if x else ">={}".format(padj) for x in df.padj < padj
             ]
 
-            if "Name" in df.columns:
-                hover_name = "Name"
-            elif "gene_id" in df.columns:
-                hover_name = "gene_id"
-            elif "locus_tag" in df.columns:
-                hover_name = "locus_tag"
-            elif "ID" in df.columns:
-                hover_name = "ID"
-            else:
-                hover_name = None
+            if hover_name is not None:
+                if hover_name not in df.columns:
+                    logger.warning(
+                        f"hover_name {hover_name} not in the GFF attributes. Switching to automatic choice"
+                    )
+                    hover_name = None
+            if hover_name is None:
+                for name in ["Name", "gene_name", "gene_id", "locus_tag", "ID"]:
+                    if name in df.columns:
+                        hover_name = name
+
             fig = px.scatter(
                 df,
                 x="log2FoldChange",
@@ -575,7 +660,6 @@ class RNADiffResults:
     def __init__(
         self,
         rnadiff_folder,
-        design_file=None,
         gff=None,
         fc_attribute=None,
         fc_feature=None,
@@ -586,64 +670,45 @@ class RNADiffResults:
         condition="condition",
         annot_cols=None,
         # annot_cols=["ID", "Name", "gene_biotype"],
+        **kwargs,
     ):
         """
 
-        :rnadiff_folder:
+        :rnadiff_folder: a valid rnadiff folder created by :class:`RNADiffAnalysis`
+
+        ::
+
+            RNADiffResults("rnadiff/")
+
 
         """
         self.path = Path(rnadiff_folder)
         self.files = [x for x in self.path.glob(pattern)]
 
         self.counts_raw = pd.read_csv(
-            self.path / "counts_raw.csv", index_col=0, sep=","
+            self.path / "counts" / "counts_raw.csv", index_col=0, sep=","
         )
         self.counts_raw.sort_index(axis=1, inplace=True)
 
         self.counts_norm = pd.read_csv(
-            self.path / "counts_normed.csv", index_col=0, sep=","
+            self.path / "counts" / "counts_normed.csv", index_col=0, sep=","
         )
         self.counts_norm.sort_index(axis=1, inplace=True)
 
         self.counts_vst = pd.read_csv(
-            self.path / "counts_vst_norm.csv", index_col=0, sep=","
+            self.path / "counts" / "counts_vst_norm.csv", index_col=0, sep=","
         )
         self.counts_vst.sort_index(axis=1, inplace=True)
 
         self.dds_stats = pd.read_csv(
-            self.path / "overall_dds.csv", index_col=0, sep=","
+            self.path / "code" / "overall_dds.csv", index_col=0, sep=","
         )
         self.condition = condition
+
+        design_file = f"{rnadiff_folder}/code/design.csv"
         self.design_df = self._get_design(
             design_file, condition=self.condition, palette=palette
         )
-
-        # FIXME: This block was commented because:
-        # Now RNADiffAnalysis create a sorted design file according to the count matrix
-        # Not sure that creating a design from scratch at this stage is relevant.
-
-        # read different results and sort by sample name all inputs
-        # TODO make this a function to be reused in RNADiffAnalysis for example
-        # if design_file == None:
-        #     conditions = []
-        #     labels = self.counts_raw.columns
-        #     for label in labels:
-        #         condition = input(
-        #             f"Please give use a condition name for the {label} label: "
-        #         )
-        #         conditions.append(condition)
-        #     df = pd.DataFrame({"label": labels, "condition": conditions})
-        #     df.set_index("label", inplace=True)
-        #     df.sort_index(inplace=True)
-        #     col_map = dict(zip(df.loc[:, condition].unique(), palette))
-        #     df["group_color"] = df.loc[:, condition].map(col_map)
-        #     self.design_df = df
-        # else:
-        #     self.design_df = self._get_design(
-        #         design_file, condition=condition, palette=palette
-        #     )
-        #     self.design_df.sort_index(inplace=True)
-        #     self.design = RNADesign(design_file)
 
         # optional annotation
         self.fc_attribute = fc_attribute
@@ -651,12 +716,15 @@ class RNADiffResults:
         self.annot_cols = annot_cols
         if gff:
             if fc_feature is None or fc_attribute is None:
-                logger.error(
-                    "Since you provided a GFF filem you must provide the feature and attribute to be used."
+                logger.warning(
+                    "Since you provided a GFF file you must provide the feature and attribute to be used."
                 )
             self.annotation = self.read_annot(gff)
         else:
-            self.annotation = None
+            self.annotation = pd.read_csv(
+                self.path / "rnadiff.csv", index_col=0, header=[0, 1]
+            )
+            self.annotation = self.annotation["annotation"]
 
         # some filtering attributes
         self._alpha = alpha
@@ -666,6 +734,9 @@ class RNADiffResults:
 
         self.df = self._get_total_df()
         self.filt_df = self._get_total_df(filtered=True)
+
+        self.fontsize = kwargs.get("fontsize", 12)
+        self.xticks_fontsize = kwargs.get("xticks_fontsize", 12)
 
     @property
     def alpha(self):
@@ -691,6 +762,7 @@ class RNADiffResults:
         self.df.to_csv(filename)
 
     def read_csv(self, filename):
+        logger.warning("DEPRECATED DO NOT USE read_csv from RNADiffResults")
         self.df = pd.read_csv(filename, index_col=0, header=[0, 1])
 
     def import_tables(self):
@@ -709,22 +781,27 @@ class RNADiffResults:
 
         return AttrDict(**data)
 
-    def read_annot(self, gff_filename):
-        """Get a properly formatted dataframe from the gff."""
+    def read_annot(self, gff):
+        """Get a properly formatted dataframe from the gff.
 
-        gff = GFF3(gff_filename)
-        df = gff.df
+        :param gff: a input GFF filename or an existing instance of GFF3
+        """
+
+        # if gff is already instanciate, we can just make a copy otherwise
+        # we read it indeed.
+        if not hasattr(gff, "df"):
+            gff = GFF3(gff)
 
         if self.annot_cols is None:
             lol = [
                 list(x.keys())
-                for x in df.query("type==@self.fc_feature")["attributes"].values
+                for x in gff.df.query("type==@self.fc_feature")["attributes"].values
             ]
-            annot_cols = list(set([x for item in lol for x in item]))
+            annot_cols = sorted(list(set([x for item in lol for x in item])))
         else:
             annot_cols = self.annot_cols
 
-        df = df.query("type == @self.fc_feature").loc[:, annot_cols]
+        df = gff.df.query("type == @self.fc_feature").loc[:, annot_cols]
         df.drop_duplicates(inplace=True)
 
         df.set_index(self.fc_attribute, inplace=True)
@@ -770,10 +847,6 @@ class RNADiffResults:
 
         if self.annotation is not None and self.fc_attribute and self.fc_feature:
             df = pd.concat([self.annotation, df], axis=1)
-        else:
-            logger.warning(
-                "Missing any of gff, fc_attribute or fc_feature. No annotation will be added."
-            )
 
         return df
 
@@ -795,7 +868,7 @@ class RNADiffResults:
                 )
             )
 
-    def run_enrichment_go(
+    def __run_enrichment_go(
         self, taxon, annot_col="Name", out_dir="enrichment"
     ):  # pragma: no cover
 
@@ -877,7 +950,7 @@ class RNADiffResults:
             except:
                 logger.warning("XLS formatting issue.")
 
-    def run_enrichment_kegg(
+    def __run_enrichment_kegg(
         self, organism, annot_col="Name", out_dir="enrichment"
     ):  # pragma: no cover
 
@@ -979,10 +1052,14 @@ class RNADiffResults:
         """Import design from a table file and add color groups following the
         groups defined in the column 'condition' of the table file.
         """
+        design = RNADesign(design_file)
+        df = design.df.set_index("label")
 
-        df = RNADesign(design_file).df.set_index("label")
+        if len(design.conditions) > len(palette):
+            palette = sns.color_palette("deep", n_colors=len(design.conditions))
 
         col_map = dict(zip(df.loc[:, condition].unique(), palette))
+
         df["group_color"] = df.loc[:, condition].map(col_map)
         return df
 
@@ -993,15 +1070,15 @@ class RNADiffResults:
         pylab.ylabel(ylabel)
 
     def get_specific_commons(self, direction, compas=None, annot_col="index"):
-        """From all the comparisons contained by the object, extract gene lists which
-        are common (but specific, ie a gene appear only appears in the
+        """Extract gene lists for all comparisons. 
+
+        Genes are common (but specific, ie a gene appear only appears in the
         combination considered) comparing all combinations of comparisons.
 
         :param direction: The regulation direction (up, down or all) of the gene
-        lists to consider
-
+            lists to consider
         :param compas: Specify a list of comparisons to consider (Comparisons
-        names can be found with self.comparisons.keys()).
+            names can be found with self.comparisons.keys()).
 
         """
 
@@ -1032,7 +1109,13 @@ class RNADiffResults:
 
         return common_specific_dict
 
-    def plot_count_per_sample(self, fontsize=12, rotation=45):
+    def _set_figsize(self, height=5, width=8):
+        pylab.figure()
+        fig = pylab.gcf()
+        fig.set_figheight(height)
+        fig.set_figwidth(width)
+
+    def plot_count_per_sample(self, fontsize=None, rotation=45, xticks_fontsize=None):
         """Number of mapped and annotated reads (i.e. counts) per sample. Each color
         for each replicate
 
@@ -1042,10 +1125,16 @@ class RNADiffResults:
             from sequana.rnadiff import RNADiffResults
             from sequana import sequana_data
 
-            r = RNADiffResults(sequana_data("rnadiff/rnadiff_onecond_1"))
+            r = RNADiffResults(sequana_data("rnadiff/", "doc"))
             r.plot_count_per_sample()
 
         """
+        self._set_figsize()
+        if fontsize is None:
+            fontsize = self.fontsize
+        if xticks_fontsize is None:
+            xticks_fontsize = self.xticks_fontsize
+
         pylab.clf()
         df = self.counts_raw.sum().rename("total_counts")
         df = pd.concat([self.design_df, df], axis=1)
@@ -1064,8 +1153,7 @@ class RNADiffResults:
         pylab.ylabel("reads (M)", fontsize=fontsize)
         pylab.grid(True, zorder=0)
         pylab.title("Total read count per sample", fontsize=fontsize)
-        pylab.xticks(rotation=rotation, ha="right")
-        # pylab.xticks(range(N), self.sample_names)
+        pylab.xticks(rotation=rotation, ha="right", fontsize=xticks_fontsize)
         try:
             pylab.tight_layout()
         except:
@@ -1082,11 +1170,12 @@ class RNADiffResults:
             from sequana.rnadiff import RNADiffResults
             from sequana import sequana_data
 
-            r = RNADiffResults(sequana_data("rnadiff/rnadiff_onecond_1"))
+            r = RNADiffResults(sequana_data("rnadiff/", "doc"))
             r.plot_percentage_null_read_counts()
 
         """
-        pylab.clf()
+        self._set_figsize()
+
         # how many null counts ?
         df = (self.counts_raw == 0).sum() / self.counts_raw.shape[0] * 100
         df = df.rename("percent_null")
@@ -1122,8 +1211,7 @@ class RNADiffResults:
             from sequana.rnadiff import RNADiffResults
             from sequana import sequana_data
 
-            path = sequana_data("rnadiff/rnadiff_onecond_1")
-            r = RNADiffResults(path)
+            r = RNADiffResults(sequana_data("rnadiff/", "doc"))
 
             colors = {
                 'surexp1': 'r',
@@ -1169,12 +1257,24 @@ class RNADiffResults:
             df["label"] = df.index
             df["group_color"] = df[self.condition]
 
+            # plotly uses 10 colors by default. Here we cope with the case
+            # of having more than 10 conditions
+            colors = None
+            try:
+                if len(set(self.design_df.condition.values)):
+                    colors = sns.color_palette("deep", n_colors=13)
+
+                    colors = px.colors.qualitative.Light24
+            except Exception as err:
+                logger.warning("Could not determine number of conditions")
+
             fig = px.scatter_3d(
                 df,
                 x="PC1",
                 y="PC2",
                 z="PC3",
                 color="group_color",
+                color_discrete_sequence=colors,
                 labels={
                     "PC1": "PC1 ({}%)".format(round(100 * variance[0], 2)),
                     "PC2": "PC2 ({}%)".format(round(100 * variance[1], 2)),
@@ -1400,3 +1500,53 @@ class RNADiffResults:
                 .index
             ]
         ).plot()
+
+    def _replace_index_with_annotation(self, df, annot):
+        # ID is unique but annotation_column may not be complete with NA
+        # Let us first get the annotion with index as the data index
+        # and one column (the annotation itself)
+        dd = self.annotation.loc[df.index][annot]
+
+        # Let us replace the possible NA with the ID
+        dd = dd.fillna(dict({(x, x) for x in dd.index}))
+
+        # Now we replace the data index with this annoation
+        df.index = dd.values
+
+        return df
+
+    def heatmap_vst_centered_data(
+        self,
+        comp,
+        log2_fc=1,
+        padj=0.05,
+        xlabel_size=8,
+        ylabel_size=12,
+        figsize=(10, 15),
+        annotation_column=None,
+    ):
+
+        assert comp in self.comparisons.keys()
+        from sequana.viz import heatmap
+
+        # Select counts based on the log2 fold change and padjusted
+        data = self.comparisons[comp].df.query(
+            "(log2FoldChange<-@log2_fc or log2FoldChange>@log2_fc) and padj<@padj"
+        )
+        counts = self.counts_vst.loc[data.index].copy()
+
+        logger.info(f"Using {len(data)} DGE genes")
+
+        # replace the indices with the proper annotation if required.
+        if annotation_column:
+            data = self._replace_index_with_annotation(data, annotation_column)
+            counts.index = data.index
+
+        # finally the plots
+        h = heatmap.Clustermap(counts, figsize=figsize, z_score=0, center=0)
+
+        ax = h.plot()
+        ax.ax_heatmap.tick_params(labelsize=xlabel_size, axis="x")
+        ax.ax_heatmap.tick_params(labelsize=ylabel_size, axis="y")
+
+        return ax
