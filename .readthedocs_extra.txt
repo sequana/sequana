@@ -1,1 +1,2 @@
 sklearn
+sequana_sphinxext
