@@ -45,20 +45,16 @@ SEQUANA
 
 **Sequana** includes a set of pipelines related to NGS (new generation sequencing) including quality control, variant calling, coverage, taxonomy, transcriptomics. We also ship **Sequanix**, a graphical user interface for Snakemake pipelines.
 
-+--------------------------+--------------------------+-----------------------+
-| **pipeline or tools**    | **Latest Pypi verison**  |  **Test passing**     |
-+--------------------------+--------------------------+-----------------------+
-| pipetools                |     |pipetools_pypi|     | |pipetools_test|      |
-+--------------------------+--------------------------+-----------------------+
-| wrappers                 |        not on pypi       | |wrappers_test|       |
-+--------------------------+--------------------------+-----------------------+
-| |fastqc|       fastqc_   |     |fastqc_pypi|        |  |fastqc_test|        |
-+--------------------------+--------------------------+-----------------------+
++------------------------------------------------+--------------------------+-----------------------+
+| **pipeline or tools**                          | **Latest Pypi verison**  |  **Test passing**     |
++------------------------------------------------+--------------------------+-----------------------+
+| https://github.com/sequana/sequana_pipetools   |     |pipetools_pypi|     | |pipetools_test|      |
++------------------------------------------------+--------------------------+-----------------------+
+| https://github.com/sequana/sequana-wrappers    |        not on pypi       | |wrappers_test|       |
++------------------------------------------------+--------------------------+-----------------------+
+| https://github.com/sequqna/fastqc              |         |fastqc_pypi|    |  |fastqc_test|        |
++------------------------------------------------+--------------------------+-----------------------+
 
-
-.. _fastqc:: `fastqc <https://github.com/sequana/fastqc>`_
-
-.. |fastqc| replace:: `fastqc <https://github.com/sequana/fastqc>`_
 
 .. |pipetools_pypi| image:: https://badge.fury.io/py/sequana-pipetools.svg
     :target: https://pypi.python.org/pypi/sequana_pipetools
