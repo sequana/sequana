@@ -11,8 +11,6 @@ SEQUANA
 .. image:: https://github.com/sequana/sequana/actions/workflows/main.yml/badge.svg?branch=master
     :target: https://github.com/sequana/sequana/actions/workflows/main.yml
 
-.. image:: https://github.com/sequana/sequana/actions/workflows/main.yml/badge.svg?branch=dev
-    :target: https://github.com/sequana/sequana/actions/workflows/main.yml
 
 .. image:: https://coveralls.io/repos/github/sequana/sequana/badge.svg?branch=master
     :target: https://coveralls.io/github/sequana/sequana?branch=master
