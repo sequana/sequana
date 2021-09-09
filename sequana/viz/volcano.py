@@ -26,6 +26,7 @@ from sequana.lazy import pandas as pd
 from sequana.lazy import pylab as pylab
 from sequana.lazy import numpy as np
 
+from adjustText import adjust_text
 
 __all__ = ["Volcano"]
 
@@ -52,23 +53,25 @@ class Volcano(object):
 
     def __init__(
         self,
-        fold_changes=None,
-        pvalues=None,
+        data=None,
+        log2fc_col="log2FoldChange",
+        pvalues_col="padj",
+        annot_col="",
         color="auto",
-        pvalue_threshold=0.05,
-        fold_change_threshold=1,
+        pvalue_threshold=-np.log10(0.05),
+        log2fc_threshold=1,
     ):
         """.. rubric:: constructor
 
+        :param DataFrame data: Pandas DataFrame with rnadiff results.
+        :param log2fc_col: Name of the column with log2 Fold changes.
+        :param pvalues_col:  Name of the column with adjusted pvalues.
+        :param annot_col: Name of the column with genes names for plot annotation.
+        :param color: for color choice
+        :param pvalue_threshold: Adjusted pvalue threshold to use for coloring/annotation.
+        :param log2fc_threshold: Log2 Fold Change threshold to use for coloring/annotation.
 
-        :param list fold_changes: 1D array or list
-        :param list pvalues: 1D array or list
-           the threshold provided.
-        :param pvalue_threshold: adds an horizontal dashed line at
-        :param fold_change_threshold: colors in grey the absolute fold
-            changes below a given threshold.
         """
-
         # try to compute the FC now
         # if self.fold_change is None:
         #    self.fold_change = pylab.log2(X1/X0)
@@ -78,32 +81,38 @@ class Volcano(object):
         #    import scipy.stats
         #    self.pvalue = - pylab.log10(scipy.stats.norm.pdf(abs(self.fold_change), 0,1)),
 
-        self.fold_changes = np.array(fold_changes)
-        self.pvalues = np.array(pvalues)
         self.color = color
         self.pvalue_threshold = pvalue_threshold
-        self.fold_change_threshold = fold_change_threshold
-        assert len(self.fold_changes) == len(self.pvalues)
+        self.log2fc_threshold = log2fc_threshold
 
-        self.df = pd.DataFrame(
-            {"fold_change": self.fold_changes, "pvalue": self.pvalues}
+        df = data.copy()
+        df.rename(
+            columns={
+                log2fc_col: "log2fc",
+                annot_col: "annot",
+            },
+            inplace=True,
         )
+        df["log10pval"] = -np.log10(df[pvalues_col])
+        self.df = df
+        # self.df = df.loc[df.log10pval.notna()]
+
         self._get_colors()
 
     def _get_colors(self):
         """Add colors according to pvalue and fold change thresholds"""
 
         def coloring(row):
-            if (row.fold_change <= -self.fold_change_threshold) and (
-                row.pvalue >= self.pvalue_threshold
+            if (row.log2fc <= -self.log2fc_threshold) and (
+                row.log10pval >= self.pvalue_threshold
             ):
                 return "royalblue"
-            if (row.fold_change >= self.fold_change_threshold) and (
-                row.pvalue >= self.pvalue_threshold
+            if (row.log2fc >= self.log2fc_threshold) and (
+                row.log10pval >= self.pvalue_threshold
             ):
                 return "firebrick"
-            if (abs(row.fold_change) < self.fold_change_threshold) and (
-                row.pvalue >= self.pvalue_threshold
+            if (abs(row.log2fc) < self.log2fc_threshold) and (
+                row.log10pval >= self.pvalue_threshold
             ):
                 return "black"
             else:
@@ -113,6 +122,19 @@ class Volcano(object):
             self.df["color"] = self.df.apply(coloring, axis=1)
         else:  # pragma: no cover
             self.df["color"] = self.color
+
+    def annotate(self, **kwargs):
+        texts = []
+        for row in self.df.itertuples(index=False):
+            if not row.annot:
+                continue
+
+            if (row.log10pval >= self.pvalue_threshold) and (
+                abs(row.log2fc) >= self.log2fc_threshold
+            ):
+                texts.append(pylab.text(row.log2fc, row.log10pval, row.annot))
+
+        adjust_text(texts, **kwargs)
 
     def plot(
         self,
@@ -148,8 +170,8 @@ class Volcano(object):
             bax = pylab
 
         bax.scatter(
-            self.df.fold_change,
-            self.df.pvalue,
+            self.df.log2fc,
+            self.df.log10pval,
             s=size,
             alpha=alpha,
             c=self.df.color,
@@ -157,9 +179,9 @@ class Volcano(object):
             edgecolors="None",
         )
 
-        bax.grid()
+        # bax.grid()
         # pylab.ylim([0, pylab.ylim()[1]])
-        # M = max(abs(self.fold_change)) * 1.1
+        # M = max(abs(self.log2fc)) * 1.1
         # pylab.xlim([-M, M])
         try:
             bax.set_xlabel(xlabel, fontsize=fontsize)
@@ -175,13 +197,13 @@ class Volcano(object):
             linewidth=threshold_lines["width"],
         )
         bax.axvline(
-            self.fold_change_threshold,
+            self.log2fc_threshold,
             color=threshold_lines["color"],
             linestyle=threshold_lines["ls"],
             linewidth=threshold_lines["width"],
         )
         bax.axvline(
-            -1 * self.fold_change_threshold,
+            -1 * self.log2fc_threshold,
             color=threshold_lines["color"],
             linestyle=threshold_lines["ls"],
             linewidth=threshold_lines["width"],
