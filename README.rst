@@ -52,7 +52,9 @@ SEQUANA
 +------------------------------------------------+--------------------------+-----------------------+
 | https://github.com/sequana/sequana-wrappers    |        not on pypi       | |wrappers_test|       |
 +------------------------------------------------+--------------------------+-----------------------+
-| https://github.com/sequqna/fastqc              |         |fastqc_pypi|    |  |fastqc_test|        |
+| https://github.com/sequana/fastqc              |         |fastqc_pypi|    |  |fastqc_test|        |
++------------------------------------------------+--------------------------+-----------------------+
+| https://github.com/sequana/ribofinder          |         |ribo_pypi|      |  |ribo_test|          |
 +------------------------------------------------+--------------------------+-----------------------+
 
 
@@ -70,6 +72,13 @@ SEQUANA
 
 .. |fastqc_test| image:: https://github.com/sequana/fastqc/actions/workflows/main.yml/badge.svg?branch=master
     :target: https://github.com/sequana/fastqc/actions/workflows/main.yml
+
+.. |ribo_pypi| image:: https://badge.fury.io/py/sequana-ribofinder.svg
+    :target: https://pypi.python.org/pypi/sequana-ribofinder
+
+.. |fastqc_test| image:: https://github.com/sequana/ribofinder/actions/workflows/main.yml/badge.svg?branch=master
+    :target: https://github.com/sequana/ribofinder/actions/workflows/main.yml
+
 
 **Please see the** `documentation <http://sequana.readthedocs.org>`_ for an
 up-to-date status and documentation.
