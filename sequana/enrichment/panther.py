@@ -226,7 +226,6 @@ class PantherEnrichment:
         ontologies=None,
         enrichment_test="FISHER",
         correction="FDR",
-        progress=True,
     ):
         """
         :param enrichment_test: Fisher or Binomial
@@ -268,7 +267,6 @@ class PantherEnrichment:
                 ontologies=ontologies,
                 enrichment_test=enrichment_test,
                 correction=correction,
-                progress=progress,
             )
 
     def _compute_enrichment(
@@ -278,7 +276,6 @@ class PantherEnrichment:
         ontologies=None,
         enrichment_test="FISHER",
         correction="FDR",
-        progress=True,
     ):
 
         # taxid=83333 # ecoli

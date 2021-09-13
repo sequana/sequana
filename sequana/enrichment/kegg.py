@@ -91,7 +91,7 @@ class KEGGPathwayEnrichment:
 
     And read them back::
 
-        ke = KEGgPathwayEnrichment("path_to_rnadiff", "mmu", mapper=df,
+        ke = KEGGPathwayEnrichment("path_to_rnadiff", "mmu", mapper=df,
             preload_directory="kegg_pathways/mmu")
 
         df = ke.scatterplot('down')
