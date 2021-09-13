@@ -1,0 +1,14 @@
+rule falco:
+    input: __falco__input
+    output: __falco__output
+    log:
+        "samples/{sample}/falco.log"
+    threads:
+        config['falco']['threads']
+    params:
+        options=config['falco']['options'],
+        working_directory="samples/{sample}"
+    wrapper:
+        "main/wrappers/falco"
+
+
