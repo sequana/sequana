@@ -354,7 +354,7 @@ categories. </p>
         style = "width:45%"
         from sequana.enrichment.kegg import KEGGPathwayEnrichment
 
-        ke = KeggPathwayEnrichment(
+        ke = KEGGPathwayEnrichment(
             self.gene_lists,
             self.organism,
             mapper=self.enrichment_params["mapper"],
