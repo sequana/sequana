@@ -76,7 +76,7 @@ SEQUANA
 .. |ribo_pypi| image:: https://badge.fury.io/py/sequana-ribofinder.svg
     :target: https://pypi.python.org/pypi/sequana-ribofinder
 
-.. |fastqc_test| image:: https://github.com/sequana/ribofinder/actions/workflows/main.yml/badge.svg?branch=master
+.. |ribo_test| image:: https://github.com/sequana/ribofinder/actions/workflows/main.yml/badge.svg?branch=master
     :target: https://github.com/sequana/ribofinder/actions/workflows/main.yml
 
 
