@@ -455,6 +455,10 @@ a hover name to be used with this option""",
     is_flag=True,
     help="""If analysis was done, you may want to redo the HTML report only using this option"""
 )
+@click.option(
+    "--xticks-fontsize",
+    default=10,
+    help="""Reduce fontsize of xticks""")
 
 @common_logger
 def rnadiff(**kwargs):
@@ -590,7 +594,8 @@ You may install it yourself or use damona using the rtools:1.0.0 image """)
         pattern="*vs*_degs_DESeq2.csv",
         palette=sns.color_palette(desat=0.6, n_colors=13),
         hover_name=kwargs["hover_name"],
-        pca_fontsize=6
+        pca_fontsize=6,
+        xticks_fontsize=kwargs.get("xticks_fontsize", 10)
     )
 
     #

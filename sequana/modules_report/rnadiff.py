@@ -117,7 +117,7 @@ for that feature.</p>
             if lfc == 0:
                 message = "Number of DGE (any FC)"
             else:
-                message = f"Number of DGE (|FC| > {lfc} "
+                message = f"Number of DGE log2(|FC|) > {lfc} "
 
 
             df = pd.DataFrame(

@@ -1068,9 +1068,9 @@ class RNADiffResults:
         df["group_color"] = df.loc[:, condition].map(col_map)
         return df
 
-    def _format_plot(self, title="", xlabel="", ylabel="", rotation=0):
+    def _format_plot(self, title="", xlabel="", ylabel="", rotation=0, fontsize=None):
         pylab.title(title)
-        pylab.xticks(rotation=rotation, ha="right")
+        pylab.xticks(rotation=rotation, ha="right", fontsize=fontsize)
         pylab.xlabel(xlabel)
         pylab.ylabel(ylabel)
 
@@ -1164,7 +1164,7 @@ class RNADiffResults:
         except:
             pass
 
-    def plot_percentage_null_read_counts(self):
+    def plot_percentage_null_read_counts(self, fontsize=None, xticks_fontsize=None):
         """Bars represent the percentage of null counts in each samples.  The dashed
         horizontal line represents the percentage of feature counts being equal
         to zero across all samples
@@ -1180,6 +1180,10 @@ class RNADiffResults:
 
         """
         self._set_figsize()
+        if fontsize is None:
+            fontsize = self.fontsize
+        if xticks_fontsize is None:
+            xticks_fontsize = self.xticks_fontsize
 
         # how many null counts ?
         df = (self.counts_raw == 0).sum() / self.counts_raw.shape[0] * 100
@@ -1194,7 +1198,7 @@ class RNADiffResults:
 
         pylab.axhline(all_null, ls="--", color="black", alpha=0.5)
 
-        pylab.xticks(rotation=45, ha="right")
+        pylab.xticks(rotation=45, ha="right", fontsize=xticks_fontsize)
         pylab.ylabel("Proportion of null counts (%)")
         pylab.grid(True, zorder=0)
         pylab.tight_layout()
@@ -1336,8 +1340,12 @@ class RNADiffResults:
             ylabel="Density",
         )
 
-    def plot_feature_most_present(self):
+    def plot_feature_most_present(self, fontsize=None, xticks_fontsize=None):
         """"""
+        if fontsize is None:
+            fontsize = self.fontsize
+        if xticks_fontsize is None:
+            xticks_fontsize = self.xticks_fontsize
 
         df = []
 
@@ -1369,6 +1377,7 @@ class RNADiffResults:
             ec="k",
             height=0.9,
         )
+        pylab.yticks(fontsize=xticks_fontsize)
 
         for idx, rect in enumerate(p):
             pylab.text(
@@ -1379,12 +1388,14 @@ class RNADiffResults:
                 va="center",
                 rotation=0,
                 zorder=20,
+                fontsize=xticks_fontsize
             )
 
         self._format_plot(
             # title="Counts monopolized by the most expressed gene",
             # xlabel="Sample",
             xlabel="Percent of total reads",
+            fontsize=xticks_fontsize
         )
         pylab.tight_layout()
 
@@ -1430,8 +1441,14 @@ class RNADiffResults:
         d.category = self.design_df[self.condition].map(group_conv).to_dict()
         d.plot()
 
-    def plot_boxplot_rawdata(self, fliersize=2, linewidth=2, rotation=0, **kwargs):
+    def plot_boxplot_rawdata(self, fliersize=2, linewidth=2, rotation=0,
+            fontsize=None, xticks_fontsize=None, **kwargs):
+
         import seaborn as sbn
+        if fontsize is None:
+            fontsize = self.fontsize
+        if xticks_fontsize is None:
+            xticks_fontsize = self.xticks_fontsize
 
         ax = sbn.boxplot(
             data=self.counts_raw.clip(1),
@@ -1444,11 +1461,17 @@ class RNADiffResults:
         pylab.xticks(pos, labs, rotation=rotation)
         ax.set_ylabel("Counts (raw) in log10 scale")
         ax.set_yscale("log")
-        self._format_plot(ylabel="Raw count distribution")
+        self._format_plot(ylabel="Raw count distribution", fontsize=xticks_fontsize)
         pylab.tight_layout()
 
-    def plot_boxplot_normeddata(self, fliersize=2, linewidth=2, rotation=0, **kwargs):
+    def plot_boxplot_normeddata(self, fliersize=2, linewidth=2, rotation=0,
+        fontsize=None, xticks_fontsize=None, **kwargs):
+
         import seaborn as sbn
+        if fontsize is None:
+            fontsize = self.fontsize
+        if xticks_fontsize is None:
+            xticks_fontsize = self.xticks_fontsize
 
         ax = sbn.boxplot(
             data=self.counts_norm.clip(1),
