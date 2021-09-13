@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-# License: 3-clause BSD
-__revision__ = "$Id: $" # for the SVN Id
 import sys
 import os
 from setuptools import setup, find_packages
@@ -8,7 +5,7 @@ import glob
 
 _MAJOR               = 0
 _MINOR               = 12
-_MICRO               = 0
+_MICRO               = 1
 version              = '%d.%d.%d' % (_MAJOR, _MINOR, _MICRO)
 release              = '%d.%d' % (_MAJOR, _MINOR)
 
