@@ -177,7 +177,7 @@ class RNADiffAnalysis:
         self.design = RNADesign(design_file, sep=sep_design, reference=reference)
         self.comparisons = comparisons if comparisons else self.design.comparisons
 
-    
+
         _conditions = {x for comp in self.comparisons for x in comp}
         if not keep_all_conditions:
             self.design.keep_conditions(_conditions)
@@ -273,7 +273,12 @@ Design overview:\n\
         except ValueError:
             counts = FeatureCount(self.usr_counts).df
 
+        if self.minimum_mean_reads_per_gene > 0:
+            logger.info(f"{len(counts)} annotated feature to be processed")
         counts = counts[counts.mean(axis=1) > self.minimum_mean_reads_per_gene]
+        if self.minimum_mean_reads_per_gene > 0:
+            logger.info(f"Keeping {len(counts)} features after removing low "
+                f"counts below {self.minimum_mean_reads_per_gene} on average")
 
         # filter count based on the design and the comparisons provide in the
         # constructor so that columns match as expected by a DESeq2 analysis.
@@ -1070,7 +1075,7 @@ class RNADiffResults:
         pylab.ylabel(ylabel)
 
     def get_specific_commons(self, direction, compas=None, annot_col="index"):
-        """Extract gene lists for all comparisons. 
+        """Extract gene lists for all comparisons.
 
         Genes are common (but specific, ie a gene appear only appears in the
         combination considered) comparing all combinations of comparisons.
@@ -1201,6 +1206,7 @@ class RNADiffResults:
         plotly=False,
         max_features=500,
         genes_to_remove=[],
+        fontsize=10
     ):
 
         """
@@ -1223,7 +1229,6 @@ class RNADiffResults:
             r.plot_pca(colors=colors)
         """
         from sequana.viz import PCA
-
         # Get most variable genes (n=max_features)
         top_features = (
             self.counts_vst.var(axis=1)
@@ -1289,6 +1294,7 @@ class RNADiffResults:
                 n_components=n_components,
                 colors=self.design_df.group_color,
                 max_features=max_features,
+                fontsize=fontsize
             )
 
         return variance

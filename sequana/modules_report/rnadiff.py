@@ -61,6 +61,7 @@ class RNAdiffModule(SequanaBaseModule):
 
         matplotlib.rc_file_defaults()
 
+
     def create_individual_reports(self):
         description = """<p>The differential analysis is based on DESeq2. This
 tool aim at fitting one linear model per feature. Given the replicates in
@@ -110,33 +111,51 @@ for that feature.</p>
             "buttons": [],
         }
 
-        S = pd.concat([Sdefault, S1])
+        def get_local_df(Sdata, lfc=0):
+            N = len(Sdata)
 
-        N = len(Sdefault)
-        df = pd.DataFrame(
-            {
-                "comparison_link": [1] * len(S),
-                "comparison": S.index.values,
-                "Description": ["Number of DGE (any FC)"] * N
-                + ["Number of DGE (|FC| > 1)"] * N,
-                "Down": S["down"].values,
-                "Up": S["up"].values,
-                "Total": S["all"].values,
-            }
-        )
-        df = df[["comparison", "Description", "Down", "Up", "Total", "comparison_link"]]
+            if lfc == 0:
+                message = "Number of DGE (any FC)"
+            else:
+                message = f"Number of DGE (|FC| > {lfc} "
 
-        df["comparison_link"] = [f"#{name}_table_all" for name in Sdefault.index] + [
-            f"#{name}_table_sign" for name in Sdefault.index
-        ]
 
-        dt = DataTable(df, "dge")
+            df = pd.DataFrame(
+                {
+                    "comparison_link": [1] * N,
+                    "comparison": Sdata.index.values,
+                    "Description": [message] * N,
+                    "Down": Sdata["down"].values,
+                    "Up": Sdata["up"].values,
+                    "Total": Sdata["all"].values,
+                }
+            )
+            df = df[["comparison", "Description", "Down", "Up", "Total", "comparison_link"]]
+
+            if lfc == 0:
+                df["comparison_link"] = [f"#{name}_table_all" for name in Sdata.index]
+            else:
+                df["comparison_link"] = [f"#{name}_table_sign" for name in Sdata.index]
+            return df
+
+        dt = DataTable(get_local_df(Sdefault), "dge_default")
         dt.datatable.set_links_to_column(
             "comparison_link", "comparison", new_page=False
         )
         dt.datatable.datatable_options = options
         js_all = dt.create_javascript_function()
         html = dt.create_datatable(float_format="%d")
+
+
+        dt = DataTable(get_local_df(S1, lfc=1), "dge_lfc")
+        dt.datatable.set_links_to_column(
+            "comparison_link", "comparison", new_page=False
+        )
+        dt.datatable.datatable_options = options
+        js_all += dt.create_javascript_function()
+        html += dt.create_datatable(float_format="%d")
+        
+
         self.sections.append(
             {
                 "name": "Summary",
@@ -194,7 +213,7 @@ href="https://en.wikipedia.org/wiki/Ward%27s_method"> Ward method </a>. The data
 
             pylab.ioff()
             pylab.clf()
-            variance = self.rnadiff.plot_pca(2)
+            variance = self.rnadiff.plot_pca(2, fontsize=self.kwargs.get("pca_fontsize", 10))
             pylab.savefig(filename)
             pylab.close()
 

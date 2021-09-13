@@ -31,6 +31,7 @@ from sequana import version
 from sequana.iem import IEM
 from sequana import GFF3
 from sequana import FastQ
+from sequana.rnadiff import RNADiffAnalysis, RNADesign
 
 
 import colorlog
@@ -304,7 +305,6 @@ def rnaseq_compare(**kwargs):
 
 
 # a dynamic call back function to introspect the design batch column
-from sequana.rnadiff import RNADiffAnalysis, RNADesign
 
 
 def rnadiff_auto_batch_column(ctx, args, incomplete):
@@ -450,6 +450,12 @@ in the analysis and report only the provided comparisons"""
 otherwise to gene_id if present, then locus_tag, and finally ID and gene_name. One can specify
 a hover name to be used with this option""",
 )
+@click.option(
+    "--report-only",
+    is_flag=True,
+    help="""If analysis was done, you may want to redo the HTML report only using this option"""
+)
+
 @common_logger
 def rnadiff(**kwargs):
     """Perform RNA-seq differential analysis and reporting.
@@ -477,16 +483,11 @@ def rnadiff(**kwargs):
 
 
     """
+    from sequana import logger
     import pandas as pd
     from sequana.featurecounts import FeatureCount
     from sequana.rnadiff import RNADiffAnalysis, RNADesign
     from sequana.modules_report.rnadiff import RNAdiffModule
-
-    # FIXME if we use the colorlog logger here, it does not work....
-    # FIXME not clear why so we import again the sequana logger
-    # FIXME looks like it works everywhere but not in the main script
-    from sequana import logger
-    # seems to be fixed in aug 2021
 
     logger.setLevel(kwargs["logger"])
 
@@ -524,7 +525,8 @@ You may install it yourself or use damona using the rtools:1.0.0 image """)
 
     comparisons = kwargs["comparisons"]
     if comparisons:
-        compa_df = pd.read_csv(comparisons)
+        # use \s*,\s* to strip spaces
+        compa_df = pd.read_csv(comparisons, sep="\s*,\s*", engine="python")
         comparisons = list(zip(compa_df["alternative"], compa_df["reference"]))
 
     logger.info(f"Differential analysis to be saved into ./{outdir}")
@@ -540,7 +542,7 @@ You may install it yourself or use damona using the rtools:1.0.0 image """)
     ):
         logger.info(f"  Parameter {k} set to : {kwargs[k]}")
 
-    # The readl analysis is here
+    # The analysis is here
     r = RNADiffAnalysis(
         kwargs["features"],
         kwargs["design"],
@@ -560,17 +562,17 @@ You may install it yourself or use damona using the rtools:1.0.0 image """)
         minimum_mean_reads_per_gene=kwargs.get("minimum_mean_reads_per_gene"),
     )
 
-    try:
-        logger.info(f"Running DGE. Saving results into {outdir}")
-        results = r.run()
-        results.to_csv(f"{outdir}/rnadiff.csv")
-    except Exception as err:
-        logger.error(err)
-        logger.error(f"please see {outdir}/code/rnadiff.err file for errors")
-        sys.exit(1)
+    if not kwargs["report_only"]:
+        try:
+            logger.info(f"Running DGE. Saving results into {outdir}")
+            results = r.run()
+            results.to_csv(f"{outdir}/rnadiff.csv")
+        except Exception as err:
+            logger.error(err)
+            logger.error(f"please see {outdir}/code/rnadiff.err file for errors")
+            sys.exit(1)
 
     logger.info(f"Reporting. Saving in summary.html")
-
     # this define the output directory where summary.html is saved
     config.output_dir = outdir
 
@@ -588,6 +590,7 @@ You may install it yourself or use damona using the rtools:1.0.0 image """)
         pattern="*vs*_degs_DESeq2.csv",
         palette=sns.color_palette(desat=0.6, n_colors=13),
         hover_name=kwargs["hover_name"],
+        pca_fontsize=6
     )
 
     #
