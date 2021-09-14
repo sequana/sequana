@@ -56,6 +56,9 @@ SEQUANA
 +------------------------------------------------+--------------------------+-----------------------+
 | https://github.com/sequana/ribofinder          |         |ribo_pypi|      |  |ribo_test|          |
 +------------------------------------------------+--------------------------+-----------------------+
+| https://github.com/sequana/mapper              |         |mapper_pypi|    |  |mapper_test|        |
++------------------------------------------------+--------------------------+-----------------------+
+
 
 
 .. |pipetools_pypi| image:: https://badge.fury.io/py/sequana-pipetools.svg
@@ -78,6 +81,13 @@ SEQUANA
 
 .. |ribo_test| image:: https://github.com/sequana/ribofinder/actions/workflows/main.yml/badge.svg?branch=master
     :target: https://github.com/sequana/ribofinder/actions/workflows/main.yml
+
+.. |mapper_pypi| image:: https://badge.fury.io/py/sequana-mapper.svg
+    :target: https://pypi.python.org/pypi/sequana-mapper
+
+.. |ribo_test| image:: https://github.com/sequana/mapper/actions/workflows/main.yml/badge.svg?branch=master
+    :target: https://github.com/sequana/mapper/actions/workflows/main.yml
+
 
 
 **Please see the** `documentation <http://sequana.readthedocs.org>`_ for an
