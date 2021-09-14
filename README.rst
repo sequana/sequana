@@ -52,6 +52,8 @@ SEQUANA
 +------------------------------------------------+--------------------------+-----------------------+
 | https://github.com/sequana/sequana-wrappers    |        not on pypi       | |wrappers_test|       |
 +------------------------------------------------+--------------------------+-----------------------+
+| https://github.com/sequana/demultiplex         |      |demultiplex_pypi|  |  |demultiplex_test|   |
++------------------------------------------------+--------------------------+-----------------------+
 | https://github.com/sequana/fastqc              |         |fastqc_pypi|    |  |fastqc_test|        |
 +------------------------------------------------+--------------------------+-----------------------+
 | https://github.com/sequana/ribofinder          |         |ribo_pypi|      |  |ribo_test|          |
@@ -87,6 +89,12 @@ SEQUANA
 
 .. |mapper_test| image:: https://github.com/sequana/mapper/actions/workflows/main.yml/badge.svg?branch=master
     :target: https://github.com/sequana/mapper/actions/workflows/main.yml
+
+.. |demultiplex_pypi| image:: https://badge.fury.io/py/sequana-demultiplex.svg
+    :target: https://pypi.python.org/pypi/sequana-demultiplex
+
+.. |demultiplex_test| image:: https://github.com/sequana/demultiplex/actions/workflows/main.yml/badge.svg?branch=master
+    :target: https://github.com/sequana/demultiplex/actions/workflows/main.yml
 
 
 
