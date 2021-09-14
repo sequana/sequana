@@ -85,7 +85,7 @@ SEQUANA
 .. |mapper_pypi| image:: https://badge.fury.io/py/sequana-mapper.svg
     :target: https://pypi.python.org/pypi/sequana-mapper
 
-.. |ribo_test| image:: https://github.com/sequana/mapper/actions/workflows/main.yml/badge.svg?branch=master
+.. |mapper_test| image:: https://github.com/sequana/mapper/actions/workflows/main.yml/badge.svg?branch=master
     :target: https://github.com/sequana/mapper/actions/workflows/main.yml
 
 
