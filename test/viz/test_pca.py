@@ -1,5 +1,7 @@
 
+import pytest
 
+@pytest.mark.timeout(10)
 def test_pca():
     from sequana.viz.pca import PCA
     from sequana import sequana_data
