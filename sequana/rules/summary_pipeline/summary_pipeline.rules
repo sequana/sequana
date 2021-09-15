@@ -51,6 +51,7 @@ rule summary_pipeline:
     params:
         name = __summary_pipeline__name
     run:
+        print("summary_pipeline will be removed in the future. Copy the rule in the pipeline if needed")
         import json
         import os.path
 
