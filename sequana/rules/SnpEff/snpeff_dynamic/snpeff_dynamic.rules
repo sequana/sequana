@@ -39,6 +39,7 @@ rule snpeff_%(name)s:
     params:
         options = __snpeff_%(name)s__options
     run:
+        print("DEPRECATED. ")
         from sequana import SnpEff
 
         mydata = SnpEff(input.annotation, log=log.log)
