@@ -14,11 +14,15 @@
 from pathlib import Path
 import os
 import json
+import glob
+import requests
 
 from sequana.lazy import pandas as pd
 from sequana.lazy import pylab
 from sequana.lazy import numpy as np
 from matplotlib_venn import venn2_unweighted, venn3_unweighted
+import colormap
+
 import gseapy
 
 from sequana.summary import Summary
@@ -106,8 +110,6 @@ class KEGGPathwayEnrichment:
         self,
         gene_lists,
         organism,
-        alpha=0.05,
-        log2_fc=0,
         progress=True,
         mapper=None,
         background=None,
@@ -134,8 +136,6 @@ class KEGGPathwayEnrichment:
         self.summary.add_params(
             {
                 "organism": organism,
-                "alpha": alpha,
-                "log2_fc": log2_fc,
                 "mapper": (True if mapper is not None else False),
                 "background": background,
             }
@@ -152,7 +152,6 @@ class KEGGPathwayEnrichment:
         self._load_pathways(progress=progress, preload_directory=preload_directory)
 
         if isinstance(mapper, str):
-            import pandas as pd
 
             df = pd.read_csv(mapper)
             df = df.rename(
@@ -171,9 +170,9 @@ class KEGGPathwayEnrichment:
             logger.critical("An error occured while computing enrichments. ")
 
     def _check_category(self, cat):
-        if cat not in ["up", "down", "all"]:
+        if cat not in self.gene_lists.keys():
             raise ValueError(
-                f"category must be set to 'up', 'down' or 'all'. You provided {cat}"
+                f"category must be set to one of {self.gene_lists.keys()}. You provided {cat}"
             )
 
     def _load_pathways(self, progress=True, preload_directory=None):
@@ -181,7 +180,6 @@ class KEGGPathwayEnrichment:
         self.pathways = {}
         if preload_directory:
             # preload is a directory with all pathways in it
-            import glob
 
             pathways = glob.glob(preload_directory + "/*json")
             for i, name in enumerate(pathways):
@@ -256,11 +254,11 @@ class KEGGPathwayEnrichment:
         self.summary.data["missing_genes"] = {}
         self.summary.data["input_gene_list"] = {}
         self.enrichment = {}
-        self.enrichment["up"] = self._enrichr("up", background=background)
-        self.enrichment["down"] = self._enrichr("down", background=background)
-        self.enrichment["all"] = self._enrichr("all", background=background)
 
-        if (
+        for category in self.gene_lists.keys():
+            self.enrichment[category] = self._enrichr(category, background=background)
+
+        """if (
             len(self.enrichment["up"].results) == 0
             and len(self.enrichment["down"].results) == 0
         ):
@@ -269,6 +267,7 @@ class KEGGPathwayEnrichment:
                 " deregulated genes is low or  an incompatible set of gene IDs."
                 " Please use BioMart to convert your IDs into external gene names "
             )
+        """
 
     def _enrichr(self, category, background=None, verbose=True):
 
@@ -305,6 +304,7 @@ class KEGGPathwayEnrichment:
             no_plot=True,
         )
 
+        enr.results['Genes'] = [";".join(sorted(x.split(";"))) for x in enr.results['Genes'].values]
         return enr
 
     def _get_final_df(self, df, cutoff=0.05, nmax=10):
@@ -349,7 +349,7 @@ class KEGGPathwayEnrichment:
         pylab.tight_layout()
         return df
 
-    def scatterplot(self, category, cutoff=0.05, nmax=10, gene_set_size=[]):
+    def scatterplot(self, category, cutoff=0.05, nmax=15, gene_set_size=[]):
         self._check_category(category)
         df = self._get_final_df(
             self.enrichment[category].results, cutoff=cutoff, nmax=nmax
@@ -362,14 +362,28 @@ class KEGGPathwayEnrichment:
             -pylab.log10(df["Adjusted P-value"]),
             range(len(df)),
             s=10 * df["size"],
-            c=df["Adjusted P-value"],
+            c=-pylab.log10(df["Adjusted P-value"]),
         )
 
         pylab.xlabel("Odd ratio")
         pylab.ylabel("Gene sets")
-        pylab.yticks(range(len(df)), df.name)
+
+        names = []
+        for x in df.name:
+            if len(x) > 40:
+                names.append(x[0:40] + " ...")
+            else:
+                names.append(x)
+
+        pylab.yticks(range(len(df)), names)
+
         a, b = pylab.xlim()
-        pylab.xlim([0, b])
+        pylab.xlim([0, b*1.1 +1 ])
+
+        a,b = pylab.ylim()
+        pylab.ylim([a-0.5, b+0.5])
+
+
         pylab.grid(True)
         ax = pylab.gca()
 
@@ -387,24 +401,38 @@ class KEGGPathwayEnrichment:
         ax.legend(handles=handles, loc="upper left", title="gene-set size")
 
         pylab.axvline(1.3, lw=2, ls="--", color="r")
-        pylab.tight_layout()
         ax = pylab.colorbar(pylab.gci())
+        pylab.tight_layout()
         return df
 
-    # FIXME rnadiff object is not imported anymore. This function is not functional
-    def _get_summary_pathway(self, pathway_ID, df):
+    def _get_summary_pathway(self, pathway_ID, df, l2fc=0, padj=0.05):
         genes = self.df_pathways.loc[pathway_ID]["GENE"]
-        df_down = df.query("padj<=0.05 and log2FoldChange<0").copy()
-        df_up = df.query("padj<=0.05 and log2FoldChange>=0").copy()
+        df_down = df.query("padj<=@padj and log2FoldChange<@l2fc").copy()
+        df_up = df.query("padj<=@padj and log2FoldChange>=@l2fc").copy()
 
-        if "Name" not in df_down.columns:
+
+        if "Name" in df_down.columns:
+            pass
+        elif "gene_name" in df_down.columns:
+            df_down["Name"] = df_down["gene_name"]
+        elif "ID" in df_down.columns:
             df_down["Name"] = df_down["ID"]
-        if "Name" not in df_up.columns:
+        else:
+            raise ValueError("Expected to find a column Name, gene_name or ID")
+
+
+        if "Name" in df_up.columns:
+            pass
+        elif "gene_name" in df_up.columns:
+            df_up["Name"] = df_up["gene_name"]
+        elif "ID" in df_up.columns:
             df_up["Name"] = df_up["ID"]
+        else:
+            raise ValueError("Expected to find a column Name, gene_name or ID")
 
         logger.info("{}".format(pathway_ID))
-        logger.info("Total down-regulated: {}".format(len(df_down)))
-        logger.info("Total up-regulated: {}".format(len(df_up)))
+        #logger.info("Total down-regulated: {}".format(len(df_down)))
+        #logger.info("Total up-regulated: {}".format(len(df_up)))
 
         mapper = {}
         for k, v in genes.items():
@@ -491,29 +519,33 @@ class KEGGPathwayEnrichment:
     def _get_colors(self, summary):
         colors = {}
         # replace iterrows by faster method
-        for index, row in summary.iterrows():
-            pvalue = row["padj"]
-            type_ = row["type"]
+        for _, row in summary.iterrows():
+            row = row.fillna(0)
+            l2fc = row["fc"]
             kegg_id = row["keggid"]
-            if type_ == "-":
-                if pvalue > 0 and pvalue < 5:
-                    colors[kegg_id] = "#FF8C00,black"
-                elif pvalue < 10:
-                    colors[kegg_id] = "#FF0000,black"
-                else:
-                    colors[kegg_id] = "#B22222%2Cblack"
-            elif type_ == "+":
-                if pvalue > 0 and pvalue < 5:
-                    colors[kegg_id] = "#9ACD32,black"
-                elif pvalue < 10:
-                    colors[kegg_id] = "#008000,black"
-                else:
-                    colors[kegg_id] = "#006400,#000000"
+
+            # Orange to Blue using _r meqns Blue to Orange where Blue is cold
+            # (negative fold change)
+
+            cmap = colormap.get_cmap.cmap_builder("PuOr_r")
+
+            if l2fc <= -4:
+                l2fc = -4
+            if l2fc >= 4:
+                l2fc = 4
+            # to get a value in the range 0,1 expectd by the colormap
+            l2fc  = (l2fc + 4)/8
+
+            color = colormap.rgb2hex(*cmap(l2fc)[0:3], normalised=True)
+
+            if l2fc <0.2:
+                colors[kegg_id] = f"{color},grey"
             else:
-                colors[kegg_id] = "grey,black"
+                colors[kegg_id] = f"{color},black"
         return colors
 
     def save_pathway(self, pathway_ID, df, scale=None, show=False, filename=None):
+
 
         summary = self._get_summary_pathway(pathway_ID, df)
         colors = self._get_colors(summary)
@@ -535,7 +567,6 @@ class KEGGPathwayEnrichment:
         }
 
         self.params = params
-        import requests
 
         html_page = requests.post(url, data=params)
 
@@ -556,11 +587,11 @@ class KEGGPathwayEnrichment:
 
         return summary
 
-    def save_all_pathways(self):  # pragma: no cover
-        # This does not do any enrichment. Just save all pathways once for all
-        # with useful information
-        for ID in self.pathway.keys():
-            self.save_pathway(ID)
+    #def save_all_pathways(self):  # pragma: no cover
+    #    # This does not do any enrichment. Just save all pathways once for all
+    #    # with useful information
+    #    for ID in self.pathways.keys():
+    #        self.save_pathway(ID)
 
     def save_significant_pathways(
         self, category, cutoff=0.05, nmax=20, background=None, tag="", outdir="."
@@ -679,10 +710,21 @@ class KEGGPathwayEnrichment:
         # :meth:`find_pathways_by_gene` method and
 
         outdir = outdir + "/" + self.kegg.organism
-        from easydev import mkdirs
-
-        mkdirs(outdir)
+        os.makedirs(outdir, exist_ok=True)
 
         for key, data in self.pathways.items():
             with open(f"{outdir}/{key}.json", "w") as fout:
                 json.dump(data, fout)
+
+"""BOOK keeping
+    def to_excel(self):
+        with pd.ExcelWriter(out_dir.parent / "enrichment_go.xlsx") as writer:
+            df = self.enrichment_go.copy()
+            df.reset_index(inplace=True)
+            df.to_excel(writer, "go", index=False)
+            ws = writer.sheets["go"]
+            try:
+                ws.autofilter(0, 0, df.shape[0], df.shape[1] - 1)
+            except:
+                logger.warning("XLS formatting issue.")
+"""
