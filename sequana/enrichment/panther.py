@@ -133,8 +133,14 @@ class PantherEnrichment:
         self.quickgo.requests_per_sec = requests_per_sec
         self.quickgo.settings.TIMEOUT = 120
 
-        self._ancestors = {"MF": "GO:0003674", "CC": "GO:0005575", "BP": "GO:0008150",
-                          "SLIM_MF": "GO:0003674", "SLIM_CC": "GO:0005575", "SLIM_BP": "GO:0008150"}
+        self._ancestors = {
+            "MF": "GO:0003674",
+            "CC": "GO:0005575",
+            "BP": "GO:0008150",
+            "SLIM_MF": "GO:0003674",
+            "SLIM_CC": "GO:0005575",
+            "SLIM_BP": "GO:0008150",
+        }
         self.ontologies = [
             "GO:0003674",
             "GO:0008150",
@@ -166,7 +172,6 @@ class PantherEnrichment:
         # to the first 2000 genes based on their log2 fold change 2000 + and
         # 2000 negatives
 
-
         msg = "Ignoring pvalue adjusted > {} and fold change in [{}, {}]".format(
             padj_threshold, 1 / (2 ** log2_fc_threshold), 2 ** log2_fc_threshold
         )
@@ -182,11 +187,11 @@ class PantherEnrichment:
         fc_threshold = log2_fc_threshold
 
         for x in sorted(gene_lists.keys()):
-            
+
             N = len(gene_lists[x])
             logger.info(f"Starting with {N} genes from category '{x}'")
 
-        self.summary["DGE_after_filtering"] = { k:len(v) for k,v in gene_lists.items()}
+        self.summary["DGE_after_filtering"] = {k: len(v) for k, v in gene_lists.items()}
 
         self.enrichment = {}
         self.stats = {}
@@ -261,13 +266,20 @@ class PantherEnrichment:
         for k in self.enrichment.keys():
             ontologies = self.enrichment[k].keys()
             for o in ontologies:
-                M = self.enrichment[k][o]['input_list']['mapped_count']
-                U = self.enrichment[k][o]['input_list']['unmapped_count']
-                results.append([k,o,M,U])
+                M = self.enrichment[k][o]["input_list"]["mapped_count"]
+                U = self.enrichment[k][o]["input_list"]["unmapped_count"]
+                results.append([k, o, M, U])
         df = pd.DataFrame(results)
         df[4] = 100 * df[2] / (df[3] + df[2])
         df[5] = df[2] + df[3]
-        df.columns = ['category','ontology','mapped','unmapped', 'mapped_percentage', 'total']
+        df.columns = [
+            "category",
+            "ontology",
+            "mapped",
+            "unmapped",
+            "mapped_percentage",
+            "total",
+        ]
         return df
 
     def _compute_enrichment(
@@ -310,7 +322,7 @@ class PantherEnrichment:
 
         for ontology in ontologies:
             logger.info(f" - Computing enrichment for {ontology}")
-            
+
             results = self.panther.get_enrichment(
                 mygenes,
                 taxid,
@@ -576,13 +588,15 @@ class PantherEnrichment:
         # They are stored by MF, CC or BP
         subdf["level"] = ""
         if compute_levels:
-            paths = self._get_graph(list(subdf["id"].values), progress=progress, ontologies=ontologies)
+            paths = self._get_graph(
+                list(subdf["id"].values), progress=progress, ontologies=ontologies
+            )
             if paths:
                 levels = []
                 keys = list(paths.keys())
 
                 # FIXME this part is flaky. What would happen if the levels are
-                # different if several keys are found ? Ze use the last one...
+                # different if several keys are found ? We use the last one...
                 goid_levels = paths[keys[0]]
                 if len(keys) > 1:
                     for k in keys[1:]:
@@ -678,7 +692,7 @@ class PantherEnrichment:
                 if level:
                     ticks.append(f"{ID} ({level}) ;  {label.title()}")
                 else:
-                    ticks.append("{ID} ; {label.title()}")
+                    ticks.append(f"{ID} ; {label.title()}")
             else:
                 ticks.append("")
 
@@ -807,8 +821,6 @@ class PantherEnrichment:
         frame.set_edgecolor("black")
         frame.set_alpha(1)
 
-        #self.subdf = subdf
-        #self.df = df
         return df
 
     def _get_graph(self, go_ids, ontologies=None, progress=True):
@@ -856,7 +868,6 @@ class PantherEnrichment:
                 obsolets.append(go_id)
                 continue
 
-
             # now figure out the distance to main ancestor
             # we can try several times
             # if _id != self.ancestors[ontology]:
@@ -888,7 +899,6 @@ class PantherEnrichment:
             for obsolet in obsolets:
                 paths[obsolet] = 100
             all_paths[ancestor] = paths
-
 
         for key in all_paths.keys():
             for old, new in renamed_ids.items():
@@ -942,6 +952,7 @@ class PantherEnrichment:
             no_data = sequana_data("no_data.png")
             shutil.copy(no_data, filename)
 
+
 """BOOK keeping
     def to_excel(self):
         with pd.ExcelWriter(out_dir.parent / "enrichment_go.xlsx") as writer:
@@ -954,5 +965,3 @@ class PantherEnrichment:
             except:
                 logger.warning("XLS formatting issue.")
 """
-
-
