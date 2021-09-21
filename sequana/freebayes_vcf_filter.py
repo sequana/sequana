@@ -76,11 +76,17 @@ class Variant(object):
                     freq = 0
                     info = ".:None:None"
                 else:
-                    info = "{0}:{1}:{3}".format(
-                        s.data.GT,
-                        s.data.DP,
-                        ",".join("{0:.3f}".format(v) for v in s.data.GL),
-                    )
+                    info = "{0}:{1}:{2}".format(
+                            s.data.GT,
+                            s.data.DP,
+                            s.data.GL[1]
+                            # this code was failing 16sept2021 . note in the
+                            # format the {3} replaced by {2} and using GL[1]
+                            # info = "{0}:{1}:{3}".format(
+                            #     s.data.GT,
+                            #     s.data.DP,
+                            #     ",".join("{0:.3f}".format(v) for v in s.data.GL),
+                        )
                     try:
                         freq = "; ".join(
                             "{0:.3f}".format(alt / s.data.DP) for alt in s.data.AO
