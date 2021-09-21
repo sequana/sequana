@@ -181,7 +181,7 @@ function, CC for cellular components and BP for biological process.</p>
                 elif x.startswith("R-"):
                     links.append(f"https://reactome.org/PathwayBrowser/#/{x}")
                 else:
-                    links.append("https://www.ebi.ac.uk/QuickGO/term/{x}")
+                    links.append(f"https://www.ebi.ac.uk/QuickGO/term/{x}")
             df["links"] = links
             for x in ["term", "fdr2", "abs_log2_fold_enrichment", "pct_diff_expr"]:
                 try:
