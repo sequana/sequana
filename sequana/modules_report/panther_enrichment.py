@@ -182,12 +182,45 @@ function, CC for cellular components and BP for biological process.</p>
             }
         )
 
+<<<<<<< HEAD
         html = self._get_enrichment("all")
         self.sections.append(
             {
                 "name": "4 - Enriched GO terms (All cases)",
                 "anchor": "go_all",
                 "content": html,
+=======
+        # a utility function to create the proper html table
+        def get_html_table(this_df, identifier):
+            df = this_df.copy()
+
+            links = []
+            for x in df['id']:
+                if x.startswith("PC"):
+                    links.append(f"http://www.pantherdb.org/panther/category.do?categoryAcc={x}")
+                elif x.startswith("R-"):
+                    links.append(f"https://reactome.org/PathwayBrowser/#/{x}")
+                else:
+                    links.append(f"https://www.ebi.ac.uk/QuickGO/term/{x}")
+            df["links"] = links
+            for x in ["term", "fdr2", "abs_log2_fold_enrichment", "pct_diff_expr"]:
+                try:
+                    del df[x]
+                except:
+                    pass
+
+            first_col = df.pop("id")
+            df.insert(0, "id", first_col)
+            df = df.sort_values(by="fold_enrichment", ascending=False)
+
+            datatable = DataTable(pd.DataFrame(df), identifier)
+            datatable.datatable.set_links_to_column("links", "id")
+            datatable.datatable.datatable_options = {
+                "scrollX": "true",
+                "pageLength": 10,
+                "scrollCollapse": "true",
+                "dom": "Bfrtip",
+                "buttons": ["copy", "csv"],
             }
         )
 
