@@ -64,7 +64,7 @@ class ModuleKEGGEnrichment(SequanaBaseModule):
 
         if self.enrichment_params["preload_directory"]:
             pathname = self.enrichment_params["preload_directory"]
-            if os.path.exists(pathname) is False:
+            if not os.path.exists(pathname):
                 logger.error(f"{pathname} does not exist")
                 sys.exit(1)
         self.nmax = enrichment_params.get("nmax", 15)
@@ -82,9 +82,9 @@ class ModuleKEGGEnrichment(SequanaBaseModule):
 
     def summary(self):
         """Add information of filter."""
-        Sup = len(self.gene_lists['up'])
-        Sdown = len(self.gene_lists['down'])
-        Stotal = Sup + Sdown
+        total_up = len(self.gene_lists['up'])
+        total_down = len(self.gene_lists['down'])
+        total = total_up + total_down
         log2fc = self.enrichment_params["log2_fc"]
 
         self.sections.append(
@@ -97,7 +97,7 @@ class ModuleKEGGEnrichment(SequanaBaseModule):
 The input data for those analyis is the output of the RNADiff
 analysis where adjusted p-values above 0.05 are excluded. Moreover, we removed 
 candidates with log2 fold change below {log2fc}. Using these filters, the list of
-differentially expressed genes is made of {Sup} up and {Sdown} down genes (total {Stotal})</p>
+differentially expressed genes is made of {total_up} up and {total_down} down genes (total {total})</p>
 <p> In the following plots you can find the first KEGG Pathways that are enriched, keeping a 
 maximum of {self.nmax} pathways. </p>
 

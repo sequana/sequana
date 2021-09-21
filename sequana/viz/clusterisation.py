@@ -112,6 +112,8 @@ class Cluster:
         pylab.ylim([Y1 + Y1 * 0.05, Y2 + Y2 * 0.05])
 
         count = 0
+        if fontsize == 0:
+            show_labels = 0
         if show_labels:
             for x, y in zip(Xr[:, pc1], Xr[:, pc2]):
                 x += dX / 40
