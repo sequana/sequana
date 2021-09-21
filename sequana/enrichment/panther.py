@@ -582,7 +582,7 @@ class PantherEnrichment:
                 keys = list(paths.keys())
 
                 # FIXME this part is flaky. What would happen if the levels are
-                # different if several keys are found ? Ze use the last one...
+                # different if several keys are found ? We use the last one...
                 goid_levels = paths[keys[0]]
                 if len(keys) > 1:
                     for k in keys[1:]:
@@ -678,7 +678,7 @@ class PantherEnrichment:
                 if level:
                     ticks.append(f"{ID} ({level}) ;  {label.title()}")
                 else:
-                    ticks.append("{ID} ; {label.title()}")
+                    ticks.append(f"{ID} ; {label.title()}")
             else:
                 ticks.append("")
 
@@ -807,8 +807,6 @@ class PantherEnrichment:
         frame.set_edgecolor("black")
         frame.set_alpha(1)
 
-        #self.subdf = subdf
-        #self.df = df
         return df
 
     def _get_graph(self, go_ids, ontologies=None, progress=True):

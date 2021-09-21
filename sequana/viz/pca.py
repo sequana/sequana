@@ -109,6 +109,7 @@ class PCA(clusterisation.Cluster):
         max_features=500,
         show_plot=True,
         fontsize=10,
+        adjust=True
     ):
         """
 
@@ -130,6 +131,7 @@ class PCA(clusterisation.Cluster):
             transform_method=transform, max_features=max_features
         )
 
+
         pca.fit(data.T)
 
         Xr = pca.transform(self.scaler.fit_transform(self.df.loc[kept].T))
@@ -142,7 +144,7 @@ class PCA(clusterisation.Cluster):
         if switch_z:
             Xr[:, 2] *= -1
 
-        def adjust():
+        def adjust_func():
             texts = [
                 x
                 for x in pylab.gca().get_children()
@@ -150,20 +152,25 @@ class PCA(clusterisation.Cluster):
             ]
             adjust_text(texts)
 
+        
         # PC1 vs PC2
+        print(adjust)
         if show_plot:
             pylab.figure(1)
             self._plot(Xr, pca=pca, pc1=0, pc2=1, colors=colors, fontsize=fontsize)
-            adjust()
+            if adjust:
+                adjust_func()
 
         if len(pca.explained_variance_ratio_) >= 3:
             if show_plot:
                 pylab.figure(2)
                 self._plot(Xr, pca=pca, pc1=0, pc2=2, colors=colors, fontsize=fontsize)
-                adjust()
+                if adjust:
+                    adjust_func()
 
                 pylab.figure(3)
                 self._plot(Xr, pca=pca, pc1=1, pc2=2, colors=colors, fontsize=fontsize)
-                adjust()
+                if adjust:
+                    adjust_func()
 
         return pca.explained_variance_ratio_

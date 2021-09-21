@@ -1088,7 +1088,8 @@ class RNADiffResults:
         plotly=False,
         max_features=500,
         genes_to_remove=[],
-        fontsize=10
+        fontsize=10,
+        adjust=True
     ):
 
         """
@@ -1176,7 +1177,8 @@ class RNADiffResults:
                 n_components=n_components,
                 colors=self.design_df.group_color,
                 max_features=max_features,
-                fontsize=fontsize
+                fontsize=fontsize,
+                adjust=adjust
             )
 
         return variance

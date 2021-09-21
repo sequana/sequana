@@ -253,21 +253,9 @@ class KEGGPathwayEnrichment:
 
         self.summary.data["missing_genes"] = {}
         self.summary.data["input_gene_list"] = {}
-        self.enrichment = {}
 
-        for category in self.gene_lists.keys():
-            self.enrichment[category] = self._enrichr(category, background=background)
-
-        """if (
-            len(self.enrichment["up"].results) == 0
-            and len(self.enrichment["down"].results) == 0
-        ):
-            logger.warning(
-                "Enrichment results are empty. Could be real because number of"
-                " deregulated genes is low or  an incompatible set of gene IDs."
-                " Please use BioMart to convert your IDs into external gene names "
-            )
-        """
+        self.enrichment = {category:self._enrichr(category, background=background) 
+                for category in self.gene_lists.keys()}
 
     def _enrichr(self, category, background=None, verbose=True):
 
@@ -368,12 +356,7 @@ class KEGGPathwayEnrichment:
         pylab.xlabel("Odd ratio")
         pylab.ylabel("Gene sets")
 
-        names = []
-        for x in df.name:
-            if len(x) > 40:
-                names.append(x[0:40] + " ...")
-            else:
-                names.append(x)
+        names = [x[0:40] + "..." if len(x)>40 else x for x in df.name]
 
         pylab.yticks(range(len(df)), names)
 
@@ -524,14 +507,14 @@ class KEGGPathwayEnrichment:
             l2fc = row["fc"]
             kegg_id = row["keggid"]
 
-            # Orange to Blue using _r meqns Blue to Orange where Blue is cold
+            # Orange to Blue using _r means Blue to Orange where Blue is cold
             # (negative fold change)
 
             cmap = colormap.get_cmap.cmap_builder("PuOr_r")
 
             if l2fc <= -4:
                 l2fc = -4
-            if l2fc >= 4:
+            elif l2fc >= 4:
                 l2fc = 4
             # to get a value in the range 0,1 expectd by the colormap
             l2fc  = (l2fc + 4)/8
@@ -586,12 +569,6 @@ class KEGGPathwayEnrichment:
             fout.write(r.content)
 
         return summary
-
-    #def save_all_pathways(self):  # pragma: no cover
-    #    # This does not do any enrichment. Just save all pathways once for all
-    #    # with useful information
-    #    for ID in self.pathways.keys():
-    #        self.save_pathway(ID)
 
     def save_significant_pathways(
         self, category, cutoff=0.05, nmax=20, background=None, tag="", outdir="."
@@ -667,8 +644,6 @@ class KEGGPathwayEnrichment:
         outdir = Path(outdir)
         outdir.mkdir(parents=True, exist_ok=True)
 
-        from pylab import savefig
-
         for category in ["up", "down", "all"]:
             common_out = Path(f"{tag}_kegg_gsea_{category}_degs")
 
@@ -686,23 +661,13 @@ class KEGGPathwayEnrichment:
                 )
 
                 self.barplot(category)
-                savefig(outdir / (common_out.name + "_barplot.png"), dpi=200)
+                pylab.savefig(outdir / (common_out.name + "_barplot.png"), dpi=200)
                 self.scatterplot(category)
-                savefig(outdir / (common_out.name + "_scatterplot.png"), dpi=200)
-
-                # TODO: Implement significant pathways export here (got an ID
-                # error before, so commenting)
-                # self.save_significant_pathways(
-                #     category, tag=tag, outdir=(outdir / "pathways")
-                # )
+                pylab.savefig(outdir / (common_out.name + "_scatterplot.png"), dpi=200)
 
             # In case of no enrichment results, create empty files stating so
             else:
                 (outdir / (common_out.name + "_NO_RESULTS")).touch()
-
-            # FIXME: I think this table is redundant with previous csv export. Is it correct ?
-            # > So commenting for now
-            # df.to_csv(outdir / (common_out.name + ".csv"), index=None)
 
     def export_pathways_to_json(self, outdir="kegg_pathways"):
         # This is useful to keep an exact track of the pathways that were used.
