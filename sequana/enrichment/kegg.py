@@ -254,8 +254,10 @@ class KEGGPathwayEnrichment:
         self.summary.data["missing_genes"] = {}
         self.summary.data["input_gene_list"] = {}
 
-        self.enrichment = {category:self._enrichr(category, background=background) 
-                for category in self.gene_lists.keys()}
+        self.enrichment = {
+            category: self._enrichr(category, background=background)
+            for category in self.gene_lists.keys()
+        }
 
     def _enrichr(self, category, background=None, verbose=True):
 
@@ -292,7 +294,9 @@ class KEGGPathwayEnrichment:
             no_plot=True,
         )
 
-        enr.results['Genes'] = [";".join(sorted(x.split(";"))) for x in enr.results['Genes'].values]
+        enr.results["Genes"] = [
+            ";".join(sorted(x.split(";"))) for x in enr.results["Genes"].values
+        ]
         return enr
 
     def _get_final_df(self, df, cutoff=0.05, nmax=10):
@@ -356,16 +360,15 @@ class KEGGPathwayEnrichment:
         pylab.xlabel("Odd ratio")
         pylab.ylabel("Gene sets")
 
-        names = [x[0:40] + "..." if len(x)>40 else x for x in df.name]
+        names = [x[0:40] + "..." if len(x) > 40 else x for x in df.name]
 
         pylab.yticks(range(len(df)), names)
 
         a, b = pylab.xlim()
-        pylab.xlim([0, b*1.1 +1 ])
+        pylab.xlim([0, b * 1.1 + 1])
 
-        a,b = pylab.ylim()
-        pylab.ylim([a-0.5, b+0.5])
-
+        a, b = pylab.ylim()
+        pylab.ylim([a - 0.5, b + 0.5])
 
         pylab.grid(True)
         ax = pylab.gca()
@@ -393,7 +396,6 @@ class KEGGPathwayEnrichment:
         df_down = df.query("padj<=@padj and log2FoldChange<@l2fc").copy()
         df_up = df.query("padj<=@padj and log2FoldChange>=@l2fc").copy()
 
-
         if "Name" in df_down.columns:
             pass
         elif "gene_name" in df_down.columns:
@@ -402,7 +404,6 @@ class KEGGPathwayEnrichment:
             df_down["Name"] = df_down["ID"]
         else:
             raise ValueError("Expected to find a column Name, gene_name or ID")
-
 
         if "Name" in df_up.columns:
             pass
@@ -414,8 +415,8 @@ class KEGGPathwayEnrichment:
             raise ValueError("Expected to find a column Name, gene_name or ID")
 
         logger.info("{}".format(pathway_ID))
-        #logger.info("Total down-regulated: {}".format(len(df_down)))
-        #logger.info("Total up-regulated: {}".format(len(df_up)))
+        # logger.info("Total down-regulated: {}".format(len(df_down)))
+        # logger.info("Total up-regulated: {}".format(len(df_up)))
 
         mapper = {}
         for k, v in genes.items():
@@ -517,18 +518,17 @@ class KEGGPathwayEnrichment:
             elif l2fc >= 4:
                 l2fc = 4
             # to get a value in the range 0,1 expectd by the colormap
-            l2fc  = (l2fc + 4)/8
+            l2fc = (l2fc + 4) / 8
 
             color = colormap.rgb2hex(*cmap(l2fc)[0:3], normalised=True)
 
-            if l2fc <0.2:
+            if l2fc < 0.2:
                 colors[kegg_id] = f"{color},grey"
             else:
                 colors[kegg_id] = f"{color},black"
         return colors
 
     def save_pathway(self, pathway_ID, df, scale=None, show=False, filename=None):
-
 
         summary = self._get_summary_pathway(pathway_ID, df)
         colors = self._get_colors(summary)
@@ -680,6 +680,7 @@ class KEGGPathwayEnrichment:
         for key, data in self.pathways.items():
             with open(f"{outdir}/{key}.json", "w") as fout:
                 json.dump(data, fout)
+
 
 """BOOK keeping
     def to_excel(self):

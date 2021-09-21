@@ -152,9 +152,7 @@ class PCA(clusterisation.Cluster):
             ]
             adjust_text(texts)
 
-        
         # PC1 vs PC2
-        print(adjust)
         if show_plot:
             pylab.figure(1)
             self._plot(Xr, pca=pca, pc1=0, pc2=1, colors=colors, fontsize=fontsize)
