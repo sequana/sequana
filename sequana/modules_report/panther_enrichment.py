@@ -11,7 +11,6 @@
 #
 ##############################################################################
 """Module to write enrichment report"""
-import ast
 import os
 import sys
 
@@ -21,14 +20,14 @@ from sequana.lazy import pylab
 from sequana.modules_report.base_module import SequanaBaseModule
 from sequana.utils.datatables_js import DataTable
 from sequana.enrichment.panther import PantherEnrichment
+from sequana.utils import config
+
 
 from easydev import Progress
 
 import colorlog
 
 logger = colorlog.getLogger(__name__)
-
-from sequana.utils import config
 
 
 class ModulePantherEnrichment(SequanaBaseModule):
@@ -50,7 +49,7 @@ class ModulePantherEnrichment(SequanaBaseModule):
             "plot_logx": True,
         },
         command="",
-        ontologies=["MF", "BP", "CC"]
+        ontologies=["MF", "BP", "CC"],
     ):
         """.. rubric:: constructor"""
         super().__init__()
@@ -59,28 +58,28 @@ class ModulePantherEnrichment(SequanaBaseModule):
         self.command = command
         self.gene_lists = gene_lists
         self.enrichment_params = enrichment_params
-        self.taxon = taxon
         self.nmax = enrichment_params.get("nmax", 50)
-
 
         # compute the enrichment here once for all, This may take time
         from sequana import logger
+
         logger.setLevel("INFO")
 
-        logger.info("Computing enrichment. Takes time")
+        logger.info(" === Module PanthEnrichment. === ")
         self.pe = PantherEnrichment(
             self.gene_lists,
-            self.taxon,
+            taxon,
             max_entries=self.enrichment_params["max_entries"],
             log2_fc_threshold=self.enrichment_params["log2_fc"],
         )
 
-        self.ontologies =ontologies
+        self.ontologies = ontologies
 
         # Compute the enrichment
         self.pe.compute_enrichment(ontologies=self.ontologies)
-        self.df_stats = self.pe.get_mapping_stats()[['category', 'mapped_percentage', 'total']]
-
+        self.df_stats = self.pe.get_mapping_stats()[
+            ["category", "mapped_percentage", "total"]
+        ]
 
         self.create_report_content()
         self.create_html("enrichment.html")
@@ -90,14 +89,14 @@ class ModulePantherEnrichment(SequanaBaseModule):
         self.summary()
         self.add_go()
         self.sections.append(
-            {"name": "3 - Info", "anchor": "command", "content": self.command}
+            {"name": "5 - Info", "anchor": "command", "content": self.command}
         )
 
     def summary(self):
         """Add information."""
 
-        total_up = len(self.gene_lists['up'])
-        total_down = len(self.gene_lists['down'])
+        total_up = len(self.gene_lists["up"])
+        total_down = len(self.gene_lists["down"])
         total = total_up + total_down
         log2fc = self.enrichment_params["log2_fc"]
 
@@ -109,15 +108,14 @@ class ModulePantherEnrichment(SequanaBaseModule):
         df_stats = self.df_stats.drop_duplicates()
         datatable = DataTable(df_stats, "unmapped")
         datatable.datatable.datatable_options = {
-                "scrollX": "true",
-                "pageLength": 10,
-                "scrollCollapse": "true",
-                "dom": "Bfrtip",
-                "buttons": ["copy", "csv"],
+            "scrollX": "true",
+            "pageLength": 10,
+            "scrollCollapse": "true",
+            "dom": "Bfrtip",
+            "buttons": ["copy", "csv"],
         }
         js = datatable.create_javascript_function()
         html_table = datatable.create_datatable(float_format="%E")
-
 
         self.sections.append(
             {
@@ -138,7 +136,6 @@ maximum of {self.nmax} identifiers. </p>
 <p> Check the following table for the percentage of mapped genes on Panther
 DB</p>
 
-
 {js}{html_table}
 """,
             }
@@ -149,10 +146,8 @@ DB</p>
         # add_go and then add_kegg, logger becomes an unbound local variable.
         # https://stackoverflow.com/questions/10851906/python-3-unboundlocalerror-local-variable-referenced-before-assignment
         # global logger
-        style = "width:85%"
         level = logger.level
         logger.setLevel(level)
-
 
         html_intro = """
 <p>Here below is a set of plots showing the enriched GO terms using the down
@@ -166,154 +161,142 @@ function, CC for cellular components and BP for biological process.</p>
             self.pe.summary["fold_change_range"][1],
             self.pe.summary["DGE_after_filtering"]["down"],
             self.pe.summary["DGE_after_filtering"]["up"],
+            self.pe.summary["DGE_after_filtering"]["all"],
         )
 
-
-
-        # a utility function to create the proper html table
-        def get_html_table(this_df, identifier):
-            df = this_df.copy()
-
-            links = []
-            for x in df['id']:
-                if x.startswith("PC"):
-                    links.append(f"http://www.pantherdb.org/panther/category.do?categoryAcc={x}")
-                elif x.startswith("R-"):
-                    links.append(f"https://reactome.org/PathwayBrowser/#/{x}")
-                else:
-                    links.append(f"https://www.ebi.ac.uk/QuickGO/term/{x}")
-            df["links"] = links
-            for x in ["term", "fdr2", "abs_log2_fold_enrichment", "pct_diff_expr"]:
-                try:
-                    del df[x]
-                except:
-                    pass
-
-            first_col = df.pop("id")
-            df.insert(0, "id", first_col)
-            df = df.sort_values(by="fold_enrichment", ascending=False)
-
-            datatable = DataTable(pd.DataFrame(df), identifier)
-            datatable.datatable.set_links_to_column("links", "id")
-            datatable.datatable.datatable_options = {
-                "scrollX": "true",
-                "pageLength": 10,
-                "scrollCollapse": "true",
-                "dom": "Bfrtip",
-                "buttons": ["copy", "csv"],
+        html = self._get_enrichment("down")
+        self.sections.append(
+            {
+                "name": "2 - Enriched GO terms (Down cases)",
+                "anchor": "go_down",
+                "content": html,
             }
-            js = datatable.create_javascript_function()
-            html_table = datatable.create_datatable(float_format="%E")
-            return js + html_table
+        )
 
+        html = self._get_enrichment("up")
+        self.sections.append(
+            {
+                "name": "3 - Enriched GO terms (Up cases)",
+                "anchor": "go_up",
+                "content": html,
+            }
+        )
 
-        # =====================================================================================
-        # DOWN CASES
-        # =====================================================================================
-        self._temp_df = {}
-        self._minus = {}
-        self._plus = {}
+        html = self._get_enrichment("all")
+        self.sections.append(
+            {
+                "name": "4 - Enriched GO terms (All cases)",
+                "anchor": "go_all",
+                "content": html,
+            }
+        )
 
-        html_down = ""
+    # a utility function to create the proper html table
+    def get_html_table(self, this_df, identifier):
+        df = this_df.copy()
+
+        # depending on the Panther category, we add the link to the identifier
+        links = []
+        for x in df["id"]:
+            if x.startswith("PC"):
+                links.append(
+                    f"http://www.pantherdb.org/panther/category.do?categoryAcc={x}"
+                )
+            elif x.startswith("R-"):
+                links.append(f"https://reactome.org/PathwayBrowser/#/{x}")
+            else:
+                links.append(f"https://www.ebi.ac.uk/QuickGO/term/{x}")
+        df["links"] = links
+
+        # remove non-informative or redundant fields
+        df = df.drop(["term", "fdr2", "abs_log2_fold_enrichment", "pct_diff_expr"], 
+            errors='ignore', axis=1)
+
+        first_col = df.pop("id")
+        df.insert(0, "id", first_col)
+        df = df.sort_values(by="fold_enrichment", ascending=False)
+
+        datatable = DataTable(pd.DataFrame(df), identifier)
+        datatable.datatable.set_links_to_column("links", "id")
+        datatable.datatable.datatable_options = {
+            "scrollX": "true",
+            "pageLength": 10,
+            "scrollCollapse": "true",
+            "dom": "Bfrtip",
+            "buttons": ["copy", "csv"],
+        }
+        js = datatable.create_javascript_function()
+        html_table = datatable.create_datatable(float_format="%E")
+        return js + html_table
+
+    def _get_enrichment(self, category):
+        # category is in down/up/all
+
+        style = "width:95%"
+        _temp_df = {}
+        _minus = {}
+        _plus = {}
+
+        html = ""
+
         for ontology in self.ontologies:
-            df = self.pe.plot_go_terms("down", ontologies=ontology, compute_levels=False)
 
-            def plot_go_terms_down(filename, ontology, df):
+            # get dat without plotting to store the entire set of GO terms
+            df, subdf = self.pe._get_plot_go_terms_data(
+                category, ontologies=ontology, compute_levels=False
+            )
+
+            # now plotting but showing only some restricted GO terms
+            def plot_go_terms(filename, category, ontology):
                 df = self.pe.plot_go_terms(
-                    "down",
+                    category,
                     ontologies=ontology,
                     compute_levels=self.enrichment_params["plot_compute_levels"],
                     log=self.enrichment_params["plot_logx"],
+                    max_features=self.nmax,
                 )
-                self._temp_df[ontology] = df.copy()
-                self._plus[ontology] = sum(df.plus_minus == "+")
-                self._minus[ontology] = sum(df.plus_minus == "-")
-                pylab.savefig(f"{config.output_dir}/Panther_down_{ontology}.png")
+                _temp_df[ontology] = df.copy()
+                _plus[ontology] = sum(df.plus_minus == "+")
+                _minus[ontology] = sum(df.plus_minus == "-")
+                pylab.savefig(f"{config.output_dir}/Panther_{category}_{ontology}.png")
                 pylab.savefig(filename)
                 pylab.close()
 
-            if len(df):
+            if df is not None and len(df):
                 image = self.create_embedded_png(
-                    plot_go_terms_down,
+                    plot_go_terms,
                     "filename",
                     style=style,
+                    category=category,
                     ontology=ontology,
-                    df=df,
                 )
 
-                html_down += f"<h4>Down - {ontology}</h4><p>For {ontology}, we found {self._plus[ontology]+self._minus[ontology]} go terms. Showing {self.nmax} here below (at most). The full list is downlodable from the CSV file hereafter.</p> {image} <br>"
-                html_down += get_html_table(
-                    self._temp_df[ontology], f"GO_table_down_{ontology}"
+                html += f"""
+<h4>{category.title()} - {ontology}</h4>
+<p>For {ontology}, we found {_plus[ontology]+_minus[ontology]} go terms.
+Showing {self.nmax} here below (at most). The full list is downlodable from the CSV
+ file hereafter.</p> {image} <br>"""
+                html += self.get_html_table(
+                    _temp_df[ontology], f"GO_table_{category}_{ontology}"
                 )
             else:
-                html_down += f"<h4>Down - {ontology}</h4><p>For {ontology} ({ontology}), we found 0 enriched go terms. </p><br>"
+                html += f"""
+<h4>{category.title()} - {ontology}</h4><p>For {ontology} case, we found 0
+enriched go terms. </p><br>"""
 
-        filenames = []
-        for ontology in self.ontologies:
-            if "PROTEIN" in ontology or "PATHWAY" in ontology:
-                continue
-            filename = f"{config.output_dir}/Chart_down_{ontology}.png"
-            if ontology in self._temp_df and len(self._temp_df[ontology]):
-                logger.info(f"Saving chart for case {ontology} (down) in {filename}")
-                self.pe.save_chart(self._temp_df[ontology], filename)
-                filenames.append(f"Chart_down_{ontology}.png")
-        fotorama_down = "<h4>Charts down</h2>" + self.add_fotorama(filenames)
+            filenames = []
+            for ontology in self.ontologies:
+                if "PROTEIN" in ontology or "PATHWAY" in ontology:
+                    continue
+                filename = f"{config.output_dir}/Chart_{category}_{ontology}.png"
+                if ontology in _temp_df and len(_temp_df[ontology]):
+                    logger.info(
+                        f"Saving chart for case {ontology} ({category}) in {filename}"
+                    )
 
-        # =====================================================================================
-        # UP CASES
-        # =====================================================================================
-        self._temp_df = {}
-        self._minus = {}
-        self._plus = {}
-        html_up = ""
+                    self.pe.save_chart(_temp_df[ontology].iloc[0 : self.nmax], filename)
+                    filenames.append(f"Chart_{category}_{ontology}.png")
+            foto = self.add_fotorama(filenames, width=1000)
+            html += f"<h4>Charts {category} -- </h4> {foto}"
 
-
-        for ontology in self.ontologies:
-
-            df = self.pe.plot_go_terms(
-                "up",
-                ontologies=ontology,
-                compute_levels=self.enrichment_params["plot_compute_levels"],
-                log=self.enrichment_params["plot_logx"],
-            )
-
-            def plot_go_terms_up(filename, ontology, df):
-                self._temp_df[ontology] = df.copy()
-                self._plus[ontology] = sum(df.plus_minus == "+")
-                self._minus[ontology] = sum(df.plus_minus == "-")
-                pylab.savefig(f"{config.output_dir}/Panther_up_{ontology}.png")
-                pylab.savefig(filename)
-                pylab.close()
-
-            if len(df):
-                image = self.create_embedded_png(
-                    plot_go_terms_up,
-                    "filename",
-                    style=style,
-                    ontology=ontology,
-                    df=df,
-                )
-
-                N = self._plus[ontology] + self._minus[ontology]
-                html_up += f"<h4>Up - {ontology}</h4><p>For {ontology}, we found {N} go terms. Showing {self.nmax} here below (at most). The full list is downlodable from the CSV file hereafter.</p>"
-                html_up += image + " <br>"
-                html_up += get_html_table(
-                    self._temp_df[ontology], f"GO_table_up_{ontology}"
-                )
-            else:
-                html_up += "<h4>Up - {ontology}</h4><p>For {ontology} ({case}), we found 0 enriched go terms. </p>"
-
-        filenames = []
-        for ontology in self.ontologies:
-            if "PROTEIN" in ontology or "PATHWAY" in ontology:
-                continue
-            filename = f"{config.output_dir}/Chart_up_{ontology}.png"
-            if ontology in self._temp_df and len(self._temp_df[ontology]):
-                logger.info(f"Saving chart for case {ontology} (up) in {filename}")
-                self.pe.save_chart(self._temp_df[ontology], filename)
-                filenames.append(f"Chart_up_{ontology}.png")
-        fotorama_up = "<h4>Charts up</h2>" + self.add_fotorama(filenames)
-
-        html = f"{html_intro} {html_down} <hr> {fotorama_down}<hr> {html_up} <hr> {fotorama_up}<hr>"
-        self.sections.append({"name": "2 - GO", "anchor": "go", "content": html})
-
+        return html

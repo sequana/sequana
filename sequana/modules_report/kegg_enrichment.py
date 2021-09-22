@@ -82,8 +82,8 @@ class ModuleKEGGEnrichment(SequanaBaseModule):
 
     def summary(self):
         """Add information of filter."""
-        total_up = len(self.gene_lists['up'])
-        total_down = len(self.gene_lists['down'])
+        total_up = len(self.gene_lists["up"])
+        total_down = len(self.gene_lists["down"])
         total = total_up + total_down
         log2fc = self.enrichment_params["log2_fc"]
 

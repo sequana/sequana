@@ -821,7 +821,7 @@ command""",
 @click.option(
     "--max-pathways",
     type=click.INT,
-    default=15,
+    default=40,
     help="""Max number of pathways to show (most enriched)"""
 )
 @click.option(
@@ -842,12 +842,12 @@ def enrichment_kegg(**kwargs):
 
     Example for the enrichment module:
 
-        sequana enrichment-panther rnadiff.csv --log2-foldchange-cutoff 2 
+        sequana enrichment-kegg rnadiff.csv --log2-foldchange-cutoff 2 
 
     The KEGG pathways are loaded and it may take time. Once done, they are saved
     in kegg_pathways/organism and be loaded next time:
 
-        sequana enrichment-panther rnadiff/rnadiff.csv
+        sequana enrichment-kegg rnadiff/rnadiff.csv
             --log2-foldchange-cutoff 2 \
             --kegg-name lbi\
             --annotation file.gff
@@ -984,13 +984,13 @@ def gtf_fixer(**kwargs):
     type=click.STRING,
     # required=True,
     default="index",
+    show_default=True,
     help="a valid taxon identifiers",
 )
 @click.option(
     "--panther-taxon",
     type=click.INT,
-    # required=True,
-    default=0,
+    required=True,
     help="a valid taxon identifiers",
 )
 @click.option(
@@ -1012,35 +1012,42 @@ def gtf_fixer(**kwargs):
     type=click.BOOL,
     default=False,
     is_flag=True,
+    show_default=True,
     help="""Default is log2 fold enrichment in the plots. use this to use linear scale""",
 )
 @click.option(
     "--compute-levels/--no-compute-levels",
-    type=click.BOOL,
     default=True,
     help="""Compute the levels of each go term, set --no-compute-levels to skip this step""",
 )
 @click.option(
     "--max-genes",
     type=click.INT,
-    default=2000,
-    help="""Maximum number of genes (up or down) to use in PantherDB, which is limited to about 3000""",
+    default=2500,
+    show_default=True,
+    help="""Maximum number of genes (up or down) to use in PantherDB.""",
 )
 @click.option(
     "--ontologies",
     default=('MF','BP','CC'),
-    help="todo",
-    cls=OptionEatAll
+    help="""Provide the ontologies to be included in the analysis and HTML report.
+Valid choices are: from MF, BP, CC, SLIM_MF, SLIM_BP, SLIM_CC, PROTEIN,
+PANTHER_PATHWAY, REACTOME_PATHWAY""",
+    cls=OptionEatAll,
+    show_default=True,
 )
 @click.option(
     "--max-enriched-go-terms",
     type=click.INT,
-    default=15,
-    help="""Max number of enriched go terms to show (most enriched)"""
+    default=40,
+    show_default=True,
+    help="""Max number of enriched go terms to show in the plots (most
+enriched). All enriched GO terms are stored in tables"""
 )
 @click.option(
     "--output-directory",
-    default="enrichement_panther")
+    show_default=True,
+    default="enrichment_panther")
 @common_logger
 def enrichment_panther(**kwargs):
     """Create a HTML report for various sequana out
@@ -1057,6 +1064,7 @@ def enrichment_panther(**kwargs):
             --panther-taxon 189518 \
             --log2-foldchange-cutoff 2 \
 
+    \b
     Valid ontologies are: MF, BP, CC, SLIM_MF, SLIM_BP, SLIM_CC, 
     PROTEIN, "PANTHER_PATHWAY", "REACTOME_PATHWAY"
 
@@ -1116,8 +1124,8 @@ def enrichment_panther(**kwargs):
         config.output_dir = f"{output_directory}/{compa}"
         os.makedirs(f"{output_directory}", exist_ok=True)
 
-        # for now, let us ignore the 'all' category
-        del gene_dict["all"]
+        # for now, let us keep the 'all' category
+        # del gene_dict["all"]
 
         ModulePantherEnrichment(
             gene_dict,
