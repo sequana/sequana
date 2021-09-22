@@ -275,7 +275,6 @@ function, CC for cellular components and BP for biological process.</p>
             }
         )
 
-        return
         html = self._get_enrichment("up")
         self.sections.append(
             {
@@ -312,11 +311,8 @@ function, CC for cellular components and BP for biological process.</p>
         df["links"] = links
 
         # remove non-informative or redundant fields
-        for x in ["term", "fdr2", "abs_log2_fold_enrichment", "pct_diff_expr"]:
-            try:
-                del df[x]
-            except KeyError:
-                pass
+        df = df.drop(["term", "fdr2", "abs_log2_fold_enrichment", "pct_diff_expr"], 
+            errors='ignore', axis=1)
 
         first_col = df.pop("id")
         df.insert(0, "id", first_col)
