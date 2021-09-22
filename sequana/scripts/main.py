@@ -1017,7 +1017,6 @@ def gtf_fixer(**kwargs):
 )
 @click.option(
     "--compute-levels/--no-compute-levels",
-    type=click.BOOL,
     default=True,
     help="""Compute the levels of each go term, set --no-compute-levels to skip this step""",
 )
