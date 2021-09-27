@@ -20,6 +20,7 @@ logger = colorlog.getLogger(__name__)
 
 
 from itolapi import Itol
+ifrom itolapi.itol import ItolExport
 
 
 __all__ = ["ITOL"]
@@ -95,10 +96,10 @@ class ITOL:
     def upload(self):
         self.itol.params = self.params
         self.status = self.itol.upload()
-        if self.status is False:
-            print("Something is wrong with your input tree")
-            print(self.itol.comm.upload_output)
-            raise Exception
+        if not self.status:
+            logger.error("Something is wrong with your input tree")
+            logger.error(self.itol.comm.upload_output)
+            raise ItolExport
 
     def export(self, filename="test.png", extra_params={}, tree_id=None, circular=True):
         """Export or retrieve an existing tree to get back the resulting image
@@ -133,7 +134,7 @@ class ITOL:
 
         # Set the output format to png/svg/epd/pdf
         extension = filename.split(".")[-1]
-        if extension in ["png", "svg", "pdf", "eps"]:
+        if extension in {"png", "svg", "pdf", "eps"}:
             logger.info(f"Exporting in {extension} format")
             export.params["format"] = extension
         else:
