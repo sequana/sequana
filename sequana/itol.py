@@ -20,7 +20,7 @@ logger = colorlog.getLogger(__name__)
 
 
 from itolapi import Itol
-ifrom itolapi.itol import ItolExport
+from itolapi.itol import ItolExport
 
 
 __all__ = ["ITOL"]
