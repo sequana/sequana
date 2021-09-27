@@ -3,6 +3,6 @@
 coverage
 ---------
 
-.. sequana_pipeline:: sequana_coverage
+.. sequana_pipeline:: coverage
 
 
