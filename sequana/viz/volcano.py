@@ -45,7 +45,7 @@ class Volcano(object):
 
         from sequana.viz import Volcano
         v = Volcano(fc, -np.log10(pvalue**2))
-        v.plot(pvalue_threshold=3)
+        v.plot()
 
 
     """
