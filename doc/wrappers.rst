@@ -19,5 +19,20 @@ documentation thanks to a sphinx extension. For example::
 Here is a non exhaustive list of documented wrappers. 
 
 
+
+fastqc
+======
+
 .. sequana_wrapper:: fastqc
+
+
+rulegraph
+==========
+
 .. sequana_wrapper:: rulegraph
+
+bowtie2
+==========
+
+
+.. sequana_wrapper:: bowtie2/align

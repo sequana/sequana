@@ -115,11 +115,7 @@ selected.
    pattern**. For instance if samples are stored in sub directories, use
    `*/*fastq.gz`
 
-.. figure:: _static/sequanix/sequanix_input_data.png
-    :width: 80%
 
-    In the input data section, you have to click on the red browser button to
-    select the directory where to find the FastQ (gzipped) files.
 
 .. note:: The directory browser can create directories 
 
