@@ -42,13 +42,14 @@ __all__ = [
 def get_most_probable_strand(
     sample_folder, tolerance, pattern=None
 ):
-    """Return most property strand given 3 feature counts files (strand of 0,1, and 2)
+    """Return most propable strand given 3 feature count files (strand of 0,1, and 2)
 
     Return the total counts by strand from featureCount matrix folder, strandness and
     probable strand for a single sample (using a tolerance threshold for
     strandness). This assumes a single sample by featureCounts file.
 
     Possible values include:
+
     * 0: unstranded
     * 1: stranded
     * 2: eversely stranded
@@ -62,10 +63,11 @@ def get_most_probable_strand(
     * if RS > 1-tolerance, stranded
     * otherwise, we cannot decided.
 
-    First version expected to find 3 files with the pattern: feature_counts_?/*_feature.out
+    First version expected to find 3 files with the pattern:
+    ``feature_counts_?/*_feature.out``
     Newest version can also cope with the pattern
-    feature_counts/[012]/*feature.out. You can also set your own pattern using
-    :param:`pattern`.
+    ``feature_counts/[012]/*feature.out``. You can also set your own pattern using
+    **pattern** parameter.
 
     """
     sample_folder = Path(sample_folder)
