@@ -1,5 +1,7 @@
 
+import pytest
 
+@pytest.mark.timeout(10)
 def test_pca():
     from sequana.viz.pca import PCA
     from sequana import sequana_data
@@ -12,9 +14,9 @@ def test_pca():
         "A1": 'r', "A2": 'r', 'A3': 'r',
         "B1": 'b', "B2": 'b', 'B3': 'b'})
 
-    p.plot(n_components=2, switch_y=True)
-    p.plot(n_components=2, switch_x=True)
-    p.plot(n_components=3, switch_z=True)
+    p.plot(n_components=2, switch_y=True, adjust=False)
+    p.plot(n_components=2, switch_x=True, adjust=False)
+    p.plot(n_components=3, switch_z=True, adjust=False)
 
 
 

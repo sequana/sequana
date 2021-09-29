@@ -12,6 +12,7 @@ rule copy_%(name)s:
         dst = __copy_%(name)s__output
     shell:
         """
+        echo "DEPRECATED"
         cp {input.src} {output.dst}
         """
 '''

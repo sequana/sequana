@@ -79,9 +79,10 @@ class PhixModule(SequanaBaseModule):
         filenames = glob.glob(
             os.sep.join([self.directory, self.phix_directory, pattern])
         )
-        if len(filenames) == 4:
+
+        if len(filenames) == 2:
             mode = "pe"
-        elif len(filenames) == 2:
+        elif len(filenames) == 1:
             mode = "se"
         elif len(filenames) == 0:
             return
@@ -111,6 +112,8 @@ class PhixModule(SequanaBaseModule):
 
     def _get_stats(self):
         filenames, mode = self._get_files("*.json")
+
+
         cols = [
             "A",
             "C",

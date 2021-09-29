@@ -51,7 +51,7 @@ def strip(text):
 class RNADesign:
     """Simple RNA design handler"""
 
-    def __init__(self, filename, sep="\s*,\s*", reference=None):
+    def __init__(self, filename, sep=r"\s*,\s*", reference=None):
         self.filename = filename
         # \s to strip the white spaces
         self.df = pd.read_csv(
@@ -153,7 +153,7 @@ class RNADiffAnalysis:
         threads=4,
         outdir="rnadiff",
         sep_counts=",",
-        sep_design="\s*,\s*",
+        sep_design=r"\s*,\s*",
         minimum_mean_reads_per_gene=0,
     ):
 
@@ -873,131 +873,6 @@ class RNADiffResults:
                 )
             )
 
-    def __run_enrichment_go(
-        self, taxon, annot_col="Name", out_dir="enrichment"
-    ):  # pragma: no cover
-
-        out_dir = Path(out_dir) / "figures"
-        out_dir.mkdir(exist_ok=True, parents=True)
-
-        gene_lists_dict = self.get_gene_lists(
-            annot_col=annot_col, Nmax=2000, dropna=True
-        )
-        enrichment = {}
-        ontologies = {"GO:0003674": "BP", "GO:0008150": "MF", "GO:0005575": "CC"}
-        failed_enrichments = []
-
-        for compa in self.comparisons:
-            gene_lists = gene_lists_dict[compa]
-            pe = PantherEnrichment(gene_lists, taxon)
-            pe.compute_enrichment(ontologies=ontologies.keys(), progress=False)
-
-            for direction in ["up", "down", "all"]:
-                if not pe.enrichment[direction]:
-                    logger.warning(
-                        f"No enrichment computed, so no plots computed for {compa} {direction} {ontology}"
-                    )
-                    failed_enrichments.append(
-                        {
-                            "comparison": compa,
-                            "direction": direction,
-                            "GO": "all",
-                            "reason": "no enrichment computed",
-                        }
-                    )
-                    continue
-
-                for ontology in ontologies.keys():
-                    pylab.figure()
-                    enrichment_df = pe.plot_go_terms(
-                        direction, ontology, compute_levels=False
-                    )
-                    if enrichment_df.empty:
-                        failed_enrichments.append(
-                            {
-                                "comparison": compa,
-                                "direction": direction,
-                                "GO": ontology,
-                                "reason": "no enrichment found",
-                            }
-                        )
-                    else:
-                        enrichment[(compa, direction, ontology)] = enrichment_df
-                        pylab.tight_layout()
-                        pylab.savefig(
-                            out_dir
-                            / f"go_{compa}_{direction}_{ontologies[ontology]}.pdf"
-                        )
-                        pe.save_chart(
-                            enrichment_df,
-                            out_dir
-                            / f"chart_{compa}_{direction}_{ontologies[ontology]}.png",
-                        )
-
-            logger.info(f"Panther enrichment for {compa} DONE.")
-
-        df = pd.concat(enrichment).sort_index()
-        df.index.rename(
-            ["comparison", "direction", "GO_category", "index"], inplace=True
-        )
-
-        self.enrichment_go = df
-        self.failed_go_enrichments = pd.DataFrame(failed_enrichments)
-
-        # Export results (should be moved to enrichment.py at some point I think)
-        with pd.ExcelWriter(out_dir.parent / "enrichment_go.xlsx") as writer:
-            df = self.enrichment_go.copy()
-            df.reset_index(inplace=True)
-            df.to_excel(writer, "go", index=False)
-            ws = writer.sheets["go"]
-            try:
-                ws.autofilter(0, 0, df.shape[0], df.shape[1] - 1)
-            except:
-                logger.warning("XLS formatting issue.")
-
-    def __run_enrichment_kegg(
-        self, organism, annot_col="Name", out_dir="enrichment"
-    ):  # pragma: no cover
-
-        out_dir = Path(out_dir) / "figures"
-        out_dir.mkdir(exist_ok=True, parents=True)
-
-        gene_lists_dict = self.get_gene_lists(annot_col=annot_col, dropna=True)
-        enrichment = {}
-
-        for compa in self.comparisons:
-            gene_lists = gene_lists_dict[compa]
-            ke = KeggPathwayEnrichment(gene_lists, organism, progress=False)
-            ke.compute_enrichment()
-
-            for direction in ["up", "down", "all"]:
-                enrichment[(compa, direction)] = ke._get_final_df(
-                    ke.enrichment[direction].results, nmax=10000
-                )
-                pylab.figure()
-                ke.scatterplot(direction)
-                pylab.tight_layout()
-                pylab.savefig(out_dir / f"kegg_{compa}_{direction}.pdf")
-                pylab.savefig(out_dir / f"kegg_{compa}_{direction}.png")
-
-            logger.info(f"KEGG enrichment for {compa} DONE.")
-
-        df = pd.concat(enrichment).sort_index()
-        df.index.rename(["comparison", "direction", "index"], inplace=True)
-
-        self.enrichment_kegg = df
-
-        # Export results (should be moved to enrichment.py at some point I think)
-        with pd.ExcelWriter(out_dir.parent / "enrichment_kegg.xlsx") as writer:
-            df = self.enrichment_kegg.copy()
-            df.reset_index(inplace=True)
-            df.to_excel(writer, "kegg", index=False)
-            ws = writer.sheets["kegg"]
-            try:
-                ws.autofilter(0, 0, df.shape[0], df.shape[1] - 1)
-            except:
-                logger.warning("Fixme")
-
     def get_gene_lists(
         self, annot_col="index", Nmax=None, dropna=False
     ):  # pragma: no cover
@@ -1005,8 +880,11 @@ class RNADiffResults:
         gene_lists_dict = {}
 
         for compa in self.comparisons.keys():
-            df = self.df.loc[:, ["annotation", compa]].copy()
+            df = self.df.loc[:, [compa]].copy()
             df = df.droplevel(0, axis=1)
+
+            # Let us add the annotation columns
+            df = pd.concat([df, self.annotation.loc[df.index]], axis=1)
 
             fc_filt = df["log2FoldChange"].abs() >= self._log2_fc
             fdr_filt = df["padj"] <= self._alpha
@@ -1210,7 +1088,8 @@ class RNADiffResults:
         plotly=False,
         max_features=500,
         genes_to_remove=[],
-        fontsize=10
+        fontsize=10,
+        adjust=True
     ):
 
         """
@@ -1298,7 +1177,8 @@ class RNADiffResults:
                 n_components=n_components,
                 colors=self.design_df.group_color,
                 max_features=max_features,
-                fontsize=fontsize
+                fontsize=fontsize,
+                adjust=adjust
             )
 
         return variance

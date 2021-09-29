@@ -119,7 +119,6 @@ for that feature.</p>
             else:
                 message = f"Number of DGE log2(|FC|) > {lfc} "
 
-
             df = pd.DataFrame(
                 {
                     "comparison_link": [1] * N,

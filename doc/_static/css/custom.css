@@ -295,7 +295,7 @@ div.sequana_wrapper {
 div.sequana_wrapper .document .literal-block {
 padding:6px;
 font-size:0.9em;
-border: 2px solid red;
-background: orange;
+border: 2px solid #e1e4e5;
+background: #eeffcc;
 }
 
