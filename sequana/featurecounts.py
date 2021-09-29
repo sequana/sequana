@@ -40,7 +40,7 @@ __all__ = [
 
 
 def get_most_probable_strand(
-    sample_folder, tolerance, pattern=None
+    filenames, tolerance
 ):
     """Return most propable strand given 3 feature count files (strand of 0,1, and 2)
 
@@ -63,33 +63,12 @@ def get_most_probable_strand(
     * if RS > 1-tolerance, stranded
     * otherwise, we cannot decided.
 
-    First version expected to find 3 files with the pattern:
-    ``feature_counts_?/*_feature.out``
-    Newest version can also cope with the pattern
-    ``feature_counts/[012]/*feature.out``. You can also set your own pattern using
-    **pattern** parameter.
-
     """
-    sample_folder = Path(sample_folder)
+    sample_name = list(set([Path(x).stem for x in filenames]))
+    assert len(sample_name) == 1
+    sample_name = sample_name[0]
 
-    if pattern is None: # try to infer standard path
-        pattern1 = f"feature_counts/?/*feature.out"
-        fc_files = list(sample_folder.glob(pattern1))
-        if not fc_files:
-            pattern2="feature_counts_?/*_feature.out"
-            fc_files = list(sample_folder.glob(pattern2))
-            if not fc_files:
-                logger.error(f"Could not identify any files in {sample_folder} "
-                            f"with pattern {pattern1} or {pattern2}")
-                sys.exit(1)
-    else:
-        fc_files = list(sample_folder.glob(pattern))
-        if not fc_files:
-            logger.error(f"Could not identify any files in {sample_folder} with pattern {pattern}")
-            sys.exit(1)
-
-
-    sample_name = sample_folder.stem
+    fc_files = [Path(x) for x in filenames]
     res_dict = {}
 
     for f in fc_files:
@@ -119,45 +98,80 @@ def get_most_probable_strand(
 
 
 def get_most_probable_strand_consensus(
-    rnaseq_folder, tolerance, pattern=None, pattern_file=None
+    rnaseq_folder, tolerance, sample_pattern="*/feature_counts_[012]",
+    file_pattern="feature_counts_[012]/*_feature.out"
 ):
-    """From a sequana rna-seq run folder get the most probable strand, based on the
+    """From a sequana RNA-seq run folder get the most probable strand, based on the
     frequecies of counts assigned with '0', '1' or '2' type strandness
-    (featureCounts nomenclature)
+    (featureCounts nomenclature) across all samples.
 
     :param rnaseq_folder: the main directory
-    :param tolerance:
+    :param tolerance: a value in the range 0-0.5. typically 0.1 or 0.15
     :param pattern: the samples directory pattern
     :param pattern_file: the feature counts pattern
 
     If guess is not possible given the tolerance, fills with None
+
+    Consider this tree structure::
+
+        rnaseq_folder
+        ├── sample1
+        │   └── feature_counts
+        │       ├── 0
+        │       │   └── sample_feature.out
+        │       ├── 1
+        │       │   └── sample_feature.out
+        │       └── 2
+        │           └── sample_feature.out
+        └── sample2
+            └── feature_counts
+                ├── 0
+                │   └── sample_feature.out
+                ├── 1
+                │   └── sample_feature.out
+                └── 2
+                    └── sample_feature.out
+
+    Then, the following command should all files and report the most probable
+    strand (0,1,2) given the sample1 and sample2::
+
+        get_most_probable_strand_consensus("rnaseq_folder", 0.15)
+
+    This tree structure is understood automatically. If you have a different
+    one, you can set the pattern (for samples) and pattern_files parameters. 
 
     .. seealso: :func:`get_most_probable_strand`
     """
 
     rnaseq_folder = Path(rnaseq_folder)
 
-
-    if pattern is None:
-        sample_folders = list(set([x.parent for x in rnaseq_folder.glob("*/feature_counts_[012]")]))
+    sample_folders = list(set([x.parent for x in rnaseq_folder.glob(sample_pattern)]))
+    if not sample_folders:
+        # the new method holds 3 sub directories 0/, 1/ and 2/
+        sample_pattern = "*/feature_counts"
+        sample_folders = list(set([x.parent for x in rnaseq_folder.glob(sample_pattern)]))
         if not sample_folders:
-            # the new method holds 3 sub directories 0/, 1/ and 2/
-            sample_folders = list(set([x.parent for x in rnaseq_folder.glob("*/feature_counts")]))
-            if not sample_folders:
-                logger.error(f"Could not find sample directories in {rnaseq_folder} with pattern {pattern}")
-                sys.exit()
-    else:
-        sample_folders = list(set([x.parent for x in rnaseq_folder.glob(pattern)]))
+            logger.error(f"Could not find sample directories in {rnaseq_folder} with pattern {pattern}")
+            sys.exit()
 
-    # hack due to possible bug in pathlib
-    sample_folders = [x for x in sample_folders if x.name not in ['rnadiff']]
 
-    df = pd.concat(
-        [
-            get_most_probable_strand(sample_folder, tolerance, pattern=pattern_file)
-            for sample_folder in sample_folders
-        ]
-    )
+    print(sample_folders)
+    results = []
+    for ii, sample in enumerate(sample_folders):
+        filenames = list(sample.glob(file_pattern))
+        if len(filenames) == 0:
+
+            file_pattern = "feature_counts/[012]/*_feature.out"
+            filenames = list(sample.glob(file_pattern))
+            if len(filenames) == 0:
+                logger.warning(f'No files found for {sample}/{file_pattern}. skipped')
+            else:
+                result = get_most_probable_strand(filenames, tolerance)
+                result.index = [ii]
+                results.append(result)
+
+    df = pd.concat(results)
+
     df = df[["0", "1", "2", "strandness", "strand"]]
 
     logger.info(f"Strand guessing for each files (tolerance: {tolerance}):\n")
@@ -237,25 +251,24 @@ class MultiFeatureCount:
         :param int tolerance:  the tolerance between 0 and 0.25
         :param str pattern: a glob pattern to find feature files. 
 
-
         """
         self.tolerance = tolerance
         self.rnaseq_folder = rnaseq_folder
         self.pattern = pattern
 
-    def get_most_probable_strand_consensus(self):
-        most_probable, df = get_most_probable_strand_consensus(
+        # this should be called in the constructor once for all
+        self._get_most_probable_strand_consensus()
+
+    def _get_most_probable_strand_consensus(self):
+        self.probable_strand, self.df = get_most_probable_strand_consensus(
             self.rnaseq_folder, self.tolerance
         )
-        return most_probable, df
 
     def plot_strandness(
         self, fontsize=12, output_filename="strand_summary.png", savefig=False
     ):
-        # USED in rnaseq pipeline
-        most_probable, df = self.get_most_probable_strand_consensus()
 
-        df = df.sort_index(ascending=False)
+        df = self.df.sort_index(ascending=False)
         df["strandness"] = df["strandness"].T
         df["strandness"].plot(kind="barh")
         pylab.xlim([0, 1])
