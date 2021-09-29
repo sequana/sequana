@@ -19,7 +19,7 @@ import os
 import glob
 from sequana import version
 from sequana.lazy import pandas as pd
-from sequana.pylab import pylab
+from sequana.lazy import pylab
 
 import colorlog
 logger = colorlog.getLogger(__name__)
