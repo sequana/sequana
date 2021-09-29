@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 #  This file is part of Sequana software
 #
@@ -39,16 +38,19 @@ __all__ = [
 ]
 
 
-def get_most_probable_strand(
-    filenames, tolerance
-):
+def get_most_probable_strand(filenames, tolerance, sample_name):
     """Return most propable strand given 3 feature count files (strand of 0,1, and 2)
 
     Return the total counts by strand from featureCount matrix folder, strandness and
     probable strand for a single sample (using a tolerance threshold for
     strandness). This assumes a single sample by featureCounts file.
 
-    Possible values include:
+    :param filenames: a list of 3 feature counts files for a given sample 
+        corresponding to the strand 0,1,2
+    :param tolerance: a value below 0.5
+    :param sample: the name of the sample corresponding to the list in filenames
+
+    Possible values returned are:
 
     * 0: unstranded
     * 1: stranded
@@ -64,9 +66,6 @@ def get_most_probable_strand(
     * otherwise, we cannot decided.
 
     """
-    sample_name = list(set([Path(x).stem for x in filenames]))
-    assert len(sample_name) == 1
-    sample_name = sample_name[0]
 
     fc_files = [Path(x) for x in filenames]
     res_dict = {}
@@ -98,8 +97,10 @@ def get_most_probable_strand(
 
 
 def get_most_probable_strand_consensus(
-    rnaseq_folder, tolerance, sample_pattern="*/feature_counts_[012]",
-    file_pattern="feature_counts_[012]/*_feature.out"
+    rnaseq_folder,
+    tolerance,
+    sample_pattern="*/feature_counts_[012]",
+    file_pattern="feature_counts_[012]/*_feature.out",
 ):
     """From a sequana RNA-seq run folder get the most probable strand, based on the
     frequecies of counts assigned with '0', '1' or '2' type strandness
@@ -138,7 +139,7 @@ def get_most_probable_strand_consensus(
         get_most_probable_strand_consensus("rnaseq_folder", 0.15)
 
     This tree structure is understood automatically. If you have a different
-    one, you can set the pattern (for samples) and pattern_files parameters. 
+    one, you can set the pattern (for samples) and pattern_files parameters.
 
     .. seealso: :func:`get_most_probable_strand`
     """
@@ -149,26 +150,27 @@ def get_most_probable_strand_consensus(
     if not sample_folders:
         # the new method holds 3 sub directories 0/, 1/ and 2/
         sample_pattern = "*/feature_counts"
-        sample_folders = list(set([x.parent for x in rnaseq_folder.glob(sample_pattern)]))
+        sample_folders = list(
+            set([x.parent for x in rnaseq_folder.glob(sample_pattern)])
+        )
         if not sample_folders:
-            logger.error(f"Could not find sample directories in {rnaseq_folder} with pattern {pattern}")
+            logger.error(
+                f"Could not find sample directories in {rnaseq_folder} with pattern {pattern}"
+            )
             sys.exit()
 
-
-    print(sample_folders)
     results = []
-    for ii, sample in enumerate(sample_folders):
+    for sample in sample_folders:
         filenames = list(sample.glob(file_pattern))
         if len(filenames) == 0:
-
             file_pattern = "feature_counts/[012]/*_feature.out"
             filenames = list(sample.glob(file_pattern))
-            if len(filenames) == 0:
-                logger.warning(f'No files found for {sample}/{file_pattern}. skipped')
-            else:
-                result = get_most_probable_strand(filenames, tolerance)
-                result.index = [ii]
-                results.append(result)
+        if len(filenames) == 0:
+            logger.warning(f"No files found for {sample}/{file_pattern}. skipped")
+            continue
+
+        result = get_most_probable_strand(filenames, tolerance, sample)
+        results.append(result)
 
     df = pd.concat(results)
 
@@ -242,19 +244,18 @@ class MultiFeatureCount:
                     └── sample_feature.out
 
     """
+
     # USED in rnaseq pipeline
 
-    def __init__(self, rnaseq_folder=".", tolerance=0.1, pattern=None):
+    def __init__(self, rnaseq_folder=".", tolerance=0.1):
         """
 
         :param str rnaseq_folder:
         :param int tolerance:  the tolerance between 0 and 0.25
-        :param str pattern: a glob pattern to find feature files. 
 
         """
         self.tolerance = tolerance
         self.rnaseq_folder = rnaseq_folder
-        self.pattern = pattern
 
         # this should be called in the constructor once for all
         self._get_most_probable_strand_consensus()
@@ -277,16 +278,17 @@ class MultiFeatureCount:
         pylab.axvline(1 - self.tolerance, ls="--", color="r")
         pylab.axvline(0.5, ls="--", color="k")
         pylab.xlabel("Strandness", fontsize=fontsize)
-        pylab.tight_layout()
+        try:
+            pylab.tight_layout()
+        except Exception:
+            pass
         if savefig:  # pragma: no cover
             pylab.savefig(output_filename)
 
 
 class FeatureCountMerger:
-    """Merge several feature counts files
+    """Merge several feature counts files"""
 
-
-    """
     def __init__(self, pattern="*feature.out", fof=[]):
         if len(fof):
             self.filenames = fof

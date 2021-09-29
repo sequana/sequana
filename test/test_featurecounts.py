@@ -46,7 +46,6 @@ def test_featurecounts():
 
 def test_multi_feature_counts():
     ff = fc.MultiFeatureCount(RNASEQ_DIR_0, 0.15)
-    ff.get_most_probable_strand_consensus()
     ff.plot_strandness()
 
 def test_feature_counts():
