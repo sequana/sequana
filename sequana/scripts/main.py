@@ -765,6 +765,29 @@ def biomart(**kwargs):
     conv.save(df, filename=kwargs["output"])
 
 #=====================================================================================
+# feature counts
+#=====================================================================================
+
+
+@main.command()
+@click.option(
+    "--pattern",
+    help="The pattern of the feature counts files to merge",
+    show_default=True,
+    default="*feature.out")
+@click.option(
+    "--output",
+    help="The output filename where to save the merged counts",
+    show_default=True,
+    default="all_features.out")
+@common_logger
+def feature_counts(**kwargs):
+    """Merge several feature counts files into one file"""
+    from sequana.featurecounts import FeatureCountMerger
+    fcm = FeatureCountMerger(kwargs['pattern'])
+    fcm.to_tsv(output_filename=kwargs['output'])
+
+#=====================================================================================
 # ENRICHMENT KEGG
 #=====================================================================================
 @main.command()
