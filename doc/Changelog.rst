@@ -1,6 +1,13 @@
 Changelog
 =========
 
+0.12.3
+------
+
+* CHANGES:
+
+  * allow feature counts to scan the new layout. Back compatible so nothing to change in your code.
+
 0.12.2
 ------
 
