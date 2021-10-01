@@ -4,9 +4,6 @@
 #
 #  Copyright (c) 2016-2021 - Sequana Dev Team (https://sequana.readthedocs.io)
 #
-#  File author(s):
-#      Thomas Cokelaer <thomas.cokelaer@pasteur.fr>
-#
 #  Distributed under the terms of the 3-clause BSD license.
 #  The full license is in the LICENSE file, distributed with this software.
 #
@@ -18,7 +15,9 @@
 
 rule feature_counts:
     """
-    Feature counts (subread) is a highly efficient general-purpose read summarization program that counts mapped reads for genomic features such as genes, exons, promoter, gene bodies, genomic bins and chromosomal locations.
+    Feature counts (subread) counts mapped reads for genomic features such as 
+    genes, exons, promoter.
+
     :reference: http://bioinf.wehi.edu.au/featureCounts/
 
     Required input:
@@ -52,4 +51,3 @@ rule feature_counts:
         shell("""featureCounts -T {threads} {params.mapp} \
                  -a {input.gff} -o {output.counts} {input.bam} 2> {log}""")
 
-      
