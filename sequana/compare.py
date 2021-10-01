@@ -41,13 +41,12 @@ class Compare():
         pass
 
 class RNADiffCompare(Compare):
-    """ An object representation of results coming from 
-    a RNADiff analysis.
+    """ An object representation of results coming from a RNADiff analysis.
 
     ::
 
         from sequana.compare import RNADiffCompare
-        c = RNADiffCompare(RNADiffTable("data.csv"), RNADiffTable("data.csv"))
+        c = RNADiffCompare("data.csv", "data2.csv")
 
 
     """
@@ -91,9 +90,10 @@ class RNADiffCompare(Compare):
             from sequana.compare import RNADiffCompare
 
             c = RNADiffCompare(
-                sequana_data("rnadiff/rnadiff_onecond_1"),
-                sequana_data("rnadiff/rnadiff_onecond_2"))
-            c.venn_up_only()
+                sequana_data("rnadiff_salmon.csv", "doc/rnadiff_compare"),
+                sequana_data("rnadiff_bowtie.csv", "doc/rnadiff_compare")
+            )
+            c.plot_venn_up()
         """
         kargs = {}
         kargs['title'] = title
@@ -233,8 +233,9 @@ class RNADiffCompare(Compare):
             from sequana.compare import RNADiffCompare
 
             c = RNADiffCompare(
-                sequana_data("rnadiff/rnadiff_onecond_1"),
-                sequana_data("rnadiff/rnadiff_onecond_2"))
+                sequana_data("rnadiff_salmon.csv", "doc/rnadiff_compare"),
+                sequana_data("rnadiff_bowtie.csv", "doc/rnadiff_compare")
+            )
             c.plot_common_major_counts("down")
         """
         #cond1, cond2 = self._get_cond1_cond2()
@@ -392,8 +393,9 @@ class RNADiffCompare(Compare):
             from sequana.compare import RNADiffCompare
 
             c = RNADiffCompare(
-                sequana_data("rnadiff/rnadiff_onecond_1"),
-                sequana_data("rnadiff/rnadiff_onecond_2"))
+                sequana_data("rnadiff_salmon.csv", "doc/rnadiff_compare"),
+                sequana_data("rnadiff_bowtie.csv", "doc/rnadiff_compare")
+            )
             c.plot_volcano()
         """
         cond1, cond2 = "cond1", "cond2"

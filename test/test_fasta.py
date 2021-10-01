@@ -1,6 +1,6 @@
 import os
 
-from sequana import FastA, sequana_data
+from sequana import FastA
 from sequana.fasta import is_fasta
 from easydev import TempFile
 from . import test_dir

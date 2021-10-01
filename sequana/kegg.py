@@ -1,11 +1,7 @@
-# -*- coding: utf-8 -*-
 #
 #  This file is part of Sequana software
 #
 #  Copyright (c) 2016-2021 - Sequana Dev Team (https://sequana.readthedocs.io)
-#
-#  File author(s):
-#      Thomas Cokelaer <thomas.cokelaer@pasteur.fr>
 #
 #  Distributed under the terms of the 3-clause BSD license.
 #  The full license is in the LICENSE file, distributed with this software.
@@ -16,7 +12,7 @@
 ##############################################################################
 from sequana import sequana_data
 
-import pandas as pd
+from sequana.lazy import pandas as pd
 
 import colorlog
 logger = colorlog.getLogger(__name__)
@@ -41,13 +37,12 @@ class KEGGHelper():
         """
         logger.info("Retrieving the kegg organisms and their definitions")
         from bioservices import KEGG
-        import pandas as pd
         k = KEGG()
         results = []
         definition = []
         for i, item in enumerate(k.organismIds):
             results.append(k.parse(k.get(f"gn:{item}"))['NAME'])
-            definition.append(k.parse(k.get(f"gn:{item}"))['DEFINITION'])
+            definition.append(k.parse(k.get(f"gn:{item}"))['ORG_CODE'])
             print(i, Nmax)
             if Nmax and i+1 >= Nmax:
                 break
