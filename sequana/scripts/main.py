@@ -812,9 +812,9 @@ def feature_counts(**kwargs):
 @click.option(
     "--annotation-attribute",
     type=click.STRING,
-    # required=True,
     default="Name",
-    help="a valid taxon identifiers",
+    show_default=True,
+    help="a valid attribute to be used to map on KEGG database",
 )
 @click.option(
     "--kegg-name",
@@ -864,6 +864,7 @@ command""",
     "--max-pathways",
     type=click.INT,
     default=40,
+    show_default=True,
     help="""Max number of pathways to show (most enriched)""",
 )
 @click.option(
@@ -875,10 +876,8 @@ command""",
 @click.option("--output-directory", default="enrichment_kegg")
 @common_logger
 def enrichment_kegg(**kwargs):
-    """Create a HTML report for KEGG enrichdvarious sequana out
-
+    """Create a HTML report showing KEGG enriched pathways
     \b
-    * enrichment: the output of RNADiff pipeline
 
     Example for the enrichment module:
 
@@ -886,11 +885,10 @@ def enrichment_kegg(**kwargs):
 
     The KEGG pathways are loaded and it may take time. Once done, they are saved
     in kegg_pathways/organism and be loaded next time:
+    \b
 
-        sequana enrichment-kegg rnadiff/rnadiff.csv
-            --log2-foldchange-cutoff 2 \
-            --kegg-name lbi\
-            --annotation file.gff
+        sequana enrichment-kegg rnadiff/rnadiff.csv --log2-foldchange-cutoff 2 \\
+            --kegg-name lbi --annotation-attribute file.gff
 
 
     """
