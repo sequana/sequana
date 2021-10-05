@@ -566,7 +566,7 @@ class RNADiffTable:
         try:
             bax.set_xlabel("fold change")
             bax.set_ylabel("log10 adjusted p-value")
-        except:
+        except Exception:
             bax.xlabel("fold change")
             bax.ylabel("log10 adjusted p-value")
 
@@ -575,12 +575,12 @@ class RNADiffTable:
         limit = max(m1, m2)
         try:
             bax.set_xlim([-limit, limit])
-        except:
+        except Exception:
             bax.xlim([-limit, limit])
         try:
             y1, _ = bax.get_ylim()
             ax1 = bax.axs[0].set_ylim([br2, y1[1] * 1.1])
-        except:
+        except Exception:
             y1, y2 = bax.ylim()
             bax.ylim([0, y2])
         bax.axhline(
@@ -646,7 +646,7 @@ class RNADiffTable:
         pylab.ylabel("Occurences", fontsize=fontsize)
         try:
             pylab.tight_layout()
-        except:
+        except Exception:
             pass
 
     def plot_padj_hist(self, bins=60, fontsize=16):
@@ -656,7 +656,7 @@ class RNADiffTable:
         pylab.ylabel("Occurences", fontsize=fontsize)
         try:
             pylab.tight_layout()
-        except:
+        except Exception:
             pass
 
 
@@ -1042,7 +1042,7 @@ class RNADiffResults:
         pylab.xticks(rotation=rotation, ha="right", fontsize=xticks_fontsize)
         try:
             pylab.tight_layout()
-        except:
+        except Exception:
             pass
 
     def plot_percentage_null_read_counts(self, fontsize=None, xticks_fontsize=None):
@@ -1084,7 +1084,7 @@ class RNADiffResults:
         pylab.grid(True, zorder=0)
         try:
             pylab.tight_layout()
-        except:
+        except Exception:
             pass
 
     def plot_pca(
