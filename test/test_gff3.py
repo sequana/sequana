@@ -30,7 +30,7 @@ def test_process_attributes():
 def test_gff_rnadiff():
     gff = GFF3(f'{test_dir}/data/saccer3_truncated.gff')
     df = gff.df
-    gff.get_duplicated_attributes_per_type()
+    gff.get_duplicated_attributes_per_genetic_type()
     with TempFile() as fout:
         gff.create_files_for_rnadiff(fout.name)
 
