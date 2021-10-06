@@ -97,6 +97,14 @@ SEQUANA
     :target: https://github.com/sequana/demultiplex/actions/workflows/main.yml
 
 
+.. |rnaseq_pypi| image:: https://badge.fury.io/py/sequana-rnaseq.svg
+    :target: https://pypi.python.org/pypi/sequana-rnaseq
+
+.. |demultiplex_test| image:: https://github.com/sequana/rnaseq/actions/workflows/main.yml/badge.svg?branch=master
+    :target: https://github.com/sequana/rnaseq/actions/workflows/main.yml
+
+
+
 
 **Please see the** `documentation <http://sequana.readthedocs.org>`_ for an
 up-to-date status and documentation.
