@@ -60,7 +60,7 @@ SEQUANA
 +------------------------------------------------+--------------------------+-----------------------+
 | https://github.com/sequana/ribofinder          |         |ribo_pypi|      |  |ribo_test|          |
 +------------------------------------------------+--------------------------+-----------------------+
-| https://github.com/sequana/rnaseq              |         |rnaseq_pypi|      |  |rnaseq_test|      |
+| https://github.com/sequana/rnaseq              |         |rnaseq_pypi|    |  |rnaseq_test|        |
 +------------------------------------------------+--------------------------+-----------------------+
 
 
@@ -102,7 +102,7 @@ SEQUANA
 .. |rnaseq_pypi| image:: https://badge.fury.io/py/sequana-rnaseq.svg
     :target: https://pypi.python.org/pypi/sequana-rnaseq
 
-.. |demultiplex_test| image:: https://github.com/sequana/rnaseq/actions/workflows/main.yml/badge.svg?branch=master
+.. |rnaseq_test| image:: https://github.com/sequana/rnaseq/actions/workflows/main.yml/badge.svg?branch=master
     :target: https://github.com/sequana/rnaseq/actions/workflows/main.yml
 
 
