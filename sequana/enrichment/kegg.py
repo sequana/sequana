@@ -331,7 +331,9 @@ class KEGGPathwayEnrichment:
 
         pylab.clf()
         pylab.barh(range(len(df)), -pylab.log10(df["Adjusted P-value"]))
-        pylab.yticks(range(len(df)), df.name)
+
+        names = [x[0:40] + "..." if len(x) > 40 else x for x in df.name]
+        pylab.yticks(range(len(df)), names)
         pylab.axvline(1.3, lw=2, ls="--", color="r")
         pylab.grid(True)
         pylab.xlabel("Adjusted p-value (log10)")

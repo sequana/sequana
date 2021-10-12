@@ -38,7 +38,7 @@ class GFF3:
         # print info about the different feature types
         g.features
         # prints info about duplicated attributes:
-        g.get_duplicated_attributes_per_type(self)
+        g.get_duplicated_attributes_per_genetic_type(self)
 
     On eukaryotes, the reading and processing of the GFF may take a while.
     On prokaryotes, it should be pretty fast (a few seconds).
@@ -189,15 +189,15 @@ class GFF3:
 
     df = property(_get_df)
 
-    def get_duplicated_attributes_per_type(self):
+    def get_duplicated_attributes_per_genetic_type(self):
 
         results = {}
         for typ in self.features:
             results[typ] = {}
-            print("{}: {} entries".format(typ, len(self.df.query("type==@typ"))))
+            print("{}: {} entries".format(typ, len(self.df.query("genetic_type==@typ"))))
             for attr in sorted(self.attributes):
 
-                dups = self.df.query("type==@typ")[attr].dropna().duplicated().sum()
+                dups = self.df.query("genetic_type==@typ")[attr].dropna().duplicated().sum()
                 if dups > 0:
                     print("  - {}:{} duplicates".format(attr, dups))
                 else:
@@ -267,7 +267,7 @@ class GFF3:
 
             counter = defaultdict(int)
             for x, y in self.df.iterrows():
-                if y["type"] in features:
+                if y["genetic_type"] in features:
                     if replace_seqid:
                         y["seqid"] = y["attributes"][replace_seqid]
                     fout.write(
@@ -280,7 +280,7 @@ class GFF3:
                             ";".join([f"{a}={b}" for a, b in y["attributes"].items()]),
                         )
                     )
-                    counter[y["type"]] += 1
+                    counter[y["genetic_type"]] += 1
                     count += 1
             logger.info("# kept {} entries".format(count))
             for feature in features:
@@ -298,7 +298,7 @@ class GFF3:
             annotation["source"] = fields[1]
 
         # Annotation type
-        annotation["type"] = fields[2]
+        annotation["genetic_type"] = fields[2]
 
         # Start and stop
         annotation["start"] = int(fields[3])
@@ -410,7 +410,7 @@ class GFF3:
         """
         tokeep = []
         for entry in self.read():
-            if genetic_type == entry["type"]:
+            if genetic_type == entry["genetic_type"]:
                 tokeep.append(entry)
 
         if len(tokeep) == 0:
@@ -420,7 +420,7 @@ class GFF3:
 
         # FIXME surely this is now redundant since we have a loop above that
         # performs the filtering already.
-        df = df.query("type==@genetic_type").copy()
+        df = df.query("genetic_type==@genetic_type").copy()
 
         # HERE we could check that ID exists
         # This file is required by the RNAdiff pipeline
