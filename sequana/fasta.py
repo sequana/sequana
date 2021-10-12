@@ -108,6 +108,28 @@ class FastA(object):
         """Return dictionary with sequence names and lengths as keys/values"""
         return dict(zip(self.names, self.lengths))
 
+    def explode(self):
+        """extract sequences from original file and save them into individual files"""
+        with open(self.filename, "r") as fin:
+            for line in fin.readlines():
+                if line.startswith(">"):
+                    # ignore the comment and > character and use it as the
+                    # filename
+                    name = line.split()[0][1:]
+                    try:
+                        # if a file was already open, let us close it
+                        fout.close()
+                    except NameError:
+                        pass
+                    finally:
+                        fout = open(f"{name}.fasta", "w")
+                    fout.write(line)
+                else:
+                    fout.write(line)
+        # need to close the last file
+        fout.close()
+
+
     def format_contigs_denovo(self, output_file, len_min=500):
         """Remove contigs with sequence length below specific threshold.
 

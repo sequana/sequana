@@ -357,8 +357,9 @@ class DataTable(object):
         """ Return string well formated to include in a HTML page.
 
         :param str style: CSS option of your table.
-        :param **dict kwargs: parameters of :meth:`pandas.DataFrame.to_csv`.
+        :param dict kwargs: parameters of :meth:`pandas.DataFrame.to_csv`.
         """
+
         html = """
 <script type="text/javascript">
     $(document).ready(function() {{

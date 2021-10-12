@@ -294,9 +294,10 @@ considered.</p> {}<hr>""".format(
             pylab.savefig(filename)
             pylab.close()
 
-        html_feature = """<p>The following figure shows for each sample the feature that
-capture the highest proportion of the reads considered. This should not impact
-the DESeq2 normalization. We expect consistence across samples within a single
+        html_feature = """<p>The following figure shows for each sample (left
+y-axis) the gene/feature that captures the highest proportion of the reads
+considered. This gene/feature is indicated in the right y-axis. This should not impact
+the DESeq2 normalization. We expect consistency across samples within a single
 condition</p> {}<hr>""".format(
             self.create_embedded_png(best_count, "filename", style=style)
         )

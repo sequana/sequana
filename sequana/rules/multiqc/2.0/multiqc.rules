@@ -1,11 +1,7 @@
-# -*- coding: utf-8 -*-
 #
 #  This file is part of Sequana software
 #
 #  Copyright (c) 2016-2021 - Sequana Dev Team (https://sequana.readthedocs.io)
-#
-#  File author(s):
-#      Thomas Cokelaer <thomas.cokelaer@pasteur.fr>
 #
 #  Distributed under the terms of the 3-clause BSD license.
 #  The full license is in the LICENSE file, distributed with this software.
@@ -16,40 +12,36 @@
 ##############################################################################
 
 
-
-
 rule multiqc:
     """This rule launch multiqc;
 
     Input:
 
-    - __multiqc__config
+    - The variable **sequana_multiqc_input** must be define and must be a list of expected files
 
     Output:
 
-    - __multiqc__input
+    - "multiqc/multiqc_report.html" file is creaetd
 
-    parameters:
+    Parameters:
 
-    - __multiqc__indir
-    - __multiqc__outdir
-    - __multiqc__config
+    The config file must contain the following field:
 
-    config file:
-
-    - multiqc/options
-
+    - input_directory: the input directory expected by multiqc (defaults to .)
+    - options: list of valid multiqc options (default to nothing)
+    - config_file: a multiqc config file (default None)
+    - modules:  a list of specific modules (default includes all)
 
     """
-    input:  __multiqc__input
-    output: globals().get("__multiqc__output", "multiqc/multiqc_report.html")
+    input: sequana_multiqc_input
+    output: "multiqc/multiqc_report.html"
     params:
-        indir   = globals().get("__multiqc__indir",  "."),
-        outdir  = globals().get('__multiqc__outdir', "multiqc"),
-        config  = globals().get("__multiqc__config", "multiqc_config.yaml"),
-        options = config["multiqc"]["options"]
-    shell:
-        """
-        multiqc {params.indir} -o {params.outdir} -c {params.config} {params.options} 2> {params.outdir}/multiqc.log
-        """
+        input_directory   = globals().get(config['multiqc']["input_directory"],  "."),
+        options           = globals().get(config['multiqc']["options"],  ""),
+        config_file       = globals().get(config['multiqc']["config_file"],  ""),
+        modules           = globals().get(config['multiqc']["modules"],  "")
+    log:
+        "multiqc/multiqc.log"
+    wrapper:
+        "main/wrappers/multiqc"
 
