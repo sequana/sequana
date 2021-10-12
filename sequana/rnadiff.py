@@ -51,7 +51,7 @@ def strip(text):
 class RNADesign:
     """Simple RNA design handler"""
 
-    def __init__(self, filename, sep="\s*,\s*", reference=None):
+    def __init__(self, filename, sep=r"\s*,\s*", reference=None):
         self.filename = filename
         # \s to strip the white spaces
         self.df = pd.read_csv(
@@ -153,7 +153,7 @@ class RNADiffAnalysis:
         threads=4,
         outdir="rnadiff",
         sep_counts=",",
-        sep_design="\s*,\s*",
+        sep_design=r"\s*,\s*",
         minimum_mean_reads_per_gene=0,
     ):
 
@@ -176,7 +176,6 @@ class RNADiffAnalysis:
         # Read and check the design file. Filtering if comparisons is provided
         self.design = RNADesign(design_file, sep=sep_design, reference=reference)
         self.comparisons = comparisons if comparisons else self.design.comparisons
-
 
         _conditions = {x for comp in self.comparisons for x in comp}
         if not keep_all_conditions:
@@ -273,12 +272,14 @@ Design overview:\n\
         except ValueError:
             counts = FeatureCount(self.usr_counts).df
 
+        Ncounts = len(counts)
         if self.minimum_mean_reads_per_gene > 0:
             logger.info(f"{len(counts)} annotated feature to be processed")
-        counts = counts[counts.mean(axis=1) > self.minimum_mean_reads_per_gene]
-        if self.minimum_mean_reads_per_gene > 0:
-            logger.info(f"Keeping {len(counts)} features after removing low "
-                f"counts below {self.minimum_mean_reads_per_gene} on average")
+        counts = counts[counts.mean(axis=1) >= self.minimum_mean_reads_per_gene]
+        logger.info(
+            f"Read {Ncounts} counts. Keeping {len(counts)} features after removing low "
+            f"counts below {self.minimum_mean_reads_per_gene} on average"
+        )
 
         # filter count based on the design and the comparisons provide in the
         # constructor so that columns match as expected by a DESeq2 analysis.
@@ -565,7 +566,7 @@ class RNADiffTable:
         try:
             bax.set_xlabel("fold change")
             bax.set_ylabel("log10 adjusted p-value")
-        except:
+        except Exception:
             bax.xlabel("fold change")
             bax.ylabel("log10 adjusted p-value")
 
@@ -574,12 +575,12 @@ class RNADiffTable:
         limit = max(m1, m2)
         try:
             bax.set_xlim([-limit, limit])
-        except:
+        except Exception:
             bax.xlim([-limit, limit])
         try:
             y1, _ = bax.get_ylim()
             ax1 = bax.axs[0].set_ylim([br2, y1[1] * 1.1])
-        except:
+        except Exception:
             y1, y2 = bax.ylim()
             bax.ylim([0, y2])
         bax.axhline(
@@ -645,7 +646,7 @@ class RNADiffTable:
         pylab.ylabel("Occurences", fontsize=fontsize)
         try:
             pylab.tight_layout()
-        except:
+        except Exception:
             pass
 
     def plot_padj_hist(self, bins=60, fontsize=16):
@@ -655,7 +656,7 @@ class RNADiffTable:
         pylab.ylabel("Occurences", fontsize=fontsize)
         try:
             pylab.tight_layout()
-        except:
+        except Exception:
             pass
 
 
@@ -800,13 +801,15 @@ class RNADiffResults:
         if self.annot_cols is None:
             lol = [
                 list(x.keys())
-                for x in gff.df.query("type==@self.fc_feature")["attributes"].values
+                for x in gff.df.query("genetic_type==@self.fc_feature")[
+                    "attributes"
+                ].values
             ]
             annot_cols = sorted(list(set([x for item in lol for x in item])))
         else:
             annot_cols = self.annot_cols
 
-        df = gff.df.query("type == @self.fc_feature").loc[:, annot_cols]
+        df = gff.df.query("genetic_type == @self.fc_feature").loc[:, annot_cols]
         df.drop_duplicates(inplace=True)
 
         df.set_index(self.fc_attribute, inplace=True)
@@ -873,131 +876,6 @@ class RNADiffResults:
                 )
             )
 
-    def __run_enrichment_go(
-        self, taxon, annot_col="Name", out_dir="enrichment"
-    ):  # pragma: no cover
-
-        out_dir = Path(out_dir) / "figures"
-        out_dir.mkdir(exist_ok=True, parents=True)
-
-        gene_lists_dict = self.get_gene_lists(
-            annot_col=annot_col, Nmax=2000, dropna=True
-        )
-        enrichment = {}
-        ontologies = {"GO:0003674": "BP", "GO:0008150": "MF", "GO:0005575": "CC"}
-        failed_enrichments = []
-
-        for compa in self.comparisons:
-            gene_lists = gene_lists_dict[compa]
-            pe = PantherEnrichment(gene_lists, taxon)
-            pe.compute_enrichment(ontologies=ontologies.keys(), progress=False)
-
-            for direction in ["up", "down", "all"]:
-                if not pe.enrichment[direction]:
-                    logger.warning(
-                        f"No enrichment computed, so no plots computed for {compa} {direction} {ontology}"
-                    )
-                    failed_enrichments.append(
-                        {
-                            "comparison": compa,
-                            "direction": direction,
-                            "GO": "all",
-                            "reason": "no enrichment computed",
-                        }
-                    )
-                    continue
-
-                for ontology in ontologies.keys():
-                    pylab.figure()
-                    enrichment_df = pe.plot_go_terms(
-                        direction, ontology, compute_levels=False
-                    )
-                    if enrichment_df.empty:
-                        failed_enrichments.append(
-                            {
-                                "comparison": compa,
-                                "direction": direction,
-                                "GO": ontology,
-                                "reason": "no enrichment found",
-                            }
-                        )
-                    else:
-                        enrichment[(compa, direction, ontology)] = enrichment_df
-                        pylab.tight_layout()
-                        pylab.savefig(
-                            out_dir
-                            / f"go_{compa}_{direction}_{ontologies[ontology]}.pdf"
-                        )
-                        pe.save_chart(
-                            enrichment_df,
-                            out_dir
-                            / f"chart_{compa}_{direction}_{ontologies[ontology]}.png",
-                        )
-
-            logger.info(f"Panther enrichment for {compa} DONE.")
-
-        df = pd.concat(enrichment).sort_index()
-        df.index.rename(
-            ["comparison", "direction", "GO_category", "index"], inplace=True
-        )
-
-        self.enrichment_go = df
-        self.failed_go_enrichments = pd.DataFrame(failed_enrichments)
-
-        # Export results (should be moved to enrichment.py at some point I think)
-        with pd.ExcelWriter(out_dir.parent / "enrichment_go.xlsx") as writer:
-            df = self.enrichment_go.copy()
-            df.reset_index(inplace=True)
-            df.to_excel(writer, "go", index=False)
-            ws = writer.sheets["go"]
-            try:
-                ws.autofilter(0, 0, df.shape[0], df.shape[1] - 1)
-            except:
-                logger.warning("XLS formatting issue.")
-
-    def __run_enrichment_kegg(
-        self, organism, annot_col="Name", out_dir="enrichment"
-    ):  # pragma: no cover
-
-        out_dir = Path(out_dir) / "figures"
-        out_dir.mkdir(exist_ok=True, parents=True)
-
-        gene_lists_dict = self.get_gene_lists(annot_col=annot_col, dropna=True)
-        enrichment = {}
-
-        for compa in self.comparisons:
-            gene_lists = gene_lists_dict[compa]
-            ke = KeggPathwayEnrichment(gene_lists, organism, progress=False)
-            ke.compute_enrichment()
-
-            for direction in ["up", "down", "all"]:
-                enrichment[(compa, direction)] = ke._get_final_df(
-                    ke.enrichment[direction].results, nmax=10000
-                )
-                pylab.figure()
-                ke.scatterplot(direction)
-                pylab.tight_layout()
-                pylab.savefig(out_dir / f"kegg_{compa}_{direction}.pdf")
-                pylab.savefig(out_dir / f"kegg_{compa}_{direction}.png")
-
-            logger.info(f"KEGG enrichment for {compa} DONE.")
-
-        df = pd.concat(enrichment).sort_index()
-        df.index.rename(["comparison", "direction", "index"], inplace=True)
-
-        self.enrichment_kegg = df
-
-        # Export results (should be moved to enrichment.py at some point I think)
-        with pd.ExcelWriter(out_dir.parent / "enrichment_kegg.xlsx") as writer:
-            df = self.enrichment_kegg.copy()
-            df.reset_index(inplace=True)
-            df.to_excel(writer, "kegg", index=False)
-            ws = writer.sheets["kegg"]
-            try:
-                ws.autofilter(0, 0, df.shape[0], df.shape[1] - 1)
-            except:
-                logger.warning("Fixme")
-
     def get_gene_lists(
         self, annot_col="index", Nmax=None, dropna=False
     ):  # pragma: no cover
@@ -1005,8 +883,11 @@ class RNADiffResults:
         gene_lists_dict = {}
 
         for compa in self.comparisons.keys():
-            df = self.df.loc[:, ["annotation", compa]].copy()
+            df = self.df.loc[:, [compa]].copy()
             df = df.droplevel(0, axis=1)
+
+            # Let us add the annotation columns
+            df = pd.concat([df, self.annotation.loc[df.index]], axis=1)
 
             fc_filt = df["log2FoldChange"].abs() >= self._log2_fc
             fdr_filt = df["padj"] <= self._alpha
@@ -1161,7 +1042,7 @@ class RNADiffResults:
         pylab.xticks(rotation=rotation, ha="right", fontsize=xticks_fontsize)
         try:
             pylab.tight_layout()
-        except:
+        except Exception:
             pass
 
     def plot_percentage_null_read_counts(self, fontsize=None, xticks_fontsize=None):
@@ -1201,7 +1082,10 @@ class RNADiffResults:
         pylab.xticks(rotation=45, ha="right", fontsize=xticks_fontsize)
         pylab.ylabel("Proportion of null counts (%)")
         pylab.grid(True, zorder=0)
-        pylab.tight_layout()
+        try:
+            pylab.tight_layout()
+        except Exception:
+            pass
 
     def plot_pca(
         self,
@@ -1210,7 +1094,8 @@ class RNADiffResults:
         plotly=False,
         max_features=500,
         genes_to_remove=[],
-        fontsize=10
+        fontsize=10,
+        adjust=True,
     ):
 
         """
@@ -1233,6 +1118,7 @@ class RNADiffResults:
             r.plot_pca(colors=colors)
         """
         from sequana.viz import PCA
+
         # Get most variable genes (n=max_features)
         top_features = (
             self.counts_vst.var(axis=1)
@@ -1298,7 +1184,8 @@ class RNADiffResults:
                 n_components=n_components,
                 colors=self.design_df.group_color,
                 max_features=max_features,
-                fontsize=fontsize
+                fontsize=fontsize,
+                adjust=adjust,
             )
 
         return variance
@@ -1379,24 +1266,31 @@ class RNADiffResults:
         )
         pylab.yticks(fontsize=xticks_fontsize)
 
-        for idx, rect in enumerate(p):
-            pylab.text(
-                2,  # * rect.get_height(),
-                idx,  # rect.get_x() + rect.get_width() / 2.0,
-                df.gene_id.iloc[idx],
-                ha="center",
-                va="center",
-                rotation=0,
-                zorder=20,
-                fontsize=xticks_fontsize
-            )
-
         self._format_plot(
             # title="Counts monopolized by the most expressed gene",
             # xlabel="Sample",
             xlabel="Percent of total reads",
-            fontsize=xticks_fontsize
+            fontsize=xticks_fontsize,
         )
+
+        ax = pylab.gca()
+        ax2 = ax.twinx()
+        N = len(df)
+        ax2.set_yticks([x + 0.5 for x in range(N)])
+        if N <= 12:
+            fontdict = {"fontsize": 12}
+        elif N <= 24:
+            fontdict = {"fontsize": 10}
+        else:
+            fontdict = {"fontsize": 8}
+
+        ax2.set_yticklabels(list(df.gene_id.values), fontdict=fontdict)
+        ax2.tick_params(
+            axis="y", grid_linewidth=0
+        )  # this is for the case seaborn is used
+
+        pylab.sca(ax)
+
         pylab.tight_layout()
 
     def plot_dendogram(
@@ -1441,10 +1335,18 @@ class RNADiffResults:
         d.category = self.design_df[self.condition].map(group_conv).to_dict()
         d.plot()
 
-    def plot_boxplot_rawdata(self, fliersize=2, linewidth=2, rotation=0,
-            fontsize=None, xticks_fontsize=None, **kwargs):
+    def plot_boxplot_rawdata(
+        self,
+        fliersize=2,
+        linewidth=2,
+        rotation=0,
+        fontsize=None,
+        xticks_fontsize=None,
+        **kwargs,
+    ):
 
         import seaborn as sbn
+
         if fontsize is None:
             fontsize = self.fontsize
         if xticks_fontsize is None:
@@ -1464,10 +1366,18 @@ class RNADiffResults:
         self._format_plot(ylabel="Raw count distribution", fontsize=xticks_fontsize)
         pylab.tight_layout()
 
-    def plot_boxplot_normeddata(self, fliersize=2, linewidth=2, rotation=0,
-        fontsize=None, xticks_fontsize=None, **kwargs):
+    def plot_boxplot_normeddata(
+        self,
+        fliersize=2,
+        linewidth=2,
+        rotation=0,
+        fontsize=None,
+        xticks_fontsize=None,
+        **kwargs,
+    ):
 
         import seaborn as sbn
+
         if fontsize is None:
             fontsize = self.fontsize
         if xticks_fontsize is None:

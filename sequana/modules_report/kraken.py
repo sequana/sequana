@@ -54,6 +54,7 @@ class KrakenModule(SequanaBaseModule):
         self.add_table_results_section()
         self.add_table_results_hierarchy_section()
         self.add_diagnostics_section()
+        self.add_blast_section()
 
     def _get_stats(self):
         return pd.read_csv(self.directory + os.sep + "kraken.csv")
@@ -232,6 +233,40 @@ classified and U for unclassified reads.</p><div>"""
             {
                 "name": "Diagnostics for unclassified reads",
                 "anchor": "diag",
+                "content": html,
+            }
+        )
+
+    def add_blast_section(self):
+        if os.path.exists(f"{self.directory}/../blast/text.krona.html"):
+            krona = """ You can visualise the results in the <a href="blast/text.krona.html"> Krona page</a>."""
+        else:
+            krona = ""
+
+        filename = f"{self.directory}/../blast/blast_summary.csv"
+        if os.path.exists(filename):
+            df = pd.read_csv(filename, sep=",")
+            datatable = DataTable(df, "blast_summary", index=False)
+            datatable.datatable.set_links_to_column("links", "blast")
+            datatable.datatable.datatable_options = {
+                "scrollX": "300px",
+                "pageLength": 30,
+                "scrollCollapse": "true",
+                "dom": "frtip",
+                "paging": "false",
+                "buttons": ["copy", "csv"],
+            }
+            js = datatable.create_javascript_function()
+            html_tab = datatable.create_datatable(float_format="%.3g")
+            html = f"""<p>Here below you can find the summary of 1000
+unclassified reads blasted on a local blast DB. {krona} {js} {html_tab}</p><hr>"""
+        else:
+            html =f"{krona}"
+
+        self.sections.append(
+            {
+                "name": "Blast of unclassified reads overview",
+                "anchor": "blast",
                 "content": html,
             }
         )

@@ -21,7 +21,6 @@ from sequana.lazy import numpy as np
 from matplotlib_venn import venn2_unweighted, venn3_unweighted
 import gseapy
 
-# from sequana.rnadiff import RNADiffResults
 from sequana.summary import Summary
 
 import colorlog
@@ -34,9 +33,6 @@ __all__ = ["PantherEnrichment"]
 
 class PantherEnrichment:
     """
-
-    # This will read your rnadiff results and tstore the rlevants genes into
-    # mygenes_u, mygenes_down, mygenes attributes.
 
     By default, we keep only the genes with a adjusted pvalue <= 0.05. The
     fold_change threshold is on a log2 scale and set to 0 (meaning no
@@ -52,8 +48,7 @@ class PantherEnrichment:
 
         pe = PantherEnrichment("input_file.tsv", taxon=10090, log2_fc_threshold=1)
         # compute enrichment for genes down and up
-        pe.compute_enrichment_down()
-        pe.compute_enrichment_up()
+        pe.compute_enrichment()
 
         # Results for up case is stored in pe.enrichment
         # then, we plot the most mportat go terms
@@ -75,14 +70,14 @@ class PantherEnrichment:
 
     You can also plot the GO terms that are significantly enriched using::
 
-        e.plot_go_terms(['GO:0003674', 'GO:0008150', 'GO:0005575'])
+        e.plot_go_terms(['MF', 'CC', 'BP])
 
     This function returns the dataframe used during the plotting.
 
     If you want to look at the up regulated genes only::
 
-        e.compute_enrichment(pe.mygenes_up, 83333)
-        df = e.plot_go_terms(['GO:0003674', 'GO:0008150', 'GO:0005575'],
+        e.compute_enrichment(pe.mygenes["up"], 83333)
+        df = e.plot_go_terms(['MF', 'CC', 'BP'],
                 log=False, include_negative_enrichment=False,
                 fontsize=8, sort_by='fold_enrichment',
                 show_pvalues=True, fdr_threshold=0.05)
@@ -104,7 +99,7 @@ class PantherEnrichment:
         log2_fc_threshold=0,
         fc_threshold=None,
         enrichment_fdr=0.05,
-        max_entries=3000,
+        max_entries=2000,
         annot_col="Name",
     ):
         """
@@ -114,6 +109,7 @@ class PantherEnrichment:
         debugging
         """
 
+        self.gene_lists = gene_lists
         self.enrichment_fdr = enrichment_fdr
 
         # users can set the fold change threshold in the log2 scale or normal
@@ -135,9 +131,16 @@ class PantherEnrichment:
 
         self.quickgo = quickgo.QuickGO(cache=True)
         self.quickgo.requests_per_sec = requests_per_sec
+        self.quickgo.settings.TIMEOUT = 120
 
-        self._ancestors = {"MF": "GO:0003674", "CC": "GO:0005575", "BP": "GO:0008150"}
-        # self.aspects = {"MF": "molecular_function"}
+        self._ancestors = {
+            "MF": "GO:0003674",
+            "CC": "GO:0005575",
+            "BP": "GO:0008150",
+            "SLIM_MF": "GO:0003674",
+            "SLIM_CC": "GO:0005575",
+            "SLIM_BP": "GO:0008150",
+        }
         self.ontologies = [
             "GO:0003674",
             "GO:0008150",
@@ -165,15 +168,11 @@ class PantherEnrichment:
             "REACTOME_PATHWAY",
         ]
 
-        # panth accepts onyl ~2-3000 genes at max. Let us restrict the analysis
+        # panther accepts onyl ~2-3000 genes at max. Let us restrict the analysis
         # to the first 2000 genes based on their log2 fold change 2000 + and
         # 2000 negatives
 
-        self.mygenes = gene_lists["all"]
-        self.mygenes_down = gene_lists["down"]
-        self.mygenes_up = gene_lists["up"]
-
-        msg = "Ignoring pvalue adjusted > {} and fold change in [{}, {}]".format(
+        msg = "Ignoring DEGs with adjusted p-value > {} and fold change in [{}, {}]".format(
             padj_threshold, 1 / (2 ** log2_fc_threshold), 2 ** log2_fc_threshold
         )
         logger.info(msg)
@@ -187,18 +186,12 @@ class PantherEnrichment:
 
         fc_threshold = log2_fc_threshold
 
-        logger.info(
-            f"Starting with {len(self.mygenes)} genes ({len(self.mygenes_down)} down; {len(self.mygenes_up)} up)"
-        )
+        for x in sorted(gene_lists.keys()):
 
-        Ndown = len(self.mygenes_down)
-        Nup = len(self.mygenes_up)
-        self.summary["DGE_after_filtering"] = {"up": Nup, "down": Ndown}
-        logger.info(
-            "Filtering and keeping {} genes ({} down; {} up)".format(
-                Ndown + Nup, Ndown, Nup
-            )
-        )
+            N = len(gene_lists[x])
+            logger.info(f"Starting with {N} genes from category '{x}'")
+
+        self.summary["DGE_after_filtering"] = {k: len(v) for k, v in gene_lists.items()}
 
         self.enrichment = {}
         self.stats = {}
@@ -257,10 +250,8 @@ class PantherEnrichment:
         The fold enrichment is also called odd-ratio.
         """
 
-        for gene_list, category in zip(
-            (self.mygenes_down, self.mygenes_up, self.mygenes), ("down", "up", "all")
-        ):
-
+        for category, gene_list in self.gene_lists.items():
+            logger.info(f"Computing enrichment for category {category}")
             self.enrichment[category], self.stats[category] = self._compute_enrichment(
                 gene_list,
                 taxid=taxid,
@@ -268,6 +259,28 @@ class PantherEnrichment:
                 enrichment_test=enrichment_test,
                 correction=correction,
             )
+
+    def get_mapping_stats(self):
+
+        results = []
+        for k in self.enrichment.keys():
+            ontologies = self.enrichment[k].keys()
+            for o in ontologies:
+                M = self.enrichment[k][o]["input_list"]["mapped_count"]
+                U = self.enrichment[k][o]["input_list"]["unmapped_count"]
+                results.append([k, o, M, U])
+        df = pd.DataFrame(results)
+        df[4] = 100 * df[2] / (df[3] + df[2])
+        df[5] = df[2] + df[3]
+        df.columns = [
+            "category",
+            "ontology",
+            "mapped",
+            "unmapped",
+            "mapped_percentage",
+            "total",
+        ]
+        return df
 
     def _compute_enrichment(
         self,
@@ -284,7 +297,7 @@ class PantherEnrichment:
         if isinstance(mygenes, list):
             mygenes = ",".join(mygenes)
 
-        if mygenes.count(",") > 2000:
+        if mygenes.count(",") > 2500:
             logger.warning(
                 "Please reduce the list input genes. may fail on pantherb otherwise"
             )
@@ -295,20 +308,25 @@ class PantherEnrichment:
             return None, None
 
         if ontologies is None:
-            ontologies = self.ontologies
+            ontologies = self.ontology_aliases
         else:
             for x in ontologies:
-                assert x in self.ontologies
+                assert x in self.ontology_aliases, f"{x} not valid ontology"
 
-        # for each ontology categorym we will store one key/value item
+        # for each ontology, we will store one key/value item
         enrichment = {}
 
+        def get_panther_ont(x):
+            index = self.ontology_aliases.index(x)
+            return self.ontologies[index]
+
         for ontology in ontologies:
-            logger.info("Computing enrichment for {}".format(ontology))
+            logger.info(f" - Computing enrichment for {ontology}")
+
             results = self.panther.get_enrichment(
                 mygenes,
                 taxid,
-                ontology,
+                get_panther_ont(ontology),
                 enrichment_test=enrichment_test,
                 correction=correction,
             )
@@ -318,7 +336,7 @@ class PantherEnrichment:
                 results = self.panther.get_enrichment(
                     mygenes,
                     taxid,
-                    ontology,
+                    get_panther_ont(ontology),
                     enrichment_test=enrichment_test,
                     correction=correction,
                 )
@@ -433,7 +451,7 @@ class PantherEnrichment:
 
         ::
 
-            pe.get_data("GO:0003674")
+            pe.get_data("MF")
 
         """
         if isinstance(ontologies, str):
@@ -497,26 +515,13 @@ class PantherEnrichment:
 
         return df
 
-    def plot_go_terms(
-        self,
-        category,
-        ontologies=None,
-        max_features=50,
-        log=False,
-        fontsize=9,
-        minimum_genes=0,
-        pvalue=0.05,
-        cmap="summer_r",
-        sort_by="fold_enrichment",
-        show_pvalues=False,
-        include_negative_enrichment=False,
-        fdr_threshold=0.05,
-        compute_levels=True,
-        progress=True,
-    ):
+    def _get_plot_go_terms_data(self, category, ontologies=None,
+        max_features=50, minimum_genes=0, pvalue=0.05,
+        sort_by="fold_enrichment", fdr_threshold=0.05,
+        include_negative_enrichment=False, compute_levels=False):
 
         if ontologies is None:
-            ontologies = ["GO:0003674", "GO:0008150", "GO:0005575"]
+            ontologies = ["MF", "BP", "CC"]
         assert sort_by in ["pValue", "fold_enrichment", "fdr"]
 
         df = self.get_data(
@@ -527,26 +532,27 @@ class PantherEnrichment:
         )
 
         if df is None or len(df) == 0:
-            return df
+            return None, None
 
         # df stores the entire data set
         # subdf will store the subset (max of n_features, and add dummy values)
-
         df = df.query("pValue<=@pvalue")
-        logger.info("Filtering out pvalue>{}. Kept {} GO terms".format(pvalue, len(df)))
         df = df.reset_index(drop=True)
 
         # Select a subset of the data to keep the best max_features in terms of
         # pValue
-        subdf = df.query("number_in_list>@minimum_genes").copy()
-        logger.info(
-            "Filtering out GO terms with less than {} genes: Kept {} GO terms".format(
-                minimum_genes, len(subdf)
+        if minimum_genes != 0:
+            subdf = df.query("number_in_list>@minimum_genes").copy()
+            logger.info(
+                f"Keeping {len(subdf)} GO terms with at least {minimum_genes+1} genes"
             )
-        )
+        else:
+            subdf = df.copy()
 
-        logger.info("Filtering out the 3 parent terms")
-        subdf = subdf.query("id not in @self.ontologies")
+        logger.debug("Filtering out the 3 parent terms")
+        to_ignore = [self.MF, self.CC, self.BP]
+        subdf = subdf.query("id not in @to_ignore")
+        df = df.query("id not in @to_ignore")
 
         if subdf is None or len(subdf) == 0:
             return subdf
@@ -566,20 +572,54 @@ class PantherEnrichment:
 
         subdf = subdf.reset_index(drop=True)
 
-        # We get all levels for each go id.
-        # They are stored by MF, CC or BP
+        # We get all levels for each go id. They are stored by MF, CC or BP
+        subdf["level"] = ""
         if compute_levels:
-            paths = self._get_graph(list(subdf["id"].values), progress=progress)
-            levels = []
-            keys = list(paths.keys())
-            goid_levels = paths[keys[0]]
-            if len(keys) > 1:
-                for k in keys[1:]:
-                    goid_levels.update(paths[k])
-            levels = [goid_levels[ID] for ID in subdf["id"].values]
-            subdf["level"] = levels
-        else:
-            subdf["level"] = ""
+            paths = self._get_graph(
+                list(subdf["id"].values), ontologies=ontologies
+            )
+            if paths:
+                levels = []
+                keys = list(paths.keys())
+
+                # FIXME this part is flaky. What would happen if the levels are
+                # different if several keys are found ? We use the last one...
+                goid_levels = paths[keys[0]]
+                if len(keys) > 1:
+                    for k in keys[1:]:
+                        goid_levels.update(paths[k])
+
+                levels = [goid_levels[ID] for ID in subdf["id"].values]
+                subdf["level"] = levels
+
+        return df, subdf
+
+    def plot_go_terms(
+        self,
+        category,
+        ontologies=None,
+        max_features=50,
+        log=False,
+        fontsize=9,
+        minimum_genes=0,
+        pvalue=0.05,
+        cmap="summer_r",
+        sort_by="fold_enrichment",
+        show_pvalues=False,
+        include_negative_enrichment=False,
+        fdr_threshold=0.05,
+        compute_levels=True,
+        progress=True,
+    ):
+
+        df, subdf = self._get_plot_go_terms_data(category, ontologies=ontologies,
+            max_features=max_features, minimum_genes=minimum_genes, pvalue=pvalue,
+            include_negative_enrichment=include_negative_enrichment,
+            sort_by=sort_by, fdr_threshold=fdr_threshold,
+            compute_levels=compute_levels)
+
+        if df is None or subdf is None:
+            return
 
         # now, for the subdf, which is used to plot the results, we add dummy
         # rows to make the yticks range scale nicer.
@@ -591,16 +631,17 @@ class PantherEnrichment:
         datum.label = ""
         datum["id"] = ""
         datum["level"] = ""
+
         while len(subdf) < 10:
             subdf = pd.concat([datum.to_frame().T, subdf], axis=0)
-        self.temp = subdf
 
+        # here, we try to figure out a proper layout
         N = len(subdf)
         size_factor = 10000 / len(subdf)
         max_size = subdf.number_in_list.max()
         # ignore the dummy values
         min_size = min([x for x in subdf.number_in_list.values if x != 0])
-        # here we define a size for each entry.
+        # here we define a size for each GO entry.
         # For the dummy entries, size is null (int(bool(x))) makes sure
         # it is not shown
         sizes = [
@@ -614,7 +655,7 @@ class PantherEnrichment:
         m3 = max(sizes)
         m2 = m1 + (m3 - m1) / 2
 
-        # The plot itself. we stretch wheen there is lots of features
+        # The plot itself. we stretch when there is lots of features
         if len(subdf) > 25:
             fig = pylab.figure(num=1)
             fig.set_figwidth(10)
@@ -623,6 +664,7 @@ class PantherEnrichment:
             fig = pylab.figure(num=1)
             fig.set_figwidth(10)
             fig.set_figheight(6)
+
         pylab.clf()
         if log:
             pylab.scatter(
@@ -637,10 +679,6 @@ class PantherEnrichment:
                 vmax=fdr_threshold,
                 zorder=10,
             )
-            # pylab.barh(range(N), pylab.log2(subdf.fold_enrichment), color="r",
-            #    label="pvalue>0.05; FDR>0.05")
-            # pylab.axvline(1, color="gray", ls="--")
-            # pylab.axvline(-1, color="gray", ls="--")
         else:
             pylab.scatter(
                 subdf.fold_enrichment,
@@ -654,8 +692,6 @@ class PantherEnrichment:
                 vmax=fdr_threshold,
                 zorder=10,
             )
-        #    pylab.barh(range(N), subdf.fold_enrichment, color="r",
-        #    label="not significant")
 
         # set color bar height
         pylab.grid(zorder=-10)
@@ -671,7 +707,10 @@ class PantherEnrichment:
         ticks = []
         for level, ID, label in zip(subdf["level"], subdf.id, labels):
             if ID:
-                ticks.append("{} ({}) {}".format(ID, level, "; " + label.title()))
+                if level:
+                    ticks.append(f"{ID} ({level}) ;  {label.title()}")
+                else:
+                    ticks.append(f"{ID} ; {label.title()}")
             else:
                 ticks.append("")
 
@@ -800,58 +839,56 @@ class PantherEnrichment:
         frame.set_edgecolor("black")
         frame.set_alpha(1)
 
-        self.subdf = subdf
-        self.df = df
         return df
 
-    def _get_graph(self, go_ids, ontologies=None, progress=True):
+    def _get_graph(self, go_ids, ontologies=None):
         # Here we filter the data to keep only the relevant go terms as shown in
         # panther pie chart
         import networkx as nx
 
         gg = nx.DiGraph()
 
-        # assert ontology in ['MF', 'BP', 'CC']
-        if ontologies is None:
-            ontologies = ["MF", "BP", "CC"]
-        elif isinstance(ontologies, str):
+        if isinstance(ontologies, str):
             ontologies = [ontologies]
-        ancestors = [self._ancestors[x] for x in ontologies]
 
+        for x in ontologies:
+            if "PROTEIN" in x or "PATHWAY" in x:
+                return {}
+
+        ancestors = [self._ancestors[x] for x in ontologies]
         levels = []
-        real_ids = []
+        renamed_ids = {}
         obsolets = []
         from easydev import Progress
 
-        pb = Progress(len(go_ids))
-        logger.info("Retrieving info for each significant go terms")
+        logger.info(f"Retrieving info for {len(go_ids)} enriched go terms")
         annotations = {}
 
         for i, go_id in enumerate(go_ids):
 
-            # Some go terms maybe obsolet or renamed. Looking at other functions
-            # may not work simply because the ID has changed.
+            # retrive info about a given GO ID
             info = self.quickgo.get_go_terms(go_id)
             annotations[go_id] = info
 
+            # Some go terms may be renamed.
             if info[0]["id"] != go_id:
                 _id = info[0]["id"]
                 logger.warning("changed {} to {}".format(go_id, _id))
                 annotations[_id] = info
+                renamed_ids[go_id] = _id
             else:
                 _id = go_id
-            aspect = info[0]["aspect"]
+
+            # Some go terms may be obsolete
             if info[0]["isObsolete"] is True:
-                logger.warning("Skipping obsolet go terms: {}".format(go_id))
+                logger.warning("Skipping obsolete go terms: {}".format(go_id))
                 obsolets.append(go_id)
                 continue
-            real_ids.append(_id)
 
             # now figure out the distance to main ancestor
             # we can try several times
             # if _id != self.ancestors[ontology]:
             for ancestor in ancestors:
-
                 edges = self.quickgo.get_go_paths(_id, ancestor)
                 if edges == 400:
                     logger.warning("Could not retrieve {} to {}".format(_id, ancestor))
@@ -864,8 +901,6 @@ class PantherEnrichment:
                             gg.add_edge(edge["child"], edge["parent"])
                 else:
                     print(_id, edges["results"])
-            if progress is True:
-                pb.animate(i + 1)
 
         self.obsolets += obsolets
         self.annotations = annotations
@@ -878,6 +913,11 @@ class PantherEnrichment:
             for obsolet in obsolets:
                 paths[obsolet] = 100
             all_paths[ancestor] = paths
+
+        for key in all_paths.keys():
+            for old, new in renamed_ids.items():
+                if new in all_paths[key]:
+                    all_paths[key][old] = all_paths[key][new]
 
         return all_paths
 
@@ -925,3 +965,17 @@ class PantherEnrichment:
 
             no_data = sequana_data("no_data.png")
             shutil.copy(no_data, filename)
+
+
+"""BOOK keeping
+    def to_excel(self):
+        with pd.ExcelWriter(out_dir.parent / "enrichment_go.xlsx") as writer:
+            df = self.enrichment_go.copy()
+            df.reset_index(inplace=True)
+            df.to_excel(writer, "go", index=False)
+            ws = writer.sheets["go"]
+            try:
+                ws.autofilter(0, 0, df.shape[0], df.shape[1] - 1)
+            except:
+                logger.warning("XLS formatting issue.")
+"""

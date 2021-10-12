@@ -1,6 +1,27 @@
 Changelog
 =========
 
+0.12.3
+------
+
+* CHANGES:
+
+  * allow feature counts to scan the new layout. Back compatible so nothing to change in your code.
+
+0.12.2
+------
+
+* CHANGES
+
+  * Update itol module to use APIkey (change of the web services)
+
+0.12.1
+------
+
+* CHANGES
+
+  * fix blocking bug in laa multiqc module
+  * Updates of the rnadiff subcommand
 
 0.12.0
 ------

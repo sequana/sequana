@@ -1,0 +1,51 @@
+# -*- coding: utf-8 -*-
+#
+#  This file is part of Sequana software
+#
+#  Copyright (c) 2016-2021 - Sequana Dev Team (https://sequana.readthedocs.io)
+#
+#  Distributed under the terms of the 3-clause BSD license.
+#  The full license is in the LICENSE file, distributed with this software.
+#
+#  Website:       https://github.com/sequana/sequana
+#  Documentation: http://sequana.readthedocs.io
+#  Contributors:  https://github.com/sequana/sequana/graphs/contributors
+##############################################################################
+
+rule mark_duplicates:
+    """
+    Mark reads duplicated. Thus, variant caller is aware of duplicated reads.
+
+    Required input:
+        __mark_duplicates__input: bam file
+
+    Required output:
+        __mark_duplicates__output: bam file
+
+    Required configuration:
+        .. code-block:: yaml
+
+            mark_duplicates:
+                remove:  # yes/no
+                tmpdir:  # temporary directory
+    """
+    input:
+        __mark_duplicates__input
+    output:
+        bam = "{sample}/mark_duplicates/{sample}.bam",
+        metrics = "{sample}/mark_duplicates/{sample}.metrics"
+    log:
+        out = "{sample}/mark_duplicates/log.out",
+        err = "{sample}/mark_duplicates/log.err"
+    params:
+        remove_dup = config["mark_duplicates"]["remove"],
+        tmpdir = config["mark_duplicates"]["tmpdir"]
+    threads:
+        int(config["mark_duplicates"]["threads"])
+    shell:
+        """
+        (picard MarkDuplicates I={input} O={output.bam} \
+            M={output.metrics} REMOVE_DUPLICATES={params.remove_dup} \
+            TMP_DIR={params.tmpdir} && samtools index {output.bam}) \
+            > {log.out} 2> {log.err}
+        """

@@ -1,0 +1,16 @@
+
+
+rule fastqc:
+    input: __fastqc__input
+    output: __fastqc__output
+    log:
+        __fastqc__log
+    threads:
+        config['fastqc']['threads']
+    params:
+        options=config['fastqc']['options'],
+        working_directory=__fastqc__wkdir
+    wrapper:
+        "main/wrappers/fastqc"
+
+

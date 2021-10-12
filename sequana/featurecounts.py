@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 #  This file is part of Sequana software
 #
@@ -39,16 +38,20 @@ __all__ = [
 ]
 
 
-def get_most_probable_strand(
-    sample_folder, tolerance, pattern="feature_counts_*/*_feature.out"
-):
-    """Return most probable strand from feature counts matrix
+def get_most_probable_strand(filenames, tolerance, sample_name):
+    """Return most propable strand given 3 feature count files (strand of 0,1, and 2)
 
     Return the total counts by strand from featureCount matrix folder, strandness and
     probable strand for a single sample (using a tolerance threshold for
     strandness). This assumes a single sample by featureCounts file.
 
-    Possible values include:
+    :param filenames: a list of 3 feature counts files for a given sample 
+        corresponding to the strand 0,1,2
+    :param tolerance: a value below 0.5
+    :param sample: the name of the sample corresponding to the list in filenames
+
+    Possible values returned are:
+
     * 0: unstranded
     * 1: stranded
     * 2: eversely stranded
@@ -63,10 +66,8 @@ def get_most_probable_strand(
     * otherwise, we cannot decided.
 
     """
-    sample_folder = Path(sample_folder)
-    fc_files = sample_folder.glob(pattern)
 
-    sample_name = sample_folder.stem
+    fc_files = [Path(x) for x in filenames]
     res_dict = {}
 
     for f in fc_files:
@@ -96,26 +97,83 @@ def get_most_probable_strand(
 
 
 def get_most_probable_strand_consensus(
-    rnaseq_folder, tolerance, pattern="*/feature_counts_[012]"
+    rnaseq_folder,
+    tolerance,
+    sample_pattern="*/feature_counts_[012]",
+    file_pattern="feature_counts_[012]/*_feature.out",
 ):
-    """From a sequana rna-seq run folder get the most probable strand, based on the
+    """From a sequana RNA-seq run folder get the most probable strand, based on the
     frequecies of counts assigned with '0', '1' or '2' type strandness
-    (featureCounts nomenclature)
+    (featureCounts nomenclature) across all samples.
+
+    :param rnaseq_folder: the main directory
+    :param tolerance: a value in the range 0-0.5. typically 0.1 or 0.15
+    :param pattern: the samples directory pattern
+    :param pattern_file: the feature counts pattern
 
     If guess is not possible given the tolerance, fills with None
+
+    Consider this tree structure::
+
+        rnaseq_folder
+        ├── sample1
+        │   └── feature_counts
+        │       ├── 0
+        │       │   └── sample_feature.out
+        │       ├── 1
+        │       │   └── sample_feature.out
+        │       └── 2
+        │           └── sample_feature.out
+        └── sample2
+            └── feature_counts
+                ├── 0
+                │   └── sample_feature.out
+                ├── 1
+                │   └── sample_feature.out
+                └── 2
+                    └── sample_feature.out
+
+    Then, the following command should all files and report the most probable
+    strand (0,1,2) given the sample1 and sample2::
+
+        get_most_probable_strand_consensus("rnaseq_folder", 0.15)
+
+    This tree structure is understood automatically. If you have a different
+    one, you can set the pattern (for samples) and pattern_files parameters.
 
     .. seealso: :func:`get_most_probable_strand`
     """
 
     rnaseq_folder = Path(rnaseq_folder)
-    sample_folders = list(set([x.parent for x in rnaseq_folder.glob(pattern)]))
 
-    df = pd.concat(
-        [
-            get_most_probable_strand(sample_folder, tolerance)
-            for sample_folder in sample_folders
-        ]
-    )
+    sample_folders = list(set([x.parent for x in rnaseq_folder.glob(sample_pattern)]))
+    if not sample_folders:
+        # the new method holds 3 sub directories 0/, 1/ and 2/
+        sample_pattern = "*/feature_counts"
+        sample_folders = list(
+            set([x.parent for x in rnaseq_folder.glob(sample_pattern)])
+        )
+        if not sample_folders:
+            logger.error(
+                f"Could not find sample directories in {rnaseq_folder} with pattern {pattern}"
+            )
+            sys.exit()
+
+    results = []
+    for sample in sample_folders:
+        filenames = list(sample.glob(file_pattern))
+        if len(filenames) == 0:
+            file_pattern = "feature_counts/[012]/*_feature.out"
+            filenames = list(sample.glob(file_pattern))
+        if len(filenames) == 0:
+            logger.warning(f"No files found for {sample}/{file_pattern}. skipped")
+            continue
+
+        result = get_most_probable_strand(filenames, tolerance, sample)
+        results.append(result)
+
+    df = pd.concat(results)
+
     df = df[["0", "1", "2", "strandness", "strand"]]
 
     logger.info(f"Strand guessing for each files (tolerance: {tolerance}):\n")
@@ -146,6 +204,45 @@ class MultiFeatureCount:
     .. seealso:: :func:`get_most_probable_strand` for more information about the
         tolerance parameter and meaning of strandness.
 
+
+    The expected data structure is ::
+
+        rnaseq_folder
+        ├── sample1
+        │   ├── feature_counts_0
+        │   │   └── sample_feature.out
+        │   ├── feature_counts_1
+        │   │   └── sample_feature.out
+        │   ├── feature_counts_2
+        │   │   └── sample_feature.out
+        └── sample2
+            ├── feature_counts_0
+            │   └── sample_feature.out
+            ├── feature_counts_1
+            │   └── sample_feature.out
+            ├── feature_counts_2
+            │   └── sample_feature.out
+
+    The new expected data structure is ::
+
+        new_rnaseq_output/
+        ├── sample1
+        │   └── feature_counts
+        │       ├── 0
+        │       │   └── sample_feature.out
+        │       ├── 1
+        │       │   └── sample_feature.out
+        │       └── 2
+        │           └── sample_feature.out
+        └── sample2
+            └── feature_counts
+                ├── 0
+                │   └── sample_feature.out
+                ├── 1
+                │   └── sample_feature.out
+                └── 2
+                    └── sample_feature.out
+
     """
 
     # USED in rnaseq pipeline
@@ -156,24 +253,23 @@ class MultiFeatureCount:
         :param str rnaseq_folder:
         :param int tolerance:  the tolerance between 0 and 0.25
 
-
         """
         self.tolerance = tolerance
         self.rnaseq_folder = rnaseq_folder
 
-    def get_most_probable_strand_consensus(self):
-        most_probable, df = get_most_probable_strand_consensus(
+        # this should be called in the constructor once for all
+        self._get_most_probable_strand_consensus()
+
+    def _get_most_probable_strand_consensus(self):
+        self.probable_strand, self.df = get_most_probable_strand_consensus(
             self.rnaseq_folder, self.tolerance
         )
-        return most_probable, df
 
     def plot_strandness(
         self, fontsize=12, output_filename="strand_summary.png", savefig=False
     ):
-        # USED in rnaseq pipeline
-        most_probable, df = self.get_most_probable_strand_consensus()
 
-        df = df.sort_index(ascending=False)
+        df = self.df.sort_index(ascending=False)
         df["strandness"] = df["strandness"].T
         df["strandness"].plot(kind="barh")
         pylab.xlim([0, 1])
@@ -182,12 +278,17 @@ class MultiFeatureCount:
         pylab.axvline(1 - self.tolerance, ls="--", color="r")
         pylab.axvline(0.5, ls="--", color="k")
         pylab.xlabel("Strandness", fontsize=fontsize)
-        pylab.tight_layout()
+        try:
+            pylab.tight_layout()
+        except Exception:
+            pass
         if savefig:  # pragma: no cover
             pylab.savefig(output_filename)
 
 
 class FeatureCountMerger:
+    """Merge several feature counts files"""
+
     def __init__(self, pattern="*feature.out", fof=[]):
         if len(fof):
             self.filenames = fof
@@ -212,7 +313,7 @@ class FeatureCountMerger:
 
 
 class FeatureCount:
-    """Read a featureCounts output file.
+    r"""Read a featureCounts output file.
 
     The input file is expected to be generated with featurecounts tool. It
     should be a TSV file such as the following one with the header provided

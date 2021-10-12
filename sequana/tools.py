@@ -167,7 +167,7 @@ def bam_to_mapped_unmapped_fastq(filename, output_directory=None, verbose=True):
         pass
     else:
         assert isinstance(filename, str)
-        from sequana.snaketools import FileFactory
+        from sequana_pipetools.snaketools import FileFactory
         ff = FileFactory(filename)
         newname = output_directory + os.sep + ff.filenames[0]
 

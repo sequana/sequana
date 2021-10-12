@@ -32,9 +32,12 @@ class MultiqcModule(BaseMultiqcModule):
 
         self.data = {}
         for myfile in self.find_log_files("sequana_quality_control"):
-            thisdata =  self.parse_logs(myfile["f"])
-            name = thisdata["project"]
-            self.data[name] = self.parse_logs(myfile["f"])
+            try:
+                thisdata =  self.parse_logs(myfile["f"])
+                name = thisdata["project"]
+                self.data[name] = self.parse_logs(myfile["f"])
+            except KeyError:
+                pass 
 
         if len(self.data) == 0:
             log.debug("No samples found: sequana_quality_control")

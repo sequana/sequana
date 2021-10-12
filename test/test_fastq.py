@@ -4,8 +4,11 @@ from easydev import TempFile
 import os
 from numpy import mean
 
-datagz = sequana_data("test.fastq.gz", "testing")
-data = sequana_data("test.fastq", "testing")
+
+from . import test_dir
+
+datagz = f"{test_dir}/data/fastq/test.fastq.gz"
+data = f"{test_dir}/data/fastq/test.fastq"
 
 
 def test_basic():
@@ -93,6 +96,10 @@ def test_split():
 
 
     f.split_lines(1000000) is None # too many
+
+    # cleanup
+    os.remove(f"{test_dir}/data/fastq/test_1_1000.fastq.gz")
+
 
 def test_filter():
     f = fastq.FastQ(data)
