@@ -105,9 +105,15 @@ SEQUANA
 .. |rnaseq_test| image:: https://github.com/sequana/rnaseq/actions/workflows/main.yml/badge.svg?branch=master
     :target: https://github.com/sequana/rnaseq/actions/workflows/main.yml
 
-
-
-
 **Please see the** `documentation <http://sequana.readthedocs.org>`_ for an
 up-to-date status and documentation.
+
+Changelog
+~~~~~~~~~
+
+========= ====================================================================
+Version   Description
+========= ====================================================================
+0.12.4    * complete change log before 0.12.4 on readthedocs.org
+========= ====================================================================
 
