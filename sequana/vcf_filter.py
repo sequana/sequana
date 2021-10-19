@@ -342,7 +342,6 @@ class VCF_mpileup_4dot1(VCFBase):
         return {"N":N, "filtered": filtered, "unfiltered": unfiltered}
 
     def is_polymorphic(self, variant):
-        print(variant.ALT)
 
         if not len(variant.ALT):
             return False
@@ -357,7 +356,6 @@ class VCF_mpileup_4dot1(VCFBase):
         if not len(variant.ALT):
             return False
 
-        print(variant.ALT)
         if "," in str(variant.ALT[0].value):
             return True
         if "," in str(variant.REF[0]):
