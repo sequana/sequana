@@ -4,11 +4,13 @@ from easydev import TempFile
 
 
 
+
 def test_vcf_filter_freebayes():
 
     data = sequana_data("test.vcf")
     v = VCF(data)
-    v.hist_qual()
+    v.vcf.hist_qual()
+
 
 def test_vcf_filter():
 
@@ -142,7 +144,7 @@ def test_vcf_filter_dp4():
 
     def validate_variant_reference(variant):
         # variant.ALT must be different from "." for this test
-        assert str(variant.ALT[0]).strip() == "."
+        assert str(variant.ALT[0].value).strip() == "."
 
         # test minimum depth of alternate must be >= 4
         variant.INFO['DP4'] = [2, 2, 0, 0]
@@ -164,7 +166,7 @@ def test_vcf_filter_dp4():
         assert v.vcf.is_valid_dp4(variant, 4, 2, 0.75) is False
 
     # variant.ALT is equal to "A"
-    variant.ALT[0].sequence = "."
+    variant.ALT[0].value = "."
     validate_variant_reference(variant)
 
 

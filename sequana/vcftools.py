@@ -1,13 +1,7 @@
-# -*- coding: utf-8 -*-
 #
 #  This file is part of Sequana software
 #
-#  Copyright (c) 2016 - Sequana Development Team
-#
-#  File author(s):
-#      Thomas Cokelaer <thomas.cokelaer@pasteur.fr>
-#      Dimitri Desvillechabrol <dimitri.desvillechabrol@pasteur.fr>, 
-#          <d.desvillechabrol@gmail.com>
+#  Copyright (c) 2016-2021 - Sequana Development Team
 #
 #  Distributed under the terms of the 3-clause BSD license.
 #  The full license is in the LICENSE file, distributed with this software.
@@ -21,17 +15,18 @@ Python script to filter a VCF file
 """
 import sys
 
-from sequana.lazy import vcf
+import vcfpy
+
+from sequana.lazy import pylab
 
 import colorlog
 logger = colorlog.getLogger(__name__)
 
 
+__all__ = ["VCFBase", "strand_ratio", "compute_frequency", "compute_strand_balance"]
 
-__all__ = ["VCFBase"]
 
-
-class VCFBase(vcf.Reader):
+class VCFBase:
     """Base class for VCF files
 
     Read an existing file as follows::
@@ -67,25 +62,15 @@ class VCFBase(vcf.Reader):
         :param kwargs: any arguments accepted by vcf.Reader
 
         """
-        try:
-            self.filename = filename
-            filin = open(filename, "r")
-            vcf.Reader.__init__(self, fsock=filin, **kwargs)
-            self._get_start_index()
-        except FileNotFoundError as e:
-            logger.error(
-                "FileNotFoundError({0}): {1}".format(e.errno, e.strerror)
-            )
-            raise FileNotFoundError
+        self.filename = filename
+        self.rewind()
 
         if verbose:
             print("Found VCF version {}".format(self.version))
 
     def rewind(self):
-        """ Rewind the reader
-        """
-        self._reader.seek(self._start_index)
-        self.reader = (line.strip() for line in self._reader if line.strip())
+        """Rewind the reader"""
+        self._vcf_reader = vcfpy.Reader.from_path(self.filename)
 
     def __len__(self):
         self.rewind()
@@ -95,17 +80,19 @@ class VCFBase(vcf.Reader):
         self.rewind()
         return i
 
-    def _get_start_index(self):
-        self._reader.seek(0)
-        for line in iter(self._reader.readline, ''):
-            if line.startswith("#"):
-                self._start_index = self._reader.tell()
-            else:
-                self.rewind()
-                break
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        return next(self._vcf_reader)
 
     def _get_version(self):
-        fileformat = self.metadata['fileformat']
+        fileformat = [x for x in self._vcf_reader.header.lines if x.key == "fileformat"]
+        if len(fileformat) == 1:
+            fileformat = fileformat[0].value
+        else:
+            fileformat = "unknown"
+
         if fileformat == 'VCFv4.1':
             return "4.1"
         elif fileformat == "VCFv4.2":
@@ -115,10 +102,77 @@ class VCFBase(vcf.Reader):
     version = property(_get_version)
 
     def _get_source(self):
-        if "source" in self.metadata:
-            return self.metadata['source'][0]
+        fileformat = [x for x in self._vcf_reader.header.lines if x.key == "source"]
+        if len(fileformat) == 1:
+            fileformat = fileformat[0].value
         else:
-            return "undefined"
+            fileformat = "unknown"
     source = property(_get_source)
 
+    def hist_qual(self, fontsize=16, bins=100):
+        """
 
+        This uses the QUAL information to be found in the VCF and should
+        work for all VCF with version 4.1 (at least)
+
+        """
+        # TODO: could be moved to VCFBase
+        self.rewind()
+        data = [x.QUAL for x in self._vcf_reader]
+        pylab.hist(data, bins=bins)
+        pylab.grid(True)
+        pylab.xlabel("Variant quality", fontsize=fontsize)
+
+
+def strand_ratio(number1, number2):
+    """Compute ratio between two number. Return result between [0:0.5]."""
+    try:
+        division = float(number1) / (number1 + number2)
+        if division > 0.5:
+            division = 1 - division
+    except ZeroDivisionError:
+        return 0
+    return division
+
+
+def compute_frequency(record):
+    """Compute frequency of alternate allele.
+        alt_freq = Count Alternate Allele / Depth
+
+    :param record: variant record
+    """
+    try:
+        info = record.info
+    except:
+        info = record.INFO
+
+    alt_freq = [float(count) / info["DP"] 
+                for count in info["AO"]]
+    return alt_freq
+
+
+def compute_strand_balance(record):
+    """Compute strand balance of alternate allele include in [0,0.5].
+    strand_bal = Alt Forward / (Alt Forward + Alt Reverse)
+
+    :param record: variant record
+
+
+    FYI: in freebayes, the allele balance (reported under AB), strand
+    bias counts (SRF, SRR, SAF, SAR) and bias estimate (SAP)
+    can be used as well for filtering. Here, we use the strand balance
+    computed as SAF / (SAF + SAR)
+
+
+    """
+    try:
+        info = record.info
+    except:
+        info = record.INFO
+
+    strand_bal = [
+        strand_ratio(info["SAF"][i], info["SAR"][i])
+        for i in range(len(info["SAF"]))
+    ]
+
+    return strand_bal

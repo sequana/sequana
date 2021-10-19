@@ -1,12 +1,7 @@
-# -*- coding: utf-8 -*-
 #
 #  This file is part of Sequana software
 #
-#  Copyright (c) 2016 - Sequana Development Team
-#
-#  File author(s):
-#      Dimitri Desvillechabrol <dimitri.desvillechabrol@pasteur.fr>,
-#          <d.desvillechabrol@gmail.com>
+#  Copyright (c) 2016-2021 - Sequana Development Team
 #
 #  Distributed under the terms of the 3-clause BSD license.
 #  The full license is in the LICENSE file, distributed with this software.
@@ -21,9 +16,13 @@
 from pysam import VariantFile
 from sequana.lazy import pandas as pd
 
+from sequana.vcftools import strand_ratio, compute_strand_balance, compute_frequency
+
 import colorlog
 logger = colorlog.getLogger(__name__)
 
+
+__all__ = ["Variant"]
 
 
 class Variant(object):
@@ -55,8 +54,8 @@ class Variant(object):
         information to detect real variants.
         """
         # Calcul all important information
-        alt_freq = compute_freq(bcf_line)
-        strand_bal = compute_strand_bal(bcf_line)
+        alt_freq = compute_frequency(bcf_line)
+        strand_bal = compute_strand_balance(bcf_line)
         line_dict = {"chr": bcf_line.chrom, "position": str(bcf_line.pos),
                      "depth": bcf_line.info["DP"], "reference": bcf_line.ref,
                      "alternative": "; ".join(str(x) for x in bcf_line.alts),
@@ -207,11 +206,11 @@ class BCF_freebayes(VariantFile):
         if reverse_depth <= self.filters["reverse_depth"]:
             return False
 
-        alt_freq = compute_freq(bcf_line)
+        alt_freq = compute_frequency(bcf_line)
         if alt_freq[0] < self.filters["frequency"]:
             return False
 
-        strand_bal = compute_strand_bal(bcf_line)
+        strand_bal = compute_strand_balance(bcf_line)
         if strand_bal[0] < self.filters["strand_ratio"]:
             return False
 
@@ -281,35 +280,4 @@ class Filtered_freebayes(object):
                 print(variant, end="", file=fp)
 
 
-def strand_ratio(number1, number2):
-    """ Compute ratio between two number. Return result between [0:0.5].
-    """
-    try:
-        division = float(number1) / (number1 + number2)
-        if division > 0.5:
-            division = 1 - division
-    except ZeroDivisionError:
-        return 0
-    return division
 
-
-def compute_freq(bcf_line):
-    """ Compute frequency of alternate allele.
-        alt_freq = Count Alternate Allele / Depth
-
-        :param VariantRecord bcf_line: variant record
-    """
-    alt_freq = [float(count)/bcf_line.info["DP"]
-                for count in bcf_line.info["AO"]]
-    return alt_freq
-
-
-def compute_strand_bal(bcf_line):
-    """ Compute strand balance of alternate allele include in [0,0.5].
-        strand_bal = Alt Forward / (Alt Forward + Alt Reverse)
-
-    """
-    strand_bal = [
-        strand_ratio(bcf_line.info["SAF"][i], bcf_line.info["SAR"][i])
-        for i in range(len(bcf_line.info["SAF"]))]
-    return strand_bal

@@ -1,13 +1,7 @@
-# -*- coding: utf-8 -*-
 #
 #  This file is part of Sequana software
 #
-#  Copyright (c) 2016 - Sequana Development Team
-#
-#  File author(s):
-#      Thomas Cokelaer <thomas.cokelaer@pasteur.fr>
-#      Dimitri Desvillechabrol <dimitri.desvillechabrol@pasteur.fr>,
-#          <d.desvillechabrol@gmail.com>
+#  Copyright (c) 2016-2021 - Sequana Development Team
 #
 #  Distributed under the terms of the 3-clause BSD license.
 #  The full license is in the LICENSE file, distributed with this software.
@@ -18,8 +12,8 @@
 ##############################################################################
 """Python script to filter a VCF file"""
 import sys
-from sequana.lazy import vcf
-from sequana.lazy import pylab
+import vcfpy
+
 from sequana.vcftools import VCFBase
 
 import colorlog
@@ -27,7 +21,7 @@ logger = colorlog.getLogger(__name__)
 
 
 
-class VCF(object):
+class VCF:
     """A factory to read and filter VCF files for different formats
 
 
@@ -88,19 +82,6 @@ all filters will be recognised"""
             else:
                 raise ValueError(msg)
 
-    def hist_qual(self, fontsize=16, bins=100):
-        """
-
-        This uses the QUAL information to be found in the VCF and should
-        work for all VCF with version 4.1 (at least)
-
-        """
-        # TODO: could be moved to VCFBase
-        self.vcf.rewind()
-        data = [x.QUAL for x in self.vcf]
-        pylab.hist(data, bins=bins)
-        pylab.grid(True)
-        pylab.xlabel("Variant quality", fontsize=fontsize)
 
 
 class VCF_mpileup_4dot1(VCFBase):
@@ -115,7 +96,7 @@ class VCF_mpileup_4dot1(VCFBase):
     There are 3 hard-coded filters that can be applied by settings these
     attributes to True:
 
-    * apply_af1_filter 
+    * apply_af1_filter
     * apply_dp4_filter: includes minimum_depth, minimu_depth_strand and ratio
       filters (see later)
     * apply_indel_filter
@@ -265,14 +246,14 @@ class VCF_mpileup_4dot1(VCFBase):
             status = self.is_valid_dp4(vcf_line, self.dp4_minimum_depth,
                         self.dp4_minimum_depth_strand,
                         self.dp4_minimum_ratio)
-            if status is False:
+            if not status:
                 logger.debug("{}: filter out DP4 line {} {}".format(VT, iline, vcf_line.INFO['DP4']))
                 return False
 
         # AF1
         if self.apply_af1_filter and "AF1" in vcf_line.INFO:
             status = self.is_valid_af1(vcf_line, self.minimum_af1)
-            if status is False:
+            if not status:
                 logger.debug("{}: filter out AF1 {} on line {}".format(VT, vcf_line.INFO['AF1'], iline))
                 return False
 
@@ -282,7 +263,7 @@ class VCF_mpileup_4dot1(VCFBase):
             # brackets to make a list and use eval function after setting
             # the local variable DP4 in the locals namespace
             # PV4 skip non morphic cases (no need to filter)
-            if key == "PV4" and self.is_polymorphic(vcf_line) is False:
+            if key == "PV4" and not self.is_polymorphic(vcf_line):
                 return True
 
             # Filter such as " sum(DP[0], DP4[2])<60 "
@@ -341,11 +322,11 @@ class VCF_mpileup_4dot1(VCFBase):
         N = len(self)
 
         with open(output, "w") as fp:
-            vcf_writer = vcf.Writer(fp, self)
+            vcf_writer = vcfpy.Writer(fp, self._vcf_reader.header)
 
             if output_filtered:
                 fpf = open(output_filtered, "w")
-                vcf_writer_filtered = vcf.Writer(fpf, self)
+                vcf_writer_filtered = vcfpy.Writer(fpf, self._vcf_reader.header)
             self.rewind()
             for iline, variant in enumerate(self):
                 if self._filter_line(variant, filter_dict, iline=iline):
@@ -361,16 +342,20 @@ class VCF_mpileup_4dot1(VCFBase):
         return {"N":N, "filtered": filtered, "unfiltered": unfiltered}
 
     def is_polymorphic(self, variant):
-        if variant.ALT[0] is None or str(variant.ALT[0]).strip() == ".":
+
+        if not len(variant.ALT):
             return False
-        else:
-            return True
+
+        return not str(variant.ALT[0].value).strip() == "."
 
     #overwrite behaviour of Variant.is_indel
     def is_indel(self, variant):
-        if variant.ALT[0] is not None and "," in str(variant.ALT[0]):
+        if not len(variant.ALT):
+            return False
+
+        if "," in str(variant.ALT[0].value):
             return True
-        if variant.REF[0] is not None and "," in str(variant.REF[0]):
+        if "," in str(variant.REF[0]):
             return True
         if "INDEL" in variant.INFO.keys() and variant.INFO['INDEL']:
             return True
@@ -423,8 +408,7 @@ class VCF_mpileup_4dot1(VCFBase):
         else:
             ratio_reverse_reference = 0
             ratio_reverse_alt = 0
-
-        if self.is_polymorphic(variant) is False: 
+        if not self.is_polymorphic(variant): 
             # dealing with non polymorphic site (i.e; VCF's ALT 
             # field equals "."
 
@@ -469,10 +453,3 @@ class VCF_mpileup_4dot1(VCFBase):
                 return False
 
         return True
-
-
-
-
-
-
-
