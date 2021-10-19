@@ -24,7 +24,6 @@ numpy = LazyImport('numpy')
 scipy = LazyImport('scipy')
 scipy_stats = LazyImport('scipy.stats')
 pandas = LazyImport('pandas')
-vcf = LazyImport("vcfpy")
 
 def enabled():
     "Returns ``True`` if LazyImports are globally enabled"
