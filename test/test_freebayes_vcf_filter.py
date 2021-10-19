@@ -1,4 +1,5 @@
 import filecmp
+import pytest
 
 from sequana.freebayes_vcf_filter import VCF_freebayes
 
@@ -22,11 +23,8 @@ def test_vcf_filter(tmpdir):
 
 
 def test_constructor():
-    try:
+    with pytest.raises(OSError):
         VCF_freebayes('dummy')
-        assert False
-    except FileNotFoundError:
-        assert True
 
 
 def test_to_csv(tmpdir):

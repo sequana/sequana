@@ -1,4 +1,5 @@
 import filecmp
+import pytest
 
 from sequana.freebayes_bcf_filter import BCF_freebayes
 from . import test_dir
@@ -21,11 +22,8 @@ def test_bcf_filter(tmpdir):
 
 
 def test_constructor():
-    try:
+    with pytest.raises(OSError):
         BCF_freebayes('dummy')
-        assert False
-    except OSError:
-        assert True
 
 
 def test_to_csv(tmpdir):
