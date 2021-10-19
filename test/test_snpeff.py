@@ -1,16 +1,16 @@
-from sequana import sequana_data
 from sequana import snpeff
 from easydev import TempFile
 import os
-
+from . import test_dir
+sharedir=f"{test_dir}/data/vcf"
 
 def test_snpeff():
     # a custom refrence
     fh_log = TempFile()
 
-    mydata = snpeff.SnpEff(annotation=sequana_data("JB409847.gbk"), log=fh_log.name)
+    mydata = snpeff.SnpEff(annotation=f"{sharedir}/JB409847.gbk", log=fh_log.name)
     with TempFile() as fh:
-        mydata.launch_snpeff(sequana_data("JB409847.vcf"), fh.name)
+        mydata.launch_snpeff(f"{sharedir}/JB409847.vcf", fh.name)
     fh_log.delete()
 
     # cleanup
@@ -53,9 +53,9 @@ def test_snpeff_download():
 
 
 def test_add_locus_no_modification():
-    mydata = snpeff.SnpEff(annotation=sequana_data("JB409847.gbk"))
+    mydata = snpeff.SnpEff(annotation=f"{sharedir}/JB409847.gbk")
     with TempFile() as fh:
-        fastafile = sequana_data("JB409847.fasta")
+        fastafile = f"{sharedir}/JB409847.fasta"
         mydata.add_locus_in_fasta(fastafile, fh.name)
         # cleanup
         try:
@@ -67,7 +67,7 @@ def test_add_locus_no_modification():
 def test_add_locus_with_modification():
 
     # Alter the original GBK to alter the locus name
-    data = open(sequana_data("JB409847.gbk"), "r").read()
+    data = open(f"{sharedir}/JB409847.gbk", "r").read()
     newdata = data.replace("JB409847", "DUMMY_JB409847")
 
     fh = TempFile(suffix=".gbk")
@@ -80,7 +80,7 @@ def test_add_locus_with_modification():
     mydata = snpeff.SnpEff(annotation=fh.name)
 
     # Here is the corresponding FASTA
-    fasta = sequana_data("JB409847.fasta")
+    fasta = f"{sharedir}/JB409847.fasta"
 
     with TempFile(suffix="fasta") as fh2:
         mydata.add_locus_in_fasta(fasta, fh2.name)

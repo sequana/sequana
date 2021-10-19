@@ -246,14 +246,14 @@ class VCF_mpileup_4dot1(VCFBase):
             status = self.is_valid_dp4(vcf_line, self.dp4_minimum_depth,
                         self.dp4_minimum_depth_strand,
                         self.dp4_minimum_ratio)
-            if status is False:
+            if not status:
                 logger.debug("{}: filter out DP4 line {} {}".format(VT, iline, vcf_line.INFO['DP4']))
                 return False
 
         # AF1
         if self.apply_af1_filter and "AF1" in vcf_line.INFO:
             status = self.is_valid_af1(vcf_line, self.minimum_af1)
-            if status is False:
+            if not status:
                 logger.debug("{}: filter out AF1 {} on line {}".format(VT, vcf_line.INFO['AF1'], iline))
                 return False
 
@@ -263,7 +263,7 @@ class VCF_mpileup_4dot1(VCFBase):
             # brackets to make a list and use eval function after setting
             # the local variable DP4 in the locals namespace
             # PV4 skip non morphic cases (no need to filter)
-            if key == "PV4" and self.is_polymorphic(vcf_line) is False:
+            if key == "PV4" and not self.is_polymorphic(vcf_line):
                 return True
 
             # Filter such as " sum(DP[0], DP4[2])<60 "
@@ -346,10 +346,7 @@ class VCF_mpileup_4dot1(VCFBase):
         if not len(variant.ALT):
             return False
 
-        if str(variant.ALT[0].value).strip() == ".":
-            return False
-        else:
-            return True
+        return not str(variant.ALT[0].value).strip() == "."
 
     #overwrite behaviour of Variant.is_indel
     def is_indel(self, variant):
@@ -411,7 +408,7 @@ class VCF_mpileup_4dot1(VCFBase):
         else:
             ratio_reverse_reference = 0
             ratio_reverse_alt = 0
-        if self.is_polymorphic(variant) is False: 
+        if not self.is_polymorphic(variant): 
             # dealing with non polymorphic site (i.e; VCF's ALT 
             # field equals "."
 

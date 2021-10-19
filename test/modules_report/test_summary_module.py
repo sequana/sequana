@@ -3,7 +3,9 @@ import json
 from sequana import sequana_data
 from sequana.modules_report.summary import SummaryModule
 from sequana.utils import config
+from . import test_dir
 
+sharedir = f"{test_dir}/data"
 
 def test_summary_module(tmpdir):
     directory = tmpdir.mkdir('test_variant_calling_module')
@@ -13,8 +15,8 @@ def test_summary_module(tmpdir):
                     'inputs': [
                         sequana_data('Hm2_GTGAAA_L005_R1_001.fastq.gz'),
                         sequana_data('Hm2_GTGAAA_L005_R2_001.fastq.gz')],
-                    'outputs': [sequana_data('JB409847.vcf')],
-                    'html': [sequana_data('JB409847.vcf')],
+                    'outputs': [f"{sharedir}/JB409847.vcf"],
+                    'html': [f"{sharedir}/JB409847.vcf"],
                     'rulegraph': sequana_data('test_summary_module.svg'),
                     'requirements': sequana_data('test_summary_module.svg'),
                     'snakefile': sequana_data('test_summary_module.svg'),
