@@ -114,6 +114,7 @@ Changelog
 ========= ====================================================================
 Version   Description
 ========= ====================================================================
+0.12.5    * refactorisation of VCF tools/modules to use vcfpy instead of pyVCF
 0.12.4    * complete change log before 0.12.4 on readthedocs.org
 ========= ====================================================================
 
