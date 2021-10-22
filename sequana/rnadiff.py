@@ -51,8 +51,11 @@ def strip(text):
 class RNADesign:
     """Simple RNA design handler"""
 
-    def __init__(self, filename, sep=r"\s*,\s*", reference=None):
+    def __init__(
+        self, filename, sep=r"\s*,\s*", condition_col="condition", reference=None
+    ):
         self.filename = filename
+        self.condition_col = condition_col
         # \s to strip the white spaces
         self.df = pd.read_csv(
             filename, sep=sep, engine="python", comment="#", dtype={"label": str}
@@ -64,7 +67,7 @@ class RNADesign:
         self.reference = reference
 
     def _get_conditions(self):
-        return sorted(self.df.condition.unique())
+        return sorted(self.df[self.condition_col].unique())
 
     conditions = property(_get_conditions)
 
@@ -82,7 +85,7 @@ class RNADesign:
     comparisons = property(_get_comparisons)
 
     def keep_conditions(self, conditions):
-        self.df = self.df.query("condition in @conditions")
+        self.df = self.df.query(f"{self.condition_col} in @conditions")
 
 
 class RNADiffAnalysis:
@@ -174,7 +177,9 @@ class RNADiffAnalysis:
         self.counts_filename = self.code_dir / "counts.csv"
 
         # Read and check the design file. Filtering if comparisons is provided
-        self.design = RNADesign(design_file, sep=sep_design, reference=reference)
+        self.design = RNADesign(
+            design_file, sep=sep_design, condition_col=condition, reference=reference
+        )
         self.comparisons = comparisons if comparisons else self.design.comparisons
 
         _conditions = {x for comp in self.comparisons for x in comp}
@@ -190,12 +195,12 @@ class RNADiffAnalysis:
         self.design_filename = self.code_dir / "design.csv"
         self.design.to_csv(self.design_filename)
 
-        # Reads and check the count file
-        self.counts = self.check_and_save_input_tables(sep_counts)
-
         # the name of the condition in the design file
         self.condition = condition
         self.check_condition()
+
+        # Reads and check the count file
+        self.counts = self.check_and_save_input_tables(sep_counts)
 
         # check comparisons and print information
         self.check_comparisons()
@@ -938,7 +943,7 @@ class RNADiffResults:
         """Import design from a table file and add color groups following the
         groups defined in the column 'condition' of the table file.
         """
-        design = RNADesign(design_file)
+        design = RNADesign(design_file, condition_col=condition)
         df = design.df.set_index("label")
 
         if len(design.conditions) > len(palette):
@@ -1156,7 +1161,7 @@ class RNADiffResults:
             # of having more than 10 conditions
             colors = None
             try:
-                if len(set(self.design_df.condition.values)):
+                if len(set(self.design_df[self.condition].values)):
                     colors = sns.color_palette("deep", n_colors=13)
 
                     colors = px.colors.qualitative.Light24
