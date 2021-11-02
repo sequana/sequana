@@ -63,7 +63,12 @@ class RNADesign:
         self.reference = reference
 
     def _get_conditions(self):
-        return sorted(self.df[self.condition_col].unique())
+
+        try:
+            return sorted(self.df[self.condition_col].unique())
+        except KeyError:
+            logger.error("No column named '{self.condition_col}' in design dataframe '{self.filename}")
+            sys.exit(1)
 
     conditions = property(_get_conditions)
 
