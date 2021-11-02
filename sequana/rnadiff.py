@@ -51,15 +51,11 @@ def strip(text):
 class RNADesign:
     """Simple RNA design handler"""
 
-    def __init__(
-        self, filename, sep=r"\s*,\s*", condition_col="condition", reference=None
-    ):
+    def __init__(self, filename, sep=r"\s*,\s*", condition_col="condition", reference=None):
         self.filename = filename
         self.condition_col = condition_col
         # \s to strip the white spaces
-        self.df = pd.read_csv(
-            filename, sep=sep, engine="python", comment="#", dtype={"label": str}
-        )
+        self.df = pd.read_csv(filename, sep=sep, engine="python", comment="#", dtype={"label": str})
         if reference and reference not in self.conditions:
             raise ValueError(
                 f"{reference} condition (for the reference) not found in the conditions of your design file"
@@ -177,9 +173,7 @@ class RNADiffAnalysis:
         self.counts_filename = self.code_dir / "counts.csv"
 
         # Read and check the design file. Filtering if comparisons is provided
-        self.design = RNADesign(
-            design_file, sep=sep_design, condition_col=condition, reference=reference
-        )
+        self.design = RNADesign(design_file, sep=sep_design, condition_col=condition, reference=reference)
         self.comparisons = comparisons if comparisons else self.design.comparisons
 
         _conditions = {x for comp in self.comparisons for x in comp}
@@ -208,9 +202,7 @@ class RNADiffAnalysis:
         logger.info(f"Comparisons to be included:")
         for x in self.comparisons:
             logger.info(f" - {x}")
-        self.comparisons_str = (
-            f"list({', '.join(['c' + str(x) for x in self.comparisons])})"
-        )
+        self.comparisons_str = f"list({', '.join(['c' + str(x) for x in self.comparisons])})"
 
         # For DeSeq2
         self.batch = batch
@@ -244,9 +236,7 @@ class RNADiffAnalysis:
             try:
                 getattr(self, attr)
             except AttributeError as err:
-                logger.error(
-                    f"Attribute {attr} missing in the RNADiffAnalysis class. cannot go further"
-                )
+                logger.error(f"Attribute {attr} missing in the RNADiffAnalysis class. cannot go further")
                 raise Exception(err)
 
     def __repr__(self):
@@ -480,19 +470,13 @@ class RNADiffTable:
                 try:
                     df = pd.concat([df, annotations.annotation], axis=1)
                 except Exception as err:
-                    logger.warning(
-                        f"Could not merge rnadiff table with annotation. Full error is: {err}"
-                    )
+                    logger.warning(f"Could not merge rnadiff table with annotation. Full error is: {err}")
             df["log_adj_pvalue"] = -pylab.log10(df.padj)
-            df["significance"] = [
-                "<{}".format(padj) if x else ">={}".format(padj) for x in df.padj < padj
-            ]
+            df["significance"] = ["<{}".format(padj) if x else ">={}".format(padj) for x in df.padj < padj]
 
             if hover_name is not None:
                 if hover_name not in df.columns:
-                    logger.warning(
-                        f"hover_name {hover_name} not in the GFF attributes. Switching to automatic choice"
-                    )
+                    logger.warning(f"hover_name {hover_name} not in the GFF attributes. Switching to automatic choice")
                     hover_name = None
             if hover_name is None:
                 for name in ["Name", "gene_name", "gene_id", "locus_tag", "ID"]:
@@ -588,9 +572,7 @@ class RNADiffTable:
         except Exception:
             y1, y2 = bax.ylim()
             bax.ylim([0, y2])
-        bax.axhline(
-            -np.log10(0.05), lw=2, ls="--", color="r", label="pvalue threshold (0.05)"
-        )
+        bax.axhline(-np.log10(0.05), lw=2, ls="--", color="r", label="pvalue threshold (0.05)")
         return bax
 
         if colors is None:
@@ -613,9 +595,7 @@ class RNADiffTable:
             df["names"] = self.sample_names
             df["colors"] = [colors[x] for x in self.sample_names]
             df["size"] = [10] * len(df)
-            df[self.condition] = [
-                self.get_cond_from_sample(sample) for sample in self.sample_names
-            ]
+            df[self.condition] = [self.get_cond_from_sample(sample) for sample in self.sample_names]
             fig = px.scatter_3d(
                 df,
                 x="PC1",
@@ -632,9 +612,7 @@ class RNADiffTable:
             )
             return fig
         else:
-            variance = p.plot(
-                n_components=n_components, colors=colors, max_features=max_features
-            )
+            variance = p.plot(n_components=n_components, colors=colors, max_features=max_features)
 
         return variance
 
@@ -696,30 +674,20 @@ class RNADiffResults:
         self.path = Path(rnadiff_folder)
         self.files = [x for x in self.path.glob(pattern)]
 
-        self.counts_raw = pd.read_csv(
-            self.path / "counts" / "counts_raw.csv", index_col=0, sep=","
-        )
+        self.counts_raw = pd.read_csv(self.path / "counts" / "counts_raw.csv", index_col=0, sep=",")
         self.counts_raw.sort_index(axis=1, inplace=True)
 
-        self.counts_norm = pd.read_csv(
-            self.path / "counts" / "counts_normed.csv", index_col=0, sep=","
-        )
+        self.counts_norm = pd.read_csv(self.path / "counts" / "counts_normed.csv", index_col=0, sep=",")
         self.counts_norm.sort_index(axis=1, inplace=True)
 
-        self.counts_vst = pd.read_csv(
-            self.path / "counts" / "counts_vst_norm.csv", index_col=0, sep=","
-        )
+        self.counts_vst = pd.read_csv(self.path / "counts" / "counts_vst_norm.csv", index_col=0, sep=",")
         self.counts_vst.sort_index(axis=1, inplace=True)
 
-        self.dds_stats = pd.read_csv(
-            self.path / "code" / "overall_dds.csv", index_col=0, sep=","
-        )
+        self.dds_stats = pd.read_csv(self.path / "code" / "overall_dds.csv", index_col=0, sep=",")
         self.condition = condition
 
         design_file = f"{rnadiff_folder}/code/design.csv"
-        self.design_df = self._get_design(
-            design_file, condition=self.condition, palette=palette
-        )
+        self.design_df = self._get_design(design_file, condition=self.condition, palette=palette)
 
         # optional annotation
         self.fc_attribute = fc_attribute
@@ -727,14 +695,10 @@ class RNADiffResults:
         self.annot_cols = annot_cols
         if gff:
             if fc_feature is None or fc_attribute is None:
-                logger.warning(
-                    "Since you provided a GFF file you must provide the feature and attribute to be used."
-                )
+                logger.warning("Since you provided a GFF file you must provide the feature and attribute to be used.")
             self.annotation = self.read_annot(gff)
         else:
-            self.annotation = pd.read_csv(
-                self.path / "rnadiff.csv", index_col=0, header=[0, 1]
-            )
+            self.annotation = pd.read_csv(self.path / "rnadiff.csv", index_col=0, header=[0, 1])
             self.annotation = self.annotation["annotation"]
 
         # some filtering attributes
@@ -804,12 +768,7 @@ class RNADiffResults:
             gff = GFF3(gff)
 
         if self.annot_cols is None:
-            lol = [
-                list(x.keys())
-                for x in gff.df.query("genetic_type==@self.fc_feature")[
-                    "attributes"
-                ].values
-            ]
+            lol = [list(x.keys()) for x in gff.df.query("genetic_type==@self.fc_feature")["attributes"].values]
             annot_cols = sorted(list(set([x for item in lol for x in item])))
         else:
             annot_cols = self.annot_cols
@@ -869,21 +828,13 @@ class RNADiffResults:
     def report(self):
 
         template_file = "rnadiff_report.html"
-        template_env = Environment(
-            loader=PackageLoader("sequana", "resources/templates")
-        )
+        template_env = Environment(loader=PackageLoader("sequana", "resources/templates"))
         template = template_env.get_template(template_file)
 
         with open("rnadiff_report.html", "w") as f:
-            f.write(
-                template.render(
-                    {"table": self.summary().to_html(classes="table table-striped")}
-                )
-            )
+            f.write(template.render({"table": self.summary().to_html(classes="table table-striped")}))
 
-    def get_gene_lists(
-        self, annot_col="index", Nmax=None, dropna=False
-    ):  # pragma: no cover
+    def get_gene_lists(self, annot_col="index", Nmax=None, dropna=False):  # pragma: no cover
 
         gene_lists_dict = {}
 
@@ -907,13 +858,7 @@ class RNADiffResults:
                 df.sort_values("log2FoldChange", ascending=True, inplace=True)
                 down_genes = list(df.query("log2FoldChange < 0")[annot_col])[:Nmax]
 
-                all_genes = list(
-                    list(
-                        df.sort_values("log2FoldChange", key=abs, ascending=False)[
-                            annot_col
-                        ]
-                    )[:Nmax]
-                )
+                all_genes = list(list(df.sort_values("log2FoldChange", key=abs, ascending=False)[annot_col])[:Nmax])
 
             else:
                 up_genes = list(df.query("log2FoldChange > 0")[annot_col])
@@ -982,17 +927,11 @@ class RNADiffResults:
 
         for size in range(1, len(compas)):
             for compa_group in combinations(compas, size):
-                gene_lists = [
-                    total_gene_lists[compa][direction] for compa in compa_group
-                ]
-                commons = set.intersection(
-                    *[set(gene_list) for gene_list in gene_lists]
-                )
+                gene_lists = [total_gene_lists[compa][direction] for compa in compa_group]
+                commons = set.intersection(*[set(gene_list) for gene_list in gene_lists])
                 other_compas = [compa for compa in compas if compa not in compa_group]
                 genes_in_other_compas = {
-                    x
-                    for other_compa in other_compas
-                    for x in total_gene_lists[other_compa][direction]
+                    x for other_compa in other_compas for x in total_gene_lists[other_compa][direction]
                 }
 
                 commons = commons - genes_in_other_compas
@@ -1076,9 +1015,7 @@ class RNADiffResults:
         df = df.rename("percent_null")
         df = pd.concat([self.design_df, df], axis=1)
 
-        pylab.bar(
-            df.index, df.percent_null, color=df.group_color, ec="k", lw=1, zorder=10
-        )
+        pylab.bar(df.index, df.percent_null, color=df.group_color, ec="k", lw=1, zorder=10)
 
         all_null = (self.counts_raw == 0).all(axis=1).sum() / self.counts_raw.shape[0]
 
@@ -1125,11 +1062,7 @@ class RNADiffResults:
         from sequana.viz import PCA
 
         # Get most variable genes (n=max_features)
-        top_features = (
-            self.counts_vst.var(axis=1)
-            .sort_values(ascending=False)
-            .index[:max_features]
-        )
+        top_features = self.counts_vst.var(axis=1).sort_values(ascending=False).index[:max_features]
 
         if genes_to_remove:
             top_features = [x for x in top_features if x not in genes_to_remove]
@@ -1290,9 +1223,7 @@ class RNADiffResults:
             fontdict = {"fontsize": 8}
 
         ax2.set_yticklabels(list(df.gene_id.values), fontdict=fontdict)
-        ax2.tick_params(
-            axis="y", grid_linewidth=0
-        )  # this is for the case seaborn is used
+        ax2.tick_params(axis="y", grid_linewidth=0)  # this is for the case seaborn is used
 
         pylab.sca(ax)
 
@@ -1315,9 +1246,7 @@ class RNADiffResults:
         cluster = clusterisation.Cluster(self.counts_norm)
         # cluster = clusterisation.Cluster(self.df[self.sample_names])
         if transform_method is not None:
-            data = cluster.scale_data(
-                transform_method=transform_method, max_features=max_features
-            )
+            data = cluster.scale_data(transform_method=transform_method, max_features=max_features)
             df = pd.DataFrame(data[0])
             df.index = data[1]
             df.columns = self.counts_norm.columns
@@ -1334,9 +1263,7 @@ class RNADiffResults:
         )
 
         # Convert groups into numbers for Dendrogram category
-        group_conv = {
-            group: i for i, group in enumerate(self.design_df[self.condition].unique())
-        }
+        group_conv = {group: i for i, group in enumerate(self.design_df[self.condition].unique())}
         d.category = self.design_df[self.condition].map(group_conv).to_dict()
         d.plot()
 
@@ -1417,9 +1344,7 @@ class RNADiffResults:
             label="final",
             ms=1,
         )
-        pylab.plot(
-            self.dds_stats.baseMean, self.dds_stats.dispFit, "or", label="Fit", ms=1
-        )
+        pylab.plot(self.dds_stats.baseMean, self.dds_stats.dispFit, "or", label="Fit", ms=1)
         pylab.legend()
         ax = pylab.gca()
         ax.set(yscale="log")
@@ -1438,9 +1363,7 @@ class RNADiffResults:
         h = heatmap.Clustermap(
             self.counts_norm.loc[
                 self.comparisons[comp]
-                .df.query(
-                    "(log2FoldChange<-@log2_fc or log2FoldChange>@log2_fc) and padj<@padj"
-                )
+                .df.query("(log2FoldChange<-@log2_fc or log2FoldChange>@log2_fc) and padj<@padj")
                 .index
             ]
         ).plot()
@@ -1474,9 +1397,7 @@ class RNADiffResults:
         from sequana.viz import heatmap
 
         # Select counts based on the log2 fold change and padjusted
-        data = self.comparisons[comp].df.query(
-            "(log2FoldChange<-@log2_fc or log2FoldChange>@log2_fc) and padj<@padj"
-        )
+        data = self.comparisons[comp].df.query("(log2FoldChange<-@log2_fc or log2FoldChange>@log2_fc) and padj<@padj")
         counts = self.counts_vst.loc[data.index].copy()
 
         logger.info(f"Using {len(data)} DGE genes")
