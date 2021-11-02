@@ -125,4 +125,4 @@ res = pairwise_comparison(dds, {{comparisons_str}}, "{{condition}}",
 export_dds(dds, "{{code_dir}}")
 export_pairwise(res, "{{outdir}}")
 export_counts(dds, "{{counts_dir}}")
-versions_resport("{{code_dir}}")
+versions_report("{{code_dir}}")
