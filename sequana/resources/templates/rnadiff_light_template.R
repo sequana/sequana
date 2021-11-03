@@ -105,6 +105,10 @@ export_dds = function(dds, outdir){
     write.table(mcols(dds), paste(outdir, "overall_dds.csv", sep="/"), sep=",")
 }
 
+versions_report = function(outdir){
+    write.csv(as.data.frame(installed.packages()[,c(1,3)]), file=paste(outdir, "versions.csv"), row.names=FALSE)
+}
+
 ####################
 ## MAIN
 ####################
@@ -121,3 +125,4 @@ res = pairwise_comparison(dds, {{comparisons_str}}, "{{condition}}",
 export_dds(dds, "{{code_dir}}")
 export_pairwise(res, "{{outdir}}")
 export_counts(dds, "{{counts_dir}}")
+versions_report("{{code_dir}}")
