@@ -1,0 +1,13 @@
+"""convert VCF file in BCF file."""
+
+rule vcf_to_bcf:
+    input:
+        vcf = __vcf_to_bcf__input
+    output:
+        bcf = __vcf_to_bcf__output
+    log:
+        "{sample}/vcf_to_vcf/{sample}.log"
+    shell:
+        """
+        bcftools view -O b {input.vcf} > {output.bcf} 2> {log}
+        """
