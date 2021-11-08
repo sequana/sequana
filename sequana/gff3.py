@@ -197,11 +197,12 @@ class GFF3:
             print("{}: {} entries".format(typ, len(self.df.query("genetic_type==@typ"))))
             for attr in sorted(self.attributes):
 
+                L = len(self.df.query("genetic_type==@typ")[attr].dropna())
                 dups = self.df.query("genetic_type==@typ")[attr].dropna().duplicated().sum()
                 if dups > 0:
-                    print("  - {}:{} duplicates".format(attr, dups))
+                    print(f"  - {attr}:{dups} duplicates ({L} in total)")
                 else:
-                    print("  - {}:No duplicates".format(attr))
+                    print(f"  - {attr}:No duplicates ({L} in total)")
                 results[typ][attr] = dups
         import pandas as pd
 
