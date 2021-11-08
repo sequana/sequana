@@ -1,4 +1,5 @@
 from sequana.tools import bam_to_mapped_unmapped_fastq, reverse_complement, StatsBAM2Mapped
+from sequana.tools import fast_gc_content
 from sequana import sequana_data
 from sequana.tools import bam_get_paired_distance, GZLineCounter, PairedFastQ
 from sequana.tools import genbank_features_parser
@@ -8,6 +9,11 @@ def test_StatsBAM2Mapped():
     res = StatsBAM2Mapped(data)
     res.to_html()
 
+def test_fast_gc_content():
+    assert fast_gc_content("GCGCGCGCGC") == 1
+    assert fast_gc_content("AAAAAAAAAA") == 0
+    assert fast_gc_content("gcgcAAAA") == 0.5
+    assert fast_gc_content("gcgcxXXXAAAA") == 0.5
 
 def test_bam2fastq():
     data = sequana_data("test.bam", "testing")
