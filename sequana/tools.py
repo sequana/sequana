@@ -310,11 +310,7 @@ def bam_get_paired_distance(filename):
     distances = []
 
     for fragment in b:
-        if (
-            fragment.is_unmapped is False
-            and fragment.mate_is_unmapped is False
-            and fragment.is_read1
-        ):
+        if not fragment.is_unmapped and not fragment.mate_is_unmapped and fragment.is_read1:
 
             # get the mate:
             mate = next(b)
@@ -350,9 +346,9 @@ def fast_gc_content(chrom):
     if x or X are present, the final GC percentage ignores them.
     """
     L = len(chrom)
-    GC = chrom.count('G') + chrom.count('C') + chrom.count('c') + chrom.count('g')
-    xX = chrom.count('X') + chrom.count('x')
-    return GC / (L -xX)
+    GC = chrom.count("G") + chrom.count("C") + chrom.count("c") + chrom.count("g")
+    xX = chrom.count("X") + chrom.count("x")
+    return GC / (L - xX)
 
 
 def _base_content(filename, window_size, letters, circular=False):
@@ -367,9 +363,7 @@ def _base_content(filename, window_size, letters, circular=False):
         gc_content = np.empty(len(chrom.sequence))
         gc_content[:] = np.nan
         if circular:
-            chrom.sequence = (
-                chrom.sequence[-mid:] + chrom.sequence + chrom.sequence[:mid]
-            )
+            chrom.sequence = chrom.sequence[-mid:] + chrom.sequence + chrom.sequence[:mid]
             # Does not shift index of array
             mid = 0
 
