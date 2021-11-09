@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 #  This file is part of Sequana software
 #
@@ -22,24 +21,22 @@ rule samtools_depth:
     position. It can also compute multiple BAM files and concatenate results in
     one BED file.
 
-    Required input:
+    Optional/Required input:
         - __samtools_depth__input: Sorted BAM file or list of bam file.
+          If not set, uses '{sample}/bwa/{sample}.sorted.bam'
 
     Required output:
         - __samtools_depth__output: BED file with coverage for each base.
-
-    Required log:
-        - __samtools_depth__log: Log file with stderr of samtools.
 
     Reference:
         - http://www.htslib.org/doc/samtools.html
     """
     input:
-        __samtools_depth__input
+        globals().get('__samtools_depth__input', '{sample}/mapping/{sample}.sorted.bam')
     output:
-        __samtools_depth__output
+        "{sample}/samtools_depth/{sample}.bed"
     log:
-        __samtools_depth__log
+        "{sample}/samtools_depth/{sample}.log"
     shell:
         """
         samtools depth -m 20000 -aa {input} > {output} 2> {log}
