@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 #  This file is part of Sequana software
 #
@@ -42,7 +41,7 @@ rule snpeff_add_locus_in_fasta:
     output:
         fasta = __snpeff_add_locus_in_fasta__output
     log:
-        log = __snpeff_add_locus_in_fasta__log
+        log = "common_logs/snpeff_add_locus_in_fasta.log"
     run:
         from sequana import SnpEff
         if input['ann'].endswith(".gbk"):
