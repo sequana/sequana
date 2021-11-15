@@ -78,6 +78,7 @@ rule sequana_coverage:
         from sequana.bedtools import GenomeCov
         from sequana.modules_report.coverage import CoverageModule
         from sequana.utils import config
+        import os
 
         # Run sequana coverage
         bed = GenomeCov(input['bed'], input['gbk'], params['low'],
@@ -100,7 +101,6 @@ rule sequana_coverage:
 
             output_json = prefix + "sequana_summary_coverage.json"
 
-            import os
             os.makedirs(prefix, exist_ok=True)
             output_roi = prefix + "rois.csv"
             ROIs = results.get_rois()
