@@ -197,11 +197,12 @@ class GFF3:
             print("{}: {} entries".format(typ, len(self.df.query("genetic_type==@typ"))))
             for attr in sorted(self.attributes):
 
+                L = len(self.df.query("genetic_type==@typ")[attr].dropna())
                 dups = self.df.query("genetic_type==@typ")[attr].dropna().duplicated().sum()
                 if dups > 0:
-                    print("  - {}:{} duplicates".format(attr, dups))
+                    print(f"  - {attr}:{dups} duplicates ({L} in total)")
                 else:
-                    print("  - {}:No duplicates".format(attr))
+                    print(f"  - {attr}:No duplicates ({L} in total)")
                 results[typ][attr] = dups
         import pandas as pd
 
@@ -251,9 +252,7 @@ class GFF3:
                     pass
         logger.info(f"Found {count} entries and saved into {outfile}")
 
-    def save_gff_filtered(
-        self, filename="filtered.gff", features=["gene"], replace_seqid=None
-    ):
+    def save_gff_filtered(self, filename="filtered.gff", features=["gene"], replace_seqid=None):
         """
 
         save_gff_filtered("test.gff", features=['misc_RNA', 'rRNA'],
@@ -337,20 +336,13 @@ class GFF3:
                 sep = x
                 break
         if sep is None:
-            logger.error(
-                f"Your GFF/GTF does not seem to be correct ({text}). Expected a = or space as separator"
-            )
+            logger.error(f"Your GFF/GTF does not seem to be correct ({text}). Expected a = or space as separator")
             sys.exit(1)
 
         # ugly but fast replacement. not sure how frequent this is. Seen only in
         # Saccer3 GFF file.
         text = text.replace("%09", "\t").replace("%0A", "\n").replace("%0D", "\r")
-        text = (
-            text.replace("%25", "%")
-            .replace("%3D", "=")
-            .replace("%26", "&")
-            .replace("%2C", ",")
-        )
+        text = text.replace("%25", "%").replace("%3D", "=").replace("%26", "&").replace("%2C", ",")
         text = text.replace("%28", "(").replace("%29", ")")  # brackets
         # we do not convert the special %3B into ;  or %20 into spaces for now
 
@@ -367,9 +359,7 @@ class GFF3:
             value = attr[idx + 1 :]
 
             # replace " by nothing (GTF case)
-            attributes[attr[:idx]] = (
-                value.replace('"', "").replace("%3B", ";").replace("%20", " ")
-            )
+            attributes[attr[:idx]] = value.replace('"', "").replace("%3B", ";").replace("%20", " ")
         return attributes
 
     def create_files_for_rnadiff(
@@ -432,9 +422,7 @@ class GFF3:
         if merge_identical_id:
             duplicated = df[df.Gene_id.duplicated()].Gene_id.drop_duplicates()
             if len(duplicated):
-                logger.warning(
-                    "Dropping {} duplicated {}(s)".format(len(duplicated), ID)
-                )
+                logger.warning("Dropping {} duplicated {}(s)".format(len(duplicated), ID))
 
             for name in duplicated.values:
                 S = df.query("Gene_id == @name").Length.sum()

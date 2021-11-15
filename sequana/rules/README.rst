@@ -1,8 +1,6 @@
-This directory contains "simple" rules that are used in the pipelines. There is
-no config file provided but may be required. The unique config file used in
-**Sequana** can be found in the pipelines directory. One can also initialise a
-pipeline locally in a shell::
+The rules here below can be included in your pipelines using the 
+following commands::
 
-    sequana --init quality
+    from sequana_pipetools import snaketools as sm
+    sm.modules["fastqc"]
 
-This will download the quality pipeline and the config file named **config.yaml**

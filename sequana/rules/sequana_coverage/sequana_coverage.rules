@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 #  This file is part of Sequana software
 #
@@ -79,6 +78,7 @@ rule sequana_coverage:
         from sequana.bedtools import GenomeCov
         from sequana.modules_report.coverage import CoverageModule
         from sequana.utils import config
+        import os
 
         # Run sequana coverage
         bed = GenomeCov(input['bed'], input['gbk'], params['low'],
@@ -90,7 +90,7 @@ rule sequana_coverage:
 
         sample = input['bed'].split(os.sep)[0]
         for chrom in bed:
-            if params['size'] >  len(chrom.df)/4:
+            if params['size'] >  len(chrom.df) / 4:
                 W = int(len(chrom.df) / 4)
             else:
                 W = params['size']
@@ -101,8 +101,7 @@ rule sequana_coverage:
 
             output_json = prefix + "sequana_summary_coverage.json"
 
-            from easydev import mkdirs
-            mkdirs(prefix)
+            os.makedirs(prefix, exist_ok=True)
             output_roi = prefix + "rois.csv"
             ROIs = results.get_rois()
             ROIs.df.to_csv(output_roi)
@@ -116,7 +115,10 @@ rule sequana_coverage:
         # Create HTML reports
         config.output_dir = params['report_dir']
         # This works for the variant calling, which report is called
-        # report_vc_{sample}. Since there is no _ in other pipelines, 
-        # this works as well
-        config.sample_name = params['report_dir'].split('_')[-1]
+        # report_vc_{sample} or we can simply use the wildcard
+        try:
+            config.sample_name = params['report_dir'].split('_')[-1]
+        except:
+            config.sample_name = wildcards.sample
+
         CoverageModule(bed)
