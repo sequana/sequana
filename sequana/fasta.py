@@ -81,7 +81,7 @@ class FastA(object):
     def __len__(self):
         if self._N is None:
             logger.info("Reading input fasta file...please wait")
-            self._N = len([x for x in FastxFile(self.filename)])
+            self._N = len([1 for x in FastxFile(self.filename)])
         return self._N
 
     def _get_names(self):
@@ -108,7 +108,7 @@ class FastA(object):
         """Return dictionary with sequence names and lengths as keys/values"""
         return dict(zip(self.names, self.lengths))
 
-    def explode(self):
+    def explode(self, outdir="."):
         """extract sequences from original file and save them into individual files"""
         with open(self.filename, "r") as fin:
             for line in fin.readlines():
@@ -122,7 +122,7 @@ class FastA(object):
                     except NameError:
                         pass
                     finally:
-                        fout = open(f"{name}.fasta", "w")
+                        fout = open(f"{outdir}/{name}.fasta", "w")
                     fout.write(line)
                 else:
                     fout.write(line)
