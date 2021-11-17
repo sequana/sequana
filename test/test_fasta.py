@@ -70,3 +70,12 @@ def test_others():
     with TempFile(suffix=".fasta") as fh:
         ff.save_collapsed_fasta(fh.name, "main")
         ff.save_collapsed_fasta(fh.name, "main", comment="null")
+
+
+def test_explode(tmpdir):
+    path = tmpdir.mkdir("temp")
+
+    filename = f"{test_dir}/data/test_fasta.fasta"
+    ff = FastA(filename)
+    with TempFile(suffix=".fasta") as fh:
+        ff.explode(outdir=path)

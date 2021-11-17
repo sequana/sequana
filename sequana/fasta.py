@@ -81,7 +81,7 @@ class FastA(object):
     def __len__(self):
         if self._N is None:
             logger.info("Reading input fasta file...please wait")
-            self._N = len([x for x in FastxFile(self.filename)])
+            self._N = sum(1 for x in FastxFile(self.filename))
         return self._N
 
     def _get_names(self):
@@ -108,7 +108,7 @@ class FastA(object):
         """Return dictionary with sequence names and lengths as keys/values"""
         return dict(zip(self.names, self.lengths))
 
-    def explode(self):
+    def explode(self, outdir="."):
         """extract sequences from original file and save them into individual files"""
         with open(self.filename, "r") as fin:
             for line in fin.readlines():
@@ -122,13 +122,12 @@ class FastA(object):
                     except NameError:
                         pass
                     finally:
-                        fout = open(f"{name}.fasta", "w")
+                        fout = open(f"{outdir}/{name}.fasta", "w")
                     fout.write(line)
                 else:
                     fout.write(line)
         # need to close the last file
         fout.close()
-
 
     def format_contigs_denovo(self, output_file, len_min=500):
         """Remove contigs with sequence length below specific threshold.
@@ -323,9 +322,7 @@ class FastA(object):
         """Reverse sequences and save in a file"""
         with open(filename, "w") as fout:
             for read in self:
-                fout.write(
-                    ">{}\t{}\n{}\n".format(read.name, read.comment, read.sequence[::-1])
-                )
+                fout.write(">{}\t{}\n{}\n".format(read.name, read.comment, read.sequence[::-1]))
 
     def save_ctg_to_fasta(self, ctgname, outname, max_length=-1):
         """Select a contig and save in a file"""
@@ -335,9 +332,7 @@ class FastA(object):
             if max_length == -1:
                 fout.write(">{}\n{}".format(outname, self.sequences[index]))
             else:
-                fout.write(
-                    ">{}\n{}".format(outname, self.sequences[index][0:max_length])
-                )
+                fout.write(">{}\n{}".format(outname, self.sequences[index][0:max_length]))
 
     def to_fasta(self, outfile, width=80):
         """Save the input FastA file into a new file
