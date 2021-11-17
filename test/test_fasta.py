@@ -79,18 +79,3 @@ def test_explode(tmpdir):
     ff = FastA(filename)
     with TempFile(suffix=".fasta") as fh:
         ff.explode(outdir=path)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
