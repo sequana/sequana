@@ -106,7 +106,7 @@ export_dds = function(dds, outdir){
 }
 
 versions_report = function(outdir){
-    write.csv(as.data.frame(installed.packages()[,c(1,3)]), file=paste(outdir, "versions.csv"), row.names=FALSE)
+    write.csv(as.data.frame(installed.packages()[,c(1,3)]), file=paste(outdir, "versions.csv", sep="/"), row.names=FALSE)
 }
 
 ####################
