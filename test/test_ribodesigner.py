@@ -1,78 +1,57 @@
-#!/usr/bin/env python
-
 """Tests for `ribodesigner` package."""
 
+import filecmp
+import shutil
+from pathlib import Path
+
 import pytest
-
 from click.testing import CliRunner
-
 from sequana import ribodesigner as rd
 from sequana.scripts import main
 
 from . import test_dir
-from pathlib import Path
-import shutil
 
 resources_dir = Path(test_dir) / "data" / "ribodesigner"
 
 
-@pytest.fixture(scope="function")
-def setup_ribo(tmpdir):
-    shutil.copytree(resources_dir, tmpdir, dirs_exist_ok=True)
-
-
-def test_get_rna_pos_from_gff(setup_ribo, tmpdir):
-    df = rd.get_rna_pos_from_gff(tmpdir / "sample.gff")
-    print(df)
+def test_get_rna_pos_from_gff(tmp_path):
+    df = rd.get_rna_pos_from_gff(
+        resources_dir / "sample.gff",
+        tmp_path / "sample_filtered.gff",
+        resources_dir / "sample.fasta",
+        tmp_path / "test_regions.fas",
+    )
     assert df.shape == (3, 9)
 
 
-def test_extract_regions_from_fasta(setup_ribo, tmpdir):
-    df = rd.get_rna_pos_from_gff(tmpdir / "sample.gff")
-    rd.extract_regions_from_fasta(tmpdir / "sample.fasta", df, tmpdir / "test_regions.fas")
-    with open(tmpdir / "test_regions.fas") as f1:
-        with open(tmpdir / "regions.fas") as f2:
-            assert list(f1) == list(f2)
+def test_get_probes(tmp_path):
+
+    rd.get_probes(resources_dir / "regions.fas", tmp_path / "test_probes.fas")
+    assert filecmp.cmp(tmp_path / "test_probes.fas", resources_dir / "probes.fas")
 
 
-def test_reverse_complement():
+def test_cluster_probes(tmp_path):
 
-    sequence = "CGTAGTGCTAGTGCTAGTGTCGATGTCGATGTCGATGTCGATCTAGTC"
-    rev_comp_sequence = "GACTAGATCGACATCGACATCGACATCGACACTAGCACTAGCACTACG"
-
-    assert rd.reverse_complement(sequence) == rev_comp_sequence
+    rd.cluster_probes(resources_dir / "probes.fas", tmp_path / "test_probes_clustered.fas")
+    assert filecmp.cmp(tmp_path / "test_probes_clustered.fas", resources_dir / "probes_clustered.fas")
 
 
-def test_get_probes(setup_ribo, tmpdir):
+def test_fasta_to_csv(tmp_path):
 
-    rd.get_probes(tmpdir / "regions.fas", tmpdir / "test_probes.fas")
-    with open(tmpdir / "test_probes.fas") as f1:
-        with open(tmpdir / "probes.fas") as f2:
-            assert list(f1) == list(f2)
+    rd.fasta_to_csv(resources_dir / "probes_clustered.fas", tmp_path / "test_probes_clustered.csv")
+    assert filecmp.cmp(tmp_path / "test_probes_clustered.csv", resources_dir / "probes_clustered.csv")
 
 
-def test_cluster_probes(setup_ribo, tmpdir):
-
-    rd.cluster_probes(tmpdir / "probes.fas", tmpdir / "test_probes_clustered.fas")
-    with open(tmpdir / "test_probes_clustered.fas") as f1:
-        with open(tmpdir / "probes_clustered.fas") as f2:
-            assert list(f1) == list(f2)
-
-
-def test_fasta_to_csv(setup_ribo, tmpdir):
-
-    rd.fasta_to_csv(tmpdir / "probes_clustered.fas", tmpdir / "test_probes_clustered.csv")
-    with open(tmpdir / "test_probes_clustered.csv") as f1:
-        with open(tmpdir / "probes_clustered.csv") as f2:
-            assert list(f1) == list(f2)
-
-
-def test_ribodesigner_cli(setup_ribo, tmpdir):
+def test_ribodesigner_cli(tmp_path):
 
     runner = CliRunner()
     result = runner.invoke(
         main.ribodesigner,
-        [str(tmpdir / "sample.fasta"), str(tmpdir / "sample.gff"), "--outdir", tmpdir / "out_ribodesigner"],
+        [
+            str(resources_dir / "sample.fasta"),
+            str(resources_dir / "sample.gff"),
+            "--output-directory",
+            tmp_path / "out_ribodesigner",
+        ],
     )
-    print(result.output)
     assert result.exit_code == 0

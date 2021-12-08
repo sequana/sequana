@@ -889,9 +889,7 @@ def feature_counts(**kwargs):
     "--kegg-name",
     type=click.STRING,
     default=None,
-    help=(
-        "a valid KEGG name (hsa for human, mmu for mus musculus);  " "See the taxonomy command to retrieved other names"
-    ),
+    help="a valid KEGG name (hsa for human, mmu for mus musculus); See the taxonomy command to retrieve other names",
 )
 @click.option(
     "--log2-foldchange-cutoff",
@@ -1367,18 +1365,28 @@ def teardown(workdir):
 @main.command()
 @click.argument("fasta", type=click.Path(exists=True))
 @click.argument("gff", type=click.Path(exists=True))
-@click.option("--outdir", default="out_ribodesigner", type=click.Path(exists=False))
-@click.option("--seq_type", default="rRNA", help="The annotation type (column 3 in gff) to target for probes.")
-@click.option("--probe_len", default=50, type=click.INT, help="The size of probes in nucleotides.")
+@click.option("--output-directory", default="out_ribodesigner", type=click.Path(exists=False))
+@click.option("--seq-type", default="rRNA", help="The annotation type (column 3 in gff) to target for probes.")
+@click.option("--probe-len", default=50, type=click.INT, help="The size of probes in nucleotides.")
 @click.option(
-    "--inter_probe_space", default=15, type=click.INT, help="The size of the space between probes in nucleotides."
+    "--inter-probe-space", default=15, type=click.INT, help="The size of the space between probes in nucleotides."
 )
-@click.option("--seq_id_thres", default=0.80, type=click.FLOAT, help="The similarity threshold for clustering.")
+@click.option("--seq-id-thres", default=0.80, type=click.FLOAT, help="The similarity threshold for clustering.")
 @click.option("--threads", default=4, type=click.INT, help="The number of threads to use for cd-hit-est.")
 def ribodesigner(**kwargs):
-    """A tool to design custom ribodepletion probes, using a reference genome (FASTA file) and the corresponding annotation (GFF file). CD-HIT-EST should be installed and in your $PATH."""
+    """A tool to design custom ribodepletion probes.
 
-    outdir = Path(kwargs["outdir"])
+    This uses a reference genome (FASTA file) and the corresponding annotation
+    (GFF file). CD-HIT-EST should be installed and in your $PATH.
+    """
+
+    from easydev import cmd_exists
+
+    if not cmd_exists("cd-hit-est"):
+        logger.error("cd-hit-est not found in PATH.")
+        sys.exit(1)
+
+    outdir = Path(kwargs["output_directory"])
     outdir.mkdir()
 
     regions_fas = outdir / "regions.fas"
@@ -1386,9 +1394,11 @@ def ribodesigner(**kwargs):
     clustered_fas = outdir / "clustered_probes.fas"
     clustered_csv = outdir / "clustered_probes.csv"
 
-    # logger.info("test")
-    df = rd.get_rna_pos_from_gff(kwargs["gff"], seq_type=kwargs["seq_type"])
-    rd.extract_regions_from_fasta(kwargs["fasta"], df, regions_fas)
+    rd.get_rna_pos_from_gff(
+        kwargs["gff"], outdir / "annot_filtered.gff", kwargs["fasta"], regions_fas, seq_type=kwargs["seq_type"]
+    )
+
+    # rd.extract_regions_from_fasta(kwargs["fasta"], df, regions_fas)
     rd.get_probes(regions_fas, probes_fas, probe_len=kwargs["probe_len"], inter_probe_space=kwargs["inter_probe_space"])
     rd.cluster_probes(probes_fas, clustered_fas, seq_id_thres=kwargs["seq_id_thres"], threads=kwargs["threads"])
     rd.fasta_to_csv(clustered_fas, clustered_csv)
