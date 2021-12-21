@@ -782,7 +782,7 @@ class SAMBAMbase():
         return X, Y
 
     def plot_insert_size(self, max_entries=100000, bins=100, upper_bound=1000,
-        lower_bound=-1000):
+        lower_bound=-1000, absolute=False):
         """
 
         This gives an idea of the insert size without taking into account any
@@ -802,7 +802,10 @@ class SAMBAMbase():
         data = self._get_insert_size_data(max_entries=max_entries)
         if len(data) == 0:
             return 0
+        
         data = [x for x in data if x>=lower_bound and x<=upper_bound]
+        if absolute:
+            data = [abs(x) for x in data]
         M = pylab.mean([abs(x) for x in data])
         pylab.hist(data, bins=bins)
         return M
