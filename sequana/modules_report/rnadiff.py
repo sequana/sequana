@@ -454,7 +454,7 @@ value as a function of the log2 ratio of diﬀerential expression. </p>"""
         # here we need to add the annotation if possible
         try:
             df = pd.concat(
-                [df, self.rnadiff.annotation.annotation.loc[comp.df.index]], axis=1
+                [df, self.rnadiff.annotation.annotation.loc[[str(x) for x in comp.df.index]]], axis=1
             )
         except Exception as err:
             logger.critical(f"Could not add annotation. {err}")
