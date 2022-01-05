@@ -20,6 +20,7 @@ import vcfpy
 from sequana.lazy import pylab
 
 import colorlog
+
 logger = colorlog.getLogger(__name__)
 
 
@@ -52,9 +53,10 @@ class VCFBase:
 
         vcf.rewind()
 
-    You also get lots of extra information inherited from the vcf.Reader 
+    You also get lots of extra information inherited from the vcf.Reader
 
     """
+
     def __init__(self, filename, verbose=True, **kwargs):
         """.. rubric:: constructor
 
@@ -93,12 +95,13 @@ class VCFBase:
         else:
             fileformat = "unknown"
 
-        if fileformat == 'VCFv4.1':
+        if fileformat == "VCFv4.1":
             return "4.1"
         elif fileformat == "VCFv4.2":
             return "4.2"
         else:
             return fileformat
+
     version = property(_get_version)
 
     def _get_source(self):
@@ -107,6 +110,7 @@ class VCFBase:
             fileformat = fileformat[0].value
         else:
             fileformat = "unknown"
+
     source = property(_get_source)
 
     def hist_qual(self, fontsize=16, bins=100):
@@ -146,8 +150,7 @@ def compute_frequency(record):
     except:
         info = record.INFO
 
-    alt_freq = [float(count) / info["DP"] 
-                for count in info["AO"]]
+    alt_freq = [float(count) / info["DP"] for count in info["AO"]]
     return alt_freq
 
 
@@ -170,9 +173,6 @@ def compute_strand_balance(record):
     except:
         info = record.INFO
 
-    strand_bal = [
-        strand_ratio(info["SAF"][i], info["SAR"][i])
-        for i in range(len(info["SAF"]))
-    ]
+    strand_bal = [strand_ratio(info["SAF"][i], info["SAR"][i]) for i in range(len(info["SAF"]))]
 
     return strand_bal

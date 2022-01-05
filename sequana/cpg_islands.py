@@ -1,6 +1,3 @@
-
-
-
 def CpG(sequence, size=200):
     """
     The Sequence Manipulation Suite: CpG Islands
@@ -15,4 +12,3 @@ def CpG(sequence, size=200):
 
     """
     pass
-

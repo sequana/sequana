@@ -560,7 +560,13 @@ effect to be included in the statistical model as batch ~ condition""",
 @click.option(
     "--minimum-mean-reads-per-gene",
     default=0,
-    help="Filter out fene where the mean number of reads is below this value. By default all genes are kept",
+    help="""Keeps genes that have an average number of reads greater or equal this value. This is the average across all
+replicates and conditions. Not recommended if you have lots of conditions. By default all genes are kept""",
+)
+@click.option(
+    "--minimum-mean-reads-per-condition-per-gene",
+    default=0,
+    help="Keeps genes that have an average number of reads greater or equal to this value in all conditions. By default all genes are kept",
 )
 @click.option(
     "--keep-all-conditions/--no-keep-all-conditions",
@@ -745,6 +751,7 @@ You may install it yourself or use damona using the rtools:1.0.0 image """
         beta_prior=kwargs.get("beta_prior"),
         fit_type=kwargs.get("fit_type"),
         minimum_mean_reads_per_gene=kwargs.get("minimum_mean_reads_per_gene"),
+        minimum_mean_reads_per_condition_per_gene=kwargs.get("minimum_mean_reads_per_condition_per_gene"),
     )
 
     if not kwargs["report_only"]:
@@ -1165,7 +1172,8 @@ def enrichment_panther(**kwargs):
 
         sequana enrichment rnadiff/rnadiff.csv
             --panther-taxon 189518 \
-            --log2-foldchange-cutoff 2 \
+            --log2-foldchange-cutoff 2 
+            --ontologies MF SLIM_MF
 
     \b
     Valid ontologies are: MF, BP, CC, SLIM_MF, SLIM_BP, SLIM_CC, 
@@ -1193,7 +1201,7 @@ def enrichment_panther(**kwargs):
     ontologies = eval(kwargs["ontologies"])
     for ontology in ontologies:
         if ontology not in valid:
-            logger.erro(f"Provided incorrect ontology ({ontology}). Must be in {valid}")
+            logger.error(f"Provided incorrect ontology ({ontology}). Must be in {valid}")
             sys.exit(1)
 
     logger.setLevel(kwargs["logger"])
@@ -1260,7 +1268,7 @@ def enrichment_panther(**kwargs):
     "--search-panther",
     type=click.Path(),
     default=None,
-    help="""Search a pattern amongst all KEGG organism""",
+    help="""Search a pattern amongst all Panther organism""",
 )
 @common_logger
 def taxonomy(**kwargs):

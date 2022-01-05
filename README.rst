@@ -58,6 +58,8 @@ SEQUANA
 +------------------------------------------------+--------------------------+-----------------------+
 | https://github.com/sequana/mapper              |         |mapper_pypi|    |  |mapper_test|        |
 +------------------------------------------------+--------------------------+-----------------------+
+| https://github.com/sequana/pacbio_qc           |         |pacbio_qc_pypi| |  |pacbio_qc_test|     |
++------------------------------------------------+--------------------------+-----------------------+
 | https://github.com/sequana/ribofinder          |         |ribo_pypi|      |  |ribo_test|          |
 +------------------------------------------------+--------------------------+-----------------------+
 | https://github.com/sequana/rnaseq              |         |rnaseq_pypi|    |  |rnaseq_test|        |
@@ -91,6 +93,13 @@ SEQUANA
 
 .. |mapper_test| image:: https://github.com/sequana/mapper/actions/workflows/main.yml/badge.svg?branch=master
     :target: https://github.com/sequana/mapper/actions/workflows/main.yml
+
+.. |pacbio_qc_pypi| image:: https://badge.fury.io/py/sequana-pacbio-qc.svg
+    :target: https://pypi.python.org/pypi/sequana-pacbio-qc
+
+.. |pacbio_qc_test| image:: https://github.com/sequana/pacbio_qc/actions/workflows/main.yml/badge.svg?branch=master
+    :target: https://github.com/sequana/pacbio_qc/actions/workflows/main.yml
+
 
 .. |demultiplex_pypi| image:: https://badge.fury.io/py/sequana-demultiplex.svg
     :target: https://pypi.python.org/pypi/sequana-demultiplex

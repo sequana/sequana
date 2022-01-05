@@ -27,17 +27,16 @@ from sequana.misc import wget
 from easydev import TempFile
 
 import colorlog
+
 logger = colorlog.getLogger(__name__)
 
 
-__all__ = ['NCBITaxonomy', 'Taxonomy']
+__all__ = ["NCBITaxonomy", "Taxonomy"]
 
 
-class NCBITaxonomy():
-    """
+class NCBITaxonomy:
+    """ """
 
-
-    """
     def __init__(self, names, nodes):
         """
 
@@ -60,7 +59,7 @@ class NCBITaxonomy():
                 self.df_nodes = pd.read_csv(fout_nodes.name, sep="|", header=None)
         for i, _type in enumerate(self.df_nodes.dtypes):
             if _type == "O":
-                self.df_nodes[i] = self.df_nodes[i].str.strip('\t')
+                self.df_nodes[i] = self.df_nodes[i].str.strip("\t")
         """
         tax_id                  -- node id in GenBank taxonomy database
         parent tax_id               -- parent node id in GenBank taxonomy database
@@ -78,12 +77,11 @@ class NCBITaxonomy():
         """
 
         try:
-            self.df_nodes.columns = ["taxid", "parent", "rank", 4, 5, "gc_id" ,"mt_id", 7, 8, 9, 10, 11, 12, 13]
+            self.df_nodes.columns = ["taxid", "parent", "rank", 4, 5, "gc_id", "mt_id", 7, 8, 9, 10, 11, 12, 13]
             del self.df_nodes[13]
         except:
             self.df_nodes.columns = ["taxid", "parent", "rank", 4, 5]
             del self.df_nodes[5]
-
 
         # make sure they are ordered by taxon ID
         self.df_nodes.sort_values("taxid", inplace=True)
@@ -100,15 +98,15 @@ class NCBITaxonomy():
 
         for i, _type in enumerate(self.df_names.dtypes):
             if _type == "O":
-                self.df_names[i] = self.df_names[i].str.strip('\t')
+                self.df_names[i] = self.df_names[i].str.strip("\t")
         del self.df_names[4]
-        self.df_names.columns = ['taxid', 'name', 'unique_name', 'key']
+        self.df_names.columns = ["taxid", "name", "unique_name", "key"]
         self.df_names.set_index("taxid", inplace=True)
 
     def create_taxonomy_file(self, filename="taxonomy.dat"):
-        logger.info("Please wait while creating the output file. "
-            "This may take a few minutes")
+        logger.info("Please wait while creating the output file. " "This may take a few minutes")
         from easydev import Progress
+
         pb = Progress(len(self.df_nodes))
         count = 0
         df_names = self.df_names.query("key == 'scientific name'").copy()
@@ -118,10 +116,10 @@ class NCBITaxonomy():
                 row = self.df_nodes.loc[taxid]
                 fout.write("ID                        : {}\n".format(taxid))
                 fout.write("PARENT ID                 : {}\n".format(row.parent))
-                fout.write("RANK                      : {}\n".format(row['rank']))
+                fout.write("RANK                      : {}\n".format(row["rank"]))
 
-                #names = df_names.loc[taxid]
-                #print(
+                # names = df_names.loc[taxid]
+                # print(
                 fout.write("{:26s}: {}\n".format("SCIENTIFIC NAME", df_names.loc[taxid, "name"]))
                 """    len(names)
                     for k,v in zip(names['key'], names['name']):
@@ -136,14 +134,14 @@ class NCBITaxonomy():
                 pb.animate(count)
 
 
-
 def load_taxons(f):
     @wraps(f)
     def wrapper(*args, **kargs):
         if len(args[0].records) == 0:
             args[0].load_records()
-            
+
         return f(*args, **kargs)
+
     return wrapper
 
 
@@ -175,11 +173,12 @@ class Taxonomy(metaclass=Singleton):
         >>> t.get_lineage(9606)
 
 
-    Possible ranks are various. You may have biotype, clade, etc ub generally speaking 
+    Possible ranks are various. You may have biotype, clade, etc ub generally speaking
     ranks are about lineage. For a given rank, e.g. kingdom, you may have sub division such
     as superkingdom and subkingdom. order has even more subdivisions (infra, parv, sub, super)
 
     """
+
     def __init__(self, filename=None, verbose=True, online=True, source="ncbi"):
         """.. rubric:: constructor
 
@@ -188,18 +187,19 @@ class Taxonomy(metaclass=Singleton):
         :param from: download taxonomy databases from ncbi
         """
 
-        assert source in ['ncbi', 'ena']
+        assert source in ["ncbi", "ena"]
         self.source = source
 
         if online:
             from bioservices import Ensembl, EUtils
+
             self.ensembl = Ensembl(verbose=False)
 
-        self.records = {} # empty to start with.
+        self.records = {}  # empty to start with.
         self.verbose = verbose
 
         if filename is None:
-            self._dbname =  "taxonomy.dat"
+            self._dbname = "taxonomy.dat"
             self.database = sequana_config_path + os.sep + self._dbname
         else:
             self.database = filename
@@ -207,9 +207,8 @@ class Taxonomy(metaclass=Singleton):
         self._custom_db = sequana_config_path
         self._custom_db += "/taxonomy/taxonomy_custom.dat"
 
-    def _update_custom_taxonomy_bases(self, taxid): # pragma: no cover
-        """
-        """
+    def _update_custom_taxonomy_bases(self, taxid):  # pragma: no cover
+        """ """
         taxid = str(taxid)
         self.eutils = EUtils(verbose=False)
         res = self.eutils.taxonomy_summary(taxid)
@@ -220,18 +219,19 @@ class Taxonomy(metaclass=Singleton):
             with open(self.custom_db, "w") as fout:
                 data = res[taxid]
                 fout.write("ID : {}\n".format(taxid))
-                #fout.write("PARENT ID : {}\n".format(taxid))
-                fout.write("RANK : {}\n".format(data['rank']))
-                #fout.write("GC ID : {}\n".format(data['']))
-                fout.write("SCIENTIFIC NAME : {}\n".format(data['scientificname']))
+                # fout.write("PARENT ID : {}\n".format(taxid))
+                fout.write("RANK : {}\n".format(data["rank"]))
+                # fout.write("GC ID : {}\n".format(data['']))
+                fout.write("SCIENTIFIC NAME : {}\n".format(data["scientificname"]))
 
-    def download_taxonomic_file(self, overwrite=False): #pragma: no cover
+    def download_taxonomic_file(self, overwrite=False):  # pragma: no cover
         """Loads entire flat file from EBI
 
         Do not overwrite the file by default.
         """
         import ftplib
         from sequana import sequana_config_path
+
         if os.path.exists(self.database) and overwrite is False:
             logger.info("Found taxonomy.dat file in sequana your path {}".format(sequana_config_path))
             return
@@ -239,40 +239,42 @@ class Taxonomy(metaclass=Singleton):
             logger.info("Downloading and extracting the taxonomy file from the web. Please be patient.")
 
         if self.source == "ena":
-            url = 'ftp.ebi.ac.uk'
+            url = "ftp.ebi.ac.uk"
         else:
-            url = 'ftp.ncbi.nlm.nih.gov'
+            url = "ftp.ncbi.nlm.nih.gov"
 
         self.ftp = ftplib.FTP(url)
         self.ftp.login()
         if self.source == "ena":
             # for the EBI ftp only: self.ftp.cwd('databases')
-            self.ftp.cwd('pub')
-            self.ftp.cwd('databases')
-            self.ftp.cwd('taxonomy')
-            logger.warning('Downloading and saving in %s. This is from ebi and may be behind the NCBI taxonomy' % self.database)
-            self.ftp.retrbinary('RETR taxonomy.dat',
-                open(self.database, 'wb').write)
+            self.ftp.cwd("pub")
+            self.ftp.cwd("databases")
+            self.ftp.cwd("taxonomy")
+            logger.warning(
+                "Downloading and saving in %s. This is from ebi and may be behind the NCBI taxonomy" % self.database
+            )
+            self.ftp.retrbinary("RETR taxonomy.dat", open(self.database, "wb").write)
             ftp.close()
         else:
-            self.ftp.cwd('pub')
-            self.ftp.cwd('taxonomy')
-            logger.warning('Downloading and saving in %s from ncbi ftp' % self.database)
+            self.ftp.cwd("pub")
+            self.ftp.cwd("taxonomy")
+            logger.warning("Downloading and saving in %s from ncbi ftp" % self.database)
             import tempfile
             import shutil
+
             with tempfile.TemporaryDirectory() as tmpdir:
                 filename = tmpdir + os.sep + "taxdump.tar.gz"
-                self.ftp.retrbinary('RETR taxdump.tar.gz', open(filename, "wb").write)
+                self.ftp.retrbinary("RETR taxdump.tar.gz", open(filename, "wb").write)
                 import tarfile
+
                 tf = tarfile.open(filename)
                 assert "nodes.dmp" in tf.getnames()
                 assert "names.dmp" in tf.getnames()
                 tf.extract("nodes.dmp", tmpdir)
                 tf.extract("names.dmp", tmpdir)
                 ncbi = NCBITaxonomy(tmpdir + os.sep + "names.dmp", tmpdir + os.sep + "nodes.dmp")
-                ncbi.create_taxonomy_file(tmpdir  + os.sep + "taxonomy.dat")
-                shutil.move(tmpdir + os.sep + "taxonomy.dat",
-                            self.database)
+                ncbi.create_taxonomy_file(tmpdir + os.sep + "taxonomy.dat")
+                shutil.move(tmpdir + os.sep + "taxonomy.dat", self.database)
             self.ftp.close()
 
     def load_records(self, overwrite=False):
@@ -295,33 +297,35 @@ class Taxonomy(metaclass=Singleton):
             data = f.read().strip()
 
         # This is fast. tried parse package, much slower. cost of progress bar
-        # is not important. 
-        data = data.split("//\n") # the sep is //\n
-        self._child_match = re.compile(r'ID\s+\:\s*(\d+)\s*')
-        self._parent_match = re.compile(r'PARENT ID\s+\:\s*(\d+)\s*')
-        self._rank_match = re.compile(r'RANK\s+\:\s*([^\n]+)\s*')
-        self._name_match = re.compile(r'SCIENTIFIC NAME\s+\:\s*([^\n]+)\s*')
+        # is not important.
+        data = data.split("//\n")  # the sep is //\n
+        self._child_match = re.compile(r"ID\s+\:\s*(\d+)\s*")
+        self._parent_match = re.compile(r"PARENT ID\s+\:\s*(\d+)\s*")
+        self._rank_match = re.compile(r"RANK\s+\:\s*([^\n]+)\s*")
+        self._name_match = re.compile(r"SCIENTIFIC NAME\s+\:\s*([^\n]+)\s*")
 
         from easydev import Progress
+
         pb = Progress(len(data))
 
-        logger.info('Loading all taxon records.')
+        logger.info("Loading all taxon records.")
         for i, record in enumerate(data[0:]):
-            dd = {'raw': record}
-            dd['id'] = int(self._child_match.search(record).group(1))
-            dd['parent'] = int(self._parent_match.search(record).group(1))
-            dd['scientific_name'] = self._name_match.search(record).group(1)
-            dd['rank'] = self._rank_match.search(record).group(1)
+            dd = {"raw": record}
+            dd["id"] = int(self._child_match.search(record).group(1))
+            dd["parent"] = int(self._parent_match.search(record).group(1))
+            dd["scientific_name"] = self._name_match.search(record).group(1)
+            dd["rank"] = self._rank_match.search(record).group(1)
             self.records[dd["id"]] = dd
             if self.verbose:
-                pb.animate(i+1)
+                pb.animate(i + 1)
         if self.verbose:
             print()
-           
+
     def find_taxon(self, taxid, mode="ncbi"):
         taxid = str(taxid)
         if mode == "ncbi":
             from bioservices import EUtils
+
             self.eutils = EUtils(verbose=False)
             res = self.eutils.taxonomy_summary(taxid)
         else:
@@ -383,26 +387,26 @@ class Taxonomy(metaclass=Singleton):
         try:
             record = self.records[taxon]
         except:
-            return [('unknown_taxon:{}'.format(taxon), 'no rank')]
+            return [("unknown_taxon:{}".format(taxon), "no rank")]
 
-        parent = int(record['parent'])
+        parent = int(record["parent"])
 
         if taxon == 1:
-            lineage_rank.append((record['scientific_name'], record['rank']))
+            lineage_rank.append((record["scientific_name"], record["rank"]))
             lineage_rank.reverse()
             return lineage_rank
         else:
-            lineage_rank.append((record['scientific_name'], record['rank']))
+            lineage_rank.append((record["scientific_name"], record["rank"]))
             return self._gen_lineage_and_rank(parent, lineage_rank)
 
     @load_taxons
     def get_parent_taxon(self, taxon):
-        return self.records[taxon]['parent']
+        return self.records[taxon]["parent"]
 
     @load_taxons
     def get_parent_name(self, taxon):
         taxid = self.get_parent_taxon(taxon)
-        return self.records[taxid]['scientific_name']
+        return self.records[taxid]["scientific_name"]
 
     @load_taxons
     def get_lineage_and_rank(self, taxon):
@@ -419,23 +423,22 @@ class Taxonomy(metaclass=Singleton):
 
     @load_taxons
     def get_ranks(self):
-        return  Counter([x['rank'] for x in self.records.values()])
+        return Counter([x["rank"] for x in self.records.values()])
 
     @load_taxons
     def get_record_for_given_rank(self, rank):
-        return [x for x in self.records.values() if x['rank'] == rank]
+        return [x for x in self.records.values() if x["rank"] == rank]
 
     @load_taxons
     def get_names_for_given_rank(self, rank):
-        data = [x for x in self.records.values() if x['rank'] == rank]
-        return [x['scientific_name'] for x in data]
+        data = [x for x in self.records.values() if x["rank"] == rank]
+        return [x["scientific_name"] for x in data]
 
     @load_taxons
     def get_children(self, taxon):
         taxon = str(taxon)
-        children = [self.records[k] for k in self.records.keys()
-                if self.records[k]['parent'] == taxon]
-        children = [child['id'] for child in children]
+        children = [self.records[k] for k in self.records.keys() if self.records[k]["parent"] == taxon]
+        children = [child["id"] for child in children]
         return children
 
     @load_taxons
@@ -473,4 +476,4 @@ class Taxonomy(metaclass=Singleton):
 
         with open(self.database, "a") as fout:
             for record in toadd:
-                fout.write(tax.records[record]['raw']+"//\n")
+                fout.write(tax.records[record]["raw"] + "//\n")

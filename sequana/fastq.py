@@ -38,8 +38,8 @@ except:
 
 
 import colorlog
-logger = colorlog.getLogger(__name__)
 
+logger = colorlog.getLogger(__name__)
 
 
 # for filter fastq files. see below in FastQ for the usage
@@ -62,7 +62,7 @@ def is_fastq(filename):
             assert line.startswith("+") and len(line.strip()) == 1
             line = fin.readline()
             return True
-        except: #pragma: no cover
+        except:  # pragma: no cover
             return False
 
 
@@ -97,6 +97,7 @@ class Identifier(object):
 
     Information can also be found here http://support.illumina.com/help/SequencingAnalysisWorkflow/Content/Vault/Informatics/Sequencing_Analysis/CASAVA/swSEQ_mCA_FASTQFiles.htm
     """
+
     def __init__(self, identifier, version="unknown"):
         self.identifier = identifier[:]
 
@@ -128,51 +129,51 @@ class Identifier(object):
         # skip @ character
         identifier = self.identifier[1:]
         # replace spaces by : character
-        identifier = b' '.join(identifier.split())
-        identifier = identifier.replace(b' ', b':')
-        items = identifier.split(b':')
-        if len(items) != 11: #pragma: no cover
-            raise ValueError('Number of items in the identifier should be 11')
+        identifier = b" ".join(identifier.split())
+        identifier = identifier.replace(b" ", b":")
+        items = identifier.split(b":")
+        if len(items) != 11:  # pragma: no cover
+            raise ValueError("Number of items in the identifier should be 11")
         res = {}
-        res['identifier'] = self.identifier[:]
-        res['instrument'] = items[0]
-        res['run_id'] = items[1]
-        res['flowcell_id'] = items[2]
-        res['flowcell_lane'] = items[3]
-        res['tile_number'] = items[4]
-        res['x_coordinate'] = items[5]
-        res['y_coordinate'] = items[6]
-        res['member_pair'] = items[7]
-        res['filtered'] = items[8]
-        res['control_bits'] = items[9]
-        res['index_sequence'] = items[10]
-        res['version'] = 'Illumina_1.8+'
+        res["identifier"] = self.identifier[:]
+        res["instrument"] = items[0]
+        res["run_id"] = items[1]
+        res["flowcell_id"] = items[2]
+        res["flowcell_lane"] = items[3]
+        res["tile_number"] = items[4]
+        res["x_coordinate"] = items[5]
+        res["y_coordinate"] = items[6]
+        res["member_pair"] = items[7]
+        res["filtered"] = items[8]
+        res["control_bits"] = items[9]
+        res["index_sequence"] = items[10]
+        res["version"] = "Illumina_1.8+"
         return res
 
     def _interpret_illumina_1_4(self):
         # skip @ character
         identifier = self.identifier[1:]
-        identifier = identifier.replace('#', ':')
-        identifier = identifier.replace('/', ':')
-        items = identifier.split(':')
+        identifier = identifier.replace("#", ":")
+        identifier = identifier.replace("/", ":")
+        items = identifier.split(":")
 
         # ['@HWUSI-EAS100R', '6', '73', '941', '1973#0/1']
         res = {}
-        res['identifier'] = self.identifier[:]
-        res['instrument_name'] = items[0]
-        res['flowcell_lane'] = items[1]
-        res['tile_number'] = items[2]
-        res['x_coordinate'] = items[3]
-        res['y_coordinate'] = items[4]
-        res['index'] = '#' + items[5]
-        res['member_pair'] = items[6]
-        res['version'] = 'Illumina_1.4+'
+        res["identifier"] = self.identifier[:]
+        res["instrument_name"] = items[0]
+        res["flowcell_lane"] = items[1]
+        res["tile_number"] = items[2]
+        res["x_coordinate"] = items[3]
+        res["y_coordinate"] = items[4]
+        res["index"] = "#" + items[5]
+        res["member_pair"] = items[6]
+        res["version"] = "Illumina_1.4+"
         return res
 
     def __str__(self):
         txt = ""
         for key in sorted(self.info.keys()):
-            txt += '%s: %s\n' % (key, self.info[key])
+            txt += "%s: %s\n" % (key, self.info[key])
         return txt
 
     def __repr__(self):
@@ -223,6 +224,7 @@ class FastQ(object):
 
     """
     _N = 4
+
     def __init__(self, filename, verbose=False):
 
         self.filename = filename
@@ -247,14 +249,15 @@ class FastQ(object):
         if self._count_reads is None:
             self._count_reads = self.count_reads()
         return self._count_reads
+
     n_reads = property(_get_count_reads, doc="return number of reads")
 
     def _get_count_lines(self):
         if self._count_lines is None:
             self._count_lines = self.count_lines()
         return self._count_lines
-    n_lines = property(_get_count_lines,
-        doc="return number of lines (should be 4 times number of reads)")
+
+    n_lines = property(_get_count_lines, doc="return number of lines (should be 4 times number of reads)")
 
     def __len__(self):
         return self.n_reads
@@ -288,14 +291,14 @@ class FastQ(object):
             print("WARNING. number of lines not multiple of 4.")
         return int(nlines / self._N)
 
-    def _count_reads_buf(self, block=1024*1024):
+    def _count_reads_buf(self, block=1024 * 1024):
         # 0.12 seconds to read 3.4M lines, faster than wc command
         # on 2M reads, takes 0.1 seconds whereas wc takes 1.2 seconds
         lines = 0
-        with open(self.filename, 'rb') as f:
+        with open(self.filename, "rb") as f:
             buf = f.read(block)
             while buf:
-                lines += buf.count(b'\n')
+                lines += buf.count(b"\n")
                 buf = f.read(block)
         return lines
 
@@ -321,25 +324,25 @@ class FastQ(object):
             self._extract_head(N, output_filename)
 
     def _extract_head(self, N, output_filename):
-        with open(self.filename, 'r') as fin:
+        with open(self.filename, "r") as fin:
             if output_filename.endswith("gz"):
                 output_filename_nogz = output_filename.replace(".gz", "")
 
-                with open(output_filename_nogz, 'w') as fout:
+                with open(output_filename_nogz, "w") as fout:
                     fout.writelines(islice(fin, N))
 
                 # compress the file
                 self._gzip(output_filename_nogz)
 
             else:
-                with open(output_filename, 'w') as fout:
+                with open(output_filename, "w") as fout:
                     fout.writelines(islice(fin, N))
 
     def _gzip(self, filename):
         try:
             s = subprocess.Popen(["pigz", "-f", filename])
             s.wait()
-        except: #pragma: no cover
+        except:  # pragma: no cover
             s = subprocess.Popen(["gzip", filename, "-f"])
             s.wait()
 
@@ -375,40 +378,43 @@ class FastQ(object):
         # will we gzip the output file ?
         output_filename, tozip = self._istozip(output_filename)
 
-        with open(self.filename, 'rb') as fin:
+        with open(self.filename, "rb") as fin:
             buf = fin.read(CHUNKSIZE)
             count = 0
 
             with open(output_filename, "wb") as fout:
                 while buf:
                     outstr = decoder.decompress(buf)
-                    if len(outstr) == 0: #pragma: no cover
-                        msg = "Error while decompressing the zip file. may need"+\
-                              "to dezip/rezip the data. known issue in extract_head"
+                    if len(outstr) == 0:  # pragma: no cover
+                        msg = (
+                            "Error while decompressing the zip file. may need"
+                            + "to dezip/rezip the data. known issue in extract_head"
+                        )
                         logger.error(msg)
                         raise ValueError(msg)
                     this_count = outstr.count(b"\n")
                     if count + this_count > N:
                         # there will be too many lines, we need to select a subset
                         missing = N - count
-                        #outstr = outstr.strip().split(b"\n")
-                        #Fix https://github.com/sequana/sequana/issues/536
+                        # outstr = outstr.strip().split(b"\n")
+                        # Fix https://github.com/sequana/sequana/issues/536
                         outstr = outstr.split(b"\n")
                         outstr = b"\n".join(outstr[0:missing]) + b"\n"
                         fout.write(outstr)
                         break
-                    else: # pragma: no cover
+                    else:  # pragma: no cover
                         count += this_count
-                    fout.write(outstr) #pragma: no cover
-                    buf = fin.read(CHUNKSIZE) #pragma: no cover
+                    fout.write(outstr)  # pragma: no cover
+                    buf = fin.read(CHUNKSIZE)  # pragma: no cover
 
-        if tozip is True: self._gzip(output_filename)
+        if tozip is True:
+            self._gzip(output_filename)
         return count
 
     def _istozip(self, filename):
-        if filename.endswith('.gz'):
+        if filename.endswith(".gz"):
             tozip = True
-            filename = filename.split(".gz",1)[0]
+            filename = filename.split(".gz", 1)[0]
         else:
             tozip = False
         return filename, tozip
@@ -420,11 +426,11 @@ class FastQ(object):
         without comments.
         """
         fastq = pysam.FastxFile(self.filename)
-        if output_filename is None: #pragma: no cover
+        if output_filename is None:  # pragma: no cover
             output_filename = os.path.basename(self.filename) + ".select"
 
         thisN = len(self)
-        pb = Progress(thisN) # since we scan the entire file
+        pb = Progress(thisN)  # since we scan the entire file
         with open(output_filename, "w") as fh:
             for i, read in enumerate(fastq):
                 if read.name in read_identifiers:
@@ -432,7 +438,7 @@ class FastQ(object):
                 else:
                     pass
                 if progress:
-                    pb.animate(i+1)
+                    pb.animate(i + 1)
 
     def select_random_reads(self, N=None, output_filename="random.fastq"):
         """Select random reads and save in a file
@@ -470,14 +476,14 @@ class FastQ(object):
 
         cherries_set = set(cherries)
 
-        pb = Progress(thisN) # since we scan the entire file
+        pb = Progress(thisN)  # since we scan the entire file
         with open(output_filename, "w") as fh:
             for i, read in enumerate(fastq):
                 if i in cherries_set:
                     fh.write(read.__str__() + "\n")
                 else:
                     pass
-                pb.animate(i+1)
+                pb.animate(i + 1)
         return cherries
 
     def split_lines(self, N=100000, gzip=True):
@@ -502,7 +508,7 @@ class FastQ(object):
         # let prepare some data first. Let us build the filenames once for all
         outputs = []
         for i in range(0, N_chunk):
-            lb = (i ) * N + 1
+            lb = (i) * N + 1
             ub = (i + 1) * N
             if ub > self.n_lines:
                 ub = self.n_lines
@@ -510,7 +516,7 @@ class FastQ(object):
             if self.filename.endswith(".gz"):
                 input_filename = self.filename.split(".gz")[0]
                 output_filename = input_filename
-            else: #pragma: no cover
+            else:  # pragma: no cover
                 input_filename = self.filename
                 output_filename = self.filename
             output_filename.split(".", -1)
@@ -519,7 +525,7 @@ class FastQ(object):
             outputs.append(output_filename)
 
         d = zlib.decompressobj(16 + zlib.MAX_WBITS)
-        with open(self.filename, 'rb') as fin:
+        with open(self.filename, "rb") as fin:
             # init buffer
             buf = fin.read(CHUNKSIZE)
             count = 0
@@ -543,9 +549,9 @@ class FastQ(object):
                     # on (remaining)
                     # Note that there is no '\n' added here because we do not
                     # read lines that we may end up in the middle of a line
-                    remaining  = b"\n".join(outstr[NN-missing-1:])
+                    remaining = b"\n".join(outstr[NN - missing - 1 :])
                     # whereas here, we are at the end of a line
-                    outstr = b"\n".join(outstr[0:NN-missing-1]) + b"\n"
+                    outstr = b"\n".join(outstr[0 : NN - missing - 1]) + b"\n"
                     # write and close that file
                     fout.write(outstr)
                     fout.close()
@@ -555,7 +561,7 @@ class FastQ(object):
                     fout = open(outputs[current_file_counter], "wb")
                     fout.write(remaining)
                     # we need to keep track of what has be written
-                    count = remaining.count(b'\n')
+                    count = remaining.count(b"\n")
                     # and finally we can now read a new chunk of data
                     buf = fin.read(CHUNKSIZE)
                 else:
@@ -568,13 +574,13 @@ class FastQ(object):
             outputs = [x + ".gz" for x in outputs]
         return outputs
 
-    #def _split_chunks(self, N=10):
+    # def _split_chunks(self, N=10):
     #    # split per chunks of size N
     #    pass
 
     def _check_multiple(self, N, multiple=4):
         if divmod(N, multiple)[1] != 0:
-            msg = "split_lines method expects a multiple of %s." %multiple
+            msg = "split_lines method expects a multiple of %s." % multiple
             raise ValueError(msg)
 
     # This could be part of easydev or other software
@@ -597,22 +603,22 @@ class FastQ(object):
 
         with open(self.filename) as fin:
             for i in range(0, N_chunk):
-                lb = (i ) * N + 1
+                lb = (i) * N + 1
                 ub = (i + 1) * N
                 output_filename = self.filename
                 output_filename.split(".", -1)
                 left, right = self.filename.rsplit(".", 1)
                 output_filename = left + "_%s_%s." % (lb, ub) + right
                 outputs.append(output_filename)
-                with open(output_filename, 'w') as fout:
+                with open(output_filename, "w") as fout:
                     fout.writelines(islice(fin, N))
             # last chunk is dealt with outside the loop
             lb = ub + 1
             ub = self.n_lines
             output_filename = left + "_%s_%s." % (lb, ub) + right
-            if remainder !=0:
+            if remainder != 0:
                 outputs.append(output_filename)
-                with open(output_filename, 'w') as fout:
+                with open(output_filename, "w") as fout:
                     fout.writelines(islice(fin, remainder))
 
         if gzip is True:
@@ -621,9 +627,9 @@ class FastQ(object):
             outputs = [x + ".gz" for x in outputs]
         return outputs
 
-    def split_chunks(self, N=10):  #pragma: no cover
+    def split_chunks(self, N=10):  # pragma: no cover
         """Not implemented"""
-        assert N <=100, "you cannot split a file into more than 100 chunks"
+        assert N <= 100, "you cannot split a file into more than 100 chunks"
         # split per chunks of size N
         cmd = "split --number %s %s -d"
 
@@ -642,7 +648,8 @@ class FastQ(object):
                 'quality': "".join()})
         # quality could be q function for a distribution
     """
-    def joining(self, pattern, output_filename): #pragma: no cover
+
+    def joining(self, pattern, output_filename):  # pragma: no cover
         """not implemented
 
         zcat Block*.fastq.gz | gzip > combined.fastq.gz
@@ -651,9 +658,9 @@ class FastQ(object):
         raise NotImplementedError
 
     def __iter__(self):
-       return self
+        return self
 
-    def __exit__(self, type, value, traceback): #pragma: no cover
+    def __exit__(self, type, value, traceback):  # pragma: no cover
         try:
             self._fileobj.close()
         except AttributeError:
@@ -663,18 +670,18 @@ class FastQ(object):
 
     def __enter__(self):
         fh = open(self.filename, "rb")
-        if self.filename.endswith('.gz'):
+        if self.filename.endswith(".gz"):
             self._fileobj = gzip.GzipFile(fileobj=fh)
         else:
             self._fileobj = fh
         return self
 
-    def __next__(self): # python 3
+    def __next__(self):  # python 3
         return self.next()
 
-    def next(self): # python 2
+    def next(self):  # python 2
         # reads 4 lines
-        d = {'quality':None, 'sequence': None, 'quality':None}
+        d = {"quality": None, "sequence": None, "quality": None}
         try:
             """data = islice(self._fileobj, 4)
             d['identifier'] = next(data).strip()
@@ -684,10 +691,10 @@ class FastQ(object):
             """
 
             # 15% faster than islice + next
-            d['identifier'] = self._fileobj.readline().strip()
-            d['sequence'] = self._fileobj.readline().strip()
+            d["identifier"] = self._fileobj.readline().strip()
+            d["sequence"] = self._fileobj.readline().strip()
             temp = self._fileobj.readline()
-            d['quality'] = self._fileobj.readline().strip()
+            d["quality"] = self._fileobj.readline().strip()
 
             # can be faster but slower on average
             """d['identifier'] = self._fileobj.readlines(1)[0].strip()
@@ -699,7 +706,7 @@ class FastQ(object):
             # reached
             if temp == b"":
                 raise StopIteration
-        except KeyboardInterrupt: #pragma: no cover
+        except KeyboardInterrupt:  # pragma: no cover
             # THis should allow developers to break an function that iterates
             # through the read to run forever
             self._fileobj.close()
@@ -719,13 +726,10 @@ class FastQ(object):
         """
         with open(output_filename, "w") as fout:
             for this in self:
-                fout.write("{}\n{}\n".format(
-                    this["identifier"].decode() ,
-                    this["sequence"].decode()))
+                fout.write("{}\n{}\n".format(this["identifier"].decode(), this["sequence"].decode()))
         return
 
-    def filter(self, identifiers_list=[], min_bp=None, max_bp=None,
-        progressbar=True, output_filename='filtered.fastq'):
+    def filter(self, identifiers_list=[], min_bp=None, max_bp=None, progressbar=True, output_filename="filtered.fastq"):
         """Save reads in a new file if there are not in the identifier_list
 
         :param int min_bp: ignore reads with length shorter than min_bp
@@ -756,13 +760,12 @@ class FastQ(object):
                 identifier = lines[0].split()[0]
                 if lines[0].split()[0].decode() in identifiers_list:
                     filtered += 1
-                else:  #pragma: no cover
+                else:  # pragma: no cover
                     N = len(lines[1])
                     if N <= max_bp and N >= min_bp:
                         buf += "{}{}+\n{}".format(
-                            lines[0].decode("utf-8"),
-                            lines[1].decode("utf-8"),
-                            lines[3].decode("utf-8"))
+                            lines[0].decode("utf-8"), lines[1].decode("utf-8"), lines[3].decode("utf-8")
+                        )
                         saved += 1
                     else:
                         filtered += 1
@@ -770,15 +773,13 @@ class FastQ(object):
                         fout.write(buf)
                         buf = ""
                 if progressbar is True:
-                    pb.animate(count+1)
+                    pb.animate(count + 1)
             fout.write(buf)
-            if filtered < len(identifiers_list): #pragma: no cover
-                print("\nWARNING: not all identifiers were found in the fastq file to " +
-                      "be filtered.")
-        logger.info("\n{} reads were filtered out and {} saved in {}".format(
-            filtered, saved, output_filename))
+            if filtered < len(identifiers_list):  # pragma: no cover
+                print("\nWARNING: not all identifiers were found in the fastq file to " + "be filtered.")
+        logger.info("\n{} reads were filtered out and {} saved in {}".format(filtered, saved, output_filename))
 
-        if tozip is True: #pragma: no cover
+        if tozip is True:  # pragma: no cover
             logger.info("Compressing file")
             self._gzip(output_filename)
 
@@ -792,14 +793,15 @@ class FastQ(object):
         """
         # Counter is slow if we apply it on each read.
         # .count is slow as well
-        
+
         from sequana.kmer import get_kmer
+
         counter = Counter()
         pb = Progress(len(self))
         buffer_ = []
         for i, this in enumerate(self):
-            buffer_.extend(list(get_kmer(this['sequence'], k)))
-            if len(buffer_) > 100000: #pragma: no cover
+            buffer_.extend(list(get_kmer(this["sequence"], k)))
+            if len(buffer_) > 100000:  # pragma: no cover
                 counter += Counter(buffer_)
                 buffer_ = []
             pb.animate(i)
@@ -831,12 +833,10 @@ class FastQ(object):
 
     def stats(self):
         self.rewind()
-        data = [len(read['sequence']) for read in self]
+        data = [len(read["sequence"]) for read in self]
         S = sum(data)
         N = float(len(data))
-        return {"mean_read_length": S/N,
-                "N": int(N),
-                "sum_read_length": S}
+        return {"mean_read_length": S / N, "N": int(N), "sum_read_length": S}
 
     def __eq__(self, other):
         if id(other) == id(self):
@@ -854,12 +854,13 @@ class FastQ(object):
 def run_info(f):
     @wraps(f)
     def wrapper(*args, **kargs):
-        #args[0] is the self of the method
+        # args[0] is the self of the method
         try:
             args[0].gc_content
         except:
             args[0]._get_info()
         return f(*args, **kargs)
+
     return wrapper
 
 
@@ -890,8 +891,8 @@ class FastQC(object):
 
 
     """
-    def __init__(self, filename, max_sample=500000, verbose=True,
-                 skip_nrows=0):
+
+    def __init__(self, filename, max_sample=500000, verbose=True, skip_nrows=0):
         """.. rubric:: constructor
 
         :param filename:
@@ -924,7 +925,7 @@ class FastQC(object):
     def _get_info(self):
         """Populates the data structures for plotting"""
 
-        stats = {"A":0, "C":0, "G":0, "T":0, "N":0}
+        stats = {"A": 0, "C": 0, "G": 0, "T": 0, "N": 0}
         stats["qualities"] = []
         stats["mean_qualities"] = []
         stats["mean_length"] = 0
@@ -969,9 +970,9 @@ class FastQC(object):
             for k in quality:
                 C[k] += 1
 
-            GG = record.sequence.count('G')
-            CC = record.sequence.count('C')
-            self.gc_list.append((GG+CC)/float(N)*100)
+            GG = record.sequence.count("G")
+            CC = record.sequence.count("C")
+            self.gc_list.append((GG + CC) / float(N) * 100)
 
             # not using a counter, or loop speed up the code
             stats["A"] += record.sequence.count("A")
@@ -983,7 +984,7 @@ class FastQC(object):
             total_length += len(record.sequence)
 
             if self.verbose:
-                pb.animate(i+1)
+                pb.animate(i + 1)
 
         # other data
         self.qualities = qualities
@@ -993,9 +994,9 @@ class FastQC(object):
         self.maximum = int(self.lengths.max())
         self.sequences = sequences
         self.gc_content = np.mean(self.gc_list)
-        stats['mean_length'] = total_length / float(self.N)
-        stats['total_bp'] = stats['A'] + stats['C'] + stats['G'] + stats["T"] + stats['N']
-        stats['mean_quality'] = sum([k*v for k,v in C.items()]) / stats['total_bp']
+        stats["mean_length"] = total_length / float(self.N)
+        stats["total_bp"] = stats["A"] + stats["C"] + stats["G"] + stats["T"] + stats["N"]
+        stats["mean_quality"] = sum([k * v for k, v in C.items()]) / stats["total_bp"]
 
         self.stats = stats
 
@@ -1022,12 +1023,13 @@ class FastQC(object):
 
         """
         from sequana.viz import Boxplot
+
         qualities = self._get_qualities()
         df = pd.DataFrame(qualities)
         bx = Boxplot(df)
         try:
             bx.plot(ax=ax)
-        except:  #pragma: no cover
+        except:  # pragma: no cover
             bx.plot()
 
     @run_info
@@ -1045,17 +1047,17 @@ class FastQC(object):
 
         """
         data = [len(x) for x in self.sequences]
-        bary, barx = np.histogram(data, bins=range(max(data)+1))
+        bary, barx = np.histogram(data, bins=range(max(data) + 1))
 
         # get rid of zeros to avoid warnings
-        bx = [x for x,y in zip(barx, bary) if y!=0]
-        by = [y for x,y in zip(barx, bary) if y!=0]
+        bx = [x for x, y in zip(barx, bary) if y != 0]
+        by = [y for x, y in zip(barx, bary) if y != 0]
         if logy:
             pylab.bar(bx, pylab.log10(by))
         else:
             pylab.bar(bx, by)
 
-        pylab.xlim([1,max(data)+1])
+        pylab.xlim([1, max(data) + 1])
 
         pylab.grid(True)
         pylab.xlabel("position (bp)", fontsize=self.fontsize)
@@ -1079,7 +1081,7 @@ class FastQC(object):
         pylab.grid()
         pylab.title("GC content distribution (per sequence)")
         pylab.xlabel(r"Mean GC content (%)", fontsize=self.fontsize)
-        pylab.xlim([0,100])
+        pylab.xlim([0, 100])
 
     @run_info
     def get_stats(self):
@@ -1089,20 +1091,20 @@ class FastQC(object):
         # full stats must be computed in run_info() method
         # so do not use .sequences here
         stats = self.stats.copy()
-        stats['GC content'] = self.gc_content
+        stats["GC content"] = self.gc_content
         stats["n_reads"] = self.N
 
-        stats['total bases'] = self.stats['total_bp']
-        stats['mean quality'] = np.mean(self.mean_qualities)
-        stats['average read length'] = self.stats['mean_length']
-        stats['min read length'] = self.minimum
-        stats['max read length'] = self.maximum
+        stats["total bases"] = self.stats["total_bp"]
+        stats["mean quality"] = np.mean(self.mean_qualities)
+        stats["average read length"] = self.stats["mean_length"]
+        stats["min read length"] = self.minimum
+        stats["max read length"] = self.maximum
 
         # use DataFrame instead of Series to mix types (int/float)
         ts = pd.DataFrame([stats])
-        cols = ['n_reads', 'A', 'C', 'G', 'T', 'N','total bases' ]
+        cols = ["n_reads", "A", "C", "G", "T", "N", "total bases"]
         ts[cols] = ts[cols].astype(int)
-        ts = ts[cols + ['GC content', 'average read length', 'mean quality']]
+        ts = ts[cols + ["GC content", "average read length", "mean quality"]]
         return ts
 
     @run_info
@@ -1113,13 +1115,13 @@ class FastQC(object):
 
         # count ACGTN in each columns for all sequences
         Nseq = len(self.sequences)
-        
+
         data = []
         for pos in range(max_length):
             # we add empty strings to have all sequences with same lengths
-            data.append(Counter([
-                (self.sequences[i] + " " * (max_length - len(self.sequences[i])) )[pos]
-                for i in range(Nseq)]))
+            data.append(
+                Counter([(self.sequences[i] + " " * (max_length - len(self.sequences[i])))[pos] for i in range(Nseq)])
+            )
 
         # remove the empty strings to normalise the data
         df = pd.DataFrame.from_records(data)
@@ -1154,5 +1156,3 @@ class FastQC(object):
             pylab.grid(True)
         pylab.xlabel("position (bp)", fontsize=self.fontsize)
         pylab.ylabel("percent", fontsize=self.fontsize)
-
-

@@ -22,6 +22,7 @@ from sequana.lazy import numpy as np
 from sequana.lazy import pandas as pd
 
 import colorlog
+
 logger = colorlog.getLogger(__name__)
 
 
@@ -30,6 +31,7 @@ __all__ = ["moving_average", "evenness", "runmean"]
 
 def runmean(data, n):
     return moving_average(data, n)
+
 
 def moving_average(data, n):
     """Compute moving average
@@ -48,7 +50,7 @@ def moving_average(data, n):
     """
     ret = np.cumsum(data, dtype=float)
     ret[n:] = ret[n:] - ret[:-n]
-    ma = ret[n - 1:] / n
+    ma = ret[n - 1 :] / n
     return ma
 
 
@@ -74,12 +76,12 @@ def evenness(data):
     coverage = coverage.dropna()
 
     C = float(round(coverage.mean()))
-    D2 = coverage[coverage<=C]
-    if len(D2) == 0: #pragma: no cover
+    D2 = coverage[coverage <= C]
+    if len(D2) == 0:  # pragma: no cover
         return 1
     else:
 
-        return 1. - (len(D2) - sum(D2) / C) / len(coverage)
+        return 1.0 - (len(D2) - sum(D2) / C) / len(coverage)
 
 
 def N50(data):
@@ -92,7 +94,7 @@ def N50(data):
     """
     data = np.sort(data)
     cdata = np.cumsum(data)
-    return data[np.argmax(cdata>cdata[-1]/2)]
+    return data[np.argmax(cdata > cdata[-1] / 2)]
 
 
 def L50(data):
@@ -106,5 +108,5 @@ def L50(data):
     """
     data = np.sort(data)
     cdata = np.cumsum(data)
-    pos = np.argmax(cdata>cdata[-1]/2)
+    pos = np.argmax(cdata > cdata[-1] / 2)
     return len(data) - pos

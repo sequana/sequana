@@ -18,13 +18,14 @@ from sequana.lazy import pylab
 import pandas as pd
 
 import colorlog
+
 logger = colorlog.getLogger(__name__)
 
 
 __all__ = ["TRF"]
 
 
-class TRF():   # pragma: no cover
+class TRF:  # pragma: no cover
     """Tandem Repeat Finder utilities
 
     The input data is the output of trf tool when using the -d option.
@@ -54,16 +55,17 @@ class TRF():   # pragma: no cover
         t.df.query(query)
 
     """
+
     def __init__(self, filename, verbose=False, frmt=None):
         if frmt is None:
             if filename.endswith(".csv"):
-                frmt = 'csv'
-            elif filename.endswith('.dat'):
-                frmt = 'trf'
+                frmt = "csv"
+            elif filename.endswith(".dat"):
+                frmt = "trf"
             else:
                 raise ValueError("Please set frmt to 'trf' or 'csv'")
         self.filename = filename
-        if frmt == 'trf':
+        if frmt == "trf":
             # input can be the output of TRF or our trf dataframe
             self.df = self.scandata(verbose=verbose)
         else:
@@ -71,7 +73,7 @@ class TRF():   # pragma: no cover
 
     def __repr__(self):
         N = len(self.df.seq1.unique())
-        msg =  "Number of unique pattern found: {}\n".format(N)
+        msg = "Number of unique pattern found: {}\n".format(N)
         msg += "Number of entries: {}".format(len(self.df))
         return msg
 
@@ -83,7 +85,7 @@ class TRF():   # pragma: no cover
 
         The format of the output file looks like::
 
-            Tandem Repeats Finder Program 
+            Tandem Repeats Finder Program
 
             some info
 
@@ -119,12 +121,12 @@ class TRF():   # pragma: no cover
         count = 0
         # If we concatenate several files, we also want to ignore the header
         for line in fin.readlines():
-            if line.startswith('Sequence:'):
+            if line.startswith("Sequence:"):
                 sequence_name = line.split()[1].strip()
                 count += 1
                 if count % 100000 == 0:
                     logger.info("scanned {} sequences".format(count))
-                #logger.info("scanned {} sequences".format(count))
+                # logger.info("scanned {} sequences".format(count))
             else:
                 this_data = line.split()
                 if len(this_data) == 15:
@@ -133,31 +135,46 @@ class TRF():   # pragma: no cover
         fin.close()
 
         df = pd.DataFrame(data)
-        df.columns = ['sequence_name', 'start', 'end', 'period_size', 'CNV',
-            'size_consensus', 'percent_matches', 'percent_indels', 'score', 'A', 'C', 'G',
-            'T', 'entropy', 'seq1', 'seq2']
+        df.columns = [
+            "sequence_name",
+            "start",
+            "end",
+            "period_size",
+            "CNV",
+            "size_consensus",
+            "percent_matches",
+            "percent_indels",
+            "score",
+            "A",
+            "C",
+            "G",
+            "T",
+            "entropy",
+            "seq1",
+            "seq2",
+        ]
 
-        df = df.astype({"start": 'int64', "end": 'int64', "period_size": 'int64'})
-        df = df.astype({
-            'A': 'float',
-            'C': 'float',
-            'G': 'float',
-            'T': 'float',
-            'percent_matches': float,
-            'percent_indels': float,
-            'size_consensus': float,
-            'score': 'float',
-            'CNV': 'float',
-            'entropy': 'float',
-            'period_size': 'float'
-            })
-        df['length'] = df['end'] - df['start'] + 1
-
+        df = df.astype({"start": "int64", "end": "int64", "period_size": "int64"})
+        df = df.astype(
+            {
+                "A": "float",
+                "C": "float",
+                "G": "float",
+                "T": "float",
+                "percent_matches": float,
+                "percent_indels": float,
+                "size_consensus": float,
+                "score": "float",
+                "CNV": "float",
+                "entropy": "float",
+                "period_size": "float",
+            }
+        )
+        df["length"] = df["end"] - df["start"] + 1
 
         return df
 
-    def hist_cnvs(self, bins=50, CNVmin=10, motif=['CAG', 'AGC', 'GCA'],
-            color="r", log=True):
+    def hist_cnvs(self, bins=50, CNVmin=10, motif=["CAG", "AGC", "GCA"], color="r", log=True):
         """
 
         histogram of the motif found in the list provided by users.
@@ -165,13 +182,11 @@ class TRF():   # pragma: no cover
         version AGC and GCA.
 
         """
-        self.df.query("CNV>@CNVmin and seq1 in @motif").CNV.hist(bins=bins, log=log,
-            color=color)
+        self.df.query("CNV>@CNVmin and seq1 in @motif").CNV.hist(bins=bins, log=log, color=color)
         pylab.xlabel("CNV length (bp)")
         pylab.ylabel("#")
 
-    def hist_length_repetition(self, bins=50, CNVmin=3, motif=['CAG', 'AGC', 'GCA'],
-            color="r", log=True):
+    def hist_length_repetition(self, bins=50, CNVmin=3, motif=["CAG", "AGC", "GCA"], color="r", log=True):
         """
 
         histogram of the motif found in the list provided by users.
@@ -182,8 +197,7 @@ class TRF():   # pragma: no cover
         cnvs = self.df.query("CNV>@CNVmin and seq1 in @motif").CNV
         repet = self.df.query("CNV>@CNVmin and seq1 in @motif").period_size
         data = cnvs * repet
-        data.hist(bins=bins, log=log,
-            color=color)
+        data.hist(bins=bins, log=log, color=color)
         pylab.xlabel("Repetition length (bp)")
         pylab.ylabel("#")
 
@@ -193,15 +207,12 @@ class TRF():   # pragma: no cover
         pylab.xlabel("repeat length")
 
     def hist_entropy(self, bins=50):
-        """Histogram of the entropy of all found repeats
-
-        """
+        """Histogram of the entropy of all found repeats"""
         self.df.entropy.hist(bins=bins)
         pylab.xlabel("Entropy")
         pylab.ylabel("#")
 
     def hist_repet_by_sequence(self):
-        # How many repetitions per sequence 
+        # How many repetitions per sequence
         pylab.hist([len(x) for x in self.df.groupby("sequence_name").groups.values()])
         pylab.xlabel("# repetitions per sequence")
-

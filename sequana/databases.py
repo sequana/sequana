@@ -48,9 +48,7 @@ class EUtilsTools(object):
         self.eutils = EUtils(cache=True)
 
     def get_fasta(self, accession):
-        data = self.eutils.EFetch(
-            "nucleotide", id=accession, retmode="text", rettype="fasta"
-        )
+        data = self.eutils.EFetch("nucleotide", id=accession, retmode="text", rettype="fasta")
         return data
 
     def accession_to_info(self, ids):
@@ -254,9 +252,7 @@ class NCBIDownload:
                 ftp.retrbinary(f"RETR {filename}", open(filename, "wb").write)
         return [x for x in filenames if "genomic.fna" in x]
 
-    def download_genomes_from_ncbi(
-        self, category, email="sequana@pasteur.fr"
-    ):  # pragma: no cover
+    def download_genomes_from_ncbi(self, category, email="sequana@pasteur.fr"):  # pragma: no cover
         """This downloads all genomes on ncbi for a given category looking at
         their ftp. This could be highly redundant.
 
@@ -353,9 +349,7 @@ class NCBITaxonReader:
         if (names and os.path.exists(names)) and (nodes and os.path.exists(nodes)):
             self.init(names, nodes)
         else:
-            logger.warning(
-                "no input file provided or do not exist. Call download_taxdump() and init() manually"
-            )
+            logger.warning("no input file provided or do not exist. Call download_taxdump() and init() manually")
 
     def init(self, names, nodes):
         logger.info(f"Reading {names}")
@@ -365,9 +359,7 @@ class NCBITaxonReader:
         self.df_names = pd.read_csv(self.filename_names, sep="\t", header=None)
         # get rid of the pipes using ::2
         self.df_names = self.df_names.loc[:, ::2]
-        self.df_names.rename(
-            {0: "taxon", 2: "name", 4: "nothing", 6: "scname"}, axis=1, inplace=True
-        )
+        self.df_names.rename({0: "taxon", 2: "name", 4: "nothing", 6: "scname"}, axis=1, inplace=True)
 
         # This will provide a faster lookup table to search for scientific
         # names given a taxon. We can drop rows that are not scientific names
@@ -384,18 +376,14 @@ class NCBITaxonReader:
         self.df_nodes = pd.read_csv(self.filename_nodes, sep="\t", header=None)
         # get rid of the pipes using ::2
         self.df_nodes = self.df_nodes.loc[:, ::2]
-        new_cols = ["taxon", "parent_taxon", "rank"] + list(
-            range(0, len(self.df_nodes.columns) - 3)
-        )
+        new_cols = ["taxon", "parent_taxon", "rank"] + list(range(0, len(self.df_nodes.columns) - 3))
         self.df_nodes.columns = new_cols
 
         self._df_nodes_taxon = self.df_nodes.copy()
         self._df_nodes_taxon.set_index("taxon", inplace=True)
 
     def download_taxdump(self, outpath="."):  # pragma: no cover
-        execute(
-            f"wget {self.ftp_url}/pub/taxonomy/taxdump.tar.gz --directory-prefix {outpath}"
-        )
+        execute(f"wget {self.ftp_url}/pub/taxonomy/taxdump.tar.gz --directory-prefix {outpath}")
         execute(f"tar xvfz {outpath}/taxdump.tar.gz -C {outpath}")
 
     def get_number_taxon(self):

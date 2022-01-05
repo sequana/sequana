@@ -24,7 +24,7 @@ import types
 
 disable_lazy_imports = False
 
-if 'sphinx' in sys.modules:
+if "sphinx" in sys.modules:
     disable_lazy_imports = True
 
 
@@ -51,11 +51,12 @@ class LazyImport(types.ModuleType):
     >>> mlab.dist(1969,2011)
     42.0
     """
-    def __getattribute__(self,x):
+
+    def __getattribute__(self, x):
         # This method will be called only once, since we'll change
         # self.__class__ to LoadedLazyImport, and __getattribute__ will point
         # to module.__getattribute__
-        name = object.__getattribute__(self,'__name__')
+        name = object.__getattribute__(self, "__name__")
         __import__(name)
         # if name above is 'package.foo.bar', package is returned, the docs
         # recommend that in order to get back the full thing, that we import
@@ -67,20 +68,22 @@ class LazyImport(types.ModuleType):
         class LoadedLazyImport(types.ModuleType):
             __getattribute__ = module.__getattribute__
             __repr__ = module.__repr__
-        object.__setattr__(self,'__class__', LoadedLazyImport)
+
+        object.__setattr__(self, "__class__", LoadedLazyImport)
         # The next line will make "reload(l)" a silent no-op
-        #sys.modules[name] = self
+        # sys.modules[name] = self
         return module.__getattribute__(x)
+
     def __repr__(self):
-        return "<module '%s' will be lazily loaded>" %\
-                object.__getattribute__(self,'__name__')
+        return "<module '%s' will be lazily loaded>" % object.__getattribute__(self, "__name__")
+
 
 if disable_lazy_imports:
     lazy_doc = """:class:`LazyImports` have been globally disabled.
     Please modify ``disable_lazy_imports`` boolean variable in
     :mod:`sequana.lazyimports` in order to leverage lazy loading of modules.
     """
-    if 'sphinx' in sys.modules:
+    if "sphinx" in sys.modules:
         lazy_doc = """
                    WARNING: To get Sphinx documentation to build we disable
                    LazyImports, which makes Sphinx incorrectly report this
@@ -89,10 +92,13 @@ if disable_lazy_imports:
                    :class:`types.ModuleType`.
                    """
         lazy_doc += LazyImport.__doc__
+
     class LazyImport(object):
         __doc__ = lazy_doc
+
         def __init__(self, x):
             __import__(x)
             self.module = sys.modules[x]
+
         def __getattr__(self, x):
             return self.module.__getattribute__(x)

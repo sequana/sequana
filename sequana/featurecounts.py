@@ -45,7 +45,7 @@ def get_most_probable_strand(filenames, tolerance, sample_name):
     probable strand for a single sample (using a tolerance threshold for
     strandness). This assumes a single sample by featureCounts file.
 
-    :param filenames: a list of 3 feature counts files for a given sample 
+    :param filenames: a list of 3 feature counts files for a given sample
         corresponding to the strand 0,1,2
     :param tolerance: a value below 0.5
     :param sample: the name of the sample corresponding to the list in filenames
@@ -150,13 +150,9 @@ def get_most_probable_strand_consensus(
     if not sample_folders:
         # the new method holds 3 sub directories 0/, 1/ and 2/
         sample_pattern = "*/feature_counts"
-        sample_folders = list(
-            set([x.parent for x in rnaseq_folder.glob(sample_pattern)])
-        )
+        sample_folders = list(set([x.parent for x in rnaseq_folder.glob(sample_pattern)]))
         if not sample_folders:
-            logger.error(
-                f"Could not find sample directories in {rnaseq_folder} with pattern {pattern}"
-            )
+            logger.error(f"Could not find sample directories in {rnaseq_folder} with pattern {pattern}")
             sys.exit()
 
     results = []
@@ -261,13 +257,9 @@ class MultiFeatureCount:
         self._get_most_probable_strand_consensus()
 
     def _get_most_probable_strand_consensus(self):
-        self.probable_strand, self.df = get_most_probable_strand_consensus(
-            self.rnaseq_folder, self.tolerance
-        )
+        self.probable_strand, self.df = get_most_probable_strand_consensus(self.rnaseq_folder, self.tolerance)
 
-    def plot_strandness(
-        self, fontsize=12, output_filename="strand_summary.png", savefig=False
-    ):
+    def plot_strandness(self, fontsize=12, output_filename="strand_summary.png", savefig=False):
 
         df = self.df.sort_index(ascending=False)
         df["strandness"] = df["strandness"].T
@@ -382,9 +374,7 @@ class FeatureCount:
         # remove unneeded columns are dropped
         df.drop(["Chr", "Start", "End", "Strand", "Length"], axis=1, inplace=True)
         # make sure data column names are cleaned
-        df.columns = [
-            self._clean_sample_names(x, self.extra_name_rm) for x in df.columns
-        ]
+        df.columns = [self._clean_sample_names(x, self.extra_name_rm) for x in df.columns]
 
         if "Geneid" in df.columns:
             df.set_index("Geneid", inplace=True)
@@ -409,11 +399,7 @@ class FeatureCount:
             labels = df["label"]
             conditions = self._guess_conditions(labels)
         except Exception as err:
-            logger.info(
-                "no conditions could be guess. You will need to edit the design file {}".format(
-                    err
-                )
-            )
+            logger.info("no conditions could be guess. You will need to edit the design file {}".format(err))
             conditions = None
         finally:
             df["condition"] = conditions
@@ -466,9 +452,7 @@ class FeatureCount:
                 df = pd.merge(df, other_df)
             df = df.set_index("Geneid")
         else:
-            df = pd.read_csv(
-                self.filename[0], sep="\t", comment="#", index_col=0, low_memory=False
-            )
+            df = pd.read_csv(self.filename[0], sep="\t", comment="#", index_col=0, low_memory=False)
         self._raw_df = df
 
     def _get_raw_df(self):
@@ -478,9 +462,7 @@ class FeatureCount:
             df.drop(["Chr", "Start", "End", "Strand", "Length"], axis=1, inplace=True)
 
         if self.clean_sample_names:
-            df.columns = [
-                self._clean_sample_names(x, self.extra_name_rm) for x in df.columns
-            ]
+            df.columns = [self._clean_sample_names(x, self.extra_name_rm) for x in df.columns]
         return df
 
     df = property(_get_raw_df)

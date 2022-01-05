@@ -25,9 +25,8 @@ import json
 from sequana.lazy import numpy as np
 
 import colorlog
+
 logger = colorlog.getLogger(__name__)
-
-
 
 
 def list_to_json_for_barplot(l, logy=False):
@@ -40,8 +39,7 @@ def list_to_json_for_barplot(l, logy=False):
     counter = Counter(l)
     if logy:
         # tolist() necessary to convert numpy.float64 as float
-        count = [{"x": int(key), "y": np.log10(value), "c": value} 
-                 for key, value in counter.items()]
+        count = [{"x": int(key), "y": np.log10(value), "c": value} for key, value in counter.items()]
     else:
         count = [{"x": int(key), "y": value} for key, value in counter.items()]
     return json.dumps(count)

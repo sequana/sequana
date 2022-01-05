@@ -19,13 +19,15 @@
 from sequana.lazyimports import LazyImport
 
 # lazy imports
-pylab = LazyImport('pylab')
-numpy = LazyImport('numpy')
-scipy = LazyImport('scipy')
-scipy_stats = LazyImport('scipy.stats')
-pandas = LazyImport('pandas')
+pylab = LazyImport("pylab")
+numpy = LazyImport("numpy")
+scipy = LazyImport("scipy")
+scipy_stats = LazyImport("scipy.stats")
+pandas = LazyImport("pandas")
+
 
 def enabled():
     "Returns ``True`` if LazyImports are globally enabled"
     import sequana.lazyimports as l
+
     return not l.disable_lazy_imports

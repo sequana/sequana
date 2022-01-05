@@ -6,7 +6,7 @@
 #
 #  File author(s):
 #      Thomas Cokelaer <thomas.cokelaer@pasteur.fr>
-#      Dimitri Desvillechabrol <dimitri.desvillechabrol@pasteur.fr>, 
+#      Dimitri Desvillechabrol <dimitri.desvillechabrol@pasteur.fr>,
 #          <d.desvillechabrol@gmail.com>
 #
 #  Distributed under the terms of the 3-clause BSD license.
@@ -22,12 +22,11 @@
 import math
 
 import colorlog
+
 logger = colorlog.getLogger(__name__)
 
 
-
-
-__all__ = ['AIC', 'AICc', 'BIC']
+__all__ = ["AIC", "AICc", "BIC"]
 
 
 def AIC(L, k, logL=False):
@@ -80,7 +79,7 @@ def AIC(L, k, logL=False):
     if logL is True:
         return 2 * k + 2 * L
     else:
-        return 2 * k -2 * math.log(L)
+        return 2 * k - 2 * math.log(L)
 
 
 def AICc(L, k, n, logL=False):
@@ -102,9 +101,8 @@ def AICc(L, k, n, logL=False):
     overfitting. The probability of AIC overfitting can be substantial, in some cases.
 
     """
-    res = AIC(L, k, logL=logL) + 2*k*(k+1.) / (n-k-1.)
+    res = AIC(L, k, logL=logL) + 2 * k * (k + 1.0) / (n - k - 1.0)
     return res
-
 
 
 def BIC(L, k, n, logL=False):
@@ -121,15 +119,8 @@ def BIC(L, k, n, logL=False):
     if logL is False:
         res = -2 * math.log(L) + k * (math.log(n) - math.log(2 * math.pi))
         # For large n
-        #res = -2 * math.log(L) + k * math.log(n)
+        # res = -2 * math.log(L) + k * math.log(n)
         return res
     else:
         res = 2 * logL + k * (math.log(n) - math.log(2 * math.pi))
         return res
-
-
-
-
-
-
-

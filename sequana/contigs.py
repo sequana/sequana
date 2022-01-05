@@ -22,9 +22,8 @@ from sequana.lazy import numpy as np
 from sequana import tools
 
 import colorlog
+
 logger = colorlog.getLogger(__name__)
-
-
 
 
 class ContigsBase(object):
@@ -36,23 +35,23 @@ class ContigsBase(object):
         data = tools._base_content(self.filename, window, "GC")
         names = self.fasta.names
         lengths = self.fasta.lengths
-        GC = [100*np.nanmean(data[name]) for name in names]
+        GC = [100 * np.nanmean(data[name]) for name in names]
         return GC
 
-    def plot_contig_length_vs_GC(self,alpha=0.5):
-        pylab.plot(self.df["length"], self.df['GC'], "o", alpha=alpha)
+    def plot_contig_length_vs_GC(self, alpha=0.5):
+        pylab.plot(self.df["length"], self.df["GC"], "o", alpha=alpha)
         pylab.xlabel("contig length (bp)")
         pylab.ylabel("GC (%)")
         pylab.grid(True)
-        pylab.ylim([0,100])
-        pylab.xlim(0, max(self.df['length']) + 10)
+        pylab.ylim([0, 100])
+        pylab.xlim(0, max(self.df["length"]) + 10)
 
     def scatter_length_cov_gc(self, min_length=200, min_cov=10):
         pylab.clf()
-        pylab.scatter(self.df.length, self.df['cov'], c=self.df.GC)
+        pylab.scatter(self.df.length, self.df["cov"], c=self.df.GC)
         pylab.loglog()
-        pylab.axvline(min_length, lw=2, c="r", ls='--')
-        pylab.axhline(min_cov, lw=2, c="r", ls='--')
+        pylab.axvline(min_length, lw=2, c="r", ls="--")
+        pylab.axhline(min_cov, lw=2, c="r", ls="--")
         pylab.xlabel("contig length")
         pylab.ylabel("contig coverage")
         pylab.colorbar(label="GC")
@@ -71,14 +70,14 @@ class ContigsSpades(ContigsBase):
             lengths.append(length)
             names.append(ID)
             covs.append(cov)
-        self.df = pd.DataFrame({"cov": covs, "length": lengths, "name":names })
+        self.df = pd.DataFrame({"cov": covs, "length": lengths, "name": names})
         self.df = self.df.astype({"length": int, "cov": float})
-        self.df = self.df[['name', 'length', 'cov']]
-        self.df['GC'] = self.get_gc()
+        self.df = self.df[["name", "length", "cov"]]
+        self.df["GC"] = self.get_gc()
 
     def hist_contig_length(self, bins=30, fontsize=16):
         pylab.clf()
-        pylab.hist(self.df.length, lw=1, ec="k",bins=bins) 
+        pylab.hist(self.df.length, lw=1, ec="k", bins=bins)
         pylab.grid()
         pylab.xlabel("Contig length", fontsize=fontsize)
         pylab.ylabel("#", fontsize=fontsize)
@@ -86,14 +85,13 @@ class ContigsSpades(ContigsBase):
 
 
 class Contigs(ContigsBase):
-
     def __init__(self, filename, reference=None, bamfile=None, mode="canu"):
 
         """
 
 
-            minimap2 -x map-pb reference filename -a > temp.sam
-            bioconvert sam2bam temp.sam temp.bam
+        minimap2 -x map-pb reference filename -a > temp.sam
+        bioconvert sam2bam temp.sam temp.bam
 
         """
         super(Contigs, self).__init__(filename)
@@ -111,17 +109,20 @@ class Contigs(ContigsBase):
         Nref = len(fref.sequences)
         N = len(self.fasta)
         pylab.clf()
-        pylab.bar(range(0, N, int(pylab.ceil(N/Nref))), sorted(fref.lengths), width=Nref/1.1,
-            label="Plasmodium chromosomes")
-        pylab.bar(range(0, N), sorted(self.fasta.lengths), width=1,
-            label="canu {} contigs".format(N))
+        pylab.bar(
+            range(0, N, int(pylab.ceil(N / Nref))),
+            sorted(fref.lengths),
+            width=Nref / 1.1,
+            label="Plasmodium chromosomes",
+        )
+        pylab.bar(range(0, N), sorted(self.fasta.lengths), width=1, label="canu {} contigs".format(N))
         pylab.legend()
-        #pylab.savefig("1179_195_contigs.png", dpi=200)
+        # pylab.savefig("1179_195_contigs.png", dpi=200)
 
     def hist_plot_contig_length(self, bins=40, fontsize=16):
         """Plot distribution of contig lengths"""
         L = len(self.fasta.sequences)
-        pylab.hist(self.fasta.lengths, lw=1, ec="k",bins=bins) 
+        pylab.hist(self.fasta.lengths, lw=1, ec="k", bins=bins)
         pylab.grid()
         pylab.xlabel("Contig length", fontsize=fontsize)
         pylab.ylabel("#", fontsize=fontsize)
@@ -143,9 +144,8 @@ class Contigs(ContigsBase):
                 covStat = covStat.split("=")[1]
                 nreads[i] = int(read)
                 covStats[i] = float(covStat)
-        #if self.bamfile
-        df = pd.DataFrame({"GC":list(GC), "length":lengths, "name": names,
-                           "nread": nreads, "covStat": covStats })
+        # if self.bamfile
+        df = pd.DataFrame({"GC": list(GC), "length": lengths, "name": names, "nread": nreads, "covStat": covStats})
 
         # deal with the bamfile
         if self.bam:
@@ -172,16 +172,15 @@ class Contigs(ContigsBase):
         pylab.ylabel("Contig N reads", fontsize=fontsize)
         pylab.grid()
 
-        X = df.query("nread>10 and length>100000")['length']
-        Y = df.query("nread>10 and length>100000")['nread']
+        X = df.query("nread>10 and length>100000")["length"]
+        Y = df.query("nread>10 and length>100000")["nread"]
         A = np.vstack([X, np.ones(len(X))]).T
         m, c = np.linalg.lstsq(A, Y.as_matrix())[0]
         x = np.array([m1, M1])
-        pylab.plot(x, m*x+c, "o-r")
+        pylab.plot(x, m * x + c, "o-r")
         pylab.tight_layout()
 
-    def plot_scatter_contig_length_nread_cov(self, fontsize=16, vmin=0, vmax=50,
-            min_nreads=20, min_length=50000):
+    def plot_scatter_contig_length_nread_cov(self, fontsize=16, vmin=0, vmax=50, min_nreads=20, min_length=50000):
 
         if self._df is None:
             _ = self.get_df()
@@ -192,9 +191,9 @@ class Contigs(ContigsBase):
         M1 = df.length.max()
 
         # least square
-        X = df.query("nread>@min_nreads and length>@min_length")['length']
-        Y = df.query("nread>@min_nreads and length>@min_length")['nread']
-        Z = df.query("nread>@min_nreads and length>@min_length")['covStat']
+        X = df.query("nread>@min_nreads and length>@min_length")["length"]
+        Y = df.query("nread>@min_nreads and length>@min_length")["nread"]
+        Z = df.query("nread>@min_nreads and length>@min_length")["covStat"]
         print(X)
         print(Y)
         print(Z)
@@ -203,16 +202,16 @@ class Contigs(ContigsBase):
         m, c = np.linalg.lstsq(A, Y.as_matrix())[0]
         x = np.array([m1, M1])
 
-        X = df['length']
-        Y = df['nread']
-        Z = df['covStat']
+        X = df["length"]
+        Y = df["nread"]
+        Z = df["covStat"]
         pylab.scatter(X, Y, c=Z, vmin=vmin, vmax=vmax)
         pylab.colorbar()
         pylab.xlabel("Contig length", fontsize=fontsize)
         pylab.ylabel("Contig reads", fontsize=fontsize)
         pylab.title("coverage function of contig length and reads used")
         pylab.grid()
-        pylab.plot(x, m*x+c, "o-r")
+        pylab.plot(x, m * x + c, "o-r")
         pylab.loglog()
         pylab.tight_layout()
 
@@ -224,19 +223,15 @@ class Contigs(ContigsBase):
         df = df.query("flag in [0,16]")
         alldata = {}
         for chrom in sorted(df.rname.unique()):
-            data = df.query("rname == @chrom").sort_values(by='rstart')[["qname", "qlen", "rstart","rend"]]
+            data = df.query("rname == @chrom").sort_values(by="rstart")[["qname", "qlen", "rstart", "rend"]]
             alldata[chrom] = data
         return alldata
 
     def stats(self):
         from sequana.stats import N50, L50
-        length = self.get_df()['length']
-        return {
-            'N50': N50(length),
-            'total_length': sum(length),
-            'L50': L50(length)
-            }
+
+        length = self.get_df()["length"]
+        return {"N50": N50(length), "total_length": sum(length), "L50": L50(length)}
 
     def plot_contig_length_vs_GC(self):
-        pylab.plot(self.get_df()["length"], self.get_df()['GC'], "o")
-
+        pylab.plot(self.get_df()["length"], self.get_df()["GC"], "o")

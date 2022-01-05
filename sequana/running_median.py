@@ -6,7 +6,7 @@
 #
 #  File author(s):
 #      Thomas Cokelaer <thomas.cokelaer@pasteur.fr>
-#      Dimitri Desvillechabrol <dimitri.desvillechabrol@pasteur.fr>, 
+#      Dimitri Desvillechabrol <dimitri.desvillechabrol@pasteur.fr>,
 #          <d.desvillechabrol@gmail.com>
 #
 #  Distributed under the terms of the 3-clause BSD license.
@@ -29,9 +29,8 @@ from bisect import bisect_left, insort
 import numpy as np
 
 import colorlog
+
 logger = colorlog.getLogger(__name__)
-
-
 
 
 # blist seems to be unstable on older systems/platforms so we use list by
@@ -39,6 +38,7 @@ logger = colorlog.getLogger(__name__)
 # complexity that is better than list complexity. Note, however that there is an
 # overhead so the list is faster for W<20,000, which is the case in most
 # applications.
+
 
 def running_median(data, width, container=list):
     rm = RunningMedian(data, width, container=list)
@@ -130,6 +130,7 @@ class RunningMedian:
         has an O(log(n)) complexity while list has a O(n) complexity
 
     """
+
     def __init__(self, data, width, container=list):
         """.. rubric:: constructor
 
@@ -158,8 +159,8 @@ class RunningMedian:
     def run(self):
 
         # initialise with first W values and sort the values
-        lc = self.container(self.data[:self.W])
-        lc.sort()  # 
+        lc = self.container(self.data[: self.W])
+        lc.sort()  #
 
         mididx = (self.W - 1) // 2
         result = np.empty_like(self.data)
@@ -171,8 +172,8 @@ class RunningMedian:
         # We start at position W removing first element in lc
         # and adding a new one. We do not use enumerate since we do not
         # start at zero.
-        for new_elem in self.data[self.W:]:
-            old_elem = self.data[idx-mididx]
+        for new_elem in self.data[self.W :]:
+            old_elem = self.data[idx - mididx]
             del lc[bisect_left(lc, old_elem)]
             insort(lc, new_elem)
             idx += 1
@@ -184,6 +185,3 @@ class RunningMedian:
         result[-mididx:] = self.data[-mididx:]
 
         return result
-
-
-

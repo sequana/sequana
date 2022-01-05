@@ -6,7 +6,7 @@
 #
 #  File author(s):
 #      Thomas Cokelaer <thomas.cokelaer@pasteur.fr>
-#      Dimitri Desvillechabrol <dimitri.desvillechabrol@pasteur.fr>, 
+#      Dimitri Desvillechabrol <dimitri.desvillechabrol@pasteur.fr>,
 #          <d.desvillechabrol@gmail.com>
 #
 #  Distributed under the terms of the 3-clause BSD license.
@@ -67,8 +67,8 @@ from sequana.lazy import numpy as np
 from sequana.lazy import pylab
 
 import colorlog
-logger = colorlog.getLogger(__name__)
 
+logger = colorlog.getLogger(__name__)
 
 
 quality = r"""!"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOP"""
@@ -78,7 +78,7 @@ quality += r"""QRSTUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxyz{|}~"""
 from math import log10
 
 
-__all__ = ['Quality', "proba_to_quality_sanger", "quality_to_proba_sanger"]
+__all__ = ["Quality", "proba_to_quality_sanger", "quality_to_proba_sanger"]
 
 
 def proba_to_quality_sanger(pe):
@@ -101,9 +101,10 @@ def proba_to_quality_sanger(pe):
         Qs = 93
     return Qs
 
+
 def quality_to_proba_sanger(quality):
     """Quality to probability (Sanger)"""
-    return 10**(quality/-10.)
+    return 10 ** (quality / -10.0)
 
 
 def proba_to_quality_solexa(pe):
@@ -114,9 +115,9 @@ def proba_to_quality_solexa(pe):
         pe = 1
         return -5
 
-    if pe <1e-90:
+    if pe < 1e-90:
         pe = 1e-90
-    Qs = -10 * log10(pe/(1-pe))
+    Qs = -10 * log10(pe / (1 - pe))
     if Qs > 62:
         Qs = 62
     if Qs < -5:
@@ -125,15 +126,12 @@ def proba_to_quality_solexa(pe):
 
 
 def quality_solexa_to_quality_sanger(qual):
-    return 10 * log10(10**(qual/10.) + 1 )
+    return 10 * log10(10 ** (qual / 10.0) + 1)
 
 
 def quality_sanger_to_quality_solexa(qual):
-    """
-
-
-    """
-    return 10 * log10(10**(qual/10.) - 1 )
+    """ """
+    return 10 * log10(10 ** (qual / 10.0) - 1)
 
 
 def ascii_to_quality(character, phred=33):
@@ -152,7 +150,7 @@ def ascii_to_quality(character, phred=33):
 
 
 def quality_to_ascii(quality, phred=33):
-    """Quality to ASCII conversion 
+    """Quality to ASCII conversion
 
     :param int phred: offset (defaults to 33)
 
@@ -179,6 +177,7 @@ class Quality(object):
     and the mean quality from the :attr:`mean_quality` attribute.
 
     """
+
     def __init__(self, seq, offset=33):
         self.seq = seq
         self.offset = offset
@@ -186,53 +185,38 @@ class Quality(object):
     def _get_quality(self):
         # bytearray conversion is required since ord() function
         # does not handle bytes from py3
-        return [x - self.offset for x in bytearray(self.seq, 'utf-8')]
+        return [x - self.offset for x in bytearray(self.seq, "utf-8")]
+
     quality = property(_get_quality, doc="phred string into quality list")
 
     def _get_mean_quality(self):
         return np.mean(self.quality)
+
     mean_quality = property(_get_mean_quality, doc="return mean quality")
 
     def plot(self, fontsize=16):
         """plot quality versus base position"""
         pylab.plot(self.quality, label="offset: %s" % self.offset)
-        pylab.xlabel('base position', fontsize=fontsize)
-        pylab.ylabel('Quality per base', fontsize=fontsize)
+        pylab.xlabel("base position", fontsize=fontsize)
+        pylab.ylabel("Quality per base", fontsize=fontsize)
         pylab.grid(True)
         # ylim set autoscale to off so if we want to call this function  several
         # times, we must reset autoscale to on before calling ylim
         pylab.autoscale()
         limits = pylab.ylim()
-        pylab.ylim(max(0,limits[0]-1), limits[1]+1)
-
+        pylab.ylim(max(0, limits[0] - 1), limits[1] + 1)
 
 
 # this should qlso be correct for Illumina 1.8+
 class QualitySanger(Quality):
     """Specialised :class:`Quality` class for Sanger case"""
+
     def __init__(self, seq):
         super(QualitySanger, self).__init__(seq, offset=33)
 
 
 class QualitySolexa(Quality):
     """Specialised :class:`Quality` class for Solexa case"""
+
     def __init__(self, seq):
         super(QualitySolexa, self).__init__(seq, offset=64)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
