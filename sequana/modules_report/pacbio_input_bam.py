@@ -108,8 +108,8 @@ class PacbioInputBAMModule(SequanaBaseModule):
             title = "Histogram read length"
         elif key == "hist_gc_content":
             title = "Histogram GC content"
-        elif key == "hist_zmw":
-            title = "Histogram ZMW"
+        elif key == "hist_passes":
+            title = "Histogram Number of Passes"
         elif key == "gc_vs_length":
             title = "GC vs length"
         elif key == "hist_snr":

@@ -102,12 +102,3 @@ def test_barcoding():
         bc.plot_and_save_all(directory=tempdir)
 
 
-def test_ccs():
-
-    ccs = CCS(sequana_data("lima_output.lbc32--lbc32.ccs.bam"))
-    ccs.df
-    ccs.stats()
-    ccs.to_summary()
-    ccs.plot_GC_read_len()
-    ccs.boxplot_read_length_vs_passes()
-    ccs.hist_passes()

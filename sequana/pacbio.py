@@ -223,7 +223,7 @@ class PacbioBAMBase(object):
         if grid is True:
             pylab.grid(True)
 
-    def hist_read_length(self, bins=80, alpha=0.5, hold=False, fontsize=12,
+    def hist_read_length(self, bins=50, alpha=0.8, hold=False, fontsize=12,
                 grid=True, xlabel="Read Length", ylabel="#", label="",
                 title=None, logy=False,  ec="k", hist_kwargs={}):
         """Plot histogram Read length
@@ -386,6 +386,8 @@ class PacbioSubreads(PacbioBAMBase):
                     snr = list(tags['sn'])
                 except:
                     snr = [None] * 4
+
+
                 res = res + snr
 
                 # res[6] = ZMW name, also stored in tags["zm"]
@@ -395,6 +397,20 @@ class PacbioSubreads(PacbioBAMBase):
                         #case, we store just a unique ID
                     res.append(i)
 
+                # store the final maen quality
+                try:
+                    rq = tags['rq']
+                except: #undefined/not found
+                    rq = -1
+                res += [rq]
+
+                # store the number of passes
+                try:
+                    np = tags['np']
+                except: #undefined/not found
+                    np = -1
+                res += [np]
+
                 # aggregate results
                 all_results.append(res)
 
@@ -403,15 +419,8 @@ class PacbioSubreads(PacbioBAMBase):
 
             self._df = pd.DataFrame(all_results,
                 columns=['read_length', "reference_length", 'GC_content',
-                            'snr_A','snr_C','snr_G','snr_T','ZMW'])
+                            'snr_A','snr_C','snr_G','snr_T','ZMW', 'rq', 'nb_passes'])
 
-            # populate the nb passes from the ZMW
-            grouped = self._df.groupby("ZMW")
-            agg = grouped.agg({"read_length": len})
-
-            ZMW = self._df.ZMW.unique()
-            aa = list(pylab.flatten([[agg.loc[this][0]] * agg.loc[this][0] for this in ZMW]))
-            self._df['nb_passes'] = aa
             self._df['nb_passes'] -= 1 # nb passes starts at 0
 
             self.reset()
@@ -424,8 +433,7 @@ class PacbioSubreads(PacbioBAMBase):
         data['nb_bases'] = int(self.df.read_length.sum())
         data['nb_reads'] = len(self.df)
         data['mean_GC'] = float(self.df.GC_content.mean())
-        data['CCS_nb_reads'] = self.get_number_of_ccs()
-        data['CCS_mean_passes'] = self.get_number_of_ccs()
+        data['mean_passes'] = self.get_mean_nb_passes()
         return data
     stats = property(_get_stats, doc="return basic stats about the read length")
 
@@ -581,10 +589,10 @@ class PacbioSubreads(PacbioBAMBase):
         if grid is True:
             pylab.grid(True)
 
-    def hist_nb_passes(self, bins=None, alpha=0.5, hold=False, fontsize=12,
-                          grid=True, xlabel="Number of ZMW passes", logy=True,
-                          ylabel="#", label="", title="Number of ZMW passes"):
-        """Plot histogram of number of reads per ZMW (number of passes)
+    def hist_nb_passes(self, bins=None, alpha=0.8, hold=False, fontsize=12,
+                          grid=True, xlabel="Number of passes", logy=True,ec="k",
+                          ylabel="#", label="", title="Number of passes"):
+        """Plot histogram of number of passes
 
         :param float alpha: transparency of the histograms
         :param bool hold:
@@ -605,16 +613,12 @@ class PacbioSubreads(PacbioBAMBase):
             b.hist_nb_passes()
         """
         max_nb_pass = self.df.nb_passes.max()
-        if bins is None:
-            k = range(1, max_nb_pass+1)
 
         # histogram nb passes
         if hold is False:
             pylab.clf()
         pylab.hist(self.df.nb_passes, bins=bins, alpha=alpha,
-                   label=label, log=logy, width=1)
-        if len(k) < 5:
-            pylab.xticks(range(6), range(6))
+                   label=label, log=logy, ec=ec)
 
         pylab.xlabel(xlabel, fontsize=fontsize)
         pylab.ylabel(ylabel, fontsize=fontsize)
@@ -627,131 +631,11 @@ class PacbioSubreads(PacbioBAMBase):
         dd = self.df.query(query)
         return len(dd.ZMW.unique())
 
-    def get_mean_nb_passes(self, min_length=50, max_length=15000):
+    def get_mean_nb_passes(self, min_length=50, max_length=1500000):
         query = "read_length>=@min_length and read_length <=@max_length"
         dd = self.df.query(query).groupby("ZMW").agg(pylab.mean)["nb_passes"]
         return dd.mean()
 
-    '''def hist_mean_ccs(self, bins=1000, **kwargs):
-        """Group subreads by ZMW and plot mean of read length for each polymerase"""
-        data = self.df[['read_length', 'ZMW']].groupby('ZMW')
-        data.mean().hist(bins=bins, **kwargs)
-        pylab.title("CCS mean read length")
-        return data
-    '''
-
-
-class CCS(PacbioBAMBase):
-    """
-
-    You can get a CCS file from a BAM file as follows::
-
-        singularity run /home/cokelaer/pacbio.simg ccs  --minPasses 80  \
-            m54091_180224_083446.subreads.bam test.bam
-
-    If empty, you may need to set other parameter such as the predicted
-    accuracy::
-
-    singularity run /home/cokelaer/pacbio.simg ccs --minPasses 0 \
-        test_pacbio_subreads.bam out.bam  --minPredictedAccuracy 0.7
-
-    """
-    def __init__(self, filename):
-        super(CCS, self).__init__(filename)
-
-    @property
-    def df(self):
-        # RG: ID read group ??
-        # np: number of passes
-        # rq ?
-        # rs: list 6 numbers ?
-        # za:
-        # zm ID of the ZMW
-        # sn: SNR how is this computed ?
-        # zs
-        # - sn: list of ACGT SNRs. A, C, G, T in that order
-        if self._df is not None:
-            return self._df
-
-        logger.info("Scanning input file. Please wait")
-        self.reset()
-        N = 0
-
-        all_results = []
-        # This takes 60%  of the time...could use cython ?
-        for read in self.data:
-            tags = dict(read.tags) #11% of the time
-            res = []
-            # count reads
-            N += 1
-            if (N % 10000) == 0:
-                logger.info("Read %d sequences" %N)
-
-            # res[0] = read length
-            res.append(read.query_length) # also stored in tags["qe"] - tags["qs"]
-
-            # collections.counter is slow, let us do it ourself
-            res.append( 100. / read.qlen * sum(
-                [read.query_sequence.count(letter) if read.query_sequence
-                    else 0 for letter in "CGcgSs"]))
-
-            # res[1:4] contains SNR  stored in tags['sn'] in the order A, C, G, T
-            try:
-                snr = list(tags['sn'])
-            except:
-                snr = [None] * 4
-            res = res + snr
-
-            # res[6] = ZMW name, also stored in tags["zm"]
-            res.append(int(tags['zm']))
-            res.append(tags['np'])
-
-            # aggregate results
-            all_results.append(res)
-
-        self._df = pd.DataFrame(all_results,
-            columns=['read_length','GC_content','snr_A','snr_C','snr_G','snr_T','ZMW',
-                     "nb_passes"])
-        self._df.ZMW = self._df.ZMW.astype(int)
-
-        if len(self._df.ZMW.unique()) != len(self._df):
-            logger.warning("Found non unique ZMW. This may not be a CCS but "
-                        "a subread file. Consider using PacbioSubreads class")
-
-        self.reset()
-        return self._df
-
-    def stats(self):
-        data = {}
-        data["N"] = len(self.df)
-        data["mean_read_length"] = float(round(self.df.read_length.mean(),2))
-        data["total_bases"] = int(self.df.read_length.sum())
-        data["mean_nb_passes"] = float(round(self.df.nb_passes.mean(),2))
-        return data
-
-    def to_summary(self, filename="sequana_summary_pacbio_ccs.json"):
-        """Save statistics into a JSON file
-
-        :param filename:
-        :param data: dictionary to save. If not provided, use :meth:`stats`
-
-        """
-        data = self.stats()
-        s = Summary("pacbio_ccs", self.sample_name, data=data)
-        s._data_description = {
-            "N": "CCS reads",
-            "total_bases": "Number of CCS bases",
-            "mean_read_length": "CCS Read Length (mean)",
-            "mean_nb_passes": "Number of Passes (mean)"
-        }
-        s.to_json(filename)
-
-    def hist_passes(self, maxp=50, fontsize=16):
-        passes = self.df.nb_passes.copy()
-        passes.clip(upper=maxp).hist(bins=maxp)
-        pylab.xlim([0, maxp])
-        pylab.ylabel("# count", fontsize=fontsize)
-        pylab.xlabel("Passes (max {})".format(maxp), fontsize=fontsize)
 
     def boxplot_read_length_vs_passes(self, nmax=20, ax=None, whis=1.5, widths=0.6):
         dd = self.df.query("nb_passes<=@nmax")[["nb_passes", "read_length"]]
