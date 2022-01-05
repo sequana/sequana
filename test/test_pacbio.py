@@ -1,7 +1,9 @@
-from sequana.pacbio import BAMSimul, PBSim, PacbioSubreads, Barcoding, CCS
+from sequana.pacbio import BAMSimul, PBSim, PacbioSubreads, Barcoding
 from sequana import sequana_data
 from easydev import TempFile
 
+# DO NOT USE TEST DIR FOR NOW. This is used in the examples
+from . import test_dir
 
 def test_pacbio():
     b = PacbioSubreads(sequana_data("test_pacbio_subreads.bam"))
