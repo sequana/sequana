@@ -78,7 +78,7 @@ rule pacbio_quality:
 
         ########## ZMW passes
         # individual histograms
-        bam_pacbio.hist_nb_passes(label=short_name)
+        bam_pacbio.hist_nb_passes(label=short_name, bins=20)
         pylab.title("")
         pylab.legend()
         pylab.savefig(setname(output.ZMW))
