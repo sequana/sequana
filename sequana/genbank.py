@@ -6,7 +6,7 @@
 #
 #  File author(s):
 #      Thomas Cokelaer <thomas.cokelaer@pasteur.fr>
-#      Dimitri Desvillechabrol <dimitri.desvillechabrol@pasteur.fr>, 
+#      Dimitri Desvillechabrol <dimitri.desvillechabrol@pasteur.fr>,
 #          <d.desvillechabrol@gmail.com>
 #
 #  Distributed under the terms of the 3-clause BSD license.
@@ -20,15 +20,15 @@ import re
 from sequana.fasta import FastA
 
 import colorlog
-logger = colorlog.getLogger(__name__)
 
+logger = colorlog.getLogger(__name__)
 
 
 __all__ = ["GenBank"]
 
 
 # TODO: we should factorise gff and genbank in a parent class (Annotation)
-class GenBank():
+class GenBank:
     """
     ::
 
@@ -36,6 +36,7 @@ class GenBank():
         gg.get_types()
 
     """
+
     def __init__(self, filename):
         self.filename = filename
 
@@ -45,11 +46,11 @@ class GenBank():
         _types = set()
         for contig in records.keys():
             for feature in records[contig]:
-                _type = feature['type']
+                _type = feature["type"]
                 _types.add(_type)
         return sorted(_types)
 
-    def extract_fasta(self, fastafile, features=['rRNA']):
+    def extract_fasta(self, fastafile, features=["rRNA"]):
         types = self.get_types()
         for feature in features:
             if feature not in types:
@@ -78,19 +79,18 @@ class GenBank():
             sequence = fasta.sequences[index]
 
             for item in records[name]:
-                if item['type'] in features:
-                    start, end = item['gene_start'], item['gene_end']
+                if item["type"] in features:
+                    start, end = item["gene_start"], item["gene_end"]
                     try:
-                        info = item['product']
-                        output += ">{}_{}_{}_{} {}\n".format(name, item['type'], 
-                                                             start,end, info)
+                        info = item["product"]
+                        output += ">{}_{}_{}_{} {}\n".format(name, item["type"], start, end, info)
                     except:
-                        output += ">{}_{}_{}_{} {}\n".format(name, item['type'], start, end)
-                    output+= "{}\n".format(sequence[start:end])
+                        output += ">{}_{}_{}_{} {}\n".format(name, item["type"], start, end)
+                    output += "{}\n".format(sequence[start:end])
         return output
 
     def genbank_features_parser(self):
-        """ Return dictionary with features contains inside a genbank file.
+        """Return dictionary with features contains inside a genbank file.
 
         :param str input_filename: genbank formated file
         """
@@ -125,8 +125,8 @@ class GenBank():
                         split_line = line.split()
                         t = split_line[0]
                         # Handle :
-                        #complement(order(1449596..1449640,1449647..1450684,
-                        #1450695..1450700))
+                        # complement(order(1449596..1449640,1449647..1450684,
+                        # 1450695..1450700))
                         positions = split_line[1]
                         if positions[0].isalpha():
                             while not line[:-1].endswith(")"):
@@ -137,12 +137,11 @@ class GenBank():
                         start = pos[0]
                         end = pos[-1]
                         strand = "-" if split_line[1].startswith("c") else "+"
-                        new_feature = {"type": t, "gene_start": start,
-                                "gene_end": end, "strand": strand}
-    
+                        new_feature = {"type": t, "gene_start": start, "gene_end": end, "strand": strand}
+
                     # recover qualifier bound with feature
                     else:
-                        quali_line = line.strip().replace('"', '')
+                        quali_line = line.strip().replace('"', "")
                         if quali_line.startswith("/") and "=" in quali_line:
                             qualifier = quali_line.split("=")
                             key = qualifier[0][1:]
@@ -153,5 +152,3 @@ class GenBank():
                             else:
                                 new_feature[key] += " " + quali_line
         return records
-
-

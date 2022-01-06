@@ -76,11 +76,9 @@ class Variant:
                 else:
                     info = f"{s.data['GT']}:{s.data['DP']}:{s.data['GL']}"
                     try:
-                        freq = "; ".join(
-                            "{0:.3f}".format(alt / s.data['DP']) for alt in s.data['AO']
-                        )
+                        freq = "; ".join("{0:.3f}".format(alt / s.data["DP"]) for alt in s.data["AO"])
                     except TypeError:
-                        freq = "{0:.3f}".format(s.data['AO'] / s.data['DP'])
+                        freq = "{0:.3f}".format(s.data["AO"] / s.data["DP"])
                 line_dict[s.sample] = freq
                 line_dict["info_{0}".format(i)] = info
         try:
@@ -142,6 +140,7 @@ class VCF_freebayes:
     one allele vs. the other.
 
     """
+
     def __init__(self, filename, **kwargs):
         """.. rubric:: constructor
 
@@ -150,7 +149,6 @@ class VCF_freebayes:
         """
         self.filename = filename
         self.rewind()
-
 
         # initiate filters dictionary
         self._filters_params = {
@@ -354,18 +352,14 @@ class Filtered_freebayes:
         :params str output_filename: output CSV filename.
         """
         with open(output_filename, "w") as fp:
-            print(
-                "# sequana_variant_calling;{0}".format(self.vcf.filters_params), file=fp
-            )
+            print("# sequana_variant_calling;{0}".format(self.vcf.filters_params), file=fp)
             if self.df.empty:
                 print(",".join(self.columns), file=fp)
             else:
                 if info_field:
                     self.df.to_csv(fp, index=False)
                 else:
-                    self.df.to_csv(
-                        fp, index=False, columns=self.columns[: -len(self.vcf.samples)]
-                    )
+                    self.df.to_csv(fp, index=False, columns=self.columns[: -len(self.vcf.samples)])
 
     def to_vcf(self, output_filename):
         """Write VCF file in VCF format.
@@ -376,5 +370,3 @@ class Filtered_freebayes:
             vcf_writer = vcfpy.Writer(fp, self._vcf._vcf_reader.header)
             for variant in self.variants:
                 vcf_writer.write_record(variant.record)
-
-

@@ -20,9 +20,8 @@ import re
 Note: could use pysam most probably to improve the speed.
 """
 import colorlog
+
 logger = colorlog.getLogger(__name__)
-
-
 
 
 class Cigar(object):
@@ -56,9 +55,9 @@ class Cigar(object):
     - "B" for back     !!!! could be also NM ???
 
     !!! BWA MEM get_cigar_stats returns list with 11 items
-    Last item is 
+    Last item is
     !!! what is the difference between M and = ???
-    Last item is I + S + X 
+    Last item is I + S + X
     !!! dans BWA, mismatch (X) not provided... should be deduced from last item - I - S
 
     .. note:: the length of the query sequence based on the CIGAR is calculated
@@ -67,17 +66,19 @@ class Cigar(object):
 
     :reference: https://github.com/samtools/htslib/blob/develop/htslib/sam.h
     """
-    __slots__ = ['cigarstring']
-    pattern = r'(\d+)([A-Za-z])?'
+
+    __slots__ = ["cigarstring"]
+    pattern = r"(\d+)([A-Za-z])?"
     # could use a dictionary. would be faster
     #: valid CIGAR types
     types = "MIDNSHP=XB"
+
     def __init__(self, cigarstring):
         """.. rubric:: Constructor
 
-        :param str cigarstring: the CIGAR string. 
+        :param str cigarstring: the CIGAR string.
 
-        .. note:: the input CIGAR string validity is not checked. 
+        .. note:: the input CIGAR string validity is not checked.
             If an unknown type is found, it is ignored generally.
             For instance, the length of 1S100Y is 1 since Y is not correct.
 
@@ -92,14 +93,14 @@ class Cigar(object):
         return "Cigar( {} )".format(self.cigarstring)
 
     def __len__(self):
-        return sum([y for x,y in self._decompose() if x in "MIS=X"])
+        return sum([y for x, y in self._decompose() if x in "MIS=X"])
 
     def _decompose(self):
         # x is the type, y the number. Note the inversion in the tuple
-        return ((y, int(x)) for x,y in re.findall(self.pattern, self.cigarstring))
+        return ((y, int(x)) for x, y in re.findall(self.pattern, self.cigarstring))
 
     def as_sequence(self):
-        return "".join( ( y*x for x,y in self._decompose()) ) 
+        return "".join((y * x for x, y in self._decompose()))
 
     def as_dict(self):
         """Return cigar types and their count
@@ -115,6 +116,7 @@ class Cigar(object):
         """
         # !! here, we have to make sure that  duplicated letters are summed up
         from collections import defaultdict
+
         d = defaultdict(int)
         for letter, num in self._decompose():
             d[letter] += num
@@ -132,11 +134,11 @@ class Cigar(object):
             (('S', 1), ('M', 2), ('S', 1))
 
         """
-        return tuple((x,y) for (x,y) in self._decompose())
+        return tuple((x, y) for (x, y) in self._decompose())
 
     def compress(self):
         """1S1S should become 2S. inplace modification"""
-        if len(set((x[0] for x,y in self._decompose()))) == len(self.as_tuple()):
+        if len(set((x[0] for x, y in self._decompose()))) == len(self.as_tuple()):
             return
 
         data = self.as_tuple()
@@ -144,10 +146,10 @@ class Cigar(object):
         for i, x in enumerate(data[1:]):
             N = len(newdata) - 1
             if newdata[N][0] == x[0]:
-                newdata[N]= (x[0], newdata[N][1] + x[1] )
+                newdata[N] = (x[0], newdata[N][1] + x[1])
             else:
                 newdata.append(x)
-        self.cigarstring = "".join(["{}{}".format(y,x) for x,y in newdata])
+        self.cigarstring = "".join(["{}{}".format(y, x) for x, y in newdata])
 
     def stats(self):
         """Returns number of occurence for each type found in :attr:`types`
@@ -188,7 +190,7 @@ def fetch_exon(chrom, start, cigar):
 
 def fetch_intron(chrom, start, cigar):
 
-    # equivalence:  
+    # equivalence:
     # c = 0 -> M
     # c = 1 -> I
     # c = 2 -> D
@@ -225,7 +227,7 @@ def fetch_clip(chrom, start, cigar):
             chrom_start += size
         elif c == 3:
             chrom_start += size
-        elif c == 4:  
+        elif c == 4:
             clip_bound.append((chrom, chrom_start, chrom_start + size))
             chrom_start += size
         else:
@@ -270,11 +272,8 @@ def fetch_insertion(chrom, start, cigar):
             chrom_start += size
         elif c == 3:
             chrom_start += size
-        elif c == 4: 
+        elif c == 4:
             chrom_start += size
         else:
             continue
     return insertion_bound
-
-
-

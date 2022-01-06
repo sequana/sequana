@@ -6,7 +6,7 @@
 #
 #  File author(s):
 #      Thomas Cokelaer <thomas.cokelaer@pasteur.fr>
-#      Dimitri Desvillechabrol <dimitri.desvillechabrol@pasteur.fr>, 
+#      Dimitri Desvillechabrol <dimitri.desvillechabrol@pasteur.fr>,
 #          <d.desvillechabrol@gmail.com>
 #
 #  Distributed under the terms of the 3-clause BSD license.
@@ -24,11 +24,11 @@ import platform
 import pathlib
 
 import colorlog
+
 logger = colorlog.getLogger(__name__)
 
 
-__all__ = ['textwrap', 'wget', 'findpos', "normpdf"]
-
+__all__ = ["textwrap", "wget", "findpos", "normpdf"]
 
 
 def normpdf(x, mu, sigma):
@@ -37,7 +37,8 @@ def normpdf(x, mu, sigma):
     .. note:: same as scipy.stats.norm but implemented to avoid scipy dependency
     """
 
-    return 1./(np.sqrt(2*np.pi)*sigma)*np.exp(-0.5 * (1./sigma*(x - mu))**2)
+    return 1.0 / (np.sqrt(2 * np.pi) * sigma) * np.exp(-0.5 * (1.0 / sigma * (x - mu)) ** 2)
+
 
 def textwrap(text, width=80, indent=0):
     """Wrap a string with 80 characters
@@ -51,7 +52,7 @@ def textwrap(text, width=80, indent=0):
         indent = ""
     else:
         indent = " " * indent
-    data = [indent + text[i*width:(i+1)*width:] for i in range(len(text)//width + 1)]
+    data = [indent + text[i * width : (i + 1) * width :] for i in range(len(text) // width + 1)]
     return "\n".join(data)
 
 
@@ -82,6 +83,5 @@ def findpos(seq, chr):
     """
     N = len(chr)
     for i, dummy in enumerate(seq):
-        if seq[i:i+N] == chr:
+        if seq[i : i + N] == chr:
             yield i
-

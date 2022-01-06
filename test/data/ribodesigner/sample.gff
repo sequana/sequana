@@ -1,0 +1,5 @@
+##sequence-region FAKE_SEQ 1 70000
+FAKE_SEQ	RefSeq	region	1	100000	.	+	.	ID=FAKE_SEQ
+FAKE_SEQ	cmsearch	rRNA	100	1000	.	+	.	ID=rna-1
+FAKE_SEQ	cmsearch	rRNA	5000	7000	.	+	.	ID=rna-2
+FAKE_SEQ	cmsearch	rRNA	20000	30000	.	-	.	ID=rna-3

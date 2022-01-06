@@ -38,6 +38,7 @@ class BUSCO(object):
 
     :reference: http://busco.ezlab.org/
     """
+
     def __init__(self, filename="full_table_testbusco.tsv"):
         """.. rubric:: constructor
 
@@ -60,10 +61,10 @@ class BUSCO(object):
         """
         if hold is False:
             pylab.clf()
-        self.df.groupby('Status').count()['# Busco id'].plot(kind="pie")
+        self.df.groupby("Status").count()["# Busco id"].plot(kind="pie")
         pylab.ylabel("")
-        #pylab.title("Distribution Complete/Fragmented/Missing")
-        #pylab.legend()
+        # pylab.title("Distribution Complete/Fragmented/Missing")
+        # pylab.legend()
         if filename:
             pylab.savefig(filename)
 
@@ -83,13 +84,19 @@ class BUSCO(object):
         if hold is False:
             pylab.clf()
         colors = ["green", "orange", "red", "blue"]
-        markers = ['o', 's', 'x', 'o']
+        markers = ["o", "s", "x", "o"]
         for i, this in enumerate(["Complete", "Fragmented", "Duplicated"]):
             mask = self.df.Status == this
-            if sum(mask)>0:
-                self.df[mask].plot(x="Length", y="Score", kind="scatter", 
-                    color=colors[i], ax=pylab.gca(),
-                    marker=markers[i], label=this)
+            if sum(mask) > 0:
+                self.df[mask].plot(
+                    x="Length",
+                    y="Score",
+                    kind="scatter",
+                    color=colors[i],
+                    ax=pylab.gca(),
+                    marker=markers[i],
+                    label=this,
+                )
 
         pylab.legend()
         pylab.grid()
@@ -103,22 +110,22 @@ class BUSCO(object):
         """
         df = self.df.drop_duplicates(subset=["# Busco id"])
         data = {}
-        data['S'] = sum(df.Status == "Complete")
-        data['F'] = sum(df.Status == "Fragmented")
-        data['D'] = sum(df.Status == "Duplicated")
-        data['C'] = data['S'] + data['D']
-        data['M'] = sum(df.Status == "Missing")
-        data['total'] = len(df)
-        data['C_pc'] = data['C'] *100. / data['total']
-        data['D_pc'] = data['D'] *100. / data['total']
-        data['S_pc'] = data['S'] *100. / data['total']
-        data['M_pc'] = data['M'] *100. / data['total']
-        data['F_pc'] = data['F'] *100. / data['total']
+        data["S"] = sum(df.Status == "Complete")
+        data["F"] = sum(df.Status == "Fragmented")
+        data["D"] = sum(df.Status == "Duplicated")
+        data["C"] = data["S"] + data["D"]
+        data["M"] = sum(df.Status == "Missing")
+        data["total"] = len(df)
+        data["C_pc"] = data["C"] * 100.0 / data["total"]
+        data["D_pc"] = data["D"] * 100.0 / data["total"]
+        data["S_pc"] = data["S"] * 100.0 / data["total"]
+        data["M_pc"] = data["M"] * 100.0 / data["total"]
+        data["F_pc"] = data["F"] * 100.0 / data["total"]
         return data
 
     def get_summary_string(self):
         data = self.summary()
-        C = data['C_pc']
+        C = data["C_pc"]
         F = data["F_pc"]
         D = data["D_pc"]
         S = data["S_pc"]
@@ -129,11 +136,12 @@ class BUSCO(object):
 
     def _get_score(self):
         return self.summary()["C_pc"]
+
     score = property(_get_score)
 
     def __str__(self):
         data = self.summary()
-        C = data['C']
+        C = data["C"]
         F = data["F"]
         D = data["D"]
         S = data["S"]

@@ -40,7 +40,7 @@ import math
 from collections import Counter, OrderedDict, defaultdict
 
 from bx.intervals.intersection import Interval, IntervalTree
-from bx.bitset import BinnedBitSet 
+from bx.bitset import BinnedBitSet
 from bx.bitset_builders import binned_bitsets_from_list
 from sequana.lazy import pandas as pd
 from sequana.lazy import numpy as np
@@ -53,6 +53,7 @@ import pysam
 from sequana import jsontool
 
 import colorlog
+
 logger = colorlog.getLogger(__name__)
 
 
@@ -67,35 +68,38 @@ Interesting commands::
 """
 
 # SAMBAMbase is for the doc
-__all__ = ['BAM','Alignment', 'SAMFlags', "CS", "SAM", "CRAM", "SAMBAMbase"]
+__all__ = ["BAM", "Alignment", "SAMFlags", "CS", "SAM", "CRAM", "SAMBAMbase"]
 
 
 # simple decorator to rewind the BAM file
 # here we use an underscore to not overlap with the reset() method
 # of the AlignmentFile class
 from functools import wraps
+
+
 def _reset(f):
     @wraps(f)
     def wrapper(*args, **kargs):
         args[0].reset()
         return f(*args, **kargs)
+
     return wrapper
 
 
 # There are lots of trouble with inheriting from pysam.AlignmentFile
-# First, you cannot use super(). indeed, it works for py27 but not 
+# First, you cannot use super(). indeed, it works for py27 but not
 # with py35 probably a missing __init__  or __new__ in
 # AlignmentFile class. See e.g., stackoverflow/questions/
 # 26653401/typeerror-object-takes-no-parameters-but-only-in-python-3
 # So we should call the __init__.
 
-# Second problem. The parent method reset() works for BAM but not for SAM 
-# files. Indeed, the reset() method rewind the file but with SAM, it seems to 
+# Second problem. The parent method reset() works for BAM but not for SAM
+# files. Indeed, the reset() method rewind the file but with SAM, it seems to
 # be confused with the header somehow. So we need to overload the reset()
 # to call the __init__ again but this is not appropriate to call the constructor
-# again. It may have side effects. 
+# again. It may have side effects.
 
-# So, we decided to store the SAM/BAM as an attribute. 
+# So, we decided to store the SAM/BAM as an attribute.
 
 # Other known issues with pysam.AlignmentFile:
 # - in PY3, there is an attribute **format** that tells us if the input is BAM
@@ -124,7 +128,7 @@ def is_cram(filename, *args):
     return f.is_cram
 
 
-class SAMBAMbase():
+class SAMBAMbase:
     """Base class for SAM/BAM/CRAM data sets
 
 
@@ -143,6 +147,7 @@ class SAMBAMbase():
         60
 
     """
+
     # The mode rb means read-only (r) and that (b) for binary the format
     # So BAM or SAM can be read in theory.
     def __init__(self, filename, mode="r", *args):
@@ -160,15 +165,14 @@ class SAMBAMbase():
         # we can accumulate the length of each contig/chromosome as an alias
         bam = pysam.AlignmentFile(self._filename, mode=self._mode, *self._args)
         hd = bam.header
-        self.lengths = {r: l for r,l in zip(hd.references, hd.lengths)}
+        self.lengths = {r: l for r, l in zip(hd.references, hd.lengths)}
 
     def reset(self):
         try:
             self._data.close()
         except:
             pass
-        self._data = pysam.AlignmentFile(self._filename,
-            mode=self._mode, *self._args)
+        self._data = pysam.AlignmentFile(self._filename, mode=self._mode, *self._args)
 
     @_reset
     def get_read_names(self):
@@ -190,15 +194,14 @@ class SAMBAMbase():
         data = []
         for a in self:
             count += 1
-            if a.is_paired and a.tlen!=0:
+            if a.is_paired and a.tlen != 0:
                 data.append(a.tlen)
-            if count>max_entries:
+            if count > max_entries:
                 break
         return data
 
     @_reset
-    def get_estimate_insert_size(self, max_entries=100000, upper_bound=1000,
-        lower_bound=-1000):
+    def get_estimate_insert_size(self, max_entries=100000, upper_bound=1000, lower_bound=-1000):
         """
 
         .. image:: _static/insert_size.png
@@ -223,7 +226,7 @@ class SAMBAMbase():
         data = self._get_insert_size_data(max_entries=max_entries)
         if len(data) == 0:
             return 0
-        data = [abs(x) for x in data if x>=lower_bound and x<=upper_bound]
+        data = [abs(x) for x in data if x >= lower_bound and x <= upper_bound]
         return pylab.mean([abs(x) for x in data])
 
     @_reset
@@ -248,17 +251,19 @@ class SAMBAMbase():
                 refnames.append(-1)
             querynames.append(a.query_name)
             querylengths.append(a.query_length)
-            if max_align!=-1 and i>max_align:
+            if max_align != -1 and i > max_align:
                 break
-        df = pd.DataFrame({
+        df = pd.DataFrame(
+            {
                 "flag": flags,
                 "rstart": starts,
                 "rend": ends,
                 "mapqs": mapqs,
                 "rname": refnames,
                 "qname": querynames,
-                "qlen": querylengths
-            })
+                "qlen": querylengths,
+            }
+        )
         return df
 
     @_reset
@@ -277,6 +282,7 @@ class SAMBAMbase():
 
         """
         from sequana import Cigar
+
         count = 0
         I, D, M, L, mapq, flags, NM, rnames = [], [], [], [], [], [], [], []
         S = []
@@ -292,23 +298,23 @@ class SAMBAMbase():
             try:
                 NM.append([x[1] for x in a.tags if x[0] == "NM"][0])
             except:
-                #FIXME why -1 and not 0
+                # FIXME why -1 and not 0
                 NM.append(-1)
 
             flags.append(a.flag)
             rnames.append(a.reference_name)
 
-            if 'cs' in dict(a.tags):
-                cs = CS(dict(a.tags)['cs'])
-                S.append(cs['S'])
-                I.append(cs['I'])
-                D.append(cs['D'])
-                M.append(cs['M'])
+            if "cs" in dict(a.tags):
+                cs = CS(dict(a.tags)["cs"])
+                S.append(cs["S"])
+                I.append(cs["I"])
+                D.append(cs["D"])
+                M.append(cs["M"])
             elif a.cigarstring:
                 cigar = Cigar(a.cigarstring).as_dict()
                 I.append(cigar["I"])
-                D.append(cigar['D'])
-                M.append(cigar['M'])
+                D.append(cigar["D"])
+                M.append(cigar["M"])
                 S.append(None)  # no info about substitutions in the cigar
             else:
                 I.append(0)
@@ -316,7 +322,7 @@ class SAMBAMbase():
                 M.append(0)
                 S.append(0)
 
-            if max_align>0 and count == max_align:
+            if max_align > 0 and count == max_align:
                 break
 
             if count % 10000 == 0:
@@ -336,11 +342,11 @@ class SAMBAMbase():
         except:
             logger.info("computed Concordance based on standard CIGAR information using INDEL and NM tag")
             computed_S = NM - D - I
-            C = 1 - (I + D + computed_S)/(computed_S + I + D + M)
+            C = 1 - (I + D + computed_S) / (computed_S + I + D + M)
 
         df = pd.DataFrame([C, L, I, D, M, mapq, flags, NM, S, rnames])
         df = df.T
-        df.columns = ["concordance", 'length', "I", "D", "M", "mapq", "flags", "NM", "mismatch", "rname"]
+        df.columns = ["concordance", "length", "I", "D", "M", "mapq", "flags", "NM", "mismatch", "rname"]
         return df
 
     def __iter__(self):
@@ -352,8 +358,8 @@ class SAMBAMbase():
     @_reset
     def infer_strandness(self, reference_bed, max_entries, mapq=30):
         """
-        :param reference_bed: a BED file (12-columns with 
-            columns 1,2,3,6 used) or GFF file (column 1, 3, 
+        :param reference_bed: a BED file (12-columns with
+            columns 1,2,3,6 used) or GFF file (column 1, 3,
             4, 5, 6 are used
         :param mapq: ignore alignment with mapq below 30.
         :param max_entries: can be long. max_entries restrict the estimate
@@ -366,13 +372,13 @@ class SAMBAMbase():
 
         For strand-specific RNA-seq data, strandness of reads is determined by
         strandness of transcripts.
-        
+
 
         This functions returns a list of 4 values. First one indicates whether
         data is paired or not. Second and third one are ratio of reads explained
         by two types of strandness of reads vs transcripts. Last values are
         fractions of reads that could not be explained. The values 2 and 3 tell
-        you whether this is a strand-specificit dataset. 
+        you whether this is a strand-specificit dataset.
 
         If similar, it is no strand-specific.  If the first value is close to 1
         while the other is close to 0, this is a strand-specific dataset
@@ -386,39 +392,39 @@ class SAMBAMbase():
         if reference_bed.endswith(".bed"):
             with open(reference_bed, "r") as fin:
                 for line in fin:
-                    if line.startswith(('#','track','browser')):
+                    if line.startswith(("#", "track", "browser")):
                         continue
                     # Parse fields from gene tabls
                     fields = line.split()
                     chrom_name = fields[0]
-                    start = int( fields[1] )
-                    end = int( fields[2] )
-                    #gene_name = fields[3]
+                    start = int(fields[1])
+                    end = int(fields[2])
+                    # gene_name = fields[3]
                     strand = fields[5]
 
                     if chrom_name not in gene_ranges:
                         gene_ranges[chrom_name] = IntervalTree()
-                    gene_ranges[chrom_name].insert(start,end, strand)
+                    gene_ranges[chrom_name].insert(start, end, strand)
         elif reference_bed.endswith(".gff"):
             with open(reference_bed, "r") as fin:
                 count = 0
                 for line in fin:
-                    count +=1
-                    if line.startswith(('#')):
+                    count += 1
+                    if line.startswith(("#")):
                         continue
                     fields = line.split()
-                    if len(fields)<6:
+                    if len(fields) < 6:
                         logger.warning("invalid format on line {}: {}".format(count, line))
                     if fields[2] != "gene":
                         continue
                     chrom_name = fields[0]
-                    start = int( fields[3] )
-                    end = int( fields[4] )
-                    #gene_name = fields[3]
+                    start = int(fields[3])
+                    end = int(fields[4])
+                    # gene_name = fields[3]
                     strand = fields[6]
                     if chrom_name not in gene_ranges:
                         gene_ranges[chrom_name] = IntervalTree()
-                    gene_ranges[chrom_name].insert(start,end, strand)
+                    gene_ranges[chrom_name].insert(start, end, strand)
 
         self.gene_ranges = gene_ranges
 
@@ -441,33 +447,34 @@ class SAMBAMbase():
 
             if aln.is_paired:
                 if aln.is_read1:
-                    read_id = '1'
+                    read_id = "1"
                 if aln.is_read2:
-                    read_id = '2'
+                    read_id = "2"
                 if aln.is_reverse:
-                    map_strand = '-'
+                    map_strand = "-"
                 else:
-                    map_strand = '+'
+                    map_strand = "+"
                 readStart = aln.pos
                 readEnd = readStart + aln.qlen
                 if chrom_name in gene_ranges:
                     tmp = set(gene_ranges[chrom_name].find(readStart, readEnd))
-                    if len(tmp) == 0: 
+                    if len(tmp) == 0:
                         continue
-                    strand_from_gene = ':'.join(tmp)
+                    strand_from_gene = ":".join(tmp)
                     p_strandness[read_id + map_strand + strand_from_gene] += 1
                     count += 1
             else:
                 if aln.is_reverse:
-                    map_strand = '-'
+                    map_strand = "-"
                 else:
-                    map_strand = '+'
+                    map_strand = "+"
                 readStart = aln.pos
                 readEnd = readStart + aln.qlen
                 if chrom_name in gene_ranges:
-                    tmp = set(gene_ranges[chrom_name].find(readStart,readEnd))
-                    if len(tmp) == 0: continue
-                    strand_from_gene = ':'.join(tmp)
+                    tmp = set(gene_ranges[chrom_name].find(readStart, readEnd))
+                    if len(tmp) == 0:
+                        continue
+                    strand_from_gene = ":".join(tmp)
                     s_strandness[map_strand + strand_from_gene] += 1
                     count += 1
 
@@ -476,20 +483,22 @@ class SAMBAMbase():
         # Fraction of reads failed to determine: 0.0189
         # Fraction of reads explained by "1++,1--,2+-,2-+": 0.6315
         # Fraction of reads explained by "1+-,1-+,2++,2--": 0.3497
-        # 
-        if len(p_strandness) >0 and len(s_strandness) ==0 :
+        #
+        if len(p_strandness) > 0 and len(s_strandness) == 0:
             protocol = "Paired-end"
-            spec1= (p_strandness['1++'] + p_strandness['1--'] 
-                    + p_strandness['2+-'] + p_strandness['2-+'])/float(sum(p_strandness.values()))
-            spec2= (p_strandness['1+-'] + p_strandness['1-+'] 
-                    + p_strandness['2++'] + p_strandness['2--'])/float(sum(p_strandness.values()))
+            spec1 = (p_strandness["1++"] + p_strandness["1--"] + p_strandness["2+-"] + p_strandness["2-+"]) / float(
+                sum(p_strandness.values())
+            )
+            spec2 = (p_strandness["1+-"] + p_strandness["1-+"] + p_strandness["2++"] + p_strandness["2--"]) / float(
+                sum(p_strandness.values())
+            )
             other = 1 - spec1 - spec2
 
-        elif len(s_strandness) > 0 and len(p_strandness) == 0 :
+        elif len(s_strandness) > 0 and len(p_strandness) == 0:
             protocol = "Singled-end"
-            spec1 = (s_strandness['++'] + s_strandness['--']) / float(sum(s_strandness.values()))
-            spec2 = (s_strandness['+-'] + s_strandness['-+']) / float(sum(s_strandness.values()))
-            other = 1-spec1-spec2
+            spec1 = (s_strandness["++"] + s_strandness["--"]) / float(sum(s_strandness.values()))
+            spec2 = (s_strandness["+-"] + s_strandness["-+"]) / float(sum(s_strandness.values()))
+            other = 1 - spec1 - spec2
         else:
             protocol = "Mixture"
             spec1 = "NA"
@@ -498,8 +507,7 @@ class SAMBAMbase():
         return [protocol, spec1, spec2, other]
 
     @_reset
-    def mRNA_inner_distance(self, refbed, low_bound=-250, up_bound=250,
-            step=5, sample_size=1000000, q_cut=30):
+    def mRNA_inner_distance(self, refbed, low_bound=-250, up_bound=250, step=5, sample_size=1000000, q_cut=30):
 
         """Estimate the inner distance of mRNA pair end fragment.
 
@@ -511,14 +519,14 @@ class SAMBAMbase():
 
 
         """
-        #This code was inspired from the RSeQC code v2.6.4 and adapted for
-        #sequana simplifying the code and using pandas to store results. This is
-        #limited by memory but more convenient.
+        # This code was inspired from the RSeQC code v2.6.4 and adapted for
+        # sequana simplifying the code and using pandas to store results. This is
+        # limited by memory but more convenient.
 
         inner_distance_bitsets = BinnedBitSet()
         tmp = BinnedBitSet()
-        tmp.set_range(0,0)
-        pair_num=0
+        tmp.set_range(0, 0)
+        pair_num = 0
 
         inner_distances = []
         read_names = []
@@ -527,7 +535,7 @@ class SAMBAMbase():
         logger.info("Get exon regions from ")
 
         bed_obj = BED(refbed)
- 
+
         ref_exons = [[exn[0].upper(), exn[1], exn[2]] for exn in bed_obj.get_exons()]
 
         exon_bitsets = binned_bitsets_from_list(ref_exons)
@@ -541,31 +549,38 @@ class SAMBAMbase():
                 transcript_ranges[i_chr].add_interval(Interval(i_st, i_end, value=i_name))
 
         try:
-            while(1):
+            while 1:
                 if pair_num >= sample_size:
                     break
-                splice_intron_size=0
+                splice_intron_size = 0
                 aligned_read = next(self)
 
-                if aligned_read.is_qcfail:continue           #skip low quality
-                if aligned_read.is_duplicate:continue        #skip duplicate read
-                if aligned_read.is_secondary:continue        #skip non primary hit
-                if aligned_read.is_unmapped:continue         #skip unmap read
-                if not aligned_read.is_paired: continue      #skip single map read
-                if aligned_read.mate_is_unmapped:continue    #
-                if aligned_read.mapq < q_cut:continue
+                if aligned_read.is_qcfail:
+                    continue  # skip low quality
+                if aligned_read.is_duplicate:
+                    continue  # skip duplicate read
+                if aligned_read.is_secondary:
+                    continue  # skip non primary hit
+                if aligned_read.is_unmapped:
+                    continue  # skip unmap read
+                if not aligned_read.is_paired:
+                    continue  # skip single map read
+                if aligned_read.mate_is_unmapped:
+                    continue  #
+                if aligned_read.mapq < q_cut:
+                    continue
 
                 read1_len = aligned_read.qlen
                 read1_start = aligned_read.pos
-                read2_start = aligned_read.mpos        #0-based, not included
+                read2_start = aligned_read.mpos  # 0-based, not included
                 if read2_start < read1_start:
-                    continue                           #because BAM file is sorted, mate_read is already processed if its coordinate is smaller
-                if  read2_start == read1_start and aligned_read.is_read1:
+                    continue  # because BAM file is sorted, mate_read is already processed if its coordinate is smaller
+                if read2_start == read1_start and aligned_read.is_read1:
                     inner_distance = 0
-                    #inner_distances.append(0)
+                    # inner_distances.append(0)
                     continue
 
-                pair_num +=1
+                pair_num += 1
 
                 # check if reads were mapped to diff chromsomes
                 R_read1_ref = self._data.get_reference_name(aligned_read.tid)
@@ -586,31 +601,31 @@ class SAMBAMbase():
                     inner_distance = read2_start - read1_end
                 else:
                     exon_positions = []
-                    exon_blocks = fetch_exon(chrom, read1_start,aligned_read.cigar)
+                    exon_blocks = fetch_exon(chrom, read1_start, aligned_read.cigar)
                     for ex in exon_blocks:
-                        for i in range(ex[1]+1,ex[2]+1):
+                        for i in range(ex[1] + 1, ex[2] + 1):
                             exon_positions.append(i)
                     inner_distance = -len([i for i in exon_positions if i > read2_start and i <= read1_end])
 
-                read1_gene_names = set()    #read1_end
+                read1_gene_names = set()  # read1_end
                 try:
-                    for gene in transcript_ranges[chrom].find(read1_end-1, read1_end):
-                        #gene: Interval(0, 10, value=a)
-                        read1_gene_names.add(gene.value)                        
+                    for gene in transcript_ranges[chrom].find(read1_end - 1, read1_end):
+                        # gene: Interval(0, 10, value=a)
+                        read1_gene_names.add(gene.value)
                 except:
                     pass
 
-                read2_gene_names = set()    #read2_start
+                read2_gene_names = set()  # read2_start
                 try:
-                    for gene in transcript_ranges[chrom].find(read2_start, read2_start +1):
-                        #gene: Interval(0, 10, value=a)
+                    for gene in transcript_ranges[chrom].find(read2_start, read2_start + 1):
+                        # gene: Interval(0, 10, value=a)
                         read2_gene_names.add(gene.value)
                 except:
                     pass
 
                 if len(read1_gene_names.intersection(read2_gene_names)) == 0:
                     # no common gene
-                    #reads mapped to different gene
+                    # reads mapped to different gene
                     inner_distances.append(inner_distance)
                     read_names.append(aligned_read.qname)
                     descriptions.append("sameTranscript=No,dist=genomic")
@@ -618,17 +633,18 @@ class SAMBAMbase():
 
                 if inner_distance > 0:
                     if chrom in exon_bitsets:
-                        size =0
-                        inner_distance_bitsets.set_range(read1_end, read2_start-read1_end)
+                        size = 0
+                        inner_distance_bitsets.set_range(read1_end, read2_start - read1_end)
                         inner_distance_bitsets.iand(exon_bitsets[chrom])
-                        end=0
+                        end = 0
                         while 1:
-                            start = inner_distance_bitsets.next_set( end )
-                            if start == inner_distance_bitsets.size: break
-                            end = inner_distance_bitsets.next_clear( start )
-                            size += (end - start)
-                        #clear BinnedBitSet
-                        inner_distance_bitsets.iand(tmp)   
+                            start = inner_distance_bitsets.next_set(end)
+                            if start == inner_distance_bitsets.size:
+                                break
+                            end = inner_distance_bitsets.next_clear(start)
+                            size += end - start
+                        # clear BinnedBitSet
+                        inner_distance_bitsets.iand(tmp)
 
                         if size == inner_distance:
                             inner_distances.append(size)
@@ -655,18 +671,15 @@ class SAMBAMbase():
             pass
 
         print("Total read pairs  used " + str(pair_num))
-        if pair_num==0:
+        if pair_num == 0:
             raise ValueError("Cannot find paired reads")
 
-        df = pd.DataFrame(
-            {"read_names": read_names,
-             "val": inner_distances,
-             "desc": descriptions})
+        df = pd.DataFrame({"read_names": read_names, "val": inner_distances, "desc": descriptions})
         df = df[["read_names", "val", "desc"]]
         df.query("val>=@low_bound and val<=@up_bound").val.hist(bins=50)
         mu = df.query("val>=@low_bound and val<=@up_bound").val.mean()
         print("mean insert size: {}".format(mu))
-        pylab.title("Mean inner distance={}".format(round(pylab.mean(mu), 2) ))
+        pylab.title("Mean inner distance={}".format(round(pylab.mean(mu), 2)))
         pylab.axvline(mu, color="r", ls="--", lw=2)
         return df, mu
 
@@ -674,6 +687,7 @@ class SAMBAMbase():
     @_reset
     def _get_paired(self):
         return next(self).is_paired
+
     is_paired = property(_get_paired)
 
     @_reset
@@ -690,6 +704,7 @@ class SAMBAMbase():
             pos = this.pos
         self._sorted = True
         return self._sorted
+
     is_sorted = property(_get_is_sorted, doc="return True if the BAM is sorted")
 
     def get_samtools_stats_as_df(self):
@@ -709,8 +724,9 @@ class SAMBAMbase():
         .. note:: uses samtools behind the scene
         """
         from easydev import shellcmd
+
         res = shellcmd("samtools stats %s" % self._filename)
-        res = res.decode('utf-8')
+        res = res.decode("utf-8")
 
         # First, we can extract all data that statrts with SN
         # The format is
@@ -724,15 +740,15 @@ class SAMBAMbase():
         # only 2 columns; names/values
 
         # extra all relevnt lines starting with SN
-        data = [x for x in res.split("\n") if x.startswith('SN')]
+        data = [x for x in res.split("\n") if x.startswith("SN")]
 
         # remove comments
-        data = [x.split('#')[0][3:] for x in data]
+        data = [x.split("#")[0][3:] for x in data]
         names = [x.split(":")[0] for x in data]
         values = [x.split(":")[1].strip() for x in data]
-        df = pd.DataFrame({"description": names, "count": values })
-        df = df[['description', 'count']]
-        df.sort_values(by='count', inplace=True)
+        df = pd.DataFrame({"description": names, "count": values})
+        df = df[["description", "count"]]
+        df.sort_values(by="count", inplace=True)
         return df
 
     def _count_item(self, d, item, n=1):
@@ -761,28 +777,29 @@ class SAMBAMbase():
             except TypeError:
                 mean_qualities.append(-1)
             count += 1
-            if count % 100000 ==0:
+            if count % 100000 == 0:
                 print(count)
         # FIXME do we need the try/except if so, add Exception
         try:
             mq = pylab.mean(mean_qualities)
         except:
             mq = 0
-        self._summary = {"mapq": mapq_dict,
-                         "read_length": read_length_dict,
-                         "flags": flag_dict,
-                         "mean_quality": pylab.mean(mean_qualities)
-                         }
+        self._summary = {
+            "mapq": mapq_dict,
+            "read_length": read_length_dict,
+            "flags": flag_dict,
+            "mean_quality": pylab.mean(mean_qualities),
+        }
         return self._summary
+
     summary = property(_get_summary)
 
     def _get_read_length(self):
-        X = sorted(self.summary['read_length'].keys())
-        Y = [self.summary['read_length'][k] for k in X]
+        X = sorted(self.summary["read_length"].keys())
+        Y = [self.summary["read_length"][k] for k in X]
         return X, Y
 
-    def plot_insert_size(self, max_entries=100000, bins=100, upper_bound=1000,
-        lower_bound=-1000):
+    def plot_insert_size(self, max_entries=100000, bins=100, upper_bound=1000, lower_bound=-1000, absolute=False):
         """
 
         This gives an idea of the insert size without taking into account any
@@ -802,8 +819,12 @@ class SAMBAMbase():
         data = self._get_insert_size_data(max_entries=max_entries)
         if len(data) == 0:
             return 0
-        data = [x for x in data if x>=lower_bound and x<=upper_bound]
-        M = pylab.mean([abs(x) for x in data])
+
+        if absolute:
+            data = [abs(x) for x in data if x >= lower_bound and x <= upper_bound]
+        else:
+            data = [x for x in data if x >= lower_bound and x <= upper_bound]
+        M = pylab.mean(data)
         pylab.hist(data, bins=bins)
         return M
 
@@ -819,8 +840,7 @@ class SAMBAMbase():
 
         """
         X, Y = self._get_read_length()
-        pylab.plot(X, Y,
-            label="min length:{}; max length:{}".format(min(X), max(X)))
+        pylab.plot(X, Y, label="min length:{}; max length:{}".format(min(X), max(X)))
         pylab.grid()
         pylab.xlabel("Read length", fontsize=16)
         pylab.legend()
@@ -862,14 +882,13 @@ class SAMBAMbase():
         samflags_count = self.get_samflags_count()
 
         # all reads - (supplementary alignmnt + secondary alignmnt)
-        d['total_reads'] = len(self) - (samflags_count[256] +
-                                        samflags_count[2048])
+        d["total_reads"] = len(self) - (samflags_count[256] + samflags_count[2048])
         # all reads - (unmapped + supplementary alignmnt + secondary alignmnt)
-        d['mapped_reads'] = d['total_reads'] - samflags_count[4]
-        d['unmapped_reads'] = samflags_count[4]
-        d['mapped_proper_pair'] = samflags_count[2]
-        d['reads_duplicated'] = samflags_count[1024]
-        d['secondary_reads'] = samflags_count[256]
+        d["mapped_reads"] = d["total_reads"] - samflags_count[4]
+        d["unmapped_reads"] = samflags_count[4]
+        d["mapped_proper_pair"] = samflags_count[2]
+        d["reads_duplicated"] = samflags_count[1024]
+        d["secondary_reads"] = samflags_count[256]
         return d
 
     @_reset
@@ -914,10 +933,10 @@ class SAMBAMbase():
                 reads_paired += 1
 
             if aln.is_unmapped:
-                unmapped +=1
+                unmapped += 1
 
-            if aln.is_qcfail: 
-                qc_fail +=1
+            if aln.is_qcfail:
+                qc_fail += 1
                 continue
             if aln.is_duplicate:
                 reads_duplicated += 1
@@ -943,7 +962,7 @@ class SAMBAMbase():
                 if aln.is_reverse:
                     reverse += 1
                 else:
-                    forward +=1
+                    forward += 1
 
             if aln.mapq == 0:
                 mapq += 0
@@ -953,13 +972,13 @@ class SAMBAMbase():
             average_length += aln.rlen
             A = abs(aln.tlen)
 
-            bases_mapped_cigar += sum([a[1] for a in aln.cigar if a[0] in [0,1]])
+            bases_mapped_cigar += sum([a[1] for a in aln.cigar if a[0] in [0, 1]])
             bases_mapped += aln.rlen
 
             introns = fetch_intron("dummy", aln.pos, aln.cigar)
             if len(introns) == 0:
                 non_splice += 1
-            elif len(introns)>=1:
+            elif len(introns) >= 1:
                 splice += 1
 
             if aln.is_proper_pair:
@@ -975,7 +994,7 @@ class SAMBAMbase():
 
             # If NM is provided, not always the case though
             try:
-                mismatches += aln.get_tag('NM')
+                mismatches += aln.get_tag("NM")
             except:
                 pass
 
@@ -988,9 +1007,9 @@ class SAMBAMbase():
 
         results = {
             "average_quality": average_quality / total_aln,
-            "average_length": average_length / (read1+read2),
-            "bases mapped (cigar)":  bases_mapped_cigar,
-            "bases mapped ":  bases_mapped,
+            "average_length": average_length / (read1 + read2),
+            "bases mapped (cigar)": bases_mapped_cigar,
+            "bases mapped ": bases_mapped,
             "forward": forward,
             "is sorted": self.is_sorted,
             "unmapped": unmapped,
@@ -1018,19 +1037,20 @@ class SAMBAMbase():
             "total_last_fragment_length": total_r2_length,
             "total_length": total_length,  # ignoring secondary, qcfail to agree with samtools
             "unique_hit": unique_hit,
-            "error_rate": mismatches / bases_mapped_cigar
-            }
-        assert results['forward'] + results['reverse']
+            "error_rate": mismatches / bases_mapped_cigar,
+        }
+        assert results["forward"] + results["reverse"]
 
-        if proper_pair> 0:
-            results["insert_size_average"] =  insert_size_sum  / proper_pair
-            results["insert_size_std"] =  math.sqrt(
-                insert_size_sum_square/(proper_pair) - (insert_size_sum/(proper_pair))**2)
-        if reads_paired>0:
-            results["percentage_properly_paired"] = 100*proper_pair / reads_paired
+        if proper_pair > 0:
+            results["insert_size_average"] = insert_size_sum / proper_pair
+            results["insert_size_std"] = math.sqrt(
+                insert_size_sum_square / (proper_pair) - (insert_size_sum / (proper_pair)) ** 2
+            )
+        if reads_paired > 0:
+            results["percentage_properly_paired"] = 100 * proper_pair / reads_paired
         else:
             results["percentage_properly_paired"] = 0
-        #else:
+        # else:
         #    results["insert_size_std"] = None
 
         return results
@@ -1054,17 +1074,17 @@ SN	pairs on different chromosomes:	0
 
 """
 
-# Note that on large files, differences can be large. Here on a human genome, we
-# got: 
-# 'insert_size_average': 2406.5781705775985,
-# 'insert_size_std': 11633.214727733652,
-#
-#and with samtools:
-#            insert size average        1219.9
-# insert size standard deviation        2249.1
-# In both case, this is wrong. This was RNA data sets and using mRNA_insert_size
-# code, we get about 72 bases as expected. One should ignore values that are too
-# large e.g. below and above -250/250
+    # Note that on large files, differences can be large. Here on a human genome, we
+    # got:
+    # 'insert_size_average': 2406.5781705775985,
+    # 'insert_size_std': 11633.214727733652,
+    #
+    # and with samtools:
+    #            insert size average        1219.9
+    # insert size standard deviation        2249.1
+    # In both case, this is wrong. This was RNA data sets and using mRNA_insert_size
+    # code, we get about 72 bases as expected. One should ignore values that are too
+    # large e.g. below and above -250/250
 
     @_reset
     def get_flags_as_df(self):
@@ -1094,13 +1114,14 @@ SN	pairs on different chromosomes:	0
         .. seealso:: :class:`SAMFlags` for meaning of each flag
         """
         flags = [s.flag for s in self]
-        data = [(this, [flag&this for flag in flags])
-            for this in (0, 1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048)]
+        data = [
+            (this, [flag & this for flag in flags]) for this in (0, 1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048)
+        ]
         df = pd.DataFrame(dict(data))
 
         # special case of flag 0 has to be handled separetely. Indeed 0 & 0 is 0
         # If flag is zero, we store 1, otherwise 0
-        df[0] = [1 if x==0 else 0 for x in flags]
+        df[0] = [1 if x == 0 else 0 for x in flags]
 
         df = df > 0
         return df
@@ -1121,9 +1142,9 @@ SN	pairs on different chromosomes:	0
         df = df.sum()
         pylab.clf()
         if logy is True:
-            barplot = df.plot(kind='bar', logy=logy, grid=True)
+            barplot = df.plot(kind="bar", logy=logy, grid=True)
         else:
-            barplot = df.plot(kind='bar', grid=True)
+            barplot = df.plot(kind="bar", grid=True)
         pylab.xlabel("flags", fontsize=fontsize)
         pylab.ylabel("count", fontsize=fontsize)
         pylab.tight_layout()
@@ -1157,12 +1178,12 @@ SN	pairs on different chromosomes:	0
         """
         with open(filename, "w") as fh:
             for i, this in enumerate(self):
-                # FIXME what about comments. not stored in the BAM 
+                # FIXME what about comments. not stored in the BAM
                 read = this.qname
                 read += this.seq + "\n"
                 read += "+\n"
                 read += this.qual + "\n"
-                #if i != self.N-1:
+                # if i != self.N-1:
                 #    read += "\n"
                 fh.write(read)
 
@@ -1173,7 +1194,7 @@ SN	pairs on different chromosomes:	0
             data = [next(self).mapq for x in range(max_entries)]
         else:
             data = [this.mapq for this in self]
-        df = pd.DataFrame({'mapq': data})
+        df = pd.DataFrame({"mapq": data})
         return df
 
     @_reset
@@ -1189,12 +1210,11 @@ SN	pairs on different chromosomes:	0
             hist(b.get_mapped_read_length())
 
         """
-        read_length = [read.reference_length for read in self
-                       if read.is_unmapped is False]
+        read_length = [read.reference_length for read in self if read.is_unmapped is False]
         return read_length
 
     def get_samflags_count(self):
-        """ Count how many reads have each flag of SAM format.
+        """Count how many reads have each flag of SAM format.
 
 
         :return: dictionary with keys as SAM flags
@@ -1207,20 +1227,23 @@ SN	pairs on different chromosomes:	0
                     samflags_count[samflag] += count
         return samflags_count
 
-    def plot_bar_mapq(self, fontsize=16, filename=None, ):
+    def plot_bar_mapq(
+        self,
+        fontsize=16,
+        filename=None,
+    ):
         """Plots bar plots of the MAPQ (quality) of alignments
 
-            .. plot::
-                :include-source:
+        .. plot::
+            :include-source:
 
-                from sequana import BAM, sequana_data
-                b = BAM(sequana_data('test.bam', "testing"))
-                b.plot_bar_mapq()
+            from sequana import BAM, sequana_data
+            b = BAM(sequana_data('test.bam', "testing"))
+            b.plot_bar_mapq()
 
         """
         df = self.get_mapq_as_df()
-        df.plot(kind='hist', bins=range(0,df.max().values[0]+1), legend=False,
-            grid=True, logy=True)
+        df.plot(kind="hist", bins=range(0, df.max().values[0] + 1), legend=False, grid=True, logy=True)
         pylab.xlabel("MAPQ", fontsize=fontsize)
         pylab.ylabel("Count", fontsize=fontsize)
         pylab.tight_layout()
@@ -1228,7 +1251,7 @@ SN	pairs on different chromosomes:	0
             pylab.savefig(filename)
 
     def bam_analysis_to_json(self, filename):
-        """ Create a json file with information related to the bam file.
+        """Create a json file with information related to the bam file.
 
         This includes some metrics (see :meth:`get_stats`; eg MAPQ),
         combination of flags, SAM flags, counters about the read length.
@@ -1249,13 +1272,14 @@ SN	pairs on different chromosomes:	0
         .. seealso:: :meth:`plot_gc_content`
 
         """
-        data = [(f.seq.count("C") + f.seq.count('G')) / len(f.seq)*100. for f in self if f.seq]
+        data = [(f.seq.count("C") + f.seq.count("G")) / len(f.seq) * 100.0 for f in self if f.seq]
         return data
 
     @_reset
     def get_length_count(self):
         """Return counter of all fragment lengths"""
         import collections
+
         data = [this.rlen for this in self]
         return collections.Counter(data)
 
@@ -1296,7 +1320,7 @@ SN	pairs on different chromosomes:	0
         qualities = []
         for i, record in enumerate(self):
             if i < max_sample:
-                #quality = [ord(x) -33 for x in record.qual]
+                # quality = [ord(x) -33 for x in record.qual]
                 quality = record.query_qualities
                 qualities.append(quality)
             else:
@@ -1305,19 +1329,18 @@ SN	pairs on different chromosomes:	0
 
     @_reset
     def boxplot_qualities(self, max_sample=500000):
-        """Same as in :class:`sequana.fastq.FastQC`
-
-        """
+        """Same as in :class:`sequana.fastq.FastQC`"""
         qualities = self._get_qualities(max_sample)
         df = pd.DataFrame([x for x in qualities if x])
         from sequana.viz.boxplot import Boxplot
+
         bx = Boxplot(df)
         try:
             bx.plot(ax=ax)
         except:
             bx.plot()
 
-    #FIXME: why not a property ? Same comments for coverage attribute
+    # FIXME: why not a property ? Same comments for coverage attribute
     def _set_alignments(self):
         # this scans the alignments once for all
         self.alignments = [this for this in self]
@@ -1330,7 +1353,7 @@ SN	pairs on different chromosomes:	0
             self._set_alignments()
         ref_start = defaultdict(list)
         ref_end = defaultdict(list)
-        
+
         for aln in self.alignments:
             # Of course, we must have a valid reference name and start/end position not set to None
             if aln.flag not in [4] and aln.rname != -1 and aln.reference_end and aln.reference_start:
@@ -1345,7 +1368,7 @@ SN	pairs on different chromosomes:	0
             N = max(ref_end[rname])
             self.coverage[rname] = np.zeros(N)
             for x, y in zip(ref_start[rname], ref_end[rname]):
-                if y and x>=0 and y>=0:
+                if y and x >= 0 and y >= 0:
                     self.coverage[rname][x:y] += 1
                 else:
                     pass
@@ -1435,7 +1458,7 @@ SN	pairs on different chromosomes:	0
         instance 10M1I10M1I stored only 1 insertion in its report; Same comment
         for deletions.
 
-        .. todo:: speed up and handle long reads cases more effitiently by 
+        .. todo:: speed up and handle long reads cases more effitiently by
             storing INDELS as histograms rather than lists
         """
         try:
@@ -1443,13 +1466,13 @@ SN	pairs on different chromosomes:	0
         except:
             self._set_indels()
 
-        if len(self.insertions) ==0 or len(self.deletions) == 0:
+        if len(self.insertions) == 0 or len(self.deletions) == 0:
             raise ValueError("No deletions or insertions found")
 
         N = max(max(Counter(self.deletions)), max(Counter(self.insertions))) + 1
         D = [self.deletions.count(i) for i in range(N)]
         I = [self.insertions.count(i) for i in range(N)]
-        R = [i/d if d!=0 else 0 for i,d in zip(I, D)]
+        R = [i / d if d != 0 else 0 for i, d in zip(I, D)]
         fig, ax = pylab.subplots()
         ax.plot(range(N), I, marker="x", label="Insertions")
         ax.plot(range(N), D, marker="x", label="Deletions")
@@ -1459,6 +1482,7 @@ SN	pairs on different chromosomes:	0
         pylab.legend()
         pylab.grid()
         from matplotlib.ticker import MaxNLocator
+
         ax.xaxis.set_major_locator(MaxNLocator(integer=True))
         pylab.xlabel("Indel length", fontsize=fontsize)
         pylab.ylabel("Indel count", fontsize=fontsize)
@@ -1467,46 +1491,53 @@ SN	pairs on different chromosomes:	0
     @_reset
     def hist_soft_clipping(self):
         """histogram of soft clipping length ignoring supplementary and
-            secondary reads
+        secondary reads
 
         """
         from sequana import Cigar
-        N = 0; M=0; C = []; F=[]
-        for i,a in enumerate(self):
+
+        N = 0
+        M = 0
+        C = []
+        F = []
+        for i, a in enumerate(self):
             c = a.cigarstring
             if c:
-                C.append(Cigar(c).as_dict()['S'])
+                C.append(Cigar(c).as_dict()["S"])
                 M += 1
-            else: 
-                N+=1
+            else:
+                N += 1
                 C.append(-1)
             F.append(a.flag)
 
-        df = pd.DataFrame({"S":C, "F":F})
-        df.query("F<32 and F!=4")['S'].hist(bins=100, log=True)
+        df = pd.DataFrame({"S": C, "F": F})
+        df.query("F<32 and F!=4")["S"].hist(bins=100, log=True)
         pylab.xlabel("Soft clip length", fontsize=16)
         pylab.ylabel("#", fontsize=16)
 
 
 class SAM(SAMBAMbase):
     """SAM Reader. See :class:`~samtools.bamtools.SAMBAMbase` for details"""
+
     def __init__(self, filename, *args):
         super(SAM, self).__init__(filename, mode="r", *args)
 
 
 class CRAM(SAMBAMbase):
     """CRAM Reader. See :class:`~sequana.bamtools.SAMBAMbase` for details"""
+
     def __init__(self, filename, *args):
         super(CRAM, self).__init__(filename, mode="r", *args)
 
 
 class BAM(SAMBAMbase):
     """BAM reader. See :class:`~sequana.bamtools.SAMBAMbase` for details"""
+
     def __init__(self, filename, *args):
         super(BAM, self).__init__(filename, mode="rb", *args)
 
 
-class MultiBAM():
+class MultiBAM:
     """Convenient structure to store several BAM files
 
     ::
@@ -1516,6 +1547,7 @@ class MultiBAM():
         mb.add_bam("file2.sorted.bam", group="B")
 
     """
+
     def __init__(self):
         self.bams = []
         self.tags = []
@@ -1525,12 +1557,15 @@ class MultiBAM():
 
     def add_bam(self, filename, tag=None, group=None):
         from pathlib import Path
+
         if tag is None:
             tag = Path(filename).stem
         if group:
             self.groups[group].append(tag)
         if self.groups and group is None:
-            raise ValueError('if a group was provided, it must be provided for each sample. Please provide one or create a new isntance of MultiBAM')
+            raise ValueError(
+                "if a group was provided, it must be provided for each sample. Please provide one or create a new isntance of MultiBAM"
+            )
 
         bam = BAM(filename)
         self.bams.append(bam)
@@ -1538,11 +1573,13 @@ class MultiBAM():
 
         # let us gather the lengths/references
         # Names must be unique and agree
-        for k,v in bam.lengths.items():
+        for k, v in bam.lengths.items():
             if k in self.lengths and v != self.lengths[k]:
-                logger.warning("BAM reference/length incompatible with "
+                logger.warning(
+                    "BAM reference/length incompatible with "
                     "previously loaded BAM file. Proceed but results may "
-                    "be incorrect")
+                    "be incorrect"
+                )
             self.lengths[k] = v
 
     def _get_df(self):
@@ -1550,6 +1587,7 @@ class MultiBAM():
             df = self.run()
             self._df = df
         return self._df
+
     df = property(_get_df)
 
     def run(self, exclude_secondary=True):
@@ -1575,12 +1613,12 @@ class MultiBAM():
             N = 0
             for k, v in self.groups.items():
                 data = self.df.sum(axis=1).loc[v]
-                X = range(N, N+len(data))
-                pylab.bar(X, data.values, label=k, ec='k', zorder=1)
+                X = range(N, N + len(data))
+                pylab.bar(X, data.values, label=k, ec="k", zorder=1)
                 N += len(v)
             pylab.legend()
         else:
-            self.df.sum(axis=1).plot(kind='bar')
+            self.df.sum(axis=1).plot(kind="bar")
         pylab.ylabel("Number of reads", fontsize=14)
         pylab.title("Number of mapped reads per sample", fontsize=14)
         pylab.tight_layout()
@@ -1596,14 +1634,15 @@ class MultiBAM():
         # We should normalise by chromosome length. We can also simply show
         # the expected proportion for each chromosome.
         total_length = sum(list(self.lengths.values()))
-        expected = [self.lengths[x]/total_length for x in mean_per_chrom.index]
+        expected = [self.lengths[x] / total_length for x in mean_per_chrom.index]
 
-        pylab.bar(range(len(expected)), expected, color='red', alpha=0.2, zorder=2)
-        mean_per_chrom.plot(kind='bar', zorder=3)
+        pylab.bar(range(len(expected)), expected, color="red", alpha=0.2, zorder=2)
+        mean_per_chrom.plot(kind="bar", zorder=3)
         pylab.grid(True, zorder=1)
-        pylab.legend(['Expected', 'Observed'])
-        pylab.ylabel('Proportion alignements per chromosome', fontsize=14)
+        pylab.legend(["Expected", "Observed"])
+        pylab.ylabel("Proportion alignements per chromosome", fontsize=14)
         return mean_per_chrom, expected
+
 
 class Alignment(object):
     """Helper class to retrieve info about Alignment
@@ -1643,6 +1682,7 @@ class Alignment(object):
 
 
     """
+
     def __init__(self, alignment):
         """.. rubric:: constructor
 
@@ -1658,17 +1698,17 @@ class Alignment(object):
     def as_dict(self):
         d = {}
         s = self._data
-        d['QNAME'] = s.qname
-        d['FLAG'] = s.flag
-        d['RNAME'] = s.rname
-        d['POS'] = s.pos
-        d['MAPQ'] = s.mapq
-        d['CIGAR'] = s.cigar
-        d['PNEXT'] = s.pnext
-        d['RNEXT'] = s.rnext
-        d['TLEN'] = s.tlen
-        d['SEQ'] = s.seq
-        d['QUAL'] = s.qual
+        d["QNAME"] = s.qname
+        d["FLAG"] = s.flag
+        d["RNAME"] = s.rname
+        d["POS"] = s.pos
+        d["MAPQ"] = s.mapq
+        d["CIGAR"] = s.cigar
+        d["PNEXT"] = s.pnext
+        d["RNEXT"] = s.rnext
+        d["TLEN"] = s.tlen
+        d["SEQ"] = s.seq
+        d["QUAL"] = s.qual
         return d
 
 
@@ -1707,6 +1747,7 @@ class SAMFlags(object):
 
     :reference: http://samtools.github.io/hts-specs/SAMv1.pdf
     """
+
     def __init__(self, value=4095):
         self.value = value
         self._flags = {
@@ -1722,10 +1763,11 @@ class SAMFlags(object):
             256: "secondary alignment",
             512: "not passing filters, such as platform/vendor quality controls",
             1024: "PCR or optical duplicate",
-            2048: "supplementary alignment"}
+            2048: "supplementary alignment",
+        }
 
     def get_meaning(self):
-        """Return all description sorted by bit """
+        """Return all description sorted by bit"""
         return [self._flags[k] for k in sorted(self._flags.keys())]
 
     def get_flags(self):
@@ -1756,14 +1798,15 @@ class CS(dict):
     When using some mapper, CIGAR are stored in another format called CS, which
     also includes the substitutions. See minimap2 documentation for details.
     """
+
     def __init__(self, tag):
         self.tag = tag
         d = self._scan()
-        for k,v in d.items():
+        for k, v in d.items():
             self[k] = v
 
     def _scan(self):
-        d = {"M":0, "I":0, "D":0, "S":0}
+        d = {"M": 0, "I": 0, "D": 0, "S": 0}
         current = ":"  # this is just to start the loop with a key (set to 0)
         number = "0"
 
@@ -1779,7 +1822,7 @@ class CS(dict):
                     d["S"] += len(number)
                 current = c
                 number = ""
-            else: # a letter or number
+            else:  # a letter or number
                 number += c
         # last one
         if current == ":":
@@ -1791,8 +1834,6 @@ class CS(dict):
         elif current == "*":
             d["S"] += len(number)
 
-        assert d['S'] % 2 == 0
-        d['S'] //= 2
+        assert d["S"] % 2 == 0
+        d["S"] //= 2
         return d
-
-

@@ -26,12 +26,12 @@ import subprocess as sp
 from sequana.resources import snpeff
 from sequana import FastA
 import colorlog
+
 logger = colorlog.getLogger(__name__)
 
 
-
 class SnpEff(object):
-    """ SnpEff is a tool dedicated to annotate detected variants in a VCF file.
+    """SnpEff is a tool dedicated to annotate detected variants in a VCF file.
     This wrapper eases the annotation with a genbank file. It create
     automatically the custom database. Then, run snpEff with a subprocess.
     Caution, the locus name (or chromosome name) in genbank file
@@ -50,8 +50,8 @@ class SnpEff(object):
 
     Will save relevant snpeff data into ./data directory
     """
-    def __init__(self, annotation, log=None, snpeff_datadir="data", 
-                 fastafile=None):
+
+    def __init__(self, annotation, log=None, snpeff_datadir="data", fastafile=None):
 
         """.. rubric:: Constructor
 
@@ -67,7 +67,7 @@ class SnpEff(object):
             self.annotation = annotation
             self.fastafile = fastafile
 
-            self.ref_name = os.path.basename(annotation).split('.')[0]
+            self.ref_name = os.path.basename(annotation).split(".")[0]
             if self.annotation.endswith(".genbank") or self.annotation.endswith(".gbk"):
                 self.format = "gbk"
             elif self.annotation.endswith(".gff3") or self.annotation.endswith(".gff"):
@@ -76,8 +76,7 @@ class SnpEff(object):
                 logger.error("Format must be genbank or gff3")
                 sys.exit(1)
         else:
-            logger.error("FileNotFoundError: The file " + annotation +
-                         " does not exist")
+            logger.error("FileNotFoundError: The file " + annotation + " does not exist")
             sys.exit(1)
 
         # Keep data directory where everything will be saved
@@ -97,8 +96,7 @@ class SnpEff(object):
             logger.info("snpEff.config file exists already. Using it.")
 
         # Create custom database
-        if not os.path.exists(self.snpeff_datadir + os.sep + self.ref_name
-                              + os.sep + "snpEffectPredictor.bin"):
+        if not os.path.exists(self.snpeff_datadir + os.sep + self.ref_name + os.sep + "snpEffectPredictor.bin"):
             self._add_custom_db()
         elif not self._check_database(self.ref_name):
             self._add_db_in_config()
@@ -106,7 +104,7 @@ class SnpEff(object):
             logger.info("DB already added in your config and database")
 
     def _check_database(self, reference):
-        """ Check if your genbank/GFF is already added."""
+        """Check if your genbank/GFF is already added."""
 
         proc_db = sp.Popen(["snpEff", "databases"], stdout=sp.PIPE)
         snpeff_db = {line.split()[0] for line in proc_db.stdout}
@@ -115,15 +113,14 @@ class SnpEff(object):
         return False
 
     def _get_snpeff_config(self):
-        """ Copy and unzip the snpEff.config file.
-        """
+        """Copy and unzip the snpEff.config file."""
         from sequana import sequana_data
+
         CONFIG = sequana_data("snpEff.config", "snpeff")
         shutil.copyfile(CONFIG, "./snpEff.config")
 
     def _add_custom_db(self):
-        """ Add your custom file in the local snpEff database.
-        """
+        """Add your custom file in the local snpEff database."""
         # create directory and copy annotation file
         logger.info("adding custom DB using your input file(s)")
         logger.info(" - {}".format(self.annotation))
@@ -141,7 +138,7 @@ class SnpEff(object):
 
         if self.format == "gbk":
             shutil.copyfile(self.annotation, genome_dir + "genes.gbk")
-            snpeff_build_line = ["snpEff", "build", "-genbank", '-v']
+            snpeff_build_line = ["snpEff", "build", "-genbank", "-v"]
             snpeff_build_line += [self.ref_name]
         elif self.format == "gff3":
             shutil.copyfile(self.annotation, genome_dir + "genes.gff")
@@ -149,7 +146,7 @@ class SnpEff(object):
                 logger.error("Input file {} does not exist".format(self.fastafile))
                 sys.exit(1)
             shutil.copyfile(self.fastafile, genome_dir + "sequences.fa")
-            snpeff_build_line = ["snpEff", "build", "-gff3", '-v']
+            snpeff_build_line = ["snpEff", "build", "-gff3", "-v"]
             snpeff_build_line += [self.ref_name]
 
         if self.log_file:
@@ -164,16 +161,14 @@ class SnpEff(object):
             sys.exit(rc)
 
     def _add_db_in_config(self):
-        """ Add new annotation at the end of snpEff.config file.
-        """
+        """Add new annotation at the end of snpEff.config file."""
         logger.info("Updating configuration file")
         if not self._check_database(self.ref_name):
             with open("snpEff.config", "a") as fp:
                 print(self.ref_name + ".genome : " + self.ref_name, file=fp)
 
-    def launch_snpeff(self, vcf_filename, output, html_output=None,
-                      options=""):
-        """ Launch snpEff with the custom genbank file.
+    def launch_snpeff(self, vcf_filename, output, html_output=None, options=""):
+        """Launch snpEff with the custom genbank file.
 
         :param str vcf_filename: input VCF filename.
         :param str output: output VCF filename.
@@ -185,7 +180,7 @@ class SnpEff(object):
         if html_output is not None:
             args_ann += ["-s", html_output]
         args_ann += options.split()
-        args_ann += [self.ref_name, '-v', vcf_filename]
+        args_ann += [self.ref_name, "-v", vcf_filename]
 
         # Launch snpEff
         if self.log_file:
@@ -199,24 +194,28 @@ class SnpEff(object):
 
     def _get_seq_ids(self):
         if self.format == "gbk":
-            regex = re.compile(r'^LOCUS\s+([\w\.\-]+)')
+            regex = re.compile(r"^LOCUS\s+([\w\.\-]+)")
             chrom_regex = re.compile(r'\\chromosome="([\w\.\-]+)"')
             with open(self.annotation, "r") as fp:
                 line = fp.readline()
                 seq = regex.findall(line)
 
                 for line in fp:
-                    if line.strip().startswith(('gene', 'CDS',)):
+                    if line.strip().startswith(
+                        (
+                            "gene",
+                            "CDS",
+                        )
+                    ):
                         break
                     chrom = chrom_regex.search(line)
                     if chrom:
-                         seq = [chrom.group(1)]
-                         regex = chrom_regex
-                seq += [regex.search(line).group(1) for line in fp
-                       if regex.search(line)]
+                        seq = [chrom.group(1)]
+                        regex = chrom_regex
+                seq += [regex.search(line).group(1) for line in fp if regex.search(line)]
             return seq
         else:
-            regex = re.compile(r'^##sequence-region\s+([\w\.\-]+)')
+            regex = re.compile(r"^##sequence-region\s+([\w\.\-]+)")
             with open(self.annotation, "r") as fp:
                 line = fp.readline()
                 seq = regex.findall(line)
@@ -227,7 +226,7 @@ class SnpEff(object):
             return seq
 
     def add_locus_in_fasta(self, fasta, output_file):
-        """ Add locus of annotation file in description line of fasta file. If
+        """Add locus of annotation file in description line of fasta file. If
         fasta file and genbank file do not have the same names.
 
         :param str fasta: input fasta file where you want to add locus.
@@ -239,8 +238,10 @@ class SnpEff(object):
         ids_list = self._get_seq_ids()
         # check if both files have same number of contigs
         if len(fasta_record) != len(ids_list):
-            print("fasta and annotation files don't have the same number of "
-                  "contigs. Found {} and {}".format(len(fasta_record), len(ids_list)))
+            print(
+                "fasta and annotation files don't have the same number of "
+                "contigs. Found {} and {}".format(len(fasta_record), len(ids_list))
+            )
             sys.exit(1)
 
         # check if directory exist
@@ -258,18 +259,18 @@ class SnpEff(object):
             os.symlink(os.path.realpath(fasta), output_file)
             return
         else:
-            logger.info("fasta and GFF seem to have different IDs. Creating a"
+            logger.info(
+                "fasta and GFF seem to have different IDs. Creating a"
                 "new coherent fasta file assuming the chromsome names appear "
-                "in the same order in the fasta and gff")
-
+                "in the same order in the fasta and gff"
+            )
 
         with open(output_file, "w") as fp:
             # write fasta with seqid of annotation file
             for n in range(len(fasta_record)):
                 seq_id = ">{0} {1}\n".format(ids_list[n], fasta_record.names[n])
                 seq = fasta_record.sequences[n]
-                sequence = "\n".join([seq[i:min(i+80, len(seq))]
-                    for i in range(0, len(seq), 80)]) + "\n"
+                sequence = "\n".join([seq[i : min(i + 80, len(seq))] for i in range(0, len(seq), 80)]) + "\n"
                 contigs = seq_id + sequence
                 fp.write(contigs)
 
@@ -283,19 +284,20 @@ def download_fasta_and_genbank(identifier, tag, genbank=True, fasta=True):
     """
     if genbank:
         from bioservices import EUtils
+
         eu = EUtils()
-        data = eu.EFetch(db="nuccore",id=identifier, rettype="gbwithparts",
-            retmode="text")
+        data = eu.EFetch(db="nuccore", id=identifier, rettype="gbwithparts", retmode="text")
         if isinstance(data, int) and data == 400:
             raise ValueError("{} not found on NCBI".format(identifier))
         else:
-            with open("%s.gbk" %  tag, "w") as fout:
+            with open("%s.gbk" % tag, "w") as fout:
                 fout.write(data.decode())
 
     if fasta:
         from bioservices import ENA
+
         ena = ENA()
-        data = ena.get_data(identifier, 'fasta')
+        data = ena.get_data(identifier, "fasta")
         if isinstance(data, int) and data == 400:
             raise ValueError("{} not found on ENA".format(identifier))
         else:

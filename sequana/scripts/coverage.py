@@ -226,7 +226,7 @@ cluster more than higher value""")
 
         group = self.add_argument_group("Large data related - CNV detection")
         group.add_argument("-s", "--chunk-size", dest="chunksize", type=int,
-            default=5000000, min=1000000, action=Min,
+            default=10000000, min=1000000, action=Min,
             help="""Length of the chunk to be used for the analysis. """)
         group.add_argument("-B", "--binning", dest="binning", type=int,
             default=None, min=2, action=Min,

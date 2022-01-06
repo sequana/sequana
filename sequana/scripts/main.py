@@ -32,6 +32,7 @@ from sequana.iem import IEM
 from sequana import GFF3
 from sequana import FastQ, FastA
 from sequana.rnadiff import RNADiffAnalysis, RNADesign
+from sequana import ribodesigner as rd
 
 import colorlog
 
@@ -106,9 +107,7 @@ def get_env_vars(ctx, args, incomplete):
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 
 
-pipelines = [
-    item.key for item in pkg_resources.working_set if item.key.startswith("sequana")
-]
+pipelines = [item.key for item in pkg_resources.working_set if item.key.startswith("sequana")]
 if len(pipelines):
     version += "\nThe following pipelines are installed:\n"
 for item in pkg_resources.working_set:
@@ -155,9 +154,7 @@ def main(**kwargs):
 @click.option("--tail", type=click.INT, help="number of reads to extract from the tail")
 @click.option("--explode", is_flag=True, help="Create a fasta file for each sequence found in the original files")
 def fasta(**kwargs):
-    """Set of useful utilities for FastA manipulation.
-
-    """
+    """Set of useful utilities for FastA manipulation."""
     filenames = kwargs["filename"]
     # users may provide a wildcards such as "A*gz" or list of files.
     if len(filenames) == 1:
@@ -190,7 +187,6 @@ def fasta(**kwargs):
         for filename in filenames:
             f = FastA(filename)
             f.explode()
-
 
 
 # =====================================================================================
@@ -341,17 +337,13 @@ def summary(**kwargs):
             from sequana.modules_report.bamqc import BAMQCModule
 
             report = BAMQCModule(name, "bamqc.html")
-    elif (
-        module == "fasta"
-    ):  # there is no module per se. HEre we just call FastA.summary()
+    elif module == "fasta":  # there is no module per se. HEre we just call FastA.summary()
         from sequana.fasta import FastA
 
         for name in names:
             f = FastA(name)
             f.summary()
-    elif (
-        module == "fastq"
-    ):  # there is no module per se. HEre we just call FastA.summary()
+    elif module == "fastq":  # there is no module per se. HEre we just call FastA.summary()
         from sequana.fastq import FastQ
         from sequana import FastQC
 
@@ -385,8 +377,16 @@ def summary(**kwargs):
         for filename in names:
             print(f"#filename: {filename}")
             vcf = VCF_freebayes(filename)
-            columns = ("chr", 'position', 'depth', 'reference', 'alternative',
-                       "freebayes_score", 'strand_balance', 'frequency')
+            columns = (
+                "chr",
+                "position",
+                "depth",
+                "reference",
+                "alternative",
+                "freebayes_score",
+                "strand_balance",
+                "frequency",
+            )
             print(",".join(columns))
             for variant in vcf.get_variants():
                 resume = variant.resume
@@ -560,7 +560,13 @@ effect to be included in the statistical model as batch ~ condition""",
 @click.option(
     "--minimum-mean-reads-per-gene",
     default=0,
-    help="Filter out fene where the mean number of reads is below this value. By default all genes are kept",
+    help="""Keeps genes that have an average number of reads greater or equal this value. This is the average across all
+replicates and conditions. Not recommended if you have lots of conditions. By default all genes are kept""",
+)
+@click.option(
+    "--minimum-mean-reads-per-condition-per-gene",
+    default=0,
+    help="Keeps genes that have an average number of reads greater or equal to this value in all conditions. By default all genes are kept",
 )
 @click.option(
     "--keep-all-conditions/--no-keep-all-conditions",
@@ -695,9 +701,7 @@ You may install it yourself or use damona using the rtools:1.0.0 image """
         logger.info(f"Checking annotation file (feature and attribute)")
         gff = GFF3(gff_filename)
         if feature not in gff.features:
-            logger.error(
-                f"{feature} not found in the GFF. Most probably a wrong feature name"
-            )
+            logger.error(f"{feature} not found in the GFF. Most probably a wrong feature name")
             sys.exit(1)
         attributes = gff.get_attributes(feature)
         if attribute not in attributes:
@@ -745,6 +749,7 @@ You may install it yourself or use damona using the rtools:1.0.0 image """
         beta_prior=kwargs.get("beta_prior"),
         fit_type=kwargs.get("fit_type"),
         minimum_mean_reads_per_gene=kwargs.get("minimum_mean_reads_per_gene"),
+        minimum_mean_reads_per_condition_per_gene=kwargs.get("minimum_mean_reads_per_condition_per_gene"),
     )
 
     if not kwargs["report_only"]:
@@ -884,10 +889,7 @@ def feature_counts(**kwargs):
     "--kegg-name",
     type=click.STRING,
     default=None,
-    help=(
-        "a valid KEGG name (hsa for human, mmu for mus musculus);  "
-        "See the taxonomy command to retrieved other names"
-    ),
+    help="a valid KEGG name (hsa for human, mmu for mus musculus); See the taxonomy command to retrieve other names",
 )
 @click.option(
     "--log2-foldchange-cutoff",
@@ -1029,9 +1031,7 @@ def enrichment_kegg(**kwargs):
 @main.command()
 @click.option("-i", "--input", required=True, help="The salmon input file.")
 @click.option("-o", "--output", required=True, help="The feature counts output file")
-@click.option(
-    "-f", "--gff", required=True, help="A GFF file compatible with your salmon file"
-)
+@click.option("-f", "--gff", required=True, help="A GFF file compatible with your salmon file")
 @click.option(
     "-a",
     "--attribute",
@@ -1165,7 +1165,8 @@ def enrichment_panther(**kwargs):
 
         sequana enrichment rnadiff/rnadiff.csv
             --panther-taxon 189518 \
-            --log2-foldchange-cutoff 2 \
+            --log2-foldchange-cutoff 2 
+            --ontologies MF SLIM_MF
 
     \b
     Valid ontologies are: MF, BP, CC, SLIM_MF, SLIM_BP, SLIM_CC, 
@@ -1193,7 +1194,7 @@ def enrichment_panther(**kwargs):
     ontologies = eval(kwargs["ontologies"])
     for ontology in ontologies:
         if ontology not in valid:
-            logger.erro(f"Provided incorrect ontology ({ontology}). Must be in {valid}")
+            logger.error(f"Provided incorrect ontology ({ontology}). Must be in {valid}")
             sys.exit(1)
 
     logger.setLevel(kwargs["logger"])
@@ -1225,9 +1226,7 @@ def enrichment_panther(**kwargs):
     # setting these attributes set the gene list with log2fc and padj filter
     rnadiff._log2_fc = params["log2_fc"]
     rnadiff._alpha = params["padj"]
-    gene_lists = rnadiff.get_gene_lists(
-        annot_col=annot_col, Nmax=kwargs.get("max_genes", None)
-    )
+    gene_lists = rnadiff.get_gene_lists(annot_col=annot_col, Nmax=kwargs.get("max_genes", None))
 
     output_directory = kwargs["output_directory"]
     for compa, gene_dict in gene_lists.items():
@@ -1260,7 +1259,7 @@ def enrichment_panther(**kwargs):
     "--search-panther",
     type=click.Path(),
     default=None,
-    help="""Search a pattern amongst all KEGG organism""",
+    help="""Search a pattern amongst all Panther organism""",
 )
 @common_logger
 def taxonomy(**kwargs):
@@ -1358,3 +1357,48 @@ def teardown(workdir):
 
         fout.write(f"# sequana version: {version}\n")
         fout.write(" ".join(["sequana"] + sys.argv[1:]))
+
+
+# =====================================================================================
+# Ribodepletion custom probes designer
+# =====================================================================================
+@main.command()
+@click.argument("fasta", type=click.Path(exists=True))
+@click.argument("gff", type=click.Path(exists=True))
+@click.option("--output-directory", default="out_ribodesigner", type=click.Path(exists=False))
+@click.option("--seq-type", default="rRNA", help="The annotation type (column 3 in gff) to target for probes.")
+@click.option("--probe-len", default=50, type=click.INT, help="The size of probes in nucleotides.")
+@click.option(
+    "--inter-probe-space", default=15, type=click.INT, help="The size of the space between probes in nucleotides."
+)
+@click.option("--seq-id-thres", default=0.80, type=click.FLOAT, help="The similarity threshold for clustering.")
+@click.option("--threads", default=4, type=click.INT, help="The number of threads to use for cd-hit-est.")
+def ribodesigner(**kwargs):
+    """A tool to design custom ribodepletion probes.
+
+    This uses a reference genome (FASTA file) and the corresponding annotation
+    (GFF file). CD-HIT-EST should be installed and in your $PATH.
+    """
+
+    from easydev import cmd_exists
+
+    if not cmd_exists("cd-hit-est"):
+        logger.error("cd-hit-est not found in PATH.")
+        sys.exit(1)
+
+    outdir = Path(kwargs["output_directory"])
+    outdir.mkdir()
+
+    regions_fas = outdir / "regions.fas"
+    probes_fas = outdir / "probes.fas"
+    clustered_fas = outdir / "clustered_probes.fas"
+    clustered_csv = outdir / "clustered_probes.csv"
+
+    rd.get_rna_pos_from_gff(
+        kwargs["gff"], outdir / "annot_filtered.gff", kwargs["fasta"], regions_fas, seq_type=kwargs["seq_type"]
+    )
+
+    # rd.extract_regions_from_fasta(kwargs["fasta"], df, regions_fas)
+    rd.get_probes(regions_fas, probes_fas, probe_len=kwargs["probe_len"], inter_probe_space=kwargs["inter_probe_space"])
+    rd.cluster_probes(probes_fas, clustered_fas, seq_id_thres=kwargs["seq_id_thres"], threads=kwargs["threads"])
+    rd.fasta_to_csv(clustered_fas, clustered_csv)

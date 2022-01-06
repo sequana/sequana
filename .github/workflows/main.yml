@@ -31,7 +31,7 @@ jobs:
     - name: Install dependencies conda
       run: |
         conda install -c conda-forge --quiet mamba python=${{ matrix.python }}
-        mamba install -c conda-forge -c bioconda --quiet -y kraken2 dsrc shustring samtools snpeff bwa 
+        mamba install -c conda-forge -c bioconda --quiet -y kraken2 dsrc shustring samtools snpeff bwa cd-hit 
         conda list | grep ruamel
         conda update ruamel_yaml
     - name: Install sequana with pip

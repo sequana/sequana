@@ -6,7 +6,7 @@
 #
 #  File author(s):
 #      Thomas Cokelaer <thomas.cokelaer@pasteur.fr>
-#      Dimitri Desvillechabrol <dimitri.desvillechabrol@pasteur.fr>, 
+#      Dimitri Desvillechabrol <dimitri.desvillechabrol@pasteur.fr>,
 #          <d.desvillechabrol@gmail.com>
 #
 #  Distributed under the terms of the 3-clause BSD license.
@@ -22,34 +22,38 @@ from sequana.fastq import is_fastq
 from sequana.fasta import is_fasta
 
 import colorlog
-logger = colorlog.getLogger(__name__)
 
+logger = colorlog.getLogger(__name__)
 
 
 def sniffer(filename):
 
     try:
-        if is_sam(filename): return "SAM"
+        if is_sam(filename):
+            return "SAM"
     except:
         pass
 
     try:
-        if is_bam(filename): return "BAM"
+        if is_bam(filename):
+            return "BAM"
     except:
         pass
 
     try:
-        if is_cram(filename): return "CRAM"
+        if is_cram(filename):
+            return "CRAM"
     except:
         pass
 
     try:
-        if is_fastq(filename): return "FASTQ"
+        if is_fastq(filename):
+            return "FASTQ"
     except:
         pass
 
     try:
-        if is_fasta(filename): return "FASTA"
+        if is_fasta(filename):
+            return "FASTA"
     except:
         pass
-

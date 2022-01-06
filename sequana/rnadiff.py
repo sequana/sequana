@@ -32,6 +32,7 @@ from sequana.enrichment import PantherEnrichment
 from sequana.enrichment import KEGGPathwayEnrichment
 from sequana.featurecounts import FeatureCount
 
+from easydev import AttrDict, cmd_exists
 
 import colorlog
 
@@ -159,10 +160,12 @@ class RNADiffAnalysis:
         sep_counts=",",
         sep_design=r"\s*,\s*",
         minimum_mean_reads_per_gene=0,
+        minimum_mean_reads_per_condition_per_gene=0,
     ):
 
         # if set, we can filter genes that have low counts (on average)
         self.minimum_mean_reads_per_gene = minimum_mean_reads_per_gene
+        self.minimum_mean_reads_per_condition_per_gene = minimum_mean_reads_per_condition_per_gene
 
         # define some output directory and create them
         self.outdir = Path(outdir)
@@ -184,9 +187,11 @@ class RNADiffAnalysis:
         _conditions = {x for comp in self.comparisons for x in comp}
         if not keep_all_conditions:
             self.design.keep_conditions(_conditions)
+
         logger.info(f"Conditions that are going to be included: ")
         for x in self.design.conditions:
             logger.info(f" - {x}")
+
         # we do not sort the design but the user order. Important for plotting
         self.design = self.design.df.set_index("label")
 
@@ -273,13 +278,29 @@ Design overview:\n\
             counts = FeatureCount(self.usr_counts).df
 
         Ncounts = len(counts)
+        logger.info(f"Found {Ncounts} counts. ")
         if self.minimum_mean_reads_per_gene > 0:
             logger.info(f"{len(counts)} annotated feature to be processed")
-        counts = counts[counts.mean(axis=1) >= self.minimum_mean_reads_per_gene]
-        logger.info(
-            f"Read {Ncounts} counts. Keeping {len(counts)} features after removing low "
-            f"counts below {self.minimum_mean_reads_per_gene} on average"
-        )
+            counts = counts[counts.mean(axis=1) >= self.minimum_mean_reads_per_gene]
+            logger.info(
+                f"Keeping {len(counts)} features after removing low "
+                f"counts below {self.minimum_mean_reads_per_gene} on average"
+            )
+
+        if self.minimum_mean_reads_per_condition_per_gene > 0:
+            conditions = {x for comp in self.comparisons for x in comp}
+
+            mean_per_conditions = pd.concat(
+                [counts[self.design.query("condition == @cond").index].mean(axis=1) for cond in conditions], axis=1
+            )
+            max_mean_per_condition = mean_per_conditions.max(axis=1)
+
+            logger.info(f"{len(counts)} annotated feature to be processed")
+            counts = counts[max_mean_per_condition >= self.minimum_mean_reads_per_condition_per_gene]
+            logger.info(
+                f"Keeping {len(counts)} features after removing low "
+                f"counts below {self.minimum_mean_reads_per_condition_per_gene} on average"
+            )
 
         # filter count based on the design and the comparisons provide in the
         # constructor so that columns match as expected by a DESeq2 analysis.
@@ -287,7 +308,6 @@ Design overview:\n\
         counts = counts[self.design.index]
 
         # Save this sub count file
-
         counts.to_csv(self.counts_filename)
 
         return counts
@@ -322,6 +342,11 @@ or comparisons. possible values are {valid_conditions}"""
         :return: a :class:`RNADiffResults` instance
         """
         logger.info("Running DESeq2 analysis. Please wait")
+        if cmd_exists("R") is False:
+            logger.error(
+                "You must install R and DeSe2 must be present. You can use damona and install the rtools:1.0.0 package"
+            )
+            sys.exit(1)
 
         rnadiff_script = self.code_dir / "rnadiff_light.R"
 
@@ -746,7 +771,6 @@ class RNADiffResults:
         self.df = pd.read_csv(filename, index_col=0, header=[0, 1])
 
     def import_tables(self):
-        from easydev import AttrDict
 
         data = {
             compa.stem.replace("_degs_DESeq2", "").replace("-", "_"): RNADiffTable(

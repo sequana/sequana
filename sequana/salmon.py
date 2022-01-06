@@ -20,18 +20,18 @@ import pandas as pd
 from sequana.gff3 import GFF3
 
 import colorlog
+
 logger = colorlog.getLogger(__name__)
 
 
-class Salmon():
+class Salmon:
     """Factory to read counts from salmon and create feature counts usable for deseq2"""
 
     def __init__(self, filename, gff_input, attribute="transcript_id"):
         self.filename = filename
-        df = pd.read_csv(filename, sep='\t')
+        df = pd.read_csv(filename, sep="\t")
 
         self.df = df
-
 
         logger.info("Initialisation the GFF")
         # handling the GFF input file
@@ -72,11 +72,10 @@ class Salmon():
 
         # Name contains the salmon entries read from gffread that uses
         # transcript_id. From this transcript id, we get the gene (parent)
-        df['Gene'] = [self.trs2genes[x] for x in self.df.Name]
+        df["Gene"] = [self.trs2genes[x] for x in self.df.Name]
 
-        #groups = df.groupby('Gene').groups
-        counts_on_genes = df.groupby('Gene').NumReads.sum()
-
+        # groups = df.groupby('Gene').groups
+        counts_on_genes = df.groupby("Gene").NumReads.sum()
 
         ff = self.filename.split("/")[-1]
         results = f"\nGeneid\tChr\tStart\tEnd\tStrand\tLength\t{ff}"
@@ -98,22 +97,23 @@ class Salmon():
         dd = dd.loc[counts_on_genes.index]
         self.dd = dd
 
-        types = dd['type'].values
-        starts = dd['start'].values
-        stops = dd['stop'].values
-        strands = dd['strand'].values
-        seqids = dd['seqid'].values
+        types = dd["type"].values
+        starts = dd["start"].values
+        stops = dd["stop"].values
+        strands = dd["strand"].values
+        seqids = dd["seqid"].values
 
         from easydev import Progress
+
         pb = Progress(len(counts_on_genes))
 
         S = 0
 
         logger.info("Grouping")
-        TPMgroup = df.groupby('Gene').apply(lambda group: group['TPM'].sum())
-        efflength_null = df.groupby('Gene').apply(lambda group: group['EffectiveLength'].mean())
+        TPMgroup = df.groupby("Gene").apply(lambda group: group["TPM"].sum())
+        efflength_null = df.groupby("Gene").apply(lambda group: group["EffectiveLength"].mean())
 
-        groups = df.groupby('Gene')
+        groups = df.groupby("Gene")
         for i, name in enumerate(counts_on_genes.index):
             # Since we use ID, there should be only one hit. we select the first
             # one to convert to a Series
@@ -124,12 +124,12 @@ class Salmon():
             else:
                 abundances = groups.get_group(name).TPM
                 efflength = groups.get_group(name).EffectiveLength
-                length = sum([x*y for x,y in zip(abundances, efflength)]) / abundances.sum()
+                length = sum([x * y for x, y in zip(abundances, efflength)]) / abundances.sum()
                 S += abundances.sum()
 
             # FIXME we keep only types 'gene' to agree with output of
             # start/bowtie when working on the gene feature. What would happen
-            # to compare salmon wit other type of features ? 
+            # to compare salmon wit other type of features ?
             if types[i] == "gene":
                 start = starts[i]
                 stop = stops[i]
@@ -192,6 +192,7 @@ star:
     Geneid  Chr Start   End Strand  Length  PyMT-DTR_Replicate1_S1/mark_duplicates/PyMT-DTR_Replicate1_S1.bam
     ENSMUSG00000051951  1   3205901 3671498 -   465598  265
 """
+
     def get_feature_counts_prokaryotes(self, feature=None, attribute=None):
         if feature is None:
             feature = "gene"
@@ -203,46 +204,48 @@ star:
         names = [x[attribute] for x in annot.attributes]
         identifiers = [x[attribute] for x in annot.attributes]
 
-        annot['identifiers'] = identifiers
-        annot['names'] = names
+        annot["identifiers"] = identifiers
+        annot["names"] = names
         annot = annot.set_index("identifiers")
 
         ff = self.filename.split("/")[-1]
         results = f"Geneid\tChr\tStart\tEnd\tStrand\tLength\t{ff}"
 
         for name, length in zip(self.df.Name, self.df.Length):
-            try:dd = annot.loc[name]
-            except: continue
+            try:
+                dd = annot.loc[name]
+            except:
+                continue
             if isinstance(dd.seqid, str):
-                length2 = dd.stop - dd.start +1
+                length2 = dd.stop - dd.start + 1
                 seqid = dd.seqid
                 stops = dd.stop
                 starts = dd.start
                 strands = dd.strand
-                new_name = dd['names']
+                new_name = dd["names"]
             else:
                 seqid = ";".join(dd.seqid.values)
                 starts = ";".join([str(x) for x in dd.start.values])
                 stops = ";".join([str(x) for x in dd.stop.values])
                 strands = ";".join(dd.strand.values)
                 length2 = (dd.stop - dd.start).sum() + len(dd.stop)
-                new_name = dd['names'].values[0]
+                new_name = dd["names"].values[0]
 
             if abs(length - length2) > 5:
                 print(name, length, length2)
                 raise ValueError("length in gff and quant not the same")
-            NumReads = int(self.df.query("Name==@name")['NumReads'].values[0])
+            NumReads = int(self.df.query("Name==@name")["NumReads"].values[0])
             if name.startswith("gene"):
                 results += f"\n{name}\t{seqid}\t{starts}\t{stops}\t{strands}\t{length}\t{NumReads}"
         return results
 
     def save_feature_counts(self, filename, feature="gene", attribute="ID"):
         from sequana import version
+
         data = self.get_feature_counts(feature=feature, attribute=attribute)
         with open(filename, "w") as fout:
-            fout.write(f"# Program:sequana.salmon v{version}; sequana " +
-                       f"salmon -i {self.filename} -o {filename} -g {self.gff.filename}\n")
+            fout.write(
+                f"# Program:sequana.salmon v{version}; sequana "
+                + f"salmon -i {self.filename} -o {filename} -g {self.gff.filename}\n"
+            )
             fout.write(data)
-
-
-

@@ -19,8 +19,8 @@ import os
 from collections import Counter
 
 
-from sequana.lazy import  pandas as pd
-from sequana.lazy import  numpy as np
+from sequana.lazy import pandas as pd
+from sequana.lazy import numpy as np
 from sequana import FastQ, FastA
 from sequana.pacbio import PacbioSubreads
 from sequana.lazy import pylab
@@ -28,8 +28,8 @@ from sequana import phred
 
 
 import colorlog
-logger = colorlog.getLogger(__name__)
 
+logger = colorlog.getLogger(__name__)
 
 
 __all__ = ["IsoSeqQC", "IsoSeqBAM"]
@@ -46,9 +46,10 @@ class IsoSeqQC(object):
     iso.stats() # "CCS" key is equivalent to summary metrics in CCS report
 
 
-    todo: get CCS passes histogram . Where to get the info of passes ? 
+    todo: get CCS passes histogram . Where to get the info of passes ?
 
     """
+
     def __init__(self, directory=".", prefix=""):
         self.prefix = prefix
         self.directory = directory
@@ -76,7 +77,7 @@ class IsoSeqQC(object):
             self.data = pd.read_csv(self.csv)
 
         # CCS fasta sequence
-        #self.ccs = self.get_file("-ccs.tar.gz")
+        # self.ccs = self.get_file("-ccs.tar.gz")
         filename = "ccs.fasta"
         self.ccs = self.get_file(filename, noprefix=True)
         if self.ccs:
@@ -100,34 +101,34 @@ class IsoSeqQC(object):
         results = {}
         if self.data is not None:
             logger.info("Reading strand")
-            results['strand'] = {
+            results["strand"] = {
                 "+": sum(self.data.strand == "+"),
                 "-": sum(self.data.strand == "-"),
-                "?": sum(self.data.strand.isnull())
+                "?": sum(self.data.strand.isnull()),
             }
 
-            results['classification'] = {
-                "total_ccs_reads" : len(self.data),
-                "five_prime_reads" : int(self.data.fiveseen.sum()),
-                "three_prime_reads" : int(self.data.threeseen.sum()),
-                "chimera" : int(self.data.chimera.sum()),
-                "polyA_reads" : int(self.data.polyAseen.sum()),
+            results["classification"] = {
+                "total_ccs_reads": len(self.data),
+                "five_prime_reads": int(self.data.fiveseen.sum()),
+                "three_prime_reads": int(self.data.threeseen.sum()),
+                "chimera": int(self.data.chimera.sum()),
+                "polyA_reads": int(self.data.polyAseen.sum()),
             }
 
         if self.lq_isoforms:
             logger.info("Reading LQ isoforms")
-            results['lq_isoform'] = self.lq_sequence.stats() # number of 
+            results["lq_isoform"] = self.lq_sequence.stats()  # number of
 
         if self.hq_isoforms:
             logger.info("Reading HQ isoforms")
-            results['hq_isoform'] = self.hq_sequence.stats() # number of polished HQ isoform
+            results["hq_isoform"] = self.hq_sequence.stats()  # number of polished HQ isoform
 
         if self.ccs:
-            seq = [ len(read.sequence) for read in self.ccs]
+            seq = [len(read.sequence) for read in self.ccs]
             results["CCS"] = {
-                "mean_length" : pylab.mean(seq),
-                "number_ccs_bases" : sum(seq),
-                "number_ccs_reads" : len(seq)
+                "mean_length": pylab.mean(seq),
+                "number_ccs_bases": sum(seq),
+                "number_ccs_reads": len(seq),
             }
 
         self.idents_v = []
@@ -135,7 +136,7 @@ class IsoSeqQC(object):
         self.non_full_v = []
         self.isoform_lengths = []
         for read in self.lq_sequence:
-            ident, full, non_full, length = read['identifier'].decode().split(";")
+            ident, full, non_full, length = read["identifier"].decode().split(";")
             self.idents_v.append(ident)
             self.full_v.append(int(full.split("=")[1]))
             self.non_full_v.append(int(non_full.split("=")[1]))
@@ -151,29 +152,30 @@ class IsoSeqQC(object):
 
         """
         from sequana.summary import Summary
+
         if data is None:
             data = self.stats()
-        Summary("isoseq",self.sample_name, data=data).to_json(filename)
+        Summary("isoseq", self.sample_name, data=data).to_json(filename)
 
-    def hist_read_length_consensus_isoform(self, mode="all", bins=80, rwidth=0.8,
-        align="left", fontsize=16, edgecolor="k", **kwargs):
+    def hist_read_length_consensus_isoform(
+        self, mode="all", bins=80, rwidth=0.8, align="left", fontsize=16, edgecolor="k", **kwargs
+    ):
         """
 
         mode can be all, lq, hq
         """
         pylab.clf()
 
-        L1 = [len(read['sequence']) for read in self.lq_sequence]
-        L2 = [len(read['sequence']) for read in self.hq_sequence]
+        L1 = [len(read["sequence"]) for read in self.lq_sequence]
+        L2 = [len(read["sequence"]) for read in self.hq_sequence]
         if mode == "all":
             L = L1 + L2
         elif mode == "lq":
             L = L1
         else:
             L = L2
- 
-        Y, X, _ = pylab.hist(L, bins=bins, rwidth=rwidth, align=align,
-                    ec=edgecolor, **kwargs)
+
+        Y, X, _ = pylab.hist(L, bins=bins, rwidth=rwidth, align=align, ec=edgecolor, **kwargs)
         pylab.gca().set_ylim(bottom=0)
         pylab.gca().set_xlim(left=0)
         pylab.xlabel("Read length", fontsize=fontsize)
@@ -184,7 +186,7 @@ class IsoSeqQC(object):
 
         shift = (X[1] - X[0]) / 2
 
-        ax_twin.plot(X[0:-1]- shift, len(L) - pylab.cumsum(Y), "k")
+        ax_twin.plot(X[0:-1] - shift, len(L) - pylab.cumsum(Y), "k")
         ax_twin.set_ylim(bottom=0)
         pylab.ylabel("CDF", fontsize=fontsize)
 
@@ -193,16 +195,14 @@ class IsoSeqQC(object):
     def hist_average_quality(self, fontsize=16, bins=None):
         """
 
-        bins is from 0 to 94 
+        bins is from 0 to 94
         """
 
-        hq_qv = [pylab.mean([ord(X)-33 for X in read['quality'].decode()]) 
-                for read in self.hq_sequence]
-        lq_qv = [pylab.mean([ord(X) -33 for X in read['quality'].decode()]) 
-            for read in self.lq_sequence]
+        hq_qv = [pylab.mean([ord(X) - 33 for X in read["quality"].decode()]) for read in self.hq_sequence]
+        lq_qv = [pylab.mean([ord(X) - 33 for X in read["quality"].decode()]) for read in self.lq_sequence]
 
         if bins is None:
-            bins = range(0,94)
+            bins = range(0, 94)
         Y1, X = np.histogram(hq_qv, bins=bins)
         Y2, X = np.histogram(lq_qv, bins=bins)
         pylab.bar(X[1:], Y1, width=1, label="HQ")
@@ -214,8 +214,8 @@ class IsoSeqQC(object):
         pylab.legend(fontsize=fontsize)
 
         ax = pylab.twinx()
-        N = np.sum(Y1+Y2)
-        ax.plot(X, [N] + list(N-np.cumsum(Y1+Y2)), "k")
+        N = np.sum(Y1 + Y2)
+        ax.plot(X, [N] + list(N - np.cumsum(Y1 + Y2)), "k")
 
 
 class IsoSeqBAM(object):
@@ -224,6 +224,7 @@ class IsoSeqBAM(object):
     Creates some plots and stats
 
     """
+
     def __init__(self, filename):
         self.filename = filename
         self._passes = None
@@ -232,23 +233,25 @@ class IsoSeqBAM(object):
     @property
     def lengths(self):
         if self._lengths is None:
-            _ = self.passes # extract passes and lengths
+            _ = self.passes  # extract passes and lengths
         return self._lengths
 
     @property
     def passes(self):
         from collections import Counter
+
         if self._passes is None:
             # for BAM of 1M reads, takes 10-15 seconds
             from pysam import AlignmentFile
+
             ccs = AlignmentFile(self.filename, check_sq=False)
             qnames = [a.qname for a in ccs]
             names = [int(qname.split("/")[1]) for qname in qnames]
             self.qnames = qnames
             lengths = []
             for qname in qnames:
-                a,b = qname.split("/")[2].split("_")
-                lengths.append(int(b)-int(a))
+                a, b = qname.split("/")[2].split("_")
+                lengths.append(int(b) - int(a))
             self._lengths = lengths
             self._passes = list(Counter(names).values())
         return self._passes
@@ -260,10 +263,12 @@ class IsoSeqBAM(object):
         pylab.hist(self.lengths, bins=bins)
 
     def stats(self):
-        return {"mean_read_length": pylab.mean(self.lengths), 
-                "ZMW": len(self.passes),
-                "N": len(self.lengths),
-                "mean_ZMW_passes": pylab.mean(self.passes)}
+        return {
+            "mean_read_length": pylab.mean(self.lengths),
+            "ZMW": len(self.passes),
+            "N": len(self.lengths),
+            "mean_ZMW_passes": pylab.mean(self.passes),
+        }
 
 
 class PacbioIsoSeqMappedIsoforms(object):
@@ -287,6 +292,7 @@ class PacbioIsoSeqMappedIsoforms(object):
     Reads a SAM file for now. BAM should work as well
 
     """
+
     def __init__(self, filename):
         self.filename = filename
         self.bam = PacbioSubreads(self.filename)
@@ -303,24 +309,22 @@ class PacbioIsoSeqMappedIsoforms(object):
 
         df = self.bam.df.copy()
 
-        rnames = [self.bam.data.get_reference_name(a.rname) if a.rname!=-1
-                  else -1 for a in data]
+        rnames = [self.bam.data.get_reference_name(a.rname) if a.rname != -1 else -1 for a in data]
 
-        df['reference_name'] = rnames
-        df['flags'] = [a.flag for a in data]
-        df['mapq'] = [a.mapq for a in data]
-        df['cigar'] = [a.cigarstring for a in data]
-        df['qname'] = [a.qname for a in data]
+        df["reference_name"] = rnames
+        df["flags"] = [a.flag for a in data]
+        df["mapq"] = [a.mapq for a in data]
+        df["cigar"] = [a.cigarstring for a in data]
+        df["qname"] = [a.qname for a in data]
 
         # Drop SNR that are not populated in the mapped BAM file.
-        df.drop(['snr_A', 'snr_C', 'snr_G', 'snr_T'], axis=1, inplace=True)
-
+        df.drop(["snr_A", "snr_C", "snr_G", "snr_T"], axis=1, inplace=True)
 
         # TODO. input could be basde on mapping of CCS in which case, the ZMW is
         # stored and the following does not work. could check whether the
         # pattern is pXXfXX
         try:
-            df["full_length"] = df["qname"].apply(lambda x: int(x.split('/')[1].split("p")[0].strip("f")))
+            df["full_length"] = df["qname"].apply(lambda x: int(x.split("/")[1].split("p")[0].strip("f")))
             df["non_full_length"] = df["qname"].apply(lambda x: int(x.split("/")[1].split("p")[1].strip("f")))
         except:
             pass
@@ -335,10 +339,8 @@ class PacbioIsoSeqMappedIsoforms(object):
             bins = range(0, len(df.reference_length.max()), 100)
         mapped = df[df.reference_name != -1]
         unmapped = df[df.reference_name == -1]
-        pylab.hist(mapped.reference_length, bins=bins, alpha=0.5,
-            label="mapped {}".format(len(mapped)), density=False)
-        pylab.hist(unmapped.reference, bins=bins, alpha=0.5,
-            label="unmapped {}".format(len(unmapped)), density=False)
+        pylab.hist(mapped.reference_length, bins=bins, alpha=0.5, label="mapped {}".format(len(mapped)), density=False)
+        pylab.hist(unmapped.reference, bins=bins, alpha=0.5, label="unmapped {}".format(len(unmapped)), density=False)
         pylab.xlabel("Isoform length")
         pylab.legend()
 
@@ -356,9 +358,11 @@ class PacbioIsoSeqMappedIsoforms(object):
             print("nothing to plot")
             return ts
 
-        ts.plot(kind="bar" ,color="r")
-        try: pylab.tight_layout()
-        except: pass
+        ts.plot(kind="bar", color="r")
+        try:
+            pylab.tight_layout()
+        except:
+            pass
         return ts
 
     def bar_mapq(self, logy=True, xmin=0, xmax=60, fontsize=12):
@@ -373,7 +377,7 @@ class PacbioIsoSeqMappedIsoforms(object):
         if len(aa) == 0:
             return pd.Series(), self.df
 
-        aa['group'] = aa.reference_name.apply(lambda x: x[0:shift])
+        aa["group"] = aa.reference_name.apply(lambda x: x[0:shift])
         mapped = aa.query("mapq>@mapq_min").groupby("group").count()["mapq"]
         mapped.name = None
 
@@ -381,11 +385,11 @@ class PacbioIsoSeqMappedIsoforms(object):
             mapped.plot(kind="bar")
             pylab.title(title)
             pylab.tight_layout()
-        #data.to_csv(path + "_hq_sirv_grouped.csv")
+        # data.to_csv(path + "_hq_sirv_grouped.csv")
         return mapped, self.df
 
 
-class SIRVReference():
+class SIRVReference:
     """
 
     See https://www.lexogen.com/sirvs/downloads/ to download one of the XLSX
@@ -399,6 +403,7 @@ class SIRVReference():
 
 
     """
+
     def __init__(self):
         pass
 
@@ -407,36 +412,33 @@ class SIRVReference():
         skip 4 empty rows. next two are a header split on two lines
 
         """
-        # header is split on two rows, so we need to skip it 
-        df = pd.read_excel(filename,  skiprows=4, header=None)
-        assert df.iloc[1, 4] == "c" # this column will be used
+        # header is split on two rows, so we need to skip it
+        df = pd.read_excel(filename, skiprows=4, header=None)
+        assert df.iloc[1, 4] == "c"  # this column will be used
         assert df.iloc[0, 2] == "SIRV ID"
         assert df.iloc[0, 1] == "SIRV gene"
         assert df.iloc[1, 23] == "length (nt)"
         assert df.iloc[1, 25] == "pA length (nt)"
-        assert df.iloc[1, 26] == "Sequence" # with polyA
-        assert df.iloc[1, 29] == "Sequence" # without polyA !! 
+        assert df.iloc[1, 26] == "Sequence"  # with polyA
+        assert df.iloc[1, 29] == "Sequence"  # without polyA !!
         # in excel this last column is actually an equation based on the
         # sequence with polyA and may be empty when using from_excel method.
 
         # filter out useless columns and first two lines
-        df = df.iloc[2:, [2,4,23,25,26, 29]]
+        df = df.iloc[2:, [2, 4, 23, 25, 26, 29]]
         # drop useless rows !! keep this statement after the first filtering
-        df = df[df.iloc[:,0].isnull() == False]
+        df = df[df.iloc[:, 0].isnull() == False]
 
         # drop header
         df.reset_index(inplace=True, drop=True)
 
-
-        df.columns = ["sirv_id", "annotation", "length",
-                      "length_polyA", "sequence_with_polya", "sequence"]
+        df.columns = ["sirv_id", "annotation", "length", "length_polyA", "sequence_with_polya", "sequence"]
 
         # remove and replace sequence column using sequence_with_poly and
         # removing the polyA
-        #df.drop("sequence", inplace=True)
-        seq = [a[0:-b] for a,b in zip(df.sequence_with_polya, df.length_polyA)]
-        df['sequence'] = seq
-
+        # df.drop("sequence", inplace=True)
+        seq = [a[0:-b] for a, b in zip(df.sequence_with_polya, df.length_polyA)]
+        df["sequence"] = seq
 
         self.df = df
 
@@ -450,6 +452,7 @@ class SIRVReference():
 class SIRV(object):
     def __init__(self, filename, shift=4):
         from sequana import FastA
+
         self.SIRV = FastA(filename)
         self.shift = 5
 
@@ -458,26 +461,28 @@ class SIRV(object):
 
     @property
     def group_names(self):
-        data = list(set([x[0:self.shift] for x in self.SIRV.names]))
+        data = list(set([x[0 : self.shift] for x in self.SIRV.names]))
         return sorted(data)
 
     @property
     def group_lengths(self):
-        data = dict(Counter( list([x[0:self.shift] for x in self.SIRV.names])))
+        data = dict(Counter(list([x[0 : self.shift] for x in self.SIRV.names])))
         return data
 
 
 class PacbioIsoSeqMultipleIsoforms(object):
     """
 
-        mul.read("./180223_113019_lexo1/data/ccs_sirv.sam", "lexo1 ccs")
-        mul.read("./180223_221457_lexo2/data/ccs_sirv.sam", "lexo2 ccs")
-        mul.read("./180206_193114_lexo3/data/ccs_sirv.sam", "lexo3 ccs")
-        mul.read("./180224_083446_lexo3/data/ccs_sirv.sam", "lexo3 ccs bis")
+    mul.read("./180223_113019_lexo1/data/ccs_sirv.sam", "lexo1 ccs")
+    mul.read("./180223_221457_lexo2/data/ccs_sirv.sam", "lexo2 ccs")
+    mul.read("./180206_193114_lexo3/data/ccs_sirv.sam", "lexo3 ccs")
+    mul.read("./180224_083446_lexo3/data/ccs_sirv.sam", "lexo3 ccs bis")
 
     """
+
     SIRV_names = ["SIRV1", "SIRV2", "SIRV3", "SIRV4", "SIRV5", "SIRV6", "SIRV7"]
     SIRV_total_lengths = [7075, 6395, 12988, 5592, 16206, 15278, 13375]
+
     def __init__(self, sirv=None, sirv_shift=5):
         self.labels = []
         self.rawdata = []
@@ -498,27 +503,27 @@ class PacbioIsoSeqMultipleIsoforms(object):
     @property
     def sirv(self):
         sirv = []
-        shift=5
+        shift = 5
         for df in self.rawdata:
             aa = df.query("reference_name not in [-1, '-1']").copy()
             if len(aa) == 0:
                 sirv.append(pd.Series(index=self.SIRV_names))
                 continue
 
-            aa['group'] = aa.reference_name.apply(lambda x: x[0:shift])
+            aa["group"] = aa.reference_name.apply(lambda x: x[0:shift])
             # filter quality and flags
-            #mask = np.logical_or(df.flags & 256, df.flags & 2048)
-            #aa = aa.query("mapq>=@self.mapq_min and @mask")
+            # mask = np.logical_or(df.flags & 256, df.flags & 2048)
+            # aa = aa.query("mapq>=@self.mapq_min and @mask")
 
             data = aa.groupby("group").count()["mapq"]
             data.name = None
             sirv.append(data)
         return sirv
 
-    def filter_raw_data(self, quality=0, flags=[256,2048]):
+    def filter_raw_data(self, quality=0, flags=[256, 2048]):
         for i, df in enumerate(self.rawdata):
-            mask = np.logical_or(df['flags'] & 256, df['flags'] & 2048)
-            ones = [-1, '-1']
+            mask = np.logical_or(df["flags"] & 256, df["flags"] & 2048)
+            ones = [-1, "-1"]
             df = df.query("mapq>=@quality and not @mask and reference_name not in @ones")
             self.rawdata[i] = df
 
@@ -542,7 +547,7 @@ class PacbioIsoSeqMultipleIsoforms(object):
         N = len(spikes.columns)
         pylab.xticks(range(N), spikes.columns, rotation=90)
         pylab.yticks(range(N), spikes.columns)
-        pylab.clim(0,1)
+        pylab.clim(0, 1)
         pylab.colorbar()
 
     def plot_bar_grouped(self, normalise=False, ncol=2, N=None):
@@ -559,7 +564,7 @@ class PacbioIsoSeqMultipleIsoforms(object):
 
         dd = pd.DataFrame(self.sirv).T
         if normalise:
-            dd = dd/ (N/max(N))
+            dd = dd / (N / max(N))
         dd.columns = self.labels
 
         dd.plot(kind="bar")
@@ -576,14 +581,16 @@ class PacbioIsoSeqMultipleIsoforms(object):
             for data in self.rawdata:
                 sirv_names.extend(data.reference_name.unique())
             sirv_names = set(sirv_names)
-            try:sirv_names.remove(-1)
-            except:pass
+            try:
+                sirv_names.remove(-1)
+            except:
+                pass
             sirv_names = sorted(list(sirv_names))
 
         df = pd.DataFrame(index=sirv_names, columns=self.labels)
         for i, data in enumerate(self.rawdata):
             aa = data.query("reference_name not in [-1, '-1']").copy()
-            sirv_detected = aa.groupby("reference_name").count()['mapq']
+            sirv_detected = aa.groupby("reference_name").count()["mapq"]
             df[self.labels[i]] = sirv_detected
         return df
 
@@ -591,32 +598,29 @@ class PacbioIsoSeqMultipleIsoforms(object):
         data = self.spikes_found(spikes_filename)
         lengths = [self.SIRV_lengths[x] for x in data.index]
         data.plot(kind="bar")
-        pylab.plot(np.array(lengths)/ratio)
+        pylab.plot(np.array(lengths) / ratio)
         pylab.tight_layout()
         return data
 
 
-
-
 def get_stats(pattern, mode):
-    data = [[],[]]
+    data = [[], []]
     for filename in glob.glob(pattern + "/data/{}_sirv.sam".format(mode)):
         b = isoseq.PacbioIsoSeqMappedIsoforms(filename)
-        N = Summary(filename.split("/")[0]+"/sequana_summary_isoseq.json").data["hq_isoform"]['N']
+        N = Summary(filename.split("/")[0] + "/sequana_summary_isoseq.json").data["hq_isoform"]["N"]
         data[0].append(N)
         data[1].append(len(b.df.query("reference_name not in [-1, '-1']")))
         print("scanned {}".format(filename))
     return data
 
 
-
-
-class GeneCoverage():
+class GeneCoverage:
     """
 
     - column 12 should be the percentage of gene coverage
-    
+
     """
+
     def __init__(self, filename):
         self.filename = filename
         self.df = pd.read_csv(filename, header=None, sep="\t")
@@ -625,53 +629,44 @@ class GeneCoverage():
     def __str__(self):
         icol = self.coverage_column
         L = float(len(self.df))
-        S0 = sum(self.df[icol]==0)
-        S2 = sum(self.df[icol]==1)
+        S0 = sum(self.df[icol] == 0)
+        S2 = sum(self.df[icol] == 1)
         S1 = L - S0 - S2
-        S90 = sum(self.df[icol]>0.9)
-        S50 = sum(self.df[icol]>0.5)
-        S99 = sum(self.df[icol]>0.99)
+        S90 = sum(self.df[icol] > 0.9)
+        S50 = sum(self.df[icol] > 0.5)
+        S99 = sum(self.df[icol] > 0.99)
         txt = "Number of genes: {}\n".format(len(self.df))
-        txt += "Fully detected genes: {} ({:.2f}%)\n".format(S2, S2/L*100)
-        txt += "Partially detected genes: {} ({:.2f}%)\n".format(S1, S1/L*100)
-        txt += "Detected genes (99% covered): {} ({:.2f}%)\n".format(S99, S99/L*100)
-        txt += "Detected genes (90% covered): {} ({:.2f}%)\n".format(S90, S90/L*100)
-        txt += "Detected genes (50% covered): {} ({:.2f}%)\n".format(S50, S50/L*100)
-        txt += "Undetected genes: {} ({:.2f}%)\n".format(S0, S0/L*100)
+        txt += "Fully detected genes: {} ({:.2f}%)\n".format(S2, S2 / L * 100)
+        txt += "Partially detected genes: {} ({:.2f}%)\n".format(S1, S1 / L * 100)
+        txt += "Detected genes (99% covered): {} ({:.2f}%)\n".format(S99, S99 / L * 100)
+        txt += "Detected genes (90% covered): {} ({:.2f}%)\n".format(S90, S90 / L * 100)
+        txt += "Detected genes (50% covered): {} ({:.2f}%)\n".format(S50, S50 / L * 100)
+        txt += "Undetected genes: {} ({:.2f}%)\n".format(S0, S0 / L * 100)
         return txt
 
-    def plot(self, X=[0,0.1,0.2,0.3,.4,.5,.6,.7,.8,.9,.95,.99,.999,1],
-            fontsize=16, label=None):
+    def plot(self, X=[0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.95, 0.99, 0.999, 1], fontsize=16, label=None):
         """plot percentage of genes covered (y axis) as a function of percentage
-        of genes covered at least by X percent (x-axis). 
+        of genes covered at least by X percent (x-axis).
 
         """
         icol = self.coverage_column
         N = float(len(self.df))
-        X = np.array(X) 
-        Y = np.array([sum(self.df[icol]>x)/N*100 for x in X])
+        X = np.array(X)
+        Y = np.array([sum(self.df[icol] > x) / N * 100 for x in X])
         if label is None:
-            pylab.plot(X*100, Y, "o-")
+            pylab.plot(X * 100, Y, "o-")
         else:
-            pylab.plot(X*100, Y, "o-", label=label)
+            pylab.plot(X * 100, Y, "o-", label=label)
         pylab.xlabel("Gene coverage (%)", fontsize=fontsize)
         pylab.ylabel("Percentage of genes covered", fontsize=fontsize)
-        for this in [25,50,75]:
+        for this in [25, 50, 75]:
             pylab.axhline(this, color="r", alpha=0.5, ls="--")
             pylab.axvline(this, color="r", alpha=0.5, ls="--")
 
     def get_percentage_genes_covered_at_this_fraction(self, this):
-        assert this<=1 and this>=0
+        assert this <= 1 and this >= 0
         icol = self.coverage_column
         X = pylab.linspace(0, 1, 101)
         N = float(len(self.df))
-        Y = np.array([sum(self.df[icol]>x)/N*100 for x in X])
+        Y = np.array([sum(self.df[icol] > x) / N * 100 for x in X])
         return np.interp(this, X, Y)
-
-
-
-
-
-
-
-

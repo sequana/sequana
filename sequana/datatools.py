@@ -79,9 +79,7 @@ def sequana_data(filename=None, where=None):
                 if filename.endswith(".pyc") or filename in to_ignore:
                     pass
                 else:
-                    print(
-                        ' - sequana("%s", "%s")' % (os.path.split(filename)[1], thisdir)
-                    )
+                    print(' - sequana("%s", "%s")' % (os.path.split(filename)[1], thisdir))
         raise ValueError("Choose a valid file from the list above")
 
     # in the code one may use / or \
@@ -101,8 +99,6 @@ def sequana_data(filename=None, where=None):
         for thisdir in directories:
             if _get_valid_file(filename, thisdir):
                 return _get_valid_file(filename, thisdir)
-        raise Exception(
-            f"unknown file {filename}. Type sequana_data() to get a list of valid names"
-        )
+        raise Exception(f"unknown file {filename}. Type sequana_data() to get a list of valid names")
 
     return filename

@@ -14,6 +14,7 @@ import os
 
 from easydev import do_profile
 import colorlog
+import pysam
 
 logger = colorlog.getLogger(__name__)
 
@@ -489,6 +490,26 @@ class GFF3:
                 fout.write(msg)
 
         fout.close()
+
+    def to_fasta(self, ref_fasta, fasta_out):
+        """From a genomic FASTA file ref_fasta, extract regions stored in the
+        gff. Export the corresponding regions to a FASTA file fasta_out.
+
+        :param ref_fasta: path to genomic FASTA file to extract rRNA regions from.
+        :param fasta_out: path to FASTA file where rRNA regions will be exported to.
+        """
+
+        count = 0
+
+        with pysam.Fastafile(ref_fasta) as fas:
+            with open(fasta_out, "w") as fas_out:
+                for region in self.df.to_dict("records"):
+                    name = f"{region['seqid']}:{region['start']}-{region['stop']}"
+                    seq_record = f">{name}\n{fas.fetch(region=name)}\n"
+                    fas_out.write(seq_record)
+                    count += 1
+
+        logger.info(f"{count} regions were extracted from '{ref_fasta}' to '{fasta_out}'")
 
     def to_bed(self, output_filename, attribute_name):
         """Experimental export to BED format to be used with rseqc scripts

@@ -247,12 +247,6 @@ Misc
     .. automodule:: sequana.scripts.coverage
         :members:
         :undoc-members:
-    .. automodule:: sequana.scripts.fastq_head
-        :members:
-        :undoc-members:
-    .. automodule:: sequana.scripts.fastq_count
-        :members:
-        :undoc-members:
     .. automodule:: sequana.scripts.mapping
         :members:
         :undoc-members:

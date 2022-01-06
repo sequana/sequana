@@ -2,6 +2,7 @@
 # http://nbviewer.ipython.org/github/tritemio/notebooks/blob/master/Mixture_Model_Fitting.ipynb
 
 from easydev import DevTools, AttrDict
+
 devtools = DevTools()
 
 from sequana.lazy import numpy as np
@@ -10,11 +11,10 @@ from sequana.lazy import pylab
 from . import criteria
 
 
-half_log_two_pi = 0.5*np.log(2*np.pi)
+half_log_two_pi = 0.5 * np.log(2 * np.pi)
 
 
-__all__ = ["Fitting",  "GaussianMixtureModel",
-            "GaussianMixtureFitting", "EM"]
+__all__ = ["Fitting", "GaussianMixtureModel", "GaussianMixtureFitting", "EM"]
 
 
 class GaussianMixtureModel(object):
@@ -29,6 +29,7 @@ class GaussianMixtureModel(object):
         plot(X, [m.pdf(x, params=[1, 0.5, 0.2, 4, 0.5, 0.8]) for x in X])
 
     """
+
     def __init__(self, k=2):
         self.k = k
 
@@ -48,28 +49,30 @@ class GaussianMixtureModel(object):
 
         pis = np.array(params[2::3])
 
-        if any(np.array(pis)<0):
+        if any(np.array(pis) < 0):
             return 0
         if normalise is True:
             pis /= pis.sum()
         # !!! sum pi must equal 1 otherwise may diverge badly
         import scipy.stats as ss
+
         data = 0
         for i in range(0, int(k)):
-            mu, sigma, pi_ = params[i*3: (i+1)*3]
+            mu, sigma, pi_ = params[i * 3 : (i + 1) * 3]
             pi_ = pis[i]
             if sigma != 0:
                 data += pi_ * ss.norm.pdf(x, mu, sigma)
         return data
 
     def log_likelihood(self, params, sample):
-        res =  -1 * pylab.log(self.pdf(sample, params)).sum()
+        res = -1 * pylab.log(self.pdf(sample, params)).sum()
         return res
 
 
 class Fitting(object):
     """Base class for :class:`EM` and :class:`GaussianMixtureFitting`"""
-    def __init__(self, data, k=2, method='Nelder-Mead'):
+
+    def __init__(self, data, k=2, method="Nelder-Mead"):
         """.. rubric:: constructor
 
         :param list data:
@@ -88,15 +91,18 @@ class Fitting(object):
 
     def _get_k(self):
         return self._k
+
     def _set_k(self, k):
         assert k > 0
         gmm = GaussianMixtureModel(k=k)
         self._k = k
         self._model = gmm
+
     k = property(_get_k, _set_k)
 
     def _get_model(self):
         return self._model
+
     model = property(_get_model)
 
     def get_guess(self):
@@ -106,21 +112,30 @@ class Fitting(object):
         M = self.data.max()
         range_ = M - m
 
-        mus = [m + range_ / (self.k+1.) * i for i in range(1, self.k+1)]
-        params['mus'] = mus
+        mus = [m + range_ / (self.k + 1.0) * i for i in range(1, self.k + 1)]
+        params["mus"] = mus
 
-        sigma = range_ / float(self.k+1) / 2.
-        params['sigmas'] = [sigma] * self.k
+        sigma = range_ / float(self.k + 1) / 2.0
+        params["sigmas"] = [sigma] * self.k
 
-        params['pis'] = [1./self.k] * self.k
+        params["pis"] = [1.0 / self.k] * self.k
 
-        params = [ [mu,sigma,pi]  for mu,sigma,pi in
-                    zip(params['mus'], params['sigmas'], params['pis'])]
+        params = [[mu, sigma, pi] for mu, sigma, pi in zip(params["mus"], params["sigmas"], params["pis"])]
         params = list(pylab.flatten(params))
         return params
 
-    def plot(self, normed=True, N=1000, Xmin=None, Xmax=None, bins=50, color='red', lw=2,
-            hist_kw={'color':'#5F9EA0', "edgecolor":"k"}, ax=None):
+    def plot(
+        self,
+        normed=True,
+        N=1000,
+        Xmin=None,
+        Xmax=None,
+        bins=50,
+        color="red",
+        lw=2,
+        hist_kw={"color": "#5F9EA0", "edgecolor": "k"},
+        ax=None,
+    ):
 
         if ax:
             ax.hist(self.data, normed=normed, bins=bins, **hist_kw)
@@ -133,24 +148,21 @@ class Fitting(object):
         X = pylab.linspace(Xmin, Xmax, N)
 
         if ax:
-            ax.plot(X, [self.model.pdf(x, self.results.x) for x in X],
-                    color=color, lw=lw)
+            ax.plot(X, [self.model.pdf(x, self.results.x) for x in X], color=color, lw=lw)
         else:
-            pylab.plot(X, [self.model.pdf(x, self.results.x) for x in X],
-                    color=color, lw=lw)
+            pylab.plot(X, [self.model.pdf(x, self.results.x) for x in X], color=color, lw=lw)
 
         K = len(self.results.x)
         # The PIs must be normalised
         import scipy.stats as ss
+
         for i in range(self.k):
 
             mu, sigma, pi_ = self.results.mus[i], self.results.sigmas[i], self.results.pis[i]
             if ax:
-                ax.plot(X, [pi_ * ss.norm.pdf(x, mu, sigma) for x in X], 
-                        'k--', alpha=0.7, lw=2)
+                ax.plot(X, [pi_ * ss.norm.pdf(x, mu, sigma) for x in X], "k--", alpha=0.7, lw=2)
             else:
-                pylab.plot(X, [pi_ * ss.norm.pdf(x, mu, sigma) for x in X], 
-                        'k--', alpha=0.7, lw=2)
+                pylab.plot(X, [pi_ * ss.norm.pdf(x, mu, sigma) for x in X], "k--", alpha=0.7, lw=2)
 
 
 class GaussianMixtureFitting(Fitting):
@@ -160,8 +172,8 @@ class GaussianMixtureFitting(Fitting):
         :width: 80%
         :include-source:
 
-        from sequana import mixture 
-        from pylab import normal 
+        from sequana import mixture
+        from pylab import normal
         data = [normal(0,1) for x in range(700)] + [normal(3,1) for x in range(300)]
         mf = mixture.GaussianMixtureFitting(data)
         mf.estimate(k=2)
@@ -169,7 +181,8 @@ class GaussianMixtureFitting(Fitting):
 
 
     """
-    def __init__(self, data, k=2, method='Nelder-Mead'):
+
+    def __init__(self, data, k=2, method="Nelder-Mead"):
         """
 
         Here we use the function minimize() from scipy.optimization.
@@ -183,14 +196,14 @@ class GaussianMixtureFitting(Fitting):
 
     def _get_method(self):
         return self._method
+
     def _set_method(self, method):
-        devtools.check_param_in_list(method, ['Nelder-Mead',
-            'Powell', 'CG', 'BFGS', 'Newton-CG', 'Anneal', 'L-BFGS-B'])
+        devtools.check_param_in_list(method, ["Nelder-Mead", "Powell", "CG", "BFGS", "Newton-CG", "Anneal", "L-BFGS-B"])
         self._method = method
+
     method = property(_get_method, _set_method)
 
-    def estimate(self, guess=None, k=None, maxfev=2e4, maxiter=1e3,
-            bounds=None):
+    def estimate(self, guess=None, k=None, maxfev=2e4, maxiter=1e3, bounds=None):
         """guess is a list of parameters as expected by the model
 
 
@@ -205,9 +218,15 @@ class GaussianMixtureFitting(Fitting):
             guess = self.get_guess()
 
         from scipy.optimize import minimize
-        res = minimize(self.model.log_likelihood, x0=guess, args=(self.data,),
-            method=self.method, options=dict(maxiter=maxiter, maxfev=maxfev),
-            bounds=bounds)
+
+        res = minimize(
+            self.model.log_likelihood,
+            x0=guess,
+            args=(self.data,),
+            method=self.method,
+            options=dict(maxiter=maxiter, maxfev=maxfev),
+            bounds=bounds,
+        )
 
         self.results = res
         pis = np.array(self.results.x[2::3])
@@ -224,11 +243,11 @@ class GaussianMixtureFitting(Fitting):
             pis /= pis.sum()
         """
         unstable = False
-        k = len(self.results.x)/3
+        k = len(self.results.x) / 3
         params = []
         for i in range(0, int(k)):
-            params.append(self.results.x[i*3])
-            params.append(self.results.x[(i*3+1)])
+            params.append(self.results.x[i * 3])
+            params.append(self.results.x[(i * 3 + 1)])
             params.append(pis[i])
         self.results.x = params
 
@@ -267,6 +286,7 @@ class EM(Fitting):
         em.plot()
 
     """
+
     def __init__(self, data, model=None, max_iter=100):
         """.. rubric:: constructor
 
@@ -276,10 +296,10 @@ class EM(Fitting):
         :param int max_iter: max iteration for the minization
 
         """
-        super(EM, self).__init__(data, k=2) # default is k=2
+        super(EM, self).__init__(data, k=2)  # default is k=2
         self.max_iter = max_iter
 
-    #@do_profile()
+    # @do_profile()
     def estimate(self, guess=None, k=2):
         """
 
@@ -287,7 +307,7 @@ class EM(Fitting):
             pi1, mu2, ...
         :param int k: number of models to be used.
         """
-        #print("EM estimation")
+        # print("EM estimation")
         self.k = k
         # Initial guess of parameters and initializations
         if guess is None:
@@ -310,40 +330,41 @@ class EM(Fitting):
         self.mus = []
 
         import scipy.stats as ss
+
         while not converged:
-        # Compute the responsibility func. and new parameters
+            # Compute the responsibility func. and new parameters
             for k in range(0, self.k):
                 # unstable if eslf.model.pdf is made of zeros
 
-                #self.model.pdf(self.data, p_new,normalise=False).sum()!=0:
+                # self.model.pdf(self.data, p_new,normalise=False).sum()!=0:
                 gamma[k, :] = pi_[k] * ss.norm.pdf(self.data, mu[k], sig[k])
-                gamma[k, :] /= (self.model.pdf(self.data, p_new, normalise=False))
+                gamma[k, :] /= self.model.pdf(self.data, p_new, normalise=False)
                 """else:
                     gamma[k, :] = pi_[k]*pylab.normpdf(self.data, mu[k],
                         sig[k])/(self.model.pdf(self.data, p_new,
                             normalise=False)+1e-6)
                 """
                 N_[k] = gamma[k].sum()
-                mu[k] = np.sum(gamma[k]*self.data)/N_[k]
-                sig[k] = pylab.sqrt( np.sum(gamma[k]*(self.data - mu[k])**2)/N_[k] )
-                pi_[k] = N_[k] /  self.size
+                mu[k] = np.sum(gamma[k] * self.data) / N_[k]
+                sig[k] = pylab.sqrt(np.sum(gamma[k] * (self.data - mu[k]) ** 2) / N_[k])
+                pi_[k] = N_[k] / self.size
 
-            self.results = {'x': p_new, 'nfev':counter, 'success': converged}
+            self.results = {"x": p_new, "nfev": counter, "success": converged}
 
             p_new = []
             for this in range(self.k):
                 p_new.extend([mu[this], sig[this], pi_[this]])
 
-            #p_new = [(mu[x], sig[x], pi_[x]) for x in range(0, self.k)]
-            #p_new = list(pylab.flatten(p_new))
+            # p_new = [(mu[x], sig[x], pi_[x]) for x in range(0, self.k)]
+            # p_new = list(pylab.flatten(p_new))
 
             self.status = True
             try:
-                assert abs(N_.sum() - self.size)/self.size < 1e-6
+                assert abs(N_.sum() - self.size) / self.size < 1e-6
                 assert abs(pi_.sum() - 1) < 1e-6
             except:
                 print("issue arised at iteration %s" % counter)
-                self.debug = {'N':N_, 'pis':pi_}
+                self.debug = {"N": N_, "pis": pi_}
                 self.status = False
                 break
 
@@ -356,8 +377,7 @@ class EM(Fitting):
         self.gamma = gamma
 
         if self.status is True:
-            self.results = {'x': p_new, 'nfev':counter, 'success': converged}
-
+            self.results = {"x": p_new, "nfev": counter, "success": converged}
 
         self.results = AttrDict(**self.results)
         self.results.mus = self.results.x[0::3]
@@ -373,7 +393,7 @@ class EM(Fitting):
         self.results.BIC = criteria.BIC(log_likelihood, self.k, self.data.size, logL=True)
 
     def plot(self, model_parameters=None, **kwargs):
-        """ Take a list of dictionnaries with models parameters to plot
+        """Take a list of dictionnaries with models parameters to plot
         predicted models. If user doesn't provide parameters, the standard
         plot function from fitting is used.
 
@@ -389,7 +409,5 @@ class EM(Fitting):
         self.results.sigmas = [model["sigma"] for model in model_parameters]
         self.results.pis = [model["pi"] for model in model_parameters]
         parms_keys = ("mu", "sigma", "pi")
-        self.results.x = [model[key] for model in model_parameters for key in
-                          parms_keys]
+        self.results.x = [model[key] for model in model_parameters for key in parms_keys]
         return super(EM, self).plot(**kwargs)
-
