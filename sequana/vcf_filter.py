@@ -17,8 +17,8 @@ import vcfpy
 from sequana.vcftools import VCFBase
 
 import colorlog
-logger = colorlog.getLogger(__name__)
 
+logger = colorlog.getLogger(__name__)
 
 
 class VCF:
@@ -50,6 +50,7 @@ class VCF:
     You can apply filter based on the INFO
 
     """
+
     def __init__(self, filename, force=False, **kwargs):
         """.. rubric:: constructor
 
@@ -69,6 +70,7 @@ class VCF:
         elif vcf.version == "4.2" and vcf.source.startswith("freeBayes"):
             logger.info("Reading VCF v 4.2 (freebayes)")
             from sequana.freebayes_vcf_filter import VCF_freebayes
+
             self.vcf = VCF_freebayes(filename, **kwargs)
         else:
             print(vcf.version)
@@ -81,7 +83,6 @@ all filters will be recognised"""
                 self.vcf = vcf
             else:
                 raise ValueError(msg)
-
 
 
 class VCF_mpileup_4dot1(VCFBase):
@@ -109,7 +110,7 @@ class VCF_mpileup_4dot1(VCFBase):
     * ratio        : ratio of first to second base call (0.75)
     * quality      : variant quality (e.g. 50)
     * map_quality  : mapping quality (e.g. 30)
-    * af1          : allele frequency (you would expect an AF of 1 
+    * af1          : allele frequency (you would expect an AF of 1
         for haploid SNPs). Here set to 0.95 by default
     * strand_bias  : p-value for strand bias.
     * map_bias     : p-value for mapping bias.
@@ -120,6 +121,7 @@ class VCF_mpileup_4dot1(VCFBase):
         Variant/Evaluator/Pseudosequence.pm file)
 
     """
+
     def __init__(self, filename, **kwargs):
         """
         Filter vcf file with a dictionnary.
@@ -170,10 +172,7 @@ class VCF_mpileup_4dot1(VCFBase):
 
         """
         super().__init__(filename, **kwargs)
-        self.filter_dict = {"QUAL": -1,
-                            "INFO": {
-                                }
-                            }
+        self.filter_dict = {"QUAL": -1, "INFO": {}}
 
         self.apply_dp4_filter = False
         self.apply_af1_filter = False
@@ -193,27 +192,25 @@ class VCF_mpileup_4dot1(VCFBase):
             exp1, exp2 = threshold.split("&")
             exp1 = exp1.strip()
             exp2 = exp2.strip()
-            return self._filter_info_field(info_value, exp1) and \
-                   self._filter_info_field(info_value, exp2)
+            return self._filter_info_field(info_value, exp1) and self._filter_info_field(info_value, exp2)
 
         if "|" in threshold:
             exp1, exp2 = threshold.split("|")
             exp1 = exp1.strip()
             exp2 = exp2.strip()
-            return self._filter_info_field(info_value, exp1) or \
-                   self._filter_info_field(info_value, exp2)
+            return self._filter_info_field(info_value, exp1) or self._filter_info_field(info_value, exp2)
 
-        if (threshold.startswith("<")):
-            if (threshold.startswith("<=")):
-                if(info_value <= float(threshold[2:])):
+        if threshold.startswith("<"):
+            if threshold.startswith("<="):
+                if info_value <= float(threshold[2:]):
                     return True
-            elif (info_value < float(threshold[1:])):
+            elif info_value < float(threshold[1:]):
                 return True
-        elif (threshold.startswith(">")):
-            if (threshold.startswith(">=")):
-                if(info_value >= float(threshold[2:])):
+        elif threshold.startswith(">"):
+            if threshold.startswith(">="):
+                if info_value >= float(threshold[2:]):
                     return True
-            elif (info_value > float(threshold[1:])):
+            elif info_value > float(threshold[1:]):
                 return True
         return False
 
@@ -243,18 +240,18 @@ class VCF_mpileup_4dot1(VCFBase):
 
         # DP4
         if self.apply_dp4_filter and "DP4" in vcf_line.INFO:
-            status = self.is_valid_dp4(vcf_line, self.dp4_minimum_depth,
-                        self.dp4_minimum_depth_strand,
-                        self.dp4_minimum_ratio)
+            status = self.is_valid_dp4(
+                vcf_line, self.dp4_minimum_depth, self.dp4_minimum_depth_strand, self.dp4_minimum_ratio
+            )
             if not status:
-                logger.debug("{}: filter out DP4 line {} {}".format(VT, iline, vcf_line.INFO['DP4']))
+                logger.debug("{}: filter out DP4 line {} {}".format(VT, iline, vcf_line.INFO["DP4"]))
                 return False
 
         # AF1
         if self.apply_af1_filter and "AF1" in vcf_line.INFO:
             status = self.is_valid_af1(vcf_line, self.minimum_af1)
             if not status:
-                logger.debug("{}: filter out AF1 {} on line {}".format(VT, vcf_line.INFO['AF1'], iline))
+                logger.debug("{}: filter out AF1 {} on line {}".format(VT, vcf_line.INFO["AF1"], iline))
                 return False
 
         for key, value in filter_dict["INFO"].items():
@@ -296,8 +293,8 @@ class VCF_mpileup_4dot1(VCFBase):
 
             # otherwise, this is probably a valid simple filter such as "DP<4"
             try:
-                if(type(vcf_line.INFO[key]) != list):
-                    if(self._filter_info_field(vcf_line.INFO[key], value)):
+                if type(vcf_line.INFO[key]) != list:
+                    if self._filter_info_field(vcf_line.INFO[key], value):
                         val = vcf_line.INFO[key]
                         logger.debug("{}: filtered variant {},{} with value {}".format(VT, key, value, val))
                         return False
@@ -305,10 +302,10 @@ class VCF_mpileup_4dot1(VCFBase):
                     Nlist = len(vcf_line.INFO[key])
                     if index > Nlist - 1:
                         raise ValueError("Index must be less than %s (starts at zero)" % Nlist)
-                    if(self._filter_info_field(vcf_line.INFO[key][index], value)):
+                    if self._filter_info_field(vcf_line.INFO[key][index], value):
                         return False
             except KeyError:
-                logger.debug("The information key {} doesn't exist in VCF file (line {}).".format(key, iline+1))
+                logger.debug("The information key {} doesn't exist in VCF file (line {}).".format(key, iline + 1))
         return True
 
     def filter_vcf(self, output, filter_dict=None, output_filtered=None):
@@ -339,7 +336,7 @@ class VCF_mpileup_4dot1(VCFBase):
                 fpf.close()
 
         filtered = N - unfiltered
-        return {"N":N, "filtered": filtered, "unfiltered": unfiltered}
+        return {"N": N, "filtered": filtered, "unfiltered": unfiltered}
 
     def is_polymorphic(self, variant):
 
@@ -348,7 +345,7 @@ class VCF_mpileup_4dot1(VCFBase):
 
         return not str(variant.ALT[0].value).strip() == "."
 
-    #overwrite behaviour of Variant.is_indel
+    # overwrite behaviour of Variant.is_indel
     def is_indel(self, variant):
         if not len(variant.ALT):
             return False
@@ -357,7 +354,7 @@ class VCF_mpileup_4dot1(VCFBase):
             return True
         if "," in str(variant.REF[0]):
             return True
-        if "INDEL" in variant.INFO.keys() and variant.INFO['INDEL']:
+        if "INDEL" in variant.INFO.keys() and variant.INFO["INDEL"]:
             return True
         return False
 
@@ -366,12 +363,12 @@ class VCF_mpileup_4dot1(VCFBase):
             return True
 
         if self.is_polymorphic(variant):
-            if variant.INFO['AF1'] < minimum_af1:
+            if variant.INFO["AF1"] < minimum_af1:
                 return False
             else:
                 return True
         else:
-            if variant.INFO['AF1'] > 1 - minimum_af1:
+            if variant.INFO["AF1"] > 1 - minimum_af1:
                 return False
             else:
                 return True
@@ -382,10 +379,10 @@ class VCF_mpileup_4dot1(VCFBase):
         if "DP4" not in variant.INFO.keys():
             return True
 
-        ref_forward = variant.INFO['DP4'][0]
-        ref_reverse = variant.INFO['DP4'][1]
-        alt_forward = variant.INFO['DP4'][2]
-        alt_reverse = variant.INFO['DP4'][3]
+        ref_forward = variant.INFO["DP4"][0]
+        ref_reverse = variant.INFO["DP4"][1]
+        alt_forward = variant.INFO["DP4"][2]
+        alt_reverse = variant.INFO["DP4"][3]
 
         count_reference = ref_forward + ref_reverse
         count_alt = alt_forward + alt_reverse
@@ -408,8 +405,8 @@ class VCF_mpileup_4dot1(VCFBase):
         else:
             ratio_reverse_reference = 0
             ratio_reverse_alt = 0
-        if not self.is_polymorphic(variant): 
-            # dealing with non polymorphic site (i.e; VCF's ALT 
+        if not self.is_polymorphic(variant):
+            # dealing with non polymorphic site (i.e; VCF's ALT
             # field equals "."
 
             # reference depth test for the reference allele

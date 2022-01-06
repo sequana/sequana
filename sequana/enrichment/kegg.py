@@ -43,12 +43,18 @@ class KEGGPathwayEnrichment:
     Current input is the output of the RNADiff analysis. This is a file
     than can be read by RNADiffResults
 
-    When performing a GDE analysis, feature counts are computed using an input
-    GFF. Depending on your parameters the gene names may be saved as ensembl
-    identifiers or gene names. If you have gene names understood by KEGG, you
-    simply need to use this code::
+    This class takes as input a dictionary with 3 lists of genes: 'up', 
+    'down' and 'all'.
 
-        ke = KEGGPathwayEnrichment("rnadiff", "eco") #"eco" for E. coli here
+    For example, using the output of the RNA-seq DGE, use:
+
+        from sequana import RNADiffResults
+        r = RNADiffResults("rnadiff.csv")
+        r._log2_fc = 1
+        gl = r.get_gene_lists(annot_col="gene_name")
+        gl['KO_vs_cont"]
+
+        ke = KEGGPathwayEnrichment(gl, "mmu") # mmu for mouse
 
     this calls ke.compute_enrichment() that stores the up, down and all results
     in the attribute :attr:`enrichment` as a dictionary.
@@ -292,6 +298,7 @@ class KEGGPathwayEnrichment:
             background=background,
             outdir="test",
             no_plot=True,
+            description='none'
         )
 
         enr.results["Genes"] = [

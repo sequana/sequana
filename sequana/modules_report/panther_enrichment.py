@@ -275,7 +275,7 @@ function, CC for cellular components and BP for biological process.</p>
                 )
 
                 html += f"""
-<h4>{category.title()} - {ontology}</h4>
+<h3>{category.title()} - {ontology}</h3>
 <p>For {ontology}, we found {_plus[ontology]+_minus[ontology]} go terms.
 Showing {self.nmax} here below (at most). The full list is downlodable from the CSV
  file hereafter.</p> {image} <br>"""
@@ -299,7 +299,7 @@ enriched go terms. </p><br>"""
 
                     self.pe.save_chart(_temp_df[ontology].iloc[0 : self.nmax], filename)
                     filenames.append(f"Chart_{category}_{ontology}.png")
-            foto = self.add_fotorama(filenames, width=1000)
-            html += f"<h4>Charts {category} -- </h4> {foto}"
+        foto = self.add_fotorama(filenames, width=1000)
+        html += f"<h4>Charts {category} -- </h4> {foto}"
 
         return html

@@ -1,23 +1,26 @@
-
 import pkg_resources
+
 try:
     version = pkg_resources.require("sequana")[0].version
 except:
     version = ">=0.11.0"
 
 from easydev.logging_tools import Logging
+
 try:
     # new version of easydev logger
-    logger = Logging("sequana", "WARNING", text_color='green')
+    logger = Logging("sequana", "WARNING", text_color="green")
 except Exception:
     logger = Logging("sequana", "WARNING")
 
 # To keep the inheritance/propagation of levels. Logging from easydev will do
 # the formatting only.
 import colorlog
+
 logger = colorlog.getLogger(logger.name)
 
 from easydev import CustomConfig
+
 configuration = CustomConfig("sequana", verbose=False)
 sequana_config_path = configuration.user_config_dir
 
@@ -58,5 +61,3 @@ from .trf import TRF
 
 # The standalone app
 from . import scripts
-
-

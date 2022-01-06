@@ -166,7 +166,10 @@ Besides, be aware that closely related species may not be classified precisely.
         return html
 
     def _get_table_grouped_results(self):
-        df = self._get_df_hierarchy()
+        try:
+            df = self._get_df_hierarchy()
+        except KeyError:
+            return ""
         url_ncbi = "https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id={}"
         df["links"] = [url_ncbi.format(taxon) for taxon in df["taxon"]]
         datatable = DataTable(df, "kraken_summary", index=False)

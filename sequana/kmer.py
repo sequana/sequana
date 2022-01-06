@@ -6,7 +6,7 @@
 #
 #  File author(s):
 #      Thomas Cokelaer <thomas.cokelaer@pasteur.fr>
-#      Dimitri Desvillechabrol <dimitri.desvillechabrol@pasteur.fr>, 
+#      Dimitri Desvillechabrol <dimitri.desvillechabrol@pasteur.fr>,
 #          <d.desvillechabrol@gmail.com>
 #
 #  Distributed under the terms of the 3-clause BSD license.
@@ -19,11 +19,11 @@
 import itertools
 
 import colorlog
+
 logger = colorlog.getLogger(__name__)
 
 
-
-def build_kmer(length=6, letters='CG'):
+def build_kmer(length=6, letters="CG"):
     """Return list of kmer of given length based on a set of letters
 
     :return: list of kmers
@@ -41,5 +41,5 @@ def get_kmer(sequence, k=7):
     :return: iterator of kmers
 
     """
-    for i in range(0, len(sequence)-k+1):
-        yield sequence[i:i+k]
+    for i in range(0, len(sequence) - k + 1):
+        yield sequence[i : i + k]

@@ -15,17 +15,17 @@ from sequana import sequana_data
 from sequana.lazy import pandas as pd
 
 import colorlog
+
 logger = colorlog.getLogger(__name__)
 
 
 __all__ = ["KEGGHelper"]
 
 
-class KEGGHelper():
+class KEGGHelper:
     """A simple class to build kegg information"""
 
     def __init__(self):
-
 
         self.df = pd.read_csv(sequana_data("kegg.csv"), index_col=0)
         self.df.fillna("", inplace=True)
@@ -37,26 +37,27 @@ class KEGGHelper():
         """
         logger.info("Retrieving the kegg organisms and their definitions")
         from bioservices import KEGG
+
         k = KEGG()
         results = []
         definition = []
         for i, item in enumerate(k.organismIds):
-            results.append(k.parse(k.get(f"gn:{item}"))['NAME'])
-            definition.append(k.parse(k.get(f"gn:{item}"))['ORG_CODE'])
+            results.append(k.parse(k.get(f"gn:{item}"))["NAME"])
+            definition.append(k.parse(k.get(f"gn:{item}"))["ORG_CODE"])
             print(i, Nmax)
-            if Nmax and i+1 >= Nmax:
+            if Nmax and i + 1 >= Nmax:
                 break
 
         results = [x[0] for x in results]
         IDs = [x.split(",")[0] for x in results]
         taxon = [x.split(",")[-1] for x in results]
-        names = [x.split(",")[1].strip() if len(x.split(","))==3 else None for x in results]
+        names = [x.split(",")[1].strip() if len(x.split(",")) == 3 else None for x in results]
 
-        df = pd.DataFrame({'ID': IDs, 'taxon': taxon, 'name': names, 'def':definition })
+        df = pd.DataFrame({"ID": IDs, "taxon": taxon, "name": names, "def": definition})
         df = df.fillna("")
-        df.columns = ['ID', 'taxon', 'shortname', 'definition']
-        df['definition'] = [x.lower() for x in df.definition]
-        df['shortname'] = [x.lower() for x in df.shortname]
+        df.columns = ["ID", "taxon", "shortname", "definition"]
+        df["definition"] = [x.lower() for x in df.definition]
+        df["shortname"] = [x.lower() for x in df.shortname]
 
         self.df = df
         if filename:
@@ -77,4 +78,3 @@ class KEGGHelper():
 
         results = self.df.loc[indices]
         return results
-

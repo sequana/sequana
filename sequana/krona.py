@@ -20,12 +20,11 @@ import collections
 
 from sequana.lazy import pandas as pd
 import colorlog
+
 logger = colorlog.getLogger(__name__)
 
 
-
-
-__all__ = ['KronaMerger']
+__all__ = ["KronaMerger"]
 
 
 class KronaMerger(collections.Counter):
@@ -58,6 +57,7 @@ class KronaMerger(collections.Counter):
     .. warning:: separator must be tabulars
 
     """
+
     def __init__(self, filename):
         """.. rubric:: constructor
 
@@ -77,15 +77,15 @@ class KronaMerger(collections.Counter):
 
     def to_tsv(self, output_filename):
         """Save the content into a new file in TSV format"""
-        assert output_filename.endswith('.tsv')
+        assert output_filename.endswith(".tsv")
         labels = []
         counts = []
         for k, count in self.items():
             labels.append(k)
             counts.append(count)
-        df = pd.DataFrame({'label':labels, 'count':counts})
-        df = df[['count', 'label']]
-        df['label'] = df['label'].apply(lambda x: x.strip())
+        df = pd.DataFrame({"label": labels, "count": counts})
+        df = df[["count", "label"]]
+        df["label"] = df["label"].apply(lambda x: x.strip())
         try:
             df.sort_values("count", inplace=True, ascending=False)
         except:

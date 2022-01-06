@@ -21,18 +21,18 @@ import sys
 from sequana.fastq import FastQ
 
 import colorlog
+
 logger = colorlog.getLogger(__name__)
 
 
-
-
-class GTFFixer():
+class GTFFixer:
     """Some GTF have syntax issues. This class should fix some of them
 
     With exons, we want to have unique IDs.
 
     We append the transcrpt version and ID to the exon ID
     """
+
     def __init__(self, filename):
 
         self.filename = filename
@@ -55,7 +55,9 @@ class GTFFixer():
                         try:
                             # sanity check that this is correctly written for all
                             # features
-                            annotations = dict([x.strip().split(maxsplit=1) for x in entries[8].split(";") if len(x.strip())])
+                            annotations = dict(
+                                [x.strip().split(maxsplit=1) for x in entries[8].split(";") if len(x.strip())]
+                            )
                         except:
                             logger.warning("warning line {}. could not parse annotations correctly".format(count))
 
@@ -63,24 +65,27 @@ class GTFFixer():
                         # appending the transcript_version if not already done
                         if entries[2] == "exon" and "." not in annotations["exon_id"]:
                             logger.info("Fixing exon ID line {} for exon ID {}".format(count, annotations["exon_id"]))
-                            exon_id = "{}.{}.{}".format(annotations['exon_id'].rstrip('"'), annotations['transcript_version'].strip('"'), annotations['transcript_id'].lstrip('"'))
-                            newline = "\t".join(entries[0:8])+"\t"
+                            exon_id = "{}.{}.{}".format(
+                                annotations["exon_id"].rstrip('"'),
+                                annotations["transcript_version"].strip('"'),
+                                annotations["transcript_id"].lstrip('"'),
+                            )
+                            newline = "\t".join(entries[0:8]) + "\t"
                             # we do not resuse the dictionaru 'annotations' just to
                             # keep the order
                             for entry in entries[8].split(";"):
                                 if len(entry.strip()):
                                     x, y = entry.split(maxsplit=1)
                                     if x.strip() != "exon_id":
-                                        newline += "{} {};".format(x,y)
+                                        newline += "{} {};".format(x, y)
                                     else:
                                         newline += "exon_id {};".format(exon_id)
-                            newline +=";\n"
+                            newline += ";\n"
                             line = newline
 
                         fout.write(line)
                     line = fin.readline()
                     count += 1
-                    if count % 100000 == 0: print("scanned {} entries".format(count))
+                    if count % 100000 == 0:
+                        print("scanned {} entries".format(count))
             return features
-
-

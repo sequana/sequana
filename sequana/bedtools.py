@@ -38,9 +38,8 @@ from sequana.stats import evenness
 from easydev import do_profile, TempFile, Progress
 
 import colorlog
+
 logger = colorlog.getLogger(__name__)
-
-
 
 
 __all__ = ["GenomeCov", "ChromosomeCov", "DoubleThresholds"]
@@ -68,12 +67,11 @@ class DoubleThresholds(object):
     hdtr are changed.
 
     """
+
     def __init__(self, low=-3, high=3, ldtr=0.5, hdtr=0.5):
 
-        assert ldtr>=0. and ldtr<=1.,\
-            "ldrt parameter (low double threshold ratio) must be in [0,1]"
-        assert hdtr>=0. and hdtr<=1.,\
-            "hdrt parameter (high double threshold ratio) must be in [0,1]"
+        assert ldtr >= 0.0 and ldtr <= 1.0, "ldrt parameter (low double threshold ratio) must be in [0,1]"
+        assert hdtr >= 0.0 and hdtr <= 1.0, "hdrt parameter (high double threshold ratio) must be in [0,1]"
         assert low < 0, "low threshold must be negative"
         assert high > 0, "high threshold must be positive"
 
@@ -88,6 +86,7 @@ class DoubleThresholds(object):
     def _set_ldtr(self, ldtr):
         self._ldtr = ldtr
         self._low2 = self._low * self._ldtr
+
     ldtr = property(_get_ldtr, _set_ldtr)
 
     def _get_hdtr(self):
@@ -96,41 +95,44 @@ class DoubleThresholds(object):
     def _set_hdtr(self, hdtr):
         self._hdtr = hdtr
         self._high2 = self._high * self._hdtr
+
     hdtr = property(_get_hdtr, _set_hdtr)
 
     def _get_low(self):
         return self._low
 
     def _set_low(self, value):
-        assert value < 0.
+        assert value < 0.0
         self._low = value
         self._low2 = self._low * self._ldtr
+
     low = property(_get_low, _set_low)
 
     def _get_high(self):
         return self._high
 
     def _set_high(self, value):
-        assert value > 0.
+        assert value > 0.0
         self._high = value
         self._high2 = self._high * self._ldtr
+
     high = property(_get_high, _set_high)
 
     def _get_low2(self):
         return self._low * self._ldtr
+
     low2 = property(_get_low2)
 
     def _get_high2(self):
         return self._high * self._hdtr
+
     high2 = property(_get_high2)
 
     def get_args(self):
-        return "%.2f,%.2f,%.2f,%.2f" % (self.low, self.high, self.ldtr,
-                                     self.hdtr)
+        return "%.2f,%.2f,%.2f,%.2f" % (self.low, self.high, self.ldtr, self.hdtr)
 
     def copy(self):
-        thresholds = DoubleThresholds(self.low, self.high,
-            self.ldtr, self.hdtr)
+        thresholds = DoubleThresholds(self.low, self.high, self.ldtr, self.hdtr)
         return thresholds
 
     def __str__(self):
@@ -187,10 +189,20 @@ class GenomeCov(object):
         - c.get_rois() ():
 
     """
-    def __init__(self, input_filename, genbank_file=None,
-                 low_threshold=-4, high_threshold=4, ldtr=0.5, hdtr=0.5,
-                 force=False, chunksize=5000000, quiet_progress=False,
-                 chromosome_list=[]):
+
+    def __init__(
+        self,
+        input_filename,
+        genbank_file=None,
+        low_threshold=-4,
+        high_threshold=4,
+        ldtr=0.5,
+        hdtr=0.5,
+        force=False,
+        chunksize=5000000,
+        quiet_progress=False,
+        chromosome_list=[],
+    ):
         """.. rubric:: constructor
 
         :param str input_filename: the input data with results of a bedtools
@@ -245,16 +257,14 @@ class GenomeCov(object):
         if low_threshold > -2.5 and self.force is False:
             raise ValueError("low threshold must be <=-2.5")
 
-        #if not self.chr_list:
+        # if not self.chr_list:
         # read bed file
-        self.thresholds = DoubleThresholds(low_threshold, high_threshold,
-                                               ldtr, hdtr)
+        self.thresholds = DoubleThresholds(low_threshold, high_threshold, ldtr, hdtr)
         if input_filename.endswith(".bed"):
             self.chromosome_list = chromosome_list
             self._scan_bed(input_filename)
         else:
-            raise Exception(("Input file must be a BED file "
-                            "(chromosome/position/coverage columns"))
+            raise Exception(("Input file must be a BED file " "(chromosome/position/coverage columns"))
 
     def __getitem__(self, index):
         return self.chr_list[index]
@@ -267,8 +277,7 @@ class GenomeCov(object):
 
     @property
     def circular(self):
-        """ Get the circularity of chromosome(s). It must be a boolean.
-        """
+        """Get the circularity of chromosome(s). It must be a boolean."""
         return self._circular
 
     @circular.setter
@@ -276,41 +285,39 @@ class GenomeCov(object):
         if isinstance(circular, bool):
             self._circular = circular
         else:
-            logger.error("TypeError: Circular must be a boolean. True if your "
-                         "genome is circular and False if not.")
+            logger.error("TypeError: Circular must be a boolean. True if your " "genome is circular and False if not.")
             sys.exit(1)
 
     @property
     def feature_dict(self):
-        """ Get the features dictionary of the genbank.
-        """
+        """Get the features dictionary of the genbank."""
         return self._feature_dict
 
     @feature_dict.setter
     def feature_dict(self, anything):
-        logger.error("AttributeError: You can't set attribute.\n"
-                     "GenomeCov.feature_dict is set when"
-                     "GenomeCov.genbank_filename is set.")
+        logger.error(
+            "AttributeError: You can't set attribute.\n"
+            "GenomeCov.feature_dict is set when"
+            "GenomeCov.genbank_filename is set."
+        )
         sys.exit(1)
 
     @property
     def gc_window_size(self):
-        """ Get or set the window size to compute the GC content.
-        """
+        """Get or set the window size to compute the GC content."""
         return self._gc_window_size
 
     @gc_window_size.setter
     def gc_window_size(self, n):
         if n % 2 == 0:
-            logger.warning(
-                "Window size should be an odd number. Incrementing by one.")
+            logger.warning("Window size should be an odd number. Incrementing by one.")
             self._gc_window_size = n + 1
         else:
             self._gc_window_size = n
 
     @property
     def genbank_filename(self):
-        """ Get or set the genbank filename to annotate ROI detected with
+        """Get or set the genbank filename to annotate ROI detected with
         :meth:`ChromosomeCov.get_roi`. Changing the genbank filename will
         configure the :attr:`GenomeCov.feature_dict`.
         """
@@ -329,7 +336,7 @@ class GenomeCov(object):
 
     @property
     def window_size(self):
-        """ Get or set the window size to compute the running median. Size
+        """Get or set the window size to compute the running median. Size
         must be an interger.
         """
         return self._window_size
@@ -361,18 +368,16 @@ class GenomeCov(object):
 
         # rough estimate of the number of rows for the progress bar
         fullsize = os.path.getsize(self.input_filename)
-        data = pd.read_table(input_filename, header=None, sep="\t",
-                             nrows=self.chunksize)
+        data = pd.read_table(input_filename, header=None, sep="\t", nrows=self.chunksize)
         with TempFile() as fh:
             data.to_csv(fh.name, index=None, sep="\t")
             smallsize = os.path.getsize(fh.name)
 
-        Nchunk = int(fullsize/smallsize)
-        if Nchunk >1:
+        Nchunk = int(fullsize / smallsize)
+        if Nchunk > 1:
             pb = Progress(Nchunk)
         i = 0
-        for chunk in pd.read_table(input_filename, header=None, sep="\t",
-                usecols=[0], chunksize=self.chunksize):
+        for chunk in pd.read_table(input_filename, header=None, sep="\t", usecols=[0], chunksize=self.chunksize):
             # accumulate length
             N += len(chunk)
 
@@ -380,20 +385,20 @@ class GenomeCov(object):
             contigs = chunk[0].unique()
             for contig in contigs:
                 if contig not in self.chrom_names:
-                    # if all contig names are integer, pandas converts them 
-                    # to numpy int64 but those are not serialisable later when 
+                    # if all contig names are integer, pandas converts them
+                    # to numpy int64 but those are not serialisable later when
                     # saving the json summary file hence the conversion.
-                    try:contig = int(contig)
-                    except:pass
+                    try:
+                        contig = int(contig)
+                    except:
+                        pass
                     self.chrom_names.append(contig)
 
             # group by names (unordered)
             chunk = chunk.groupby(0)
             for contig in contigs:
                 if contig not in positions:
-                    positions[contig] = {
-                        "start": chunk.groups[contig].min(),
-                        "end": chunk.groups[contig].max()}
+                    positions[contig] = {"start": chunk.groups[contig].min(), "end": chunk.groups[contig].max()}
                 else:
                     positions[contig]["end"] = chunk.groups[contig].max()
             i += 1
@@ -404,8 +409,8 @@ class GenomeCov(object):
         if self.quiet_progress is False and Nchunk > 1:
             print()
         self.total_length = N
-        for k in  positions.keys():
-            positions[k]['N'] = positions[k]['end'] - positions[k]['start'] + 1
+        for k in positions.keys():
+            positions[k]["N"] = positions[k]["end"] - positions[k]["start"] + 1
 
         self.positions = positions
 
@@ -415,6 +420,7 @@ class GenomeCov(object):
                 tokeep.append(self.chrom_names[this])
             self.chrom_names = tokeep
         self._set_chr_list()
+
     """
     def _read_csv(self, input_filename):
         # set regex to get important information about previous analysis
@@ -474,16 +480,15 @@ class GenomeCov(object):
             chrom.mixture_fitting = mixture.EM(
                 chrom.df['scale'][chrom.range[0]:chrom.range[1]])
     """
+
     def _set_chr_list(self):
         self.chr_list = []
         for name in self.chrom_names:
             logger.debug("Creating ChromosomeCov instance for {}".format(name))
-            self.chr_list.append(ChromosomeCov(self, name, self.thresholds,
-                                       self.chunksize))
+            self.chr_list.append(ChromosomeCov(self, name, self.thresholds, self.chunksize))
 
-    def compute_gc_content(self, fasta_file, window_size=101, circular=False,
-                           letters=['G', 'C', 'c', 'g']):
-        """ Compute GC content of genome sequence.
+    def compute_gc_content(self, fasta_file, window_size=101, circular=False, letters=["G", "C", "c", "g"]):
+        """Compute GC content of genome sequence.
 
         :param str fasta_file: fasta file name.
         :param int window_size: size of the sliding window.
@@ -496,13 +501,11 @@ class GenomeCov(object):
         """
         self.gc_window_size = window_size
         self.circular = circular
-        self.gc_dict = gc_content(fasta_file, self.gc_window_size, circular,
-                             letters=letters)
+        self.gc_dict = gc_content(fasta_file, self.gc_window_size, circular, letters=letters)
 
         for chrom in self.chrom_names:
             if chrom not in self.gc_dict.keys():
-                msg = ("The chromosome/contig {} (present in the"
-                       " BED/BAM file) not found in the reference.")
+                msg = "The chromosome/contig {} (present in the" " BED/BAM file) not found in the reference."
                 logger.warning(msg.format(chrom))
 
     def get_stats(self):
@@ -523,14 +526,15 @@ class GenomeCov(object):
     def hist(self, logx=True, logy=True, fignum=1, N=25, lw=2, **kwargs):
         for chrom in self.chr_list:
             try:
-                chrom.plot_hist_coverage(logx=logx, logy=logy, fignum=fignum, N=N,
-                    histtype='step', hold=True, lw=lw, **kwargs)
+                chrom.plot_hist_coverage(
+                    logx=logx, logy=logy, fignum=fignum, N=N, histtype="step", hold=True, lw=lw, **kwargs
+                )
                 pylab.legend()
             except:
                 logger.warning("histogram failed")
 
     def to_csv(self, output_filename, **kwargs):
-        """ Write all data in a csv.
+        """Write all data in a csv.
 
         :param str output_filename: csv output file name.
         :param dict kwargs: parameters of :meth:`pandas.DataFrame.to_csv`.
@@ -539,15 +543,15 @@ class GenomeCov(object):
         df_list = [chrom.df for chrom in self.chr_list]
         df = pd.concat(df_list)
 
-        header = ("# sequana_coverage thresholds:{0} window_size:{1} circular:"
-                  "{2}".format(self.thresholds.get_args(), self.window_size,
-                  self.circular))
+        header = "# sequana_coverage thresholds:{0} window_size:{1} circular:" "{2}".format(
+            self.thresholds.get_args(), self.window_size, self.circular
+        )
 
         if self.genbank_filename:
-            header += ' genbank:' + self.genbank_filename
+            header += " genbank:" + self.genbank_filename
 
         if self.gc_window_size:
-            header += ' gc_window_size:{0}'.format(self.gc_window_size)
+            header += " gc_window_size:{0}".format(self.gc_window_size)
 
         with open(output_filename, "w") as fp:
             print("{0}".format(header), file=fp)
@@ -587,6 +591,7 @@ class ChromosomeCov(object):
 
     .. seealso:: sequana_coverage standalone application
     """
+
     def __init__(self, genomecov, chrom_name, thresholds=None, chunksize=5000000):
         """.. rubric:: constructor
 
@@ -628,11 +633,11 @@ class ChromosomeCov(object):
 
     def reset(self):
         # jump to the file position corresponding to the chrom name.
-        N = self.bed.positions[self.chrom_name]['N']
-        toskip = self.bed.positions[self.chrom_name]['start']
-        self.iterator = pd.read_table(self.bed.input_filename, skiprows=toskip,
-                                      nrows=N, header=None, sep="\t",
-                                      chunksize=self.chunksize)
+        N = self.bed.positions[self.chrom_name]["N"]
+        toskip = self.bed.positions[self.chrom_name]["start"]
+        self.iterator = pd.read_table(
+            self.bed.input_filename, skiprows=toskip, nrows=N, header=None, sep="\t", chunksize=self.chunksize
+        )
         if N <= self.chunksize:
             # we can load all data into memory:
             self._mode = "memory"
@@ -653,35 +658,24 @@ class ChromosomeCov(object):
         self._C4 = None
 
     def __str__(self):
-        N = self.bed.positions[self.chrom_name]['N']
+        N = self.bed.positions[self.chrom_name]["N"]
         if self._mode == "memory":
             stats = self.get_stats()
             txt = "\nGenome length: {:>10}".format(N)
-            txt += "\nSequencing depth (DOC):                {:>10.2f} ".format(
-                self.DOC)
-            txt += "\nSequencing depth (median):             {:>10.2f} ".format(
-                stats['Median'])
-            txt += "\nBreadth of coverage (BOC) (percent):   {:>10.2f} ".format(
-                self.BOC)
-            txt += "\nGenome coverage standard deviation:    {:>10.2f}".format(
-                self.STD)
-            txt += "\nGenome coverage coefficient variation: {:>10.2f}".format(
-                self.CV)
+            txt += "\nSequencing depth (DOC):                {:>10.2f} ".format(self.DOC)
+            txt += "\nSequencing depth (median):             {:>10.2f} ".format(stats["Median"])
+            txt += "\nBreadth of coverage (BOC) (percent):   {:>10.2f} ".format(self.BOC)
+            txt += "\nGenome coverage standard deviation:    {:>10.2f}".format(self.STD)
+            txt += "\nGenome coverage coefficient variation: {:>10.2f}".format(self.CV)
         else:
             stats = self.get_stats()
             txt = "\nGenome length: {:>10}".format(N)
-            txt += "\n!!!! Information based on a sample of {} points".format(
-                self.chunksize)
-            txt += "\nSequencing depth (DOC):                {:>10.2f} ".format(
-                self.DOC)
-            txt += "\nSequencing depth (median):             {:>10.2f} ".format(
-                stats['Median'])
-            txt += "\nBreadth of coverage (BOC) (percent):   {:>10.2f} ".format(
-                self.BOC)
-            txt += "\nGenome coverage standard deviation:    {:>10.2f}".format(
-                self.STD)
-            txt += "\nGenome coverage coefficient variation: {:>10.2f}".format(
-                self.CV)
+            txt += "\n!!!! Information based on a sample of {} points".format(self.chunksize)
+            txt += "\nSequencing depth (DOC):                {:>10.2f} ".format(self.DOC)
+            txt += "\nSequencing depth (median):             {:>10.2f} ".format(stats["Median"])
+            txt += "\nBreadth of coverage (BOC) (percent):   {:>10.2f} ".format(self.BOC)
+            txt += "\nGenome coverage standard deviation:    {:>10.2f}".format(self.STD)
+            txt += "\nGenome coverage coefficient variation: {:>10.2f}".format(self.CV)
             txt += "\nExact values will be available in the summary file (json)"
         return txt
 
@@ -689,24 +683,23 @@ class ChromosomeCov(object):
         # binning may be used, so len is not the length of the
         # dataframe, but the min/max positions.
         if self.binning > 1:
-            return  self._length
+            return self._length
         else:
             return self.df.__len__()
 
     def _set_chunk(self, chunk):
-        chunk.rename(columns={0: "chr", 1: "pos", 2: "cov", 3: "mapq0"},
-            inplace=True)
-        assert set(chunk['chr'].unique()) == set([self.chrom_name])
+        chunk.rename(columns={0: "chr", 1: "pos", 2: "cov", 3: "mapq0"}, inplace=True)
+        assert set(chunk["chr"].unique()) == set([self.chrom_name])
         chunk = chunk.set_index("chr", drop=True)
         chunk = chunk.set_index("pos", drop=False)
         self._df = chunk
         self._reset_metrics()
         # set GC if available
         if self.bed.gc_dict and self.chrom_name in self.bed.gc_dict.keys():
-            i1 = self._df.index[0] -1
+            i1 = self._df.index[0] - 1
             i2 = self._df.index[-1]
             gc = self.bed.gc_dict[self.chrom_name][i1:i2]
-            self._df['gc'] = gc
+            self._df["gc"] = gc
 
     def next(self):
         try:
@@ -717,9 +710,8 @@ class ChromosomeCov(object):
             self._df = None
 
     def _check_window(self, W):
-        if W*2 > len(self.df):
-            msg = "W ({}) is too large compared to the contig ({})".format(
-                W, len(self.df))
+        if W * 2 > len(self.df):
+            msg = "W ({}) is too large compared to the contig ({})".format(W, len(self.df))
             logger.error(msg)
             raise Exception(msg)
 
@@ -738,43 +730,41 @@ class ChromosomeCov(object):
         if cnv_delta:
             logger.debug("cnv_delta={}".format(cnv_delta))
         if self.chunksize < 5 * W:
-            logger.warning(("chunksize is small as compared to W. "
-                            "Not recommended! "))
+            logger.warning(("chunksize is small as compared to W. " "Not recommended! "))
         if binning:
-            assert binning > 1 and isinstance(binning, int), \
-                "binning must be integer > 1"
+            assert binning > 1 and isinstance(binning, int), "binning must be integer > 1"
 
         self.chunk_rois = []
 
         # Get the number of chunks
-        num = self.bed.positions[self.chrom_name]['N']
-        denom =  self.chunksize
+        num = self.bed.positions[self.chrom_name]["N"]
+        denom = self.chunksize
         if num % denom == 0:
             N = num // denom
         else:
             N = num // denom + 1
 
-        if binning is None or binning==1:
+        if binning is None or binning == 1:
             self.binning = 1
             if N > 1:
                 pb = Progress(N)
                 pb.animate(0)
             for i, chunk in enumerate(self.iterator):
-                logger.debug("Analysing chunk {}".format(i+1))
+                logger.debug("Analysing chunk {}".format(i + 1))
                 self._set_chunk(chunk)
 
                 logger.debug("running median computation")
                 self.running_median(W, circular=circular)
                 logger.debug("zscore computation")
-                self.compute_zscore(k=k, verbose=False) # avoid repetitive warning
+                self.compute_zscore(k=k, verbose=False)  # avoid repetitive warning
 
                 rois = self.get_rois()
-                if cnv_delta is not None and cnv_delta>1:
+                if cnv_delta is not None and cnv_delta > 1:
                     rois.merge_rois_into_cnvs(delta=cnv_delta)
                 summary = self.get_summary()
                 self.chunk_rois.append([summary, rois])
                 if N > 1:
-                    pb.animate(i+1)
+                    pb.animate(i + 1)
             if N > 1:
                 print()
         else:
@@ -795,39 +785,41 @@ class ChromosomeCov(object):
                 # with the remaining points
 
                 if len(a) < NN:
-                    a = a + [n] * (NN-len(a))
+                    a = a + [n] * (NN - len(a))
                 # Now, we groupby on the ID, and aggregate the cov columns (sum)
                 # while the pos is aggregate by simply taking the minimum
                 # (starting position).
-                #self._set_chunk(chunk)
+                # self._set_chunk(chunk)
                 df = self._df.copy()
                 df["id"] = a
-                groups = df.groupby('id')
+                groups = df.groupby("id")
                 # Don't understand why but this is ultra slow
                 # when called from this method, whereas, it is
                 # fast in a shell, when calling statement by statement
-                # Tried to use np.mean, pylab.mean, from np import mean, 
+                # Tried to use np.mean, pylab.mean, from np import mean,
                 # the "mean" string command, etc...
                 # df = groups.agg({
                 #        "pos":lambda x: x.min(),
                 #        "cov": np.mean
                 #    })
-                df = pd.DataFrame({
-                    "pos": groups.min()['pos'].astype(int), 
-                    "cov": groups.mean()['cov'],
-                })
+                df = pd.DataFrame(
+                    {
+                        "pos": groups.min()["pos"].astype(int),
+                        "cov": groups.mean()["cov"],
+                    }
+                )
 
                 if "gc" in self._df.columns:
-                    df["gc"] = groups.mean()['gc']
+                    df["gc"] = groups.mean()["gc"]
 
-                df.index = df['pos']
+                df.index = df["pos"]
                 # append
                 if binned_df is not None:
                     binned_df = binned_df.append(df)
                 else:
                     binned_df = df
-                if N > 1: 
-                    pb.animate(i+1)
+                if N > 1:
+                    pb.animate(i + 1)
             if N > 1:
                 print()
             # used by __len__
@@ -835,13 +827,13 @@ class ChromosomeCov(object):
             self._df = binned_df.copy()
             self.binning = binning
 
-            self.running_median(int(W/binning), circular=circular)
-            self.compute_zscore(k=k, verbose=False) # avoid repetitive warning
-            # Only one ROIs, but we use the same logic as in the chunk case, 
+            self.running_median(int(W / binning), circular=circular)
+            self.compute_zscore(k=k, verbose=False)  # avoid repetitive warning
+            # Only one ROIs, but we use the same logic as in the chunk case,
             # and store the rois/summary in the ChromosomeCovMultiChunk
             # structure
             rois = self.get_rois()
-            if cnv_delta is not None and cnv_delta>1:
+            if cnv_delta is not None and cnv_delta > 1:
                 rois.merge_rois_into_cnvs(delta=cnv_delta)
             summary = self.get_summary()
             self.chunk_rois.append([summary, rois])
@@ -870,6 +862,7 @@ class ChromosomeCov(object):
         df.insert(0, "chr", self.chrom_name)
         return df.set_index("chr", drop=True)
     """
+
     def get_size(self):
         return self.__len__()
 
@@ -893,26 +886,25 @@ class ChromosomeCov(object):
         column named *ma*.
 
         """
-        N = len(self.df['cov'])
-        assert n < N/2
+        N = len(self.df["cov"])
+        assert n < N / 2
         from sequana.stats import moving_average
 
         ret = np.cumsum(np.array(self.df["cov"]), dtype=float)
         ret[n:] = ret[n:] - ret[:-n]
-        ma = ret[n - 1:] / n
+        ma = ret[n - 1 :] / n
         mid = int(n / 2)
-        self._df["ma"] = pd.Series(ma, index=np.arange(start=mid,
-            stop=(len(ma) + mid)))
+        self._df["ma"] = pd.Series(ma, index=np.arange(start=mid, stop=(len(ma) + mid)))
 
         if circular:
             # FIXME: shift of +-1 as compared to non circular case...
             # shift the data and compute the moving average
-            self.data = list(self.df['cov'].values[N-n:]) +\
-                list(self.df['cov'].values) + \
-                list(self.df['cov'].values[0:n])
+            self.data = (
+                list(self.df["cov"].values[N - n :]) + list(self.df["cov"].values) + list(self.df["cov"].values[0:n])
+            )
             ma = moving_average(self.data, n)
-            self.ma = ma[n//2+1:-n//2]
-            self._df["ma"] = pd.Series(self.ma, index=self.df['cov'].index)
+            self.ma = ma[n // 2 + 1 : -n // 2]
+            self._df["ma"] = pd.Series(self.ma, index=self.df["cov"].index)
 
     def running_median(self, n, circular=False):
         """Compute running median of genome coverage
@@ -939,22 +931,23 @@ class ChromosomeCov(object):
                 # BASED on running_median pure implementation, could be much
                 # slower than pure pandas rolling function. Keep those 4 lines
                 # for book keeping though.
-                #cover = list(self.df["cov"])
-                #cover = cover[-mid:] + cover + cover[:mid]
-                #rm = running_median.RunningMedian(cover, n).run()
-                #self.df["rm"] = rm[mid:-mid]
-                rm = pd.concat([self.df['cov'][-mid:],
-                                self.df['cov'],
-                                self.df['cov'][:mid]]).rolling(
-                                n, center=True).median()
+                # cover = list(self.df["cov"])
+                # cover = cover[-mid:] + cover + cover[:mid]
+                # rm = running_median.RunningMedian(cover, n).run()
+                # self.df["rm"] = rm[mid:-mid]
+                rm = (
+                    pd.concat([self.df["cov"][-mid:], self.df["cov"], self.df["cov"][:mid]])
+                    .rolling(n, center=True)
+                    .median()
+                )
                 self._df["rm"] = rm[mid:-mid]
 
             else:
-                rm = self.df['cov'].rolling(n, center=True).median()
+                rm = self.df["cov"].rolling(n, center=True).median()
                 # Like in RunningMedian, we copy the NAN with real data
-                rm[0:mid] = self.df['cov'][0:mid]
-                rm[-mid:] = self.df['cov'][-mid:]
-                #rm = running_median.RunningMedian(cover, n).run()
+                rm[0:mid] = self.df["cov"][0:mid]
+                rm[-mid:] = self.df["cov"][-mid:]
+                # rm = running_median.RunningMedian(cover, n).run()
 
                 self._df["rm"] = rm
                 # set up slice for gaussian prediction
@@ -966,14 +959,14 @@ class ChromosomeCov(object):
     def DOC(self):
         """depth of coverage"""
         if self._DOC is None:
-            self._DOC = self.df['cov'].mean()
+            self._DOC = self.df["cov"].mean()
         return self._DOC
 
     @property
     def STD(self):
         """standard deviation of depth of coverage"""
         if self._STD is None:
-            self._STD = self.df['cov'].std()
+            self._STD = self.df["cov"].std()
         return self._STD
 
     @property
@@ -990,7 +983,7 @@ class ChromosomeCov(object):
     def BOC(self):
         """breadth of coverage"""
         if self._BOC is None:
-            self._BOC = 100 * ( 1 - (self.df['cov'] == 0).sum() / float(len(self.df)))
+            self._BOC = 100 * (1 - (self.df["cov"] == 0).sum() / float(len(self.df)))
         return self._BOC
 
     @property
@@ -1017,7 +1010,7 @@ class ChromosomeCov(object):
         """
         if self._evenness is None:
             try:
-                self._evenness = evenness(self.df['cov'])
+                self._evenness = evenness(self.df["cov"])
             except:
                 self._evenness = 0
         return self._evenness
@@ -1032,11 +1025,11 @@ class ChromosomeCov(object):
 
         """
         if "rm" not in self.df.columns:
-            txt = "Column rm (running median) is missing.\n" +  self.__doc__
+            txt = "Column rm (running median) is missing.\n" + self.__doc__
             print(txt)
             raise KeyError
         else:
-            self._df["scale"] =  self.df["cov"] / self.df["rm"]
+            self._df["scale"] = self.df["cov"] / self.df["rm"]
         self._df = self.df.replace(np.inf, np.nan)
         self._df = self.df.replace(-np.inf, np.nan)
 
@@ -1046,7 +1039,7 @@ class ChromosomeCov(object):
         return self.gaussians_params[indice]
 
     def compute_zscore(self, k=2, use_em=True, clip=4, verbose=True):
-        """ Compute zscore of coverage and normalized coverage.
+        """Compute zscore of coverage and normalized coverage.
 
         :param int k: Number gaussian predicted in mixture (default = 2)
         :param float clip: ignore values above the clip threshold
@@ -1065,20 +1058,19 @@ class ChromosomeCov(object):
 
         # ignore start and end (corrupted due to running median window)
         # the slice does not seem to work as a copy, hence the copy()
-        data = self.df['scale'][self.range[0]:self.range[1]].copy()
+        data = self.df["scale"][self.range[0] : self.range[1]].copy()
 
         # remove zero, nan and inf values and ignore values above 4 that would
         # bias the estimation of the central
-        data[data>4] = 0
+        data[data > 4] = 0
         data = data.replace(0, np.nan)
         data = data.dropna()
 
         if data.empty:
-            self._df['scale'] = np.ones(len(self.df), dtype=int)
+            self._df["scale"] = np.ones(len(self.df), dtype=int)
             self._df["zscore"] = np.zeros(len(self.df), dtype=int)
             # define arbitrary values
-            self.gaussians_params = [{'mu': 0.5,  'pi': 0.15,
-              'sigma': 0.1}, {'mu': 1, 'pi': 0.85, 'sigma': 0.1}]
+            self.gaussians_params = [{"mu": 0.5, "pi": 0.15, "sigma": 0.1}, {"mu": 1, "pi": 0.85, "sigma": 0.1}]
             self.best_gaussian = self._get_best_gaussian()
 
             return
@@ -1086,6 +1078,7 @@ class ChromosomeCov(object):
         # if len data > 100,000 select 100,000 data points randomly
         if len(data) > 100000:
             import random
+
             indices = random.sample(range(len(data)), 100000)
             data = [data.iloc[i] for i in indices]
 
@@ -1099,23 +1092,19 @@ class ChromosomeCov(object):
         # keep gaussians informations
         self.gaussians = self.mixture_fitting.results
         params_key = ("mus", "sigmas", "pis")
-        self.gaussians_params = [{key[:-1]: self.gaussians[key][i] for key in
-                                 params_key} for i in range(k)]
+        self.gaussians_params = [{key[:-1]: self.gaussians[key][i] for key in params_key} for i in range(k)]
         self.best_gaussian = self._get_best_gaussian()
-
 
         # warning when sigma is equal to 0
         if self.best_gaussian["sigma"] == 0:
-            logger.warning("A problem related to gaussian prediction is "
-                  "detected. Be careful, Sigma is equal to 0.")
+            logger.warning("A problem related to gaussian prediction is " "detected. Be careful, Sigma is equal to 0.")
             self._df["zscore"] = np.zeros(len(self.df), dtype=int)
         else:
-            self._df["zscore"] = (self.df["scale"] - self.best_gaussian["mu"]) / \
-                self.best_gaussian["sigma"]
+            self._df["zscore"] = (self.df["scale"] - self.best_gaussian["mu"]) / self.best_gaussian["sigma"]
 
         # Naive checking that the 2 models are sensible (mus are different)
         if k == 2:
-            mus = self.gaussians['mus']
+            mus = self.gaussians["mus"]
             sigmas = self.gaussians["sigmas"]
 
             index0 = mus.index(self.best_gaussian["mu"])
@@ -1129,11 +1118,15 @@ class ChromosomeCov(object):
                 s1 = sigmas[0]
                 s0 = sigmas[1]
                 mu0 = mus[1]
-            if abs(mu0-mu1) < s0:
+            if abs(mu0 - mu1) < s0:
                 if verbose:
-                    logger.warning(("\nFound mixture model parameters (k=2) where "
-                        " |mu0-mu1| < sigma0. k=1 could be a better choice."
-                        "mu0={}, m1={}, sigma0={}, sigma1={}".format(mu0,mu1, s0,s1)))
+                    logger.warning(
+                        (
+                            "\nFound mixture model parameters (k=2) where "
+                            " |mu0-mu1| < sigma0. k=1 could be a better choice."
+                            "mu0={}, m1={}, sigma0={}, sigma1={}".format(mu0, mu1, s0, s1)
+                        )
+                    )
 
         # If coverage is zero, clearly, this is the lowest bound
         # Yet, for low depth of coverage (e.g. around 5), a deleted
@@ -1143,11 +1136,10 @@ class ChromosomeCov(object):
 
         # Here, we set the zscore value to at least the value of the threshold
 
-        self._df['zscore'].fillna(0, inplace=True)
+        self._df["zscore"].fillna(0, inplace=True)
 
         floor = self.df["cov"] == 0  # fastest than query, or ==
-        newvalues = self.df.loc[floor, "zscore"].apply(
-            lambda x: min(self.thresholds.low-0.01,x))
+        newvalues = self.df.loc[floor, "zscore"].apply(lambda x: min(self.thresholds.low - 0.01, x))
         self._df.loc[floor, "zscore"] = newvalues
 
         # finally, since re compute the zscore, rois must be recomputed
@@ -1171,14 +1163,14 @@ class ChromosomeCov(object):
         try:
             filtered = self.get_rois()
         except Exception as err:
-            raise(err)
+            raise (err)
         finally:
             # restore the original threshold
             self.thresholds.low = temp_low
             self.thresholds.high = temp_high
-        Cplus = (filtered.get_high_rois()['size']).sum()
-        Cminus = (filtered.get_low_rois()['size']).sum()
-        Centralness = 1 - (Cplus+Cminus) / float(len(self))
+        Cplus = (filtered.get_high_rois()["size"]).sum()
+        Cminus = (filtered.get_low_rois()["size"]).sum()
+        Centralness = 1 - (Cplus + Cminus) / float(len(self))
 
         return Centralness
 
@@ -1191,9 +1183,12 @@ class ChromosomeCov(object):
         """
         if "zscore" not in self.df.columns:
             logger.critical(
-                ("you must call running_median and compute_zscore."
-                "alternatively, the run() method does the two steps"
-                " at once"))
+                (
+                    "you must call running_median and compute_zscore."
+                    "alternatively, the run() method does the two steps"
+                    " at once"
+                )
+            )
             raise Exception
         features = self.bed.feature_dict
         try:
@@ -1217,8 +1212,8 @@ class ChromosomeCov(object):
                         msg += "\n                        - %s" % this
 
                     alternative = [x for x in self.chrom_name.split("|") if x]
-                    alternative = alternative[-1] # assume the accession is last
-                    alternative = alternative.split('.')[0] # remove version
+                    alternative = alternative[-1]  # assume the accession is last
+                    alternative = alternative.split(".")[0]  # remove version
                     if alternative in features.keys():
                         msg += "\n Guessed the chromosome name to be: %s" % alternative
                     else:
@@ -1230,22 +1225,21 @@ class ChromosomeCov(object):
 
             if features:
                 if alternative:
-                    return FilteredGenomeCov(data, self.thresholds,
-                        features[alternative], step=self.binning)
+                    return FilteredGenomeCov(data, self.thresholds, features[alternative], step=self.binning)
                 else:
-                    return FilteredGenomeCov(data, self.thresholds,
-                        features[self.chrom_name], step=self.binning)
+                    return FilteredGenomeCov(data, self.thresholds, features[self.chrom_name], step=self.binning)
             else:
-                return FilteredGenomeCov(data, self.thresholds, 
-                            step=self.binning)
+                return FilteredGenomeCov(data, self.thresholds, step=self.binning)
         except KeyError:
-            logger.error("Column zscore is missing in data frame.\n"
-                         "You must run compute_zscore before get low coverage."
-                         "\n\n", self.__doc__)
+            logger.error(
+                "Column zscore is missing in data frame.\n"
+                "You must run compute_zscore before get low coverage."
+                "\n\n",
+                self.__doc__,
+            )
             sys.exit(1)
 
-    def plot_rois(self, x1, x2, set_ylimits=False, rois=None, fontsize=16,
-                  color_high="r", color_low="g", clf=True):
+    def plot_rois(self, x1, x2, set_ylimits=False, rois=None, fontsize=16, color_high="r", color_low="g", clf=True):
 
         if rois is None:
             rois = self.rois
@@ -1253,24 +1247,35 @@ class ChromosomeCov(object):
         high = rois.get_high_rois().query("end>@x1 and start<@x2")
         low = rois.get_low_rois().query("end>@x1 and start<@x2")
 
-        self.plot_coverage(x1=x1, x2=x2, set_ylimits=set_ylimits, sample=False,
-            fontsize=fontsize, clf=clf)
+        self.plot_coverage(x1=x1, x2=x2, set_ylimits=set_ylimits, sample=False, fontsize=fontsize, clf=clf)
 
         for start, end, cov in zip(high.start, high.end, high.mean_cov):
-            pylab.plot([start, end], [cov, cov], lw=2, color=color_high, 
-                       marker="o")
+            pylab.plot([start, end], [cov, cov], lw=2, color=color_high, marker="o")
 
         for start, end, cov in zip(low.start, low.end, low.mean_cov):
-            pylab.plot([start, end], [cov, cov], lw=2, color=color_low, 
-                       marker="o")
-        pylab.xlim([x1,x2])
+            pylab.plot([start, end], [cov, cov], lw=2, color=color_low, marker="o")
+        pylab.xlim([x1, x2])
 
-    def plot_coverage(self, filename=None, fontsize=16,
-            rm_lw=1, rm_color="#0099cc", rm_label="Running median",
-            th_lw=1, th_color="r", th_ls="--", main_color="k", main_lw=1,
-            main_kwargs={}, sample=True, set_ylimits=True, x1=None, x2=None,
-            clf=True):
-        """ Plot coverage as a function of base position.
+    def plot_coverage(
+        self,
+        filename=None,
+        fontsize=16,
+        rm_lw=1,
+        rm_color="#0099cc",
+        rm_label="Running median",
+        th_lw=1,
+        th_color="r",
+        th_ls="--",
+        main_color="k",
+        main_lw=1,
+        main_kwargs={},
+        sample=True,
+        set_ylimits=True,
+        x1=None,
+        x2=None,
+        clf=True,
+    ):
+        """Plot coverage as a function of base position.
 
         :param filename:
         :param rm_lw: line width of the running median
@@ -1307,18 +1312,17 @@ class ChromosomeCov(object):
             x1 = self.df.iloc[0].name
         if x2 is None:
             x2 = self.df.iloc[-1].name
-        assert x1<x2
+        assert x1 < x2
 
         df = self.df.loc[x1:x2]
 
-        high_zcov = (self.thresholds.high * self.best_gaussian["sigma"] +
-                self.best_gaussian["mu"]) * df["rm"]
-        low_zcov = (self.thresholds.low * self.best_gaussian["sigma"] +
-                self.best_gaussian["mu"]) * df["rm"]
+        high_zcov = (self.thresholds.high * self.best_gaussian["sigma"] + self.best_gaussian["mu"]) * df["rm"]
+        low_zcov = (self.thresholds.low * self.best_gaussian["sigma"] + self.best_gaussian["mu"]) * df["rm"]
 
-        if clf:pylab.clf()
+        if clf:
+            pylab.clf()
         ax = pylab.gca()
-        ax.set_facecolor('#eeeeee')
+        ax.set_facecolor("#eeeeee")
         pylab.xlim(df["pos"].iloc[0], df["pos"].iloc[-1])
         axes = []
         labels = []
@@ -1327,31 +1331,25 @@ class ChromosomeCov(object):
         # the number of points to a million for now.
         if len(df) > 1000000 and sample is True:
             logger.info("sub sample data for plotting the coverage")
-            NN = int(len(df)/1000000)
+            NN = int(len(df) / 1000000)
         else:
             NN = 1
 
         # the main coverage plot
-        p1, = pylab.plot(df["cov"][::NN], color=main_color, label="Coverage",
-                linewidth=main_lw, **main_kwargs)
+        (p1,) = pylab.plot(df["cov"][::NN], color=main_color, label="Coverage", linewidth=main_lw, **main_kwargs)
         axes.append(p1)
         labels.append("Coverage")
 
         # The running median plot
         if rm_lw > 0:
-            p2, = pylab.plot(df["rm"][::NN],
-                    color=rm_color,
-                    linewidth=rm_lw,
-                    label=rm_label)
+            (p2,) = pylab.plot(df["rm"][::NN], color=rm_color, linewidth=rm_lw, label=rm_label)
             axes.append(p2)
             labels.append(rm_label)
 
         # The threshold curves
         if th_lw > 0:
-            p3, = pylab.plot(high_zcov[::NN], linewidth=th_lw,
-                             color=th_color, ls=th_ls, label="Thresholds")
-            p4, = pylab.plot(low_zcov[::NN], linewidth=th_lw,
-                             color=th_color, ls=th_ls, label="_nolegend_")
+            (p3,) = pylab.plot(high_zcov[::NN], linewidth=th_lw, color=th_color, ls=th_ls, label="Thresholds")
+            (p4,) = pylab.plot(low_zcov[::NN], linewidth=th_lw, color=th_color, ls=th_ls, label="_nolegend_")
             axes.append(p3)
             labels.append("Thresholds")
 
@@ -1362,21 +1360,19 @@ class ChromosomeCov(object):
 
         # sometimes there are large coverage value that squeeze the plot.
         # Let us restrict it. We can say that 10 times the average coverage is
-        # the maximum. We can save the original plot and the squeezed one. 
+        # the maximum. We can save the original plot and the squeezed one.
 
         if set_ylimits is True:
-            #m1 = high_zcov.max(skipna=True)
-            m4 = high_zcov[high_zcov>0]
+            # m1 = high_zcov.max(skipna=True)
+            m4 = high_zcov[high_zcov > 0]
             if len(m4) == 0:
                 m4 = 3
             else:
                 m4 = m4.max(skipna=True)
             # ignore values equal to zero to compute mean average
-            m3 = df[df['cov']>0]['cov'].mean()
+            m3 = df[df["cov"] > 0]["cov"].mean()
 
-            pylab.ylim([0, min([
-                m4 * 2,
-                m3 * 10])])
+            pylab.ylim([0, min([m4 * 2, m3 * 10])])
         else:
             pylab.ylim([0, pylab.ylim()[1]])
 
@@ -1397,16 +1393,11 @@ class ChromosomeCov(object):
             return bins
         return 100
 
-    def plot_hist_zscore(self, fontsize=16, filename=None, max_z=6,
-            binwidth=0.5, **hist_kargs):
-        """ Barplot of the zscore values
-
-        """
+    def plot_hist_zscore(self, fontsize=16, filename=None, max_z=6, binwidth=0.5, **hist_kargs):
+        """Barplot of the zscore values"""
         pylab.clf()
-        bins = self._set_bins(self.df["zscore"][self.range[0]:self.range[1]],
-                              binwidth)
-        self.df["zscore"][self.range[0]:self.range[1]].hist(
-            grid=True, bins=bins, **hist_kargs)
+        bins = self._set_bins(self.df["zscore"][self.range[0] : self.range[1]], binwidth)
+        self.df["zscore"][self.range[0] : self.range[1]].hist(grid=True, bins=bins, **hist_kargs)
         pylab.xlabel("Z-score", fontsize=fontsize)
         try:
             pylab.tight_layout()
@@ -1416,26 +1407,22 @@ class ChromosomeCov(object):
         if filename:
             pylab.savefig(filename)
 
-    def plot_hist_normalized_coverage(self, filename=None, binwidth=0.05,
-            max_z=3):
-        """ Barplot of the normalized coverage with gaussian fitting
-
-        """
+    def plot_hist_normalized_coverage(self, filename=None, binwidth=0.05, max_z=3):
+        """Barplot of the normalized coverage with gaussian fitting"""
         pylab.clf()
         # if there are a NaN -> can't set up binning
-        d = self.df["scale"][self.range[0]:self.range[1]].dropna()
+        d = self.df["scale"][self.range[0] : self.range[1]].dropna()
         # remove outlier -> plot crash if range between min and max is too high
         d = d[np.abs(d - d.mean()) <= (4 * d.std())]
         bins = self._set_bins(d, binwidth)
         try:
             self.mixture_fitting.data = d
-            self.mixture_fitting.plot(self.gaussians_params, bins=bins, Xmin=0,
-                                      Xmax=max_z)
+            self.mixture_fitting.plot(self.gaussians_params, bins=bins, Xmin=0, Xmax=max_z)
         except ZeroDivisionError:
             return
 
         pylab.grid(True)
-        pylab.xlim([0,max_z])
+        pylab.xlim([0, max_z])
         pylab.xlabel("Normalised per-base coverage")
 
         try:
@@ -1445,8 +1432,20 @@ class ChromosomeCov(object):
         if filename:
             pylab.savefig(filename)
 
-    def plot_hist_coverage(self, logx=True, logy=True, fontsize=16, N=25,
-        fignum=1, hold=False, alpha=0.8, ec="k", filename=None, zorder=10, **kw_hist):
+    def plot_hist_coverage(
+        self,
+        logx=True,
+        logy=True,
+        fontsize=16,
+        N=25,
+        fignum=1,
+        hold=False,
+        alpha=0.8,
+        ec="k",
+        filename=None,
+        zorder=10,
+        **kw_hist
+    ):
         """
 
         :param N:
@@ -1456,33 +1455,29 @@ class ChromosomeCov(object):
             pylab.figure(fignum)
             pylab.clf()
         ax = pylab.gca()
-        ax.set_facecolor('#eeeeee')
+        ax.set_facecolor("#eeeeee")
 
-        data = self.df['cov'].dropna().values
+        data = self.df["cov"].dropna().values
 
         maxcov = data.max()
         if logx is True and logy is True:
             bins = pylab.logspace(0, pylab.log10(maxcov), N)
-            pylab.hist(data, bins=bins, log=True, label=self.chrom_name,
-                alpha=alpha, ec=ec, zorder=zorder, **kw_hist)
+            pylab.hist(data, bins=bins, log=True, label=self.chrom_name, alpha=alpha, ec=ec, zorder=zorder, **kw_hist)
             pylab.semilogx()
             pylab.xlabel("Coverage (log scale)", fontsize=fontsize)
             pylab.ylabel("Count (log scale)", fontsize=fontsize)
         elif logx is False and logy is True:
-            pylab.hist(data, bins=N, log=True, label=self.chrom_name,
-                alpha=alpha, ec=ec, zorder=zorder, **kw_hist)
+            pylab.hist(data, bins=N, log=True, label=self.chrom_name, alpha=alpha, ec=ec, zorder=zorder, **kw_hist)
             pylab.xlabel("Coverage", fontsize=fontsize)
             pylab.ylabel("Count (log scale)", fontsize=fontsize)
         elif logx is True and logy is False:
             bins = pylab.logspace(0, pylab.log10(maxcov), N)
-            pylab.hist(data, bins=N, label=self.chrom_name, alpha=alpha,
-                zorder=zorder, ec=ec, **kw_hist)
+            pylab.hist(data, bins=N, label=self.chrom_name, alpha=alpha, zorder=zorder, ec=ec, **kw_hist)
             pylab.xlabel("Coverage (log scale)", fontsize=fontsize)
             pylab.ylabel("Count", fontsize=fontsize)
             pylab.semilogx()
         else:
-            pylab.hist(data, bins=N, label=self.chrom_name, alpha=alpha,
-                zorder=zorder, ec=ec, **kw_hist)
+            pylab.hist(data, bins=N, label=self.chrom_name, alpha=alpha, zorder=zorder, ec=ec, **kw_hist)
             pylab.xlabel("Coverage", fontsize=fontsize)
             pylab.ylabel("Count", fontsize=fontsize)
         pylab.grid(True)
@@ -1490,7 +1485,7 @@ class ChromosomeCov(object):
             pylab.savefig(filename)
 
     def to_csv(self, filename=None, start=None, stop=None, **kwargs):
-        """ Write CSV file of the dataframe.
+        """Write CSV file of the dataframe.
 
         :param str filename: csv output filename. If None, return string.
         :param int start: start row index.
@@ -1512,47 +1507,68 @@ class ChromosomeCov(object):
                 if os.path.isdir(directory):
                     pass
                 else:
-                    msg = "{0} exist and it is not a directory".format(
-                        directory)
+                    msg = "{0} exist and it is not a directory".format(directory)
                     logger.error(msg)
                     raise FileExistsError
         return self.df.loc[start:stop].to_csv(filename, **kwargs)
 
-    def plot_gc_vs_coverage(self, filename=None, bins=None, Nlevels=None,
-                            fontsize=20, norm="log", ymin=0, ymax=100,
-                            contour=True, cmap="BrBG", **kwargs):
-        """Plot histogram 2D of the GC content versus coverage
-
-
-        """
-        if Nlevels is None or Nlevels==0:
+    def plot_gc_vs_coverage(
+        self,
+        filename=None,
+        bins=None,
+        Nlevels=None,
+        fontsize=20,
+        norm="log",
+        ymin=0,
+        ymax=100,
+        contour=True,
+        cmap="BrBG",
+        **kwargs
+    ):
+        """Plot histogram 2D of the GC content versus coverage"""
+        if Nlevels is None or Nlevels == 0:
             contour = False
 
-        data = self.df[['cov','gc']].copy()
-        data['gc'] *= 100
+        data = self.df[["cov", "gc"]].copy()
+        data["gc"] *= 100
         data = data.dropna()
         if bins is None:
-            bins = [100, min(int(data['gc'].max()-data['gc'].min()+1),
-                    max(5, self.bed.gc_window_size - 10))]
-            bins[0] = max(10, min(bins[0], self.df['cov'].max()))
+            bins = [100, min(int(data["gc"].max() - data["gc"].min() + 1), max(5, self.bed.gc_window_size - 10))]
+            bins[0] = max(10, min(bins[0], self.df["cov"].max()))
 
         # FIXME jan 2018 there is currently an annoying warning in Hist2D
         import warnings
+
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             from sequana.viz import Hist2D
+
             h2 = Hist2D(data)
 
             try:
-                h2.plot(bins=bins, xlabel="Per-base coverage",
-                    ylabel=r'GC content (%)',
-                    Nlevels=Nlevels, contour=contour, norm=norm,
-                    fontsize=fontsize, cmap=cmap, **kwargs)
+                h2.plot(
+                    bins=bins,
+                    xlabel="Per-base coverage",
+                    ylabel=r"GC content (%)",
+                    Nlevels=Nlevels,
+                    contour=contour,
+                    norm=norm,
+                    fontsize=fontsize,
+                    cmap=cmap,
+                    **kwargs
+                )
             except:
-                h2.plot(bins=bins, xlabel="Per-base coverage",
-                    ylabel=r'GC content (%)' , cmap=cmap,
-                    Nlevels=Nlevels, contour=False, norm=norm,
-                    fontsize=fontsize, **kwargs)
+                h2.plot(
+                    bins=bins,
+                    xlabel="Per-base coverage",
+                    ylabel=r"GC content (%)",
+                    cmap=cmap,
+                    Nlevels=Nlevels,
+                    contour=False,
+                    norm=norm,
+                    fontsize=fontsize,
+                    **kwargs
+                )
 
         pylab.ylim([ymin, ymax])
         try:
@@ -1569,14 +1585,14 @@ class ChromosomeCov(object):
         (default window size is 101)
 
         """
-        return self.df[['cov', 'gc']].corr().iloc[0, 1]
+        return self.df[["cov", "gc"]].corr().iloc[0, 1]
 
     def get_max_gc_correlation(self, reference, guess=100):
         """Plot correlation between coverage and GC content by varying the GC window
 
-         The GC content uses a moving window of size W. This parameter affects
-         the correlation bewteen coverage and GC. This function find the
-         *optimal* window length.
+        The GC content uses a moving window of size W. This parameter affects
+        the correlation bewteen coverage and GC. This function find the
+        *optimal* window length.
 
         """
         pylab.clf()
@@ -1594,6 +1610,7 @@ class ChromosomeCov(object):
             return corr
 
         from scipy.optimize import fmin
+
         res = fmin(func, guess, xtol=1, disp=False)  # guess is 200
         pylab.plot(wss, corrs, "o")
         pylab.xlabel("GC window size")
@@ -1602,7 +1619,7 @@ class ChromosomeCov(object):
         return res[0]
 
     def _get_hist_data(self, bins=30):
-        data = self.df['cov'].dropna()
+        data = self.df["cov"].dropna()
         m = data.quantile(0.01)
         M = data.quantile(0.99)
         # we
@@ -1614,14 +1631,16 @@ class ChromosomeCov(object):
             bins = pylab.arange(m, M, step)
 
         try:
-            #Y, X, _ = pylab.hist(data, bins=bins, normed=True)
-            Y, X, = np.histogram(data, bins=bins, density=True)
+            # Y, X, _ = pylab.hist(data, bins=bins, normed=True)
+            (
+                Y,
+                X,
+            ) = np.histogram(data, bins=bins, density=True)
             return {"X": list(X[1:]), "Y": list(Y)}
         except:
             return {"X": [], "Y": []}
 
-    def get_summary(self, C3=None, C4=None,  stats=None,
-            caller="sequana.bedtools"):
+    def get_summary(self, C3=None, C4=None, stats=None, caller="sequana.bedtools"):
 
         if stats is None:
             stats = self.get_stats()
@@ -1632,32 +1651,31 @@ class ChromosomeCov(object):
 
         fit = self._get_best_gaussian()
 
-        d = {"evenness": round(self.evenness, 4),
-             "C3": round(self.C3, 4),
-             "C4": round(self.C4, 4),
-             "BOC": self.BOC,
-             "length": len(self),
-             "DOC": self.DOC,
-             "CV": self.CV,
-             "chrom_name": self.chrom_name,
-             "ROI": ROI,
-             "ROI(low)": ROIlow,
-             "ROI(high)": ROIhigh,
-             "fit_mu": fit["mu"],
-             "fit_sigma": fit["sigma"],
-             "fit_pi": fit["pi"],
-             "hist_coverage": self._get_hist_data()
+        d = {
+            "evenness": round(self.evenness, 4),
+            "C3": round(self.C3, 4),
+            "C4": round(self.C4, 4),
+            "BOC": self.BOC,
+            "length": len(self),
+            "DOC": self.DOC,
+            "CV": self.CV,
+            "chrom_name": self.chrom_name,
+            "ROI": ROI,
+            "ROI(low)": ROIlow,
+            "ROI(high)": ROIhigh,
+            "fit_mu": fit["mu"],
+            "fit_sigma": fit["sigma"],
+            "fit_pi": fit["pi"],
+            "hist_coverage": self._get_hist_data(),
         }
         if "gc" in stats:
-            d["GC"] = stats['gc']
+            d["GC"] = stats["gc"]
 
         # sample name will be the filename
         # chrom name is the chromosome or contig name
         # Fixes v0.8.0 get rid of the .bed extension
         sample_name = os.path.basename(self._bed.input_filename.replace(".bed", ""))
-        summary = Summary("coverage", sample_name=sample_name, data=d,
-            caller=caller)
-
+        summary = Summary("coverage", sample_name=sample_name, data=d, caller=caller)
 
         summary.data_description = {
             "BOC": "Breadth of Coverage",
@@ -1681,30 +1699,28 @@ class ChromosomeCov(object):
 
         :return: dictionary
         """
-        MedianCOV = self.df['cov'].median()
+        MedianCOV = self.df["cov"].median()
 
         stats = {
-            'DOC': self.DOC,                    # depth of coverage
-            'STD': self.STD,                    # sigma of the DOC
-            'Median': MedianCOV,                # median of the DOC
-            'BOC': self.BOC                     # breadth of coverage
-            }
+            "DOC": self.DOC,  # depth of coverage
+            "STD": self.STD,  # sigma of the DOC
+            "Median": MedianCOV,  # median of the DOC
+            "BOC": self.BOC,  # breadth of coverage
+        }
 
         # coefficient of variation
-        stats['CV'] =  self.CV
+        stats["CV"] = self.CV
 
         # median of the absolute median deviation
-        stats['MAD'] = np.median(abs(MedianCOV - self.df['cov']).dropna())
+        stats["MAD"] = np.median(abs(MedianCOV - self.df["cov"]).dropna())
 
         # GC content
-        if 'gc' in self.df.columns:
-            stats['GC'] = self.df['gc'].mean() * 100
-            #names.append('GC')
-            #descriptions.append("GC content in %")
+        if "gc" in self.df.columns:
+            stats["GC"] = self.df["gc"].mean() * 100
+            # names.append('GC')
+            # descriptions.append("GC content in %")
 
         return stats
-
-
 
 
 class FilteredGenomeCov(object):
@@ -1712,11 +1728,11 @@ class FilteredGenomeCov(object):
 
     :target: developers only
     """
+
     _feature_not_wanted = {"gene", "regulatory", "source"}
 
-    def __init__(self, df, threshold, feature_list=None, step=1,
-            apply_threshold_after_merging=True):
-        """ .. rubric:: constructor
+    def __init__(self, df, threshold, feature_list=None, step=1, apply_threshold_after_merging=True):
+        """.. rubric:: constructor
 
         :param df: dataframe with filtered position used within
             :class:`GenomeCov`. Must contain the following columns:
@@ -1750,13 +1766,13 @@ class FilteredGenomeCov(object):
                 return x.split(".")[0]
             except:
                 return x
-        for column in ['gene_end', 'gene_start']:
+
+        for column in ["gene_end", "gene_start"]:
             if column in self.df.columns:
                 self.df[column] = self.df[column].astype(str)
                 self.df[column] = self.df[column].apply(func)
-        #self.df['end'] *= self.step
-        #self.df['start'] *= self.step
-
+        # self.df['end'] *= self.step
+        # self.df['start'] *= self.step
 
     def __iadd__(self, other):
         self.df = self.df.append(other.df)
@@ -1784,14 +1800,23 @@ class FilteredGenomeCov(object):
         size = stop - start + 1
 
         def log2ratio(mean_cov, rm):
-            if rm != 0 and mean_cov!=0:
-                return np.log2(mean_cov/rm)
+            if rm != 0 and mean_cov != 0:
+                return np.log2(mean_cov / rm)
             else:
                 np.nan
-        return {"chr": chrom, "start": start, "end": stop + 1, "size": size,
-                "mean_cov": cov, "mean_rm": rm, "mean_zscore": zscore,
-                "log2_ratio": log2ratio(cov, rm),
-                "max_zscore": max_zscore, "max_cov": max_cov}
+
+        return {
+            "chr": chrom,
+            "start": start,
+            "end": stop + 1,
+            "size": size,
+            "mean_cov": cov,
+            "mean_rm": rm,
+            "mean_zscore": zscore,
+            "log2_ratio": log2ratio(cov, rm),
+            "max_zscore": max_zscore,
+            "max_cov": max_cov,
+        }
 
     def _merge_region(self, zscore_label="zscore"):
         """Cluster regions within a dataframe.
@@ -1839,7 +1864,7 @@ class FilteredGenomeCov(object):
         return merge_df
 
     def _add_annotation(self, region_list, feature_list):
-        """ Add annotation from a dictionary generated by parsers in
+        """Add annotation from a dictionary generated by parsers in
         sequana.tools.
         """
         region_ann = []
@@ -1851,9 +1876,10 @@ class FilteredGenomeCov(object):
             try:
                 feature = next(iter_feature)
             except StopIteration:
-                print("Features types ({0}) are not present in the annotation"
-                      " file. Please change what types you want".format(
-                      feature['type']))
+                print(
+                    "Features types ({0}) are not present in the annotation"
+                    " file. Please change what types you want".format(feature["type"])
+                )
                 return region_ann
 
         # merge regions and annotations
@@ -1884,7 +1910,7 @@ class FilteredGenomeCov(object):
                     except:
                         feature["product"] = "None"
                 # FIXME what that ?
-                #if region["start"] == 237433:
+                # if region["start"] == 237433:
                 #    print(dict(region, **feature))
                 region_ann.append(dict(region, **feature))
                 try:
@@ -1892,21 +1918,42 @@ class FilteredGenomeCov(object):
                 except StopIteration:
                     break
             if feature_exist is False:
-                region_ann.append(dict(region, **{"gene_start": None,
-                                                  "gene_end": None,
-                                                  "type": None,
-                                                  "gene": None,
-                                                  "strand": None,
-                                                  "product": None}))
+                region_ann.append(
+                    dict(
+                        region,
+                        **{
+                            "gene_start": None,
+                            "gene_end": None,
+                            "type": None,
+                            "gene": None,
+                            "strand": None,
+                            "product": None,
+                        }
+                    )
+                )
         return region_ann
 
     def _dict_to_df(self, region_list, annotation):
-        """ Convert dictionary as dataframe.
-        """
+        """Convert dictionary as dataframe."""
         merge_df = pd.DataFrame(region_list)
-        colnames = ["chr", "start", "end", "size", "mean_cov", "max_cov",
-                    "mean_rm", "mean_zscore", "max_zscore", "log2_ratio",
-                    "gene_start","gene_end", "type", "gene", "strand", "product"]
+        colnames = [
+            "chr",
+            "start",
+            "end",
+            "size",
+            "mean_cov",
+            "max_cov",
+            "mean_rm",
+            "mean_zscore",
+            "max_zscore",
+            "log2_ratio",
+            "gene_start",
+            "gene_end",
+            "type",
+            "gene",
+            "strand",
+            "product",
+        ]
         if not annotation:
             colnames = colnames[:10]
         merge_df = pd.DataFrame(region_list, columns=colnames)
@@ -1915,14 +1962,12 @@ class FilteredGenomeCov(object):
         if annotation:
             merge_df.rename(columns={"gene": "gene_name"}, inplace=True)
             # maybe let the user set what he wants
-            return merge_df.loc[~merge_df["type"].isin(
-                FilteredGenomeCov._feature_not_wanted)]
+            return merge_df.loc[~merge_df["type"].isin(FilteredGenomeCov._feature_not_wanted)]
         return merge_df
 
     def _get_sub_range(self, seq_range):
         try:
-            return self.df[(self.df["end"] > seq_range[0]) &
-                           (self.df["start"] < seq_range[1])]
+            return self.df[(self.df["end"] > seq_range[0]) & (self.df["start"] < seq_range[1])]
         except TypeError:
             return self.df
 
@@ -1942,17 +1987,17 @@ class FilteredGenomeCov(object):
         should be clustered as:
         <EEE>---------E-------<EE>
 
-        Where new large events will combine information from 
+        Where new large events will combine information from
         the small events.
 
         When merging two events, we recompute the  max_zscore and mean_zscore
         and apply the threshold again.
 
-        To illustrate this feature, imagine two marginal events at position 1 
-        and 1000 with a zscore of 4 each (marginals). When there are merged, 
-        their mean_zscore is recomputed and should be smaller than 4. Those 
+        To illustrate this feature, imagine two marginal events at position 1
+        and 1000 with a zscore of 4 each (marginals). When there are merged,
+        their mean_zscore is recomputed and should be smaller than 4. Those
          events are just noise but will appear as significant events (since
-        long size). So, we can remove then by checking the new mean_zscore to 
+        long size). So, we can remove then by checking the new mean_zscore to
         be > than the thresholds.
 
         """
@@ -1965,48 +2010,50 @@ class FilteredGenomeCov(object):
         logger.info("Merged into {} ROIs".format(len(data)))
 
         # sort data by chr and start
-        self.df = data.sort_values(by=['chr', 'start'])
+        self.df = data.sort_values(by=["chr", "start"])
 
         # some rows have been merged, let us reset the index
         self.df.reset_index(inplace=True, drop=True)
 
     def _merge_rois_into_cnvs(self, rois, delta=1000):
-        #rois is a copy, it can be changed
+        # rois is a copy, it can be changed
 
         clusterID = [-1] * len(rois)
         cluster_counter = 0
-        for i in range(0, len(rois)-2):
-            start = rois.iloc[i:i+2]['start'].values
-            end = rois.iloc[i:i+2]['end'].values
+        for i in range(0, len(rois) - 2):
+            start = rois.iloc[i : i + 2]["start"].values
+            end = rois.iloc[i : i + 2]["end"].values
 
             # for the next ROI to be added as an item of
             # the cluster, it should be close, and similar.
             # similar for now means zscore have the same sign
             d1 = start[1] - end[0]
             z1 = rois.iloc[i]["max_zscore"]
-            z2 = rois.iloc[i+1]["max_zscore"]
+            z2 = rois.iloc[i + 1]["max_zscore"]
 
-            if d1 < delta and z1*z2>=0:# and d2 <1000:
+            if d1 < delta and z1 * z2 >= 0:  # and d2 <1000:
                 clusterID[i] = cluster_counter
-                clusterID[i+1] = cluster_counter
+                clusterID[i + 1] = cluster_counter
             else:
                 cluster_counter += 1
 
-        # Now, we can cluster the events 
+        # Now, we can cluster the events
         # newdata contains the unclustered rows, then
         # we will add one row per cluster.
-        rois['cluster'] = clusterID
+        rois["cluster"] = clusterID
         self.clusterID = clusterID
         self.rois = rois
 
         # just get start and end time of the clusters.
         # we drop special case of unclustered rows (-1)
-        new_regions = rois.groupby("cluster").agg({
-            # min of ("A", "A") should return "A"
-            #"chr": lambda x: x.min(),
-            "start": lambda x: x.min(),
-            "end": lambda x: x.max()
-        })
+        new_regions = rois.groupby("cluster").agg(
+            {
+                # min of ("A", "A") should return "A"
+                # "chr": lambda x: x.min(),
+                "start": lambda x: x.min(),
+                "end": lambda x: x.max(),
+            }
+        )
         new_regions.drop(-1, inplace=True)
 
         # Now we build back the entire ROI dataframe
@@ -2022,11 +2069,9 @@ class FilteredGenomeCov(object):
 
         merge_df = self._dict_to_df(region_list, self.feature_list)
 
-
         # finally, remove events that are small.
         if self.apply_threshold_after_merging:
-            merge_df = merge_df.query(
-                "mean_zscore>@self.thresholds.high or mean_zscore<@self.thresholds.low")
+            merge_df = merge_df.query("mean_zscore>@self.thresholds.high or mean_zscore<@self.thresholds.low")
 
         return merge_df
 
@@ -2080,34 +2125,33 @@ class ChromosomeCovMultiChunk(object):
         # from the first one extract metadata
         data = summaries[0]
         sample_name = data["sample_name"]
-        summary = Summary("coverage", sample_name=sample_name,
-            data=data['data'].copy(), caller=caller)
-        summary.data_description = data['data_description'].copy()
+        summary = Summary("coverage", sample_name=sample_name, data=data["data"].copy(), caller=caller)
+        summary.data_description = data["data_description"].copy()
 
         # now replace the data field with proper values
-        N = sum([this['data']['length'] for this in summaries])
+        N = sum([this["data"]["length"] for this in summaries])
         summary.data["length"] = N
 
         # now, we need to update those values, which are means, so
         # we need to multiply back by the length to get the sum, and finally
         # divide by the total mean
-        for this in ['BOC', 'DOC', 'evenness']:
-            summary.data[this] = sum([d['data'][this] * d['data']['length']
-                        for d in summaries]) / float(N)
+        for this in ["BOC", "DOC", "evenness"]:
+            summary.data[this] = sum([d["data"][this] * d["data"]["length"] for d in summaries]) / float(N)
 
         # FIXME
         # For, CV, centralness, evenness, we simply takes the grand mean for now
-        for this in ['C3', 'C4', 'evenness']:
-            summary.data[this] = np.mean([d['data'][this] for d in summaries])
+        for this in ["C3", "C4", "evenness"]:
+            summary.data[this] = np.mean([d["data"][this] for d in summaries])
 
         # For, ROI, just the sum
-        for this in ['ROI', 'ROI(high)', 'ROI(low)']:
-            summary.data[this] = sum([d['data'][this] for d in summaries])
+        for this in ["ROI", "ROI(high)", "ROI(low)"]:
+            summary.data[this] = sum([d["data"][this] for d in summaries])
 
         return summary
 
     def get_rois(self):
         import copy
+
         # all individual ROIs
         data = [item[1] for item in self.data]
 
@@ -2115,7 +2159,3 @@ class ChromosomeCovMultiChunk(object):
         rois = copy.deepcopy(data[0])
         rois.df = pd.concat([this.df for this in data], ignore_index=True)
         return rois
-
-
-
-

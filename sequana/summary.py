@@ -22,8 +22,8 @@ from pathlib import Path
 
 from sequana.lazy import pandas as pd
 import colorlog
-logger = colorlog.getLogger(__name__)
 
+logger = colorlog.getLogger(__name__)
 
 
 from sequana.utils.datatables_js import DataTable
@@ -32,10 +32,9 @@ from sequana.utils.datatables_js import DataTable
 __all__ = ["Summary"]
 
 
-
 class MultiSummary(object):
     """Helper class to read several json and create summary plots and HTML
-content"""
+    content"""
 
     def __init__(self):
         self.data = {}
@@ -45,6 +44,7 @@ content"""
         self.filename = filename
         data = json.load(open(self.filename, "r"))
         import os
+
         if label is None:
             p = Path(filename)
             label = p.name
@@ -53,18 +53,20 @@ content"""
 
     def remove_summary(self, label):
         if label in self.data and label in self.order:
-            del self.data[label] 
+            del self.data[label]
             self.order.pop(label)
 
     def get_html_table(self, user_key_list):
         df = self.get_single_data(user_key_list)
-        datatable = DataTable(df, 'name')
-        datatable.datatable.datatable_options = {'pageLength': 15,
-            'scrollCollapse': 'false',
-            'dom': 'Brt',
-            'buttons': ['copy', 'csv']}
+        datatable = DataTable(df, "name")
+        datatable.datatable.datatable_options = {
+            "pageLength": 15,
+            "scrollCollapse": "false",
+            "dom": "Brt",
+            "buttons": ["copy", "csv"],
+        }
         js = datatable.create_javascript_function()
-        html = datatable.create_datatable(float_format='%.6g')
+        html = datatable.create_datatable(float_format="%.6g")
         return js + html
 
     def get_single_data(self, user_key_lists):
@@ -82,10 +84,9 @@ content"""
         df = pd.DataFrame(data.values(), index=data.keys())
         df.columns = user_key_lists
         df = df.loc[self.order]
-        df = df.reset_index() # we need at least one index and one value
+        df = df.reset_index()  # we need at least one index and one value
 
-        return df 
-
+        return df
 
 
 class Summary(object):
@@ -123,10 +124,10 @@ class Summary(object):
         s.description = "bla bla bla"
 
     """
-    def __init__(self, name, sample_name="undefined", data={}, caller=None,
-            pipeline_version=None):
 
-        if os.path.exists(name) and name.endswith('json'):
+    def __init__(self, name, sample_name="undefined", data={}, caller=None, pipeline_version=None):
+
+        if os.path.exists(name) and name.endswith("json"):
             with open(name, "r") as fin:
                 data = json.loads(fin.read())
                 self._name = data["name"]
@@ -164,12 +165,14 @@ class Summary(object):
             "description": self.description,
             "data_description": self.data_description,
             "caller": self.caller,
-    }
+        }
+
     def add_params(self, params):
         self.params = params
 
     def to_json(self, filename):
         import json
+
         with open(filename, "w") as fh:
             json.dump(self.as_dict(), fh, indent=4, sort_keys=True)
 
@@ -184,6 +187,7 @@ class Summary(object):
     @property
     def version(self):
         from sequana import version
+
         return version
 
     @property
@@ -197,7 +201,7 @@ class Summary(object):
     def data_description(self, desc):
         self._data_description = {}
         assert isinstance(desc, dict), "data_description must be a dictionary"
-        for k,v in desc.items():
+        for k, v in desc.items():
             if k not in self.data.keys():
                 raise KeyError("{} not a key found in your data dictionary")
             else:
