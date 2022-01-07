@@ -22,6 +22,7 @@ from itertools import combinations
 
 from jinja2 import Environment, PackageLoader
 import seaborn as sns
+import upsetplot as upset
 
 from sequana.lazy import pandas as pd
 from sequana.lazy import pylab
@@ -1444,3 +1445,26 @@ class RNADiffResults:
         ax.ax_heatmap.tick_params(labelsize=ylabel_size, axis="y")
 
         return ax
+
+    def plot_upset(self, force=False):
+        """Plot the upset plot (alternative to venn diagram)."""
+
+        if len(self.comparisons) > 6 and not force:
+            logger.warning("Upset plots are not computed for more than 6 comparisons.")
+            return
+
+        if len(self.comparisons) < 2:
+            logger.warning("Upset plots can not computed for less than 2 comparisons.")
+            return
+
+        df = self.df.copy()
+        df = df.loc[:, (slice(None), "padj")]
+
+        # Keep only the name of the comparison as column name
+        df.columns = [x[0] for x in df.columns]
+        df = df < self.alpha
+
+        # From a dataframe of booleans, get data structure needed for upset
+        # ie a dictionnary with comparisons as keys and list of DEG as values.
+        data = df.apply(lambda x: list(x.index[x])).to_dict()
+        upset.UpSet(upset.from_contents(data), subset_size="count", sort_by="cardinality").plot()
