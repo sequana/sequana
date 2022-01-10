@@ -31,3 +31,4 @@ seaborn
 statsmodels
 xlrd
 xml2dict
+UpSetPlot
