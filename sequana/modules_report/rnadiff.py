@@ -61,7 +61,6 @@ class RNAdiffModule(SequanaBaseModule):
 
         matplotlib.rc_file_defaults()
 
-
     def create_individual_reports(self):
         description = """<p>The differential analysis is based on DESeq2. This
 tool aim at fitting one linear model per feature. Given the replicates in
@@ -95,6 +94,8 @@ for that feature.</p>
         self.add_cluster()
         self.add_normalisation()
         self.add_dispersion()
+        if len(self.rnadiff.comparisons) > 1 and len(self.rnadiff.comparisons) < 7:
+            self.add_upset_plot()
 
     def summary(self):
         """Add information of filter."""
@@ -138,22 +139,16 @@ for that feature.</p>
             return df
 
         dt = DataTable(get_local_df(Sdefault), "dge_default")
-        dt.datatable.set_links_to_column(
-            "comparison_link", "comparison", new_page=False
-        )
+        dt.datatable.set_links_to_column("comparison_link", "comparison", new_page=False)
         dt.datatable.datatable_options = options
         js_all = dt.create_javascript_function()
         html = dt.create_datatable(float_format="%d")
 
-
         dt = DataTable(get_local_df(S1, lfc=1), "dge_lfc")
-        dt.datatable.set_links_to_column(
-            "comparison_link", "comparison", new_page=False
-        )
+        dt.datatable.set_links_to_column("comparison_link", "comparison", new_page=False)
         dt.datatable.datatable_options = options
         js_all += dt.create_javascript_function()
         html += dt.create_datatable(float_format="%d")
-        
 
         self.sections.append(
             {
@@ -183,9 +178,7 @@ scale). Clicking on any of the link will lead you to the section of the comparis
         html = """<p>dispersion of the fitted data to the model</p>{}<hr>""".format(
             self.create_embedded_png(dispersion, "filename", style=style)
         )
-        self.sections.append(
-            {"name": "4. Dispersion", "anchor": "table", "content": html}
-        )
+        self.sections.append({"name": "4. Dispersion", "anchor": "table", "content": html})
 
     def add_cluster(self):
         style = "width:65%"
@@ -370,6 +363,30 @@ normalised counts.
             }
         )
 
+    def add_upset_plot(self):
+
+        style = "width:65%"
+
+        def upsetplot(filename):
+            import pylab
+
+            pylab.ioff()
+            pylab.clf()
+            self.rnadiff.plot_upset()
+            pylab.savefig(filename)
+            pylab.close()
+
+        html_upsetplot = """<p> Upset plots are an alternative to venn diagrams, easing the visualisation of DEG lists overlap between comparisons."""
+        img = self.create_embedded_png(upsetplot, "filename", style=style)
+
+        self.sections.append(
+            {
+                "name": "4. Upset plot",
+                "anchor": "table",
+                "content": html_upsetplot + img + "</hr>",
+            }
+        )
+
     def add_individual_report(self, comp, name, counter):
         style = "width:45%"
 
@@ -453,9 +470,7 @@ value as a function of the log2 ratio of diﬀerential expression. </p>"""
 
         # here we need to add the annotation if possible
         try:
-            df = pd.concat(
-                [df, self.rnadiff.annotation.annotation.loc[[str(x) for x in comp.df.index]]], axis=1
-            )
+            df = pd.concat([df, self.rnadiff.annotation.annotation.loc[[str(x) for x in comp.df.index]]], axis=1)
         except Exception as err:
             logger.critical(f"Could not add annotation. {err}")
 
