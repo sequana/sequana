@@ -133,8 +133,8 @@ software for you.
 Install conda executable
 ----------------------------
 
-.. warning:: this is currently borken on bioconda. We advice use to install sequana
-   with Python (pip) for latest versions
+.. warning:: this is currently broken on bioconda. We advise you to install sequana
+   with Python (pip) for the latest versions.
 
 
 In practice, we do use `Anaconda <https://conda.readthedocs.io/>`_ . We recommend to
