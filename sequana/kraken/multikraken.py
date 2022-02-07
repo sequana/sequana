@@ -81,8 +81,7 @@ class MultiKrakenResults:
 
         df = pd.DataFrame(data)
         df = df.fillna(0)
-        df = df.sort_index(ascending=False)
-        df = df.sort_index(ascending=True, axis=1)
+        df = df.sort_index(ascending=False, axis=1)
 
         return df
 
@@ -151,7 +150,7 @@ class MultiKrakenResults:
             if len(self.sample_names) < max_labels:
                 pylab.yticks(
                     range(len(self.sample_names)),
-                    self.sample_names[::-1],
+                    df.columns,
                     fontsize=ytick_fontsize,
                 )
             else:
@@ -165,7 +164,7 @@ class MultiKrakenResults:
             if len(self.sample_names) < max_labels:
                 pylab.xticks(
                     range(len(self.sample_names)),
-                    self.sample_names[::-1],
+                    df.columns,
                     fontsize=ytick_fontsize,
                 )
             else:
