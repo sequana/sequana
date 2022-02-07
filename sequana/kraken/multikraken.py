@@ -56,7 +56,7 @@ class MultiKrakenResults:
         for sample, filename in zip(self.sample_names, self.filenames):
             df = pd.read_csv(filename)
             count = df["count"].sum()
-            if "kingdom" not in df.columns:
+            if "kingdom" not in df.columns: #pragma: no cover
                 for name in self.ranks:
                     df[name] = "Unclassified"
 
@@ -107,8 +107,8 @@ class MultiKrakenResults:
         fig, ax = pylab.subplots(figsize=(9.5, 7))
 
         labels = []
-        for kingdom in sorted(df.index):
-            if kingdom == "Eukaryota":
+        for kingdom in sorted(df.index): #pragma: no cover
+            if kingdom == "Eukaryota": 
                 color = "purple"
             elif kingdom == "Unclassified":
                 color = "grey"
@@ -153,7 +153,7 @@ class MultiKrakenResults:
                     df.columns,
                     fontsize=ytick_fontsize,
                 )
-            else:
+            else: #pragma: no cover
                 pylab.yticks([1], [""])
             pylab.xlim([0, 100])
             pylab.ylim([-0.5, len(df.columns) - 0.5])
@@ -167,7 +167,7 @@ class MultiKrakenResults:
                     df.columns,
                     fontsize=ytick_fontsize,
                 )
-            else:
+            else: #pragma: no cover
                 pylab.xticks([1], [""])
             pylab.xlim([-0.5, len(df.columns) - 0.5])
 
@@ -215,7 +215,7 @@ class MultiKrakenResults2:
             for db in summary["databases"]:
                 try:
                     data[sample][db] = round(summary[db]["C"] / total * 100, 2)
-                except:
+                except KeyError: #pragma: no cover
                     data[sample][db] = 0
         df = pd.DataFrame(data)
         df = df.fillna(0)
@@ -235,7 +235,6 @@ class MultiKrakenResults2:
         width=1,
         ytick_fontsize=10,
         max_labels=50,
-        logx=False,
         alpha=0.8,
         colors=None,
         cmap="hot_r",
@@ -271,8 +270,6 @@ class MultiKrakenResults2:
             ax=ax,
             legend=False,
         )
-        if logx is True:
-            pylab.semilogx()
 
         pylab.xlabel("Percentage (%)", fontsize=fontsize)
         pylab.ylabel("Sample index/name", fontsize=fontsize)
@@ -280,7 +277,7 @@ class MultiKrakenResults2:
             pylab.yticks(
                 range(len(self.sample_names)), df.index, fontsize=ytick_fontsize
             )
-        else:
+        else: #pragma: no cover
             pylab.yticks([1], [""])
         pylab.xlim([0, 100])
         pylab.ylim([0 - 0.5, len(df.index) - 0.5])  # +1 for the legends

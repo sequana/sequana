@@ -42,4 +42,3 @@ def test_mkr2(tmpdir):
 
     filename = tmpdir.mkdir("temp").join("test.png")
     mkr.plot_stacked_hist(output_filename=filename)
-    mkr.plot_stacked_hist(output_filename=filename, logx=True)
