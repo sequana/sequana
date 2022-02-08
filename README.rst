@@ -123,6 +123,7 @@ Changelog
 ========= ====================================================================
 Version   Description
 ========= ====================================================================
+0.12.8    * Fix order of databases in multikraken
 0.12.7    * Fix memory leak in len() of FastA class
 0.12.6    * remove some useless rules
 0.12.5    * refactorisation of VCF tools/modules to use vcfpy instead of pyVCF
