@@ -15,13 +15,17 @@ import subprocess
 import sys
 from pathlib import Path
 import tempfile as tmp
-
 import pandas as pd
 import pysam
+import numpy as np
+import seaborn as sns
+import matplotlib
+import shutil
 
 from sequana import logger
 from sequana.tools import reverse_complement
 from sequana.gff3 import GFF3
+from sequana.fasta import FastA
 
 logger.setLevel("INFO")
 
@@ -40,7 +44,12 @@ def get_rna_pos_from_gff(gff, gff_filtered, ref_fasta, fasta_out, seq_type="rRNA
     gff_filtered = GFF3(gff_filtered)
     gff_filtered.to_fasta(ref_fasta, fasta_out)
 
+    genetic_types = gff.df.genetic_type.unique().tolist()
+    seq_types = gff_filtered.df.ID.tolist()
+
     logger.info(f"Found {gff_filtered.df.shape[0]} '{seq_type}' entries in annotation file.")
+    logger.info(f"Genetic types found in gff: {','.join(genetic_types)}")
+    logger.info(f"List of '{seq_type}' detected: {','.join(seq_types)}")
 
     return gff_filtered.df
 
@@ -78,19 +87,50 @@ def get_probes(fasta_in, fasta_out, probe_len=50, inter_probe_space=15):
     logger.info(f"{count} probes designed.")
 
 
-def cluster_probes(fasta_in, fasta_out, seq_id_thres=0.80, threads=4):
-    """Use cd-hit-est to cluster highly similar probes
+def cluster_probes(fasta_in, fasta_out, threads=4, best_n_probes=374):
+    """Use cd-hit-est to cluster highly similar probes.
+
+    Detect the highest cd-hit-est threshold where the number of probes is inferior or equal to best_n_probes.
 
     :param fasta_in: path to FASTA file with probes.
     :param fasta_out: path to FASTA file with probes after filtering.
+
     """
-    log_file = Path(fasta_out).with_suffix(".log")
 
-    cmd = f"cd-hit-est -i {fasta_in} -o {fasta_out} -c {seq_id_thres} -n {threads}"
-    logger.info(f"Clustering probes with command: {cmd} (log in '{log_file}').")
+    outdir = Path(fasta_out).parent / "cd-hit-est"
+    outdir.mkdir()
+    log_file = outdir / "cd-hit.log"
 
-    with open(log_file, "w") as f:
-        subprocess.run(cmd, shell=True, check=True, stdout=f)
+    res_dict = {"seq_id_thres": [], "n_probes": []}
+
+    for seq_id_thres in np.arange(0.8, 1, 0.01).round(2):
+
+        tmp_fas = outdir / f"clustered_{seq_id_thres}.fas"
+        cmd = f"cd-hit-est -i {fasta_in} -o {tmp_fas} -c {seq_id_thres} -n {threads}"
+        logger.debug(f"Clustering probes with command: {cmd} (log in '{log_file}').")
+
+        with open(log_file, "a") as f:
+            subprocess.run(cmd, shell=True, check=True, stdout=f)
+
+        res_dict["seq_id_thres"].append(seq_id_thres)
+        res_dict["n_probes"].append(len(FastA(tmp_fas)))
+
+    # Dataframe with number of probes for each cdhit identity threshold
+    df = pd.DataFrame(res_dict)
+    p = sns.lineplot(data=df, x="seq_id_thres", y="n_probes")
+    p.axhline(best_n_probes, alpha=0.8, linestyle="--", color="red")
+
+    # Extract the best identity threshold
+    best_thres = df.query("n_probes <= @best_n_probes").seq_id_thres.max()
+    print(best_thres)
+    if not np.isnan(best_thres):
+        n_probes = df.query("seq_id_thres == @best_thres").loc[:, "n_probes"].values[0]
+        logger.info(f"Best clustering threshold: {best_thres}, with {n_probes} probes.")
+        shutil.copy(outdir / f"clustered_{best_thres}.fas", fasta_out)
+    else:
+        logger.warning(f"No identity threshold was found to have as few as {best_n_probes} probes.")
+
+    return df
 
 
 def fasta_to_csv(fasta_in, csv_out):
