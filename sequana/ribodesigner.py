@@ -21,6 +21,7 @@ import numpy as np
 import seaborn as sns
 import matplotlib
 import shutil
+import datetime
 
 from sequana import logger
 from sequana.tools import reverse_complement
@@ -97,7 +98,7 @@ def cluster_probes(fasta_in, fasta_out, threads=4, best_n_probes=374):
 
     """
 
-    outdir = Path(fasta_out).parent / "cd-hit-est"
+    outdir = Path(fasta_out).parent / f"cd-hit-est-{datetime.datetime.today().isoformat(timespec='seconds', sep='_')}"
     outdir.mkdir()
     log_file = outdir / "cd-hit.log"
 
