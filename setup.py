@@ -115,7 +115,7 @@ setup(
     entry_points = {
         'console_scripts':[
            'sequana_lane_merging=sequana.scripts.lane_merging:main',
-           'sequana=sequana.scripts.main:main',
+           'sequana=sequana.scripts.main.main:main',
            'sequana_taxonomy=sequana.scripts.taxonomy:main',
            'sequana_coverage=sequana.scripts.coverage:main',
            'sequana_mapping=sequana.scripts.mapping:main',

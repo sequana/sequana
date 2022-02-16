@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 from click.testing import CliRunner
 from sequana import ribodesigner as rd
-from sequana.scripts import main
+from sequana.scripts.main import main
 
 from . import test_dir
 
