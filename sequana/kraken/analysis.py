@@ -1221,14 +1221,12 @@ class KrakenSequential(object):
             last_unclassified = self._list_kraken_input[-1]
 
             # If everything was classified, we can stop here
-            try:
+            try: # handle special case of emmpty FastQ file
                 try:
-                    #if isinstance(last_unclassified, str):
                     stat = os.stat(last_unclassified)
                     if stat.st_size == 0:
                         break
-                except:
-                    #elif isinstance(last_unclassified, list):
+                except TypeError:
                     stat = os.stat(last_unclassified[0])
                     if stat.st_size == 0:
                         break
