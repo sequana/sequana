@@ -74,7 +74,10 @@ class KrakenModule(SequanaBaseModule):
             "species",
             "name",
         ]
-        df = df.groupby(ranks).sum().sort_index(level=["kingdom"])
+        try:
+            df = df.groupby(ranks).sum().sort_index(level=["kingdom"])
+        except KeyError:
+            return df
 
         # here we do not want the table to be sorted. it is sorted on first column so
         # let us add back the index
@@ -166,10 +169,7 @@ Besides, be aware that closely related species may not be classified precisely.
         return html
 
     def _get_table_grouped_results(self):
-        try:
-            df = self._get_df_hierarchy()
-        except KeyError:
-            return ""
+        df = self._get_df_hierarchy()
         url_ncbi = "https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id={}"
         df["links"] = [url_ncbi.format(taxon) for taxon in df["taxon"]]
         datatable = DataTable(df, "kraken_summary", index=False)

@@ -274,9 +274,9 @@ class KrakenResults(object):
                 usecols=[0, 2, 3],
                 chunksize=1000000,
             )
-        except pd.errors.EmptyDataError:  # pragma: no cover
+        except (pd.errors.EmptyDataError,FileNotFoundError):  # pragma: no cover
             logger.warning("Empty files. 100%% unclassified ?")
-            self.unclassified = "?"  # size of the input data set
+            self.unclassified = 0  # size of the input data set
             self.classified = 0
             self._df = pd.DataFrame([], columns=columns)
             self._taxons = self._df.taxon
@@ -356,7 +356,10 @@ class KrakenResults(object):
         df.loc[newrow, "count"] = self.unclassified
         df.loc[newrow, "index"] = -1
         df.rename(columns={"index": "taxon"}, inplace=True)
-        df["percentage"] = df["count"] / df["count"].sum() * 100
+        try:
+            df["percentage"] = df["count"] / df["count"].sum() * 100
+        except:
+            df['percentage'] = 0
 
         starter = ["taxon", "count", "percentage"]
         df = df[starter + [x for x in df.columns if x not in starter]]
@@ -1021,10 +1024,12 @@ class KrakenAnalysis(object):
             fout = TempFile()
             outname = fout.name
             newfile = open(outname, "w")
-            with open(output_filename, "r") as fin:
-                for line in fin.readlines():
-                    if line.startswith("C"):
-                        newfile.write(line)
+            # if the FastQ file is empty, there is no output file
+            if os.path.exists(output_filename):
+                with open(output_filename, "r") as fin:
+                    for line in fin.readlines():
+                        if line.startswith("C"):
+                            newfile.write(line)
             newfile.close()
             shutil.move(outname, output_filename)
 
@@ -1216,14 +1221,17 @@ class KrakenSequential(object):
             last_unclassified = self._list_kraken_input[-1]
 
             # If everything was classified, we can stop here
-            if isinstance(last_unclassified, str):
-                stat = os.stat(last_unclassified)
-                if stat.st_size == 0:
-                    break
-            elif isinstance(last_unclassified, list):
-                stat = os.stat(last_unclassified[0])
-                if stat.st_size == 0:
-                    break
+            try:
+                if isinstance(last_unclassified, str):
+                    stat = os.stat(last_unclassified)
+                    if stat.st_size == 0:
+                        break
+                elif isinstance(last_unclassified, list):
+                    stat = os.stat(last_unclassified[0])
+                    if stat.st_size == 0:
+                        break
+            except FileNotFoundError:
+                break
 
         # concatenate all kraken output files
         file_output_final = self.output_directory + os.sep + "%s.out" % output_prefix
@@ -1306,10 +1314,16 @@ class KrakenSequential(object):
             # unclassified
             for f_temp in self._list_kraken_input:
                 if isinstance(f_temp, str):
-                    os.remove(f_temp)
+                    try:
+                        os.remove(f_temp)
+                    except FileNotFoundError:
+                        pass
                 elif isinstance(f_temp, list):
                     for this in f_temp:
-                        os.remove(this)
+                        try:
+                            os.remove(this)
+                        except FileNotFoundError:
+                            pass
         return summary
 
 
