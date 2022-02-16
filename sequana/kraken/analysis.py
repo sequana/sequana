@@ -358,7 +358,7 @@ class KrakenResults(object):
         df.rename(columns={"index": "taxon"}, inplace=True)
         try:
             df["percentage"] = df["count"] / df["count"].sum() * 100
-        except:
+        except ZeroDivisionError:
             df['percentage'] = 0
 
         starter = ["taxon", "count", "percentage"]
@@ -1222,11 +1222,13 @@ class KrakenSequential(object):
 
             # If everything was classified, we can stop here
             try:
-                if isinstance(last_unclassified, str):
+                try:
+                    #if isinstance(last_unclassified, str):
                     stat = os.stat(last_unclassified)
                     if stat.st_size == 0:
                         break
-                elif isinstance(last_unclassified, list):
+                except:
+                    #elif isinstance(last_unclassified, list):
                     stat = os.stat(last_unclassified[0])
                     if stat.st_size == 0:
                         break
