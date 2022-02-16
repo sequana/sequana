@@ -205,9 +205,10 @@ class MultiKrakenResults2:
         data = {}
         for sample, filename in zip(self.sample_names, self.filenames):
             summary = json.loads(open(filename, "r").read())
-            total = summary["total"]
+            total = max(1,summary["total"])
             if "unclassified" not in summary:
                 summary["unclassified"] = 0
+
             data[sample] = {
                 "unclassified": round(summary["unclassified"] / total * 100, 2),
                 "nreads": summary["total"],
