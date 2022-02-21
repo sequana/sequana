@@ -96,6 +96,7 @@ class MultiKrakenResults:
         width=1,
         ytick_fontsize=10,
         max_labels=50,
+        max_sample_name_length=30
     ):
 
         """Summary plot of reads classified."""
@@ -150,7 +151,7 @@ class MultiKrakenResults:
             if len(self.sample_names) < max_labels:
                 pylab.yticks(
                     range(len(self.sample_names)),
-                    df.columns,
+                    [str(x)[0:max_sample_name_length] for x in df.columns],
                     fontsize=ytick_fontsize,
                 )
             else: #pragma: no cover
@@ -164,7 +165,7 @@ class MultiKrakenResults:
             if len(self.sample_names) < max_labels:
                 pylab.xticks(
                     range(len(self.sample_names)),
-                    df.columns,
+                    [str(x)[0:max_sample_name_length] for x in df.columns],
                     fontsize=ytick_fontsize,
                 )
             else: #pragma: no cover
@@ -240,6 +241,7 @@ class MultiKrakenResults2:
         colors=None,
         cmap="hot_r",
         sorting_method="sample_name",
+        max_sample_name_length=30
     ):
         """Summary plot of reads classified.
 
@@ -272,11 +274,13 @@ class MultiKrakenResults2:
             legend=False,
         )
 
+
         pylab.xlabel("Percentage (%)", fontsize=fontsize)
         pylab.ylabel("Sample index/name", fontsize=fontsize)
         if len(self.sample_names) < max_labels:
             pylab.yticks(
-                range(len(self.sample_names)), df.index, fontsize=ytick_fontsize
+                range(len(self.sample_names)), [str(x)[0:max_sample_name_length] for x in df.index], 
+                   fontsize=ytick_fontsize
             )
         else: #pragma: no cover
             pylab.yticks([1], [""])
