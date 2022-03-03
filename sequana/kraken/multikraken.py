@@ -56,7 +56,7 @@ class MultiKrakenResults:
         for sample, filename in zip(self.sample_names, self.filenames):
             df = pd.read_csv(filename)
             count = df["count"].sum()
-            if "kingdom" not in df.columns: #pragma: no cover
+            if "kingdom" not in df.columns:  # pragma: no cover
                 for name in self.ranks:
                     df[name] = "Unclassified"
 
@@ -67,9 +67,7 @@ class MultiKrakenResults:
             if " " in df.index:
                 percent = df.loc[" "]
                 if percent > limit:
-                    logger.warning(
-                        "Found {}% of taxons with no kingdom".format(percent)
-                    )
+                    logger.warning("Found {}% of taxons with no kingdom".format(percent))
                 if "Unclassified" in df.index:
                     df.loc["Unclassified"] += df.loc[" "]
                     df.drop(" ", inplace=True)
@@ -96,7 +94,7 @@ class MultiKrakenResults:
         width=1,
         ytick_fontsize=10,
         max_labels=50,
-        max_sample_name_length=30
+        max_sample_name_length=30,
     ):
 
         """Summary plot of reads classified."""
@@ -108,8 +106,8 @@ class MultiKrakenResults:
         fig, ax = pylab.subplots(figsize=(9.5, 7))
 
         labels = []
-        for kingdom in sorted(df.index): #pragma: no cover
-            if kingdom == "Eukaryota": 
+        for kingdom in sorted(df.index):  # pragma: no cover
+            if kingdom == "Eukaryota":
                 color = "purple"
             elif kingdom == "Unclassified":
                 color = "grey"
@@ -154,7 +152,7 @@ class MultiKrakenResults:
                     [str(x)[0:max_sample_name_length] for x in df.columns],
                     fontsize=ytick_fontsize,
                 )
-            else: #pragma: no cover
+            else:  # pragma: no cover
                 pylab.yticks([1], [""])
             pylab.xlim([0, 100])
             pylab.ylim([-0.5, len(df.columns) - 0.5])
@@ -168,7 +166,7 @@ class MultiKrakenResults:
                     [str(x)[0:max_sample_name_length] for x in df.columns],
                     fontsize=ytick_fontsize,
                 )
-            else: #pragma: no cover
+            else:  # pragma: no cover
                 pylab.xticks([1], [""])
             pylab.xlim([-0.5, len(df.columns) - 0.5])
 
@@ -206,7 +204,7 @@ class MultiKrakenResults2:
         data = {}
         for sample, filename in zip(self.sample_names, self.filenames):
             summary = json.loads(open(filename, "r").read())
-            total = max(1,summary["total"])
+            total = max(1, summary["total"])
             if "unclassified" not in summary:
                 summary["unclassified"] = 0
 
@@ -217,13 +215,14 @@ class MultiKrakenResults2:
             for db in summary["databases"]:
                 try:
                     data[sample][db] = round(summary[db]["C"] / total * 100, 2)
-                except KeyError: #pragma: no cover
+                except KeyError:  # pragma: no cover
                     data[sample][db] = 0
         df = pd.DataFrame(data)
         df = df.fillna(0)
         df = df.loc[["unclassified"] + [x for x in df.index if x != "unclassified"]]
         # df = df.sort_index(ascending=False)
-        df = df.sort_index(ascending=False, axis=1)
+        if sorting_method == "sample_name":
+            df = df.sort_index(ascending=False, axis=1)
         return df
 
     def plot_stacked_hist(
@@ -239,14 +238,23 @@ class MultiKrakenResults2:
         max_labels=50,
         alpha=0.8,
         colors=None,
-        cmap="hot_r",
+        cmap="viridis",
         sorting_method="sample_name",
-        max_sample_name_length=30
+        max_sample_name_length=30,
     ):
         """Summary plot of reads classified.
 
 
         :param sorting_method: only by sample name for now
+        :param cmap: a valid matplotlib colormap. viridis is the default sequana colormap.
+
+
+        if you prefer to use a colormap, you can use::
+
+            from matplotlib import cm
+            cm = matplotlib.colormap
+            colors = [cm.get_cmap(cmap)(x) for x in pylab.linspace(0.2, 1, L)]
+
         """
         df = self.get_df(sorting_method=sorting_method)
         df = df.T
@@ -274,15 +282,15 @@ class MultiKrakenResults2:
             legend=False,
         )
 
-
         pylab.xlabel("Percentage (%)", fontsize=fontsize)
         pylab.ylabel("Sample index/name", fontsize=fontsize)
         if len(self.sample_names) < max_labels:
             pylab.yticks(
-                range(len(self.sample_names)), [str(x)[0:max_sample_name_length] for x in df.index], 
-                   fontsize=ytick_fontsize
+                range(len(self.sample_names)),
+                [str(x)[0:max_sample_name_length] for x in df.index],
+                fontsize=ytick_fontsize,
             )
-        else: #pragma: no cover
+        else:  # pragma: no cover
             pylab.yticks([1], [""])
         pylab.xlim([0, 100])
         pylab.ylim([0 - 0.5, len(df.index) - 0.5])  # +1 for the legends
