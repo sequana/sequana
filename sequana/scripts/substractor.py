@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 #  This file is part of Sequana software
 #
@@ -24,13 +23,12 @@ import subprocess
 
 from easydev.console import purple
 
-from sequana.scripts.tools import SequanaOptions
 from sequana.bamtools import SAM
 from sequana import FastQ
 from sequana import logger
 
 import colorlog
-logger = colorlob.getLogger(__name__)
+logger = colorlog.getLogger(__name__)
 
 
 class CustomFormatter(argparse.ArgumentDefaultsHelpFormatter,
@@ -47,7 +45,7 @@ Issues: http://github.com/sequana/sequana
         """)
 
 
-class Options(argparse.ArgumentParser, SequanaOptions):
+class Options(argparse.ArgumentParser):
     def  __init__(self, prog="sequana_substractor"):
         usage = """%s reads (flag 256+4) saving the mapped reads in a file, and the unmapped in
 another file\n""" % prog
@@ -76,10 +74,14 @@ another file\n""" % prog
                             default="minimap2", choices=["bwa", "minimap2"],
                             required=False, help="mapper minimap2 or bwa")
 
-        self.add_threads(self)
-        self.add_version(self)
-        self.add_level(self)
-
+        self.add_argument("--version", dest='version',
+            action="store_true", help="print version")
+        self.add_argument("--verbose", dest='verbose',
+            action="store_true", help="set verbosity on")
+        self.add_argument("--quiet", dest='verbose',
+            action="store_false", help="set verbosity off")
+        self.add_argument("--threads", dest='threads', type=int,
+            default=4, help="threading")
 
 
 class Substractor(object):

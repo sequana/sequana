@@ -30,6 +30,8 @@ from .samplesheet import samplesheet
 from .summary import summary
 from .taxonomy import taxonomy
 from .utils import CONTEXT_SETTINGS
+from .mapping import mapping
+from .lane_merging import lane_merging
 
 
 @click.group(context_settings=CONTEXT_SETTINGS)
@@ -64,6 +66,8 @@ main.add_command(feature_counts)
 main.add_command(gff_to_gtf)
 main.add_command(gff_to_light_gff)
 main.add_command(gtf_fixer)
+main.add_command(lane_merging)
+main.add_command(mapping)
 main.add_command(ribodesigner)
 main.add_command(rnadiff)
 main.add_command(rnaseq_compare)
