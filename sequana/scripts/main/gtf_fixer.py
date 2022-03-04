@@ -11,7 +11,7 @@
 ##############################################################################
 import click
 import colorlog
-    
+
 from sequana.gtf import GTFFixer
 
 from .utils import CONTEXT_SETTINGS
