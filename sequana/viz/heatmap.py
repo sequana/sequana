@@ -87,13 +87,6 @@ def get_clustermap_data():
     return df, df_sample_groups, df_gene_groups
 
 
-# def heatmap(data, *args, **kargs):
-#    """alias to Heatmap class"""
-#    h = Heatmap(data, *args, **kargs)
-#    h.plot()
-#    return h
-
-
 class Clustermap:
     """Heatmap and dendrograms based on seaborn Clustermap
 
@@ -271,10 +264,10 @@ class Heatmap(Linkage):
         """.. rubric:: constructor
 
         :param data: a dataframe or possibly a numpy matrix.
-        :param row_method: complete by default
-        :param column_method: complete by default. See linkage module for details
-        :param row_metric: euclidean by default
-        :param column_metric: euclidean by default
+        :param row_method: *complete* by default
+        :param column_method: *complete* by default. See linkage module for details
+        :param row_metric: *euclidean* by default
+        :param column_metric: *euclidean* by default
         :param cmap: colormap. any matplotlib accepted or combo of colors as
             defined in colormap package (pypi)
         :param col_side_colors:
@@ -621,7 +614,7 @@ class Heatmap(Linkage):
             # self.category_row must be a dictionary with names as found in the columns
             # of the dataframe.
 
-            category_row = [self.category_row[x] for x in self.frame.columns]
+            category_row = [self.category_row[x] for x in self.frame.index]
 
             dr = np.array(category_row, dtype=int)
             dr.shape = (len(category_row), 1)

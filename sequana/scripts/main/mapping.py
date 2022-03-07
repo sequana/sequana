@@ -16,7 +16,8 @@ from snakemake import shell as shellcmd
 import click
 import colorlog
 
-from sequana import salmon
+from sequana import FastQ
+from sequana import FastA
 
 from .utils import CONTEXT_SETTINGS
 
@@ -58,15 +59,11 @@ samtools sort -o REFERENCE.sorted.bam  REFERENCE.bam
     elif file1 is None:
         raise ValueError("--file1 must be used")
 
-    from sequana import FastQ
-    from sequana import FastA
+    S = sum([len(this['sequence']) for this in FastQ(file1)])
 
-    S = 0
-    for this in FastQ(file1):
-        S += len(this["sequence"])
     if file2:
-        for this in FastQ(file2):
-            S += len(this["sequence"])
+        S += sum([len(this['sequence']) for this in FastQ(file2)])
+
     ref = FastA(reference)
     coverage = float(S) / len(ref.sequences[0])
     print("Theoretical Depth of Coverage : %s" % coverage)
