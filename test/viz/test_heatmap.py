@@ -1,8 +1,10 @@
 from sequana.viz import Heatmap
-from sequana import sequana_data
+
+from . import test_dir
+
 
 def test_heatmap():
-    filename = sequana_data("test_heatmap.csv")
+    filename = f"{test_dir}/data/test_heatmap.csv"
     import pandas as pd
     data = pd.read_csv(filename, skiprows=2, index_col=0)
 
