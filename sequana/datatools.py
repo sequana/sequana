@@ -32,7 +32,7 @@ def sequana_data(filename=None, where=None):
     .. code-block:: python
 
         from sequana import sequana_data
-        filename = sequana_data("test.bam")
+        filename = sequana_data("test.fastq")
 
     Type the function name with "*" parameter to get a list of
     available files. Withe where argument set, the function returns a
@@ -52,7 +52,7 @@ def sequana_data(filename=None, where=None):
     """
     sequana_path = easydev.get_package_location("sequana")
     sharedir = os.sep.join([sequana_path, "sequana", "resources"])
-    directories = ["data", "testing", "examples", "images", "scripts"]
+    directories = ["data", "testing", "examples", "images", "scripts", "doc"]
 
     if filename == "*":
         found = collections.defaultdict(list)

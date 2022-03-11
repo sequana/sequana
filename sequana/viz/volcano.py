@@ -43,9 +43,13 @@ class Volcano(object):
         import numpy as np
         fc = np.random.randn(1000)
         pvalue = np.random.randn(1000)
+        import pandas as pd
+        data = pd.DataFrame([fc, pvalue])
+        data = data.T
+        data.columns = ['log2FoldChange', 'padj']
 
         from sequana.viz import Volcano
-        v = Volcano(fc, -np.log10(pvalue**2))
+        v = Volcano(data)
         v.plot()
 
 
@@ -72,14 +76,6 @@ class Volcano(object):
         :param log2fc_threshold: Log2 Fold Change threshold to use for coloring/annotation.
 
         """
-        # try to compute the FC now
-        # if self.fold_change is None:
-        #    self.fold_change = pylab.log2(X1/X0)
-
-        # if pvalue is None:
-        #    # assume a normal distribution mean 0 and sigma 1
-        #    import scipy.stats
-        #    self.pvalue = - pylab.log10(scipy.stats.norm.pdf(abs(self.fold_change), 0,1)),
 
         self.color = color
         self.pvalue_threshold = pvalue_threshold
