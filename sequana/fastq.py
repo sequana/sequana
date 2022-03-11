@@ -879,7 +879,7 @@ class FastQC(object):
 
         from sequana import sequana_data
         from sequana import FastQC
-        filename  = sequana_data("test.fastq", "testing")
+        filename  = sequana_data("test.fastq", "doc")
         qc = FastQC(filename)
         qc.boxplot_quality()
 
@@ -1041,7 +1041,7 @@ class FastQC(object):
 
             from sequana import sequana_data
             from sequana import FastQC
-            filename  = sequana_data("test.fastq", "testing")
+            filename  = sequana_data("test.fastq", "doc")
             qc = FastQC(filename)
             qc.histogram_sequence_lengths()
 
@@ -1072,7 +1072,7 @@ class FastQC(object):
 
             from sequana import sequana_data
             from sequana import FastQC
-            filename  = sequana_data("test.fastq", "testing")
+            filename  = sequana_data("test.fastq", "doc")
             qc = FastQC(filename)
             qc.histogram_gc_content()
 
@@ -1144,7 +1144,7 @@ class FastQC(object):
 
             from sequana import sequana_data
             from sequana import FastQC
-            filename  = sequana_data("test.fastq", "testing")
+            filename  = sequana_data("test.fastq", "doc")
             qc = FastQC(filename)
             qc.plot_acgt_content()
         """

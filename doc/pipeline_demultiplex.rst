@@ -3,6 +3,6 @@
 demultiplex
 ===========
 
-.. .. sequana_pipeline:: demultiplex
+.. sequana_pipeline:: demultiplex
 
 

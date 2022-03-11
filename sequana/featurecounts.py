@@ -194,7 +194,7 @@ class MultiFeatureCount:
         from sequana.featurecounts import *
         directory = sequana_data("featurecounts") + "/rnaseq_0"
         ff = MultiFeatureCount(directory, 0.15)
-        ff.get_most_probable_strand_consensus()
+        ff._get_most_probable_strand_consensus()
         ff.plot_strandness()
 
     .. seealso:: :func:`get_most_probable_strand` for more information about the

@@ -98,6 +98,10 @@ This is a non-exhaustive list of pipelines
     pipeline_demultiplex.rst
     pipeline_fastqc.rst
     pipeline_quality_control.rst
+    pipeline_mapper.rst
+    pipeline_ribofinder.rst
+    pipeline_pacbio_qc.rst
     pipeline_rnaseq.rst
+    pipeline_vc.rst
 
 Please see the https://github.com/sequana organisation to get the full list.
