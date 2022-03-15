@@ -79,7 +79,8 @@ class MultiKrakenResults:
 
         df = pd.DataFrame(data)
         df = df.fillna(0)
-        df = df.sort_index(ascending=False, axis=1)
+        if self.sample_names is None:
+            df = df.sort_index(ascending=False, axis=1)
 
         return df
 
