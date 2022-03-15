@@ -121,7 +121,7 @@ Changelog
 ========= ====================================================================
 Version   Description
 ========= ====================================================================
-0.12.8    * Fix order of databases in multikraken. Handle empty file case
+0.13.0    * Fix order of databases in multikraken. Handle empty file case
           * Move sequana_lane_merging into a subcommand (sequana lane_merging)
 0.12.7    * Fix memory leak in len() of FastA class
 0.12.6    * remove some useless rules
