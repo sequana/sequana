@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 #  This file is part of Sequana software
 #
@@ -27,7 +26,6 @@ import scipy.spatial.distance as distance
 
 import easydev
 from sequana.viz.linkage import Linkage
-import matplotlib.patches as mpatches
 
 __all__ = ["Heatmap", "Clustermap"]
 
@@ -87,13 +85,6 @@ def get_clustermap_data():
     ).transpose()
 
     return df, df_sample_groups, df_gene_groups
-
-
-# def heatmap(data, *args, **kargs):
-#    """alias to Heatmap class"""
-#    h = Heatmap(data, *args, **kargs)
-#    h.plot()
-#    return h
 
 
 class Clustermap:
@@ -160,6 +151,11 @@ class Clustermap:
 
         self.yticklabels = self._convert_gene_names(yticklabels)
 
+        self.params = {'legend.fontsize': 16,
+                        'legend.sample': True,
+                        'legend.gene': True
+        }
+
     def _convert_gene_names(self, yticklabels):
         if isinstance(yticklabels, pd.Series):
             return yticklabels.loc[self.data_df.index]
@@ -183,6 +179,7 @@ class Clustermap:
 
     def _do_legend(self, figure, color_dict, bbox_to_anchor):
         if color_dict:
+            import matplotlib.patches as mpatches
             patches = [mpatches.Patch(color=c, label=l) for l, c in color_dict.items()]
             legend = pylab.legend(
                 loc="upper center",
@@ -190,12 +187,14 @@ class Clustermap:
                 bbox_to_anchor=bbox_to_anchor,
                 frameon=True,
                 title="Sample groups",
+                fontsize=self.params['legend.fontsize']
             )
 
             figure.add_artist(legend)
 
-    def plot(self):
-        cmap = sns.diverging_palette(220, 10, as_cmap=True)
+    def plot(self, cmap=None):
+        if cmap is None:
+            cmap = sns.diverging_palette(220, 10, as_cmap=True)
         cmap.set_bad("grey", 1.0)
 
         p = sns.clustermap(
@@ -209,8 +208,11 @@ class Clustermap:
 
         f = pylab.gca()
 
-        self._do_legend(f, self.sample_color_dict, (12, 2))
-        self._do_legend(f, self.gene_color_dict, (-2, -2))
+        if self.params['legend.sample']:
+            self._do_legend(f, self.sample_color_dict, (12, 2))
+
+        if self.params['legend.gene']:
+            self._do_legend(f, self.gene_color_dict, (-2, -2))
 
         return p
 
@@ -262,10 +264,10 @@ class Heatmap(Linkage):
         """.. rubric:: constructor
 
         :param data: a dataframe or possibly a numpy matrix.
-        :param row_method: complete by default
-        :param column_method: complete by default. See linkage module for details
-        :param row_metric: euclidean by default
-        :param column_metric: euclidean by default
+        :param row_method: *complete* by default
+        :param column_method: *complete* by default. See linkage module for details
+        :param row_metric: *euclidean* by default
+        :param column_metric: *euclidean* by default
         :param cmap: colormap. any matplotlib accepted or combo of colors as
             defined in colormap package (pypi)
         :param col_side_colors:
@@ -432,12 +434,15 @@ class Heatmap(Linkage):
             vmin = self.frame.min().min()
             vmax = max([vmax, abs(vmin)])
             vmin = vmax * -1
+
         if self.gradient_span == "only_max":
             vmin = 0
             vmax = self.frame.max().max()
+
         if self.gradient_span == "only_min":
             vmin = self.frame.min().min()
             vmax = 0
+
         norm = matplotlib.colors.Normalize(vmin, vmax)
 
         # Scale the figure window size #
@@ -530,7 +535,7 @@ class Heatmap(Linkage):
             ax1 = fig.add_axes([ax1_x, ax1_y, ax1_w, ax1_h], frame_on=True)
             Z = hierarchy.dendrogram(
                 Y,
-                orientation="right",
+                orientation="left",
                 color_threshold=0,
                 above_threshold_color="k",
                 distance_sort="descending",
@@ -593,7 +598,7 @@ class Heatmap(Linkage):
         if self.category_column:
             axc = fig.add_axes([axc_x, axc_y, axc_w, axc_h])
 
-            category_col = [self.category_column[self.df.columns[i]] for i in idx2]
+            category_col = [self.category_column[x] for x in self.frame.columns]
 
             dc = np.array(category_col, dtype=int)
             dc.shape = (1, len(ind2))
@@ -609,11 +614,11 @@ class Heatmap(Linkage):
             # self.category_row must be a dictionary with names as found in the columns
             # of the dataframe.
 
-            category_row = [self.category_row[self.df.index[i]] for i in idx1]
+            category_row = [self.category_row[x] for x in self.frame.index]
 
             dr = np.array(category_row, dtype=int)
             dr.shape = (len(category_row), 1)
-            cmap_r = matplotlib.colors.ListedColormap(self.params.col_side_colors)
+            cmap_r = matplotlib.colors.ListedColormap(self.params.row_side_colors)
             axr.matshow(dr, aspect="auto", origin="lower", cmap=cmap_r)
             axr.set_xticks([])
             axr.set_yticks([])

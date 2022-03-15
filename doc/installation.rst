@@ -5,9 +5,9 @@ Installation
 
 Here below are the instructions to install Sequana. There are different ways (source, bioconda, singularity, conda environment, pip). Let us summarize the different methods for you.
 
-If you want the latest version of Sequana, you should install it from source (see :ref:`github_method`). Otherwise, we install Sequana from the Pypi website. Note that for pipelines, which are now independent Python packages, we also us Pypi releases, however, third-party dependencies (not Python) should be installed manually. Most of them are provided through **Anaconda** channels.  See the :ref:`installation_conda` Section for details on how to set up Conda. 
+If you want the latest version of Sequana, you should install it from source (see :ref:`github_method`). Otherwise, you can install a release of **Sequana** from the Pypi website (using **pip**). Note that for pipelines, which are now independent Python packages, we also use Pypi releases. However, third-party dependencies (not Python) should be installed manually. Most of them are provided through **Anaconda** channels.  See the :ref:`installation_conda` Section for details on how to set up Conda. 
 
-If you just want to test **Sequana** or **Sequanix** or one of the Sequana
+If you just want to test **Sequana** or **Sequanix** (see note here below) or one of the Sequana
 standalone, we also provide **Singularity** containers as explained in the
 :ref:`singularity_details` section.
 
@@ -27,14 +27,19 @@ standalone, we also provide **Singularity** containers as explained in the
     Sequana quite easily using pip, or bioconda, or virtual environment as shown
     here below.
 
+.. topic:: Sequanix
+
+    Sequanix has now its own repository here: https://github.com/sequana/sequanix and should 
+    be installed independently.
+
 
 Latest recommended installation method
 ======================================
 
-Sequana is maintained under Python 3.6  and 3.7 (Aug 2020).
+Sequana is maintained under Python 3.7 and above  (Feb 2022).
 
-.. warning:: due to PyQt library issue; you should keep Python below 3.7.3 to
-   benefit from the Qt interface and therefore Sequanix GUI.
+.. warning:: For Sequanix, for a while we adviced to use Python 3.7.3 due to a PyQt library issue
+    preventing Sequanix to work.
 
 Lots of dependencies have been dropped in version 0.8.0 so that you could simply
 use **pip** to install Sequana.
@@ -79,12 +84,13 @@ Sequana pipelines are now easily installable using **pip**::
 
     pip install sequana_rnaseq
     pip install sequana_fastqc
-    pip install sequana_variant_calling
+    pip install sequana_demultiplex
+    pip install sequana_pacbio_qc
     # etc
 
 The dependencies of this pipeline must be dealt with by the developer or users.
-Each pipeline has its own repository on github (github.com/sequana/sequana_PIPELINENAME)
-where a requirements.txt file is accessible in the repository.
+Each pipeline has its own repository on github (https://github.com/sequana/sequana_PIPELINENAME)
+where more details about specific dependencies are provided. 
 
 
 Other solutions (overview)
@@ -126,6 +132,10 @@ software for you.
 
 Install conda executable
 ----------------------------
+
+.. warning:: this is currently broken on bioconda. We advise you to install sequana
+   with Python (pip) for the latest versions.
+
 
 In practice, we do use `Anaconda <https://conda.readthedocs.io/>`_ . We recommend to
 install **conda** executable via the manual installer (`download <https//continuum.io/downloads>`_). 

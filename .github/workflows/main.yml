@@ -31,7 +31,7 @@ jobs:
     - name: Install dependencies conda
       run: |
         conda install -c conda-forge --quiet mamba python=${{ matrix.python }}
-        mamba install -c conda-forge -c bioconda --quiet -y kraken2 dsrc shustring samtools snpeff bwa cd-hit 
+        mamba install -c conda-forge -c bioconda --quiet -y kraken2 dsrc shustring samtools "snpeff<5.1" bwa cd-hit 
         conda list | grep ruamel
         conda update ruamel_yaml
     - name: Install sequana with pip
@@ -39,6 +39,7 @@ jobs:
         pip install -r requirements.txt
         pip install -r requirements_dev.txt
         pip install .
+        pip install multiqc==1.11.0
     - name: Test with pytest
       run: |
         pytest --cov-report term --cov=sequana

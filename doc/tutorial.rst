@@ -26,11 +26,38 @@ using e.g. for bash users::
 
     eval "$(_SEQUANA_COMPLETE=source_bash sequana)"
 
+The fastqc pipeline
+--------------------
+
+The following example will show how to run the fastqc pipeline 
+(https://github.com/sequana/fastqc) on a pair of
+FastQ files. The data comes from a sequencing (using HiSeq technology) of a
+Measles virus. For testing purposes, you can download :download:`R1
+<../sequana/resources/data/Hm2_GTGAAA_L005_R1_001.fastq.gz>` and
+:download:`R2 <../sequana/resources/data/Hm2_GTGAAA_L005_R2_001.fastq.gz>`)
+files that contain only 1500 reads. Copy them in a local directory.
+
+Those files are from an HiSeq2500 run. The adapters are PCRFree. There is
+only one sample for which the index is GTGAAA. You should have 10% of adapters.
+
+Then, initiate the pipeline::
+
+    sequana_fastqc --input-directory . 
+    cd fastqc
+    sh fastq.sh
+
+Open the summary.html file that is generated for you.
 
 
 
-Quality Control pipeline
+Quality Control pipelines
 --------------------------
+
+The quality_control pipeline  (https://github.com/sequana/quality_control)
+is not maintained anymore and has been split into several smaller pipelines.
+
+For book-keeping, we keep this section though.
+
 
 The following example will show how to run the quality control pipeline
 (https://github.com/sequana/quality_control) on a pair of

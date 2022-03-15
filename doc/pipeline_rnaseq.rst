@@ -1,7 +1,8 @@
 .. _pipeline_rnaseq:
 
-rnaseq
+RNA-seq
 =================
+
 
 .. sequana_pipeline:: rnaseq
 

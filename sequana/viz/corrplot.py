@@ -422,9 +422,10 @@ class Corrplot(Linkage):
                     elif d>=0:
                         edgecolor = self.cm(1.0)
                     d_str = "{:.2f}".format(d).replace("0.", ".").replace(".00", "")
+                    # min is to guarantee that alpha<=1 on Python >3.8
                     ax.text(x,y, d_str, color=edgecolor,
                             fontsize=self.fontsize, horizontalalignment='center',
-                            weight='bold', alpha=max(0.5, d_abs))
+                            weight='bold', alpha=min(1,max(0.5, d_abs)))
                             # withdash=False)
                 elif method == 'pie':
                     S = 360 * d_abs

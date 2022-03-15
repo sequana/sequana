@@ -5,7 +5,7 @@ import glob
 
 _MAJOR               = 0
 _MINOR               = 12
-_MICRO               = 7
+_MICRO               = 8
 version              = '%d.%d.%d' % (_MAJOR, _MINOR, _MICRO)
 release              = '%d.%d' % (_MAJOR, _MINOR)
 
@@ -114,12 +114,9 @@ setup(
     zip_safe=False,
     entry_points = {
         'console_scripts':[
-           'sequana_lane_merging=sequana.scripts.lane_merging:main',
-           'sequana=sequana.scripts.main:main',
+           'sequana=sequana.scripts.main.main:main',
            'sequana_taxonomy=sequana.scripts.taxonomy:main',
            'sequana_coverage=sequana.scripts.coverage:main',
-           'sequana_mapping=sequana.scripts.mapping:main',
-           'sequana_bam_splitter=sequana.scripts.bam_splitter:main', # aug 2018
            'sequana_substractor=sequana.scripts.substractor:main', # march 2019
            'sequana_start_pipeline=sequana.scripts.start_pipeline:main', # dec 2019
         ],

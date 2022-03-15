@@ -45,77 +45,75 @@ SEQUANA
 
 **Sequana** includes a set of pipelines related to NGS (new generation sequencing) including quality control, variant calling, coverage, taxonomy, transcriptomics. We also ship **Sequanix**, a graphical user interface for Snakemake pipelines.
 
-+------------------------------------------------+--------------------------+-----------------------+
-| **pipeline or tools**                          | **Latest Pypi verison**  |  **Test passing**     |
-+------------------------------------------------+--------------------------+-----------------------+
-| https://github.com/sequana/sequana_pipetools   |     |pipetools_pypi|     | |pipetools_test|      |
-+------------------------------------------------+--------------------------+-----------------------+
-| https://github.com/sequana/sequana-wrappers    |        not on pypi       | |wrappers_test|       |
-+------------------------------------------------+--------------------------+-----------------------+
-| https://github.com/sequana/demultiplex         |      |demultiplex_pypi|  |  |demultiplex_test|   |
-+------------------------------------------------+--------------------------+-----------------------+
-| https://github.com/sequana/fastqc              |         |fastqc_pypi|    |  |fastqc_test|        |
-+------------------------------------------------+--------------------------+-----------------------+
-| https://github.com/sequana/mapper              |         |mapper_pypi|    |  |mapper_test|        |
-+------------------------------------------------+--------------------------+-----------------------+
-| https://github.com/sequana/pacbio_qc           |         |pacbio_qc_pypi| |  |pacbio_qc_test|     |
-+------------------------------------------------+--------------------------+-----------------------+
-| https://github.com/sequana/ribofinder          |         |ribo_pypi|      |  |ribo_test|          |
-+------------------------------------------------+--------------------------+-----------------------+
-| https://github.com/sequana/rnaseq              |         |rnaseq_pypi|    |  |rnaseq_test|        |
-+------------------------------------------------+--------------------------+-----------------------+
 
 
+.. list-table:: Pipelines and tools available in the Sequana project
+    :widths: 20 40 40
+    :header-rows: 1
 
-.. |pipetools_pypi| image:: https://badge.fury.io/py/sequana-pipetools.svg
-    :target: https://pypi.python.org/pypi/sequana_pipetools
-
-.. |pipetools_test| image:: https://github.com/sequana/sequana_pipetools/actions/workflows/main.yml/badge.svg?branch=master
-    :target: https://github.com/sequana/sequana_pipetools/actions/workflows/main.yml
-
-.. |wrappers_test| image:: https://github.com/sequana/sequana-wrappers/actions/workflows/main.yml/badge.svg
-    :target: https://github.com/sequana/sequana-wrappers/actions/workflows/main.yml
-
-.. |fastqc_pypi| image:: https://badge.fury.io/py/sequana-fastqc.svg
-    :target: https://pypi.python.org/pypi/sequana-fastqc
-
-.. |fastqc_test| image:: https://github.com/sequana/fastqc/actions/workflows/main.yml/badge.svg?branch=master
-    :target: https://github.com/sequana/fastqc/actions/workflows/main.yml
-
-.. |ribo_pypi| image:: https://badge.fury.io/py/sequana-ribofinder.svg
-    :target: https://pypi.python.org/pypi/sequana-ribofinder
-
-.. |ribo_test| image:: https://github.com/sequana/ribofinder/actions/workflows/main.yml/badge.svg?branch=master
-    :target: https://github.com/sequana/ribofinder/actions/workflows/main.yml
-
-.. |mapper_pypi| image:: https://badge.fury.io/py/sequana-mapper.svg
-    :target: https://pypi.python.org/pypi/sequana-mapper
-
-.. |mapper_test| image:: https://github.com/sequana/mapper/actions/workflows/main.yml/badge.svg?branch=master
-    :target: https://github.com/sequana/mapper/actions/workflows/main.yml
-
-.. |pacbio_qc_pypi| image:: https://badge.fury.io/py/sequana-pacbio-qc.svg
-    :target: https://pypi.python.org/pypi/sequana-pacbio-qc
-
-.. |pacbio_qc_test| image:: https://github.com/sequana/pacbio_qc/actions/workflows/main.yml/badge.svg?branch=master
-    :target: https://github.com/sequana/pacbio_qc/actions/workflows/main.yml
-
-
-.. |demultiplex_pypi| image:: https://badge.fury.io/py/sequana-demultiplex.svg
-    :target: https://pypi.python.org/pypi/sequana-demultiplex
-
-.. |demultiplex_test| image:: https://github.com/sequana/demultiplex/actions/workflows/main.yml/badge.svg?branch=master
-    :target: https://github.com/sequana/demultiplex/actions/workflows/main.yml
-
-
-.. |rnaseq_pypi| image:: https://badge.fury.io/py/sequana-rnaseq.svg
-    :target: https://pypi.python.org/pypi/sequana-rnaseq
-
-.. |rnaseq_test| image:: https://github.com/sequana/rnaseq/actions/workflows/main.yml/badge.svg?branch=master
-    :target: https://github.com/sequana/rnaseq/actions/workflows/main.yml
+    * - **pipeline or tools**
+      - **Latest Pypi version**
+      - **Test passing**
+    * - https://github.com/sequana/sequana_pipetools
+      - .. image:: https://badge.fury.io/py/sequana-pipetools.svg
+            :target: https://pypi.python.org/pypi/sequana_pipetools
+      - .. image:: https://github.com/sequana/sequana_pipetools/actions/workflows/main.yml/badge.svg
+            :target: https://github.com/sequana/sequana_pipetools/actions/workflows/main.yml
+    * - https://github.com/sequana/sequana-wrappers
+      - .. image:: https://badge.fury.io/py/sequana-wrappers.svg
+            :target: https://pypi.python.org/pypi/sequana-wrappers
+      - .. image:: https://github.com/sequana/sequana-wrappers/actions/workflows/main.yml/badge.svg
+            :target: https://github.com/sequana/sequana-wrappers/actions/workflows/main.yml
+    * - https://github.com/sequana/demultiplex
+      - .. image:: https://badge.fury.io/py/sequana-demultiplex.svg
+            :target: https://pypi.python.org/pypi/sequana-demultiplex
+      - .. image:: https://github.com/sequana/demultiplex/actions/workflows/main.yml/badge.svg
+            :target: https://github.com/sequana/demultiplex/actions/workflows/main.yml
+    * - https://github.com/sequana/fastqc
+      - .. image:: https://badge.fury.io/py/sequana-fastqc.svg
+            :target: https://pypi.python.org/pypi/sequana-fastqc
+      - .. image:: https://github.com/sequana/fastqc/actions/workflows/main.yml/badge.svg
+            :target: https://github.com/sequana/fastqc/actions/workflows/main.yml
+    * - https://github.com/sequana/mapper
+      - .. image:: https://badge.fury.io/py/sequana-mapper.svg
+            :target: https://pypi.python.org/pypi/sequana-mapper
+      - .. image:: https://github.com/sequana/mapper/actions/workflows/main.yml/badge.svg
+            :target: https://github.com/sequana/mapper/actions/workflows/main.yml
+    * - https://github.com/sequana/pacbio_qc
+      - .. image:: https://badge.fury.io/py/sequana-pacbio-qc.svg
+            :target: https://pypi.python.org/pypi/sequana-pacbio-qc
+      - .. image:: https://github.com/sequana/pacbio_qc/actions/workflows/main.yml/badge.svg
+            :target: https://github.com/sequana/pacbio_qc/actions/workflows/main.yml
+    * - https://github.com/sequana/ribofinder
+      - .. image:: https://badge.fury.io/py/sequana-ribofinder.svg
+            :target: https://pypi.python.org/pypi/sequana-ribofinder
+      - .. image:: https://github.com/sequana/ribofinder/actions/workflows/main.yml/badge.svg
+            :target: https://github.com/sequana/ribofinder/actions/workflows/main.yml
+    * - https://github.com/sequana/rnaseq
+      - .. image:: https://badge.fury.io/py/sequana-rnaseq.svg
+            :target: https://pypi.python.org/pypi/sequana-rnaseq
+      - .. image:: https://github.com/sequana/rnaseq/actions/workflows/main.yml/badge.svg
+            :target: https://github.com/sequana/rnaseq/actions/workflows/main.yml
+    * - https://github.com/sequana/variant_calling
+      - .. image:: https://badge.fury.io/py/sequana-variant-calling.svg
+            :target: https://pypi.python.org/pypi/sequana-variant-calling
+      - .. image:: https://github.com/sequana/variant_calling/actions/workflows/main.yml/badge.svg
+            :target: https://github.com/sequana/variant_calling/actions/workflows/main.yml
 
 **Please see the** `documentation <http://sequana.readthedocs.org>`_ for an
 up-to-date status and documentation.
+
+
+Contributors
+============
+
+Maintaining BioServices would not have been possible without users and contributors. 
+Each contribution has been an encouragement to pursue this project. Thanks to all:
+
+.. image:: https://contrib.rocks/image?repo=sequana/sequana
+    :target: https://github.com/sequana/sequana/graphs/contributors
+
+
 
 Changelog
 ~~~~~~~~~
@@ -123,6 +121,8 @@ Changelog
 ========= ====================================================================
 Version   Description
 ========= ====================================================================
+0.12.8    * Fix order of databases in multikraken. Handle empty file case
+          * Move sequana_lane_merging into a subcommand (sequana lane_merging)
 0.12.7    * Fix memory leak in len() of FastA class
 0.12.6    * remove some useless rules
 0.12.5    * refactorisation of VCF tools/modules to use vcfpy instead of pyVCF

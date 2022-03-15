@@ -237,31 +237,3 @@ Misc
     :members:
     :undoc-members:
 
-
-
-
-
-.. Standalone applications
-    ---------------------------
-
-    .. automodule:: sequana.scripts.coverage
-        :members:
-        :undoc-members:
-    .. automodule:: sequana.scripts.mapping
-        :members:
-        :undoc-members:
-    .. automodule:: sequana.scripts.summary
-        :members:
-        :undoc-members:
-    .. automodule:: sequana.scripts.taxonomy
-        :members:
-        :undoc-members:
-
-.. not yet included in the doc:: 
-    ../sequana/isoseq.py
-    ../sequana/iuapc.py
-    ../sequana/jsontool.py
-    ../sequana/pacbio_amplicon.py
-    ../sequana/summary.py
-    ../sequana/vcf_filter.py
-    ../sequana/vcftools.py

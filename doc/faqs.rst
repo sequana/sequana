@@ -323,3 +323,17 @@ content::
 
 where you can replace tkagg with e.g. qt5agg
 
+Installation issue on Mac
+--------------------------
+
+On a MacOSx conda environment (PYthon3.9), I could not build **datrie** with this kinf of error message::
+
+    error: command ‘llvm-ar’ failed: No such file or directory
+    ERROR: Failed building wheel for datrie
+    Failed to build datrie
+    Failed to build datrie
+    ERROR: Could not build wheels for datrie, which is required to install pyproject.toml-based projects
+
+The solution was to set the AR variable::
+
+    export AR=/usr/bin/ar
