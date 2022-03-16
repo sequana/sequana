@@ -1,2 +1,0 @@
-kraken==1.1
-krona

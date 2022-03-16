@@ -131,7 +131,7 @@ In **Sequana**, in addition to the library and standalone applications, we also
 provide a set of pipelines (see :ref:`pipelines` section). Originally, pipeline
 were provided with Sequana, inside the same source repository. Since version
 0.8.0, pipeline have their own repository. For instance, 
-:ref:`pipeline_variant_calling` is available on
+:ref:`pipeline_vc` is available on
 https://github.com/sequana/variant_calling.
 We will not describe all pipelines here below since new ones may appear now and
 then. Instead, let us explain the way pipelines can be designed and run.
@@ -149,11 +149,8 @@ The --upgrade option is to make sure you install the newest version.
 
 To check if the installation is successful, just type::
 
-    sequana_pipelines_variant_calling --help
+    sequana_ariant_calling --help
 
-Alias is most probably available (shorter version without _pipelines tag)::
-
-    sequana_variant_calling --help
 
 Usage
 -----

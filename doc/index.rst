@@ -27,7 +27,7 @@ What is Sequana ?
 The sequana pipelines are various. Since March 2020, they have their own independent life within dedicated github repositories. You may find pipelines for NGS quality control (e.g. adapters removal,
 phix removal, trimming of bad quality bases), variant calling, characterisation
 of the genome coverage, taxonomic classification, de-novo assembly, 
-:ref:`Variant calling <pipeline_variant_calling>`, :ref:`RNA-seq <pipeline_rnaseq>`, etc. See the :ref:`pipelines`
+:ref:`Variant calling <pipeline_vc>`, :ref:`RNA-seq <pipeline_rnaseq>`, etc. See the :ref:`pipelines`
 section for more information.
 
 

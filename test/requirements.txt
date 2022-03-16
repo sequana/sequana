@@ -4,6 +4,4 @@ pytest-xdist
 pytest-mock
 pytest-timeout
 pytest-runner
-sphinx>=3
-sphinx_rtd_theme
 coveralls

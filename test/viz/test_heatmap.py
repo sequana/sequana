@@ -67,3 +67,12 @@ def test_others():
         assert False
     except:
         assert True
+
+
+def test_clusterer_map():
+   from sequana.viz.heatmap import Clustermap, get_clustermap_data
+   df, sample_groups_df, gene_groups_df = get_clustermap_data()
+   h = Clustermap(df, sample_groups_df=sample_groups_df, gene_groups_df=gene_groups_df)
+   h.plot()
+
+

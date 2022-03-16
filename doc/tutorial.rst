@@ -172,7 +172,7 @@ For testing purposes, you can download :download:`R1
 files that contain only 1500 reads. Copy them in a local directory.
 
 Note that this does the variant calling + snpEff + coverage.
-See more information in the :ref:`pipeline_variant_calling` section.
+See more information in the :ref:`pipeline_vc` section.
 
 Make sure you have installed the pipeline::
 
@@ -268,7 +268,7 @@ De novo
 
 The denovo_assembly pipeline can be initialised in the same way::
 
-    sequana --pipeline denovo_assembly --input-directory . --working-directory denovo_test
+    sequana_denovo --input-directory . --working-directory denovo_test
 
 Go to the **denovo_test** directory and edit the config file. 
 
@@ -300,7 +300,6 @@ Initialise the pipeline
 Call **sequana** standalone as follows::
 
     sequana_rnaseq --working-directory EXAMPLE
-        --adapter-fwd GATCGGAAGAGCACACGTCTGAACTCCAGTCA --adapter-rev GTGACTGGAGTTCAGACGTGTGCTCTTCCGATC
 
 This command download the pipeline and its configuration file. The configuration
 file is prefilled with adapter information and input data files found in the
@@ -335,29 +334,12 @@ the fasta and the GFF files from SGD before to run the pipeline::
 
 .. warning:: For the counting step, the RNA-seq pipeline take only GFF files. GTF and SAF files will be integrated soon.
 
-Edit the config file(s)
+Initiate the pipeline
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Edit the config file **config.yaml** and fill the genome section::
+:: 
 
-    genome:
-      do: yes
-      genome_directory: Saccer3
-      name: Saccer3 #path to index name
-      fasta_file: Saccer3/Saccer3.fa
-      gff_file: Saccer3/Saccer3.gff
-      rRNA_file:
-      rRNA_feature: "rRNA"
-
-
-.. warning:: Note that fastq_screen is off by default. Indeed, Sequana does not provide 
-   a fastq_screen database so far. Therefore, if you want to run fastq_screen, please 
-   see the manual (https://www.bioinformatics.babraham.ac.uk/projects/fastq_screen/)
-   and add the config file in the tool section.
-
-
-
-An alternative is to use :ref:`sequanix`.
+    sequana_rnaseq --genome-directory Saccer3  --aligner bowtie2
 
 
 Run the pipeline

@@ -8,14 +8,11 @@ formats: all
 python:
     version: 3.7
     install:
-        - requirements: requirements.txt
-        - requirements: requirements_dev.txt
+        - requirements: doc/requirements.txt
         - requirements: requirements_pipelines.txt
-        - requirements: .readthedocs_extra.txt
         - method: pip
           path: .
 
-# it is either conda or python not both....
-# https://docs.readthedocs.io/en/stable/config-file/v2.html
+# if present, this section is used and python section ignored before sphinx is built
 #conda:
-#    environment: environment_rtd.yml
+#    environment: environment.yml

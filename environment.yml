@@ -1,0 +1,12 @@
+name: sequana_deps
+
+channels:
+- bioconda
+- conda-forge
+- default
+- r
+
+dependencies:
+- cd-hit
+- kraken2
+- krona
