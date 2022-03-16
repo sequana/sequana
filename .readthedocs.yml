@@ -8,7 +8,7 @@ formats: all
 python:
     version: 3.7
     install:
-        - requirements: docs/requirements.txt
+        - requirements: doc/requirements.txt
         - requirements: requirement_pipelines.txt
 
 # if present, this section is used and python section ignored before sphinx is built
