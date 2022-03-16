@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-#
 #  This file is part of Sequana software
 #
 #  Copyright (c) 2016 - Sequana Development Team
@@ -33,12 +31,11 @@ class Cigar(object):
         >>> c = Cigar("2S30M1I")
         >>> len(c)
         33
-        >>> c.items()
 
         >>> c = Cigar("1S1S1S1S")
         >>> c.compress()
         >>> c.cigarstring
-        "4S"
+        '4S'
 
 
     Possible CIGAR types are:
@@ -131,6 +128,7 @@ class Cigar(object):
 
             >>> from sequana import Cigar
             >>> c = Cigar("1S2M1S")
+            >>> c.as_tuple()
             (('S', 1), ('M', 2), ('S', 1))
 
         """

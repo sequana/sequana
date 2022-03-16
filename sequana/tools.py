@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-#
 #  This file is part of Sequana software
 #
 #  Copyright (c) 2016 - Sequana Development Team
@@ -479,10 +477,10 @@ class GZLineCounter(object):
     .. doctest::
 
         >>> from sequana import sequana_data
-        >>> from sequana.misc import GZLineCounter
+        >>> from sequana.tools import GZLineCounter
         >>> gz = GZLineCounter(sequana_data("test.fastq.gz"))
         >>> len(gz)
-        100
+        1000
 
     """
 

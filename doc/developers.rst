@@ -43,8 +43,8 @@ We can quickly check that a name is not already taken as follows:
 
 .. doctest::
 
-    >>> import sequana
-    >>> "count" in sequana.modules.keys()
+    >>> from sequana_pipetools.snaketools import modules
+    >>> "count" in modules.keys()
     False
 
 So, let us name it **count**

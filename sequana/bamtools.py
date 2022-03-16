@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-#
 #  This file is part of Sequana software
 #
 #  Copyright (c) 2016 - Sequana Development Team

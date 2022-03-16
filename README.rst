@@ -118,14 +118,16 @@ Each contribution has been an encouragement to pursue this project. Thanks to al
 Changelog
 ~~~~~~~~~
 
-========= ====================================================================
+========= ========================================================================
 Version   Description
-========= ====================================================================
-0.13.0    * Fix order of databases in multikraken. Handle empty file case
+========= ========================================================================
+0.13.0    * Remove useless standalones or moved to main **sequana** command
           * Move sequana_lane_merging into a subcommand (sequana lane_merging)
+          * General cleanup of documentation, test and links to pipelines
+          * add new ribodesigner subcommand
 0.12.7    * Fix memory leak in len() of FastA class
-0.12.6    * remove some useless rules
+0.12.6    * remove some rules now in https://github.com/sequana/sequana-wrappers
 0.12.5    * refactorisation of VCF tools/modules to use vcfpy instead of pyVCF
 0.12.4    * complete change log before 0.12.4 on readthedocs.org
-========= ====================================================================
+========= ========================================================================
 

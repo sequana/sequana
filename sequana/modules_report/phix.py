@@ -34,7 +34,7 @@ logger = colorlog.getLogger(__name__)
 from sequana.utils.datatables_js import DataTable
 
 
-class PhixModule(SequanaBaseModule):
+class PhixModule(SequanaBaseModule): #pragma: no cover (used in sequana_quality_control)
     """Write HTML report of fastq stats analysis."""
 
     def __init__(self, input_directory, output_filename=None, tag_R1="_R1_"):

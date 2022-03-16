@@ -404,7 +404,7 @@ class Heatmap(Linkage):
             import colormap
 
             cmap = colormap.cmap_builder(cmap)
-        except:
+        except Exception: #pragma: no cover
             pass
 
         # keep track of row and column names for later.
