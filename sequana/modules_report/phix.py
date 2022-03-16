@@ -1,8 +1,6 @@
-# coding: utf-8
-#
 #  This file is part of Sequana software
 #
-#  Copyright (c) 2016 - Sequana Development Team
+#  Copyright (c) 2016-2022 - Sequana Development Team
 #
 #  File author(s):
 #      Thomas Cokelaer <thomas.cokelaer@pasteur.fr>
@@ -142,14 +140,19 @@ class PhixModule(SequanaBaseModule):
             indices.append(index)
 
             try:
+                print(filename)
                 # Use a try since the subdf may be empty
                 subdf = pd.read_json(filename)
                 df.iloc[i] = subdf.iloc[0]
-                df.iloc[i]["A"] /= df.iloc[i]["n_reads"]
-                df.iloc[i]["C"] /= df.iloc[i]["n_reads"]
-                df.iloc[i]["G"] /= df.iloc[i]["n_reads"]
-                df.iloc[i]["T"] /= df.iloc[i]["n_reads"]
-                df.iloc[i]["N"] /= df.iloc[i]["n_reads"]
+                if df.iloc[i] != 0:
+                    df.iloc[i]["A"] /= df.iloc[i]["n_reads"]
+                    df.iloc[i]["C"] /= df.iloc[i]["n_reads"]
+                    df.iloc[i]["G"] /= df.iloc[i]["n_reads"]
+                    df.iloc[i]["T"] /= df.iloc[i]["n_reads"]
+                    df.iloc[i]["N"] /= df.iloc[i]["n_reads"]
+                else:
+                    print(df)
+                    print(filename)
             except:
                 pass
 
