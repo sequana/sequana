@@ -9,6 +9,7 @@ python:
     version: 3.7
     install:
         - requirements: docs/requirements.txt
+        - requirements: requirement_pipelines.txt
 
 conda:
     environment: environment.yml
