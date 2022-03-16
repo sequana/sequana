@@ -24,7 +24,7 @@ import types
 
 disable_lazy_imports = False
 
-if "sphinx" in sys.modules:
+if "sphinx" in sys.modules: #pragma: no cover
     disable_lazy_imports = True
 
 
@@ -78,12 +78,12 @@ class LazyImport(types.ModuleType):
         return "<module '%s' will be lazily loaded>" % object.__getattribute__(self, "__name__")
 
 
-if disable_lazy_imports:
+if disable_lazy_imports: #pragma: no cover
     lazy_doc = """:class:`LazyImports` have been globally disabled.
     Please modify ``disable_lazy_imports`` boolean variable in
     :mod:`sequana.lazyimports` in order to leverage lazy loading of modules.
     """
-    if "sphinx" in sys.modules:
+    if "sphinx" in sys.modules: 
         lazy_doc = """
                    WARNING: To get Sphinx documentation to build we disable
                    LazyImports, which makes Sphinx incorrectly report this
