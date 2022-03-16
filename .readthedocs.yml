@@ -11,5 +11,6 @@ python:
         - requirements: docs/requirements.txt
         - requirements: requirement_pipelines.txt
 
-conda:
-    environment: environment.yml
+# if present, this section is used and python section ignored before sphinx is built
+#conda:
+#    environment: environment.yml
