@@ -10,8 +10,8 @@ python:
     install:
         - requirements: doc/requirements.txt
         - requirements: requirements_pipelines.txt
-         - method: pip
-           path: .
+        - method: pip
+          path: .
 
 # if present, this section is used and python section ignored before sphinx is built
 #conda:
