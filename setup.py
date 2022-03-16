@@ -84,7 +84,7 @@ setup(
     install_requires = requirements,
 
     # specific packages for testing
-    tests_require = open('requirements_dev.txt').read().split(),
+    tests_require = open('test/requirements.txt').read().split(),
 
     # here below '': pattern means include that pattern in all packages
     # so '' :['README.rst'] will include all README.rst recursively
