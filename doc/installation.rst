@@ -7,6 +7,9 @@ Here below are the instructions to install Sequana. There are different ways (so
 
 If you want the latest version of Sequana, you should install it from source (see :ref:`github_method`). Otherwise, you can install a release of **Sequana** from the Pypi website (using **pip**). Note that for pipelines, which are now independent Python packages, we also use Pypi releases. However, third-party dependencies (not Python) should be installed manually. Most of them are provided through **Anaconda** channels.  See the :ref:`installation_conda` Section for details on how to set up Conda. 
 
+For instance, if you want to use the sequana_fastqc pipelinem you must install **fastqc** yourself, which is not a
+Python package.
+
 If you just want to test **Sequana** or **Sequanix** (see note here below) or one of the Sequana
 standalone, we also provide **Singularity** containers as explained in the
 :ref:`singularity_details` section.
@@ -24,8 +27,7 @@ standalone, we also provide **Singularity** containers as explained in the
     each pipeline has now its own life cycle outside of Sequana. For example,
     the variant calling pipeline is hosted on
     https://github.com/sequana/variant_calling. This way, you can install
-    Sequana quite easily using pip, or bioconda, or virtual environment as shown
-    here below.
+    Sequana quite easily using pip.
 
 .. topic:: Sequanix
 
@@ -45,7 +47,7 @@ Lots of dependencies have been dropped in version 0.8.0 so that you could simply
 use **pip** to install Sequana.
 
 
-In any case we strongly recommend to use a virtual environment so that (i))
+In any case we strongly recommend to use a virtual environment so that (i)
 you can install all requirements without root permissions and (ii) you do
 not interfer with your system.
 
@@ -113,9 +115,11 @@ Other solutions (overview)
         conda install sequana
 
 #. From source. If you prefer to install everything yourself, the source code is available on
-   github (http://github.com/sequana/sequana) and releases are posted on Pypi::
+   github (http://github.com/sequana/sequana)::
 
-        pip install sequana
+        git clone https://github.com/sequana/sequana
+        cd sequana
+        pip install sequana .
 
 These three methods are detailled hereafter.
 

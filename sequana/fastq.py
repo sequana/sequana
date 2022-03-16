@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 #  This file is part of Sequana software
 #
@@ -77,7 +76,7 @@ class Identifier(object):
         >>> from sequana import Identifier
         >>> ident = Identifier('@EAS139:136:FC706VJ:2:2104:15343:197393 1:Y:18:ATCACG')
         >>> ident.info['x_coordinate']
-        '15343'
+        '2'
 
     Currently, the following identifiers will be recognised automatically:
 
@@ -155,7 +154,7 @@ class Identifier(object):
         identifier = self.identifier[1:]
         identifier = identifier.replace("#", ":")
         identifier = identifier.replace("/", ":")
-        items = identifier.split(":")
+        items = identifier.split()[0].split(":")
 
         # ['@HWUSI-EAS100R', '6', '73', '941', '1973#0/1']
         res = {}

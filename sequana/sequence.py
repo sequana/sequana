@@ -1,3 +1,17 @@
+#  This file is part of Sequana software
+#
+#  Copyright (c) 2018 - Sequana Development Team
+#
+#  File author(s):
+#      Thomas Cokelaer <thomas.cokelaer@pasteur.fr>
+#
+#  Distributed under the terms of the 3-clause BSD license.
+#  The full license is in the LICENSE file, distributed with this software.
+#
+#  website: https://github.com/sequana/sequana
+#  documentation: http://sequana.readthedocs.io
+#
+##############################################################################
 import re
 import string
 import subprocess
@@ -25,7 +39,7 @@ class Sequence(object):
     Sequenced is the base class for other classes such as :class:`DNA` and
     :class:`RNA`.
 
-    ::
+    .. doctest::
 
         from sequana import Sequence
         s = Sequence("ACGT")
@@ -149,10 +163,11 @@ class Sequence(object):
 class DNA(Sequence):
     """Simple DNA class
 
+    ::
 
+        >>> from sequana.sequence import DNA
         >>> d = DNA("ACGTTTT")
-        >>> d.complement
-        >>> d.reverse_complement
+        >>> d.reverse_complement()
 
     Some long computations are done when setting the window size::
 
@@ -656,9 +671,9 @@ class RNA(Sequence):
     """Simple RNA class
 
 
+    >>> from sequana.sequence import RNA
     >>> d = RNA("ACGUUUU")
-    >>> d.complement
-    >>> d.reverse_complement
+    >>> d.reverse_complement()
 
     """
 
