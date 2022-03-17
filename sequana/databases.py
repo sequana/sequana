@@ -229,7 +229,7 @@ class NCBIDownload:
             "viral",
         }
 
-    def download_ncbi_refseq_release(self, category, email="sequana@pasteur.fr"):
+    def download_ncbi_refseq_release(self, category, email="sequana@pasteur.fr", outdir="."):
         """Download all files of type *fna* from ncbi FTP.
 
         ::
@@ -249,7 +249,7 @@ class NCBIDownload:
         for filename in filenames:
             if "genomic.fna" in filename:
                 logger.info(f"Downloading {filename}")
-                ftp.retrbinary(f"RETR {filename}", open(filename, "wb").write)
+                ftp.retrbinary(f"RETR {filename}", open("/".join([filename, outdir]), "wb").write)
         return [x for x in filenames if "genomic.fna" in x]
 
     def download_genomes_from_ncbi(self, category, email="sequana@pasteur.fr"):  # pragma: no cover
