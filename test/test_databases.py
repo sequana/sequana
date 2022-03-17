@@ -64,11 +64,13 @@ def test_NCBITaxonReader():
 @pytest.mark.timeout(20)
 @pytest.mark.xfail(reason="too slow")
 def test_NCBIDownload(tmpdir):
-    path = tmpdir.mkdir("temp").join("summary.txt")
+    outdir = tmpdir.mkdir("temp")
+    path = outdir.join("summary.txt")
+
     n = databases.NCBIDownload()
     try:
         filenames = []
-        filenames = n.download_ncbi_refseq_release("mitochondrion")
+        filenames = n.download_ncbi_refseq_release("mitochondrion", outdir=str(outdir))
     except Exception:
         assert False
     finally:
