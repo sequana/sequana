@@ -60,8 +60,7 @@ SEQUANA
       - .. image:: https://github.com/sequana/sequana_pipetools/actions/workflows/main.yml/badge.svg
             :target: https://github.com/sequana/sequana_pipetools/actions/workflows/main.yml
     * - https://github.com/sequana/sequana-wrappers
-      - .. image:: https://badge.fury.io/py/sequana-wrappers.svg
-            :target: https://pypi.python.org/pypi/sequana-wrappers
+      - Not on pypi
       - .. image:: https://github.com/sequana/sequana-wrappers/actions/workflows/main.yml/badge.svg
             :target: https://github.com/sequana/sequana-wrappers/actions/workflows/main.yml
     * - https://github.com/sequana/demultiplex
