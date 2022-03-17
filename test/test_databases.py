@@ -61,21 +61,20 @@ def test_NCBITaxonReader():
     assert n.get_taxon_from_scientific_name("Measles morbillivirus").values[0] == 11234
 
 
-@pytest.mark.timeout(20)
-@pytest.mark.xfail(reason="too slow")
+#@pytest.mark.timeout(20)
+#@pytest.mark.xfail(reason="too slow")
 def test_NCBIDownload(tmpdir):
-    path = tmpdir.mkdir("temp").join("summary.txt")
+
+    outdir = tmpdir.mkdir("temp")
+    path = outdir.join("summary.txt")
     n = databases.NCBIDownload()
     try:
-        filenames = []
-        filenames = n.download_ncbi_refseq_release("mitochondrion")
-    except Exception:
+        filenames = n.download_ncbi_refseq_release("mitochondrion", outdir=str(outdir))
+        print(filenames)
+    except Exception as err:
+        print(err)
         assert False
-    finally:
-        for ff in filenames:
-            os.remove(ff)
     n.download_assembly_report("fungi", output=path)
-
 
 
 @pytest.mark.xfail(reason="too slow", method="thread")
@@ -86,5 +85,5 @@ def test_ENADownload(tmpdir):
     n.download_fasta("K01711.1", output_dir=str(path))
     n.download_fasta(["K01711.1", "dummy"], output_dir=str(path))
     n.download_fasta(
-        f"{test_dir}/data/test_eutils_list_accession_number.txt", output_dir=str(path)
+        f"{test_dir}/data/test_eutils_list_accession_number.txt", outdir=str(path)
     )

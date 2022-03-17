@@ -108,7 +108,7 @@ class ENADownload(object):
             results.update(result)
         return results
 
-    def download_fasta(self, filelist, output_dir=None):
+    def download_fasta(self, filelist, outdir=None):
         """Download a FASTA (or list of)
 
         :param filelist: a name to find on the ENA web server OR the
@@ -134,11 +134,11 @@ class ENADownload(object):
 
         # do not use caching things this could be huge data sets.
 
-        if output_dir is None:  # pragma: no cover
-            output_dir = "."
+        if outdir is None:  # pragma: no cover
+            outdir = "."
         else:
             try:
-                os.mkdir(output_dir)
+                os.mkdir(outdir)
             except FileExistsError:
                 pass
 
@@ -170,8 +170,8 @@ class ENADownload(object):
             # Save to local file
             # WARNINGS: extension is .fa because kraken-build expects .fa files
             filename = "%s_%s.fa" % (db, acc.split(".")[0])
-            if output_dir:
-                filename = output_dir + os.sep + filename
+            if outdir:
+                filename = outdir + os.sep + filename
 
             with open(filename, "w") as fout:
                 fout.write(header + "\n" + others)
@@ -229,7 +229,7 @@ class NCBIDownload:
             "viral",
         }
 
-    def download_ncbi_refseq_release(self, category, email="sequana@pasteur.fr"):
+    def download_ncbi_refseq_release(self, category, email="sequana@pasteur.fr", outdir="."):
         """Download all files of type *fna* from ncbi FTP.
 
         ::
@@ -249,10 +249,10 @@ class NCBIDownload:
         for filename in filenames:
             if "genomic.fna" in filename:
                 logger.info(f"Downloading {filename}")
-                ftp.retrbinary(f"RETR {filename}", open(filename, "wb").write)
+                ftp.retrbinary(f"RETR {filename}", open("/".join([outdir, filename]), "wb").write)
         return [x for x in filenames if "genomic.fna" in x]
 
-    def download_genomes_from_ncbi(self, category, email="sequana@pasteur.fr"):  # pragma: no cover
+    def download_genomes_from_ncbi(self, category, email="sequana@pasteur.fr", outdir="."):  # pragma: no cover
         """This downloads all genomes on ncbi for a given category looking at
         their ftp. This could be highly redundant.
 
@@ -266,7 +266,7 @@ class NCBIDownload:
         for filename in ftp.nlst():
             if "genomic.fna" in filename:
                 logger.info(f"Downloading {filename}")
-                ftp.retrbinary(f"RETR {filename}", open(filename, "wb").write)
+                ftp.retrbinary(f"RETR {filename}", open("/".join([outdir, filename]), "wb").write)
 
     def download_assembly_report(self, category, output=None):
         assert category in self.category_genomes
