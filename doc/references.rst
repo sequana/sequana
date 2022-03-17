@@ -13,10 +13,6 @@ Assembly related
     :members:
     :undoc-members:
 
-.. automodule:: sequana.busco
-    :members:
-    :undoc-members:
-
 .. automodule:: sequana.contigs
     :members:
     :undoc-members:
