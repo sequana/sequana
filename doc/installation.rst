@@ -95,6 +95,11 @@ Each pipeline has its own repository on github (https://github.com/sequana/sequa
 where more details about specific dependencies are provided. 
 
 
+A set of predefined pipelines can be installed using::
+
+    pip install sequana[pipelines]
+
+
 Other solutions (overview)
 ========================================
 
@@ -183,7 +188,7 @@ As of May 2020, the recommended order is now::
     conda config --add channels bioconda
     conda config --add channels conda-forge
 
-Create an environement
+Create an environment
 -------------------------
 
 Once **conda** is installed and the channels set, open a new shell.
@@ -214,19 +219,16 @@ From GitHub Source code
 ===========================
 
 Finally, if you are a developer and wish to use the latest code, you 
-can install **sequana** from source::
+can install **sequana** in develop mode as follows::
 
     conda create --name sequana python=3.7.3
     source activate sequana
     git clone git@https://github.com:sequana/sequana.git
     cd sequana
-    python setup.py install
-
-    # to use sequanix interface:
-    conda install -c anaconda qt pyqt>5
+    pip install -e .
 
     # to perform testing and documentation:
-    pip install -r requirements_dev.txt
+    pip install -e .[doc,testing]
 
 
 This should install most of the required dependencies. However, you may need to
