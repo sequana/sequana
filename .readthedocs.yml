@@ -9,9 +9,9 @@ python:
     version: 3.7
     install:
         - requirements: doc/requirements.txt
-        - requirements: requirements_pipelines.txt
         - method: pip
           path: .
+        - requirements: requirements_pipelines.txt
 
 # if present, this section is used and python section ignored before sphinx is built
 #conda:
