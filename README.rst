@@ -120,7 +120,7 @@ Changelog
 ========= ========================================================================
 Version   Description
 ========= ========================================================================
-0.13.0    * Remove useless standalones or moved to main **sequana** command
+0.13.X    * Remove useless standalones or moved to main **sequana** command
           * Move sequana_lane_merging into a subcommand (sequana lane_merging)
           * General cleanup of documentation, test and links to pipelines
           * add new ribodesigner subcommand
