@@ -32,7 +32,23 @@ logger.setLevel("INFO")
 
 
 class RiboDesigner(object):
-    """Documentation for RiboDesigner"""
+    """Design probes for ribosomes depletion.
+
+    From a complete genome assembly FASTA file and a GFF annotation file:
+    - Extract genomic sequences corresponding to the selected 'seq_type'.
+    - For these selected sequences, design probes of length 'probe_len' and with a space between probes of 'inter_probe_space'.
+    - Detect the highest cd-hit-est identity threshold where the number of probes is inferior or equal to 'best_n_probes'.
+    - Report the list of probes in bed and csv files.
+
+    In the csv, the oligo names are in column 1 and the oligo sequences in column 2.
+
+    :param fasta: The complete genome assembly to extract ribosome sequences from.
+    :param gff: GFF annotation file of the genome assembly.
+    :param output_directory: The path to the output directory.
+    :param seq_type: string describing sequence annotation type (column 3 in GFF) to select rRNA from.
+    :param prob_len: the size for probes in nucleotides.
+    :param inter_probe_space: the space between probes in nucleotides.
+    """
 
     def __init__(
         self,
@@ -68,12 +84,8 @@ class RiboDesigner(object):
         self.clustered_probes_csv = self.outdir / "clustered_probes.csv"
 
     def get_rna_pos_from_gff(self):
-        """Convert a GFF fil e into a pandas DataFrame filtered according to the
-        seq_type.
-
-        :param gff: GFF annotation file
-        :param seq_type: string describing sequence annotation type (column 3 in GFF) to
-            select rRNA from.
+        """Convert a GFF file into a pandas DataFrame filtered according to the
+        self.seq_type.
         """
 
         gff = GFF3(self.gff)
@@ -91,17 +103,7 @@ class RiboDesigner(object):
         return gff_filtered.df
 
     def get_probes(self):
-        """Generate a FASTA file containing probe sequences.
-
-        From a FASTA file of nucleotide sequence to be targetted, generate a FASTA
-        file with probe designed of size 'probe_len' and with a space between probes
-        of 'inter_probe_space'
-
-        :param fasta_in: path to FASTA file with extracted rRNA regions.
-        :param fasta_out: path to FASTA file where probes will be exported to.
-        :param prob_len: the size for probes in nucleotides.
-        :param inter_probe_space: the space between probes in nucleotides.
-        """
+        """Generate a FASTA file containing probe sequences."""
 
         count = 0
         with open(self.probes_fasta, "w") as fas_out:
@@ -123,14 +125,7 @@ class RiboDesigner(object):
         logger.info(f"{count} probes designed.")
 
     def cluster_probes(self):
-        """Use cd-hit-est to cluster highly similar probes.
-
-        Detect the highest cd-hit-est threshold where the number of probes is inferior or equal to best_n_probes.
-
-        :param fasta_in: path to FASTA file with probes.
-        :param fasta_out: path to FASTA file with probes after filtering.
-
-        """
+        """Use cd-hit-est to cluster highly similar probes."""
 
         outdir = (
             Path(self.clustered_probes_fasta).parent
@@ -171,14 +166,7 @@ class RiboDesigner(object):
         return df
 
     def fasta_to_csv(self):
-        """Convert a FASTA file into a CSV file.
-
-        The oligo names are in column 1 and the oligo sequences in column 2.
-
-        :param fasta_in: path to FASTA file with clustered probes.
-        :param csv_out: path to CSV file with clustered probes.
-
-        """
+        """Convert a FASTA file into a CSV file."""
 
         seq_dict = {"id": [], "sequence": []}
 
