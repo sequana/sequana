@@ -84,11 +84,12 @@ setup(
     install_requires = requirements,
 
     # specific packages for testing
-    tests_require = open('test/requirements.txt').read().split(),
-
-    # here below '': pattern means include that pattern in all packages
-    # so '' :['README.rst'] will include all README.rst recursively
-    # required to use python setup.py install
+    extras_require = {
+    "testing": [
+        "pytest", "pytest-cov", "pytest-xdist", 
+        "pytest-mock", "pytest-timeout", "pytest-runner",
+        "coveralls"]
+    },
 
     # This is recursive include of data files
     exclude_package_data = {"": ["__pycache__"]},
@@ -103,7 +104,6 @@ setup(
         'sequana.resources.templates' : ['*.R'],
         'sequana.resources.images' : ['*'],
         'sequana.resources.testing' : ['*', '*/*', '*/*/*', '*/*/*/*', '*/*/*/*/*', '*/*/*/*/*/*'],
-        'sequana.resources.busco' : ['*'],
         'sequana.multiqc' : ['*yaml'],
         },
 
