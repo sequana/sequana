@@ -84,8 +84,12 @@ setup(
     install_requires = requirements,
 
     # specific packages for testing
-    tests_require = ["pytest", "pytest-cov", "pytest-xdist", "pytest-mock", "pytest-timeout", "pytest-runner",
-        "coveralls"],
+    extras_require = {
+    "testing": [
+        "pytest", "pytest-cov", "pytest-xdist", 
+        "pytest-mock", "pytest-timeout", "pytest-runner",
+        "coveralls"]
+    },
 
     # This is recursive include of data files
     exclude_package_data = {"": ["__pycache__"]},

@@ -213,9 +213,9 @@ class ScatterHist(VizInput2D):
 
         # grid
         if grid is True:
-            ax_scatter.grid(b=grid, which='major', axis='both', **kargs_grids)
-            ax_hist_x.grid(b=grid, which='major', axis='both', **kargs_grids)
-            ax_hist_y.grid(b=grid, which='major', axis='both', **kargs_grids)
+            ax_scatter.grid(visible=grid, which='major', axis='both', **kargs_grids)
+            ax_hist_x.grid(visible=grid, which='major', axis='both', **kargs_grids)
+            ax_hist_y.grid(visible=grid, which='major', axis='both', **kargs_grids)
 
         return (ax_scatter, ax_hist_x, ax_hist_y)
 

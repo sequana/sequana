@@ -460,7 +460,7 @@ class ChromosomeCoverageModule(SequanaBaseModule):
         hroi = DataTable(high_roi, "hroi", datatable)
         html_low_roi = lroi.create_datatable(float_format="%.3g")
         html_high_roi = hroi.create_datatable(float_format="%.3g")
-        rois.df.drop("link", 1, inplace=True)
+        rois.df.drop("link", axis=1, inplace=True)
         roi_paragraph = (
             "<p>Regions with a z-score {0}er than {1:.2f} and at "
             "least one base with a z-score {0}er than {2:.2f} are detected."

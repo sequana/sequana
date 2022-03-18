@@ -288,8 +288,8 @@ See more information in the :ref:`pipeline_rnaseq` section.
 The following example will show you how to initialise and run the RNAseq pipeline on a couple of FastQ files (in single-end mode).
 The data comes from a sequencing (using HiSeq2500 technology) of a saccharomyces cerevisiae strain.
 For testing purposes, you can download :download:`Fastq1
-<../sequana/resources/data/WT_ATCACG_L001_R1_001.fastq.gz>` and
-:download:`Fastq2 <../sequana/resources/data/KO_ATCACG_L001_R1_001.fastq.gz>`)
+<data/WT_ATCACG_L001_R1_001.fastq.gz>` and
+:download:`Fastq2 <data/KO_ATCACG_L001_R1_001.fastq.gz>`)
 files that contain only 100,000 reads. Copy them in a local directory.
 
 
