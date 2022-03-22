@@ -1,10 +1,8 @@
 """Tests for `ribodesigner` package."""
 
 import filecmp
-import shutil
 from pathlib import Path
 
-import pytest
 from click.testing import CliRunner
 from sequana.ribodesigner import RiboDesigner
 from sequana.scripts.main import ribodesigner
@@ -19,7 +17,7 @@ def test_ribodesigner(tmp_path):
         fasta=resources_dir / "sample.fas", gff=resources_dir / "sample.gff", output_directory=tmp_path, force=True
     )
     rd.run()
-    assert rd.filtered_gff_df.shape == (12, 16)
+    assert rd.filtered_gff_df.shape == (12, 9)
     assert filecmp.cmp(tmp_path / "probes_sequences.fas", resources_dir / "probes_sequences.fas")
     assert filecmp.cmp(tmp_path / "clustered_probes.fas", resources_dir / "clustered_probes.fas")
     assert filecmp.cmp(tmp_path / "clustered_probes.csv", resources_dir / "clustered_probes.csv")

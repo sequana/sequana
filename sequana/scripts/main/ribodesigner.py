@@ -10,11 +10,10 @@
 #
 ##############################################################################
 import sys
-from pathlib import Path
 
 import click
 import colorlog
-from easydev import cmd_exists
+import shutil
 
 from sequana.ribodesigner import RiboDesigner
 
@@ -32,11 +31,7 @@ logger = colorlog.getLogger(__name__)
 @click.argument("gff", type=click.Path(exists=True))
 @click.option("--output-directory", default="out_ribodesigner", type=click.Path(exists=False))
 @click.option("--seq-type", default="rRNA", help="The annotation type (column 3 in gff) to target for probes.")
-@click.option("--probe-len", default=50, type=click.INT, help="The size of probes in nucleotides.")
-@click.option(
-    "--inter-probe-space", default=15, type=click.INT, help="The size of the space between probes in nucleotides."
-)
-@click.option("--best-n-probes", default=384, type=click.INT, help="The optimal number of probes to design.")
+@click.option("--max-n-probes", default=384, type=click.INT, help="The maximum number of probes to design.")
 @click.option("--threads", default=4, type=click.INT, help="The number of threads to use for cd-hit-est.")
 @click.option(
     "--force",
@@ -51,9 +46,7 @@ def ribodesigner(**kwargs):
     (GFF file). CD-HIT-EST should be installed and in your $PATH.
     """
 
-    from easydev import cmd_exists
-
-    if not cmd_exists("cd-hit-est"):
+    if not shutil.which("cd-hit-est"):
         logger.error("cd-hit-est not found in PATH.")
         sys.exit(1)
 

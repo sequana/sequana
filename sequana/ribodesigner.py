@@ -23,7 +23,6 @@ from itertools import product
 
 from sequana import logger
 from sequana.tools import reverse_complement
-from sequana.gff3 import GFF3
 from sequana.fasta import FastA
 
 logger.setLevel("INFO")
@@ -33,19 +32,21 @@ class RiboDesigner(object):
     """Design probes for ribosomes depletion.
 
     From a complete genome assembly FASTA file and a GFF annotation file:
-    - Extract genomic sequences corresponding to the selected 'seq_type'.
-    - For these selected sequences, design probes of length 'probe_len' and with a space between probes of 'inter_probe_space'.
-    - Detect the highest cd-hit-est identity threshold where the number of probes is inferior or equal to 'best_n_probes'.
-    - Report the list of probes in bed and csv files.
 
-    In the csv, the oligo names are in column 1 and the oligo sequences in column 2.
+    - Extract genomic sequences corresponding to the selected ``seq_type``.
+    - For these selected sequences, design probes computing probe length and inter probe space according to the length of the ribosomale sequence.
+    - Detect the highest cd-hit-est identity threshold where the number of probes is inferior or equal to ``max_n_probes``.
+    - Report the list of probes in BED and CSV files.
 
-    :param fasta: The complete genome assembly to extract ribosome sequences from.
+    In the CSV, the oligo names are in column 1 and the oligo sequences in column 2.
+
+    :param fasta: The FASTA file with complete genome assembly to extract ribosome sequences from.
     :param gff: GFF annotation file of the genome assembly.
     :param output_directory: The path to the output directory.
     :param seq_type: string describing sequence annotation type (column 3 in GFF) to select rRNA from.
-    :param prob_len: the size for probes in nucleotides.
-    :param inter_probe_space: the space between probes in nucleotides.
+    :param max_n_probes: Max number of probes to design
+    :param force:  If the `output_directory` already exists, overwrite it.
+    :param threads: Number of threads to use in cd-hit clustering.
     """
 
     def __init__(
@@ -54,9 +55,7 @@ class RiboDesigner(object):
         gff,
         output_directory,
         seq_type="rRNA",
-        probe_len=None,
-        inter_probe_space=None,
-        best_n_probes=384,
+        max_n_probes=384,
         force=False,
         threads=4,
     ):
@@ -64,9 +63,7 @@ class RiboDesigner(object):
         self.fasta = fasta
         self.gff = gff
         self.seq_type = seq_type
-        self.probe_len = probe_len
-        self.inter_probe_space = inter_probe_space
-        self.best_n_probes = best_n_probes
+        self.max_n_probes = max_n_probes
         self.threads = threads
         self.outdir = Path(output_directory)
         if force:
@@ -87,22 +84,33 @@ class RiboDesigner(object):
         self.seq_type.
         """
 
-        gff = GFF3(self.gff)
-        gff.save_gff_filtered(filename=self.filtered_gff, features=[self.seq_type])
-        gff_filtered = GFF3(self.filtered_gff)
-        gff_filtered.to_fasta(self.fasta, self.ribo_sequences_fasta)
+        gff = pd.read_csv(
+            self.gff,
+            sep="\t",
+            comment="#",
+            names=["seqid", "source", "seq_type", "start", "end", "score", "strand", "phase", "attributes"],
+        )
 
-        genetic_types = gff.df.genetic_type.unique().tolist()
-        seq_types = gff_filtered.df.ID.tolist()
+        filtered_gff = gff.query("seq_type == @self.seq_type")
 
-        logger.info(f"Found {gff_filtered.df.shape[0]} '{self.seq_type}' entries in annotation file.")
-        logger.info(f"Genetic types found in gff: {','.join(genetic_types)}")
-        logger.info(f"List of '{self.seq_type}' detected: {','.join(seq_types)}")
+        with pysam.Fastafile(self.fasta) as fas:
+            with open(self.ribo_sequences_fasta, "w") as fas_out:
 
-        return gff_filtered.df
+                for row in filtered_gff.itertuples():
+                    region = f"{row.seqid}:{row.start}-{row.end}"
+                    seq_record = f">{region}\n{fas.fetch(region=region)}\n"
+                    fas_out.write(seq_record)
+
+        seq_types = gff.seq_type.unique().tolist()
+
+        logger.info(f"Genetic types found in gff: {','.join(seq_types)}")
+        logger.info(f"Found {filtered_gff.shape[0]} '{self.seq_type}' entries in the annotation file.")
+        logger.debug(f"\t" + filtered_gff.to_string().replace("\n", "\n\t"))
+
+        return filtered_gff
 
     def _get_probe_and_step_len(self, seq):
-        """This method calculate the probe_len and inter_probe_space for each ribosomale sequence and generate FASTA probe file accordingly.
+        """Calculates the probe_len and inter_probe_space for a ribosomal sequence.
 
         ribo_len = probe_len * n + (inter_probe_space * (n - 1))
         <=>
@@ -117,9 +125,9 @@ class RiboDesigner(object):
             if ((seq_len + inter_probe_space) / (probe_len + inter_probe_space)).is_integer():
                 return probe_len, inter_probe_space
 
-        raise "This should not happen"
+        raise ValueError(f"No correct probe length/inter probe space combination was found for {seq.name}")
 
-    def _get_probes_df(self, seq, probe_len, step_len, strand):
+    def _get_probes_df(self, seq, probe_len, step_len):
         """Generate the Dataframe with probes information.
 
         Design probes to have end-to-end coverage on the + strand and fill the inter_probe_space present on the + strand with probes designed on the - strand.
@@ -130,29 +138,30 @@ class RiboDesigner(object):
         :param strand: The strand on which probes are designed.
         """
 
+        # + strand probes
         starts = [start for start in range(0, len(seq.sequence) - probe_len + 1, probe_len + step_len)]
         stops = [start + probe_len for start in starts]
 
-        if strand == "-":
-            sequence = reverse_complement(seq.sequence)
-            # Starts reverse probes to be centered on inter_probe_space of the forward probes
-            starts = [int((starts[i + 1] + starts[i]) / 2) for i in range(0, len(starts) - 1)]
-            stops = [start + probe_len for start in starts]
+        df = pd.DataFrame({"name": seq.name, "start": starts, "stop": stops, "strand": "+", "score": 0})
+        df["sequence"] = [seq.sequence[row.start : row.stop] for row in df.itertuples()]
+        df["seq_id"] = df["name"] + f"_+_" + df["start"].astype(str) + "_" + df["stop"].astype(str)
 
-        else:
-            sequence = seq.sequence
+        # - strand probes
+        sequence = reverse_complement(seq.sequence)
+        # Starts reverse probes to be centered on inter_probe_space of the forward probes
+        rev_starts = [int((starts[i + 1] + starts[i]) / 2) for i in range(0, len(starts) - 1)]
+        rev_stops = [start + probe_len for start in rev_starts]
 
-        df = pd.DataFrame({"name": seq.name, "start": starts, "stop": stops, "strand": strand, "score": 0})
-        df["sequence"] = [sequence[row.start : row.stop] for row in df.itertuples()]
-        df["seq_id"] = df["name"] + f"_{strand}_" + df["start"].astype(str) + "_" + df["stop"].astype(str)
+        df_rev = pd.DataFrame({"name": seq.name, "start": rev_starts, "stop": rev_stops, "strand": "-", "score": 0})
+        df_rev["sequence"] = [sequence[row.start : row.stop] for row in df_rev.itertuples()]
+        df_rev["seq_id"] = df_rev["name"] + f"_-_" + df_rev["start"].astype(str) + "_" + df_rev["stop"].astype(str)
 
-        if strand == "-":
-            # Transform to bed coordinates for the reverse_complement
-            df["start"] = len(sequence) - df["start"]
-            df["stop"] = len(sequence) - df["stop"]
-            df.rename(columns={"start": "stop", "stop": "start"}, inplace=True)
+        # Transform to bed coordinates for the reverse_complement
+        df_rev["start"] = len(sequence) - df_rev["start"]
+        df_rev["stop"] = len(sequence) - df_rev["stop"]
+        df_rev.rename(columns={"start": "stop", "stop": "start"}, inplace=True)
 
-        return df
+        return pd.concat([df, df_rev])
 
     def get_all_probes(self):
         """Run all probe design and concatenate results in a single DataFrame."""
@@ -163,12 +172,9 @@ class RiboDesigner(object):
             for seq in fas:
 
                 probe_len, step_len = self._get_probe_and_step_len(seq)
+                probes_dfs.append(self._get_probes_df(seq, probe_len, step_len))
 
-                probes_dfs.append(self._get_probes_df(seq, probe_len, step_len, "+"))
-                probes_dfs.append(self._get_probes_df(seq, probe_len, step_len, "-"))
-
-        probes_df = pd.concat(probes_dfs)
-        self.probes_df = probes_df
+        self.probes_df = pd.concat(probes_dfs)
 
     def export_to_fasta(self):
         """From the self.probes_df, export to FASTA and CSV files."""
@@ -178,15 +184,19 @@ class RiboDesigner(object):
                 fas.write(f">{row.seq_id}\n{row.sequence}\n")
 
     def clustering_needed(self, force=False):
+        """Checks if a clustering is needed.
+
+        :param force: force clustering even if unecessary.
+        """
 
         # Do not cluster if number of probes already inferior to defined threshold
-        if self.probes_df.shape[0] <= self.best_n_probes and not force:
-            logger.info(f"Number of probes already inferior to {self.best_n_probes}. No clustering will be performed.")
+        if not force and self.probes_df.shape[0] <= self.max_n_probes:
+            logger.info(f"Number of probes already inferior to {self.max_n_probes}. No clustering will be performed.")
             return False
         else:
             return True
 
-    def cluster_probes(self, force=False):
+    def cluster_probes(self):
         """Use cd-hit-est to cluster highly similar probes."""
 
         outdir = (
@@ -216,10 +226,10 @@ class RiboDesigner(object):
         # Dataframe with number of probes for each cdhit identity threshold
         df = pd.DataFrame(res_dict)
         p = sns.lineplot(data=df, x="seq_id_thres", y="n_probes")
-        p.axhline(self.best_n_probes, alpha=0.8, linestyle="--", color="red")
+        p.axhline(self.max_n_probes, alpha=0.8, linestyle="--", color="red")
 
         # Extract the best identity threshold
-        best_thres = df.query("n_probes <= @self.best_n_probes").seq_id_thres.max()
+        best_thres = df.query("n_probes <= @self.max_n_probes").seq_id_thres.max()
 
         if not np.isnan(best_thres):
             n_probes = df.query("seq_id_thres == @best_thres").loc[:, "n_probes"].values[0]
@@ -232,7 +242,7 @@ class RiboDesigner(object):
             )
             self.probes_df["clustering_thres"] = best_thres
         else:
-            logger.warning(f"No identity threshold was found to have as few as {self.best_n_probes} probes.")
+            logger.warning(f"No identity threshold was found to have as few as {self.max_n_probes} probes.")
 
         self.clustering_df = df.sort_values("seq_id_thres")
 
