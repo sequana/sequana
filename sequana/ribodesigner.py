@@ -12,16 +12,14 @@
 """Ribodesigner module"""
 
 import subprocess
-import sys
 from pathlib import Path
-import tempfile as tmp
 import pandas as pd
 import pysam
 import numpy as np
 import seaborn as sns
-import matplotlib
 import shutil
 import datetime
+from itertools import product
 
 from sequana import logger
 from sequana.tools import reverse_complement
@@ -56,8 +54,8 @@ class RiboDesigner(object):
         gff,
         output_directory,
         seq_type="rRNA",
-        probe_len=50,
-        inter_probe_space=15,
+        probe_len=None,
+        inter_probe_space=None,
         best_n_probes=384,
         force=False,
         threads=4,
@@ -82,6 +80,7 @@ class RiboDesigner(object):
         self.probes_fasta = self.outdir / "probes_sequences.fas"
         self.clustered_probes_fasta = self.outdir / "clustered_probes.fas"
         self.clustered_probes_csv = self.outdir / "clustered_probes.csv"
+        self.clustered_probes_bed = self.outdir / "clustered_probes.bed"
 
     def get_rna_pos_from_gff(self):
         """Convert a GFF file into a pandas DataFrame filtered according to the
@@ -102,29 +101,72 @@ class RiboDesigner(object):
 
         return gff_filtered.df
 
-    def get_probes(self):
-        """Generate a FASTA file containing probe sequences."""
+    def get_optimal_probes(self):
+        """Generate a FASTA file containing probe sequences.
 
-        count = 0
-        with open(self.probes_fasta, "w") as fas_out:
+        This method calculate the probe_len and inter_probe_space for each ribosomale sequence and generate FASTA probe file accordingly.
 
-            with pysam.FastxFile(self.ribo_sequences_fasta) as fas:
-                for seq in fas:
+        ribo_len = probe_len * n + (inter_probe_space * (n - 1))
+        <=>
+        n = (ribo_len + inter_probe_space) / (prob_len + inter_probe_space)
 
-                    for start in range(0, len(seq.sequence) - self.probe_len, self.probe_len + self.inter_probe_space):
-                        count += 2
+        n being the number of probes which will be designed to have an end-to-end coverage of the ribosomale sequence.
+        """
+        probe_lens = range(50, 40, -1)
+        inter_lens = range(20, 10, -1)
 
-                        stop = start + self.probe_len
+        probe_dict = {}
 
-                        probe_fw = f">{seq.name}:probe_{start}_{stop}_forward\n{seq.sequence[start:stop]}\n"
-                        rev_seq = reverse_complement(seq.sequence)
-                        probe_rv = f">{seq.name}:probe_{start}_{stop}_reverse\n{rev_seq[start:stop]}\n"
+        with pysam.FastxFile(self.ribo_sequences_fasta) as fas:
+            for seq in fas:
+                seq_len = len(seq.sequence)
 
-                        fas_out.write(probe_fw + probe_rv)
+                for p, i in product(probe_lens, inter_lens):
+                    if ((seq_len + i) / (p + i)).is_integer():
+                        probe_len = p
+                        inter_len = i
+                        break
 
-        logger.info(f"{count} probes designed.")
+                for start in range(0, seq_len - probe_len + 1, probe_len + inter_len):
+                    stop = start + probe_len
 
-    def cluster_probes(self):
+                    probe_dict[(seq.name, start, stop, "+")] = {
+                        "probe_len": probe_len,
+                        "inter_len": inter_len,
+                        "sequence": f"{seq.sequence[start:stop]}",
+                        "seq_id": f"{seq.name}:probe_{start}_{stop}_forward",
+                    }
+
+                    rev_seq = reverse_complement(seq.sequence)
+                    add_step = int(probe_len / 2 + inter_len / 2)
+                    rev_start = start + add_step
+                    rev_stop = stop + add_step
+                    probe_dict[(seq.name, seq_len - rev_stop, seq_len - rev_start, "-")] = {
+                        "probe_len": probe_len,
+                        "inter_len": inter_len,
+                        "sequence": f"{rev_seq[rev_start:rev_stop]}",
+                        "seq_id": f"{seq.name}:probe_{rev_start}_{rev_stop}_reverse",
+                    }
+
+        self.probes_df = pd.DataFrame(probe_dict).T
+        self.probes_df.index.set_names(["chr", "start", "stop", "strand"], inplace=True)
+
+    def export_to_fasta(self):
+        """From the self.probes_df, export to FASTA and CSV files."""
+        with open(self.probes_fasta, "w") as fas:
+            for i, row in self.probes_df.iterrows():
+                fas.write(f">{row.seq_id}\n{row.sequence}\n")
+
+    def clustering_needed(self, force=False):
+
+        # Do not cluster if number of probes already inferior to defined threshold
+        if self.probes_df.shape[0] <= self.best_n_probes and not force:
+            logger.info(f"Number of probes already inferior to {self.best_n_probes}. No clustering will be performed.")
+            return False
+        else:
+            return True
+
+    def cluster_probes(self, force=False):
         """Use cd-hit-est to cluster highly similar probes."""
 
         outdir = (
@@ -135,6 +177,9 @@ class RiboDesigner(object):
         log_file = outdir / "cd-hit.log"
 
         res_dict = {"seq_id_thres": [], "n_probes": []}
+        # Add number of probes without clustering
+        res_dict["seq_id_thres"].append(1)
+        res_dict["n_probes"].append(self.probes_df.shape[0])
 
         for seq_id_thres in np.arange(0.8, 1, 0.01).round(2):
 
@@ -155,15 +200,35 @@ class RiboDesigner(object):
 
         # Extract the best identity threshold
         best_thres = df.query("n_probes <= @self.best_n_probes").seq_id_thres.max()
-        print(best_thres)
+
         if not np.isnan(best_thres):
             n_probes = df.query("seq_id_thres == @best_thres").loc[:, "n_probes"].values[0]
             logger.info(f"Best clustering threshold: {best_thres}, with {n_probes} probes.")
             shutil.copy(outdir / f"clustered_{best_thres}.fas", self.clustered_probes_fasta)
+            kept_probes = [seq.name for seq in FastA(outdir / f"clustered_{best_thres}.fas")]
+            self.probes_df["kept_after_clustering"] = self.probes_df.seq_id.isin(kept_probes)
+            self.probes_df["bed_color"] = self.probes_df.kept_after_clustering.map(
+                {True: "128,255,170", False: "255,170,128"}
+            )
+            self.probes_df["clustering_thres"] = best_thres
         else:
             logger.warning(f"No identity threshold was found to have as few as {self.best_n_probes} probes.")
 
         return df
+
+    def export_to_csv_bed(self):
+        """Export final results to CSV and BED files"""
+
+        df = self.probes_df.query("kept_after_clustering == True")
+        df.to_csv(self.clustered_probes_csv, index=False, columns=["seq_id", "sequence"])
+
+        self.probes_df.reset_index().to_csv(
+            self.clustered_probes_bed,
+            index=False,
+            columns=["chr", "start", "stop", "seq_id", "clustering_thres", "strand", "start", "stop", "bed_color"],
+            sep="\t",
+            header=False,
+        )
 
     def fasta_to_csv(self):
         """Convert a FASTA file into a CSV file."""
@@ -181,6 +246,9 @@ class RiboDesigner(object):
 
     def run(self):
         self.filtered_gff_df = self.get_rna_pos_from_gff()
-        self.get_probes()
-        self.clustered_probes_df = self.cluster_probes()
-        self.fasta_to_csv()
+        self.get_optimal_probes()
+        self.export_to_fasta()
+        if self.clustering_needed():
+            self.clustered_probes_df = self.cluster_probes()
+        self.export_to_csv_bed()
+        # self.fasta_to_csv()
