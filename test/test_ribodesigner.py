@@ -16,13 +16,13 @@ resources_dir = Path(test_dir) / "data" / "ribodesigner"
 
 def test_ribodesigner(tmp_path):
     rd = RiboDesigner(
-        fasta=resources_dir / "sample.fasta", gff=resources_dir / "sample.gff", output_directory=tmp_path, force=True
+        fasta=resources_dir / "sample.fas", gff=resources_dir / "sample.gff", output_directory=tmp_path, force=True
     )
     rd.run()
-    assert rd.filtered_gff_df.shape == (3, 9)
-    assert filecmp.cmp(tmp_path / "probes_sequences.fas", resources_dir / "probes.fas")
-    assert filecmp.cmp(tmp_path / "clustered_probes.fas", resources_dir / "probes_clustered.fas")
-    assert filecmp.cmp(tmp_path / "clustered_probes.csv", resources_dir / "probes_clustered.csv")
+    assert rd.filtered_gff_df.shape == (12, 16)
+    assert filecmp.cmp(tmp_path / "probes_sequences.fas", resources_dir / "probes_sequences.fas")
+    assert filecmp.cmp(tmp_path / "clustered_probes.fas", resources_dir / "clustered_probes.fas")
+    assert filecmp.cmp(tmp_path / "clustered_probes.csv", resources_dir / "clustered_probes.csv")
 
 
 def test_ribodesigner_cli(tmp_path):
@@ -31,7 +31,7 @@ def test_ribodesigner_cli(tmp_path):
     result = runner.invoke(
         ribodesigner.ribodesigner,
         [
-            str(resources_dir / "sample.fasta"),
+            str(resources_dir / "sample.fas"),
             str(resources_dir / "sample.gff"),
             "--output-directory",
             tmp_path / "out_ribodesigner",

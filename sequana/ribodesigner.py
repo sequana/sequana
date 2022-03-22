@@ -101,60 +101,80 @@ class RiboDesigner(object):
 
         return gff_filtered.df
 
-    def get_optimal_probes(self):
-        """Generate a FASTA file containing probe sequences.
-
-        This method calculate the probe_len and inter_probe_space for each ribosomale sequence and generate FASTA probe file accordingly.
+    def _get_probe_and_step_len(self, seq):
+        """This method calculate the probe_len and inter_probe_space for each ribosomale sequence and generate FASTA probe file accordingly.
 
         ribo_len = probe_len * n + (inter_probe_space * (n - 1))
         <=>
         n = (ribo_len + inter_probe_space) / (prob_len + inter_probe_space)
-
-        n being the number of probes which will be designed to have an end-to-end coverage of the ribosomale sequence.
         """
-        probe_lens = range(50, 40, -1)
-        inter_lens = range(20, 10, -1)
+        seq_len = len(seq.sequence)
 
-        probe_dict = {}
+        probe_lens = range(50, 40, -1)
+        inter_probe_space = range(20, 10, -1)
+
+        for probe_len, inter_probe_space in product(probe_lens, inter_probe_space):
+            if ((seq_len + inter_probe_space) / (probe_len + inter_probe_space)).is_integer():
+                return probe_len, inter_probe_space
+
+        raise "This should not happen"
+
+    def _get_probes_df(self, seq, probe_len, step_len, strand):
+        """Generate the Dataframe with probes information.
+
+        Design probes to have end-to-end coverage on the + strand and fill the inter_probe_space present on the + strand with probes designed on the - strand.
+
+        :param seq: A pysam sequence object.
+        :param prob_len: The length of the probes calculated by self._get_probe_and_step_len.
+        :param step_len: The length of the inter-probe space calculated by self._get_probe_and_step_len.
+        :param strand: The strand on which probes are designed.
+        """
+
+        starts = [start for start in range(0, len(seq.sequence) - probe_len + 1, probe_len + step_len)]
+        stops = [start + probe_len for start in starts]
+
+        if strand == "-":
+            sequence = reverse_complement(seq.sequence)
+            # Starts reverse probes to be centered on inter_probe_space of the forward probes
+            starts = [int((starts[i + 1] + starts[i]) / 2) for i in range(0, len(starts) - 1)]
+            stops = [start + probe_len for start in starts]
+
+        else:
+            sequence = seq.sequence
+
+        df = pd.DataFrame({"name": seq.name, "start": starts, "stop": stops, "strand": strand, "score": 0})
+        df["sequence"] = [sequence[row.start : row.stop] for row in df.itertuples()]
+        df["seq_id"] = df["name"] + f"_{strand}_" + df["start"].astype(str) + "_" + df["stop"].astype(str)
+
+        if strand == "-":
+            # Transform to bed coordinates for the reverse_complement
+            df["start"] = len(sequence) - df["start"]
+            df["stop"] = len(sequence) - df["stop"]
+            df.rename(columns={"start": "stop", "stop": "start"}, inplace=True)
+
+        return df
+
+    def get_all_probes(self):
+        """Run all probe design and concatenate results in a single DataFrame."""
+
+        probes_dfs = []
 
         with pysam.FastxFile(self.ribo_sequences_fasta) as fas:
             for seq in fas:
-                seq_len = len(seq.sequence)
 
-                for p, i in product(probe_lens, inter_lens):
-                    if ((seq_len + i) / (p + i)).is_integer():
-                        probe_len = p
-                        inter_len = i
-                        break
+                probe_len, step_len = self._get_probe_and_step_len(seq)
 
-                for start in range(0, seq_len - probe_len + 1, probe_len + inter_len):
-                    stop = start + probe_len
+                probes_dfs.append(self._get_probes_df(seq, probe_len, step_len, "+"))
+                probes_dfs.append(self._get_probes_df(seq, probe_len, step_len, "-"))
 
-                    probe_dict[(seq.name, start, stop, "+")] = {
-                        "probe_len": probe_len,
-                        "inter_len": inter_len,
-                        "sequence": f"{seq.sequence[start:stop]}",
-                        "seq_id": f"{seq.name}:probe_{start}_{stop}_forward",
-                    }
-
-                    rev_seq = reverse_complement(seq.sequence)
-                    add_step = int(probe_len / 2 + inter_len / 2)
-                    rev_start = start + add_step
-                    rev_stop = stop + add_step
-                    probe_dict[(seq.name, seq_len - rev_stop, seq_len - rev_start, "-")] = {
-                        "probe_len": probe_len,
-                        "inter_len": inter_len,
-                        "sequence": f"{rev_seq[rev_start:rev_stop]}",
-                        "seq_id": f"{seq.name}:probe_{rev_start}_{rev_stop}_reverse",
-                    }
-
-        self.probes_df = pd.DataFrame(probe_dict).T
-        self.probes_df.index.set_names(["chr", "start", "stop", "strand"], inplace=True)
+        probes_df = pd.concat(probes_dfs)
+        self.probes_df = probes_df
 
     def export_to_fasta(self):
         """From the self.probes_df, export to FASTA and CSV files."""
+
         with open(self.probes_fasta, "w") as fas:
-            for i, row in self.probes_df.iterrows():
+            for row in self.probes_df.itertuples():
                 fas.write(f">{row.seq_id}\n{row.sequence}\n")
 
     def clustering_needed(self, force=False):
@@ -208,13 +228,13 @@ class RiboDesigner(object):
             kept_probes = [seq.name for seq in FastA(outdir / f"clustered_{best_thres}.fas")]
             self.probes_df["kept_after_clustering"] = self.probes_df.seq_id.isin(kept_probes)
             self.probes_df["bed_color"] = self.probes_df.kept_after_clustering.map(
-                {True: "128,255,170", False: "255,170,128"}
+                {True: "21,128,0", False: "128,64,0"}
             )
             self.probes_df["clustering_thres"] = best_thres
         else:
             logger.warning(f"No identity threshold was found to have as few as {self.best_n_probes} probes.")
 
-        return df
+        self.clustering_df = df.sort_values("seq_id_thres")
 
     def export_to_csv_bed(self):
         """Export final results to CSV and BED files"""
@@ -222,33 +242,18 @@ class RiboDesigner(object):
         df = self.probes_df.query("kept_after_clustering == True")
         df.to_csv(self.clustered_probes_csv, index=False, columns=["seq_id", "sequence"])
 
-        self.probes_df.reset_index().to_csv(
+        self.probes_df.to_csv(
             self.clustered_probes_bed,
-            index=False,
-            columns=["chr", "start", "stop", "seq_id", "clustering_thres", "strand", "start", "stop", "bed_color"],
             sep="\t",
-            header=False,
+            index=False,
+            header=None,
+            columns=["name", "start", "stop", "sequence", "score", "strand", "start", "stop", "bed_color"],
         )
-
-    def fasta_to_csv(self):
-        """Convert a FASTA file into a CSV file."""
-
-        seq_dict = {"id": [], "sequence": []}
-
-        with pysam.FastxFile(self.clustered_probes_fasta) as fas:
-            data = [(seq.name, seq.sequence) for seq in fas]
-        logger.info(f"After clustering, keeping {len(data)} probes.")
-        logger.info(f"Creating probes csv table '{self.clustered_probes_csv}'.")
-        df = pd.DataFrame(data, columns=["id", "sequence"])
-        df.to_csv(self.clustered_probes_csv, index=False)
-
-        return df
 
     def run(self):
         self.filtered_gff_df = self.get_rna_pos_from_gff()
-        self.get_optimal_probes()
+        self.get_all_probes()
         self.export_to_fasta()
         if self.clustering_needed():
             self.clustered_probes_df = self.cluster_probes()
         self.export_to_csv_bed()
-        # self.fasta_to_csv()
