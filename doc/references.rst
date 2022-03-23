@@ -123,6 +123,12 @@ Phred quality
     :members:
     :undoc-members:
 
+RiboDesigner
+------------
+.. automodule:: sequana.ribodesigner
+    :members:
+    :undoc-members:
+       
 RNAdiff
 -------
 

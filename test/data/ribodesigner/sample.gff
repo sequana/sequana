@@ -1,5 +1,15 @@
-##sequence-region FAKE_SEQ 1 70000
-FAKE_SEQ	RefSeq	region	1	100000	.	+	.	ID=FAKE_SEQ
-FAKE_SEQ	cmsearch	rRNA	100	1000	.	+	.	ID=rna-1
-FAKE_SEQ	cmsearch	rRNA	5000	7000	.	+	.	ID=rna-2
-FAKE_SEQ	cmsearch	rRNA	20000	30000	.	-	.	ID=rna-3
+#gff-version 3
+#Custom gff from sequana
+NC_011748.1	RefSeq	region	1	600000	.	+	.	ID=NC_011748.1
+NC_011748.1	feature	rRNA	122101	123642	.	+	.	ID=rna-EC55989_RS21595;Parent=gene-EC55989_RS21595;Dbxref=RFAM:RF00177;gbkey=rRNA;inference=COORDINATES: profile:INFERNAL:1.1.1;locus_tag=EC55989_RS21595;product=16S ribosomal RNA
+NC_011748.1	feature	rRNA	123997	126900	.	+	.	ID=rna-EC55989_RS21605;Parent=gene-EC55989_RS21605;Dbxref=RFAM:RF02541;gbkey=rRNA;inference=COORDINATES: profile:INFERNAL:1.1.1;locus_tag=EC55989_RS21605;product=23S ribosomal RNA
+NC_011748.1	feature	rRNA	126995	127110	.	+	.	ID=rna-EC55989_RS21610;Parent=gene-EC55989_RS21610;Dbxref=RFAM:RF00001;gbkey=rRNA;gene=rrf;inference=COORDINATES: profile:INFERNAL:1.1.1;locus_tag=EC55989_RS21610;product=5S ribosomal RNA
+NC_011748.1	feature	rRNA	219398	220939	.	+	.	ID=rna-EC55989_RS22080;Parent=gene-EC55989_RS22080;Dbxref=RFAM:RF00177;gbkey=rRNA;inference=COORDINATES: profile:INFERNAL:1.1.1;locus_tag=EC55989_RS22080;product=16S ribosomal RNA
+NC_011748.1	feature	rRNA	221386	224288	.	+	.	ID=rna-EC55989_RS22095;Parent=gene-EC55989_RS22095;Dbxref=RFAM:RF02541;gbkey=rRNA;inference=COORDINATES: profile:INFERNAL:1.1.1;locus_tag=EC55989_RS22095;product=23S ribosomal RNA
+NC_011748.1	feature	rRNA	224384	224499	.	+	.	ID=rna-EC55989_RS22100;Parent=gene-EC55989_RS22100;Dbxref=RFAM:RF00001;gbkey=rRNA;gene=rrf;inference=COORDINATES: profile:INFERNAL:1.1.1;locus_tag=EC55989_RS22100;product=5S ribosomal RNA
+NC_011748.1	feature	rRNA	356604	358145	.	+	.	ID=rna-EC55989_RS22740;Parent=gene-EC55989_RS22740;Dbxref=RFAM:RF00177;gbkey=rRNA;inference=COORDINATES: profile:INFERNAL:1.1.1;locus_tag=EC55989_RS22740;product=16S ribosomal RNA
+NC_011748.1	feature	rRNA	358500	361403	.	+	.	ID=rna-EC55989_RS22750;Parent=gene-EC55989_RS22750;Dbxref=RFAM:RF02541;gbkey=rRNA;inference=COORDINATES: profile:INFERNAL:1.1.1;locus_tag=EC55989_RS22750;product=23S ribosomal RNA
+NC_011748.1	feature	rRNA	361498	361613	.	+	.	ID=rna-EC55989_RS22755;Parent=gene-EC55989_RS22755;Dbxref=RFAM:RF00001;gbkey=rRNA;gene=rrf;inference=COORDINATES: profile:INFERNAL:1.1.1;locus_tag=EC55989_RS22755;product=5S ribosomal RNA
+NC_011748.1	feature	rRNA	397985	399526	.	+	.	ID=rna-EC55989_RS22950;Parent=gene-EC55989_RS22950;Dbxref=RFAM:RF00177;gbkey=rRNA;inference=COORDINATES: profile:INFERNAL:1.1.1;locus_tag=EC55989_RS22950;product=16S ribosomal RNA
+NC_011748.1	feature	rRNA	399881	402784	.	+	.	ID=rna-EC55989_RS22960;Parent=gene-EC55989_RS22960;Dbxref=RFAM:RF02541;gbkey=rRNA;inference=COORDINATES: profile:INFERNAL:1.1.1;locus_tag=EC55989_RS22960;product=23S ribosomal RNA
+NC_011748.1	feature	rRNA	402879	402994	.	+	.	ID=rna-EC55989_RS22965;Parent=gene-EC55989_RS22965;Dbxref=RFAM:RF00001;gbkey=rRNA;gene=rrf;inference=COORDINATES: profile:INFERNAL:1.1.1;locus_tag=EC55989_RS22965;product=5S ribosomal RNA
