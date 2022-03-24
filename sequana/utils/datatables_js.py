@@ -1,4 +1,3 @@
-# coding: utf-8
 #
 #  This file is part of Sequana software
 #
@@ -82,7 +81,6 @@ class DataTableFunction(object):
         Note that buttons can also be excel, pdf, print, ...
 
 
-
     All options of datatable:
         https://datatables.net/reference/option/
     """
@@ -93,7 +91,9 @@ class DataTableFunction(object):
         :param str html_id: the ID used in the HTML file.
         """
         self.index = index
-        self._html_id = html_id
+        # Mars 2022. added 'id' in front of the id to avoid issue with is 
+        # starting with a number, which is not allowed in HTML
+        self._html_id = f"id_{html_id}"
         self._datatable_options = dict()
         self._datatable_columns = self._set_datatable_columns(df)
 
@@ -167,8 +167,9 @@ class DataTableFunction(object):
     def create_javascript_function(self):
         """ Return javascript to create the DataTable.
         """
+
         js_function = """
-<script type="text/javascript">
+<script async type="text/javascript">
     function parseCsv_{0}(csv, id) {{
         Papa.parse(csv, {{
             comments: '#',
@@ -336,7 +337,9 @@ class DataTable(object):
         """
         self.index = index
         self._df = df
-        self._html_id = html_id
+        # Mars 2022. added 'id' in front of the id to avoid issue with is 
+        # starting with a number, which is not allowed in HTML
+        self._html_id = f"id_{html_id}"
         if datatable:
             self.datatable = datatable
         else:
@@ -361,7 +364,7 @@ class DataTable(object):
         """
 
         html = """
-<script type="text/javascript">
+<script async type="text/javascript">
     $(document).ready(function() {{
         var {0} = document.getElementById('csv_{0}').innerText;
         parseCsv_{1}({0}, '#table_{0}');
