@@ -1,8 +1,11 @@
 
-from sequana import sequana_data
 from multiqc.utils import report
 
 
+from . import test_dir
+
+def sequana_data(file):
+    return f"{test_dir}/data/{file}"
 
 try:
     # Since sept 2017 and a bioconda travis integrationupdate, 

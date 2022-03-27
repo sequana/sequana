@@ -1,98 +1,76 @@
-from sequana import snpeff
-from easydev import TempFile
 import os
+import pytest
+
+from sequana import snpeff
 from . import test_dir
+
 sharedir=f"{test_dir}/data/vcf"
 
-def test_snpeff():
-    # a custom refrence
-    fh_log = TempFile()
 
-    mydata = snpeff.SnpEff(annotation=f"{sharedir}/JB409847.gbk", log=fh_log.name)
-    with TempFile() as fh:
-        mydata.launch_snpeff(f"{sharedir}/JB409847.vcf", fh.name)
-    fh_log.delete()
+def test_snpeff(tmpdir):
 
-    # cleanup
-    try:
-        os.remove("snpEff.config")
-    except:
-        pass
+    outdir = tmpdir.mkdir("snpeff")
+    log = outdir.join("snpeff.log")
 
-    try:
-        os.remove("snpEff_genes.txt")
-    except:
-        pass
+    mydata = snpeff.SnpEff(annotation=f"{sharedir}/JB409847.gbk",
+        log=log, snpeff_datadir=outdir)
 
-    try:
-        os.remove("snpEff_summary.html")
-    except:
-        pass
+    # enter in some different conditions in the constructor.
+    mydata = snpeff.SnpEff(annotation=f"{sharedir}/JB409847.gbk",
+        log=log, snpeff_datadir=outdir)
 
-    try:
+    mydata.launch_snpeff(f"{sharedir}/JB409847.vcf", log)
+
+
+    with pytest.raises(SystemExit):
         snpeff.SnpEff(annotation="dummy")
-        assert False
-    except SystemExit:
-        assert True
-    except:
-        assert False
 
 
-def test_snpeff_download():
-    with TempFile() as fh:
-        snpeff.download_fasta_and_genbank("K01711", fh.name)
+def test_snpeff_download(tmpdir):
 
-    with TempFile() as fh:
-        try:
-            snpeff.download_fasta_and_genbank("dummyK01711", fh.name)
-            assert False
-        except ValueError:
-            assert True
-        except:
-            assert False
+    outdir = tmpdir.mkdir("snpeff")
+
+    snpeff.download_fasta_and_genbank("K01711", tag="test",
+        outdir=outdir)
+
+    with pytest.raises(ValueError):
+        snpeff.download_fasta_and_genbank("dummyK01711", tag="test",
+            outdir=outdir)
 
 
-def test_add_locus_no_modification():
-    mydata = snpeff.SnpEff(annotation=f"{sharedir}/JB409847.gbk")
-    with TempFile() as fh:
-        fastafile = f"{sharedir}/JB409847.fasta"
-        mydata.add_locus_in_fasta(fastafile, fh.name)
-        # cleanup
-        try:
-            os.remove("snpEff.config")
-        except:
-            pass
+def test_add_locus_no_modification(tmpdir):
+    outdir = tmpdir.mkdir('snpeff')
+    mydata = snpeff.SnpEff(annotation=f"{sharedir}/JB409847.gbk",
+        snpeff_datadir=outdir)
+
+    fastafile = f"{sharedir}/JB409847.fasta"
+    mydata.add_locus_in_fasta(fastafile, outdir + "/test.fasta")
 
 
-def test_add_locus_with_modification():
+def test_add_locus_with_modification(tmpdir):
+
+    outdir = tmpdir.mkdir('snpeff')
 
     # Alter the original GBK to alter the locus name
     data = open(f"{sharedir}/JB409847.gbk", "r").read()
     newdata = data.replace("JB409847", "DUMMY_JB409847")
 
-    fh = TempFile(suffix=".gbk")
-    print(fh.name)
-    with open(fh.name, 'w') as fout:
+    fh = outdir.join("JB409847.gbk")
+    with open(fh, "w") as fout:
         fout.write(newdata)
 
     # Now we read this new GBK file that has a different locus name as
     # compared to the fasta
-    mydata = snpeff.SnpEff(annotation=fh.name)
+    mydata = snpeff.SnpEff(annotation=str(fh), snpeff_datadir=outdir)
 
     # Here is the corresponding FASTA
     fasta = f"{sharedir}/JB409847.fasta"
 
-    with TempFile(suffix="fasta") as fh2:
-        mydata.add_locus_in_fasta(fasta, fh2.name)
+    # save new one
+    fh2 = outdir.join("JB409847.fa")
+    mydata.add_locus_in_fasta(fasta, fh2)
 
-        # In theory, in the newly created fasta file, we should find back the
-        # DUMMY tag
-        # cleanup
-        try:
-            os.remove("snpEff.config")
-        except:
-            pass
+    # In theory, in the newly created fasta file, we should find back the DUMMY tag
 
-        data = open(fh2.name, "r").read()
-        assert "DUMMY" in data
-    fh.delete()
+    with open(fh2, "r") as fin:
+        assert "DUMMY" in fin.read()

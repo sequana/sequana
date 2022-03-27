@@ -29,6 +29,7 @@ from collections import OrderedDict
 import colorlog
 logger = colorlog.getLogger(__name__)
 
+from sequana.lazy import pandas as pd
 
 
 class DataTableFunction(object):
@@ -39,7 +40,7 @@ class DataTableFunction(object):
     ::
 
         import pandas as pd
-        from sequana.utils import DataTableFunction
+        from sequana.utils.datatables_js import DataTableFunction
 
         df = pandas.read_csv('data.csv')
         datatable_js = DataTableFunction(df, 'data')
@@ -153,8 +154,7 @@ class DataTableFunction(object):
         """ Fill :attr:`DataTableFunction.datatable_columns` with header of
         :param:`DataTableFunction.df`.
         """
-        from pandas import Series
-        if isinstance(df, Series):
+        if isinstance(df, pd.Series): #pragma: no cover
             return {}
 
         if self.index is True:
@@ -246,29 +246,28 @@ class DataTableFunction(object):
         :param str target_col: column to connect.
         """
         # hide the link column
-        try:
+        try: #pragma: no cover
             self.datatable_columns[link_col]['visible'] = 'false'
-        except KeyError:
-
-            keys = self.datatable_columns.keys() 
+        except KeyError: #pragma: no cover
+            keys = self.datatable_columns.keys()
             logger.warning(f"KeyError: Column name '{target_col}' does not exist. Use one of {keys}")
+
         # function to add link
         if new_page is True:
             fct = """function(data, type, row, meta){{
                 return '<a href="'+row.{0}+'" target="_blank">'+data+'</a>';
             }}
             """.format(link_col)
-        else:
+        else: #pragma: no cover
             fct = """function(data, type, row, meta){{
                 return '<a href="'+row.{0}+'">'+data+'</a>';
             }}
             """.format(link_col)
-        try:
+        try: #pragma: no cover
             self.datatable_columns[target_col]['render'] = fct
-        except KeyError:
+        except KeyError: #pragma: no cover
             logger.warning("KeyError: Column name '{0}' does not exist."
                            .format(target_col))
-            pass
 
     def set_tooltips_to_column(self, tooltips_col, target_col):
         """Hide a column with tooltips and connect it with a column.
@@ -279,10 +278,9 @@ class DataTableFunction(object):
         # hide tooltips
         try:
             self.datatable_columns[tooltips_col]['visible'] = 'false'
-        except KeyError:
+        except KeyError: 
             logger.warning("KeyError: Column name '{0}' does not exist."
                            .format(target_col))
-            pass
         # function to add tooltips
         fct = """function(data, type, row, meta){{
             return '<a href="#" data-toggle="tooltip" title="'+row.{0}+'">'+data+'</a>';
@@ -333,7 +331,6 @@ class DataTable(object):
             Jquery Datatables. If None, a :class:`DataTableFunction` is
             generated from the df.
         :param bool index: indicates whether the index dataframe should 
-            be included in the CSV table
         """
         self.index = index
         self._df = df

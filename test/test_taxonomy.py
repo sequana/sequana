@@ -37,3 +37,7 @@ def test_taxonomy(tmp_path):
     assert tax.get_names_for_given_rank("family") ==  ['Coronaviridae', 'Paramyxoviridae']
 
     tax.append_existing_database(filename)
+
+    tax.fetch_by_name('corona')
+
+    tax.find_taxon('10684')

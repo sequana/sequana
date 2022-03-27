@@ -1,14 +1,14 @@
 from easydev import TempFile
-from sequana import ITOL, sequana_data
+from sequana import ITOL
 
 
-
+from . import test_dir
 
 # FIXME need a valid IP and API
 def _test_itol_format():
 
 
-    itol = ITOL(sequana_data("test_itol_basic.tree.txt"))
+    itol = ITOL(f"{test_dir}/data/txt/test_itol_basic.tree.txt")
     itol.upload()
     for frmt in [".png", ".pdf", ".svg", ".eps"]:
         with TempFile(suffix=frmt) as fout:
@@ -24,7 +24,7 @@ def _test_itol_format():
 
 def test_itol_status():
     # an error
-    itol = ITOL(sequana_data("test_itol_basic.tree.txt"))
+    itol = ITOL(f"{test_dir}/data/txt/test_itol_basic.tree.txt")
 
     with TempFile(suffix="png") as fout:
         # let us forget the upload    itol.upload()

@@ -120,7 +120,6 @@ class VCFBase:
         work for all VCF with version 4.1 (at least)
 
         """
-        # TODO: could be moved to VCFBase
         self.rewind()
         data = [x.QUAL for x in self._vcf_reader]
         pylab.hist(data, bins=bins)

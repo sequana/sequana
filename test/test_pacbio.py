@@ -1,12 +1,12 @@
 from sequana.pacbio import BAMSimul, PBSim, PacbioSubreads, Barcoding
-from sequana import sequana_data
 from easydev import TempFile
 
 # DO NOT USE TEST DIR FOR NOW. This is used in the examples
 from . import test_dir
 
 def test_pacbio():
-    b = PacbioSubreads(sequana_data("test_pacbio_subreads.bam"))
+    filename = f"{test_dir}/data/bam/test_pacbio_subreads.bam"
+    b = PacbioSubreads(filename)
     assert len(b) == 130
     b.df
     #assert b.nb_pass[1] == 130
@@ -22,7 +22,8 @@ def test_pacbio():
 
     b.summary()
 
-    b = PacbioSubreads(sequana_data("test_pacbio_subreads.bam"))
+    filename = f"{test_dir}/data/bam/test_pacbio_subreads.bam"
+    b = PacbioSubreads(filename)
 
     # test hist_snr from scratch
     b._df = None
@@ -54,7 +55,8 @@ def test_pacbio():
 
 
 def test_pacbio_stride():
-    b = PacbioSubreads(sequana_data("test_pacbio_subreads.bam"))
+    filename = f"{test_dir}/data/bam/test_pacbio_subreads.bam"
+    b = PacbioSubreads(filename)
     with TempFile() as fh:
         b.stride(fh.name, stride=2)
     with TempFile() as fh:
@@ -62,7 +64,8 @@ def test_pacbio_stride():
 
 
 def test_pacbio_random():
-    b = PacbioSubreads(sequana_data("test_pacbio_subreads.bam"))
+    filename = f"{test_dir}/data/bam/test_pacbio_subreads.bam"
+    b = PacbioSubreads(filename)
 
     with TempFile() as fh:
         b.random_selection(fh.name, nreads=10)
@@ -73,7 +76,7 @@ def test_pacbio_random():
 
 
 def test_bamsim():
-    filename = sequana_data("test_pacbio_subreads.bam")
+    filename = f"{test_dir}/data/bam/test_pacbio_subreads.bam"
     b = BAMSimul(filename)
     b.df
     b.hist_read_length()
@@ -87,7 +90,7 @@ def test_bamsim():
 
 
 def test_pbsim():
-    filename = sequana_data("test_pacbio_subreads.bam")
+    filename = f"{test_dir}/data/bam/test_pacbio_subreads.bam"
     ss = PBSim(filename, filename)
     with TempFile() as fh:
         ss.run(bins=100, step=50, output_filename=fh.name)
@@ -96,7 +99,7 @@ def test_pbsim():
 
 
 def test_barcoding():
-    data = sequana_data("test_pacbio_barcode_report.csv")
+    data = f"{test_dir}/data/csv/test_pacbio_barcode_report.csv"
     bc = Barcoding(data)
 
     import tempfile

@@ -1,4 +1,10 @@
-{  "n_reads":{"0":2500},
+{
+ "name": "fastq_stats",
+ "description": "none",
+ "data_description": "none",
+ "sample_name": "none",
+ "data": {},
+ "n_reads":{"0":2500},
   "A":{"0":69041},
   "C":{"0":61033},
   "G":{"0":58322},

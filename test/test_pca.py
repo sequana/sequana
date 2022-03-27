@@ -1,11 +1,11 @@
 from sequana.viz.pca import PCA
+import pandas as pd
 
+from . import test_dir
 
 def test_pca():
 
-    from sequana import sequana_data 
-    import pandas as pd
-    filename = sequana_data("test_pca.csv")
+    filename = f"{test_dir}/data/misc/test_pca.csv"
     df = pd.read_csv(filename)
     df = df.set_index("Id")
 

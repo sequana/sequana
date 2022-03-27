@@ -1,11 +1,10 @@
-
+from . import test_dir
+from sequana.viz.mds import MDS
+import pandas as pd
 
 def test_mds():
-    from sequana.viz.mds import MDS
-    from sequana import sequana_data
-    import pandas as pd
 
-    data = sequana_data("test_pca.csv")
+    data = f"{test_dir}/data/test_pca.csv"
     df = pd.read_csv(data)
     df = df.set_index("Id")
     p = MDS(df, colors={

@@ -1,10 +1,12 @@
-from sequana import sequana_data, bedtools
+from sequana import bedtools
 from sequana.utils.datatables_js import DataTable, DataTableFunction
 
+from . import test_dir
+
 def test_datatables():
-        bed = bedtools.GenomeCov(sequana_data("JB409847.bed"),
-                                 sequana_data("JB409847.gbk"))
-        fasta = sequana_data("JB409847.fasta")
+        bed = bedtools.GenomeCov(f"{test_dir}/data/bed/JB409847.bed",
+                                 f"{test_dir}/data/genbank/JB409847.gbk")
+        fasta = f"{test_dir}/data/fasta/JB409847.fasta"
         bed.compute_gc_content(fasta)
 
         c = bed.chr_list[0]

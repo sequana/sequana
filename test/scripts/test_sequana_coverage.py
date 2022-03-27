@@ -1,19 +1,10 @@
 from sequana.scripts import coverage
-from sequana import sequana_data
 import pytest
+import os
 
 prog = "sequana_coverage"
 
-@pytest.fixture
-def coveragefix():
-    import os
-    # local nosetests execution
-    try:os.remove('README')
-    except:pass
-    try:os.remove('quality.rules')
-    except:pass
-    try:os.remove('config.yaml')
-    except:pass
+from .. import test_dir
 
 
 def test_version():
@@ -35,47 +26,39 @@ def test_help():
     else:
         raise Exception
 
-@pytest.mark.xfail(reason="too slow or service may be down")
-def test_input(tmpdir):
-    import os
+#@pytest.mark.xfail(reason="too slow or service may be down")
+def test_download_reference(tmpdir):
     # Download reference in temporary directory so that it is erased if the test
     # fails.
     directory_data = tmpdir.mkdir("datatemp")
     cwd = os.getcwd()
-    try:
-        os.chdir(directory_data.__str__())
-        coverage.main([prog, '--download-reference', "JB409847"])
-        os.system("""sed -i s"/>ENA/>JB409847 /" %s/JB409847.fa """ % directory_data.__str__())
+    os.chdir(directory_data.__str__())
+    coverage.main([prog, '--download-reference', "JB409847"])
+    os.system("""sed -i s"/>ENA/>JB409847 /" %s/JB409847.fa """ % directory_data.__str__())
 
-        coverage.main([prog, '--download-genbank', "JB409847"])
-    except Exception:
-        raise Exception
-    finally:
-        os.chdir(cwd)
+    coverage.main([prog, '--download-genbank', "JB409847"])
+
+def test_run(tmpdir):
 
     directory_run = tmpdir.mkdir("report")
 
-    filename = sequana_data('JB409847.bed')
-    try:
-        coverage.main([prog, '-i', filename, "-o", "--output-directory",
-                directory_run.__str__(), 
-                "--window-median", "3001", "-r", 
-                "%s/JB409847.fa" % directory_data.__str__()])
-        assert False
-    except Exception as err:
-        print(err)
-        assert True
+    bedfile = f"{test_dir}/data/bed/JB409847.bed"
+    genbank = f"{test_dir}/data/genbank/JB409847.gbk"
+    fastafile = f"{test_dir}/data/fasta/JB409847.fasta"
+
+    coverage.main([prog, '-i', bedfile, "-o", "--output-directory",
+                directory_run.__str__(), "-b", genbank,
+                "--window-median", "3001", "-r",
+                fastafile])
     print(os.listdir(directory_run.__str__()))
-    assert os.path.exists(directory_run.__str__() + os.sep + "multiqc_report.html")
-    try:
-        coverage.main([prog, '-i', filename, "-o", "--output-directory",
-                       directory_run.__str__(),
-                       "--window-median", "3001", "-r",
-                       "%s/JB409847.fa" % directory_data.__str__(), '-c', '1'])
-        assert False
-    except Exception as err:
-        print(err)
-        assert True
-    assert os.path.exists(str(directory_run) + os.sep + 'multiqc_report.html')
+    #assert os.path.exists(str(directory_run / "multiqc_report.html"))
+
+
+
+
+    coverage.main([prog, '-i', bedfile, "-o", "--output-directory",
+                   directory_run.__str__(), "--no-multiqc","--no-html",
+                   "--window-median", "3001", "-r",
+                   fastafile ])
 
 

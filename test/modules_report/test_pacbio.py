@@ -1,16 +1,16 @@
-from sequana import sequana_data
 from sequana.modules_report import pacbio_input_bam
 from easydev import TempFile
 
+from . import test_dir
 
 def test_pacbio_input_bam(tmpdir):
     # we need a summary and a bunch of images
-    filename = sequana_data("summary_pacbio_qc1.json")
+    filename = f"{test_dir}/data/summary_pacbio_qc1.json"
 
     # mock the PNG files found in the summary
     import json
     summary = json.load(open(filename))
-    pngname = sequana_data("no_data.jpg")
+    pngname = f"{test_dir}/data/no_data.jpg"
     summary["images"]["gc_vs_length"] = pngname
     summary["images"]["hist_gc_content"] = pngname
     summary["images"]["hist_read_length"] = pngname

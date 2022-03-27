@@ -1,13 +1,13 @@
 from sequana.vst import VST
+import pandas as pd
 
+from . import test_dir
 
 def test_vst():
 
 
-    from sequana import sequana_data 
-    import pandas as pd
     VST()
-    data = sequana_data("test_pca.csv")
+    data = f"{test_dir}/data/misc/test_pca.csv"
     df = pd.read_csv(data)['A1']
     # to avoid warnings:
     df = df.replace(0,1)
