@@ -1,9 +1,8 @@
 from sequana.assembly import BUSCO
-from sequana import sequana_data
-
+from . import test_dir
 
 def test_busco():
-    filename = sequana_data('test_busco_full_table.tsv')
+    filename = f"{test_dir}/data/tsv/test_busco_full_table.tsv"
     b = BUSCO(filename)
     print(b)
     b.pie_plot()

@@ -1,5 +1,4 @@
 import json
-
 from sequana import sequana_data
 from sequana.modules_report.summary import SummaryModule
 from sequana.utils import config
@@ -17,9 +16,9 @@ def test_summary_module(tmpdir):
                         sequana_data('Hm2_GTGAAA_L005_R2_001.fastq.gz')],
                     'outputs': [f"{sharedir}/JB409847.vcf"],
                     'html': [f"{sharedir}/JB409847.vcf"],
-                    'rulegraph': sequana_data('test_summary_module.svg'),
-                    'requirements': sequana_data('test_summary_module.svg'),
-                    'snakefile': sequana_data('test_summary_module.svg'),
-                    'config': sequana_data('test_summary_module.svg'),
+                    'rulegraph': f"{sharedir}/test_summary_module.svg",
+                    'requirements': f"{sharedir}/test_summary_module.svg",
+                    'snakefile': f"{sharedir}/test_summary_module.svg",
+                    'config': f"{sharedir}/test_summary_module.svg",
                     'name': 'JB409847'}
     SummaryModule(summary_dict)

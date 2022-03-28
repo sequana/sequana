@@ -5,6 +5,7 @@ import pytest
 from sequana import sequana_data
 import shutil
 
+from ... import test_dir
 
 def test_analysis():
     from click.testing import CliRunner
@@ -12,7 +13,7 @@ def test_analysis():
 
     file1 = sequana_data("Hm2_GTGAAA_L005_R1_001.fastq.gz")
     file2 = sequana_data("Hm2_GTGAAA_L005_R2_001.fastq.gz")
-    reference = sequana_data("measles.fa")
+    reference = f"{test_dir}/data/fasta/measles.fa"
 
     from tempfile import TemporaryDirectory
     directory = TemporaryDirectory()

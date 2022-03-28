@@ -1,11 +1,6 @@
 #  This file is part of Sequana software
 #
-#  Copyright (c) 2016 - Sequana Development Team
-#
-#  File author(s):
-#      Thomas Cokelaer <thomas.cokelaer@pasteur.fr>
-#      Dimitri Desvillechabrol <dimitri.desvillechabrol@pasteur.fr>,
-#          <d.desvillechabrol@gmail.com>
+#  Copyright (c) 2016-2022 - Sequana Development Team
 #
 #  Distributed under the terms of the 3-clause BSD license.
 #  The full license is in the LICENSE file, distributed with this software.
@@ -41,29 +36,15 @@ logger = colorlog.getLogger(__name__)
 __all__ = ["StatsBAM2Mapped", "bam_to_mapped_unmapped_fastq", "GZLineCounter"]
 
 
-class DataContainer(dict):
-    def __init__(self, wkdir="."):
-        self.wkdir = wkdir
-
-    def to_json(self, filename):
-        json.dump(self.data, open(filename, "w"))
-
-    def read_json(self, filename):
-        return json.load(open(filename, "r"))
-
-    def to_html(self):
-        pass
 
 
-try:
-    _translate = string.maketrans("ACGTacgt", "TGCAtgca")
-
-    def bytes(x, dummy):
-        return x
-
-
-except:
-    _translate = bytes.maketrans(b"ACGTacgt", b"TGCAtgca")
+#try:
+#    _translate = string.maketrans("ACGTacgt", "TGCAtgca")
+#
+#    def bytes(x, dummy):
+#        return x
+#except:
+_translate = bytes.maketrans(b"ACGTacgt", b"TGCAtgca")
 
 
 def reverse_complement(seq):
@@ -75,18 +56,20 @@ def reverse(seq):
     return seq[::-1]
 
 
-class StatsBAM2Mapped(DataContainer):
+class StatsBAM2Mapped:
     def __init__(self, bamfile=None, wkdir=None, verbose=True):
-        super(StatsBAM2Mapped, self).__init__(wkdir=wkdir)
+        self.wkdir = wkdir
         if bamfile.endswith(".bam"):
             self.data = bam_to_mapped_unmapped_fastq(bamfile, wkdir, verbose)
         elif bamfile.endswith(".json"):
-            self.data = self.read_json(bamfile)
+            self.data = json.load(open(bamfile, "r"))
+
+    def to_json(self, filename):
+        json.dump(self.data, open(filename, "w"))
 
     def to_html(self):
         data = self.data
 
-        # TODO hardcoded word phix here ?
         html = "Reads with Phix: %s %%<br>" % precision(data["contamination"], 3)
 
         # add HTML table
@@ -146,7 +129,7 @@ def bam_to_mapped_unmapped_fastq(filename, output_directory=None, verbose=True):
         the supplementary. This flag is not used in this function. Note also that
         chimeric alignment have same QNAME and flag 4 and 8
 
-    .. note:: the contamination reported is basde on R1 only.
+    .. note:: the contamination reported is based on R1 only.
 
     .. todo:: comments are missing since there are not stored in the BAM file.
 
@@ -255,7 +238,7 @@ def bam_to_mapped_unmapped_fastq(filename, output_directory=None, verbose=True):
                 else:
                     R2_mapped.write(txt)
                     stats["R2_mapped"] += 1
-            else:
+            else: #pragma: no cover
                 # This should be a single read
                 # assert self.is_paired is False
                 stats["unpaired"] += 1
@@ -338,7 +321,7 @@ def bam_get_paired_distance(filename):
 
 
 def fast_gc_content(chrom):
-    """Returns men GC content on a sequence
+    """Returns mean GC content on a sequence
 
     Cope with lower and upper cases
     if x or X are present, the final GC percentage ignores them.
@@ -488,7 +471,7 @@ class GZLineCounter(object):
         self.filename = filename
         if cmd_exists("zcat"):
             self.use_zcat = True
-        else:
+        else: #pragma: no cover
             self.use_zcat = False
 
     def __len__(self):
@@ -550,6 +533,7 @@ class PairedFastQ(object):
                 id1 = a.rsplit("/2")[0]
             else:
                 id1 = a
+
             if b.endswith("/1"):
                 id2 = b.rsplit("/1")[0]
             elif b.endswith("/2"):

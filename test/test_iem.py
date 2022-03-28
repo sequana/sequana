@@ -2,17 +2,16 @@
 
 
 from sequana.iem import IEM
-from sequana import sequana_data
 from easydev import TempFile
 
-
+from . import test_dir
 def test_iem():
 
     for this in ["test_expdesign_wrong.csv",
         "test_expdesign_miseq_illumina_1.csv",
         "test_expdesign_miseq_illumina2.csv"]:
 
-        filename = sequana_data(this)
+        filename = f"{test_dir}/data/csv/{this}"
 
         iem = IEM(filename)
         iem._scanner()
@@ -26,7 +25,7 @@ def test_iem():
 
     with TempFile() as fh:
 
-        e = IEM(sequana_data("test_expdesign_miseq_illumina_semicommas.csv"), tryme=True)
+        e = IEM(f"{test_dir}/data/csv/test_expdesign_miseq_illumina_semicommas.csv", tryme=True)
         e.quick_fix(fh.name)
         e = IEM(fh.name)
 
@@ -37,7 +36,7 @@ def test_iem_samplesheets():
                      'test_iem_samplesheet_nextseq_single.csv',
                      'test_iem_samplesheet_iseq100.csv',
                      'test_iem_samplesheet_misnieq.csv']:
-        iem = IEM(sequana_data(filename))
+        iem = IEM(f"{test_dir}/data/csv/{filename}")
         iem.validate()
         iem.version
         iem.instrument
@@ -45,7 +44,7 @@ def test_iem_samplesheets():
 
 def test_old_samplesheet():
     for filename in ['test_expdesign_hiseq.csv', 'test_expdesign_hiseq_doubleindex.csv']:
-        iem = IEM(sequana_data(filename))
+        iem = IEM(f"{test_dir}/data/csv/{filename}")
         iem.validate()
         iem.version
         iem.instrument

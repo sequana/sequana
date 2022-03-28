@@ -20,15 +20,14 @@ packaging
 pandas>=0.22
 plotly
 psutil
-pykwalify>=1.8
+pykwalify
 vcfpy
 pysam>=0.16
 ruamel.yaml>=0.16.0
-snakemake
+snakemake>=7.3.1
 scikit-learn
 scipy
 seaborn
 statsmodels
 xlrd
-xml2dict
 UpSetPlot

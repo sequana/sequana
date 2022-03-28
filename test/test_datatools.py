@@ -26,4 +26,19 @@ def test_sequana_data():
         assert False
     except ValueError:
         assert True
-        
+
+
+    try:
+        sequana_data("dummy")
+        assert False
+    except Exception:
+        assert True
+
+
+    try:
+        sequana_data("dummy", "dummy")
+        assert False
+    except Exception:
+        assert True
+
+

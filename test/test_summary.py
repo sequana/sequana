@@ -1,5 +1,6 @@
 from sequana.summary import Summary
 
+from . import test_dir
 
 def test_summary():
     s = Summary("test2", sample_name="chr1",data={"mean":1})
@@ -39,3 +40,8 @@ def test_summary():
     from easydev import TempFile
     with TempFile(suffix=".json") as fh:
         s.to_json(fh.name)
+
+
+def test_summary_from_json():
+
+    s = Summary(f"{test_dir}/modules_report/data/test_summary_fastq_stats.json")

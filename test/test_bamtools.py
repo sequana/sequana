@@ -1,27 +1,27 @@
 from sequana.bamtools import SAM, BAM, CRAM,  Alignment, SAMFlags
 from sequana.bamtools import is_bam, is_cram, is_sam
 from sequana.modules_report.bamqc import BAMQCModule
-from sequana import sequana_data
 from easydev import TempFile
 import pytest
 import os
 
+from . import test_dir
 
 def test_is_sam_bam():
 
-    datatest = sequana_data("test_measles.sam", "testing")
+    datatest = f"{test_dir}/data/sam/test_measles.sam"
     assert is_sam(datatest) is True
 
-    datatest = sequana_data("test_measles.bam", "testing")
+    datatest = f"{test_dir}/data/bam/test_measles.bam"
     assert is_bam(datatest) is True
 
 def test_is_cram():
-    datatest = sequana_data("test_measles.cram", "testing")
+    datatest = f"{test_dir}/data/cram/test_measles.cram"
     assert is_cram(datatest) is True
 
 
 def test_sam(tmpdir):
-    datatest = sequana_data("test.sam", "testing")
+    datatest = f"{test_dir}/data/sam/test.sam"
     s = SAM(datatest)
     assert len(s) == 432
     assert s.is_sorted is True
@@ -31,7 +31,7 @@ def test_sam(tmpdir):
 
 
 def test_bam(tmpdir):
-    datatest = sequana_data("test.bam", "testing")
+    datatest = f"{test_dir}/data/bam/test.bam"
     s = BAM(datatest)
     assert len(s) == 1000
     assert s.is_sorted is True
@@ -80,7 +80,7 @@ def test_bam(tmpdir):
 
 @pytest.mark.xfail(reason="cram flaky")
 def test_cram():
-    datatest = sequana_data("test_measles.cram", "testing")
+    datatest = f"{test_dir}/data/cram/test_measles.cram"
     s = CRAM(datatest)
     assert s.summary == {'flags': {77: 6, 83: 14, 99: 10, 141: 6, 147: 10, 163: 14},
          'mapq': {0: 12, 60: 48},
@@ -88,7 +88,8 @@ def test_cram():
          'read_length': {79: 2, 81: 1, 93: 1, 101: 44}}
 
 def test_bam_others():
-    b = BAM(sequana_data("measles.fa.sorted.bam"))
+    datatest = f"{test_dir}/data/bam/measles.fa.sorted.bam"
+    b = BAM(datatest)
     assert len(b) == 2998
 
     # plot_reaqd_length and data
@@ -102,7 +103,7 @@ def test_bam_others():
 
 
 def test_alignment():
-    datatest = sequana_data("test.bam", "testing")
+    datatest = f"{test_dir}/data/bam/test.bam"
     s = BAM(datatest)
     # no need to call reset but does not harm and reminds us that it shoudl be
     # used in general to make sure we start at the beginning of the iterator.
@@ -119,7 +120,7 @@ def test_samflags():
 
 
 def test_bamreport(tmpdir):
-    datatest = sequana_data("test.bam", "testing")
+    datatest = f"{test_dir}/data/bam/test.bam"
     directory = tmpdir.mkdir("bam")
     from sequana.utils import config
     config.output_dir = directory.__str__()
@@ -132,7 +133,7 @@ def test_cs():
 
 
 def test_cs_in_bam():
-    b = BAM(sequana_data("test_CS_tiny.bam"))
+    b = BAM(f"{test_dir}/data/bam/test_CS_tiny.bam")
     assert  b.summary == {
         'flags': {0: 2, 16: 2},
          'mapq': {60: 4},
@@ -146,9 +147,9 @@ def test_cs_in_bam():
 
 def test_insert_size():
 
-    d1 = sequana_data("test_measles.sam", "testing")
-    d3 = sequana_data("test.bam", "testing")
-    d4 = sequana_data("test_CS_tiny.bam")
+    d1 = f"{test_dir}/data/sam/test_measles.sam"
+    d3 = f"{test_dir}/data/bam/test.bam"
+    d4 = f"{test_dir}/data/bam/test_CS_tiny.bam"
 
 
     b1  = BAM(d1)
@@ -169,8 +170,8 @@ def test_insert_size():
 
 
 def test_strandness():
-    b = BAM(sequana_data("test_hg38_chr18.bam"))
-    res = b.infer_strandness(sequana_data("hg38_chr18.bed"), 200000)
+    b = BAM(f"{test_dir}/data/bam/test_hg38_chr18.bam")
+    res = b.infer_strandness(f"{test_dir}/data/bed/hg38_chr18.bed", 200000)
     assert res[0] == 'Paired-end'
     assert res[1]> 0.94
     assert res[2]<0.06
@@ -179,8 +180,8 @@ def test_strandness():
 
 
 def test_mRNA_inner_distance():
-    b = BAM(sequana_data("test_hg38_chr18.bam"))
-    df = b.mRNA_inner_distance(sequana_data("hg38_chr18.bed"))
+    b = BAM(f"{test_dir}/data/bam/test_hg38_chr18.bam")
+    df = b.mRNA_inner_distance(f"{test_dir}/data/bed/hg38_chr18.bed")
     # Total read pairs  used 382
     # mean insert size: 88.3975155279503
     assert df[0]['val'].mean() >1436 and df[0]['val'].mean()<1437

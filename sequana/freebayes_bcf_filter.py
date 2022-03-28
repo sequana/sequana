@@ -107,8 +107,7 @@ class BCF_freebayes(VariantFile):
 
     ::
 
-        from sequana import sequana_data, BCF_freebayes
-        bcf_filename = sequana_data("test.bcf", "testing")
+        from sequana import BCF_freebayes
 
         # Read the data
         b = BCF_freebayes(bcf_filename)

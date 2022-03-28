@@ -1,8 +1,8 @@
 from sequana.mgi import MGI
-from sequana import sequana_data
 
+from . import test_dir
 
 def test_mgi():
-    m = MGI(sequana_data("test_mgi.fqStat.txt"))
+    m = MGI(f"{test_dir}/data/mgi/test_mgi.fqStat.txt")
     m.plot_acgt()
     m.boxplot_quality()

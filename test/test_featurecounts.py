@@ -2,7 +2,6 @@ import os
 import glob
 
 import sequana.featurecounts as fc
-from sequana import sequana_data
 
 from . import test_dir
 test_dir = f"{test_dir}/data"

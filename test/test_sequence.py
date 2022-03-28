@@ -1,7 +1,8 @@
 from sequana.sequence import DNA, RNA, Repeats
-from sequana import sequana_data
 
-datafile = sequana_data("measles.fa")
+from . import test_dir
+
+datafile = f"{test_dir}/data/fasta/measles.fa"
 
 
 def test_dna():
@@ -74,7 +75,6 @@ def test_repeats():
 
 def test_gc_skew():
 
-    data = sequana_data("measles.fa")
-    dna = DNA(data)
+    dna = DNA(datafile)
     dna.window = 100
     dna.plot_all_skews()

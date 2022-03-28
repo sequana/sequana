@@ -1,11 +1,12 @@
 
+from sequana.viz.isomap import Isomap
+import pandas as pd
+
+from . import test_dir
 
 def test_isomap():
-    from sequana.viz.isomap import Isomap
-    from sequana import sequana_data
-    import pandas as pd
 
-    data = sequana_data("test_pca.csv")
+    data = f"{test_dir}/data/test_pca.csv"
     df = pd.read_csv(data)
     df = df.set_index("Id")
     p = Isomap(df, colors={
