@@ -120,6 +120,8 @@ Changelog
 ========= ========================================================================
 Version   Description
 ========= ========================================================================
+0.14.0    * pinned click>=8.1.0 due to API change (autocomplete)
+          * moved tests around to decrease packaging from 16 to 4Mb
 0.13.X    * Remove useless standalones or moved to main **sequana** command
           * Move sequana_lane_merging into a subcommand (sequana lane_merging)
           * General cleanup of documentation, test and links to pipelines

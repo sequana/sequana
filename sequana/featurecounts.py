@@ -188,7 +188,7 @@ class MultiFeatureCount:
 
         from sequana import sequana_data
         from sequana.featurecounts import *
-        directory = sequana_data("featurecounts") + "/rnaseq_0"
+        directory = sequana_data("/rnaseq_0")
         ff = MultiFeatureCount(directory, 0.15)
         ff._get_most_probable_strand_consensus()
         ff.plot_strandness()

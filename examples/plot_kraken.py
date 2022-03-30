@@ -56,7 +56,7 @@ print(df)
 #
 # A more interactive plot can be obtained using Krona if installed:
 from sequana import KrakenResults, sequana_data
-test_file = sequana_data("test_kraken.out", "testing")
+test_file = sequana_data("test_kraken.out", "examples")
 import easydev
 if easydev.cmd_exists("ktImportText"):
     k = KrakenResults(test_file)
