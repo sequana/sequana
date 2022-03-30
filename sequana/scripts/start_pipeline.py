@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 #  This file is part of Sequana software
 #
@@ -51,6 +50,9 @@ class Options(argparse.ArgumentParser):
         self.add_argument("-f", "--force", dest="force", action="store_true",
             default=False,
             help="""Force the creation to overwrite existing directory and contents""")
+        self.add_argument("-I", "--no-interaction", action="store_true",
+            default=False,
+            help="""Force the creation to overwrite existing directory and contents""")
         self.add_argument("--name", dest="name", 
             required=True,
             help="Name of your project. For instance for sequana_analysis, just type 'analysis'")
@@ -59,10 +61,12 @@ class Options(argparse.ArgumentParser):
             help="Keywords (you can edit later)")
         self.add_argument("--description", dest="description", default=None,
             help="description of your future pipeline (you can still edit later)")
+        self.add_argument("--output-directory", default=".",
+            help="where to save the final directory")
 
 def main(args=None):
 
-    if args is None:
+    if args is None: #pragma: no cover
         args = sys.argv[:]
 
     user_options = Options(prog="sequana")
@@ -83,6 +87,8 @@ def main(args=None):
 
     cookiecutter('https://github.com/sequana/sequana_pipeline_template',
         extra_context=extra_context,
+        no_input=options.no_interaction,
+        output_dir=options.output_directory,
         overwrite_if_exists=options.force)
 
 

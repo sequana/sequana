@@ -1,9 +1,11 @@
 from sequana.modules_report.fastq_stats import FastQStatsModule
-from sequana import sequana_data
 import shutil
 from sequana.utils import config
 
-filename = sequana_data("test_summary_fastq_stats.json")
+
+
+from . import test_dir
+filename = f"{test_dir}/data/test_summary_fastq_stats.json"
 
 def test_report(tmpdir):
     directory = tmpdir.mkdir('test_module')

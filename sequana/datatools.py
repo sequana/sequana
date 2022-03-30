@@ -85,11 +85,15 @@ def sequana_data(filename=None, where=None):
     # in the code one may use / or \
     if where:
         filename = os.sep.join([sharedir, where, filename])
+        if os.path.exists(filename):
+            return filename
+        else:
+            raise FileNotFoundError(f"unknown file {filename}. Type sequana_data() to get a list of valid names")
     else:
 
         def _get_valid_file(filename, directory):
             filename = os.sep.join([sharedir, directory, filename])
-            if os.path.exists(filename) is False:
+            if os.path.exists(filename) is False: #pragma: no cover
                 return False
             else:
                 return filename
@@ -99,6 +103,6 @@ def sequana_data(filename=None, where=None):
         for thisdir in directories:
             if _get_valid_file(filename, thisdir):
                 return _get_valid_file(filename, thisdir)
-        raise Exception(f"unknown file {filename}. Type sequana_data() to get a list of valid names")
+        raise FileNotFoundError(f"unknown file {filename}. Type sequana_data() to get a list of valid names")
 
     return filename

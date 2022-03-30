@@ -1,11 +1,11 @@
-from sequana import BED, sequana_data
+from sequana import BED
 
 
 
-
+from . import test_dir
 
 def test_bed():
-    bedfile = sequana_data("hg38_chr18.bed")
+    bedfile = f"{test_dir}/data/bed/hg38_chr18.bed"
     b = BED(bedfile)
     assert len(list(b.get_transcript_ranges())) == 2777
     assert len(b.get_exons()) == 32640
@@ -14,7 +14,7 @@ def test_bed():
 
 
 def test_wrong_file():
-    bedfile = sequana_data("test_wrong_bed.bed")
+    bedfile = f"{test_dir}/data/bed/test_wrong_bed.bed"
     b = BED(bedfile)
     assert len(b) == 2
     try:

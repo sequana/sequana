@@ -1,23 +1,22 @@
 from sequana.vcf_filter import VCF
-from sequana import sequana_data
 from easydev import TempFile
 
 
+from . import test_dir
 
 
 def test_vcf_filter_freebayes():
 
-    data = sequana_data("test.vcf")
+    data = f"{test_dir}/data/vcf/test_vcf_snpeff.vcf"
     v = VCF(data)
-    v.vcf.hist_qual()
 
 
 def test_vcf_filter():
 
-    data = sequana_data("test_vcf_mpileup_4dot1.vcf")
+    data = f"{test_dir}/data/test_vcf_mpileup_4dot1.vcf"
     v = VCF(data)
+    v.vcf.hist_qual()
     assert v.vcf.version == "4.1"
-
 
     # Test the INFO set to {}
     v.vcf.filter_dict['INFO'] = {}
@@ -76,7 +75,7 @@ def test_vcf_filter():
 
 
 def test_af1():
-    data = sequana_data("test_vcf_mpileup_4dot1.vcf")
+    data = f"{test_dir}/data/test_vcf_mpileup_4dot1.vcf"
     v = VCF(data)
     variant = next(v.vcf)
 
@@ -101,7 +100,7 @@ def test_af1():
 
 
 def test_indel():
-    data = sequana_data("test_vcf_mpileup_4dot1.vcf")
+    data = f"{test_dir}/data/test_vcf_mpileup_4dot1.vcf"
     v = VCF(data)
     variant = next(v.vcf)
     assert v.vcf.is_indel(variant) is False
@@ -113,7 +112,7 @@ def test_indel():
 
 def test_vcf_filter_dp4():
 
-    data = sequana_data("test_vcf_mpileup_4dot1.vcf")
+    data = f"{test_dir}/data/test_vcf_mpileup_4dot1.vcf"
     v = VCF(data)
     variant = next(v.vcf)
 

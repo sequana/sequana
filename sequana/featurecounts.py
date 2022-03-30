@@ -1,11 +1,7 @@
 #
 #  This file is part of Sequana software
 #
-#  Copyright (c) 2016,2020 - Sequana Development Team
-#
-#  File author(s):
-#      Thomas Cokelaer <thomas.cokelaer@pasteur.fr>
-#      Etienne Kornobis <etienne.kornobis@pasteur.fr>
+#  Copyright (c) 2016-2022 - Sequana Development Team
 #
 #  Distributed under the terms of the 3-clause BSD license.
 #  The full license is in the LICENSE file, distributed with this software.
@@ -192,7 +188,7 @@ class MultiFeatureCount:
 
         from sequana import sequana_data
         from sequana.featurecounts import *
-        directory = sequana_data("featurecounts") + "/rnaseq_0"
+        directory = sequana_data("/rnaseq_0")
         ff = MultiFeatureCount(directory, 0.15)
         ff._get_most_probable_strand_consensus()
         ff.plot_strandness()

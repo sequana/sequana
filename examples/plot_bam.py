@@ -14,7 +14,7 @@ from sequana import BAM, sequana_data
 #####################################################
 # Get a data set (BAM file) for testing
 from sequana import BAM, sequana_data
-datatest = sequana_data('test.bam', "testing")
+datatest = sequana_data('test.bam', "doc")
 
 ##########################################################################
 # Use :class:`sequana.bamtools.BAM` class to plot the MAPQ historgram 

@@ -1,11 +1,12 @@
 from sequana import KronaMerger
-from sequana import sequana_data
-from easydev import TempFile, execute
+from easydev import TempFile
+
+from . import test_dir
 
 def test_krona_merger():
 
-    k1 = KronaMerger(sequana_data("test_krona_k1.tsv"))
-    k2 = KronaMerger(sequana_data("test_krona_k2.tsv"))
+    k1 = KronaMerger(f"{test_dir}/data/tsv/test_krona_k1.tsv")
+    k2 = KronaMerger(f"{test_dir}/data/tsv/test_krona_k2.tsv")
     k1 += k2
 
     with TempFile(suffix='.tsv') as fh:

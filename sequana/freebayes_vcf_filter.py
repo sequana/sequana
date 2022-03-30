@@ -1,3 +1,4 @@
+#
 #  This file is part of Sequana software
 #
 #  Copyright (c) 2016-2021 - Sequana Development Team

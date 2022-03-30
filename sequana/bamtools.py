@@ -1,11 +1,7 @@
+#
 #  This file is part of Sequana software
 #
-#  Copyright (c) 2016 - Sequana Development Team
-#
-#  File author(s):
-#      Thomas Cokelaer <thomas.cokelaer@pasteur.fr>
-#      Dimitri Desvillechabrol <dimitri.desvillechabrol@pasteur.fr>,
-#          <d.desvillechabrol@gmail.com>
+#  Copyright (c) 2016-2022 - Sequana Development Team
 #
 #  Distributed under the terms of the 3-clause BSD license.
 #  The full license is in the LICENSE file, distributed with this software.
@@ -1131,7 +1127,7 @@ SN	pairs on different chromosomes:	0
             :include-source:
 
             from sequana import BAM, sequana_data
-            b = BAM(sequana_data('test.bam', "testing"))
+            b = BAM(sequana_data('test.bam'))
             b.plot_bar_flags()
 
         .. seealso:: :class:`SAMFlags` for meaning of each flag
@@ -1236,7 +1232,7 @@ SN	pairs on different chromosomes:	0
             :include-source:
 
             from sequana import BAM, sequana_data
-            b = BAM(sequana_data('test.bam', "testing"))
+            b = BAM(sequana_data('test.bam'))
             b.plot_bar_mapq()
 
         """

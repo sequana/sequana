@@ -1,4 +1,3 @@
-# coding: utf-8
 #
 #  This file is part of Sequana software
 #
@@ -30,6 +29,7 @@ from collections import OrderedDict
 import colorlog
 logger = colorlog.getLogger(__name__)
 
+from sequana.lazy import pandas as pd
 
 
 class DataTableFunction(object):
@@ -40,7 +40,7 @@ class DataTableFunction(object):
     ::
 
         import pandas as pd
-        from sequana.utils import DataTableFunction
+        from sequana.utils.datatables_js import DataTableFunction
 
         df = pandas.read_csv('data.csv')
         datatable_js = DataTableFunction(df, 'data')
@@ -82,7 +82,6 @@ class DataTableFunction(object):
         Note that buttons can also be excel, pdf, print, ...
 
 
-
     All options of datatable:
         https://datatables.net/reference/option/
     """
@@ -93,7 +92,9 @@ class DataTableFunction(object):
         :param str html_id: the ID used in the HTML file.
         """
         self.index = index
-        self._html_id = html_id
+        # Mars 2022. added 'id' in front of the id to avoid issue with is 
+        # starting with a number, which is not allowed in HTML
+        self._html_id = f"id_{html_id}"
         self._datatable_options = dict()
         self._datatable_columns = self._set_datatable_columns(df)
 
@@ -153,8 +154,7 @@ class DataTableFunction(object):
         """ Fill :attr:`DataTableFunction.datatable_columns` with header of
         :param:`DataTableFunction.df`.
         """
-        from pandas import Series
-        if isinstance(df, Series):
+        if isinstance(df, pd.Series): #pragma: no cover
             return {}
 
         if self.index is True:
@@ -167,8 +167,9 @@ class DataTableFunction(object):
     def create_javascript_function(self):
         """ Return javascript to create the DataTable.
         """
+
         js_function = """
-<script type="text/javascript">
+<script async type="text/javascript">
     function parseCsv_{0}(csv, id) {{
         Papa.parse(csv, {{
             comments: '#',
@@ -245,29 +246,28 @@ class DataTableFunction(object):
         :param str target_col: column to connect.
         """
         # hide the link column
-        try:
+        try: #pragma: no cover
             self.datatable_columns[link_col]['visible'] = 'false'
-        except KeyError:
-
-            keys = self.datatable_columns.keys() 
+        except KeyError: #pragma: no cover
+            keys = self.datatable_columns.keys()
             logger.warning(f"KeyError: Column name '{target_col}' does not exist. Use one of {keys}")
+
         # function to add link
         if new_page is True:
             fct = """function(data, type, row, meta){{
                 return '<a href="'+row.{0}+'" target="_blank">'+data+'</a>';
             }}
             """.format(link_col)
-        else:
+        else: #pragma: no cover
             fct = """function(data, type, row, meta){{
                 return '<a href="'+row.{0}+'">'+data+'</a>';
             }}
             """.format(link_col)
-        try:
+        try: #pragma: no cover
             self.datatable_columns[target_col]['render'] = fct
-        except KeyError:
+        except KeyError: #pragma: no cover
             logger.warning("KeyError: Column name '{0}' does not exist."
                            .format(target_col))
-            pass
 
     def set_tooltips_to_column(self, tooltips_col, target_col):
         """Hide a column with tooltips and connect it with a column.
@@ -278,10 +278,9 @@ class DataTableFunction(object):
         # hide tooltips
         try:
             self.datatable_columns[tooltips_col]['visible'] = 'false'
-        except KeyError:
+        except KeyError: 
             logger.warning("KeyError: Column name '{0}' does not exist."
                            .format(target_col))
-            pass
         # function to add tooltips
         fct = """function(data, type, row, meta){{
             return '<a href="#" data-toggle="tooltip" title="'+row.{0}+'">'+data+'</a>';
@@ -332,11 +331,12 @@ class DataTable(object):
             Jquery Datatables. If None, a :class:`DataTableFunction` is
             generated from the df.
         :param bool index: indicates whether the index dataframe should 
-            be included in the CSV table
         """
         self.index = index
         self._df = df
-        self._html_id = html_id
+        # Mars 2022. added 'id' in front of the id to avoid issue with is 
+        # starting with a number, which is not allowed in HTML
+        self._html_id = f"id_{html_id}"
         if datatable:
             self.datatable = datatable
         else:
@@ -361,7 +361,7 @@ class DataTable(object):
         """
 
         html = """
-<script type="text/javascript">
+<script async type="text/javascript">
     $(document).ready(function() {{
         var {0} = document.getElementById('csv_{0}').innerText;
         parseCsv_{1}({0}, '#table_{0}');

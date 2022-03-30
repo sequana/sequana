@@ -1,9 +1,6 @@
 #  This file is part of Sequana software
 #
-#  Copyright (c) 2018 - Sequana Development Team
-#
-#  File author(s):
-#      Thomas Cokelaer <thomas.cokelaer@pasteur.fr>
+#  Copyright (c) 2018-2022 - Sequana Development Team
 #
 #  Distributed under the terms of the 3-clause BSD license.
 #  The full license is in the LICENSE file, distributed with this software.
@@ -233,10 +230,6 @@ class DNA(Sequence):
         logger.info("Computing GC skew")
         self._compute_skews()
 
-        #### takes a too long time
-        # print("Computing fft")
-        # self._myfft_gc_skew(self._window)
-
     window = property(_get_window, _set_window)
 
     def _get_type_window(self):
@@ -302,7 +295,7 @@ class DNA(Sequence):
 
             i += 1
 
-            if i % 500000 == 0:
+            if i % 500000 == 0: #pragma: no cover
                 logger.info("%d / %d" % (i, self.__len__()))
             # if in and out are the same : do nothing, append same result
             if out_nuc != in_nuc:
@@ -361,7 +354,7 @@ class DNA(Sequence):
         self._ignored_nuc = 1.0 - GC_content_total - AT_content_total
 
     def _get_AT_skew(self):
-        if self._AT_skew_slide is None:
+        if self._AT_skew_slide is None: #pragma: no cover
             raise AttributeError("Please set a valid window to compute skew")
         else:
             return self._AT_skew_slide
@@ -369,19 +362,19 @@ class DNA(Sequence):
     AT_skew = property(_get_AT_skew)
 
     def _get_GC_skew(self):
-        if self._GC_skew_slide is None:
+        if self._GC_skew_slide is None: #pragma: no cover
             raise AttributeError("Please set a valid window to compute skew")
         else:
             return self._GC_skew_slide
 
     GC_skew = property(_get_GC_skew)
 
-    def _create_template_fft(self, M=1000):
+    def _create_template_fft(self, M=1000): #pragma: no cover
         M_3 = int(M / 3)
         W = [-0.5] * M_3 + list(np.linspace(-0.5, 0.5, M - 2 * M_3)) + [0.5] * M_3
         return list(W * np.hanning(M))
 
-    def _myfft_gc_skew(self, M):
+    def _myfft_gc_skew(self, M): #pragma: no cover
         """
         x : GC_skew vector (list)
         param N: length of the GC skew vector
@@ -406,11 +399,10 @@ class DNA(Sequence):
         self._c_fft = c * 2.0 / N
 
     def plot_all_skews(self, figsize=(10, 12), fontsize=16, alpha=0.5):
-        if self._window is None:
+        if self._window is None: #pragma: no cover
             raise AttributeError("Please set a valid window to compute skew")
 
         # create figure
-        # fig, axarr = pylab.subplots(10,1, sharex=True, figsize=figsize)
         fig, axarr = pylab.subplots(9, 1, sharex=True, figsize=figsize)
 
         main_title = (

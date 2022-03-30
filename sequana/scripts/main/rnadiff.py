@@ -27,9 +27,19 @@ logger = colorlog.getLogger(__name__)
 def rnadiff_auto_batch_column(ctx, args, incomplete):
     if "--design" in args:
         dfile = args[args.index("--design")]
-        d = RNADesign(dfile)
+        if os.path.exists(dfile):
+            d = RNADesign(dfile)
+        else:
+            logger.critical("You must have a valid design.csv file following --design")
+            sys.exit(1)
     else:
-        d = RNADesign("design.csv")
+        try:
+            d = RNADesign("design.csv")
+            logger.warning('Using local design.csv to infer the batch column')
+        except FileNotFoundError:
+            logger.critical("No default design.csv found. Please use --design YOUR_DESIGN.csv ")
+            sys.exit(1)
+
 
     batch = (x for x in d.df.columns if x not in {"label", "condition"})
     if len(batch) == 0:
@@ -156,7 +166,7 @@ have adjusted pvalues otherwise""",
     default=None,
     help="""set the column name (in your design) corresponding to the batch
 effect to be included in the statistical model as batch ~ condition""",
-    autocompletion=rnadiff_auto_batch_column,
+    shell_complete=rnadiff_auto_batch_column,
 )
 @click.option(
     "--fit-type",

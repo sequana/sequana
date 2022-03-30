@@ -1,10 +1,11 @@
 from sequana.plots.canvasjs_linegraph import CanvasJSLineGraph
-from sequana import bedtools, sequana_data
+from sequana import bedtools
 
+from . import test_dir
 
 def test_canvasjs_linegraph():
-    bed = bedtools.GenomeCov(sequana_data("JB409847.bed"))
-    fasta = sequana_data("JB409847.fasta")
+    bed = bedtools.GenomeCov(f"{test_dir}/data/bed/JB409847.bed")
+    fasta = f"{test_dir}/data/fasta/JB409847.fasta"
     bed.compute_gc_content(fasta)
 
 

@@ -1,11 +1,12 @@
 from sequana.demultiplex import StatsFile
-from sequana import sequana_data
 from easydev import TempFile
 import os
 
+from . import test_dir
+
 def test_stats_file():
 
-    data = sequana_data("test_demultiplex_Stats.json")
+    data = f"{test_dir}/data/json/test_demultiplex_Stats.json"
     s = StatsFile(data)
     with TempFile() as fout:
         s.to_summary_reads(fout.name)
@@ -16,7 +17,7 @@ def test_stats_file():
         for lane in s.get_data_reads().lane.unique():
              os.remove("lane{}_status.png".format(lane)) 
 
-    data = sequana_data("test_demultiplex_Stats_undetermined.json")
+    data = f"{test_dir}/data/json/test_demultiplex_Stats_undetermined.json"
     s = StatsFile(data)
     with TempFile() as fout:
         s.to_summary_reads(fout.name)

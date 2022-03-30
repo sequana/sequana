@@ -1,12 +1,11 @@
 from sequana.isoseq import SIRV, SIRVReference
-from sequana import sequana_data
 from easydev import md5, TempFile
 
-
+from . import test_dir
 def test_SIRVReference():
 
     with TempFile() as fh:
-        data = sequana_data("test_sirv.xls")
+        data = f"{test_dir}/data/xls/test_sirv.xls"
         ss = SIRVReference()
         ss.from_excel(data)
         ss.to_fasta(fh.name)
@@ -15,7 +14,7 @@ def test_SIRVReference():
 def test_SIRV():
 
     with TempFile() as fh:
-        data = sequana_data("test_sirv.xls")
+        data = f"{test_dir}/data/xls/test_sirv.xls"
         ss = SIRVReference()
         ss.from_excel(data)
         ss.to_fasta(fh.name)
@@ -28,8 +27,8 @@ def test_SIRV():
 
 def test_mapped_sirv():
     from sequana import isoseq
-    bam = sequana_data("test_isoseq_lq_sirv.bam")
-    sirv = sequana_data("SIRV.fa")
+    bam = f"{test_dir}/data/bam/test_isoseq_lq_sirv.bam"
+    sirv = f"{test_dir}/data/fasta/SIRV.fa"
     mul = isoseq.PacbioIsoSeqMultipleIsoforms(sirv)
     mul.read(bam, "s1")
     mul.plot_bar()
