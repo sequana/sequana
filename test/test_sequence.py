@@ -19,6 +19,11 @@ def test_dna():
     dna.reverse()
     dna.complement()
     dna.reverse_complement()
+    dna.window = 0.5
+    dna.window
+    dna.type_window
+    dna.AT_skew
+    dna.GC_skew
 
     dna = DNA("jjjj")
     try:
@@ -70,7 +75,10 @@ def test_repeats():
     rep = Repeats(datafile)
     rep.threshold = 11
     rep.hist_length_repeats()
-
+    rep.plot()
+    assert rep.length == 15894
+    rep.names
+    rep.header
 
 
 def test_gc_skew():
@@ -78,3 +86,5 @@ def test_gc_skew():
     dna = DNA(datafile)
     dna.window = 100
     dna.plot_all_skews()
+    for x in dna: # test the iterator
+        pass

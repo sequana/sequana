@@ -26,6 +26,16 @@ using e.g. for bash users::
 
     eval "$(_SEQUANA_COMPLETE=source_bash sequana)"
 
+To speed up things, you can also save the script somewhere.::
+
+    _FOO_BAR_COMPLETE=bash_source foo-bar > ~/.foo-bar-complete.bash
+
+and then source the file in ~/.bashrc.::
+
+    . ~/.foo-bar-complete.bash
+
+.. seealso:: https://click.palletsprojects.com/en/8.0.x/shell-completion/ for fish and zsh support
+
 The fastqc pipeline
 --------------------
 
