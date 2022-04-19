@@ -10,14 +10,11 @@
 #  documentation: http://sequana.readthedocs.io
 #
 ##############################################################################
-import time
-import re
-import os
 import io
-
-from sequana.lazy import pandas as pd
+import time
 
 import colorlog
+from sequana.lazy import pandas as pd
 
 logger = colorlog.getLogger(__name__)
 
@@ -38,27 +35,31 @@ class Mart:  # pragma: no cover
     The file can now be loaded in e.g. :class:`~sequana.enrichment.kegg.KeggPathwayEnrichment`
     as a mapper of the ensemble identifier to external names understood by Kegg.
 
+
+    For fungi (cryptococcus), you can use::
+
+        m = Mart(host="fungi.ensembl.org", dataset="cneoformans_eg_gene", mart="fungi_mart")
+        m.query(['cneoformans_eg_gene'])
+
+    See more information on https://bioservices.readthedocs.io
+
     """
 
-    def __init__(self, dataset, mart="ENSEMBL_MART_ENSEMBL"):
+    def __init__(self, dataset, mart="ENSEMBL_MART_ENSEMBL", host=None):
         logger.info("Init Mart")
         from bioservices import BioMart
 
-        self.biomart = BioMart()
+        self.biomart = BioMart(host=host)
         self.datasets = self.biomart.get_datasets(mart)
         self._dataset = None
         try:
             self.dataset = dataset
         except:
-            logger.critical("Invalid dataset. checks datasets attributse")
+            logger.critical("Invalid dataset. checks datasets attributes")
 
     def _set_dataset(self, dataset):
         if dataset not in self.datasets["name"].values:
-            raise ValueError(
-                "Invalid dataset {}. Check the Choose amongst {}".format(
-                    dataset, self.datasets
-                )
-            )
+            raise ValueError("Invalid dataset {}. Check the Choose amongst {}".format(dataset, self.datasets))
         self._dataset = dataset
         self.attributes = self.biomart.attributes(dataset=dataset)
         self.filters = self.biomart.filters(dataset=dataset)
@@ -77,9 +78,7 @@ class Mart:  # pragma: no cover
         self.biomart.add_dataset_to_xml(self.dataset)
         for attribute in attributes:
             if attribute not in self.attributes:
-                logger.error(
-                    "{} not found in the dataset {}".format(attribute, self.dataset)
-                )
+                logger.error("{} not found in the dataset {}".format(attribute, self.dataset))
                 raise ValueError
             self.biomart.add_attribute_to_xml(attribute)
         xml = self.biomart.get_xml()
@@ -97,8 +96,6 @@ class Mart:  # pragma: no cover
 
         date = time.localtime()
         if filename is None:
-            filename = "biomart_{}__{}_{}_{}.csv".format(
-                self.dataset, date.tm_year, date.tm_mon, date.tm_mday
-            )
+            filename = "biomart_{}__{}_{}_{}.csv".format(self.dataset, date.tm_year, date.tm_mon, date.tm_mday)
         logger.info("Saving into {}".format(filename))
         df.to_csv(filename, index=False)

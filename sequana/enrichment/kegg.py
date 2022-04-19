@@ -11,23 +11,22 @@
 #
 ##############################################################################
 
-from pathlib import Path
-import os
-import json
 import glob
-import requests
-
-from sequana.lazy import pandas as pd
-from sequana.lazy import pylab
-from sequana.lazy import numpy as np
-from matplotlib_venn import venn2_unweighted, venn3_unweighted
-import colormap
-
-import gseapy
-
-from sequana.summary import Summary
+import json
+import os
+from pathlib import Path
 
 import colorlog
+import colormap
+import requests
+from bioservices import KEGG
+from matplotlib_venn import venn2_unweighted, venn3_unweighted
+from sequana.enrichment.gsea import GSEA
+from sequana.lazy import numpy as np
+from sequana.lazy import pandas as pd
+from sequana.lazy import pylab
+from sequana.summary import Summary
+from tqdm import tqdm
 
 logger = colorlog.getLogger(__name__)
 
@@ -43,7 +42,7 @@ class KEGGPathwayEnrichment:
     Current input is the output of the RNADiff analysis. This is a file
     than can be read by RNADiffResults
 
-    This class takes as input a dictionary with 3 lists of genes: 'up', 
+    This class takes as input a dictionary with 3 lists of genes: 'up',
     'down' and 'all'.
 
     For example, using the output of the RNA-seq DGE, use:
@@ -134,8 +133,6 @@ class KEGGPathwayEnrichment:
         """
         self.convert_input_gene_to_upper_case = convert_input_gene_to_upper_case
 
-        from bioservices import KEGG
-
         self.kegg = KEGG(cache=True)
         self.kegg.organism = organism
         self.summary = Summary("KEGGPathwayEnrichment")
@@ -160,9 +157,7 @@ class KEGGPathwayEnrichment:
         if isinstance(mapper, str):
 
             df = pd.read_csv(mapper)
-            df = df.rename(
-                {"external_gene_name": "name", "ensembl_gene_id": "ensembl"}, axis=1
-            )
+            df = df.rename({"external_gene_name": "name", "ensembl_gene_id": "ensembl"}, axis=1)
             df.set_index("ensembl", inplace=True)
             self.mapper = df
 
@@ -171,15 +166,13 @@ class KEGGPathwayEnrichment:
 
         try:
             self.compute_enrichment()
-        except Exception as err:
+        except Exception as err:  # pragma: no cover
             print(err)
             logger.critical("An error occured while computing enrichments. ")
 
     def _check_category(self, cat):
         if cat not in self.gene_lists.keys():
-            raise ValueError(
-                f"category must be set to one of {self.gene_lists.keys()}. You provided {cat}"
-            )
+            raise ValueError(f"category must be set to one of {self.gene_lists.keys()}. You provided {cat}")
 
     def _load_pathways(self, progress=True, preload_directory=None):
         # This is just loading all pathways once for all
@@ -188,22 +181,17 @@ class KEGGPathwayEnrichment:
             # preload is a directory with all pathways in it
 
             pathways = glob.glob(preload_directory + "/*json")
+            logger.info(f"loading {len(pathways)} pathways from local files in {preload_directory}.")
             for i, name in enumerate(pathways):
                 key = name.strip(".json").split("/")[-1]
                 with open(name, "r") as fin:
                     data = json.load(fin)
                     self.pathways[key] = data
-        else:
-            logger.info("loading all pathways from KEGG. may take time the first time")
-            from easydev import Progress
+        else:  # pragma: no cover  #not tested due to slow call
+            logger.info("loading all pathways from KEGG. You may export and load the pathways next time.")
 
-            pb = Progress(len(self.kegg.pathwayIds))
-            for i, ID in enumerate(self.kegg.pathwayIds):
-                self.pathways[ID.replace("path:", "")] = self.kegg.parse(
-                    self.kegg.get(ID)
-                )
-                if progress:
-                    pb.animate(i + 1)
+            for i, ID in tqdm(enumerate(self.kegg.pathwayIds)):
+                self.pathways[ID.replace("path:", "")] = self.kegg.parse(self.kegg.get(ID))
 
         # Some cleanup. Note that if we read the json file, this is different
         # since already cleanup but this code does no harm
@@ -236,10 +224,7 @@ class KEGGPathwayEnrichment:
         self.df_pathways = pd.DataFrame(self.pathways).T
         del self.df_pathways["ENTRY"]
         del self.df_pathways["REFERENCE"]
-        go = [
-            x["GO"] if isinstance(x, dict) and "GO" in x.keys() else None
-            for x in self.df_pathways.DBLINKS
-        ]
+        go = [x["GO"] if isinstance(x, dict) and "GO" in x.keys() else None for x in self.df_pathways.DBLINKS]
         self.df_pathways["GO"] = go
         del self.df_pathways["DBLINKS"]
 
@@ -261,8 +246,7 @@ class KEGGPathwayEnrichment:
         self.summary.data["input_gene_list"] = {}
 
         self.enrichment = {
-            category: self._enrichr(category, background=background)
-            for category in self.gene_lists.keys()
+            category: self._enrichr(category, background=background) for category in self.gene_lists.keys()
         }
 
     def _enrichr(self, category, background=None, verbose=True):
@@ -291,19 +275,13 @@ class KEGGPathwayEnrichment:
             logger.info("Mapped gene list of {} ids".format(len(identifiers)))
             gene_list = list(identifiers)
 
-        enr = gseapy.enrichr(
+        gs = GSEA(self.gene_sets)
+        enr = gs.compute_enrichment(
             gene_list=gene_list,
-            gene_sets=self.gene_sets,
             verbose=verbose,
             background=background,
-            outdir="test",
-            no_plot=True,
-            description='none'
         )
 
-        enr.results["Genes"] = [
-            ";".join(sorted(x.split(";"))) for x in enr.results["Genes"].values
-        ]
         return enr
 
     def _get_final_df(self, df, cutoff=0.05, nmax=10):
@@ -315,7 +293,6 @@ class KEGGPathwayEnrichment:
 
         df = df.copy()
         df["name"] = [self.pathways[x]["NAME"] for x in df.Term]
-        df["size"] = [len(x.split(";")) for x in df.Genes]
         df = df.sort_values("Adjusted P-value")
         df.reset_index(drop=True, inplace=True)
         df = df[df["Adjusted P-value"] <= cutoff]
@@ -330,9 +307,7 @@ class KEGGPathwayEnrichment:
 
     def barplot(self, category, cutoff=0.05, nmax=10):
         self._check_category(category)
-        df = self._get_final_df(
-            self.enrichment[category].results, cutoff=cutoff, nmax=nmax
-        )
+        df = self._get_final_df(self.enrichment[category].results, cutoff=cutoff, nmax=nmax)
         if len(df) == 0:
             return df
 
@@ -352,9 +327,7 @@ class KEGGPathwayEnrichment:
 
     def scatterplot(self, category, cutoff=0.05, nmax=15, gene_set_size=[]):
         self._check_category(category)
-        df = self._get_final_df(
-            self.enrichment[category].results, cutoff=cutoff, nmax=nmax
-        )
+        df = self._get_final_df(self.enrichment[category].results, cutoff=cutoff, nmax=nmax)
         if len(df) == 0:
             return df
 
@@ -459,19 +432,11 @@ class KEGGPathwayEnrichment:
             new_mapper = {}
             for name, kegg_id in mapper.items():
                 try:
-                    identifier = (
-                        self.mapper.query("name == @name")["name"]
-                        .drop_duplicates()
-                        .index[0]
-                    )
+                    identifier = self.mapper.query("name == @name")["name"].drop_duplicates().index[0]
                     identifiers.append(identifier)
                     new_mapper[identifier] = kegg_id
                 except:
-                    logger.warning(
-                        "Skipped {}(kegg ID {}). could not find mapping".format(
-                            name, kegg_id
-                        )
-                    )
+                    logger.warning("Skipped {}(kegg ID {}). could not find mapping".format(name, kegg_id))
             mapper = new_mapper
 
         for name, kegg_id in mapper.items():
@@ -504,9 +469,7 @@ class KEGGPathwayEnrichment:
                 "keggid": summary_keggids,
             }
         )
-        summary["description"] = [
-            self.pathways[pathway_ID]["GENE"][x] for x in summary.keggid
-        ]
+        summary["description"] = [self.pathways[pathway_ID]["GENE"][x] for x in summary.keggid]
         return summary
 
     def _get_colors(self, summary):
@@ -553,9 +516,7 @@ class KEGGPathwayEnrichment:
         # requests
         params = {
             "map": pathway_ID,
-            "multi_query": "\r\n".join(
-                ["{} {}".format(k, v) for k, v in colors.items()]
-            ),
+            "multi_query": "\r\n".join(["{} {}".format(k, v) for k, v in colors.items()]),
         }
 
         self.params = params
@@ -565,9 +526,7 @@ class KEGGPathwayEnrichment:
         self.tmp = html_page
         html_page = html_page.content.decode()
 
-        links_to_png = [
-            x for x in html_page.split() if "png" in x and x.startswith("src")
-        ]
+        links_to_png = [x for x in html_page.split() if "png" in x and x.startswith("src")]
         link_to_png = links_to_png[0].replace("src=", "").replace('"', "")
         r = requests.get("https://www.kegg.jp/{}".format(link_to_png))
 
@@ -599,9 +558,7 @@ class KEGGPathwayEnrichment:
         summaries = {}
 
         for ID in df["pathway_id"]:
-            summary = self.save_pathway(
-                ID, filename=(Path(outdir) / f"{ID}_{category}.png")
-            )
+            summary = self.save_pathway(ID, df, filename=(Path(outdir) / f"{ID}_{category}.png"))
             summaries[ID] = summary
 
         return summaries
@@ -644,7 +601,7 @@ class KEGGPathwayEnrichment:
                         paths.append(key)
                 else:
                     for candidate in candidates:
-                        if candicodate in self.pathways[key]["GENE"].keys():
+                        if candidate in self.pathways[key]["GENE"].keys():
                             paths.append(key)
         return list(set(paths))
 
@@ -653,7 +610,7 @@ class KEGGPathwayEnrichment:
         outdir = Path(outdir)
         outdir.mkdir(parents=True, exist_ok=True)
 
-        for category in ["up", "down", "all"]:
+        for category in self.gene_lists.keys():
             common_out = Path(f"{tag}_kegg_gsea_{category}_degs")
 
             results = self.enrichment[category].results
@@ -662,9 +619,7 @@ class KEGGPathwayEnrichment:
 
                 # FIXME: For now fixing a nmax to 10000 to be sure to have all results
                 # (this could be improved by having self.complete_df and self.filtered_df attributes)
-                self._get_final_df(results, cutoff=1, nmax=10000).to_csv(
-                    outdir / (common_out.name + ".csv")
-                )
+                self._get_final_df(results, cutoff=1, nmax=10000).to_csv(outdir / (common_out.name + ".csv"))
                 self._get_final_df(results, cutoff=0.05, nmax=10000).to_csv(
                     outdir / (common_out.name + "_significant.csv")
                 )
@@ -689,17 +644,3 @@ class KEGGPathwayEnrichment:
         for key, data in self.pathways.items():
             with open(f"{outdir}/{key}.json", "w") as fout:
                 json.dump(data, fout)
-
-
-"""BOOK keeping
-    def to_excel(self):
-        with pd.ExcelWriter(out_dir.parent / "enrichment_go.xlsx") as writer:
-            df = self.enrichment_go.copy()
-            df.reset_index(inplace=True)
-            df.to_excel(writer, "go", index=False)
-            ws = writer.sheets["go"]
-            try:
-                ws.autofilter(0, 0, df.shape[0], df.shape[1] - 1)
-            except:
-                logger.warning("XLS formatting issue.")
-"""
