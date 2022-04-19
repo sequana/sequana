@@ -103,12 +103,12 @@ enriched). All enriched GO terms are stored in tables""",
 @click.option("--output-directory", show_default=True, default="enrichment_uniprot")
 @common_logger
 def enrichment_uniprot(**kwargs):
-    """Create a HTML report for various sequana out
+    """GO enrichment using Uniprot and HTML report creation
 
     \b
-    * enrichment: the output of RNADiff pipeline
+    The input should be the output of the RNADiff pipeline
 
-    Example for the enrichment module:
+    Example::
 
         sequana enrichment-uniprot rnadiff.csv --taxon 10090
             --log2-foldchange-cutoff 2 
@@ -116,25 +116,14 @@ def enrichment_uniprot(**kwargs):
         sequana enrichment rnadiff/rnadiff.csv
             --taxon 189518 \
             --log2-foldchange-cutoff 2 
-            --ontologies MF SLIM_MF
+            --ontologies MF 
 
     \b
-    Valid ontologies are: MF, BP, CC, SLIM_MF, SLIM_BP, SLIM_CC, 
-    PROTEIN, "PANTHER_PATHWAY", "REACTOME_PATHWAY"
+    Valid ontologies are: MF, BP, CC
 
 
     """
-    valid = [
-        "MF",
-        "BP",
-        "CC",
-        "SLIM_MF",
-        "SLIM_BP",
-        "SLIM_CC",
-        "PROTEIN",
-        "PANTHER_PATHWAY",
-        "REACTOME_PATHWAY",
-    ]
+    valid = {"MF", "BP",  "CC"}
 
     ontologies = eval(kwargs["ontologies"])
     for ontology in ontologies:

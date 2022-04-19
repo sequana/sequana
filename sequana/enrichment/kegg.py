@@ -167,7 +167,7 @@ class KEGGPathwayEnrichment:
         try:
             self.compute_enrichment()
         except Exception as err:  # pragma: no cover
-            print(err)
+            logger.critical(err)
             logger.critical("An error occured while computing enrichments. ")
 
     def _check_category(self, cat):

@@ -168,8 +168,13 @@ class UniprotEnrichment(Ontology, PlotGOTerms):
         for i, x in enumerate(conv["Gene names"]):
             names = x.split()
 
-            # for cryptococcus, keep first name starting with CNAG else, the first word.
+            # Some gene names are very species-dependent. 
+            # A gene name may also be composed of several valid names
+
+            # for cryptococcus, we keep first name starting with CNAG , otherwise we keep the first word only.
             names = [x for x in names if x.startswith("CNAG_")] + [x for x in names if not x.startswith("CNAG_")]
+
+            # irrespective of the list of names, we only keep the first one
             results.append(names[0])
         return results
 

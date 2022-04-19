@@ -59,7 +59,7 @@ class Mart:  # pragma: no cover
 
     def _set_dataset(self, dataset):
         if dataset not in self.datasets["name"].values:
-            raise ValueError("Invalid dataset {}. Check the Choose amongst {}".format(dataset, self.datasets))
+            raise ValueError("Invalid dataset {}. Choose amongst {}".format(dataset, self.datasets))
         self._dataset = dataset
         self.attributes = self.biomart.attributes(dataset=dataset)
         self.filters = self.biomart.filters(dataset=dataset)
@@ -96,6 +96,6 @@ class Mart:  # pragma: no cover
 
         date = time.localtime()
         if filename is None:
-            filename = "biomart_{}__{}_{}_{}.csv".format(self.dataset, date.tm_year, date.tm_mon, date.tm_mday)
+            filename = "biomart_{}_{}_{}_{}.csv".format(self.dataset, date.tm_year, date.tm_mon, date.tm_mday)
         logger.info("Saving into {}".format(filename))
         df.to_csv(filename, index=False)

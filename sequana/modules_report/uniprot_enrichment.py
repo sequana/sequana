@@ -102,7 +102,7 @@ class ModuleUniprotEnrichment(SequanaBaseModule):
                 "content": f"""
 
 <p>In the following sections, you will find the GO
-terms enrichment. The input data for those analyis is the output of the RNADiff
+terms enrichment. The input data for those analysis is the output of the RNADiff
 analysis where adjusted p-values above 0.05 are excluded. Moreover, we removed 
 candidates with log2 fold change below {log2fc}. Using these filters, the list of
 differentially expressed genes is made of {total_up} up and {total_down} down genes (total {total})</p>

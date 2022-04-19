@@ -106,7 +106,7 @@ up-to-date status and documentation.
 Contributors
 ============
 
-Maintaining BioServices would not have been possible without users and contributors. 
+Maintaining Sequana would not have been possible without users and contributors.
 Each contribution has been an encouragement to pursue this project. Thanks to all:
 
 .. image:: https://contrib.rocks/image?repo=sequana/sequana

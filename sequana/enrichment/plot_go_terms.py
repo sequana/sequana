@@ -28,7 +28,10 @@ class PlotGOTerms:
     """
 
     def __init__(self):
-        pass
+        # will be defined by the parent class
+        self.enrichment = {}
+        self.gene_sets = {}
+        self.df_genes = None
 
     def get_data(self, category, ontologies, include_negative_enrichment=True, fdr=0.05):
         """
@@ -122,7 +125,7 @@ class PlotGOTerms:
     ):
 
         if ontologies is None:
-            ontologies = ["MF", "BP", "CC"]
+            ontologies = {"MF", "BP", "CC"}
         assert sort_by in ["pValue", "fold_enrichment", "fdr"]
 
         df = self.get_data(
@@ -142,7 +145,7 @@ class PlotGOTerms:
         subdf = df.copy()
 
         logger.debug("Filtering out the 3 parent terms")
-        to_ignore = [self.MF, self.CC, self.BP]
+        to_ignore = {"GO:0003674", "GO:0008150", "GO:0005575"}
         subdf = subdf.query("id not in @to_ignore")
         df = df.query("id not in @to_ignore")
 
@@ -150,15 +153,12 @@ class PlotGOTerms:
             return subdf
 
         # Keeping only a part of the data, sorting by pValue
-        if sort_by == "pValue":
-            subdf = subdf.sort_values(by="pValue", ascending=False).iloc[-max_features:]
-            df = df.sort_values(by="pValue", ascending=False)
+        if sort_by in ["pValue", "fdr"]:
+            subdf = subdf.sort_values(by=sort_by, ascending=False).iloc[-max_features:]
+            df = df.sort_values(by=sort_by, ascending=False)
         elif sort_by == "fold_enrichment":
             subdf = subdf.sort_values(by="abs_log2_fold_enrichment", ascending=True).iloc[-max_features:]
             df = df.sort_values(by="abs_log2_fold_enrichment", ascending=False)
-        elif sort_by == "fdr":
-            subdf = subdf.sort_values(by="fdr", ascending=False).iloc[-max_features:]
-            df = df.sort_values(by="fdr", ascending=False)
 
         subdf = subdf.reset_index(drop=True)
 
