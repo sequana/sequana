@@ -16,6 +16,7 @@ from sequana import version
 from .biomart import biomart
 from .enrichment_kegg import enrichment_kegg
 from .enrichment_panther import enrichment_panther
+from .enrichment_uniprot import enrichment_uniprot
 from .fasta import fasta
 from .fastq import fastq
 from .feature_count import feature_counts
@@ -60,6 +61,7 @@ def main(**kwargs):
 main.add_command(biomart)
 main.add_command(enrichment_kegg)
 main.add_command(enrichment_panther)
+main.add_command(enrichment_uniprot)
 main.add_command(fastq)
 main.add_command(fasta)
 main.add_command(feature_counts)

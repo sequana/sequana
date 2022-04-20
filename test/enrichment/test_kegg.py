@@ -7,15 +7,21 @@ from . import test_dir
 
 
 
-@pytest.mark.xfail(reason="too slow or service may be down")
-def test_ke():
+def test_ke(tmpdir):
     up = pd.read_csv(f"{test_dir}/data/ecoli_up_gene.csv")
     down = pd.read_csv(f"{test_dir}/data/ecoli_down_gene.csv")
     up = list(up.Name)
     down = list(down.Name)
     gene_lists = {'up': up, 'down': down, 'all': up +down}
 
-    ke = KEGGPathwayEnrichment(gene_lists, "lbi", log2_fc=0)
+    from sequana import logger
+    logger.setLevel('INFO')
+    ke = KEGGPathwayEnrichment(gene_lists, "eco",
+            preload_directory=f"{test_dir}/data/kegg_pathways/eco/")
+
+    with pytest.raises(ValueError):
+        ke.barplot('dummy')
+
     ke.barplot('down')
     ke.barplot('up')
     ke.barplot('down')
@@ -24,10 +30,13 @@ def test_ke():
     assert ke.find_pathways_by_gene("moaA")
     assert ke.find_pathways_by_gene("moaA", match="exact")
 
-    # cleanup
-    filenames = glob.glob(f"{test_dir}/test/CUSTOM*")
-    for filename in filenames:
-        os.remove(filename)
-    os.removedirs(f"{test_dir}/test")
- 
+
+    # save one pathway (just one to speed up things)
+    outpng = tmpdir.join('test.png')
+    df = pd.read_csv(f"{test_dir}/data/ecoli_all_gene.csv", index_col=0)
+    ke.save_pathway('eco04122', df, filename=outpng)
+
+    # save all pathways (same as input)
+    path = tmpdir.mkdir("pathways_tmp")
+    ke.export_pathways_to_json(str(path))
 

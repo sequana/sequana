@@ -19,7 +19,7 @@ logger = colorlog.getLogger(__name__)
 __all__ = ["BUSCO"]
 
 
-class BUSCO(object):
+class BUSCO:
     """Wrapper of the BUSCO output
 
     "BUSCO provides a quantitative measures for the assessment
@@ -42,7 +42,11 @@ class BUSCO(object):
             code source (testing)
 
         """
+        # version 3.0.1
         self.df = pd.read_csv(filename, sep="\t", skiprows=4)
+        if 'Status' not in self.df.columns:
+            # version 5.2.2
+            self.df = pd.read_csv(filename, sep="\t", skiprows=2)
 
     def pie_plot(self, filename=None, hold=False):
         """Plot PIE plot of the status (complete / fragment / missed)
