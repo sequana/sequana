@@ -2,12 +2,14 @@ from sequana.assembly import BUSCO
 from . import test_dir
 
 
-def test_busco():
+def test_busco(tmpdir):
+
+    outname = tmpdir.join('test.png')
     filename = f"{test_dir}/data/tsv/test_busco_full_table.tsv"
     b = BUSCO(filename)
     print(b)
-    b.pie_plot()
-    b.scatter_plot()
+    b.pie_plot(filename=outname)
+    b.scatter_plot(filename=outname)
     assert b.score > 90
     assert b.score <91
 
