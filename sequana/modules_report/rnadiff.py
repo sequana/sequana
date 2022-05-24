@@ -502,13 +502,16 @@ value as a function of the log2 ratio of diﬀerential expression. </p>"""
             "buttons": ["copy", "csv"],
         }
 
-        datatable = DataTable(df, f"{name}_table_all")
+        idname = name.replace(".","")
+
+        datatable = DataTable(df, f"{idname}_table_all")
         datatable.datatable.datatable_options = options
         js_all = datatable.create_javascript_function()
         html_tab_all = datatable.create_datatable(float_format="%.3e")
 
         df_sign = df.query("padj<=0.05 and (log2FoldChange>1 or log2FoldChange<-1)")
-        datatable = DataTable(df_sign, f"{name}_table_sign")
+
+        datatable = DataTable(df_sign, f"{idname}_table_sign")
         datatable.datatable.datatable_options = options
         js_sign = datatable.create_javascript_function()
         html_tab_sign = datatable.create_datatable(float_format="%.3e")
@@ -536,12 +539,12 @@ between the condition versus the reference condition</li>
 </li>
 </ul>
 </p>
-<h3>Significative only<a id="{name}_table_sign"></a></h3>
+<h3>Significative only<a id="{idname}_table_sign"></a></h3>
 here below is a subset of the next table. It contains all genes below adjusted
 p-value of 0.05 and absolute log2 fold change above 1.
 {js_sign} {html_tab_sign} 
 
-<h3>All genes<a id="{name}_table_all"></a></h3>
+<h3>All genes<a id="{idname}_table_all"></a></h3>
 {js_all} {html_tab_all}""",
             }
         )

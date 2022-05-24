@@ -6,7 +6,7 @@ References
 
 .. contents::
 
-Assembly related
+Assembly and contigs related
 -----------------------------
 
 .. automodule:: sequana.assembly

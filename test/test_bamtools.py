@@ -130,6 +130,8 @@ def test_bamreport(tmpdir):
 def test_cs():
     from sequana.bamtools import CS
     assert  CS('-a:6-g:14+g:2+c:9*ac:10-a:13-a') ==  {'D': 4, 'I': 2, 'M': 54, 'S': 1}
+    assert  CS('-a:6-g:14+g:2+c:9*ac:10-a:13-a:2*ac') ==  {'D': 4, 'I': 2, 'M': 56, 'S': 2}
+    assert  CS('-a:6-g:14+g:2+c:9*ac:10-a:13-a:1+g') ==  {'D': 4, 'I': 3, 'M': 55, 'S': 1}
 
 
 def test_cs_in_bam():

@@ -27,7 +27,6 @@
     developers to convert their SAM to BAM.
 
 """
-import os
 import json
 import math
 

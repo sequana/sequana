@@ -876,6 +876,10 @@ class RNADiffResults:
             df = df[fc_filt.values & fdr_filt.values]
             df.reset_index(inplace=True)
 
+            if annot_col not in df.columns:
+                logger.error(f"{annot_col} not found in input file. Use one of {df.columns}")
+                sys.exit(1)
+
             if Nmax:
                 df.sort_values("log2FoldChange", ascending=False, inplace=True)
                 up_genes = list(df.query("log2FoldChange > 0")[annot_col])[:Nmax]

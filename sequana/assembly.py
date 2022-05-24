@@ -33,6 +33,8 @@ class BUSCO:
     percentage in the range 0-100.
 
     :reference: http://busco.ezlab.org/
+
+    .. note:: support version 3.0.1 and new formats from v5.X
     """
 
     def __init__(self, filename="full_table_testbusco.tsv"):
@@ -44,12 +46,13 @@ class BUSCO:
         """
         # version 3.0.1
         self.df = pd.read_csv(filename, sep="\t", skiprows=4)
-        if 'Status' not in self.df.columns:
+        if "Status" not in self.df.columns:
             # version 5.2.2
             self.df = pd.read_csv(filename, sep="\t", skiprows=2)
+        self.df.rename({"# Busco id": "ID"}, inplace=True, axis=1)
 
     def pie_plot(self, filename=None, hold=False):
-        """Plot PIE plot of the status (complete / fragment / missed)
+        """Pie plot of the status (completed / fragment / missed)
 
         .. plot::
             :include-source:
@@ -61,7 +64,7 @@ class BUSCO:
         """
         if hold is False:
             pylab.clf()
-        self.df.groupby("Status").count()["# Busco id"].plot(kind="pie")
+        self.df.groupby("Status").count()["ID"].plot(kind="pie")
         pylab.ylabel("")
         # pylab.title("Distribution Complete/Fragmented/Missing")
         # pylab.legend()
@@ -108,7 +111,7 @@ class BUSCO:
         orthologs
 
         """
-        df = self.df.drop_duplicates(subset=["# Busco id"])
+        df = self.df.drop_duplicates(subset=["ID"])
         data = {}
         data["S"] = sum(df.Status == "Complete")
         data["F"] = sum(df.Status == "Fragmented")
