@@ -6,24 +6,43 @@ from . import test_dir
 
 sharedir=f"{test_dir}/data/vcf"
 
-
 def test_snpeff(tmpdir):
 
     outdir = tmpdir.mkdir("snpeff")
     log = outdir.join("snpeff.log")
+    output = outdir.join("snpeff.vcf")
+    html = outdir.join("snpeff.html")
+
+    # must be first to enforce call to _add_custom_db method
+    with pytest.raises(SystemExit):
+        # missing fasta
+        mydata = snpeff.SnpEff(annotation=f"{test_dir}/data/gff/ecoli_MG1655.gff",
+            log=log, snpeff_datadir=outdir, fastafile="dummy")
+
+    # test a GFF file
+    mydata = snpeff.SnpEff(annotation=f"{test_dir}/data/gff/ecoli_MG1655.gff",
+        log=log, snpeff_datadir=outdir, fastafile=f"{test_dir}/data/fasta/ecoli_MG1655.fa")
+
 
     mydata = snpeff.SnpEff(annotation=f"{sharedir}/JB409847.gbk",
         log=log, snpeff_datadir=outdir)
 
-    # enter in some different conditions in the constructor.
+    # enter in some different conditions in the constructor with log
     mydata = snpeff.SnpEff(annotation=f"{sharedir}/JB409847.gbk",
         log=log, snpeff_datadir=outdir)
+    mydata.launch_snpeff(f"{sharedir}/JB409847.vcf", output, html_output=html)
 
-    mydata.launch_snpeff(f"{sharedir}/JB409847.vcf", log)
+    # without log
+    mydata = snpeff.SnpEff(annotation=f"{sharedir}/JB409847.gbk", snpeff_datadir=outdir)
+    mydata.launch_snpeff(f"{sharedir}/JB409847.vcf", output, html_output=html)
 
-
+    # file not found
     with pytest.raises(SystemExit):
         snpeff.SnpEff(annotation="dummy")
+
+    # incorrect extension
+    with pytest.raises(SystemExit):
+        snpeff.SnpEff("test_snpeff.py")
 
 
 def test_snpeff_download(tmpdir):
