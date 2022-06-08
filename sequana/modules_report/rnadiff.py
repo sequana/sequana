@@ -133,9 +133,9 @@ for that feature.</p>
             df = df[["comparison", "Description", "Down", "Up", "Total", "comparison_link"]]
 
             if lfc == 0:
-                df["comparison_link"] = [f"#{name}_table_all" for name in Sdata.index]
+                df["comparison_link"] = [f"#{name.replace(".", "")}_table_all" for name in Sdata.index]
             else:
-                df["comparison_link"] = [f"#{name}_table_sign" for name in Sdata.index]
+                df["comparison_link"] = [f"#{name.replace(".", "")}_table_sign" for name in Sdata.index]
             return df
 
         dt = DataTable(get_local_df(Sdefault), "dge_default")

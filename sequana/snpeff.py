@@ -44,7 +44,7 @@ class SnpEff(object):
 
     If your input is in GFF format, you must also provide the fasta reference file.
 
-    Will save relevant snpeff data into ./data directory (or 
+    Will save relevant snpeff data into ./data directory (or
     snpeff_datadir).
     """
 
@@ -56,7 +56,7 @@ class SnpEff(object):
         :param file_format: format of your file. ('only genbank actually')
         :param log: log file
         :param snpeff_datadir: default to data.
-        :param fastafile: if a GFF is used, you must provide the FASTA 
+        :param fastafile: if a GFF is used, you must provide the FASTA
             input file as well
         """
         # Check if the input file exist
@@ -67,7 +67,7 @@ class SnpEff(object):
             self.ref_name = os.path.basename(annotation).split(".")[0]
             if self.annotation.endswith(".genbank") or self.annotation.endswith(".gbk"):
                 self.format = "gbk"
-            elif self.annotation.endswith(".gff3") or self.annotation.endswith(".gff"): 
+            elif self.annotation.endswith(".gff3") or self.annotation.endswith(".gff"):
                 self.format = "gff3"
             else:
                 logger.error("Format must be genbank or gff3")
@@ -83,7 +83,7 @@ class SnpEff(object):
         # Set the log file
         self.log_file = log
         if log is not None:
-            if os.path.isfile(log): #pragma: no cover
+            if os.path.isfile(log):  # pragma: no cover
                 os.remove(log)
 
         # Check if snpEff.config is present
@@ -91,15 +91,15 @@ class SnpEff(object):
         if not os.path.exists(self.configfile):
             logger.info("snpEff.config file not found, creating one")
             self._copy_snpeff_config()
-        else: #pragma: no cover
+        else:  # pragma: no cover
             logger.info(f"Using existing config file: {self.configfile}.")
 
         # Create custom database
-        if not os.path.exists(self.snpeff_datadir + os.sep + self.ref_name + os.sep + "snpEffectPredictor.bin"):
+        if not os.path.exists(os.sep.join([self.snpeff_datadir, self.ref_name, "snpEffectPredictor.bin"])):
             self._add_custom_db()
-        elif not self._check_database(self.ref_name): #pragma: no cover
+        elif not self._check_database(self.ref_name):  # pragma: no cover
             self._add_db_in_config()
-        else:
+        else:  # pragma: no cover
             logger.info("DB already added in your config and database")
 
     def _check_database(self, reference):
@@ -107,7 +107,7 @@ class SnpEff(object):
 
         proc_db = sp.Popen(["snpEff", "databases"], stdout=sp.PIPE)
         snpeff_db = {line.split()[0] for line in proc_db.stdout}
-        if reference.encode("utf-8") in snpeff_db: #pragma: no cover
+        if reference.encode("utf-8") in snpeff_db:  # pragma: no cover
             return True
         return False
 
@@ -122,35 +122,31 @@ class SnpEff(object):
         """Add your custom file in the local snpEff database."""
         # create directory and copy annotation file
         logger.info("adding custom DB using your input file(s)")
-        logger.info(" - {}".format(self.annotation))
+        logger.info(f" - {self.annotation}")
         if self.fastafile:
-            logger.info(" - {}".format(self.fastafile))
+            logger.info(f" - {self.fastafile}")
 
         genome_dir = os.path.sep.join([self.snpeff_datadir, self.ref_name])
-        try:
-            os.makedirs(genome_dir)
-        except FileExistsError:
-            pass
+        os.makedirs(genome_dir, exist_ok=True)
 
         # add new annotation file in config file
         self._add_db_in_config()
 
         if self.format == "gbk":
-            shutil.copyfile(self.annotation, genome_dir + "/genes.gbk")
+            shutil.copyfile(self.annotation, os.sep.join([genome_dir, "genes.gbk"]))
             snpeff_build_line = ["snpEff", "build", "-genbank", "-v"]
             snpeff_build_line += [self.ref_name]
         elif self.format == "gff3":
-            shutil.copyfile(self.annotation, genome_dir + "/genes.gff")
+            shutil.copyfile(self.annotation, os.sep.join([genome_dir, "genes.gff"]))
             if self.fastafile is None or not os.path.exists(self.fastafile):
-                logger.error("Input file {} does not exist".format(self.fastafile))
+                logger.error(f"Input file {self.fastafile} does not exist")
                 sys.exit(1)
-            shutil.copyfile(self.fastafile, genome_dir + "sequences.fa")
+            shutil.copyfile(self.fastafile, os.sep.join([genome_dir, "sequences.fa"]))
             snpeff_build_line = ["snpEff", "build", "-gff3", "-v"]
             snpeff_build_line += [self.ref_name]
 
         # set config path, which has been saved in the datadir directory
-        snpeff_build_line += ['-c', self.configfile]
-
+        snpeff_build_line += ["-c", self.configfile]
 
         if self.log_file:
             with open(self.log_file, "ab") as fl:
@@ -159,7 +155,8 @@ class SnpEff(object):
             snp_build = sp.Popen(snpeff_build_line)
         snp_build.wait()
         rc = snp_build.returncode
-        if rc != 0: #pragma: no cover
+
+        if rc != 0:  # pragma: no cover
             logger.error("snpEff build return a non-zero code")
             sys.exit(rc)
 
@@ -180,10 +177,17 @@ class SnpEff(object):
         """
         # Create command line for Popen
         args_ann = ["snpEff", "-formatEff"]
+
+        # cast in case we have a Path instance (e.g. in testing)
         if html_output is not None:
-            args_ann += ["-s", html_output]
+            args_ann += ["-s", str(html_output)]
         args_ann += options.split()
-        args_ann += [self.ref_name, "-v", vcf_filename]
+        args_ann += ["-v", self.ref_name, vcf_filename]
+
+        # specify the config file
+        args_ann += ["-c", self.configfile]
+
+        logger.info(" ".join(args_ann))
 
         # Launch snpEff
         if self.log_file:
@@ -212,12 +216,12 @@ class SnpEff(object):
                     ):
                         break
                     chrom = chrom_regex.search(line)
-                    if chrom: #pragma: no cover
+                    if chrom:  # pragma: no cover
                         seq = [chrom.group(1)]
                         regex = chrom_regex
                 seq += [regex.search(line).group(1) for line in fp if regex.search(line)]
             return seq
-        else: #pragma: no cover
+        else:  # pragma: no cover
             regex = re.compile(r"^##sequence-region\s+([\w\.\-]+)")
             with open(self.annotation, "r") as fp:
                 line = fp.readline()
@@ -241,7 +245,7 @@ class SnpEff(object):
         ids_list = self._get_seq_ids()
 
         # check if both files have same number of contigs
-        if len(fasta_record) != len(ids_list): #pragma: no cover
+        if len(fasta_record) != len(ids_list):  # pragma: no cover
             print(
                 "fasta and annotation files don't have the same number of "
                 "contigs. Found {} and {}".format(len(fasta_record), len(ids_list))
@@ -250,15 +254,11 @@ class SnpEff(object):
 
         # check if directory exist
         output_dir = os.path.dirname(output_file)
-        try:
-            if not os.path.exists(output_dir):
-                os.makedirs(output_dir)
-        except FileNotFoundError:
-            pass
+        os.makedirs(output_dir, exist_ok=True)
 
         if sorted(fasta_record.names) == sorted(ids_list):
             logger.info("Files have same sequence id.")
-            if os.path.isfile(output_file): #pragma: no cover
+            if os.path.isfile(output_file):  # pragma: no cover
                 os.remove(output_file)
             os.symlink(os.path.realpath(fasta), output_file)
             return
@@ -291,8 +291,8 @@ def download_fasta_and_genbank(identifier, tag, genbank=True, fasta=True, outdir
 
         eu = EUtils()
         data = eu.EFetch(db="nuccore", id=identifier, rettype="gbwithparts", retmode="text")
-        if isinstance(data, int) and data == 400: #pragma: no cover
-            raise ValueError("{} not found on NCBI".format(identifier))
+        if isinstance(data, int) and data == 400:  # pragma: no cover
+            raise ValueError(f"{identifier} not found on NCBI")
         else:
             with open(f"{outdir}/{tag}.gbk", "w") as fout:
                 fout.write(data.decode())
@@ -302,12 +302,12 @@ def download_fasta_and_genbank(identifier, tag, genbank=True, fasta=True, outdir
 
         ena = ENA()
         data = ena.get_data(identifier, "fasta")
-        if isinstance(data, int) and data == 400: #pragma: no cover
+        if isinstance(data, int) and data == 400:  # pragma: no cover
             raise ValueError("{} not found on ENA".format(identifier))
         else:
             with open(f"{outdir}/{tag}.fa", "w") as fout:
                 try:
                     # change in API in v1.7.8
                     fout.write(data)
-                except: #pragma: no cover
+                except:  # pragma: no cover
                     fout.write(data.decode())

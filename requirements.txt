@@ -29,5 +29,6 @@ scikit-learn
 scipy
 seaborn
 statsmodels
+tqdm
 xlrd
 UpSetPlot
