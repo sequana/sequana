@@ -133,15 +133,15 @@ class SnpEff(object):
         self._add_db_in_config()
 
         if self.format == "gbk":
-            shutil.copyfile(self.annotation, genome_dir + "/genes.gbk")
+            shutil.copyfile(self.annotation, os.sep.join([genome_dir, "genes.gbk"]))
             snpeff_build_line = ["snpEff", "build", "-genbank", "-v"]
             snpeff_build_line += [self.ref_name]
         elif self.format == "gff3":
-            shutil.copyfile(self.annotation, genome_dir + "/genes.gff")
+            shutil.copyfile(self.annotation, os.sep.join([genome_dir, "genes.gff"]))
             if self.fastafile is None or not os.path.exists(self.fastafile):
                 logger.error(f"Input file {self.fastafile} does not exist")
                 sys.exit(1)
-            shutil.copyfile(self.fastafile, genome_dir + "/sequences.fa")
+            shutil.copyfile(self.fastafile, os.sep.join([genome_dir, "sequences.fa"]))
             snpeff_build_line = ["snpEff", "build", "-gff3", "-v"]
             snpeff_build_line += [self.ref_name]
 
