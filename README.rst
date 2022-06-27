@@ -117,9 +117,10 @@ Each contribution has been an encouragement to pursue this project. Thanks to al
 Changelog
 ~~~~~~~~~
 
-========= ========================================================================
+========= ==========================================================================
 Version   Description
-========= ========================================================================
+========= ==========================================================================
+0.14.2    * Kegg enrichment: add gene list 'all' and fix incomplete annotation case
 0.14.1    * New uniprot module for GO term enrichment and enrichment 
             refactorisation (transparent for users)
 0.14.0    * pinned click>=8.1.0 due to API change (autocomplete)
@@ -133,5 +134,5 @@ Version   Description
 0.12.6    * remove some rules now in https://github.com/sequana/sequana-wrappers
 0.12.5    * refactorisation of VCF tools/modules to use vcfpy instead of pyVCF
 0.12.4    * complete change log before 0.12.4 on readthedocs.org
-========= ========================================================================
+========= ==========================================================================
 
