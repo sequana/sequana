@@ -1,0 +1,10 @@
+# BUSCO version is: 5.2.2 
+# The lineage dataset is: euglenozoa_odb10 (Creation date: 2020-08-05, number of genomes: 31, number of BUSCOs: 130)
+# Busco id	Status	Sequence	Gene Start	Gene End	Strand	Score	Length	OrthoDB url	Description
+126at33682	Complete	tig1	10	20	-	3939.1	2178	https://www.orthodb.org/v10?query=126at33682	phosphatidylinositol 3-kinase
+33682	Missing
+408at33682	Complete	tig2	10	20	+	1756.9	1493	https://www.orthodb.org/v10?query=408at33682	Putativedeath-receptorfusionprotein(DUF2428)-putative/Pfam
+608at33682	Duplicated	tig3	10	20	+	1676.7	1040	https://www.orthodb.org/v10?query=608at33682	Putative NFX1-type zinc finger-containing protein 1-like
+608at33682	Duplicated	tig3	30	40	+	1	1040	https://www.orthodb.org/v10?query=608at33682	Putative NFX1-type zinc finger-containing protein 1-like
+608at336	Duplicated	tig4	10	20	+	1	1040	https://www.orthodb.org/v10?query=608at33682	Putative NFX1-type zinc finger-containing protein 1-like
+608at336	Duplicated	tig4	30	40	+	1676.7	1040	https://www.orthodb.org/v10?query=608at33682	Putative NFX1-type zinc finger-containing protein 1-like
