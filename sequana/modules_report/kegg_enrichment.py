@@ -20,6 +20,7 @@ from sequana.lazy import pylab
 
 from sequana.modules_report.base_module import SequanaBaseModule
 from sequana.utils.datatables_js import DataTable
+from sequana.enrichment.kegg import KEGGPathwayEnrichment
 
 from easydev import Progress
 
@@ -69,6 +70,14 @@ class ModuleKEGGEnrichment(SequanaBaseModule):
                 sys.exit(1)
         self.nmax = enrichment_params.get("nmax", 15)
 
+        self.ke = KEGGPathwayEnrichment(
+            self.gene_lists,
+            self.organism,
+            mapper=self.enrichment_params["mapper"],
+            background=self.enrichment_params["kegg_background"],
+            preload_directory=self.enrichment_params["preload_directory"],
+        )
+
         self.create_report_content()
         self.create_html("enrichment.html")
 
@@ -76,9 +85,7 @@ class ModuleKEGGEnrichment(SequanaBaseModule):
         self.sections = list()
         self.summary()
         self.add_kegg()
-        self.sections.append(
-            {"name": "3 - Info", "anchor": "command", "content": self.command}
-        )
+        self.sections.append({"name": "3 - Info", "anchor": "command", "content": self.command})
 
     def summary(self):
         """Add information of filter."""
@@ -113,64 +120,59 @@ maximum of {self.nmax} pathways. </p>
     def add_kegg(self):
         logger.info("Enrichment module: kegg term")
         style = "width:45%"
-        from sequana.enrichment.kegg import KEGGPathwayEnrichment
-
-        ke = KEGGPathwayEnrichment(
-            self.gene_lists,
-            self.organism,
-            mapper=self.enrichment_params["mapper"],
-            background=self.enrichment_params["kegg_background"],
-            preload_directory=self.enrichment_params["preload_directory"],
-        )
 
         logger.info(f"Saving all pathways in kegg_pathways/{self.organism}")
-        ke.export_pathways_to_json()
+        self.ke.export_pathways_to_json()
 
-        # Image kegg pathways down
-        def plot_barplot_down(filename):
-            ke.barplot("down", nmax=self.nmax)
-            pylab.savefig(filename)
+        html = f""
 
-        img_barplot_down = self.create_embedded_png(
-            plot_barplot_down, "filename", style=style
-        )
+        for category in ["down", "up", "all"]:
+            df = self.ke.barplot(category, nmax=self.nmax)
+            n_enriched = len(df)
 
-        def plot_scatter_down(filename):
-            ke.scatterplot("down", nmax=self.nmax)
-            pylab.savefig(filename)
+            if len(df):
+                img_barplot = self.create_embedded_png(self.plot_barplot, "filename", style=style, category=category)
+                img_scatter = self.create_embedded_png(self.plot_scatter, "filename", style=style, category=category)
+                js_table, html_table, fotorama = self.get_table(category)
+            else:
+                img_barplot = img_scatterplot = js_table = html_table = fotorama = ""
 
-        img_scatter_down = self.create_embedded_png(
-            plot_scatter_down, "filename", style=style
-        )
+            html += f"""
+<h3>2.1 - KEGG pathways enriched in {category} regulated genes</h3>
+<p>{n_enriched} KEGG pathways are found enriched in {category} regulated genes</p>
+<br>
+{img_barplot}
+{img_scatter}
+<hr>
+{js_table} {html_table}
+<hr>
+<p>Here below are the pathways with gene colored according to their fold change.
+Blue colors are for down-regulated genes and Orange are for up-regulated genes. 
+(Note that absolute log2 fold change above 4 are clipped to 4; So a gene with a
+log2 fold change of 4 of 40 will have the same darkest color.). </p>
+{fotorama}
 
-        # Image kegg pathways up
-        def plot_barplot_up(filename):
-            ke.barplot("up", nmax=self.nmax)
-            pylab.savefig(filename)
+"""
+        self.sections.append({"name": "2 - KEGG", "anchor": "kegg", "content": html})
 
-        img_barplot_up = self.create_embedded_png(
-            plot_barplot_up, "filename", style=style
-        )
+    def plot_barplot(self, filename, category=None):
+        self.ke.barplot(category, nmax=self.nmax)
+        pylab.savefig(filename)
 
-        def plot_scatter_up(filename):
-            ke.scatterplot("up", nmax=self.nmax)
-            pylab.savefig(filename)
+    def plot_scatter(self, filename, category=None):
+        self.ke.scatterplot(category, nmax=self.nmax)
+        pylab.savefig(filename)
 
-        img_scatter_up = self.create_embedded_png(
-            plot_scatter_up, "filename", style=style
-        )
-
+    def get_table(self, category):
         # Results down (pathway info)
-        html_before_table = """<p>Enrichment pathways summary</p>"""
-        df_down = ke.barplot("down", nmax=self.nmax)
+        # html_before_table = """<p>Enrichment pathways summary</p>"""
 
-        if len(df_down):
-            links = [
-                "https://www.genome.jp/dbget-bin/www_bget?path:{}".format(x)
-                for x in df_down["pathway_id"]
-            ]
-            df_down["links"] = links
-            df_down = df_down[
+        df = self.ke.barplot(category, nmax=self.nmax)
+
+        if len(df):
+            links = ["https://www.genome.jp/dbget-bin/www_bget?path:{}".format(x) for x in df["pathway_id"]]
+            df["links"] = links
+            df = df[
                 [
                     "pathway_id",
                     "name",
@@ -185,17 +187,15 @@ maximum of {self.nmax} pathways. </p>
 
             # save pathways and add fotorama
             logger.setLevel("WARNING")
-            pb = Progress(len(df_down))
+            pb = Progress(len(df))
             files = []
-            for i, ID in enumerate(df_down["pathway_id"]):
-                df = ke.save_pathway(
-                    ID, self.data, filename=f"{config.output_dir}/{ID}.png"
-                )
+            for i, ID in enumerate(df["pathway_id"]):
+                df_pathways = self.ke.save_pathway(ID, self.data, filename=f"{config.output_dir}/{ID}.png")
                 files.append(f"{ID}.png")
                 pb.animate(i + 1)
-            fotorama_down = self.add_fotorama(files, width=800)
+            fotorama = self.add_fotorama(files, width=800)
 
-            datatable = DataTable(df_down, "kegg_down")
+            datatable = DataTable(df, f"kegg_{category}")
             datatable.datatable.set_links_to_column("links", "pathway_id")
             datatable.datatable.datatable_options = {
                 "scrollX": "true",
@@ -204,95 +204,7 @@ maximum of {self.nmax} pathways. </p>
                 "dom": "Bfrtip",
                 "buttons": ["copy", "csv"],
             }
-            js_table_down = datatable.create_javascript_function()
-            html_table_down = datatable.create_datatable(float_format="%E")
+            js_table = datatable.create_javascript_function()
+            html_table = datatable.create_datatable(float_format="%E")
 
-        # Results up (pathway info)
-        df_up = ke.barplot("up", nmax=self.nmax)
-        if len(df_up):
-            links = [
-                "https://www.genome.jp/dbget-bin/www_bget?path:{}".format(x)
-                for x in df_up["pathway_id"]
-            ]
-            df_up["links"] = links
-            df_up = df_up[
-                [
-                    "pathway_id",
-                    "name",
-                    "size",
-                    "Overlap",
-                    "P-value",
-                    "Adjusted P-value",
-                    "Genes",
-                    "links",
-                ]
-            ]
-            datatable = DataTable(df_up, "kegg_up")
-            datatable.datatable.set_links_to_column("links", "pathway_id")
-            datatable.datatable.datatable_options = {
-                "scrollX": "true",
-                "pageLength": 20,
-                "scrollCollapse": "true",
-                "dom": "Bfrtip",
-                "buttons": ["copy", "csv"],
-            }
-            js_table_up = datatable.create_javascript_function()
-            html_table_up = datatable.create_datatable(float_format="%E")
-            pb = Progress(len(df_up))
-            files = []
-            for i, ID in enumerate(df_up["pathway_id"]):
-                df = ke.save_pathway(
-                    ID, self.data, filename=f"{config.output_dir}/{ID}.png"
-                )
-                files.append(f"{ID}.png")
-                pb.animate(i + 1)
-            fotorama_up = self.add_fotorama(files, width=800)
-            # logger.setLevel(level)
-
-        Ndown = len(df_down)
-        Nup = len(df_up)
-
-        if Ndown == 0:
-            img_barplot_down = ""
-            img_scatter_down = ""
-            fotorama_down = ""
-            js_table_down = ""
-            html_table_down = ""
-        if Nup == 0:
-            img_barplot_up = ""
-            img_scatter_up = ""
-            fotorama_up = ""
-            js_table_up = ""
-            html_table_up = ""
-
-        html = f"""
-<h3>2.1 - KEGG pathways down regulated</h3>
-<p>{Ndown} KEGG pathways are found to be down regulated</p>
-<br>
-{img_barplot_down}
-{img_scatter_down}
-<hr>
-{js_table_down} {html_table_down}
-<hr>
-<p>Here below are the pathways with gene colored according to their fold change.
-Blue colors are for down-regulated genes and Orange are for up-regulated genes. 
-(Note that absolute log2 fold change above 4 are clipped to 4; So a gene with a
-log2 fold change of 4 of 40 will have the same darkest color.). </p>
-{fotorama_down}
-
-
-<h3>2.1 - KEGG pathways up regulated</h3>
-<p>{Nup} KEGG pathways are found to be up regulated</p>
-<br>
-{img_barplot_up}
-{img_scatter_up}
-<hr>
-{js_table_up} {html_table_up}
-<hr>
-<p>Here below are the pathways with gene colored according to their fold change.
-Blue colors are for down-regulated genes and Orange are for up-regulated genes. 
-(Note that absolute log2 fold change above 4 are clipped to 4; So a gene with a
-log2 fold change of 4 of 40 will have the same darkest color.). </p>
-{fotorama_up}
-"""
-        self.sections.append({"name": "2 - KEGG", "anchor": "kegg", "content": html})
+            return (js_table, html_table, fotorama)
