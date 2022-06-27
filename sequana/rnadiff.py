@@ -900,16 +900,24 @@ class RNADiffResults:
                 "all": all_genes,
             }
 
+            # sometimes, an attribute may not have an entry for each ID...
+            # the column correponding to this annotation will therefore be 
+            # made of NaN, which need to be removed (or None possibly?). 
             if dropna:
                 for direction in gene_lists_dict[compa]:
                     gl = gene_lists_dict[compa][direction]
                     if not gl:
                         continue
-                    perc_unannotated = gl.count(None) / len(gl) * 100
+
+                    N = len(gl)
+                    # drop None and nan (from math.nan)
+                    gl = [x for x in gl if not str(x)=='nan' and x]
+
+                    perc_unannotated = len(gl) / N * 100
                     logger.warning(
-                        f"{compa} {direction}: Removing {perc_unannotated:.0f}% of the data for enrichment analysis due to missing identifiers in annotation."
+                        f"{compa} {direction}: Removing {perc_unannotated:.0f}% of the genes for enrichment (missing identifiers in annotation)."
                     )
-                    gene_lists_dict[compa][direction] = [x for x in gl if x != None]
+                    gene_lists_dict[compa][direction] = gl
 
         return gene_lists_dict
 
