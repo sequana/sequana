@@ -40,9 +40,6 @@ jobs:
 
     - name: Install sequana with pip
       run: |
-        which pip
-        python --version
-        which python
         pip install .[testing]
         pip install multiqc==1.11.0
     - name: testing

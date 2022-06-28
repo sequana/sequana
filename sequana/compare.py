@@ -243,13 +243,13 @@ class RNADiffCompare(Compare):
 
         if mode in ["down"]:
             # Negative values !
-            gl1 = set(self.r1.gene_lists["down"])
-            gl2 = set(self.r2.gene_lists["down"])
+            gl1 = list(set(self.r1.gene_lists["down"]))
+            gl2 = list(set(self.r2.gene_lists["down"]))
             A = self.r1.df.loc[gl1].sort_values(by=sortby)
             B = self.r2.df.loc[gl1].sort_values(by=sortby)
         else:
-            gl1 = set(self.r1.gene_lists[mode])
-            gl2 = set(self.r2.gene_lists[mode])
+            gl1 = list(set(self.r1.gene_lists[mode]))
+            gl2 = list(set(self.r2.gene_lists[mode]))
             A = self.r1.df.loc[gl1].sort_values(by=sortby, ascending=False)
             B = self.r2.df.loc[gl1].sort_values(by=sortby, ascending=False)
         # sometimes, up and down may be inverted as compared to the other
@@ -309,9 +309,10 @@ class RNADiffCompare(Compare):
 
         A = self.r1.df.loc[self.r1.gene_lists[mode]]
         B = self.r2.df.loc[self.r2.gene_lists[mode]]
-        AB = set(A.index).intersection(set(B.index))
-        Ao = A.loc[set(A.index).difference(set(B.index))]
-        Bo = B.loc[set(B.index).difference(set(A.index))]
+        # cast set to list to avoid future error in pandas (june 2022)
+        AB = list(set(A.index).intersection(set(B.index)))
+        Ao = A.loc[list(set(A.index).difference(set(B.index)))]
+        Bo = B.loc[list(set(B.index).difference(set(A.index)))]
         Ac = A.loc[AB]
         Bc = B.loc[AB]
 
@@ -329,9 +330,10 @@ class RNADiffCompare(Compare):
         labels = [cond1, cond2]
         A = self.r1.df.loc[self.r1.gene_lists[mode]]
         B = self.r2.df.loc[self.r2.gene_lists[mode]]
-        AB = set(A.index).intersection(set(B.index))
-        Aonly = A.loc[set(A.index).difference(set(B.index))]
-        Bonly = B.loc[set(B.index).difference(set(A.index))]
+        # cast set to list to avoid future error in pandas (june 2022)
+        AB = list(set(A.index).intersection(set(B.index)))
+        Aonly = A.loc[list(set(A.index).difference(set(B.index)))]
+        Bonly = B.loc[list(set(B.index).difference(set(A.index)))]
         Acommon = A.loc[AB]
         Bcommon = B.loc[AB]
 

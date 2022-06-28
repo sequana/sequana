@@ -120,8 +120,8 @@ Changelog
 ========= ==========================================================================
 Version   Description
 ========= ==========================================================================
-0.14.2    * Kegg enrichment: add gene list 'all' and fix incomplete annotation case
-0.14.1    * New uniprot module for GO term enrichment and enrichment 
+0.14.1    * Kegg enrichment: add gene list 'all' and fix incomplete annotation case
+          * New uniprot module for GO term enrichment and enrichment 
             refactorisation (transparent for users)
 0.14.0    * pinned click>=8.1.0 due to API change (autocomplete)
           * moved tests around to decrease packaging from 16 to 4Mb

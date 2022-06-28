@@ -139,20 +139,23 @@ class UniprotEnrichment(Ontology, PlotGOTerms):
         self.enrichment = {}
         self.stats = {}
 
-        self.df_genes = self._fill_uniprot_for_taxon()
+        try:
+            self.df_genes = self._fill_uniprot_for_taxon()
 
-        self.df_genes = self.df_genes[self.df_genes["Gene names"].isnull() == False]
-        self.df_genes.index = self._get_gene_names(self.df_genes)
+            self.df_genes = self.df_genes[self.df_genes["Gene names"].isnull() == False]
+            self.df_genes.index = self._get_gene_names(self.df_genes)
 
-        BP = self.df_genes["Gene ontology (biological process)"]
-        CC = self.df_genes["Gene ontology (cellular component)"]
-        MF = self.df_genes["Gene ontology (molecular function)"]
+            BP = self.df_genes["Gene ontology (biological process)"]
+            CC = self.df_genes["Gene ontology (cellular component)"]
+            MF = self.df_genes["Gene ontology (molecular function)"]
 
-        self.gene_sets = {
-            "BP": self.get_go_gene_dict(BP),
-            "MF": self.get_go_gene_dict(MF),
-            "CC": self.get_go_gene_dict(CC),
-        }
+            self.gene_sets = {
+                "BP": self.get_go_gene_dict(BP),
+                "MF": self.get_go_gene_dict(MF),
+                "CC": self.get_go_gene_dict(CC),
+            }
+        except TypeError:
+            logger.critical("Uniprot search failed. You may try again if the unitprot server was done")
 
     def get_go_gene_dict(self, df):
         results = defaultdict(list)
@@ -201,7 +204,12 @@ class UniprotEnrichment(Ontology, PlotGOTerms):
         )
         uniprot = UniProt(cache=True, verbose=True)
         df = uniprot.search(f"organism:{self.taxon}", frmt="tab", columns=columns)
-        df = pd.read_csv(io.StringIO(df), sep="\t")
+
+        try:
+            df = pd.read_csv(io.StringIO(df), sep="\t")
+        except TypeError:
+            logger.critical(f"UniProt call failed and return code {df}")
+            return []
 
         # populate some information
         orgs = Counter(df["Organism"])
