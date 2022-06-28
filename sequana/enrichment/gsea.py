@@ -60,7 +60,7 @@ class GSEA:
             description=description,
         )
 
-        enr.results["Genes"] = [";".join(sorted(x.split(";"))) for x in enr.results["Genes"].values]
-        enr.results["size"] = [len(x.split(";")) for x in enr.results.Genes]
-
+        if len(enr.results):
+            enr.results["Genes"] = [";".join(sorted(x.split(";"))) for x in enr.results["Genes"].values]
+            enr.results["size"] = [len(x.split(";")) for x in enr.results.Genes]
         return enr
