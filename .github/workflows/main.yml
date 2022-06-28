@@ -58,7 +58,7 @@ jobs:
         python --version
         which python
         pip install .[testing]
-        #pip install multiqc==1.11.0
+        pip install multiqc==1.11.0
     - name: Test with pytest
       shell: bash -l {0}
       run: |

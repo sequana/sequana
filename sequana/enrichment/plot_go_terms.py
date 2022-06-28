@@ -150,7 +150,7 @@ class PlotGOTerms:
         df = df.query("id not in @to_ignore")
 
         if subdf is None or len(subdf) == 0:
-            return subdf
+            return df, subdf
 
         # Keeping only a part of the data, sorting by pValue
         if sort_by in ["pValue", "fdr"]:

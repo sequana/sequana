@@ -15,7 +15,7 @@ lxml
 matplotlib
 matplotlib-venn
 mock
-multiqc
+multiqc<=1.11
 packaging
 pandas>=0.22
 plotly
