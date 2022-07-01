@@ -184,26 +184,26 @@ class UniprotEnrichment(Ontology, PlotGOTerms):
     def _fill_uniprot_for_taxon(self):
         columns = ",".join(
             [
+                "accession",
                 "id",
-                "entry name",
-                "genes",
-                "genes(PREFERRED)",
-                "genes(ALTERNATIVE)",
-                "genes(OLN)",
-                "genes(ORF)",
-                "organism",
-                "organism-id",
-                "protein names",
+                "gene_name",
+                "gene_primary",
+                "gene_synonym",
+                "gene_oln",
+                "gene_orf",
+                "organism_name",
+                "organism_id",
+                "protein_name",
                 "ec",
                 "go",
-                "go(biological process)",
-                "go(molecular function)",
-                "go(cellular component)",
+                "go_p",
+                "go_f",
+                "go_c",
                 "go-id",
             ]
         )
         uniprot = UniProt(cache=True, verbose=True)
-        df = uniprot.search(f"organism:{self.taxon}", frmt="tab", columns=columns)
+        df = uniprot.search(f"organism_name:{self.taxon}", frmt="tsv", columns=columns)
 
         try:
             df = pd.read_csv(io.StringIO(df), sep="\t")
