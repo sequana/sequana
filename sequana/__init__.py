@@ -34,6 +34,8 @@ from .cigar import Cigar
 from .coverage import Coverage
 from .fastq import FastQ, FastQC, Identifier
 from .fasta import FastA
+# contig import is after fasta due to cycling imports
+from .contigs import Contigs
 from .gff3 import GFF3
 from .freebayes_vcf_filter import VCF_freebayes
 from .freebayes_bcf_filter import BCF_freebayes

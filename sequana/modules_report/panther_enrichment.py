@@ -42,7 +42,7 @@ class ModulePantherEnrichment(SequanaBaseModule):
         enrichment_params={
             "padj": 0.05,
             "log2_fc": 3,
-            "max_entries": 3000,
+            "max_entries": 3000,  # not used in enrichment
             "nmax": 50,
             "mapper": None,
             "plot_compute_levels": False,
@@ -69,7 +69,7 @@ class ModulePantherEnrichment(SequanaBaseModule):
         self.pe = PantherEnrichment(
             self.gene_lists,
             taxon,
-            max_entries=self.enrichment_params["max_entries"],
+            #max_entries=self.enrichment_params["max_entries"],
             log2_fc_threshold=self.enrichment_params["log2_fc"],
         )
 
@@ -244,11 +244,11 @@ function, CC for cellular components and BP for biological process.</p>
 
         for ontology in self.ontologies:
 
+
             # get dat without plotting to store the entire set of GO terms
             df, subdf = self.pe._get_plot_go_terms_data(
                 category, ontologies=ontology, compute_levels=False
             )
-
             # now plotting but showing only some restricted GO terms
             def plot_go_terms(filename, category, ontology):
                 df = self.pe.plot_go_terms(

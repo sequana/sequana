@@ -876,6 +876,10 @@ class RNADiffResults:
             df = df[fc_filt.values & fdr_filt.values]
             df.reset_index(inplace=True)
 
+            if annot_col not in df.columns:
+                logger.error(f"{annot_col} not found in input file. Use one of {df.columns}")
+                sys.exit(1)
+
             if Nmax:
                 df.sort_values("log2FoldChange", ascending=False, inplace=True)
                 up_genes = list(df.query("log2FoldChange > 0")[annot_col])[:Nmax]
@@ -896,16 +900,24 @@ class RNADiffResults:
                 "all": all_genes,
             }
 
+            # sometimes, an attribute may not have an entry for each ID...
+            # the column correponding to this annotation will therefore be 
+            # made of NaN, which need to be removed (or None possibly?). 
             if dropna:
                 for direction in gene_lists_dict[compa]:
                     gl = gene_lists_dict[compa][direction]
                     if not gl:
                         continue
-                    perc_unannotated = gl.count(None) / len(gl) * 100
+
+                    N = len(gl)
+                    # drop None and nan (from math.nan)
+                    gl = [x for x in gl if not str(x)=='nan' and x]
+
+                    perc_unannotated = len(gl) / N * 100
                     logger.warning(
-                        f"{compa} {direction}: Removing {perc_unannotated:.0f}% of the data for enrichment analysis due to missing identifiers in annotation."
+                        f"{compa} {direction}: Removing {perc_unannotated:.0f}% of the genes for enrichment (missing identifiers in annotation)."
                     )
-                    gene_lists_dict[compa][direction] = [x for x in gl if x != None]
+                    gene_lists_dict[compa][direction] = gl
 
         return gene_lists_dict
 

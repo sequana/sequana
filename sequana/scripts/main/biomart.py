@@ -26,6 +26,12 @@ logger = colorlog.getLogger(__name__)
     help="A valid mart name",
 )
 @click.option(
+    "--host",
+    default=None,
+    show_default=True,
+    help="A valid mart name such as www.ensembl.org (default) or fungi.ensembl.org",
+)
+@click.option(
     "--dataset",
     required=True,
     help="A valid dataset name. e.g. mmusculus_gene_ensembl, hsapiens_gene_ensembl",
@@ -66,9 +72,11 @@ def biomart(**kwargs):
     mart = kwargs["mart"]
     attributes = kwargs["attributes"]
     dataset = kwargs["dataset"]
+    host = kwargs["host"]
 
     from sequana.enrichment.mart import Mart
 
-    conv = Mart(dataset, mart)
+    conv = Mart(host=host, dataset=dataset, mart=mart)
+
     df = conv.query(attributes.split(","))
     conv.save(df, filename=kwargs["output"])
