@@ -409,6 +409,9 @@ class PantherEnrichment(Ontology, PlotGOTerms):
 
         # some extra information for convenience
         df["pct_diff_expr"] = df["number_in_list"] * 100 / df["number_in_reference"]
+
+        # could happen that all fold enrichment are set to 'NaN'
+        df = df[df['fold_enrichment'] != 'NaN']
         df["log2_fold_enrichment"] = pylab.log2(df["fold_enrichment"])
         df["abs_log2_fold_enrichment"] = abs(pylab.log2(df["fold_enrichment"]))
         df["expected"] = [int(x) for x in df.expected]

@@ -139,20 +139,23 @@ class UniprotEnrichment(Ontology, PlotGOTerms):
         self.enrichment = {}
         self.stats = {}
 
-        self.df_genes = self._fill_uniprot_for_taxon()
+        try:
+            self.df_genes = self._fill_uniprot_for_taxon()
 
-        self.df_genes = self.df_genes[self.df_genes["Gene names"].isnull() == False]
-        self.df_genes.index = self._get_gene_names(self.df_genes)
+            self.df_genes = self.df_genes[self.df_genes["Gene names"].isnull() == False]
+            self.df_genes.index = self._get_gene_names(self.df_genes)
 
-        BP = self.df_genes["Gene ontology (biological process)"]
-        CC = self.df_genes["Gene ontology (cellular component)"]
-        MF = self.df_genes["Gene ontology (molecular function)"]
+            BP = self.df_genes["Gene ontology (biological process)"]
+            CC = self.df_genes["Gene ontology (cellular component)"]
+            MF = self.df_genes["Gene ontology (molecular function)"]
 
-        self.gene_sets = {
-            "BP": self.get_go_gene_dict(BP),
-            "MF": self.get_go_gene_dict(MF),
-            "CC": self.get_go_gene_dict(CC),
-        }
+            self.gene_sets = {
+                "BP": self.get_go_gene_dict(BP),
+                "MF": self.get_go_gene_dict(MF),
+                "CC": self.get_go_gene_dict(CC),
+            }
+        except TypeError:
+            logger.critical("Uniprot search failed. You may try again if the unitprot server was done")
 
     def get_go_gene_dict(self, df):
         results = defaultdict(list)
@@ -181,27 +184,32 @@ class UniprotEnrichment(Ontology, PlotGOTerms):
     def _fill_uniprot_for_taxon(self):
         columns = ",".join(
             [
+                "accession",
                 "id",
-                "entry name",
-                "genes",
-                "genes(PREFERRED)",
-                "genes(ALTERNATIVE)",
-                "genes(OLN)",
-                "genes(ORF)",
-                "organism",
-                "organism-id",
-                "protein names",
+                "gene_name",
+                "gene_primary",
+                "gene_synonym",
+                "gene_oln",
+                "gene_orf",
+                "organism_name",
+                "organism_id",
+                "protein_name",
                 "ec",
                 "go",
-                "go(biological process)",
-                "go(molecular function)",
-                "go(cellular component)",
+                "go_p",
+                "go_f",
+                "go_c",
                 "go-id",
             ]
         )
         uniprot = UniProt(cache=True, verbose=True)
-        df = uniprot.search(f"organism:{self.taxon}", frmt="tab", columns=columns)
-        df = pd.read_csv(io.StringIO(df), sep="\t")
+        df = uniprot.search(f"organism_name:{self.taxon}", frmt="tsv", columns=columns)
+
+        try:
+            df = pd.read_csv(io.StringIO(df), sep="\t")
+        except TypeError:
+            logger.critical(f"UniProt call failed and return code {df}")
+            return []
 
         # populate some information
         orgs = Counter(df["Organism"])

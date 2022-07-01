@@ -144,7 +144,7 @@ def enrichment_kegg(**kwargs):
     rnadiff._log2_fc = log2fc
     rnadiff._alpha = padj
     gene_lists = rnadiff.get_gene_lists(
-        annot_col=annot_col, Nmax=kwargs.get("max_genes", 1000000)
+        annot_col=annot_col, Nmax=kwargs.get("max_genes", 1000000), dropna=True
     )  # no filter on number of genes
 
     output_directory = kwargs["output_directory"]

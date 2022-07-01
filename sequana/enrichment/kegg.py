@@ -384,8 +384,10 @@ class KEGGPathwayEnrichment:
             df_down["Name"] = df_down["gene_name"]
         elif "ID" in df_down.columns:
             df_down["Name"] = df_down["ID"]
+        elif "gene" in df_down.columns:
+            df_down["Name"] = df_down["gene"]
         else:
-            raise ValueError("Expected to find a column Name, gene_name or ID")
+            raise ValueError("Expected to find a column Name, gene_name, gene or ID")
 
         if "Name" in df_up.columns:
             pass
@@ -393,8 +395,10 @@ class KEGGPathwayEnrichment:
             df_up["Name"] = df_up["gene_name"]
         elif "ID" in df_up.columns:
             df_up["Name"] = df_up["ID"]
+        elif "gene" in df_up.columns:
+            df_up["Name"] = df_up["gene"]
         else:
-            raise ValueError("Expected to find a column Name, gene_name or ID")
+            raise ValueError("Expected to find a column Name, gene_name, gene or ID")
 
         logger.info("{}".format(pathway_ID))
         # logger.info("Total down-regulated: {}".format(len(df_down)))

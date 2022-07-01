@@ -167,7 +167,7 @@ def enrichment_panther(**kwargs):
     # setting these attributes set the gene list with log2fc and padj filter
     rnadiff._log2_fc = params["log2_fc"]
     rnadiff._alpha = params["padj"]
-    gene_lists = rnadiff.get_gene_lists(annot_col=annot_col, Nmax=kwargs.get("max_genes", None))
+    gene_lists = rnadiff.get_gene_lists(annot_col=annot_col, Nmax=kwargs.get("max_genes", None), dropna=True)
 
     output_directory = kwargs["output_directory"]
     for compa, gene_dict in gene_lists.items():
