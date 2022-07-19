@@ -97,19 +97,8 @@ class SnpEff(object):
         # Create custom database
         if not os.path.exists(os.sep.join([self.snpeff_datadir, self.ref_name, "snpEffectPredictor.bin"])):
             self._add_custom_db()
-        elif not self._check_database(self.ref_name):  # pragma: no cover
-            self._add_db_in_config()
         else:  # pragma: no cover
             logger.info("DB already added in your config and database")
-
-    def _check_database(self, reference):
-        """Check if your genbank/GFF is already added."""
-
-        proc_db = sp.Popen(["snpEff", "databases"], stdout=sp.PIPE)
-        snpeff_db = {line.split()[0] for line in proc_db.stdout}
-        if reference.encode("utf-8") in snpeff_db:  # pragma: no cover
-            return True
-        return False
 
     def _copy_snpeff_config(self):
         """Copy and unzip the snpEff.config file."""
@@ -162,10 +151,9 @@ class SnpEff(object):
 
     def _add_db_in_config(self):
         """Add new annotation at the end of snpEff.config file."""
-        logger.info("Updating configuration file")
-        if not self._check_database(self.ref_name):
-            with open(self.configfile, "a") as fp:
-                print(self.ref_name + ".genome : " + self.ref_name, file=fp)
+        logger.info(f"Updating configuration file in {self.configfile}")
+        with open(self.configfile, "a") as fp:
+            print(self.ref_name + ".genome : " + self.ref_name, file=fp)
 
     def launch_snpeff(self, vcf_filename, output, html_output=None, options=""):
         """Launch snpEff with the custom genbank file.
