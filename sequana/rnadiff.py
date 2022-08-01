@@ -911,9 +911,9 @@ class RNADiffResults:
 
                     N = len(gl)
                     # drop None and nan (from math.nan)
-                    gl = [x for x in gl if not str(x)=='nan' and x]
+                    gl = [x for x in gl if not str(x) == "nan" and x]
 
-                    perc_unannotated = len(gl) / N * 100
+                    perc_unannotated = (N - len(gl)) / N * 100
                     logger.warning(
                         f"{compa} {direction}: Removing {perc_unannotated:.0f}% of the genes for enrichment (missing identifiers in annotation)."
                     )
