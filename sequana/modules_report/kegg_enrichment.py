@@ -135,7 +135,7 @@ maximum of {self.nmax} pathways. </p>
                 img_scatter = self.create_embedded_png(self.plot_scatter, "filename", style=style, category=category)
                 js_table, html_table, fotorama = self.get_table(category)
             else:
-                img_barplot = img_scatterplot = js_table = html_table = fotorama = ""
+                img_barplot = img_scatter = js_table = html_table = fotorama = ""
 
             html += f"""
 <h3>2.1 - KEGG pathways enriched in {category} regulated genes</h3>
