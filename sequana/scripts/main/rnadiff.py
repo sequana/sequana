@@ -279,7 +279,7 @@ def rnadiff(**kwargs):
         perform the C vs A  and C vs B comparisons only, create this
         file (e.g. comparison.csv):
 
-            alternate,reference
+            alternative,reference
             C,A
             C,B
 

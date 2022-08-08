@@ -33,9 +33,12 @@ logger = colorlog.getLogger(__name__)
 @click.option("--seq-type", default="rRNA", help="The annotation type (column 3 in gff) to target for probes.")
 @click.option("--max-n-probes", default=384, type=click.INT, help="The maximum number of probes to design.")
 @click.option("--threads", default=4, type=click.INT, help="The number of threads to use for cd-hit-est.")
+@click.option("--identity-step", default=0.01, type=click.FLOAT, help="The number of threads to use for cd-hit-est.")
+@click.option("--output-image", default=None)
 @click.option(
     "--force",
     default=False,
+    is_flag=True,
     type=click.BOOL,
     help="If output directory exists, use this option to erase previous results",
 )
@@ -51,3 +54,6 @@ def ribodesigner(**kwargs):
         sys.exit(1)
 
     RiboDesigner(**kwargs).run()
+    if kwargs["output_image"]:
+        from pylab import savefig
+        savefig("/".join([kwargs["output_directory"], kwargs["output_image"]]))
