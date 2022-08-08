@@ -11,6 +11,7 @@
 ##############################################################################
 """Ribodesigner module"""
 import sys
+import json
 import subprocess
 from pathlib import Path
 
@@ -89,6 +90,9 @@ class RiboDesigner(object):
         self.clustered_probes_fasta = self.outdir / "clustered_probes.fas"
         self.clustered_probes_csv = self.outdir / "clustered_probes.csv"
         self.clustered_probes_bed = self.outdir / "clustered_probes.bed"
+        self.output_json = self.outdir / "ribodesigner.json"
+
+        self.json = {"max_n_probes": max_n_probes, "identity_step": identity_step, "feature": seq_type}
 
     def get_rna_pos_from_gff(self):
         """Convert a GFF file into a pandas DataFrame filtered according to the
@@ -186,6 +190,10 @@ class RiboDesigner(object):
                 probes_dfs.append(self._get_probes_df(seq, probe_len, step_len))
 
         self.probes_df = pd.concat(probes_dfs)
+        self.probes_df["kept_after_clustering"] = True
+        self.probes_df["bed_color"] = self.probes_df.kept_after_clustering.map(
+            {True: "21,128,0", False: "128,64,0"}
+        )
 
     def export_to_fasta(self):
         """From the self.probes_df, export to FASTA and CSV files."""
@@ -203,10 +211,6 @@ class RiboDesigner(object):
         # Do not cluster if number of probes already inferior to defined threshold
         if not force and self.probes_df.shape[0] <= self.max_n_probes:
             logger.info(f"Number of probes already inferior to {self.max_n_probes}. No clustering will be performed.")
-            self.probes_df["kept_after_clustering"] = True
-            self.probes_df["bed_color"] = self.probes_df.kept_after_clustering.map(
-                {True: "21,128,0", False: "128,64,0"}
-            )
             return False
         else:
             return True
@@ -222,11 +226,8 @@ class RiboDesigner(object):
         log_file = outdir / "cd-hit.log"
 
         res_dict = {"seq_id_thres": [], "n_probes": []}
-        # Add number of probes without clustering
-        res_dict["seq_id_thres"].append(1)
-        res_dict["n_probes"].append(self.probes_df.shape[0])
 
-        for seq_id_thres in np.arange(0.8, 1, self.identity_step).round(4):
+        for seq_id_thres in np.arange(0.8, 1, self.identity_step).round(3):
 
             tmp_fas = outdir / f"clustered_{seq_id_thres}.fas"
             cmd = f"cd-hit-est -i {self.probes_fasta} -o {tmp_fas} -c {seq_id_thres} -n {self.threads}"
@@ -237,6 +238,12 @@ class RiboDesigner(object):
 
             res_dict["seq_id_thres"].append(seq_id_thres)
             res_dict["n_probes"].append(len(FastA(tmp_fas)))
+
+        # Add number of probes without clustering
+        res_dict["seq_id_thres"].append(1)
+        res_dict["n_probes"].append(self.probes_df.shape[0])
+
+        self.json["results"] = res_dict
 
         # Dataframe with number of probes for each cdhit identity threshold
         pylab.clf()
@@ -252,6 +259,10 @@ class RiboDesigner(object):
 
         if not np.isnan(best_thres):
             n_probes = df.query("seq_id_thres == @best_thres").loc[:, "n_probes"].values[0]
+
+            self.json['n_probes'] = int(n_probes)
+            self.json['best_thres'] = best_thres
+
             logger.info(f"Best clustering threshold: {best_thres}, with {n_probes} probes.")
             shutil.copy(outdir / f"clustered_{best_thres}.fas", self.clustered_probes_fasta)
             kept_probes = [seq.name for seq in FastA(outdir / f"clustered_{best_thres}.fas")]
@@ -270,7 +281,6 @@ class RiboDesigner(object):
     def export_to_csv_bed(self):
         """Export final results to CSV and BED files"""
 
-        print(self.probes_df)
         df = self.probes_df.query("kept_after_clustering == True")
         df.to_csv(self.clustered_probes_csv, index=False, columns=["seq_id", "sequence"])
 
@@ -282,6 +292,10 @@ class RiboDesigner(object):
             columns=["name", "start", "stop", "sequence", "score", "strand", "start", "stop", "bed_color"],
         )
 
+    def export_to_json(self):
+        with open(self.output_json, "w") as fout:
+            json.dump(self.json, fout, indent=4, sort_keys=True)
+
     def run(self):
         self.filtered_gff_df = self.get_rna_pos_from_gff()
         self.get_all_probes()
@@ -289,3 +303,4 @@ class RiboDesigner(object):
         if self.clustering_needed():
             self.clustered_probes_df = self.cluster_probes()
         self.export_to_csv_bed()
+        self.export_to_json()
