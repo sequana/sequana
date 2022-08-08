@@ -80,7 +80,7 @@ class FastA(object):
 
     def __len__(self):
         if self._N is None:
-            logger.info("Reading input fasta file...please wait")
+            logger.debug("Reading input fasta file...please wait")
             self._N = sum(1 for x in FastxFile(self.filename))
         return self._N
 

@@ -10,10 +10,12 @@
 #
 ##############################################################################
 """Ribodesigner module"""
-
+import sys
 import subprocess
 from pathlib import Path
+
 import pandas as pd
+import pylab
 import pysam
 import numpy as np
 import seaborn as sns
@@ -47,6 +49,7 @@ class RiboDesigner(object):
     :param max_n_probes: Max number of probes to design
     :param force:  If the `output_directory` already exists, overwrite it.
     :param threads: Number of threads to use in cd-hit clustering.
+    :param float identity_step: step to scan the sequence identity (between 0 and 1) defaults to 0.01.
     """
 
     def __init__(
@@ -58,6 +61,8 @@ class RiboDesigner(object):
         max_n_probes=384,
         force=False,
         threads=4,
+        identity_step=0.01,
+        **kwargs
     ):
         # Input
         self.fasta = fasta
@@ -66,10 +71,16 @@ class RiboDesigner(object):
         self.max_n_probes = max_n_probes
         self.threads = threads
         self.outdir = Path(output_directory)
+        self.identity_step = identity_step
+
         if force:
             self.outdir.mkdir(exist_ok=True)
         else:
-            self.outdir.mkdir()
+            try:
+                self.outdir.mkdir()
+            except FileExistsError as err:
+                logger.error(f"Output directory {output_directory} exists. Use --force or set force=True")
+                sys.exit(1)
 
         # Output
         self.filtered_gff = self.outdir / "ribosome_filtered.gff"
@@ -192,6 +203,10 @@ class RiboDesigner(object):
         # Do not cluster if number of probes already inferior to defined threshold
         if not force and self.probes_df.shape[0] <= self.max_n_probes:
             logger.info(f"Number of probes already inferior to {self.max_n_probes}. No clustering will be performed.")
+            self.probes_df["kept_after_clustering"] = True
+            self.probes_df["bed_color"] = self.probes_df.kept_after_clustering.map(
+                {True: "21,128,0", False: "128,64,0"}
+            )
             return False
         else:
             return True
@@ -211,7 +226,7 @@ class RiboDesigner(object):
         res_dict["seq_id_thres"].append(1)
         res_dict["n_probes"].append(self.probes_df.shape[0])
 
-        for seq_id_thres in np.arange(0.8, 1, 0.01).round(2):
+        for seq_id_thres in np.arange(0.8, 1, self.identity_step).round(4):
 
             tmp_fas = outdir / f"clustered_{seq_id_thres}.fas"
             cmd = f"cd-hit-est -i {self.probes_fasta} -o {tmp_fas} -c {seq_id_thres} -n {self.threads}"
@@ -224,9 +239,13 @@ class RiboDesigner(object):
             res_dict["n_probes"].append(len(FastA(tmp_fas)))
 
         # Dataframe with number of probes for each cdhit identity threshold
+        pylab.clf()
         df = pd.DataFrame(res_dict)
-        p = sns.lineplot(data=df, x="seq_id_thres", y="n_probes")
-        p.axhline(self.max_n_probes, alpha=0.8, linestyle="--", color="red")
+        p = sns.lineplot(data=df, x="seq_id_thres", y="n_probes", markers=["o"])
+        p.axhline(self.max_n_probes, alpha=0.8, linestyle="--", color="red", label="max number of probes requested")
+        pylab.xlabel("Sequence identity", fontsize=16)
+        pylab.ylabel("Number of probes", fontsize=16)
+
 
         # Extract the best identity threshold
         best_thres = df.query("n_probes <= @self.max_n_probes").seq_id_thres.max()
@@ -241,6 +260,8 @@ class RiboDesigner(object):
                 {True: "21,128,0", False: "128,64,0"}
             )
             self.probes_df["clustering_thres"] = best_thres
+            pylab.plot(best_thres, n_probes, 'o', label="Final number of probes")
+            pylab.legend()
         else:
             logger.warning(f"No identity threshold was found to have as few as {self.max_n_probes} probes.")
 
@@ -249,6 +270,7 @@ class RiboDesigner(object):
     def export_to_csv_bed(self):
         """Export final results to CSV and BED files"""
 
+        print(self.probes_df)
         df = self.probes_df.query("kept_after_clustering == True")
         df.to_csv(self.clustered_probes_csv, index=False, columns=["seq_id", "sequence"])
 
