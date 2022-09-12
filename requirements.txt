@@ -9,7 +9,7 @@ cookiecutter
 cython
 docutils
 easydev>=0.11.1
-gseapy
+gseapy>=0.13
 itolapi
 lxml
 matplotlib

@@ -38,8 +38,8 @@ class GSEA:
         self.gene_sets = gene_sets
         self.no_plot = True
 
-    # here description='none' is not a typo, we do not want to write None but 'none' due to the gseapy API
-    def compute_enrichment(self, gene_list, background=None, verbose=False, outdir=None, description="none"):
+    # Remove description when using v0.13.0 of gseapy API
+    def compute_enrichment(self, gene_list, background=None, verbose=False, outdir=None):
         """
 
         :param gene_list: list of genes (e.g. genes with significant fold change)
@@ -56,8 +56,7 @@ class GSEA:
             verbose=verbose,
             background=background,
             outdir=outdir.name,
-            no_plot=self.no_plot,
-            description=description,
+            no_plot=self.no_plot
         )
 
         if len(enr.results):
