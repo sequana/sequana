@@ -125,12 +125,16 @@ class PCA(clusterisation.Cluster):
         import numpy as np
 
         pylab.clf()
+
+
         pca = PCA(n_components)
 
         data, kept = self.scale_data(
             transform_method=transform, max_features=max_features
         )
 
+        # in rare cases, with sparse feature count matrix, NA may be included
+        data[np.isnan(data)] = 0
 
         pca.fit(data.T)
 

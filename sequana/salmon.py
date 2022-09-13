@@ -196,7 +196,7 @@ star:
             attribute = "ID"
 
         annot = self.gff.df
-        annot = annot.query("type==@feature").copy()
+        annot = annot.query("genetic_type==@feature").copy()
         names = [x[attribute] for x in annot.attributes]
         identifiers = [x[attribute] for x in annot.attributes]
 
@@ -228,8 +228,8 @@ star:
                 new_name = dd["names"].values[0]
 
             if abs(length - length2) > 5:
-                print(name, length, length2)
-                raise ValueError("length in gff and quant not the same")
+                logger.warning(f"GFF and salmon length for for {name} are quite different: {length} and {length2}")
+                #raise ValueError("length in gff and quant not the same")
             NumReads = int(self.df.query("Name==@name")["NumReads"].values[0])
             if name.startswith("gene"):
                 results += f"\n{name}\t{seqid}\t{starts}\t{stops}\t{strands}\t{length}\t{NumReads}"
