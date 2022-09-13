@@ -615,7 +615,6 @@ class RNADiffTable:
             y1, y2 = bax.ylim()
             bax.ylim([0, y2])
         bax.axhline(-np.log10(0.05), lw=2, ls="--", color="r", label="pvalue threshold (0.05)")
-        return bax
 
         if colors is None:
             colors = {}
