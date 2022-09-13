@@ -64,7 +64,7 @@ class RNADesign:
         try:
             return sorted(self.df[self.condition_col].unique())
         except KeyError:
-            logger.error("No column named '{self.condition_col}' in design dataframe '{self.filename}")
+            logger.error(f"No column named '{self.condition_col}' in design dataframe '{self.filename}'")
             sys.exit(1)
 
     conditions = property(_get_conditions)
