@@ -54,7 +54,7 @@ if on_rtd:
     # indeed gseapy requires rust, not installed by default on RTD.
     gseapy =  [i for i,x in enumerate(requirements) if x.startswith('gseapy')]
     if gseapy: # for future, if dropped
-        requirements[gseapy] = 'gseapy<0.11'
+        requirements[gseapy[0]] = 'gseapy<0.11'
 
 
 
