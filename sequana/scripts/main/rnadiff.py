@@ -314,16 +314,17 @@ You may install it yourself or use damona using the rtools:1.0.0 image """
         gff_filename = kwargs["annotation"]
         logger.info("Checking annotation file (feature and attribute)")
         gff = GFF3(gff_filename)
-        if feature not in gff.features:
-            logger.error(f"{feature} not found in the GFF. Most probably a wrong feature name")
-            sys.exit(1)
-        attributes = gff.get_attributes(feature)
-        if attribute not in attributes:
-            logger.error(
-                f"{attribute} not found in the GFF for the provided feature. Most probably a wrong feature name."
-                " Please change --attribute-name option or do not provide any GFF"
-            )
-            sys.exit(1)
+        for feat in feature.split(","):
+            if feat not in gff.features:
+                logger.error(f"{feature} not found in the GFF. Most probably a wrong feature name")
+                sys.exit(1)
+            attributes = gff.get_attributes(feat)
+            if attribute not in attributes:
+                logger.error(
+                    f"{attribute} not found in the GFF for the provided feature ({feat}). Most probably a wrong feature name."
+                    " Please change --attribute-name option or do not provide any GFF"
+                )
+                sys.exit(1)
     else:
         gff = None
 

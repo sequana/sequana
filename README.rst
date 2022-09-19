@@ -48,56 +48,113 @@ SEQUANA
 
 
 .. list-table:: Pipelines and tools available in the Sequana project
-    :widths: 20 40 40
+    :widths: 20 40 20 20
     :header-rows: 1
 
-    * - **pipeline or tools**
+    * - **name/github**
+      - **description**
       - **Latest Pypi version**
       - **Test passing**
-    * - https://github.com/sequana/sequana_pipetools
+    * - `sequana_pipetools <https://github.com/sequana/sequana_pipetools>`_
+      - Create and Manage Sequana pipeline
       - .. image:: https://badge.fury.io/py/sequana-pipetools.svg
             :target: https://pypi.python.org/pypi/sequana_pipetools
       - .. image:: https://github.com/sequana/sequana_pipetools/actions/workflows/main.yml/badge.svg
             :target: https://github.com/sequana/sequana_pipetools/actions/workflows/main.yml
-    * - https://github.com/sequana/sequana-wrappers
+    * - `sequana-wrappers <https://github.com/sequana/sequana-wrappers>`_
+      - Set of wrappers to build pipelines
       - Not on pypi
       - .. image:: https://github.com/sequana/sequana-wrappers/actions/workflows/main.yml/badge.svg
             :target: https://github.com/sequana/sequana-wrappers/actions/workflows/main.yml
-    * - https://github.com/sequana/demultiplex
+    * - `demultiplex <https://github.com/sequana/demultiplex>`_
+      - Demultiplex your raw data
       - .. image:: https://badge.fury.io/py/sequana-demultiplex.svg
             :target: https://pypi.python.org/pypi/sequana-demultiplex
       - .. image:: https://github.com/sequana/demultiplex/actions/workflows/main.yml/badge.svg
             :target: https://github.com/sequana/demultiplex/actions/workflows/main.yml
-    * - https://github.com/sequana/fastqc
+    * - `fastqc <https://github.com/sequana/fastqc>`_
+      - Get Sequencing Quality control
       - .. image:: https://badge.fury.io/py/sequana-fastqc.svg
             :target: https://pypi.python.org/pypi/sequana-fastqc
       - .. image:: https://github.com/sequana/fastqc/actions/workflows/main.yml/badge.svg
             :target: https://github.com/sequana/fastqc/actions/workflows/main.yml
-    * - https://github.com/sequana/mapper
+    * - `mapper <https://github.com/sequana/mapper>`_
+      - Map sequences on target genome
       - .. image:: https://badge.fury.io/py/sequana-mapper.svg
             :target: https://pypi.python.org/pypi/sequana-mapper
       - .. image:: https://github.com/sequana/mapper/actions/workflows/main.yml/badge.svg
             :target: https://github.com/sequana/mapper/actions/workflows/main.yml
-    * - https://github.com/sequana/pacbio_qc
+    * - `pacbio_qc <https://github.com/sequana/pacbio_qc>`_
+      - Pacbio quality control
       - .. image:: https://badge.fury.io/py/sequana-pacbio-qc.svg
             :target: https://pypi.python.org/pypi/sequana-pacbio-qc
       - .. image:: https://github.com/sequana/pacbio_qc/actions/workflows/main.yml/badge.svg
             :target: https://github.com/sequana/pacbio_qc/actions/workflows/main.yml
-    * - https://github.com/sequana/ribofinder
+    * - `ribofinder <https://github.com/sequana/ribofinder>`_
+      - Find ribosomal content
       - .. image:: https://badge.fury.io/py/sequana-ribofinder.svg
             :target: https://pypi.python.org/pypi/sequana-ribofinder
       - .. image:: https://github.com/sequana/ribofinder/actions/workflows/main.yml/badge.svg
             :target: https://github.com/sequana/ribofinder/actions/workflows/main.yml
-    * - https://github.com/sequana/rnaseq
+    * - `rnaseq <https://github.com/sequana/rnaseq>`_
+      - RNA-seq analysis 
       - .. image:: https://badge.fury.io/py/sequana-rnaseq.svg
             :target: https://pypi.python.org/pypi/sequana-rnaseq
       - .. image:: https://github.com/sequana/rnaseq/actions/workflows/main.yml/badge.svg
             :target: https://github.com/sequana/rnaseq/actions/workflows/main.yml
-    * - https://github.com/sequana/variant_calling
+    * - `variant_calling <https://github.com/sequana/variant_calling>`_
+      - Variant Calling
       - .. image:: https://badge.fury.io/py/sequana-variant-calling.svg
             :target: https://pypi.python.org/pypi/sequana-variant-calling
       - .. image:: https://github.com/sequana/variant_calling/actions/workflows/main.yml/badge.svg
             :target: https://github.com/sequana/variant_calling/actions/workflows/main.yml
+    * - `multicov <https://github.com/sequana/multicov>`_
+      - Coverage (mapping)
+      - .. image:: https://badge.fury.io/py/sequana-multicov.svg
+            :target: https://pypi.python.org/pypi/sequana-multicov
+      - .. image:: https://github.com/sequana/multicov/actions/workflows/main.yml/badge.svg
+            :target: https://github.com/sequana/multicov/actions/workflows/main.yml
+    * - `laa <https://github.com/sequana/laa>`_
+      - Long read Amplicon Analysis
+      - .. image:: https://badge.fury.io/py/sequana-laa.svg
+            :target: https://pypi.python.org/pypi/sequana-laa
+      - .. image:: https://github.com/sequana/laa/actions/workflows/main.yml/badge.svg
+            :target: https://github.com/sequana/laa/actions/workflows/main.yml
+    * - `revcomp <https://github.com/sequana/revcomp>`_
+      - reverse complement of sequence data
+      - .. image:: https://badge.fury.io/py/sequana-revcomp.svg
+            :target: https://pypi.python.org/pypi/sequana-revcomp
+      - .. image:: https://github.com/sequana/revcomp/actions/workflows/main.yml/badge.svg
+            :target: https://github.com/sequana/revcomp/actions/workflows/main.yml
+    * - `downsampling <https://github.com/sequana/downsampling>`_
+      - downsample sequencing data
+      - .. image:: https://badge.fury.io/py/sequana-downsampling.svg
+            :target: https://pypi.python.org/pypi/sequana-downsampling
+      - .. image:: https://github.com/sequana/downsampling/actions/workflows/main.yml/badge.svg
+            :target: https://github.com/sequana/downsampling/actions/workflows/main.yml
+
+
+
+.. list-table:: Pipelines not yet released 
+    :widths: 20 40 20 20 
+    :header-rows: 1
+
+    * - **name/github**
+      - **description**
+      - **Latest Pypi version**
+      - **Test passing**
+    * - `trf <https://github.com/sequana/trf>`_
+      - Find repeats
+      - .. image:: https://badge.fury.io/py/sequana-trf.svg
+            :target: https://pypi.python.org/pypi/sequana-trf
+      - .. image:: https://github.com/sequana/trf/actions/workflows/main.yml/badge.svg
+            :target: https://github.com/sequana/trf/actions/workflows/main.yml
+    * - `multitax <https://github.com/sequana/multitax>`_
+      - Taxonomy analysis
+      - .. image:: https://badge.fury.io/py/sequana-multitax.svg
+            :target: https://pypi.python.org/pypi/sequana-multitax
+      - .. image:: https://github.com/sequana/multitax/actions/workflows/main.yml/badge.svg
+            :target: https://github.com/sequana/multitax/actions/workflows/main.yml
 
 **Please see the** `documentation <http://sequana.readthedocs.org>`_ for an
 up-to-date status and documentation.
@@ -120,6 +177,9 @@ Changelog
 ========= ==========================================================================
 Version   Description
 ========= ==========================================================================
+0.14.3    * new fisher metric in variant calling
+          * ability to use several feature in rnaseq/rnadiff
+          * pin several libaries due to regression during installs
 0.14.2    * Update ribodesigner 
 0.14.1    * Kegg enrichment: add gene list 'all' and fix incomplete annotation case
           * New uniprot module for GO term enrichment and enrichment

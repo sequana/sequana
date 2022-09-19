@@ -64,7 +64,7 @@ class RNADesign:
         try:
             return sorted(self.df[self.condition_col].unique())
         except KeyError:
-            logger.error("No column named '{self.condition_col}' in design dataframe '{self.filename}")
+            logger.error(f"No column named '{self.condition_col}' in design dataframe '{self.filename}'")
             sys.exit(1)
 
     conditions = property(_get_conditions)
@@ -213,6 +213,7 @@ class RNADiffAnalysis:
         # For DeSeq2
         self.batch = batch
         self.model = f"~{batch + '+' + condition if batch else condition}"
+
         self.fit_type = fit_type
         self.beta_prior = "TRUE" if beta_prior else "FALSE"
         self.independent_filtering = "TRUE" if independent_filtering else "FALSE"
@@ -337,6 +338,8 @@ or comparisons. possible values are {valid_conditions}"""
 
         :return: a :class:`RNADiffResults` instance
         """
+
+
         logger.info("Running DESeq2 analysis. Please wait")
         if cmd_exists("R") is False:
             logger.error(
@@ -370,6 +373,19 @@ or comparisons. possible values are {valid_conditions}"""
             f.write(stderr)
         with open(self.code_dir / "rnadiff.out", "w") as f:
             f.write(stdout)
+
+        with open(self.code_dir /  "rnadiff.err", "r") as f:
+            messages = [
+                ("every gene contains at least one zero, cannot compute log geometric means",
+                 ". Please check your input feature file content."),
+                ("counts matrix should be numeric, currently it has mode: logical",
+                "May be a wrong design. Check the condition column")
+            ]
+
+            data = f.read()
+            for msg in messages:
+                if msg[0] in data:
+                    logger.critical(msg[0] + msg[1])
 
         logger.info("DGE analysis done.")
 
@@ -793,12 +809,12 @@ class RNADiffResults:
             gff = GFF3(gff)
 
         if self.annot_cols is None:
-            lol = [list(x.keys()) for x in gff.df.query("genetic_type==@self.fc_feature")["attributes"].values]
+            lol = [list(x.keys()) for x in gff.df.query("genetic_type in @self.fc_feature.split(',')")["attributes"].values]
             annot_cols = sorted(list(set([x for item in lol for x in item])))
         else:
             annot_cols = self.annot_cols
 
-        df = gff.df.query("genetic_type == @self.fc_feature").loc[:, annot_cols]
+        df = gff.df.query("genetic_type in @self.fc_feature.split(',')").loc[:, annot_cols]
         df.drop_duplicates(inplace=True)
 
         df.set_index(self.fc_attribute, inplace=True)
@@ -1116,6 +1132,7 @@ class RNADiffResults:
                 show_plot=False,
                 max_features=max_features,
             )
+
             from plotly import express as px
 
             df = pd.DataFrame(p.Xr)
