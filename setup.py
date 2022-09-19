@@ -43,17 +43,19 @@ packages = [this for this in packages if this.startswith("test.") is False]
 packages = [this for this in packages if this not in ["test"]]
 
 # load a common list of requirements
-# - mock is for the test only
-# - qtconsole is required by Sequanix
 requirements = open("requirements.txt").read().split()
-# not in conda but on pypi
-requirements += ["itolapi"]
 
 on_rtd = os.environ.get("READTHEDOCS", None) == "True"
 if on_rtd:
     # pillow, sphinx, numpydoc are  for the doc only
     extra_packages = ["pillow", "numpydoc", "sphinx"]
     requirements += extra_packages
+    # replace gseapy by gseapy<0.11 to make sure RTD works
+    # indeed gseapy requires rust, not installed by default on RTD.
+    gseapy =  [i for i,x in enumerate(requirements) if x.startswith('gseapy')]
+    if gseapy: # for future, if dropped
+        requirements[gseapy] = 'gseapy<0.11'
+
 
 
 if sys.version_info.major == 2 or on_rtd:
