@@ -15,7 +15,7 @@ import vcfpy
 
 from sequana.lazy import pandas as pd
 
-from sequana.vcftools import strand_ratio, compute_strand_balance, compute_frequency
+from sequana.vcftools import strand_ratio, compute_strand_balance, compute_frequency, compute_fisher_strand_filter
 
 import colorlog
 
@@ -57,6 +57,8 @@ class Variant:
         # Calcul all important information
         alt_freq = compute_frequency(vcf_line)
         strand_bal = compute_strand_balance(vcf_line)
+        fisher = compute_fisher_strand_filter(vcf_line)
+
         line_dict = {
             "chr": vcf_line.CHROM,
             "position": str(vcf_line.POS),
@@ -66,6 +68,7 @@ class Variant:
             "type": "; ".join(str(x.type) for x in vcf_line.ALT),
             "freebayes_score": vcf_line.QUAL,
             "strand_balance": "; ".join("{0:.3f}".format(x) for x in strand_bal),
+            "fisher_pvalue": "; ".join(f"{x}" for x in fisher),
         }
         if len(self.samples) == 1:
             line_dict["frequency"] = "; ".join("{0:.3f}".format(x) for x in alt_freq)
@@ -317,7 +320,7 @@ class Filtered_freebayes:
             columns += self.vcf.samples
         else:
             columns.append("frequency")
-        columns += ["strand_balance", "freebayes_score"]
+        columns += ["strand_balance", "freebayes_score", "fisher_pvalue"]
         try:
             if "effect_type" in self.variants[0].resume.keys():
                 columns += [
