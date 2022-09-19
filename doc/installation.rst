@@ -254,7 +254,7 @@ version 3.5. We suggest users to look at the l=singularity installation page
 itself to install the tool.
  
 Once done, you can either build an image yourself or download a Sequana image. 
-For instance, for the latest master version::
+For instance, for the latest main version::
 
     singularity pull --name sequana.img shub://sequana/sequana:latest
 

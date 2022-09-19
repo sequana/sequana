@@ -232,7 +232,7 @@ allows users to use any parameters.
 
 
 .. seealso:: Sequana contains many pipelines that can be used as examples.
-    See `github repo <https://github.com/sequana/sequana/tree/master/sequana/pipelines>`_
+    See `github repo <https://github.com/sequana/sequana/tree/main/sequana/pipelines>`_
 
 .. note:: Boolean are very permissive. One can use:
    true|True|TRUE|false|False|FALSE yes|Yes|YES|no|No|NO on|On|ON|off|Off|OFF
@@ -362,7 +362,7 @@ pipeline name)::
     Here you should list the dependencies, which should match the file
     requirements.txt in ./sequana_pipelines/count/ 
 
-    .. image:: https://raw.githubusercontent.com/sequana/sequana_count/master/sequana_pipelines/count/dag.png
+    .. image:: https://raw.githubusercontent.com/sequana/sequana_count/main/sequana_pipelines/count/dag.png
 
     Details
     ~~~~~~~~~~~~~
@@ -463,10 +463,10 @@ just type::
     the main reason to move was to be able to test Qt application. It appeared that
     it also has nice plugins such as multithreaded testing.
 
-You will need to install **pytest** and some plugins. You can use conda to do
-so thanks to the **requirements_dev.txt** file::
+You will need to install **pytest** and some plugins. All package are pure-python so you can install then using
+**pip**::
 
-    conda install --list https://raw.githubusercontent.com/sequana/sequana/master/requirements_dev.yml
+    pip install .[testing]
 
 This command installs:
 
@@ -659,7 +659,7 @@ Singularity
 =============
 
 We provide a Singularity file. It is in the main directory and must be kept
-there to be found by singularity-hub. Each commit to the Singularity file (in the master branch) will trigger this website to build a singularity image. The latest built image can be downloaded as follwos:: 
+there to be found by singularity-hub. Each commit to the Singularity file (in the main branch) will trigger this website to build a singularity image. The latest built image can be downloaded as follwos:: 
 
     singularity pull shub://sequana/sequana
 
@@ -680,7 +680,7 @@ be changed again (except for bugs) !! Althoug you may also create a branch (e.g.
 named release_0_6_2), you still need to keep the singularity filename unique. Indeed, consider
 this case:
 
-- branch master with a singularity/Singularity file
+- branch main with a singularity/Singularity file
 - branch release_0_6_2 with a singularity/Singularity file
 
 Although those two files (if built on singularity) are in different branches,
@@ -688,7 +688,7 @@ they will have the same URI (sequana/sequana:latest) so the latest will be
 considered and you have two identical containers.
 
 So, whatever solution is chosen, a unique tag must always be added. We decided
-to only use the master branch for now.
+to only use the main branch for now.
 
 When downloading a container without the **--name** argument, your file is
 named::

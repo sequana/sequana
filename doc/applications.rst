@@ -53,7 +53,7 @@ sequana_coverage
 :Status: Production
 :Help: please use sequana_coverage ``--help``
 :Sequana: See :class:`~sequana.bedtools.GenomeCov` to use the coverage in your own script.
-:Gallery: See examples in the `gallery <http://sequana.readthedocs.io/en/master/auto_examples/index.html>`_
+:Gallery: See examples in the `gallery <http://sequana.readthedocs.io/en/main/auto_examples/index.html>`_
 
 Starting from a BED file and its reference, one can use this command in a
 shell::

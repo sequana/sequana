@@ -7,8 +7,8 @@ Conda related
 Create a conda environment on IP cluster::
 
     module load conda
-    conda create --name py35 python=3.5
-    source condaenvs/py35/bin/activate py35
+    conda create --name py37 python=3.7 
+    conda activate py37
 
 add channel from where to download packages::
 
@@ -31,18 +31,9 @@ called **bioconda**. For instance::
 
     conda install bwa
 
-The full list of dependencies will be maintained in the :ref:`installation`
-section but those two lines should be sufficient to install most of the
-dependencies with **conda**::
+Since version 0.12, most pipelines have been moved outside of sequana. Sequana itself only requires::
 
-    conda install --file https://raw.githubusercontent.com/sequana/sequana/master/requirements.txt
-    conda install --file https://raw.githubusercontent.com/sequana/sequana/master/requirements_pipelines.txt
-
-Additional tools such as prokka, busco, canu and future heavy software will be
-maintained in this specific requirements for now::
-
-    conda install --file https://raw.githubusercontent.com/sequana/sequana/master/requirements_pipelines_extra.txt
-
+    conda install kraken2 cd-hit krona
 
 
 Installation issues
@@ -265,7 +256,7 @@ this may be because your genbank does not contain the sequences.
 Another type of errors is that the sequence and genbank are not synchrone. We
 would recommend to use the code here to download the Fasta and genbank:
 
-http://sequana.readthedocs.io/en/master/tutorial.html#new-in-v0-10
+http://sequana.readthedocs.io/en/main/tutorial.html#new-in-v0-10
 
 
 Quality Control pipeline

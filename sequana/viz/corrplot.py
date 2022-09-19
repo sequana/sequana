@@ -61,7 +61,7 @@ class Corrplot(Linkage):
         c.plot()
 
     .. seealso::    All functionalities are covered in this
-        `notebook <http://nbviewer.ipython.org/github/sequana/sequana/blob/master/notebooks/viz/corrplot.ipynb>`_
+        `notebook <http://nbviewer.ipython.org/github/sequana/sequana/blob/main/notebooks/viz/corrplot.ipynb>`_
 
     """
     def __init__(self, data, na=0, compute_correlation=False):

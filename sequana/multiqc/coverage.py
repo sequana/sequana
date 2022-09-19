@@ -102,7 +102,7 @@ class MultiqcModule(BaseMultiqcModule):
                 subpath + root,
                 chrom_name,  this)
         info += "</ul>"
-        href="http://sequana.readthedocs.io/en/master/"
+        href="http://sequana.readthedocs.io/en/main/"
         target = "Sequana"
         mname = '<a href="{}" target="_blank">{}</a> individual report pages:'.format(href, target)
         self.intro = '<p>{} {}</p>'.format( mname, info)

@@ -8,14 +8,14 @@ SEQUANA
 .. image:: https://badge.fury.io/py/sequana.svg
     :target: https://pypi.python.org/pypi/sequana
 
-.. image:: https://github.com/sequana/sequana/actions/workflows/main.yml/badge.svg?branch=master
+.. image:: https://github.com/sequana/sequana/actions/workflows/main.yml/badge.svg?branch=main
     :target: https://github.com/sequana/sequana/actions/workflows/main.yml
 
-.. image:: https://coveralls.io/repos/github/sequana/sequana/badge.svg?branch=master
-    :target: https://coveralls.io/github/sequana/sequana?branch=master
+.. image:: https://coveralls.io/repos/github/sequana/sequana/badge.svg?branch=main
+    :target: https://coveralls.io/github/sequana/sequana?branch=main
 
-.. image:: http://readthedocs.org/projects/sequana/badge/?version=master
-    :target: http://sequana.readthedocs.org/en/latest/?badge=master
+.. image:: http://readthedocs.org/projects/sequana/badge/?version=main
+    :target: http://sequana.readthedocs.org/en/latest/?badge=main
     :alt: Documentation Status
 
 .. image:: http://joss.theoj.org/papers/10.21105/joss.00352/status.svg
