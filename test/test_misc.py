@@ -20,5 +20,5 @@ def test_findpos():
 def test_wget():
     from easydev import TempFile
     with TempFile() as fh:
-        wget("https://github.com/sequana/sequana/raw/master/README.rst", fh.name)
+        wget("https://github.com/sequana/sequana/raw/main/README.rst", fh.name)
 

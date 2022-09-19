@@ -43,7 +43,7 @@ Docker containers in details (obsolet)
 `Docker <http://www.docker.com>`_ containers wrap a piece of software in a complete filesystem that contains everything needed to run the software.
 
 In order to allow anyone to use **Sequana** without needs for complex installation, we provide
-`Docker images <https://hub.docker.com/u/sequana>`_, which are synchronized on the *master*
+`Docker images <https://hub.docker.com/u/sequana>`_, which are synchronized on the *main*
 branch of the source code.
 
 We assume that:
@@ -75,8 +75,8 @@ The primary goal of the docker is to make it possible to quickly test the
 standalones. For now, we expose only one docker. Please see specific 
 documentation following the links here below:
 
-- sequana_coverage: (https://github.com/sequana/sequana/tree/master/docker/sequana_coverage)
-- sequana_taxonomy: (https://github.com/sequana/sequana/tree/master/docker/sequana_taxonomy)
+- sequana_coverage: (https://github.com/sequana/sequana/tree/main/docker/sequana_coverage)
+- sequana_taxonomy: (https://github.com/sequana/sequana/tree/main/docker/sequana_taxonomy)
 
 
 More advanced Usage
@@ -168,11 +168,11 @@ Each layer is built on top of the previous one
 
   - sequana_coverage_ (sequana + sequana_coverage standalone)
 
-.. _sequana_core: https://github.com/sequana/sequana/tree/master/docker/sequana_core
-.. _sequana_conda_core: https://github.com/sequana/sequana/tree/master/docker/sequana_conda_core
-.. _sequana_conda_ngs: https://github.com/sequana/sequana/tree/master/docker/sequana_conda_ngs
-.. _sequana: https://github.com/sequana/sequana/tree/master/docker/sequana
-.. _sequana_coverage: https://github.com/sequana/sequana/tree/master/docker/sequana_coverage
+.. _sequana_core: https://github.com/sequana/sequana/tree/main/docker/sequana_core
+.. _sequana_conda_core: https://github.com/sequana/sequana/tree/main/docker/sequana_conda_core
+.. _sequana_conda_ngs: https://github.com/sequana/sequana/tree/main/docker/sequana_conda_ngs
+.. _sequana: https://github.com/sequana/sequana/tree/main/docker/sequana
+.. _sequana_coverage: https://github.com/sequana/sequana/tree/main/docker/sequana_coverage
 
 
 

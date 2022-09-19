@@ -30,7 +30,7 @@ However, we extended the interface so that it can handle other Snakemake
 workflows, referred to as **Generic pipelines** in the GUI.
 
 A tutorial in form of a video is available in another repository: 
-`video/tutorial <https://github.com/sequana/resources/blob/master/sequanix/videos/demo_sequana.webm?raw=true>`_
+`video/tutorial <https://github.com/sequana/resources/blob/main/sequanix/videos/demo_sequana.webm?raw=true>`_
 
 
 .. figure:: _static/sequanix/sequanix.png

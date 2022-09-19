@@ -120,7 +120,7 @@ class ScatterHist(VizInput2D):
                 kargs_histy={'color': 'green'})
 
 
-        .. seealso:: `notebook <http://nbviewer.ipython.org/github/sequana/sequana/blob/master/notebooks/viz/scatter.ipynb>`__
+        .. seealso:: `notebook <http://nbviewer.ipython.org/github/sequana/sequana/blob/main/notebooks/viz/scatter.ipynb>`__
         """
         df = self.df
         try:

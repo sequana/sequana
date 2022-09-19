@@ -68,7 +68,7 @@ and finally plot the coverage together with confidence interval (3 sigma)::
     chrom.plot_coverage()
 
 .. seealso:: notebook available in the `github repository
-   <https://github.com/sequana/sequana/blob/master/notebooks/coverage.ipynb>`_
+   <https://github.com/sequana/sequana/blob/main/notebooks/coverage.ipynb>`_
 
 
 As you can see, **Sequana** is a standard Python library where developers can

@@ -195,7 +195,7 @@ results with a specific annotation file. So, let us download those files first.
 Get the genbank reference
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-You can use `BioServices <https://bioservices.readthedocs.io/en/master/>`_ to
+You can use `BioServices <https://bioservices.readthedocs.io/en/main/>`_ to
 download those files.
 
 

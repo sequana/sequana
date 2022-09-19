@@ -1362,7 +1362,7 @@ class KrakenDownload(object):
         except FileExistsError:
             pass
 
-        baseurl = "https://github.com/sequana/data/raw/master/"
+        baseurl = "https://github.com/sequana/data/raw/main/"
 
         # download only if required
         logger.info("Downloading the database into %s" % base)
