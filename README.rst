@@ -177,6 +177,9 @@ Changelog
 ========= ==========================================================================
 Version   Description
 ========= ==========================================================================
+0.14.3    * new fisher metric in variant calling
+          * ability to use several feature in rnaseq/rnadiff
+          * pin several libaries due to regression during installs
 0.14.2    * Update ribodesigner 
 0.14.1    * Kegg enrichment: add gene list 'all' and fix incomplete annotation case
           * New uniprot module for GO term enrichment and enrichment
