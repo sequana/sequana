@@ -17,7 +17,7 @@ def _krakendb():
             HOME = os.getenv('HOME')
             logger.info(HOME)
             from sequana.misc import wget
-            baseurl = "https://github.com/sequana/data/raw/master/kraken_toydb/"
+            baseurl = "https://github.com/sequana/data/raw/main/kraken_toydb/"
             filenames = [
                  "database.idx",
                  "database.kdb",
