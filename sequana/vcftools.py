@@ -24,7 +24,8 @@ import colorlog
 logger = colorlog.getLogger(__name__)
 
 
-__all__ = ["VCFBase", "strand_ratio", "compute_frequency", "compute_strand_balance"]
+__all__ = ["VCFBase", "strand_ratio", "compute_frequency", "compute_strand_balance", 
+            "compute_fisher_strand_filter"]
 
 
 class VCFBase:
@@ -152,6 +153,39 @@ def compute_frequency(record):
     alt_freq = [float(count) / info["DP"] for count in info["AO"]]
     return alt_freq
 
+
+def compute_fisher_strand_filter(record):
+    """Fisher strand filter (FS).
+
+    Sites where the numbers of reference/non-reference reads are highly correlated 
+    with the strands of the reads. Counting the number of reference reads on the forward 
+    strand and on the reverse strand, and the number of alternate reads on the forward and 
+    reverse strand should be equivlent. With these four numbers, we
+    constructed a 2 x 2 contingency table and used the P -value from a Fisher’s exact test 
+    to evaluate the correlation.
+
+        from sequana import freebayes_vcf_filter
+        v = freebayes_vcf_filter.VCF_freebayes("data/JB409847.vcf")
+        r = next(v)
+        compute_fisher_strand_filter(r)
+
+    If the pvalue is less than 0.05 we should reject the variant since the alternate and reference
+    do not behave in the same way. Typically found if the alternate has a poor strand balance. Used with
+    care if frequency of alternate or reference is low or deth of coverage is low.
+
+
+    .. note:: fisher terst with two-sided hypothesis"""
+    try:
+        info = record.info
+    except:
+        info = record.INFO
+
+    def _compute_FS(SAF, SAR, SRF, SRR):
+        from sequana.lazy import scipy
+        stat, pvalue = scipy.stats.fisher_exact(table=[[SAF,SAR],[SRF, SRR]], alternative="two-sided")
+        return pvalue
+    FS = [_compute_FS(info["SAF"][i], info["SAR"][i], info["SRF"], info["SRR"]) for i in range(len(info["SAF"]))]
+    return FS
 
 def compute_strand_balance(record):
     """Compute strand balance of alternate allele include in [0,0.5].
