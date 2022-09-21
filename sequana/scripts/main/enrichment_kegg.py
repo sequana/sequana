@@ -119,6 +119,7 @@ def enrichment_kegg(**kwargs):
         "kegg_background": kwargs["kegg_background"],
         "preload_directory": kwargs["kegg_pathways_directory"],
         "plot_logx": not kwargs["plot_linearx"],
+        "color_node_with_annotation": kwargs['annotation_attribute']
     }
     filename = kwargs["biomart"]
     if filename and os.path.exists(filename) is False:
@@ -149,6 +150,24 @@ def enrichment_kegg(**kwargs):
 
     output_directory = kwargs["output_directory"]
     for compa, gene_dict in gene_lists.items():
+
+        if keggname.startswith('vc'):
+            logger.warning("Vibrio Cholera annotation old_locus_tag processed to be compatible with KEGG/Sequana")
+            if kwargs['annotation_attribute'] == 'old_locus_tag':
+                def get_kegg_id(x):
+                    try:
+                        a, b = x.split(',')
+                        if a[0:3] == 'VC_':
+                            return a
+                        else:
+                            return b
+                    except:
+                        return x
+                for cat in ['up', 'down', 'all']:
+                    gene_dict[cat] = [get_kegg_id(x) for x in gene_dict[cat]]
+                old_locus_tag = rnadiff.annotation['old_locus_tag'].values
+                rnadiff.annotation['old_locus_tag'] = [get_kegg_id(x) for x in old_locus_tag]
+
         config.output_dir = f"{output_directory}/{compa}"
         os.makedirs(f"{output_directory}", exist_ok=True)
 
