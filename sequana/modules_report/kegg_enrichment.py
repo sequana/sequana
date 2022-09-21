@@ -22,7 +22,7 @@ from sequana.modules_report.base_module import SequanaBaseModule
 from sequana.utils.datatables_js import DataTable
 from sequana.enrichment.kegg import KEGGPathwayEnrichment
 
-from easydev import Progress
+from tqdm import tqdm
 
 import colorlog
 
@@ -49,6 +49,7 @@ class ModuleKEGGEnrichment(SequanaBaseModule):
             "kegg_background": None,
             "mapper": None,
             "preload_directory": None,
+            "color_node_with_annotation": 'Name',
             "plot_logx": True,
         },
         command="",
@@ -76,6 +77,8 @@ class ModuleKEGGEnrichment(SequanaBaseModule):
             mapper=self.enrichment_params["mapper"],
             background=self.enrichment_params["kegg_background"],
             preload_directory=self.enrichment_params["preload_directory"],
+            color_node_with_annotation=self.enrichment_params['color_node_with_annotation']
+
         )
 
         self.create_report_content()
@@ -126,7 +129,7 @@ maximum of {self.nmax} pathways. </p>
 
         html = f""
 
-        for category in ["down", "up", "all"]:
+        for category in tqdm(["down", "up", "all"], desc='scanning categories'):
             df = self.ke.barplot(category, nmax=self.nmax)
             n_enriched = len(df)
 
@@ -187,12 +190,12 @@ log2 fold change of 4 of 40 will have the same darkest color.). </p>
 
             # save pathways and add fotorama
             logger.setLevel("WARNING")
-            pb = Progress(len(df))
+
             files = []
-            for i, ID in enumerate(df["pathway_id"]):
+            logger.info(f"Saving {len(df)} pathways")
+            for ID in df["pathway_id"]:
                 df_pathways = self.ke.save_pathway(ID, self.data, filename=f"{config.output_dir}/{ID}.png")
                 files.append(f"{ID}.png")
-                pb.animate(i + 1)
             fotorama = self.add_fotorama(files, width=800)
 
             datatable = DataTable(df, f"kegg_{category}")

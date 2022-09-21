@@ -120,6 +120,7 @@ class KEGGPathwayEnrichment:
         background=None,
         preload_directory=None,
         convert_input_gene_to_upper_case=False,
+        color_node_with_annotation='Name'
     ):
         """
 
@@ -132,6 +133,7 @@ class KEGGPathwayEnrichment:
         convert_input_gene_to_upper_case parameter to True
         """
         self.convert_input_gene_to_upper_case = convert_input_gene_to_upper_case
+        self.color_node_with_annotation = color_node_with_annotation
 
         self.kegg = KEGG(cache=True)
         self.kegg.organism = organism
@@ -181,16 +183,15 @@ class KEGGPathwayEnrichment:
             # preload is a directory with all pathways in it
 
             pathways = glob.glob(preload_directory + "/*json")
-            logger.info(f"loading {len(pathways)} pathways from local files in {preload_directory}.")
+            logger.info(f"Loading {len(pathways)} pathways from local files in {preload_directory}.")
             for i, name in enumerate(pathways):
                 key = name.strip(".json").split("/")[-1]
                 with open(name, "r") as fin:
                     data = json.load(fin)
                     self.pathways[key] = data
         else:  # pragma: no cover  #not tested due to slow call
-            logger.info("loading all pathways from KEGG. You may export and load the pathways next time.")
 
-            for i, ID in tqdm(enumerate(self.kegg.pathwayIds)):
+            for ID in tqdm(self.kegg.pathwayIds, desc="Downloading KEGG pathways"):
                 self.pathways[ID.replace("path:", "")] = self.kegg.parse(self.kegg.get(ID))
 
         # Some cleanup. Note that if we read the json file, this is different
@@ -244,7 +245,6 @@ class KEGGPathwayEnrichment:
 
         self.summary.data["missing_genes"] = {}
         self.summary.data["input_gene_list"] = {}
-
         self.enrichment = {
             category: self._enrichr(category, background=background) for category in self.gene_lists.keys()
         }
@@ -260,22 +260,23 @@ class KEGGPathwayEnrichment:
             self._check_category(category)
             gene_list = self.gene_lists[category]
 
-        logger.info("Input gene list of {} ids".format(len(gene_list)))
+        logger.info(f"Computing enrichment for category '{category}'. Input gene list of {len(gene_list)} ids")
         self.summary.data["input_gene_list"][category] = len(gene_list)
 
         if self.mapper is not None:
             missing = [x for x in gene_list if x not in self.mapper.index]
-            logger.info("Missing genes from mapper dataframe: {}".format(len(missing)))
+            logger.info(f"Missing genes from mapper dataframe: {len(missing)}")
             self.summary.data["missing_genes"][category] = ",".join(missing)
             gene_list = [x for x in gene_list if x in self.mapper.index]
             identifiers = self.mapper.loc[gene_list]["name"].drop_duplicates().values
 
             if self.convert_input_gene_to_upper_case:
                 identifiers = [x.upper() for x in identifiers if isinstance(x, str)]
-            logger.info("Mapped gene list of {} ids".format(len(identifiers)))
+            logger.info(f"Mapped gene list of {len(identifiers)} ids")
             gene_list = list(identifiers)
 
         gs = GSEA(self.gene_sets)
+
         enr = gs.compute_enrichment(
             gene_list=gene_list,
             verbose=verbose,
@@ -374,42 +375,37 @@ class KEGGPathwayEnrichment:
         return df
 
     def _get_summary_pathway(self, pathway_ID, df, l2fc=0, padj=0.05):
+
         genes = self.df_pathways.loc[pathway_ID]["GENE"]
         df_down = df.query("padj<=@padj and log2FoldChange<@l2fc").copy()
         df_up = df.query("padj<=@padj and log2FoldChange>=@l2fc").copy()
 
-        if "Name" in df_down.columns:
-            pass
-        elif "gene_name" in df_down.columns:
-            df_down["Name"] = df_down["gene_name"]
-        elif "ID" in df_down.columns:
-            df_down["Name"] = df_down["ID"]
-        elif "gene" in df_down.columns:
-            df_down["Name"] = df_down["gene"]
-        else:
-            raise ValueError("Expected to find a column Name, gene_name, gene or ID")
 
-        if "Name" in df_up.columns:
-            pass
-        elif "gene_name" in df_up.columns:
-            df_up["Name"] = df_up["gene_name"]
-        elif "ID" in df_up.columns:
-            df_up["Name"] = df_up["ID"]
-        elif "gene" in df_up.columns:
-            df_up["Name"] = df_up["gene"]
-        else:
-            raise ValueError("Expected to find a column Name, gene_name, gene or ID")
+        # for the color, we need to find the match between names and the annotation
+        # since names is suppose to have been populated with the annotaion, it should be
+        # found. no need for sanity checks.
+        df_down["Name"] = df_down[self.color_node_with_annotation]
+        df_up["Name"] = df_down[self.color_node_with_annotation]
 
-        logger.info("{}".format(pathway_ID))
-        # logger.info("Total down-regulated: {}".format(len(df_down)))
-        # logger.info("Total up-regulated: {}".format(len(df_up)))
 
+        # in principle, the KEGG pathays field 'GENE' is stored as 
+        # "GENE":{key: value} and the values are the NAME, a semi column, and a description
+        # hence the split on ; herebelow:
+        # unfortunately, there are special cases to handle such as vibrio cholera (vc)
         mapper = {}
-        for k, v in genes.items():
-            mapper[v.split(";")[0]] = k
+        if self.kegg.organism.startswith('vc'):
+            for k, v in genes.items():
+                #the value is just the description. Let us assume that the name is also the ID
+                mapper[k] = k
+        else:
+            for k, v in genes.items():
+                mapper[v.split(";")[0]] = k
+
+        # may not be used ?
         self.genes = genes
         self.df_down = df_down
         self.df_up = df_up
+
         summary_names = []
         summary_keggids = []
         summary_types = []
@@ -509,11 +505,12 @@ class KEGGPathwayEnrichment:
         summary = self._get_summary_pathway(pathway_ID, df)
         colors = self._get_colors(summary)
 
-        logger.info("pathway {} total genes: {}".format(pathway_ID, len(summary)))
+
+        logger.info(f"pathway {pathway_ID} total genes: {len(summary)}")
         count_up = len(summary.query("type == '+'"))
         count_down = len(summary.query("type == '-'"))
-        logger.info("this pathway down-regulared genes: {}".format(count_down))
-        logger.info("this pathway up-regulated genes: {}".format(count_up))
+        logger.info(f"this pathway down-regulared genes: {count_down}")
+        logger.info(f"this pathway up-regulated genes: {count_up}")
 
         url = "https://www.kegg.jp/kegg-bin/show_pathway"
         # dcolor = "white"  --> does not work with the post requests unlike get
@@ -535,7 +532,7 @@ class KEGGPathwayEnrichment:
         r = requests.get("https://www.kegg.jp/{}".format(link_to_png))
 
         if filename is None:
-            filename = "{}.png".format(pathway_ID)
+            filename = f"{pathway_ID}.png"
 
         with open(filename, "wb") as fout:
             fout.write(r.content)
