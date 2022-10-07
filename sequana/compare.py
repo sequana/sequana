@@ -62,6 +62,20 @@ class RNADiffCompare(Compare):
         else:
             raise NotImplementedError
 
+        # keep only entries in common
+        A = self.r1.df.index
+        B = self.r2.df.index
+        common = set(A).intersection(B)
+
+        if len(A) != len(B):
+            self.r1.df = self.r1.df.loc[common]
+            self.r2.df = self.r2.df.loc[common]
+            self.r1.filt_df = self.r1.filter()
+            self.r2.filt_df = self.r2.filter()
+            self.r1.set_gene_lists()
+            self.r2.set_gene_lists()
+            logger.info(f"Two sets are not equal. Kept {len(self.r1.df)} in common")
+
     def plot_venn_down(self, labels=None, ax=None, title="Down expressed genes", mode="all"):
 
         kargs = {}
@@ -328,6 +342,8 @@ class RNADiffCompare(Compare):
     def plot_volcano_differences(self, mode="all"):
         cond1, cond2 = "cond1", "cond2"
         labels = [cond1, cond2]
+
+
         A = self.r1.df.loc[self.r1.gene_lists[mode]]
         B = self.r2.df.loc[self.r2.gene_lists[mode]]
         # cast set to list to avoid future error in pandas (june 2022)

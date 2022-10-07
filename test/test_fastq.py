@@ -107,7 +107,7 @@ def test_filter():
 
     with TempFile() as fh:
         f.filter(min_bp=80, max_bp=120, output_filename=fh.name,
-            progressbar=False)
+            progress=False)
         assert len(f) == 250
         ff = FastQ(fh.name)
         assert len(ff) == 250

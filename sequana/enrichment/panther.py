@@ -251,11 +251,12 @@ class PantherEnrichment(Ontology, PlotGOTerms):
 
         results = []
         for k in self.enrichment.keys():
-            ontologies = self.enrichment[k].keys()
-            for o in ontologies:
-                M = self.enrichment[k][o]["input_list"]["mapped_count"]
-                U = self.enrichment[k][o]["input_list"]["unmapped_count"]
-                results.append([k, o, M, U])
+            if self.enrichment[k]:
+                ontologies = self.enrichment[k].keys()
+                for o in ontologies:
+                    M = self.enrichment[k][o]["input_list"]["mapped_count"]
+                    U = self.enrichment[k][o]["input_list"]["unmapped_count"]
+                    results.append([k, o, M, U])
         df = pd.DataFrame(results)
         df[4] = 100 * df[2] / (df[3] + df[2])
         df[5] = df[2] + df[3]
@@ -281,6 +282,10 @@ class PantherEnrichment(Ontology, PlotGOTerms):
         # taxid=83333 # ecoli
         if taxid is None:
             taxid = self.taxon
+
+        # nice bug from panterdb website. if 'php' is a gene name, no process is done
+        if 'php' in mygenes:
+            mygenes.remove('php')
 
         if isinstance(mygenes, list):
             mygenes = ",".join(mygenes)
@@ -342,6 +347,9 @@ class PantherEnrichment(Ontology, PlotGOTerms):
 
             # extract the ID and label of the go term and save
             # as primary keys
+
+
+
             for i, k in enumerate(results["result"]):
                 if results["result"][i]["term"]["label"] == "UNCLASSIFIED":
                     unclassified[ontology] += 1

@@ -95,8 +95,9 @@ class QuickGOGraph:
             for ancestor in ancestors:
                 edges = self.quickgo.get_go_paths(_id, ancestor)
                 if edges == 400:
-                    logger.warning("Could not retrieve {} to {}".format(_id, ancestor))
+                    logger.warning(f"Could not retrieve {_id} to {ancestor}")
                     continue
+
                 if edges["numberOfHits"] == 0:
                     continue
                 if len(edges["results"]) >= 1:

@@ -177,6 +177,13 @@ class PlotGOTerms:
                     for k in keys[1:]:
                         goid_levels.update(paths[k])
 
+                # FIXME
+                # in rare cases, imd are not found in _get_graph()
+                # need to add them back here with a dummy level
+                for ID in subdf['id'].values:
+                    if ID not in goid_levels:
+                        goid_levels[ID] = 10
+
                 levels = [goid_levels[ID] for ID in subdf["id"].values]
                 subdf["level"] = levels
 

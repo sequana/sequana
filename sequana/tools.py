@@ -27,7 +27,7 @@ from pysam import FastxFile
 from easydev import precision
 from easydev.misc import cmd_exists
 import subprocess
-
+from tqdm import tqdm
 import colorlog
 
 logger = colorlog.getLogger(__name__)
@@ -89,7 +89,7 @@ class StatsBAM2Mapped:
         return html
 
 
-def bam_to_mapped_unmapped_fastq(filename, output_directory=None, verbose=True):
+def bam_to_mapped_unmapped_fastq(filename, output_directory=None, progress=True):
     """Create mapped and unmapped fastq files from a BAM file
 
     :context: given a reference, one or two FastQ files are mapped onto the
@@ -183,12 +183,8 @@ def bam_to_mapped_unmapped_fastq(filename, output_directory=None, verbose=True):
     # loop through the BAM (make sure it is rewinded)
     bam.reset()
 
-    if verbose:
-        from easydev import Progress
 
-        pb = Progress(len(bam))
-
-    for i, this in enumerate(bam):
+    for this in tqdm(bam, disable=not progress):
         if this.flag & 256:
             # Unmapped reads are in the BAM file but have no valid assigned
             # position (N.B., they may have an assigned position, but it should be ignored).
@@ -252,14 +248,10 @@ def bam_to_mapped_unmapped_fastq(filename, output_directory=None, verbose=True):
             if this.is_duplicate:
                 stats["duplicated"] += 1
 
-        if verbose:
-            pb.animate(i + 1)
-
     if bam.is_paired:
         R2_mapped.close()
         R2_unmapped.close()
 
-    logger.info("\nNumber of entries in the BAM: %s" % str(i + 1))
 
     R1_mapped.close()
     R1_unmapped.close()

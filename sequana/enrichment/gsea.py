@@ -23,6 +23,7 @@ import gseapy
 
 logger = colorlog.getLogger(__name__)
 
+from sequana.lazy import pandas as pd
 
 __all__ = ["GSEA"]
 
@@ -50,16 +51,24 @@ class GSEA:
         """
         if outdir is None:
             outdir = tempfile.TemporaryDirectory()
-        enr = gseapy.enrichr(
-            gene_list=gene_list,
-            gene_sets=self.gene_sets,
-            verbose=verbose,
-            background=background,
-            outdir=outdir.name,
-            no_plot=self.no_plot
-        )
 
-        if len(enr.results):
-            enr.results["Genes"] = [";".join(sorted(x.split(";"))) for x in enr.results["Genes"].values]
-            enr.results["size"] = [len(x.split(";")) for x in enr.results.Genes]
+        try:
+            enr = gseapy.enrichr(
+                gene_list=gene_list,
+                gene_sets=self.gene_sets,
+                verbose=verbose,
+                background=background,
+                outdir=outdir.name,
+                no_plot=self.no_plot
+            )
+            if len(enr.results):
+                enr.results["Genes"] = [";".join(sorted(x.split(";"))) for x in enr.results["Genes"].values]
+                enr.results["size"] = [len(x.split(";")) for x in enr.results.Genes]
+        except ValueError:
+            # if no hits, newest gseapy version will raise a ValueError
+            from collections import namedtuple
+            
+            enrich = namedtuple('MyStruct', 'results')
+            enr = enrich(results=pd.DataFrame({'Genes':[], 'size':[], 'Term':[]}))
+
         return enr

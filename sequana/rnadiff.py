@@ -616,46 +616,7 @@ class RNADiffTable:
             bax.ylim([0, y2])
         bax.axhline(-np.log10(0.05), lw=2, ls="--", color="r", label="pvalue threshold (0.05)")
 
-        if colors is None:
-            colors = {}
-            for sample in self.sample_names:
-                colors[sample] = self.colors[self.get_cond_from_sample(sample)]
 
-        if plotly is True:
-            assert n_components == 3
-            variance = p.plot(
-                n_components=n_components,
-                colors=colors,
-                show_plot=False,
-                max_features=max_features,
-            )
-            from plotly import express as px
-
-            df = pd.DataFrame(p.Xr)
-            df.columns = ["PC1", "PC2", "PC3"]
-            df["names"] = self.sample_names
-            df["colors"] = [colors[x] for x in self.sample_names]
-            df["size"] = [10] * len(df)
-            df[self.condition] = [self.get_cond_from_sample(sample) for sample in self.sample_names]
-            fig = px.scatter_3d(
-                df,
-                x="PC1",
-                y="PC2",
-                z="PC3",
-                color=self.condition,
-                labels={
-                    "PC1": "PC1 ({}%)".format(round(100 * variance[0], 2)),
-                    "PC2": "PC2 ({}%)".format(round(100 * variance[1], 2)),
-                    "PC3": "PC3 ({}%)".format(round(100 * variance[2], 2)),
-                },
-                height=800,
-                text="names",
-            )
-            return fig
-        else:
-            variance = p.plot(n_components=n_components, colors=colors, max_features=max_features)
-
-        return variance
 
     def plot_pvalue_hist(self, bins=60, fontsize=16, rotation=0):
 

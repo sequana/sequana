@@ -240,6 +240,9 @@ function, CC for cellular components and BP for biological process.</p>
         _minus = {}
         _plus = {}
 
+        if not self.pe.enrichment[category]:
+            return ""
+ 
         html = ""
 
         for ontology in self.ontologies:

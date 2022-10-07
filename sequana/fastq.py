@@ -11,6 +11,7 @@
 #
 ##############################################################################
 """Utilities to manipulate FASTQ and Reads"""
+import os
 import zlib
 from itertools import islice
 import gzip
@@ -23,6 +24,7 @@ from sequana.lazy import pandas as pd
 from sequana.lazy import pylab
 from sequana.tools import GZLineCounter
 
+from tqdm import tqdm
 from easydev import Progress
 
 import pysam
@@ -425,18 +427,14 @@ class FastQ(object):
         if output_filename is None:  # pragma: no cover
             output_filename = os.path.basename(self.filename) + ".select"
 
-        thisN = len(self)
-        pb = Progress(thisN)  # since we scan the entire file
         with open(output_filename, "w") as fh:
-            for i, read in enumerate(fastq):
+            for read in tqdm(fastq, disable=not progress, desc="sequana:fastq select specific reads"):
                 if read.name in read_identifiers:
                     fh.write(read.__str__() + "\n")
                 else:
                     pass
-                if progress:
-                    pb.animate(i + 1)
 
-    def select_random_reads(self, N=None, output_filename="random.fastq"):
+    def select_random_reads(self, N=None, output_filename="random.fastq", progress=True):
         """Select random reads and save in a file
 
         :param int N: number of random unique reads to select
@@ -472,14 +470,12 @@ class FastQ(object):
 
         cherries_set = set(cherries)
 
-        pb = Progress(thisN)  # since we scan the entire file
         with open(output_filename, "w") as fh:
-            for i, read in enumerate(fastq):
+            for i, read in tqdm(enumerate(fastq), desc="sequana:fastq selecting random reads", disable=not progress):
                 if i in cherries_set:
                     fh.write(read.__str__() + "\n")
                 else:
                     pass
-                pb.animate(i + 1)
         return cherries
 
     def split_lines(self, N=100000, gzip=True):
@@ -725,7 +721,7 @@ class FastQ(object):
                 fout.write("{}\n{}\n".format(this["identifier"].decode(), this["sequence"].decode()))
         return
 
-    def filter(self, identifiers_list=[], min_bp=None, max_bp=None, progressbar=True, output_filename="filtered.fastq"):
+    def filter(self, identifiers_list=[], min_bp=None, max_bp=None, progress=True, output_filename="filtered.fastq"):
         """Save reads in a new file if there are not in the identifier_list
 
         :param int min_bp: ignore reads with length shorter than min_bp
@@ -747,12 +743,13 @@ class FastQ(object):
         output_filename, tozip = self._istozip(output_filename)
 
         with open(output_filename, "w") as fout:
-            pb = Progress(self.n_reads)
             buf = ""
             filtered = 0
             saved = 0
 
-            for count, lines in enumerate(grouper(self._fileobj)):
+            for count, lines in tqdm(enumerate(grouper(self._fileobj)), desc="sequana:fastq filter reads" 
+                ,disable=not progress):
+
                 identifier = lines[0].split()[0]
                 if lines[0].split()[0].decode() in identifiers_list:
                     filtered += 1
@@ -768,8 +765,6 @@ class FastQ(object):
                     if count % 100000 == 0:
                         fout.write(buf)
                         buf = ""
-                if progressbar is True:
-                    pb.animate(count + 1)
             fout.write(buf)
             if filtered < len(identifiers_list):  # pragma: no cover
                 print("\nWARNING: not all identifiers were found in the fastq file to " + "be filtered.")
@@ -793,14 +788,12 @@ class FastQ(object):
         from sequana.kmer import get_kmer
 
         counter = Counter()
-        pb = Progress(len(self))
         buffer_ = []
-        for i, this in enumerate(self):
-            buffer_.extend(list(get_kmer(this["sequence"], k)))
+        for this in tqdm(self):
+            buffer_.extend(list(get_kmer(this["sequence"].decode(), k)))
             if len(buffer_) > 100000:  # pragma: no cover
                 counter += Counter(buffer_)
                 buffer_ = []
-            pb.animate(i)
         counter += Counter(buffer_)
 
         ts = pd.Series(counter)
@@ -824,7 +817,7 @@ class FastQ(object):
 
         with open(output_filename, "w") as fout:
             for index, count in ts.items():
-                letters = "\t".join([x for x in index.decode()])
+                letters = "\t".join([x for x in index])
                 fout.write("%s\t" % count + letters + "\n")
 
     def stats(self):

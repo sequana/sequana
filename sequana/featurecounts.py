@@ -387,7 +387,6 @@ class FeatureCount:
             }
         )
         df.set_index(df.columns[0], inplace=True)
-
         # condition is None since it should be set by the users. Yet in simple
         # cases, we can try to infer the condition names assuming the condition
         # is in the name. eg. WT1, WT2, etc
@@ -419,14 +418,17 @@ class FeatureCount:
             # which we find the longest prefix
             N = min([len(x) for x in names])
             # the first letter is the same by definition, so we start at 1
-            for i in range(1, N):
-                # as soon as there is a difference, we can stop: we found the
-                # common prefix
-                if len(set([x[0:i] for x in names])) != 1:
-                    # if different, we need to ignore the last letter hence the
-                    # -1 here below
-                    conditions.append(names[0][0 : i - 1])
-                    break
+            if len(names) == 1:
+                conditions.append(names[0])
+            else:
+                for i in range(1, N):
+                    # as soon as there is a difference, we can stop: we found the
+                    # common prefix
+                    if len(set([x[0:i] for x in names])) != 1:
+                        # if different, we need to ignore the last letter hence the
+                        # -1 here below
+                        conditions.append(names[0][0 : i - 1])
+                        break
         # trim trailing _ if any
         conditions = [x.rstrip("_") for x in conditions]
         indconds = []
