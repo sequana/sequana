@@ -27,7 +27,7 @@ from pysam import FastxFile
 from easydev import precision
 from easydev.misc import cmd_exists
 import subprocess
-
+from tqdm import tqdm
 import colorlog
 
 logger = colorlog.getLogger(__name__)
@@ -252,7 +252,6 @@ def bam_to_mapped_unmapped_fastq(filename, output_directory=None, progress=True)
         R2_mapped.close()
         R2_unmapped.close()
 
-    logger.info("\nNumber of entries in the BAM: %s" % str(i + 1))
 
     R1_mapped.close()
     R1_unmapped.close()

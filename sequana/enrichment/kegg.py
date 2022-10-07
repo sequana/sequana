@@ -505,11 +505,10 @@ class KEGGPathwayEnrichment:
         summary = self._get_summary_pathway(pathway_ID, df)
         colors = self._get_colors(summary)
 
-
         logger.info(f"pathway {pathway_ID} total genes: {len(summary)}")
         count_up = len(summary.query("type == '+'"))
         count_down = len(summary.query("type == '-'"))
-        logger.info(f"this pathway down-regulared genes: {count_down}")
+        logger.info(f"this pathway down-regulated genes: {count_down}")
         logger.info(f"this pathway up-regulated genes: {count_up}")
 
         url = "https://www.kegg.jp/kegg-bin/show_pathway"
