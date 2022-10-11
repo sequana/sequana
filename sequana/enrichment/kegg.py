@@ -184,13 +184,12 @@ class KEGGPathwayEnrichment:
 
             pathways = glob.glob(preload_directory + "/*json")
             logger.info(f"Loading {len(pathways)} pathways from local files in {preload_directory}.")
-            for i, name in enumerate(pathways):
+            for name in tqdm(pathways):
                 key = name.strip(".json").split("/")[-1]
                 with open(name, "r") as fin:
                     data = json.load(fin)
                     self.pathways[key] = data
         else:  # pragma: no cover  #not tested due to slow call
-
             for ID in tqdm(self.kegg.pathwayIds, desc="Downloading KEGG pathways"):
                 self.pathways[ID.replace("path:", "")] = self.kegg.parse(self.kegg.get(ID))
 
@@ -377,7 +376,8 @@ class KEGGPathwayEnrichment:
     def _get_summary_pathway(self, pathway_ID, df, l2fc=0, padj=0.05):
 
         genes = self.df_pathways.loc[pathway_ID]["GENE"]
-        df_down = df.query("padj<=@padj and log2FoldChange<@l2fc").copy()
+
+        df_down = df.query("padj<=@padj and log2FoldChange<=-@l2fc").copy()
         df_up = df.query("padj<=@padj and log2FoldChange>=@l2fc").copy()
 
 
@@ -385,7 +385,7 @@ class KEGGPathwayEnrichment:
         # since names is suppose to have been populated with the annotaion, it should be
         # found. no need for sanity checks.
         df_down["Name"] = df_down[self.color_node_with_annotation]
-        df_up["Name"] = df_down[self.color_node_with_annotation]
+        df_up["Name"] = df_up[self.color_node_with_annotation]
 
 
         # in principle, the KEGG pathays field 'GENE' is stored as 
@@ -505,11 +505,9 @@ class KEGGPathwayEnrichment:
         summary = self._get_summary_pathway(pathway_ID, df)
         colors = self._get_colors(summary)
 
-        logger.info(f"pathway {pathway_ID} total genes: {len(summary)}")
         count_up = len(summary.query("type == '+'"))
         count_down = len(summary.query("type == '-'"))
-        logger.info(f"this pathway down-regulated genes: {count_down}")
-        logger.info(f"this pathway up-regulated genes: {count_up}")
+        logger.info(f"pathway {pathway_ID} total genes: {len(summary)}. Found {count_down} down-regulated and {count_up} up-regulated")
 
         url = "https://www.kegg.jp/kegg-bin/show_pathway"
         # dcolor = "white"  --> does not work with the post requests unlike get
@@ -642,5 +640,7 @@ class KEGGPathwayEnrichment:
         os.makedirs(outdir, exist_ok=True)
 
         for key, data in self.pathways.items():
-            with open(f"{outdir}/{key}.json", "w") as fout:
-                json.dump(data, fout)
+            output_json = f"{outdir}/{key}.json"
+            if not os.path.exists(output_json):
+                with open(output_json, "w") as fout:
+                    json.dump(data, fout)
