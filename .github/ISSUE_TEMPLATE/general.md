@@ -7,7 +7,7 @@ assignees: ''
 
 ---
 
-# Please fill those information if known:
+# Please fill this information if known:
 
 - sequana version: 
 
