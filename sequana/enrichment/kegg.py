@@ -561,47 +561,26 @@ class KEGGPathwayEnrichment:
 
         return summaries
 
-    def find_pathways_by_gene(self, gene_name, match="exact"):
+    def find_pathways_by_gene(self, gene_name):
         """Returns pathways that contain the gene name
 
-        ke.find_pathways_by_gene("ysgA")
+        ::
+
+            ke.find_pathways_by_gene("ysgA")
+
         """
 
-        # First let us find the kegg ID
-        genes = self.kegg.list(self.kegg.organism).strip().split("\n")
+        # we are going to search for the gene name and lower case onyl
+        candidates = [gene_name, gene_name.lower()]
 
-        keggid = [x.split("\t")[0].strip() for x in genes]
-        gene_names = [x.split("\t")[1].split(";")[0].strip() for x in genes]
+        found_paths = []
 
-        self.keggid = keggid
-        self.gene_names = gene_names
-        candidates = []
-        for x, y in zip(keggid, gene_names):
-
-            if match == "exact":
-                if gene_name == y:
-                    candidates = x.split(":")[1]
-                    break
-            else:
-                if gene_name in y:
-                    candidates.append(x)
-        if match != "exact":
-            candidates = [x.split(":")[1] for x in candidates]
-            logger.info("Found {} candidate(s): {}".format(len(candidates), candidates))
-        else:
-            logger.info("Found {} in {}".format(gene_name, candidates))
-
-        paths = []
         for key in self.pathways.keys():
             if "GENE" in self.pathways[key]:
-                if match == "exact":
-                    if candidates in self.pathways[key]["GENE"].keys():
-                        paths.append(key)
-                else:
-                    for candidate in candidates:
-                        if candidate in self.pathways[key]["GENE"].keys():
-                            paths.append(key)
-        return list(set(paths))
+                for candidate in candidates:
+                    if candidate in [x.split(";")[0] for x in self.pathways[key]["GENE"].values()]:
+                            found_paths.append(key)
+        return list(set(found_paths))
 
     def save_project(self, tag, outdir="."):
         """Save tables and visualisations of the complete enrichmment analysis."""

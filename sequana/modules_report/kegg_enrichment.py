@@ -124,9 +124,6 @@ maximum of {self.nmax} pathways. </p>
         logger.info("Enrichment module: kegg term")
         style = "width:45%"
 
-        #logger.info(f"Saving all pathways in json format in kegg_pathways/{self.organism}")
-        #self.ke.export_pathways_to_json()
-
         html = f""
 
         for category in tqdm(["down", "up", "all"], desc='scanning categories'):
