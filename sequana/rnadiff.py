@@ -520,10 +520,13 @@ class RNADiffTable:
                 if hover_name not in df.columns:
                     logger.warning(f"hover_name {hover_name} not in the GFF attributes. Switching to automatic choice")
                     hover_name = None
+
             if hover_name is None:
                 for name in ["Name", "gene_name", "gene_id", "locus_tag", "ID"]:
                     if name in df.columns:
                         hover_name = name
+                        # once found, we can stop
+                        break
 
             fig = px.scatter(
                 df,
@@ -777,7 +780,9 @@ class RNADiffResults:
         df = gff.df.query("genetic_type in @self.fc_feature.split(',')").loc[:, annot_cols]
         df.drop_duplicates(inplace=True)
 
-        df.set_index(self.fc_attribute, inplace=True)
+        # we want to keep the attribute in the columns for simplicity (to use in e.g. 
+        # volcano plots as a hover name) hence the drop=False
+        df.set_index(self.fc_attribute, inplace=True, drop=False)
 
         # It may happen that a GFF has duplicated IDs ! For instance ecoli
         # has 20 duplicated ID that are part 1 and 2 of the same gene

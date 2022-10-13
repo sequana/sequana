@@ -577,9 +577,10 @@ class KEGGPathwayEnrichment:
 
         for key in self.pathways.keys():
             if "GENE" in self.pathways[key]:
+                genes = set([x.split(";")[0] for x in self.pathways[key]["GENE"].values())
                 for candidate in candidates:
-                    if candidate in [x.split(";")[0] for x in self.pathways[key]["GENE"].values()]:
-                            found_paths.append(key)
+                    if candidate in genes:
+                        found_paths.append(key)
         return list(set(found_paths))
 
     def save_project(self, tag, outdir="."):
