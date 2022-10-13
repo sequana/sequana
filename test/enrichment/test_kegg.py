@@ -22,13 +22,11 @@ def test_ke(tmpdir):
     with pytest.raises(ValueError):
         ke.barplot('dummy')
 
-    ke.barplot('down')
     ke.barplot('up')
     ke.barplot('down')
     ke.plot_genesets_hist()
     ke.scatterplot('down')
     assert ke.find_pathways_by_gene("moaA")
-    assert ke.find_pathways_by_gene("moaA", match="exact")
 
 
     # save one pathway (just one to speed up things)

@@ -124,9 +124,6 @@ maximum of {self.nmax} pathways. </p>
         logger.info("Enrichment module: kegg term")
         style = "width:45%"
 
-        logger.info(f"Saving all pathways in kegg_pathways/{self.organism}")
-        self.ke.export_pathways_to_json()
-
         html = f""
 
         for category in tqdm(["down", "up", "all"], desc='scanning categories'):
@@ -152,7 +149,7 @@ maximum of {self.nmax} pathways. </p>
 <p>Here below are the pathways with gene colored according to their fold change.
 Blue colors are for down-regulated genes and Orange are for up-regulated genes. 
 (Note that absolute log2 fold change above 4 are clipped to 4; So a gene with a
-log2 fold change of 4 of 40 will have the same darkest color.). </p>
+log2 fold change of 4 or 40 will have the same darkest color.). </p>
 {fotorama}
 
 """
