@@ -180,6 +180,7 @@ Version   Description
 0.14.4    * hotfix bug on kegg colorised pathways
           * Fix the hover_name in rnadiff volcano plot to include the
             index/attribute.
+          * pin snakemake to be >=7.16
 0.14.3    * new fisher metric in variant calling
           * ability to use several feature in rnaseq/rnadiff
           * pin several libaries due to regression during installs

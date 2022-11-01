@@ -55,7 +55,6 @@ class FastQC:
                 section = section.lower().replace(" ", "_")
                 self.fastqc_data[s_name]["statuses"][section] = status
             elif section is not None:
-                # bug in falco, Length Count not preceeded by expected # sign
                 if l.startswith("#"):
                     s_headers = l[1:].split("\t")
                     # Special case: Total Deduplicated Percentage header line
