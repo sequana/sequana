@@ -36,12 +36,17 @@ class FastQC:
 
         self.fastqc_data[s_name] = {"statuses": dict()}
 
-        # Here below is the code from  multiqc v1.6
-        # Parse the report
         section = None
         s_headers = None
         self.dup_keys = []
         for l in file_contents.splitlines():
+
+
+            # Hack to fix falco bug found in some versions where this 
+            # line is missing the # character in front of it
+            if l.startswith('Length\tCount'):
+                l = '#' + l
+
             if l == ">>END_MODULE":
                 section = None
                 s_headers = None
@@ -50,6 +55,7 @@ class FastQC:
                 section = section.lower().replace(" ", "_")
                 self.fastqc_data[s_name]["statuses"][section] = status
             elif section is not None:
+                # bug in falco, Length Count not preceeded by expected # sign
                 if l.startswith("#"):
                     s_headers = l[1:].split("\t")
                     # Special case: Total Deduplicated Percentage header line
