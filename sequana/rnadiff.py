@@ -288,7 +288,7 @@ Design overview:\n\
             conditions = {x for comp in self.comparisons for x in comp}
 
             mean_per_conditions = pd.concat(
-                [counts[self.design.query("condition == @cond").index].mean(axis=1) for cond in conditions], axis=1
+                [counts[self.design.query(f"{self.condition} == @cond").index].mean(axis=1) for cond in conditions], axis=1
             )
             max_mean_per_condition = mean_per_conditions.max(axis=1)
 
