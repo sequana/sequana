@@ -122,8 +122,8 @@ class RiboDesigner(object):
         logger.info(f"Found {filtered_gff.shape[0]} '{self.seq_type}' entries in the annotation file.")
         logger.debug(f"\t" + filtered_gff.to_string().replace("\n", "\n\t"))
 
-        return filtered_gff
-
+        filtered_gff.to_csv(self.filtered_gff)
+        
     def _get_probe_and_step_len(self, seq):
         """Calculates the probe_len and inter_probe_space for a ribosomal sequence.
 
@@ -277,11 +277,17 @@ class RiboDesigner(object):
             logger.warning(f"No identity threshold was found to have as few as {self.max_n_probes} probes.")
 
         self.clustering_df = df.sort_values("seq_id_thres")
+        
+        return self.probes_df.query("kept_after_clustering == True")
 
     def export_to_csv_bed(self):
         """Export final results to CSV and BED files"""
 
-        df = self.probes_df.query("kept_after_clustering == True")
+        if self.clustering_needed():
+            df = self.cluster_probes()
+        else:
+            df = self.probes_df
+            
         df.to_csv(self.clustered_probes_csv, index=False, columns=["seq_id", "sequence"])
 
         self.probes_df.to_csv(
@@ -297,10 +303,8 @@ class RiboDesigner(object):
             json.dump(self.json, fout, indent=4, sort_keys=True)
 
     def run(self):
-        self.filtered_gff_df = self.get_rna_pos_from_gff()
+        self.get_rna_pos_from_gff()
         self.get_all_probes()
         self.export_to_fasta()
-        if self.clustering_needed():
-            self.clustered_probes_df = self.cluster_probes()
         self.export_to_csv_bed()
         self.export_to_json()
