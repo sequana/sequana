@@ -372,7 +372,7 @@ class GenomeCov(object):
         if Nchunk > 1:
             pb = Progress(Nchunk)
         i = 0
-        for chunk in pd.read_table(input_filename, header=None, sep="\t", usecols=[0], chunksize=self.chunksize):
+        for chunk in pd.read_table(input_filename, header=None, sep="\t", usecols=[0], chunksize=self.chunksize, dtype="string"):
             # accumulate length
             N += len(chunk)
 
@@ -380,13 +380,6 @@ class GenomeCov(object):
             contigs = chunk[0].unique()
             for contig in contigs:
                 if contig not in self.chrom_names:
-                    # if all contig names are integer, pandas converts them
-                    # to numpy int64 but those are not serialisable later when
-                    # saving the json summary file hence the conversion.
-                    try:
-                        contig = int(contig)
-                    except:
-                        pass
                     self.chrom_names.append(contig)
 
             # group by names (unordered)
@@ -571,7 +564,7 @@ class ChromosomeCov(object):
         N = self.bed.positions[self.chrom_name]["N"]
         toskip = self.bed.positions[self.chrom_name]["start"]
         self.iterator = pd.read_table(
-            self.bed.input_filename, skiprows=toskip, nrows=N, header=None, sep="\t", chunksize=self.chunksize
+            self.bed.input_filename, skiprows=toskip, nrows=N, header=None, sep="\t", chunksize=self.chunksize, dtype={0: "string"}
         )
         if N <= self.chunksize:
             # we can load all data into memory:
