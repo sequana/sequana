@@ -201,5 +201,11 @@ def test_binning():
     chrom.run(501, k=2, circular=True, binning=2, cnv_delta=100)
 
 
-
+def test_chromosome_intname():
+    filename = f"{test_dir}/data/bed/unicycler.bed"
+    bed = bedtools.GenomeCov(filename, f'{test_dir}/data/genbank/unicycler.gbk',chunksize=6000)
+    chrom = bed.chr_list[0]
+    chrom.run(501, k=2, circular=True)
+    chrom.get_summary()
+    chrom.get_rois()
 
