@@ -102,6 +102,12 @@ SEQUANA
             :target: https://pypi.python.org/pypi/sequana-rnaseq
       - .. image:: https://github.com/sequana/rnaseq/actions/workflows/main.yml/badge.svg
             :target: https://github.com/sequana/rnaseq/actions/workflows/main.yml
+    * - `denovo <https://github.com/sequana/denovo>`_
+      - denovo analysis (short reads)
+      - .. image:: https://badge.fury.io/py/sequana-denovo.svg
+            :target: https://pypi.python.org/pypi/sequana-denvo
+      - .. image:: https://github.com/sequana/denovo/actions/workflows/main.yml/badge.svg
+            :target: https://github.com/sequana/denovo/actions/workflows/main.yml
     * - `variant_calling <https://github.com/sequana/variant_calling>`_
       - Variant Calling
       - .. image:: https://badge.fury.io/py/sequana-variant-calling.svg
