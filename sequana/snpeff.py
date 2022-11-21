@@ -48,7 +48,7 @@ class SnpEff(object):
     snpeff_datadir).
     """
 
-    def __init__(self, annotation, log=None, snpeff_datadir="data", fastafile=None):
+    def __init__(self, annotation, log=None, snpeff_datadir="data", fastafile=None, build_options=""):
 
         """.. rubric:: Constructor
 
@@ -95,6 +95,7 @@ class SnpEff(object):
             logger.info(f"Using existing config file: {self.configfile}.")
 
         # Create custom database
+        self.build_options = build_options
         if not os.path.exists(os.sep.join([self.snpeff_datadir, self.ref_name, "snpEffectPredictor.bin"])):
             self._add_custom_db()
         else:  # pragma: no cover
@@ -136,6 +137,9 @@ class SnpEff(object):
 
         # set config path, which has been saved in the datadir directory
         snpeff_build_line += ["-c", self.configfile]
+
+        # add any extra build options for 'snpeff build' command
+        snpeff_build_line += self.build_options.split()
 
         if self.log_file:
             with open(self.log_file, "ab") as fl:
