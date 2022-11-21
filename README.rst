@@ -206,6 +206,9 @@ Changelog
 ========= ==========================================================================
 Version   Description
 ========= ==========================================================================
+0.14.5    * move start_pipeline standalone in 
+            https://github.com/sequana/sequana_pipetools
+          * update snpeff module to allows build command to have options
 0.14.4    * hotfix bug on kegg colorised pathways
           * Fix the hover_name in rnadiff volcano plot to include the
             index/attribute.
