@@ -109,9 +109,13 @@ class VariantCallingModule(SequanaBaseModule):
             {
                 "name": "Variants Detected",
                 "anchor": "basic_stats",
-                "content": "<p>This table present variant detected by freebayes after "
-                "filtering.</p>\n{0}\n{1}\n<p>Note: the freebayes score can be"
-                " understood as 1 - P(locus is homozygous given the data)</p>".format(
+                "content": "<p>This table gives variants detected by freebayes after "
+                "filtering. The important metrics are the depth (if not enough reads supports "
+                "the variant it should be ignored); the strand_balance (forward and reverse number "
+                " of reads supporting the variants should be similar e.g balance of 0.5); the fisher "
+                "pvalue (variants with pvalue<0.05 should be rejected since the strand balance of"
+                "alternate and reference are different).</p><p>Note: the freebayes score can be"
+                " understood as 1 - P(locus is homozygous given the data)</p> {0}\n{1}\n".format(
                     js, html_tab
                 ),
             }
