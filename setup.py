@@ -5,7 +5,7 @@ import glob
 
 _MAJOR = 0
 _MINOR = 14
-_MICRO = 4
+_MICRO = 5
 version = "%d.%d.%d" % (_MAJOR, _MINOR, _MICRO)
 release = "%d.%d" % (_MAJOR, _MINOR)
 
@@ -144,7 +144,6 @@ setup(
             "sequana_taxonomy=sequana.scripts.taxonomy:main",
             "sequana_coverage=sequana.scripts.coverage:main",
             "sequana_substractor=sequana.scripts.substractor:main",  # march 2019
-            "sequana_start_pipeline=sequana.scripts.start_pipeline:main",  # dec 2019
         ],
         "sequana.module": [
             "sequana_coverage=sequana.modules_report.coverage:CoverageModule",

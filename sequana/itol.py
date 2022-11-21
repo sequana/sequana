@@ -11,6 +11,7 @@
 #
 ##############################################################################
 import colorlog
+from pathlib import Path
 
 logger = colorlog.getLogger(__name__)
 
@@ -62,9 +63,14 @@ class ITOL:
 
     def __init__(self, tree, APIkey=None, projectName=None):
         """.. rubric:: constructor"""
+        
         self.itol = Itol()
         assert tree.endswith(".tree.txt"), "Your input tree must end in .tree.txt"
-        self.itol.add_file(tree)
+
+        try:
+            self.itol.add_file(tree)
+        except AttributeError:
+            self.itol.add_file(Path(tree))
         self._datasets = 0
         self.status = None
 
@@ -85,7 +91,10 @@ class ITOL:
             self.params["projectName"] = projectName
 
     def add_file(self, filename):
-        self.itol.add_file(filename)
+        try: # itol 4.0.1
+            self.itol.add_file(filename)
+        except AttributeError: #itol 4.1.0
+            self.itol.add_file(Path(filename))
         N = len(self.itol.files) - 1  # remove the input tree file
         self.params["datasets_visible"] = ",".join([str(x) for x in range(0, N)])
 
