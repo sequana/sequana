@@ -21,6 +21,8 @@ def test_vcf_filter(tmpdir):
         compare_file = filecmp.cmp(ft.name, vcf_output_expected)
         assert compare_file
 
+    v.barplot()
+    v.manhattan_plot("JB409847")
 
 def test_constructor():
     with pytest.raises(OSError):
