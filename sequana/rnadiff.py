@@ -340,13 +340,7 @@ or comparisons. possible values are {valid_conditions}"""
         """
 
 
-        logger.info("Running DESeq2 analysis. Please wait")
-        if cmd_exists("R") is False:
-            logger.error(
-                "You must install R and DeSe2 must be present. You can use damona and install the rtools:1.0.0 package"
-            )
-            sys.exit(1)
-
+        logger.info("Running DESeq2 analysis. Rscript/R with DESeq2 must be installed. Please wait")
         rnadiff_script = self.code_dir / "rnadiff_light.R"
 
         with open(rnadiff_script, "w") as f:
@@ -354,9 +348,7 @@ or comparisons. possible values are {valid_conditions}"""
 
         logger.info("Starting differential analysis with DESeq2...")
 
-        # capture_output is valid for py3.7 and above so we will use
-        # stdout/stderr to be back compatible with py3.6
-        # Capture rnadiff output
+        # capture_output is valid for py3.7 and above 
         p = subprocess.Popen(
             f"Rscript {rnadiff_script}",
             shell=True,
@@ -388,7 +380,6 @@ or comparisons. possible values are {valid_conditions}"""
                     logger.critical(msg[0] + msg[1])
 
         logger.info("DGE analysis done.")
-
         results = RNADiffResults(
             self.outdir,
             condition=self.condition,
