@@ -25,6 +25,7 @@ configuration = CustomConfig("sequana", verbose=False)
 sequana_config_path = configuration.user_config_dir
 
 # This must be import before all other modules (sequana_data function)
+from .codon import Codon
 from .datatools import sequana_data
 from .assembly import *
 from .bamtools import BAM, SAMFlags, SAM, CRAM
