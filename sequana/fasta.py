@@ -49,9 +49,10 @@ class FastA:
         f = FastA("test.fa")
         read = next(f)
 
-    names and sequences can be accessed with lists:
+    names and sequences can be accessed with attributes::
 
-        names = f.names
+        f.names
+        f.sequences
 
 
     """

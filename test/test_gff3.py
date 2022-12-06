@@ -19,6 +19,8 @@ def test_gff():
     gff = GFF3(f'{test_dir}/data/hg38_truncated_gtf.gff')
     assert gff.df.iloc[0].gene_id == "ENSG00000223972"
 
+    assert gff.clean_gff_line_special_characters("A%09A") == "A\tA"
+
 def test_process_attributes():
     gff = GFF3(f'{test_dir}/data/mm10_truncated.gff')
     res = gff._process_attributes("ID=YAL058W;Name=YAL058W")
