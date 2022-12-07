@@ -1,7 +1,7 @@
 import os
 from collections import defaultdict
 
-from sequana.fasta_gff_correction import FastAGFFCorrection
+from sequana.fasta_gff_correction import FastaGFFCorrection
 
 from . import test_dir
 
@@ -16,7 +16,7 @@ def test_fasta_gff_correction(tmpdir):
     out_fasta = tmpdir.join('test.fa')
     out_gff = tmpdir.join('test.gff3')
 
-    f = FastAGFFCorrection(in_fasta, in_vcf)
+    f = FastaGFFCorrection(in_fasta, in_vcf)
     f.fix_and_save_fasta(out_fasta)
     f.fix_and_save_gff(in_gff, out_fasta, out_gff)
 

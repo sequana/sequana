@@ -13,35 +13,38 @@
 """Utilities to manipulate FastA files"""
 import os
 import textwrap
+from collections import defaultdict
 
 from sequana.lazy import pandas as pd
 from sequana import VCF_freebayes
 from sequana import FastA
 from sequana import Codon
+from sequana import GFF3
 
 from pysam import FastxFile
+
 import colorlog
 
 logger = colorlog.getLogger(__name__)
 
 
-__all__ = ["FastAGFFCorrection"]
+__all__ = ["FastaGFFCorrection"]
 
 
-class FastAGFFCorrection:
+class FastaGFFCorrection:
     """Class to correct FastA reference and its GFF given a set of variants
 
     ::
-        f = FastAGFFCorrection("input.fa", "input.vcf")
+        f = FastaGFFCorrection("input.fa", "input.vcf")
         f.fix_and_save_fasta("new.fa")
         f.fix_and_save_gff("new.fa", "input.gff3", "new.gff3")
 
     You must call :meth:`save_fasta` before :meth:`save_gff` to compute
     the shifts of positions found in the VCF file.
 
-    The GFF corrections are made on the start and stop positions of sall features
+    The GFF corrections are made on the start and stop positions of all features
     found in the GFF. In addition, gene and CDS start and stop positions are also
-    corrected for the change of start/stop codon implies by the variants.
+    corrected for the change of start/stop codon implied by the variants.
 
 
     """
@@ -55,6 +58,9 @@ class FastAGFFCorrection:
         self.positions = None
 
         self.codon = Codon()
+
+        # parameter used in find_start_codon_position method.
+        self._start_codon_max_shift = 10000
 
     def fix_and_save_fasta(self, outfile):
         """
@@ -125,8 +131,13 @@ class FastAGFFCorrection:
         self.positions = positions
         return {"shifts": shifts, "positions": positions}
 
-    def get_shift(self, position, chrom_name):
-        """Utility method to get the closests INDELs to a given position"""
+    def _get_shift(self, position, chrom_name):
+        """Utility method to get the shift created by INDELs at a given position
+
+
+        This functions returns the sum of Insertion minus Deletions on the LHS of
+        a given position
+        """
         shifts = self.shifts[chrom_name]
         positions = self.positions[chrom_name]
 
@@ -145,141 +156,144 @@ class FastAGFFCorrection:
         You must call :meth:`fix_and_save_fasta` first.
 
         .. todo:: multiple contig is not yet implemented"""
-        
         # initiate the original fasta file
         fasta = FastxFile(self._fasta_file)
         contig = next(fasta)
-        seq = contig.sequence
-        L = len(seq)
+        L = len(contig.sequence)
 
+        # reads the corrected fasta
         corfasta = FastxFile(fasta_corrected)
         contig = next(corfasta)
         chrom_name = contig.name
         corseq = contig.sequence
-        # length of the updated sequence
         newL = len(corseq)
 
-        with open(gff_infile, "r") as fin:
-            with open(gff_outfile, "w") as fout:
-                for line in fin.readlines():
+        with open(gff_infile, "r") as fin, open(gff_outfile, "w") as fout:
+            for line in fin:
 
-                    # we can skip empty lines
-                    if not line.strip():
-                        continue
+                # we can skip empty lines
+                if not line.strip():
+                    continue
 
-                    if line.startswith("#"):
-                        # first commented lines usually contains the sequence
-                        # length. may also contain the sequence name
-                        line = line.replace(str(L), str(newL))
+                if line.startswith("#"):
+                    # first commented lines usually contains the sequence
+                    # length. may also contain the sequence name
+                    line = line.replace(str(L), str(newL))
+                    fout.write(f"{line}")
+                else:
+                    # process line, splitting items
+                    items = line.split("\t")
+
+                    # regions just need to update the length of the region
+                    if items[2] == "region":
+                        items[4] = str(newL)
+                        line = "\t".join(items)
                         fout.write(f"{line}")
                     else:
-                        # process line, splitting items
-                        items = line.split("\t")
+                        # we update the starting and ending positions of all other features
+                        start, end = int(items[3]), int(items[4])
 
-                        # regions just need to update the length of the region
-                        if items[2] == "region":
-                            items[4] = str(newL)
-                            line = "\t".join(items)
-                            fout.write(f"{line}")
-                        else:
-                            # we update the starting and ending positions of all other features
-                            start, end = int(items[3]), int(items[4])
+                        S1 = self._get_shift(start, chrom_name)
+                        S2 = self._get_shift(end, chrom_name)
 
-                            S1 = self.get_shift(start, chrom_name)
-                            S2 = self.get_shift(end, chrom_name)
+                        start += S1
+                        end += S2
 
-                            start += S1
-                            end += S2
+                        # We could stop here but gene/CDS need to be check carefully since
+                        # their starting/ending codon may not be correct anymore due
+                        # to the shift (not a modulo 3 anymore), or variant that may happen
+                        # exactly at the start/stop codon position. In principle the start codon
+                        # should be correct (except if a variant occured) but stop codon will differ
+                        # if an INDEL exists in between
+                        if items[2] in ["gene", "CDS"]:
+                            strand = items[6]
+                            if strand == "+":
 
-                            # no let us check that start and end are still correct.
-                            # we just need to check the start on strand + and -
-                            # stop will be fixed by the script.
+                                # given a gene/CDS, first retrieve the start codon position
+                                # on the corrected sequence at start - 1 (-1 because python
+                                # uses 0-base convetion.
+                                start = self.find_start_codon_position(corseq, start - 1, strand="+") + 1
 
-                            # We have the new theoretical positions of the CDS/gene but we need to fix
-                            # the end codon that may not be in the good location anymore. We must ensure
-                            # that the starting position is still a starting codong and if the
-                            # stop codon is not valid anymore, we need to find the closest valid
-                            # stop codon. The stop codon is either on the start/end depending on
-                            # the strand +/-
-                            if items[2] in ["gene", "CDS"]:
-                                strand = items[6]
-                                if strand == "+":
+                                assert corseq[start - 1 : start - 1 + 3] in self.codon.codons["start"]["+"]
 
-                                    # start -1 because we work in 0-base
-                                    start2 = self.find_start_codon_position(corseq, start - 1, strand="+")
-                                    start = start2 + 1  # +1 because in 1-base convention
+                                # We now scan the CDS/gene from start to the end searching for stop codon
+                                # until we reach the end position.
+                                stop_codon_position = 0
+                                for cursor in range(start, end + 1, 3):
+                                    codon = corseq[cursor - 1 : cursor - 1 + 3]
+                                    if codon in self.codon.codons["stop"]["+"]:
+                                        stop_codon_position = cursor
 
-                                    assert corseq[start - 1 :  start - 1 + 3] in self.codon.start_codons["+"]
+                                # we now have the closest stop codon to the end position
+                                # we keep the delta with respect to the current known end position
+                                delta = end - stop_codon_position
 
-                                    # First we scan the CDS
-                                    stop_codon_position = 0
+                                # and see if we can get a closer one after the end position
+                                for cursor in range(end + 1, end + maxshift, 3):
+                                    codon = corseq[cursor - 1 : cursor - 1 + 3]
+                                    if codon in self.codon.codons["stop"]["+"]:
+                                        stop_codon_position = cursor
+                                        break
 
-                                    for cursor in range(start, end + 1, 3):
-                                        codon = corseq[cursor - 1 : cursor - 1 + 3]
-                                        if codon in ["TAG", "TGA", "TAA"]:
-                                            stop_codon_position = cursor
+                                    if cursor - end > delta and stop_codon_position != 0:
+                                        break
 
-                                    # we now have the closest stop codon to the end position
-                                    if stop_codon_position:
-                                        delta = end - stop_codon_position
+                                # we need to check whether we found something
+                                if stop_codon_position == 0:
+                                    raise Exception("stop_codon_position no found")
+                                items[3] = str(start)
+                                items[4] = str(stop_codon_position + 2)
 
-                                    for cursor in range(end + 1, end + maxshift, 3):
-                                        codon = corseq[cursor - 1 : cursor - 1 + 3]
-                                        if codon in ["TAG", "TGA", "TAA"]:
-                                            stop_codon_position = cursor
-                                            break
+                            elif strand == "-":
 
-                                        if cursor - end > delta and stop_codon_position != 0:
-                                            break
+                                # given a gene/CDS, first retrieve the start codon position
+                                # on the corrected sequence at start - 1 (-1 because python
+                                # uses 0-base convetion.
+                                end = self.find_start_codon_position(corseq, end - 3 - 1, strand="-")
+                                end += 3 + 1  # 3 for the end of the codon +1 for 1-base convention
 
-                                    # we need to check the stop_codon on the 3prime
-                                    if stop_codon_position == 0:
-                                        raise Exception("stop_codon_position no found")
-                                    items[3] = str(start)
-                                    items[4] = str(stop_codon_position + 2)
+                                assert corseq[end - 3 - 1 : end - 1] in self.codon.codons["start"]["-"]
 
-                                elif strand == "-":
+                                # We now scan the CDS/gene from start to the end searching for stop codon
+                                # until we reach the end position.
+                                stop_codon_position = 0
+                                for cursor in range(end, start - 1, -3):
+                                    codon = corseq[cursor - 3 - 1 : cursor - 1]
+                                    if codon in self.codon.codons["stop"]["-"]:
+                                        stop_codon_position = cursor - 3
 
-                                    # end is 1-base so end-1. Moreover, -3 to start at the beginning of codon
-                                    end = self.find_start_codon_position(corseq, end - 3 - 1, strand="-")
-                                    end += 3 + 1  # 3 for the end of the codon +1 for 1-base convention
+                                # we now have the closest stop codon to the end position
+                                # we keep the delta with respect to the current known end position
+                                delta = stop_codon_position - start - 1
 
-                                    assert corseq[end - 3 - 1 : end - 1] in self.codon.start_codons["-"]
+                                # and see if we can get a closer one after the end position
+                                for cursor in range(start, start - maxshift - 1, -3):
+                                    codon = corseq[cursor - 3 - 1 : cursor - 1]
+                                    if codon in self.codon.codons["stop"]["-"]:
+                                        stop_codon_position = cursor - 3
+                                        break
 
-                                    stop_codon_position = 0
-                                    for cursor in range(end, start - 1, -3):
-                                        codon = corseq[cursor - 3 - 1 : cursor - 1]
-                                        if codon in ["TTA", "TCA", "CTA"]:
-                                            stop_codon_position = cursor - 3
-                                    # we now have the closest stop codon to the end position
-                                    if stop_codon_position:
-                                        delta = stop_codon_position - start - 1
+                                    if start - 1 - cursor > delta and stop_codon_position != 0:
+                                        break
 
-                                    for cursor in range(start, start - maxshift - 1, -3):
-                                        codon = corseq[cursor - 3 - 1 : cursor - 1]
-                                        if codon in ["TTA", "TCA", "CTA"]:
-                                            stop_codon_position = cursor - 3
-                                            break
-
-                                        if start - 1 - cursor > delta and stop_codon_position != 0:
-                                            break
-                                    # we need to check the stop_codon on the 3prime
-                                    if stop_codon_position == 0:
-                                        raise Exception("stop_codon_position not found")
-                                    items[3] = str(stop_codon_position)
-                                    items[4] = str(end - 1)
-                                else:
-                                    raise ValueError(f"strand must be + or -. Found {strand}")
-                            line = "\t".join(items)
-                            fout.write(f"{line}")
+                                # we need to check whether we found something
+                                if stop_codon_position == 0:
+                                    raise Exception("stop_codon_position not found")
+                                items[3] = str(stop_codon_position)
+                                items[4] = str(end - 1)
+                            else:
+                                raise ValueError(f"strand must be + or -. Found {strand}")
+                        line = "\t".join(items)
+                        fout.write(f"{line}")
 
     def find_start_codon_position(self, sequence, position, strand):
         """return position of start codon"""
-        res = self.codon.find_start_codon_position(sequence, position, strand, max_shift=10000)
-        if res:
-            return res[0]
-        else:
-            logger.warning(f"Could not find stop codon at position {position}. keep given position")
+ 
+        try:
+            position, codon = self.codon.find_start_codon_position(sequence, position, strand, max_shift=self._start_codon_max_shift)
+            return position
+        except TypeError:
+            logger.warning(f"Could not find start codon at position {position}. keep given position")
             return position
 
     def get_all_start_codons(self, fasta, gff, chr_name, strand, feature="CDS"):
@@ -291,7 +305,6 @@ class FastAGFFCorrection:
 
 
         """
-        from sequana import GFF3, FastA
 
         gff = GFF3(gff)
         fasta = FastA(fasta)
@@ -300,8 +313,6 @@ class FastAGFFCorrection:
             if ctg.name == chr_name:
                 seq = ctg.sequence
                 break
-
-        from collections import defaultdict
 
         d = defaultdict(int)
 
@@ -322,7 +333,6 @@ class FastAGFFCorrection:
         of start codon on strand+).
 
         """
-        from sequana import GFF3, FastA
 
         gff = GFF3(gff)
         fasta = FastA(fasta)
@@ -332,7 +342,6 @@ class FastAGFFCorrection:
                 seq = ctg.sequence
                 break
 
-        from collections import defaultdict
 
         d = defaultdict(int)
 

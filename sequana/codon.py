@@ -28,8 +28,18 @@ class Codon:
 
     """
 
-    start_codons = {"+": frozenset({"ATG", "TTG", "GTG"}), "-": frozenset({"CAT", "CAA", "CAC"})}
-    stop_codons = {"+": frozenset({"TAG", "TGA", "TAA"}), "-": frozenset({"TTA", "TCA", "CTA"})}
+    codons = {
+        "start":
+            {
+                "+": frozenset({"ATG", "TTG", "GTG"}),
+                "-": frozenset({"CAT", "CAA", "CAC"})
+            },
+        "stop":
+            {
+                "+": frozenset({"TAG", "TGA", "TAA"}),
+                "-": frozenset({"TTA", "TCA", "CTA"})
+            }
+    }
 
     def __init__(self):
         pass
@@ -74,8 +84,8 @@ class Codon:
             >>> c.find_start_codon_position("AAACATCAT", 8, "-")
 
         """
-        assert strand in "+-"
-        codons = self.start_codons[strand]
+        assert strand in ("+", "-")
+        codons = self.codons['start'][strand]
         return self._search_codons(sequence, position, strand, max_shift, codons)
 
     def find_stop_codon_position(self, sequence, position, strand, max_shift=10000):
@@ -97,8 +107,8 @@ class Codon:
             (1, 'TGA')
 
         """
-        assert strand in "+-"
-        codons = self.stop_codons[strand]
+        assert strand in ("+", "-")
+        codons = self.codons['stop'][strand]
         return self._search_codons(sequence, position, strand, max_shift, codons)
 
     def _search_codons(self, sequence, position, strand, max_shift, codons):
