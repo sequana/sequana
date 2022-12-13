@@ -12,12 +12,14 @@
 ##############################################################################
 """Utilities to manipulate FastA files"""
 import os
-from pysam import FastxFile
-from easydev import Progress
 import textwrap
 
 from sequana.stats import N50, L50
+from sequana.lazy import pylab
+from sequana.lazy import numpy as np
 
+from pysam import FastxFile
+import tqdm
 import colorlog
 
 logger = colorlog.getLogger(__name__)
@@ -38,17 +40,20 @@ def is_fasta(filename):
 
 
 # cannot inherit from FastxFile (no object in the API ?)
-class FastA(object):
+class FastA:
     """Class to handle FastA files
 
-
-    ::
+    Works like an iterator::
 
         from sequana import FastA
         f = FastA("test.fa")
         read = next(f)
 
-        names = f.names
+    names and sequences can be accessed with attributes::
+
+        f.names
+        f.sequences
+
 
     """
 
@@ -85,22 +90,26 @@ class FastA(object):
         return self._N
 
     def _get_names(self):
-        return [this.name for this in self]
+        _fasta = FastxFile(self.filename)
+        return [this.name for this in _fasta]
 
     names = property(_get_names)
 
     def _get_sequences(self):
-        return [this.sequence for this in self]
+        _fasta = FastxFile(self.filename)
+        return [this.sequence for this in _fasta]
 
     sequences = property(_get_sequences)
 
     def _get_comment(self):
-        return [this.comment for this in self]
+        _fasta = FastxFile(self.filename)
+        return [this.comment for this in _fasta]
 
     comments = property(_get_comment)
 
     def _get_lengths(self):
-        return [len(this.sequence) for this in self]
+        _fasta = FastxFile(self.filename)
+        return [len(this.sequence) for this in _fasta]
 
     lengths = property(_get_lengths)
 
@@ -109,7 +118,7 @@ class FastA(object):
         return dict(zip(self.names, self.lengths))
 
     def explode(self, outdir="."):
-        """extract sequences from original file and save them into individual files"""
+        """extract sequences from one fasta file and save them into individual files"""
         with open(self.filename, "r") as fin:
             for line in fin.readlines():
                 if line.startswith(">"):
@@ -213,7 +222,6 @@ class FastA(object):
             should provide a number but a list can be used as well.
         :param str output_filename:
         """
-        import numpy as np
 
         thisN = len(self)
         if isinstance(N, int):
@@ -229,23 +237,24 @@ class FastA(object):
         elif isinstance(N, list):
             cherries = set(N)
         fasta = FastxFile(self.filename)
-        pb = Progress(thisN)  # since we scan the entire file
+
         with open(output_filename, "w") as fh:
-            for i, read in enumerate(fasta):
+            for i, read in enumerate(tqdm.tqdm(fasta)):
                 if i in cherries:
                     fh.write(read.__str__() + "\n")
                 else:
                     pass
-                pb.animate(i + 1)
         return cherries
 
     def get_stats(self):
-        """Return a dictionary with basic statistics"""
-        from pylab import mean
+        """Return a dictionary with basic statistics
 
+        N the number of contigs, the N50 and L50, the min/max/mean 
+        contig lengths and total length.
+        """
         stats = {}
         stats["N"] = len(self.sequences)
-        stats["mean_length"] = mean(self.lengths)
+        stats["mean_length"] = pylab.mean(self.lengths)
         stats["total_length"] = sum(self.lengths)
         stats["N50"] = N50(self.lengths)
         stats["L50"] = L50(self.lengths)
@@ -260,12 +269,11 @@ class FastA(object):
 
             sequana summary test.fasta
         """
-        from pylab import mean, argmax
 
         # used by sequana summary fasta
         summary = {"number_of_contigs": len(self.sequences)}
         summary["total_contigs_length"] = sum(self.lengths)
-        summary["mean_contig_length"] = mean(self.lengths)
+        summary["mean_contig_length"] = pylab.mean(self.lengths)
         summary["max_contig_length"] = max(self.lengths)
         summary["min_contig_length"] = min(self.lengths)
         N = 0
@@ -286,7 +294,7 @@ class FastA(object):
             max_contigs = len(lengths) + 1
         while lengths and N < max_contigs:
             N += 1
-            index = argmax(lengths)
+            index = pylab.argmax(lengths)
             length = lengths.pop(index)
             position = positions.pop(index)
             sequence = self.sequences[position]
@@ -365,3 +373,4 @@ class FastA(object):
                 fout.write(f">{ctgname}\n{seq}\n")
             else:
                 fout.write(f">{ctgname}\t{comment}\n{seq}\n")
+

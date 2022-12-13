@@ -12,7 +12,6 @@
 ##############################################################################
 import os
 
-from easydev import do_profile
 import colorlog
 import pysam
 
@@ -133,7 +132,6 @@ class GFF3:
 
     def read(self):
         """Read annotations one by one creating a generator"""
-        count = 0
 
         self._features = set()
 
@@ -148,19 +146,14 @@ class GFF3:
                 if not line.strip():
                     continue
 
-                # Format checking
+                # Format checking. skip rows that do not have 9 columns since
+                # it is comments or fasta sequence
                 split = line.rstrip().split("\t")
+                if len(split) != 9:
+                     continue
 
                 # skipping  biological_region saves lots of time
                 if split[2].strip() in self.skip_types:
-                    continue
-
-                L = len(split)
-                if L != 9 and L != 0:  # pragma: no cover
-                    msg = "Incorrect format on line ({}). Expected 9 items, found {}. Skipped"
-                    print(msg.format(count, L))
-                    print(line.strip())
-                    count += 1
                     continue
 
                 # we process main fields and attributes. This takes most of the
@@ -173,7 +166,6 @@ class GFF3:
                 # all attributes as key/values added to all annotations.
                 annotation["attributes"] = self._process_attributes(split[8])
                 annotation.update(annotation["attributes"])
-                count += 1
 
                 yield annotation
 
@@ -340,8 +332,7 @@ class GFF3:
             logger.error(f"Your GFF/GTF does not seem to be correct ({text}). Expected a = or space as separator")
             sys.exit(1)
 
-        # ugly but fast replacement. not sure how frequent this is. Seen only in
-        # Saccer3 GFF file.
+        # ugly but fast replacement. 
         text = text.replace("%09", "\t").replace("%0A", "\n").replace("%0D", "\r")
         text = text.replace("%25", "%").replace("%3D", "=").replace("%26", "&").replace("%2C", ",")
         text = text.replace("%28", "(").replace("%29", ")")  # brackets
@@ -576,3 +567,10 @@ class GFF3:
                     fout.write(msg)
 
         fout.close()
+
+    def clean_gff_line_special_characters(self, text):
+        """Simple leaner of gff lines that may contain special characters"""
+        text = text.replace("%09", "\t").replace("%0A", "\n").replace("%0D", "\r")
+        text = text.replace("%25", "%").replace("%3D", "=").replace("%26", "&").replace("%2C", ",")
+        text = text.replace("%28", "(").replace("%29", ")")  # brackets
+        return text

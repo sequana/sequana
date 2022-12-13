@@ -160,8 +160,8 @@ def compute_fisher_strand_filter(record):
     Sites where the numbers of reference/non-reference reads are highly correlated 
     with the strands of the reads. Counting the number of reference reads on the forward 
     strand and on the reverse strand, and the number of alternate reads on the forward and 
-    reverse strand should be equivlent. With these four numbers, we
-    constructed a 2 x 2 contingency table and used the P -value from a Fisher’s exact test 
+    reverse strand should be equivalent. With these four numbers, we
+    construct a 2 x 2 contingency table and used the P-value from a Fisher’s exact test 
     to evaluate the correlation.
 
         from sequana import freebayes_vcf_filter
@@ -186,6 +186,7 @@ def compute_fisher_strand_filter(record):
         return pvalue
     FS = [_compute_FS(info["SAF"][i], info["SAR"][i], info["SRF"], info["SRR"]) for i in range(len(info["SAF"]))]
     return FS
+
 
 def compute_strand_balance(record):
     """Compute strand balance of alternate allele include in [0,0.5].

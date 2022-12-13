@@ -117,7 +117,7 @@ codons = {
     "UCA": "S",
     "UCG": "S",
     "CCU": "P",
-    "ACC": "P",
+    "CCC": "P",
     "CCA": "P",
     "CCG": "P",
     "ACU": "T",

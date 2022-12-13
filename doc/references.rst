@@ -81,9 +81,13 @@ Feature counts module
     :members:
     :undoc-members:
 
-Sequence module
----------------
+Sequence and genomic modules
+----------------------------------
 .. automodule:: sequana.sequence
+    :members:
+    :undoc-members:
+
+.. automodule:: sequana.codon
     :members:
     :undoc-members:
 
