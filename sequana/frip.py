@@ -12,6 +12,8 @@
 #  documentation: http://sequana.readthedocs.io
 #
 ##############################################################################
+from athlib import Path
+
 from sequana.utils.pandas import PandasReader
 
 from sequana.lazy import pylab
@@ -26,8 +28,8 @@ class FRiP:
 
     expected format::
 
-        bamfile,count,in_peaks, FRiP,
-        1_S1_L001.sorted.bam,3548090,53673,0.015127293839784221
+        bamfile,count,in_peaks,FRiP
+        1_S1_L001.sorted.bam,3548090,53673,0.01512729383978422
         2_S2_L001.sorted.bam,3868608,58292,0.01506795209026089
         3_S3_L001.sorted.bam,4092990,50219,0.01226951446253228
 
@@ -37,14 +39,14 @@ class FRiP:
         self.df = PandasReader(filename, sep=",").df
 
     def plot(self):
-        """scatter plot of FRiP verus Reads in peaks """
+        """scatter plot of FRiP versus Reads in peaks """
 
         pylab.clf()
         MX = self.df.FRiP.max()
         MY = self.df["in_peaks"].max()
         pylab.plot([0, MX], [0, MY], ls="--", color="b", alpha=0.5)
         for bamfile in self.df["bamfile"]:
-            label = bamfile.split("/")[0]
+            label = Path(bamfile).parent
             self.df.query("bamfile==@bamfile").plot(
                 x="FRiP", y="in_peaks", marker="o", alpha=0.5, lw=0, label=label, ax=pylab.gca()
             )

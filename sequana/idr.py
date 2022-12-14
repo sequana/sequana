@@ -1,7 +1,7 @@
 #
 #  This file is part of Sequana software
 #
-#  Copyright (c) 2016-2021 - Sequana Development Team
+#  Copyright (c) 2016-2023 - Sequana Development Team
 #
 #  File author(s): Sequana team
 #
@@ -33,9 +33,9 @@ class IDR:
     Note that signalValue = rep1_signal + rep2_signal
 
     The score columns contains the scaled IDR value, min(int(log2(-125IDR), 1000).
-    THis means that peaks with an IDR of 0 have a score of 1000,
-    or peaks with an IDR of 0.05 0.05 have a score of int(-125log2(0.05)) = 540,
-    and peaks with IDR of 1.0 have a score of 0.
+    This means that peaks with an IDR of 0 have a score of 1000. 
+    A peak with an IDR of 0.05 has a score of int(-125log2(0.05)) = 540. Finally, a
+    peaks with an IDR of 1.0 have a score of 0.
 
         IDR, score
         0.0039, 1000

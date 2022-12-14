@@ -1,7 +1,7 @@
 #
 #  This file is part of Sequana software
 #
-#  Copyright (c) 2016-2021 - Sequana Development Team
+#  Copyright (c) 2016-2023 - Sequana Development Team
 #
 #  Distributed under the terms of the 3-clause BSD license.
 #  The full license is in the LICENSE file, distributed with this software.
@@ -127,7 +127,7 @@ class MACS3Reader:
         return len(self.df)
 
     def plot_volcano(self, plotly=False, marker_color="b", title=""):
-        """Plots log10 versus fold change of all peaks"""
+        """Plots -log10 p-value versus fold change of all peaks"""
 
         if plotly:
             from plotly import express as px
@@ -238,6 +238,8 @@ class PeakConsensus:
         )
 
     def to_saf(self, filename):
+        """For now, all strand are categorised as strand + . 
+        strand not used in the pipeline for now."""
         df = self.df_merged.reset_index()
         df["strand"] = "+"
         df["GeneID"] = df["index"]

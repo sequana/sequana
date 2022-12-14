@@ -34,6 +34,7 @@ class Homer:
 
         self.df = PandasReader(filename, sep="\t", skiprows=1, header=None).df
         self.df.columns = ["ID"] + header
+        self.df.fillna("NA", inplace=True)
 
     def pie_annotation(self, wedgeprops={"ec": "k"}, **kwargs):
 

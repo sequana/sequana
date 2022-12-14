@@ -1,7 +1,7 @@
 #
 #  This file is part of Sequana software
 #
-#  Copyright (c) 2016 - Sequana Development Team
+#  Copyright (c) 2016-2023 - Sequana Development Team
 #
 #  File author(s):
 #      Thomas Cokelaer <thomas.cokelaer@pasteur.fr>
@@ -17,6 +17,8 @@
 from sequana.lazy import pandas as pd
 from sequana.lazy import pylab
 from sequana.lazy import numpy as np
+from sequana.utils.pandas import PandasReader
+
 
 import colorlog
 
@@ -48,39 +50,28 @@ class PhantomPeaksReader:
 
     """
 
+    _columns = [
+        "filename",
+        "num_reads",
+        "estimated_fragment_length",
+        "corr",
+        "phantom_peak",
+        "corr_phantom_peak",
+        "argmin_corr",
+        "min_corr",
+        "NSC",
+        "RSC",
+        "quality_tag",
+    ]
+
     def __init__(self, filename):
-        self.df = pd.read_csv(filename, sep="\t", header=None)
-        self.df.columns = [
-            "filename",
-            "num_reads",
-            "estimated_fragment_length",
-            "corr",
-            "phantom_peak",
-            "corr_phantom_peak",
-            "argmin_corr",
-            "min_corr",
-            "NSC",
-            "RSC",
-            "quality_tag",
-        ]
+        self.df = PandasReader(filename, sep="\t", header=None).df
+        self.df.columns = self._columns
 
     def read(self, filename):
-        df = pd.read_csv(filename, sep="\t", header=None)
-        df.columns = [
-            "filename",
-            "num_reads",
-            "estimated_fragment_length",
-            "corr",
-            "phantom_peak",
-            "corr_phantom_peak",
-            "argmin_corr",
-            "min_corr",
-            "NSC",
-            "RSC",
-            "quality_tag",
-        ]
-        self.df = self.df.append(df)
-        self.df.reset_index(inplace=True, drop=True)
+        df = PandasReader(filename, sep="\t", header=None).df
+        df.columns = self._columns
+        self.df = pd.concat([self.df, df], axis=0)
 
     def plot_RSC(self):
         self.df.RSC.plot(kind="bar")
@@ -132,16 +123,13 @@ class Phantom:
         self.start = start
         self.stop = stop
         self.binning = binning
-
-        # for book-keeping: command required to build the input file from the bamfile
-        # cmd = """
-        # shell(cmd)
         self.df = None
 
     def read_align(self, readfile):
 
-        self.df = pd.read_csv(readfile, sep="\t", header=None)
-        self.df.columns = ["ref", "start", "end", "dummy", "quality", "strand"]
+        self.df = PandasReader(
+            readfile, sep="\t", header=None, columns=["ref", "start", "end", "dummy", "quality", "strand"]
+        ).df
 
         self.read_length = round(pylab.median(self.df["end"] - self.df["start"]))
         self.chromosomes = self.df["ref"].unique()
@@ -157,7 +145,7 @@ class Phantom:
 
         # because bins is set to 5, we actually go from m*5 to M*5
         X = range(m, M + 1, 1)
-        Xreal = np.array(range(m * self.binning, (M + 1) * self.binning, self.binning))
+        Xreal = np.arange(m * self.binning, (M + 1) * self.binning, self.binning)
 
         results = {}
         for chrom in self.chromosomes:
@@ -186,12 +174,14 @@ class Phantom:
     def stats(self, results, df_avc, bw=1):
 
         stats = {}
+
+        # some simple stars about the reads
         stats["read_fragments"] = len(self.df)
         stats["fragment_length"] = self.read_length
-
-        # average cross correlation across all chromosomes
         logger.info("Read {} fragments".format(stats["read_fragments"]))
         logger.info("ChIP data mean length: {}".format(self.read_length))
+
+        # average cross correlation across all chromosomes
         # df_avc.sum(axis=1).plot()
         df = df_avc.sum(axis=1)
         corr_max = df.max()
@@ -352,7 +342,6 @@ class Phantom:
         zo = z * 3
 
         x = data["x"]
-
 
         # the frequencies, sorted from smaller to larger
         tt = np.floor(x / bin).value_counts().sort_values()
