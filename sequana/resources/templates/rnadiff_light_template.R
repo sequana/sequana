@@ -58,7 +58,11 @@ pairwise_comparison = function(dds, comps, meta_col_name,
                         independentFiltering=independentFiltering,
                         cooksCutoff=cooksCutoff)
         summary(res_i)
-        
+	shrinked_lfc = lfcShrink(dds, res=res_i, contrast=c(meta_col_name, comp[[1]], comp[[2]]), type="ashr", quiet=TRUE)
+        res_i$log2FoldChangeNotShrinked = res_i$log2FoldChange
+	res_i$lfcSENotShrinked = res_i$lfcSE
+	res_i$log2FoldChange = shrinked_lfc$log2FoldChange
+	res_i$lfcSE = shrinked_lfc$lfcSE
         compa_res[[compa_name]] = res_i
     }
     return(compa_res)
