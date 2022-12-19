@@ -12,7 +12,7 @@
 #  documentation: http://sequana.readthedocs.io
 #
 ##############################################################################
-from athlib import Path
+from pathlib import Path
 
 from sequana.utils.pandas import PandasReader
 
