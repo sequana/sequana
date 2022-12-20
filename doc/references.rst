@@ -132,7 +132,7 @@ RiboDesigner
 .. automodule:: sequana.ribodesigner
     :members:
     :undoc-members:
-       
+
 RNAdiff
 -------
 
@@ -165,6 +165,14 @@ General tools
     :undoc-members:
 
 .. automodule:: sequana.tools
+    :members:
+    :undoc-members:
+
+
+Peaks
+-----
+
+.. automodule:: sequana.macs3
     :members:
     :undoc-members:
 

@@ -52,7 +52,9 @@ from .enrichment.kegg import KEGGPathwayEnrichment
 from .enrichment.panther import PantherEnrichment
 from .enrichment.gsea import GSEA
 
-
+from .idr import IDR
+from .homer import Homer
+from .macs3 import MACS3Reader, PeakConsensus
 from .pacbio import PacbioSubreads
 from .phred import Quality
 from .rnadiff import RNADiffResults
