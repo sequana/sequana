@@ -206,6 +206,12 @@ Changelog
 ========= ==========================================================================
 Version   Description
 ========= ==========================================================================
+0.14.6    * add fasta_and_gff_annotation module to correct fasta and gff given a 
+            vcf file.
+          * add macs3 module to read output of macs3 peak detector.
+          * add idr module to read results of idr analysis
+          * add phantom module to compute phantom peaks
+          * add homer module to read annotation files from annotatePeaks
 0.14.5    * move start_pipeline standalone in 
             https://github.com/sequana/sequana_pipetools
           * update snpeff module to allows build command to have options

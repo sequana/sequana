@@ -1328,10 +1328,7 @@ SN	pairs on different chromosomes:	0
         from sequana.viz.boxplot import Boxplot
 
         bx = Boxplot(df)
-        try:
-            bx.plot(ax=ax)
-        except:
-            bx.plot()
+        bx.plot()
 
     # FIXME: why not a property ? Same comments for coverage attribute
     def _set_alignments(self):
@@ -1356,8 +1353,6 @@ SN	pairs on different chromosomes:	0
         self.coverage = {}
 
         for rname in ref_start.keys():
-            print(rname)
-            print(None in ref_end[rname])
             N = max(ref_end[rname])
             self.coverage[rname] = np.zeros(N)
             for x, y in zip(ref_start[rname], ref_end[rname]):

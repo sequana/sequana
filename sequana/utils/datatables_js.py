@@ -330,7 +330,7 @@ class DataTable(object):
         :param DataTableFunction datatable: javascript function to create the
             Jquery Datatables. If None, a :class:`DataTableFunction` is
             generated from the df.
-        :param bool index: indicates whether the index dataframe should 
+        :param bool index: indicates whether the index dataframe should be shown
         """
         self.index = index
         self._df = df
