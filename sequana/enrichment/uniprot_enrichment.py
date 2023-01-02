@@ -142,12 +142,12 @@ class UniprotEnrichment(Ontology, PlotGOTerms):
         try:
             self.df_genes = self._fill_uniprot_for_taxon()
 
-            self.df_genes = self.df_genes[self.df_genes["Gene names"].isnull() == False]
+            self.df_genes = self.df_genes[self.df_genes["Gene Names"].isnull() == False]
             self.df_genes.index = self._get_gene_names(self.df_genes)
 
-            BP = self.df_genes["Gene ontology (biological process)"]
-            CC = self.df_genes["Gene ontology (cellular component)"]
-            MF = self.df_genes["Gene ontology (molecular function)"]
+            BP = self.df_genes["Gene Ontology (biological process)"]
+            CC = self.df_genes["Gene Ontology (cellular component)"]
+            MF = self.df_genes["Gene Ontology (molecular function)"]
 
             self.gene_sets = {
                 "BP": self.get_go_gene_dict(BP),
@@ -168,7 +168,7 @@ class UniprotEnrichment(Ontology, PlotGOTerms):
 
     def _get_gene_names(self, conv):
         results = []
-        for i, x in enumerate(conv["Gene names"]):
+        for i, x in enumerate(conv["Gene Names"]):
             names = x.split()
 
             # Some gene names are very species-dependent. 
@@ -186,7 +186,7 @@ class UniprotEnrichment(Ontology, PlotGOTerms):
             [
                 "accession",
                 "id",
-                "gene_name",
+                "gene_names",
                 "gene_primary",
                 "gene_synonym",
                 "gene_oln",
@@ -199,11 +199,12 @@ class UniprotEnrichment(Ontology, PlotGOTerms):
                 "go_p",
                 "go_f",
                 "go_c",
-                "go-id",
+                "go_id",
             ]
         )
         uniprot = UniProt(cache=True, verbose=True)
         df = uniprot.search(f"organism_name:{self.taxon}", frmt="tsv", columns=columns)
+
 
         try:
             df = pd.read_csv(io.StringIO(df), sep="\t")

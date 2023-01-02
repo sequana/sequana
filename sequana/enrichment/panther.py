@@ -127,7 +127,7 @@ class PantherEnrichment(Ontology, PlotGOTerms):
 
         self.quickgo = quickgo.QuickGO(cache=True)
         self.quickgo.requests_per_sec = requests_per_sec
-        self.quickgo.settings.TIMEOUT = 120
+        self.quickgo.services.settings.TIMEOUT = 120
 
         self._ancestors = {
             "MF": "GO:0003674",
