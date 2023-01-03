@@ -37,7 +37,7 @@ class QuickGOGraph:
 
         self.quickgo = quickgo.QuickGO(cache=True)
         self.quickgo.requests_per_sec = 10
-        self.quickgo.settings.TIMEOUT = 120
+        self.quickgo.services.settings.TIMEOUT = 120
 
         self.obsolets = []
 
