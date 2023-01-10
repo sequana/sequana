@@ -22,19 +22,25 @@ SEQUANA
    :target: http://joss.theoj.org/papers/10.21105/joss.00352
    :alt: JOSS (journal of open source software) DOI
 
+.. image:: https://img.shields.io/badge/python-3.7%20%7C%203.8%20%7C3.9-blue.svg
+    :target: https://pypi.python.org/pypi/sequana
+    :alt: Python 3.7 | 3.8 | 3.9
 
-:Python version: 3.7, 3.8, 3.9
-:Documentation: `On readthedocs <http://sequana.readthedocs.org/>`_
-:Issues: `On github <https://github.com/sequana/sequana/issues>`_
+.. image:: https://img.shields.io/github/issues/sequana/sequana.svg
+    :target: https://github.com/sequana/sequana/issues
+    :alt: GitHub Issues
+
 :How to cite: Citations are important for us to carry on developments.
     For Sequana library (including the pipelines), please use
 
     Cokelaer et al, (2017), 'Sequana': a Set of Snakemake NGS pipelines, Journal of
     Open Source Software, 2(16), 352, `JOSS DOI doi:10.21105/joss.00352 <https://joss.theoj.org/papers/10.21105/joss.00352>`_
 
-    For the **genome coverage** tool (sequana_coverage):  Dimitri Desvillechabrol,
-    Christiane Bouchier, Sean Kennedy, Thomas Cokelaer
-    http://biorxiv.org/content/early/2016/12/08/092478
+    For the **genome coverage** tool (sequana_coverage):  Dimitri Desvillechabrol, Christiane Bouchier,
+    Sean Kennedy, Thomas Cokelaer. Sequana coverage: detection and characterization of genomic
+    variations using running median and mixture models. GigaScience, 7(12), 2018.
+    https://doi.org/10.1093/gigascience/giy110 
+    Also available on bioRxiv (DOI: http://biorxiv.org/content/early/2016/12/08/092478)
 
     For **Sequanix**: Dimitri Desvillechabrol, Rachel Legendre, Claire Rioualen,
     Christiane Bouchier, Jacques van Helden, Sean Kennedy, Thomas Cokelaer.
@@ -92,6 +98,14 @@ SEQUANA
             :target: https://github.com/sequana/fastqc/actions/workflows/main.yml
       - .. image:: https://github.com/sequana/fastqc/actions/workflows/apptainer.yml/badge.svg
             :target: https://github.com/sequana/fastqc/actions/workflows/apptainer.yml
+    * - `LORA <https://github.com/sequana/lora>`_
+      - Map sequences on target genome
+      - .. image:: https://badge.fury.io/py/sequana-lora.svg
+            :target: https://pypi.python.org/pypi/sequana-lora
+      - .. image:: https://github.com/sequana/lora/actions/workflows/main.yml/badge.svg
+            :target: https://github.com/sequana/lora/actions/workflows/main.yml
+      - .. image:: https://github.com/sequana/lora/actions/workflows/apptainer.yml/badge.svg
+            :target: https://github.com/sequana/lora/actions/workflows/apptainer.yml
     * - `mapper <https://github.com/sequana/mapper>`_
       - Map sequences on target genome
       - .. image:: https://badge.fury.io/py/sequana-mapper.svg
@@ -117,7 +131,7 @@ SEQUANA
       - .. image:: https://github.com/sequana/ribofinder/actions/workflows/apptainer.yml/badge.svg
             :target: https://github.com/sequana/ribofinder/actions/workflows/apptainer.yml
     * - `rnaseq <https://github.com/sequana/rnaseq>`_
-      - RNA-seq analysis 
+      - RNA-seq analysis
       - .. image:: https://badge.fury.io/py/sequana-rnaseq.svg
             :target: https://pypi.python.org/pypi/sequana-rnaseq
       - .. image:: https://github.com/sequana/rnaseq/actions/workflows/main.yml/badge.svg
@@ -206,6 +220,8 @@ Changelog
 ========= ==========================================================================
 Version   Description
 ========= ==========================================================================
+0.14.7    * remove useless rules now in sequana-wrappers
+          * update main README to add LORA in list of pipelines 
 0.14.6    * add fasta_and_gff_annotation module to correct fasta and gff given a 
             vcf file.
           * add macs3 module to read output of macs3 peak detector.
