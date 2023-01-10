@@ -220,7 +220,7 @@ Changelog
 ========= ==========================================================================
 Version   Description
 ========= ==========================================================================
-0.14.7    * remove uselss rules now in sequana-wrappers
+0.14.7    * remove useless rules now in sequana-wrappers
           * update main README to add LORA in list of pipelines 
 0.14.6    * add fasta_and_gff_annotation module to correct fasta and gff given a 
             vcf file.
