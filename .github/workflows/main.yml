@@ -3,12 +3,12 @@ name: Tests
 on:
   push:
     branches:
-      - master
+      - main
       - dev
   pull_request:
     branches-ignore: []
   schedule:
-    - cron: '0 0 * * SUN'
+    - cron: '0 0 13 * *'
 
 jobs:
   build-linux:
@@ -16,7 +16,7 @@ jobs:
     strategy:
       max-parallel: 5
       matrix:
-        python: [3.7, 3.8, 3.9]
+        python: [3.8, 3.9, '3.10']
       fail-fast: false
 
 
@@ -24,29 +24,36 @@ jobs:
     - name: checkout git repo
       uses: actions/checkout@v2
 
-    - name: Set up Python 3.X
-      uses: actions/setup-python@v2
+    - name: conda/mamba
+      uses: mamba-org/provision-with-micromamba@main
       with:
-        python-version: ${{ matrix.python }}
+          cache-downloads: true
+          environment-file: false
+          environment-name: installation
+          channels:
+            conda-forge,bioconda,defaults
+          extra-specs: |
+            python=${{ matrix.python }}
+            kraken2
+            shustring
+            samtools
+            snpeff
+            bwa
+            shustring
+            cd-hit
 
-    - name: Add conda to system path
-      run: |
-        echo $CONDA/bin >> $GITHUB_PATH
-
-    - name: conda
-      run: |
-        conda install -c conda-forge --quiet 'mamba<0.24' python=${{ matrix.python }}
-        mamba install -c conda-forge -c bioconda --quiet -y kraken2 shustring 'samtools<1.15.1' "snpeff" bwa cd-hit
-
-    - name: Install sequana with pip
+    - name: install package itself
+      shell: bash -l {0}
       run: |
         pip install .[testing]
-        pip install multiqc==1.11.0
+
     - name: testing
+      shell: bash -l {0}
       run: |
         pytest --cov-report term-missing --cov=sequana
 
     - name: coveralls
+      shell: bash -l {0}
       run: |
         pip install coveralls
         coveralls --service=github
