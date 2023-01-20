@@ -16,7 +16,7 @@ jobs:
     strategy:
       max-parallel: 5
       matrix:
-        python: [3.7, 3.8, 3.9]
+        python: [3.8, 3.9, '3.10']
       fail-fast: false
 
 
@@ -27,11 +27,16 @@ jobs:
     - name: conda/mamba
       uses: mamba-org/provision-with-micromamba@main
       with:
-          environment-file: 
+          cache-downloads: true
+          environment-file: false
+          environment-name: installation
+          channels:
+            conda-forge,bioconda,defaults
           extra-specs: |
             python=${{ matrix.python }}
             kraken2
             shustring
+            samtools
             snpeff
             bwa
             shustring
