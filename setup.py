@@ -107,6 +107,7 @@ setup(
         "doc": [
             "sphinx>=3",
             "sphinx_rtd_theme",
+            "sphinx_gallery",
             "sequana_sphinxext",
         ],
     },
