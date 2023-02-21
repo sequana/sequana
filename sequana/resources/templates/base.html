@@ -10,7 +10,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   <!-- Javascript static files  -->
-  <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+  <script async defer src="https://buttons.github.io/buttons.js"></script>
   <script src="{{ module.path }}js/jquery-3.5.1.min.js"></script>
   <script src="{{ module.path }}js/bootstrap.min.js"></script>
   <script src="{{ module.path }}js/jquery.dropdown.min.js"></script>
@@ -32,37 +32,42 @@
 
 <body>
   <div class="container-fluid">
+
     <header>
+
+    <div>
+    <img style="float:left ; border:0px; width=80px ; height:80px; position:relative; left:0px" src="images/logo_256x256.png">
+    </div>
       <h1 class="title">{{ module.title }}</h1>
       <h2 class="subtitle">
         Report created with <a href="http://sequana.readthedocs.org">Sequana</a>
-        (v{{ config.version }}) 
-
-{% if config.pipeline_version %} 
-and <a href="https://github.com/sequana/sequana_{{ config.pipeline_name}}">sequana_{{ config.pipeline_name  }}</a> (v{{ config.pipeline_version}})
-{% endif %}
-
+        (v{{ config.version }})
+      {% if config.pipeline_version %}
+        and <a href="https://github.com/sequana/{{ config.pipeline_name}}">sequana_{{ config.pipeline_name  }}</a> (v{{config.pipeline_version}})
+      {% endif %}
       </h2>
     </header>
+
+
     {% block content %}{% endblock %}
     <br>
     <br>
     </div>
-    
+
   <footer class="footer">
     <div class="container">
-{% if config.pipeline_version %} 
     This pipeline is part of the  <a href="http://sequana.readthedocs.io"
-target="_blank">Sequana project</a>. Please consider citing us (<a
-href="http://sequana.readthedocs.io">How to cite?</a> or contribute with new <a
-href="https://github.com/sequana/sequana/issues/new/choose">suggestions</a>)
+target="_blank">Sequana project</a>. Please consider citing us (<a href="http://sequana.readthedocs.io">How to cite
+?</a>).
+<br>
 
-{% else %}
-Report generated with <b>sequana summary {{ config.module_command }} </b> command. Please consider citing us (<a href="http://sequana.readthedocs.io">How to cite ?</a>). You may also <a href="https://github.com/sequana/sequana_{{config.pipeline_name}}/stargazers">{{config.pipeline_name}}</a> star us or contribute with new <a href="https://github.com/sequana/sequana/issues/new/choose">suggestions.</a>
-
-{% endif %}
-
-        <br>Generated with Sequana ({{ config.time_now }})
+<p>You may also star us: <a class="github-button" href="https://github.com/sequana/{{config.pipeline_name}}"
+    data-color-scheme="no-preference: dark; light: light; dark: dark;" data-icon="octicon-star" data-size="large"
+     data-show-count="true" aria-label="Star sequana/rnaseq on GitHub">Star</a> 
+ <a class="github-button" href="https://github.com/sequana/sequana"
+     data-color-scheme="no-preference: dark; light: light; dark: dark;" data-icon="octicon-star" data-size="large"
+ data-show-count="true" aria-label="Star sequana/rnaseq on GitHub">Star</a>
+Generated with Sequana ({{ config.time_now }})</p>
  
     </div>
   </footer>
