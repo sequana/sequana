@@ -14,6 +14,7 @@
 """Module to write differential regulation analysis report"""
 
 from sequana.lazy import pandas as pd
+from sequana.lazy import pylab
 
 from sequana.modules_report.base_module import SequanaBaseModule
 from sequana.utils.datatables_js import DataTable
@@ -37,13 +38,14 @@ class RNAdiffModule(SequanaBaseModule):
         """.. rubric:: constructor"""
         super().__init__()
         self.title = "RNAdiff"
+        self.folder = folder
         self.independent_module = True
         self.module_command = "--module rnadiff"
 
         self.rnadiff = RNADiffResults(folder, gff=gff, **kwargs)
 
-        # nice layout for the report. Use import here to not overload import
-        # time
+        # nice layout for the report. Use import here to not overload
+        # import time
         import seaborn
 
         seaborn.set()
@@ -51,15 +53,22 @@ class RNAdiffModule(SequanaBaseModule):
         # any user option here
         self.kwargs = kwargs
 
+        self._count_section = 1
         self.create_main_report_content()
         self.create_individual_reports()
-
+        self.create_command_section()
         self.create_html(output_filename)
 
         # Fixme not sure this is required to be imported here
         import matplotlib
 
         matplotlib.rc_file_defaults()
+
+    def create_command_section(self):
+
+        command = self.kwargs.get("command", "")
+        self.sections.append({"name": f"{self._count_section} - Info", "anchor": "command", "content": command})
+        self._count_section += 1
 
     def create_individual_reports(self):
         description = """<p>The differential analysis is based on DESeq2. This
@@ -76,11 +85,12 @@ for that feature.</p>
 
         self.sections.append(
             {
-                "name": "6. DGE results",
+                "name": f"{self._count_section}. DGE results",
                 "anchor": "filters_option",
                 "content": description,
             }
         )
+        self._count_section += 1
 
         counter = 1
         for name, comp in self.rnadiff.comparisons.items():
@@ -111,6 +121,9 @@ for that feature.</p>
             "dom": "",
             "buttons": [],
         }
+
+        if len(S1) > 20:
+            options["dom"] = "Bfrtip"
 
         def get_local_df(Sdata, lfc=0):
             N = len(Sdata)
@@ -167,7 +180,6 @@ scale). Clicking on any of the link will lead you to the section of the comparis
         style = "width:65%"
 
         def dispersion(filename):
-            import pylab
 
             pylab.ioff()
             pylab.clf()
@@ -178,13 +190,13 @@ scale). Clicking on any of the link will lead you to the section of the comparis
         html = """<p>dispersion of the fitted data to the model</p>{}<hr>""".format(
             self.create_embedded_png(dispersion, "filename", style=style)
         )
-        self.sections.append({"name": "4. Dispersion", "anchor": "table", "content": html})
+        self.sections.append({"name": f"{self._count_section}. Dispersion", "anchor": "table", "content": html})
+        self._count_section += 1
 
     def add_cluster(self):
         style = "width:65%"
 
         def dendogram(filename):
-            import pylab
 
             pylab.ioff()
             pylab.clf()
@@ -199,9 +211,9 @@ href="https://en.wikipedia.org/wiki/Ward%27s_method"> Ward method </a>. The data
 </p>{}<hr>""".format(
             self.create_embedded_png(dendogram, "filename", style=style)
         )
+        dendogram(f"{self.folder}/images/dendogram.png")
 
         def pca(filename):
-            import pylab
 
             pylab.ioff()
             pylab.clf()
@@ -227,15 +239,15 @@ of the PCA where the first 3 components are shown.
 
         self.sections.append(
             {
-                "name": "2. Clusterisation",
+                "name": f"{self._count_section}. Clusterisation",
                 "anchor": "table",
                 "content": html_dendogram + html_pca + html_pca_plotly,
             }
         )
+        self._count_section += 1
 
     def add_plot_count_per_sample(self):
         style = "width:65%"
-        import pylab
 
         def plotter(filename):
             pylab.ioff()
@@ -297,18 +309,18 @@ condition</p> {}<hr>""".format(
 
         self.sections.append(
             {
-                "name": "1. Diagnostic plots",
+                "name": f"{self._count_section}. Diagnostic plots",
                 "anchor": "table",
                 "content": html1 + html_null + html_density + html_feature,
             }
         )
+        self._count_section += 1
 
     def add_normalisation(self):
 
         style = "width:45%"
 
         def rawcount(filename):
-            import pylab
 
             pylab.ioff()
             pylab.clf()
@@ -324,7 +336,6 @@ condition</p> {}<hr>""".format(
             pylab.close()
 
         def normedcount(filename):
-            import pylab
 
             pylab.ioff()
             pylab.clf()
@@ -357,18 +368,18 @@ normalised counts.
 
         self.sections.append(
             {
-                "name": "3. Normalisation",
+                "name": f"{self._count_section}. Normalisation",
                 "anchor": "table",
                 "content": html_boxplot + img1 + img2 + "</hr>",
             }
         )
+        self._count_section += 1
 
     def add_upset_plot(self):
 
         style = "width:65%"
 
         def upsetplot(filename):
-            import pylab
 
             pylab.ioff()
             pylab.clf()
@@ -381,11 +392,12 @@ normalised counts.
 
         self.sections.append(
             {
-                "name": "4. Upset plot",
+                "name": f"{self._count_section}. Upset plot",
                 "anchor": "table",
                 "content": html_upsetplot + img + "</hr>",
             }
         )
+        self._count_section += 1
 
     def add_individual_report(self, comp, name, counter):
         style = "width:45%"
@@ -398,7 +410,6 @@ around 0 corresponding to the diﬀerentially expressed features. This may not
 always be the case. </p>"""
 
         def plot_pvalue_hist(filename):
-            import pylab
 
             pylab.ioff()
             pylab.clf()
@@ -407,7 +418,6 @@ always be the case. </p>"""
             pylab.close()
 
         def plot_padj_hist(filename):
-            import pylab
 
             pylab.ioff()
             pylab.clf()
@@ -423,14 +433,13 @@ always be the case. </p>"""
 
         self.sections.append(
             {
-                "name": f"6.{counter}.a pvalue distribution ({name})",
+                "name": f"{self._count_section}.{counter}.a pvalue distribution ({name})",
                 "anchor": f"dge_summary",
                 "content": description + img1 + img2,
             }
         )
 
         def plot_volcano(filename):
-            import pylab
 
             pylab.ioff()
             pylab.clf()
@@ -454,17 +463,15 @@ value as a function of the log2 ratio of diﬀerential expression. </p>"""
         from plotly import offline
 
         plotly = offline.plot(fig, output_type="div", include_plotlyjs=False)
-
         self.sections.append(
             {
-                "name": f"6.{counter}.b volcano plots ({name})",
+                "name": f"{self._count_section}.{counter}.b volcano plots ({name})",
                 "anchor": f"{name}_volcano",
                 "content": html_volcano + img3 + "<hr>" + plotly,
             }
         )
 
         # finally, let us add the tables
-        from pylab import log10
 
         df = comp.df.copy()  # .reset_index()
 
@@ -477,14 +484,12 @@ value as a function of the log2 ratio of diﬀerential expression. </p>"""
         df = df.reset_index()
 
         fold_change = 2 ** df["log2FoldChange"]
-        log10padj = -log10(df["padj"])
+        log10padj = -pylab.log10(df["padj"])
         df.insert(df.columns.get_loc("log2FoldChange") + 1, "FoldChange", fold_change)
         df.insert(df.columns.get_loc("padj") + 1, "log10_padj", log10padj)
 
         try:
             del df["dispGeneEst"]
-            # del df['dispFit']
-            # del df['dispMap']
         except:
             pass
 
@@ -509,27 +514,20 @@ value as a function of the log2 ratio of diﬀerential expression. </p>"""
         js_all = datatable.create_javascript_function()
         html_tab_all = datatable.create_datatable(float_format="%.3e")
 
-        df_sign = df.query("padj<=0.05 and (log2FoldChange>1 or log2FoldChange<-1)")
+        df_sign = df.query(f"padj<=0.05 and ({comp.l2fc_name}>1 or {comp.l2fc_name}<-1)")
 
         datatable = DataTable(df_sign, f"{idname}_table_sign")
         datatable.datatable.datatable_options = options
         js_sign = datatable.create_javascript_function()
         html_tab_sign = datatable.create_datatable(float_format="%.3e")
 
-        self.sections.append(
-            {
-                "name": f"6.{counter}.c {name} Tables ({name})",
-                "anchor": f"{name} stats",
-                "content": f"""<p>The following tables give all DGE results. The
-first table contains all significant genes (adjusted p-value below 0.05 and
-absolute fold change of at least 0.5). The following tables contains all results
+        content = f"""<p>The following tables give all DGE results. The
+first table contains all significant genes (adjusted yyp-value below 0.05 and absolute fold change of at least 0.5). The following tables contains all results
 without any filtering. Here is a short explanation for each column:
 <ul>
-<li> baseMean: base mean over all samples</li>
-<li> norm.sampleName: rounded normalized counts per sample</li>
-<li> FC: fold change in natural base</li>
-<li> log2FoldChange: log2 Fold Change estimated by the model. Reflects change
-between the condition versus the reference condition</li>
+<li> baseMean: read count mean over all samples</li>
+<li> FoldChange: fold change in natural base</li>
+<li> log2FoldChange: log2 Fold Change estimated by the model. Reflects change between the condition versus the reference condition</li>
 <li> stat: Wald statistic for the coefficient (contrast) tested</li>
 <li> pvalue: raw p-value from statistical test</li>
 <li> padj: adjusted pvalue. Used for cutoff at 0.05 </li>
@@ -539,12 +537,37 @@ between the condition versus the reference condition</li>
 </li>
 </ul>
 </p>
-<h3>Significative only<a id="{idname}_table_sign"></a></h3>
-here below is a subset of the next table. It contains all genes below adjusted
+<h3>Significative only (and |l2fC| > 1) <a id="{idname}_table_sign"></a></h3>
+Here below is a subset of the entire table. It contains all genes below adjusted
 p-value of 0.05 and absolute log2 fold change above 1.
-{js_sign} {html_tab_sign} 
+{js_sign} {html_tab_sign}"""
 
-<h3>All genes<a id="{idname}_table_all"></a></h3>
-{js_all} {html_tab_all}""",
+        if not self.kwargs.get("split_full_table", False):
+            content += f"""<h3>All genes<a id="{idname}_table_all"></a></h3>{js_all} {html_tab_all}"""
+        else:
+            # create an independent pages (lighter to have N pages rather than everything
+            # on the same page. Could be useful for eukaryotes.
+            link = f"{self.folder}/{name}.html"
+            content += f"""<h3>All genes<a id="{idname}_table_all"></a></h3>"""
+            content += f'The full list is available <a target="_blank" href="{name}.html">here</a>'
+            r = SequanaBaseModule()
+            r.title = "List of DGEs"
+            r.folder = self.folder
+            r.independent_module = True
+            r.sections = list()
+            r.sections.append(
+                {
+                    "name": f"{name} comparison",
+                    "anchor": "table",
+                    "content": f"""<h3>All genes<a id="{idname}_table_all"></a></h3>{js_all} {html_tab_all}""",
+                }
+            )
+            r.create_html(f"{name}.html")
+
+        self.sections.append(
+            {
+                "name": f"{self._count_section}.{counter}.c {name} Tables ({name})",
+                "anchor": f"{name} stats",
+                "content": content,
             }
         )

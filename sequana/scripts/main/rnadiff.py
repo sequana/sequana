@@ -14,6 +14,7 @@ import sys
 
 import click
 import colorlog
+from pathlib import Path
 
 from sequana import GFF3
 from sequana.rnadiff import RNADesign, RNADiffAnalysis
@@ -35,11 +36,10 @@ def rnadiff_auto_batch_column(ctx, args, incomplete):
     else:
         try:
             d = RNADesign("design.csv")
-            logger.warning('Using local design.csv to infer the batch column')
+            logger.warning("Using local design.csv to infer the batch column")
         except FileNotFoundError:
             logger.critical("No default design.csv found. Please use --design YOUR_DESIGN.csv ")
             sys.exit(1)
-
 
     batch = (x for x in d.df.columns if x not in {"label", "condition"})
     if len(batch) == 0:
@@ -185,6 +185,16 @@ replicates and conditions. Not recommended if you have lots of conditions. By de
     help="Keeps genes that have an average number of reads greater or equal to this value in all conditions. By default all genes are kept",
 )
 @click.option(
+    "--shrinkage/--no-shrinkage",
+    default=True,
+    help="Shrinkage was added in the DESeq2 script analysis in Sequana 0.14.7. Although it has a marginal impact, number of DGEs may be different and volcano plots have usually a different shape. To ignore the shrinkage, you could set the option to --no-shrinkage",
+)
+@click.option(
+    "--split-full-table/--no-split-full-table",
+    default=False,
+    help="Multiple comparisons on large genomes may create HTML reports that are quite large and would required lots of memory. Using this option, only significative DGE are in the main HTML report and full table are save in individual HTML pages",
+)
+@click.option(
     "--keep-all-conditions/--no-keep-all-conditions",
     default=False,
     help="""Even though sub set of comparisons are provided, keep all conditions
@@ -290,15 +300,13 @@ def rnadiff(**kwargs):
     from sequana import logger
     import pandas as pd
     from sequana.modules_report.rnadiff import RNAdiffModule
+    from easydev import cmd_exists
 
     logger.setLevel(kwargs["logger"])
 
-    from easydev import cmd_exists
-
     if not cmd_exists("Rscript"):
         logger.critical(
-            """Rscript not found; You will need R and the DESeq2 package to be installed. 
-You may install it yourself or use damona using the rtools:1.0.0 image """
+            """Rscript not found; You will need R with the DESeq2 and ashr packages installed. You may install it yourself or use damona using the rtools:1.2.0 image """
         )
         sys.exit(1)
 
@@ -307,8 +315,15 @@ You may install it yourself or use damona using the rtools:1.0.0 image """
     attribute = kwargs["attribute_name"]
 
     if os.path.exists(outdir) and not kwargs["force"]:
-        logger.error(f"{outdir} exist already. Use --force to overwrite")
+        logger.error(f"{outdir} exist already. Use --force to overwrite. This will possibly delete existing files")
         sys.exit(1)
+
+    if os.path.exists(outdir):
+        # let us just remove the file with degs_DESeq2.csv
+        # if files remains from previous comparisons they will
+        # otherwise be included in the new analysis.
+        for filename in Path(outdir).glob("*degs_DESeq2.csv"):
+            filename.unlink()
 
     if kwargs["annotation"]:
         gff_filename = kwargs["annotation"]
@@ -381,6 +396,10 @@ You may install it yourself or use damona using the rtools:1.0.0 image """
     logger.info("Reporting. Saving in summary.html")
     # this define the output directory where summary.html is saved
     config.output_dir = outdir
+    from sequana_pipelines.rnaseq import version as version_rnaseq
+
+    config.pipeline_version = version_rnaseq
+    config.pipeline_name = "rnaseq"
 
     import seaborn as sns
 
@@ -398,6 +417,9 @@ You may install it yourself or use damona using the rtools:1.0.0 image """
         hover_name=kwargs["hover_name"],
         pca_fontsize=6,
         xticks_fontsize=kwargs.get("xticks_fontsize", 10),
+        shrinkage=kwargs.get("shrinkage"),
+        split_full_table=kwargs.get("split_full_table"),
+        command=" ".join(["sequana"] + sys.argv[1:]),
     )
 
     #

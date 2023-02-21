@@ -288,7 +288,8 @@ Design overview:\n\
             conditions = {x for comp in self.comparisons for x in comp}
 
             mean_per_conditions = pd.concat(
-                [counts[self.design.query(f"{self.condition} == @cond").index].mean(axis=1) for cond in conditions], axis=1
+                [counts[self.design.query(f"{self.condition} == @cond").index].mean(axis=1) for cond in conditions],
+                axis=1,
             )
             max_mean_per_condition = mean_per_conditions.max(axis=1)
 
@@ -339,7 +340,6 @@ or comparisons. possible values are {valid_conditions}"""
         :return: a :class:`RNADiffResults` instance
         """
 
-
         logger.info("Running DESeq2 analysis. Rscript/R with DESeq2 must be installed. Please wait")
         rnadiff_script = self.code_dir / "rnadiff_light.R"
 
@@ -348,7 +348,7 @@ or comparisons. possible values are {valid_conditions}"""
 
         logger.info("Starting differential analysis with DESeq2...")
 
-        # capture_output is valid for py3.7 and above 
+        # capture_output is valid for py3.7 and above
         p = subprocess.Popen(
             f"Rscript {rnadiff_script}",
             shell=True,
@@ -366,12 +366,16 @@ or comparisons. possible values are {valid_conditions}"""
         with open(self.code_dir / "rnadiff.out", "w") as f:
             f.write(stdout)
 
-        with open(self.code_dir /  "rnadiff.err", "r") as f:
+        with open(self.code_dir / "rnadiff.err", "r") as f:
             messages = [
-                ("every gene contains at least one zero, cannot compute log geometric means",
-                 ". Please check your input feature file content."),
-                ("counts matrix should be numeric, currently it has mode: logical",
-                "May be a wrong design. Check the condition column")
+                (
+                    "every gene contains at least one zero, cannot compute log geometric means",
+                    ". Please check your input feature file content.",
+                ),
+                (
+                    "counts matrix should be numeric, currently it has mode: logical",
+                    "May be a wrong design. Check the condition column",
+                ),
             ]
 
             data = f.read()
@@ -392,7 +396,7 @@ or comparisons. possible values are {valid_conditions}"""
 
 
 class RNADiffTable:
-    def __init__(self, path, alpha=0.05, log2_fc=0, sep=",", condition="condition"):
+    def __init__(self, path, alpha=0.05, log2_fc=0, sep=",", condition="condition", shrinkage=True):
         """A representation of the results of a single rnadiff comparison
 
         Expect to find output of RNADiffAnalysis file named after condt1_vs_cond2_degs_DESeq2.csv
@@ -406,6 +410,11 @@ class RNADiffTable:
         """
         self.path = Path(path)
         self.name = self.path.stem.replace("_degs_DESeq2", "").replace("-", "_")
+
+        if shrinkage is True:
+            self.l2fc_name = "log2FoldChange"
+        else:
+            self.l2fc_name = "log2FoldChangeNotShrinked"
 
         self._alpha = alpha
         self._log2_fc = log2_fc
@@ -440,7 +449,7 @@ class RNADiffTable:
     def filter(self):
         """filter a DESeq2 result with FDR and logFC thresholds"""
 
-        fc_filt = self.df["log2FoldChange"].abs() < self._log2_fc
+        fc_filt = self.df[self.l2fc_name].abs() < self._log2_fc
         fdr_filt = self.df["padj"] > self._alpha
         outliers = self.df["padj"].isna()
 
@@ -453,8 +462,8 @@ class RNADiffTable:
         only_drgs_df = self.filt_df.dropna(how="all")
 
         self.gene_lists = {
-            "up": list(only_drgs_df.query("log2FoldChange > 0").index),
-            "down": list(only_drgs_df.query("log2FoldChange < 0").index),
+            "up": list(only_drgs_df.query(f"{self.l2fc_name} > 0").index),
+            "down": list(only_drgs_df.query(f"{self.l2fc_name} < 0").index),
             "all": list(only_drgs_df.index),
         }
 
@@ -521,7 +530,7 @@ class RNADiffTable:
 
             fig = px.scatter(
                 df,
-                x="log2FoldChange",
+                x=self.l2fc_name,
                 y="log_adj_pvalue",
                 hover_name=hover_name,
                 hover_data=["baseMean"],
@@ -531,18 +540,17 @@ class RNADiffTable:
                 height=600,
                 labels={"log_adj_pvalue": "log adjusted p-value"},
             )
-            # axes[0].axhline(
-            # -np.log10(0.05), lw=2, ls="--", color="r", label="pvalue threshold (0.05)"
-            # i)
             # in future version of plotly, a add_hlines will be available. For
             # now, this is the only way to add axhline
+            X = df[self.l2fc_name]
+
             fig.update_layout(
                 shapes=[
                     dict(
                         type="line",
                         xref="x",
-                        x0=df.log2FoldChange.min(),
-                        x1=df.log2FoldChange.max(),
+                        x0=X.min(),
+                        x1=X.max(),
                         yref="y",
                         y0=-pylab.log10(padj),
                         y1=-pylab.log10(padj),
@@ -568,8 +576,12 @@ class RNADiffTable:
 
         d1 = self.df.query("padj>@padj")
         d2 = self.df.query("padj<=@padj")
+
+        x1 = d1[self.l2fc_name]
+        x2 = d2[self.l2fc_name]
+
         bax.plot(
-            d1.log2FoldChange,
+            x1,
             -np.log10(d1.padj),
             marker="o",
             alpha=0.5,
@@ -578,7 +590,7 @@ class RNADiffTable:
             markersize=markersize,
         )
         bax.plot(
-            d2.log2FoldChange,
+            x2,
             -np.log10(d2.padj),
             marker="o",
             alpha=0.5,
@@ -595,8 +607,9 @@ class RNADiffTable:
             bax.xlabel("fold change")
             bax.ylabel("log10 adjusted p-value")
 
-        m1 = abs(min(self.df.log2FoldChange))
-        m2 = max(self.df.log2FoldChange)
+        m1 = abs(min(self.df[self.l2fc_name]))
+        m2 = max(self.df[self.l2fc_name])
+
         limit = max(m1, m2)
         try:
             bax.set_xlim([-limit, limit])
@@ -609,8 +622,6 @@ class RNADiffTable:
             y1, y2 = bax.ylim()
             bax.ylim([0, y2])
         bax.axhline(-np.log10(0.05), lw=2, ls="--", color="r", label="pvalue threshold (0.05)")
-
-
 
     def plot_pvalue_hist(self, bins=60, fontsize=16, rotation=0):
 
@@ -654,7 +665,6 @@ class RNADiffResults:
         palette=sns.color_palette(desat=0.6),
         condition="condition",
         annot_cols=None,
-        # annot_cols=["ID", "Name", "gene_biotype"],
         **kwargs,
     ):
         """
@@ -701,6 +711,8 @@ class RNADiffResults:
         self._alpha = alpha
         self._log2_fc = log2_fc
 
+        # shrinkage required to import the table
+        self.shrinkage = kwargs.get("shrinkage", True)
         self.comparisons = self.import_tables()
 
         self.df = self._get_total_df()
@@ -745,6 +757,7 @@ class RNADiffResults:
                 log2_fc=self._log2_fc,
                 condition=self.condition,
                 # gff=self.annotation.annotation,
+                shrinkage=self.shrinkage,
             )
             for compa in self.files
         }
@@ -763,7 +776,9 @@ class RNADiffResults:
             gff = GFF3(gff)
 
         if self.annot_cols is None:
-            lol = [list(x.keys()) for x in gff.df.query("genetic_type in @self.fc_feature.split(',')")["attributes"].values]
+            lol = [
+                list(x.keys()) for x in gff.df.query("genetic_type in @self.fc_feature.split(',')")["attributes"].values
+            ]
             annot_cols = sorted(list(set([x for item in lol for x in item])))
         else:
             annot_cols = self.annot_cols
@@ -771,7 +786,7 @@ class RNADiffResults:
         df = gff.df.query("genetic_type in @self.fc_feature.split(',')").loc[:, annot_cols]
         df.drop_duplicates(inplace=True)
 
-        # we want to keep the attribute in the columns for simplicity (to use in e.g. 
+        # we want to keep the attribute in the columns for simplicity (to use in e.g.
         # volcano plots as a hover name) hence the drop=False
         df.set_index(self.fc_attribute, inplace=True, drop=False)
 
@@ -873,8 +888,8 @@ class RNADiffResults:
             }
 
             # sometimes, an attribute may not have an entry for each ID...
-            # the column correponding to this annotation will therefore be 
-            # made of NaN, which need to be removed (or None possibly?). 
+            # the column correponding to this annotation will therefore be
+            # made of NaN, which need to be removed (or None possibly?).
             if dropna:
                 for direction in gene_lists_dict[compa]:
                     gl = gene_lists_dict[compa][direction]
@@ -886,9 +901,10 @@ class RNADiffResults:
                     gl = [x for x in gl if not str(x) == "nan" and x]
 
                     perc_unannotated = (N - len(gl)) / N * 100
-                    logger.warning(
-                        f"{compa} {direction}: Removing {perc_unannotated:.0f}% of the genes for enrichment (missing identifiers in annotation)."
-                    )
+                    if perc_unannotated > 0:
+                        logger.warning(
+                            f"{compa} {direction}: Removing {perc_unannotated:.0f}% of the genes for enrichment (missing identifiers in annotation)."
+                        )
                     gene_lists_dict[compa][direction] = gl
 
         return gene_lists_dict
@@ -1184,7 +1200,7 @@ class RNADiffResults:
 
         df = []
 
-        for x, y in self.counts_raw.idxmax().iteritems():
+        for x, y in self.counts_raw.idxmax().items():
 
             most_exp_gene_count = self.counts_raw.stack().loc[y, x]
             total_sample_count = self.counts_raw.sum().loc[x]
