@@ -220,11 +220,13 @@ Changelog
 ========= ==========================================================================
 Version   Description
 ========= ==========================================================================
-0.14.7    * remove useless rules now in sequana-wrappers
+0.15.0    * add logo in reports
+          * RNADiff reports can now use shrinkage or not (optional)
+          * remove useless rules now in sequana-wrappers
           * update main README to add LORA in list of pipelines
-	  * Log2FC values are now **shrinked log2FC** values in volcano plot
-	    and report table. "NotShrinked" columns for Log2FC and Log2FCSE
-	    prior shrinkage are displayed in report table.
+          * Log2FC values are now **shrinked log2FC** values in volcano plot
+	        and report table. "NotShrinked" columns for Log2FC and Log2FCSE
+            prior shrinkage are displayed in report table.
 0.14.6    * add fasta_and_gff_annotation module to correct fasta and gff given a 
             vcf file.
           * add macs3 module to read output of macs3 peak detector.
