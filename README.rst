@@ -22,9 +22,9 @@ SEQUANA
    :target: http://joss.theoj.org/papers/10.21105/joss.00352
    :alt: JOSS (journal of open source software) DOI
 
-.. image:: https://img.shields.io/badge/python-3.7%20%7C%203.8%20%7C3.9-blue.svg
+.. image:: https://img.shields.io/badge/python-3.8%20%7C%203.9%20%7C3.10-blue.svg
     :target: https://pypi.python.org/pypi/sequana
-    :alt: Python 3.7 | 3.8 | 3.9 | 3.10
+    :alt: Python 3.8 | 3.9 | 3.10
 
 .. image:: https://img.shields.io/github/issues/sequana/sequana.svg
     :target: https://github.com/sequana/sequana/issues
