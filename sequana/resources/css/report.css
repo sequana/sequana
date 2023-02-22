@@ -6,7 +6,7 @@
  */
 
 body {
-    margin-bottom: 3em; 
+    margin-bottom: 6em; 
 }
 
 footer {
@@ -21,7 +21,13 @@ footer {
 header {
     background: black;
     color:white;
+    margin-top: 0em;
+    margin-left: -1em;
+    margin-right: -1em;
+    margin-top: -0.5em;
+    position: relative;
 }
+
 
 h2 {
     color: #326598;

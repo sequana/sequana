@@ -87,6 +87,10 @@ class SequanaBaseModule(object):
             if os.path.isfile(target) is False:
                 shutil.copy(filename, target)
 
+        target = os.sep.join([self.output_dir, "images"])
+        if os.path.isfile(target) is False:
+            shutil.copy(config.logo, target)
+
     def create_html(self, output_filename):
         """Create HTML file with Jinja2.
 
@@ -181,10 +185,7 @@ class SequanaBaseModule(object):
 
     def include_svg_image(self, filename, alt="undefined"):
         """Include SVG image in the html."""
-        html = (
-            '<object data="{0}" type="image/svg+xml">\n'
-            '<img src="{0}" alt={1}></object>'
-        )
+        html = '<object data="{0}" type="image/svg+xml">\n' '<img src="{0}" alt={1}></object>'
         return html.format(filename, alt)
 
     def png_to_embedded_png(self, png, style=None, alt="", title=""):
@@ -212,9 +213,7 @@ class SequanaBaseModule(object):
             html = "<img "
             if style:
                 html += 'style="{0}"'.format(style)
-            html += 'src="data:image/png;base64,{0}"/>'.format(
-                base64.b64encode(buf.getvalue()).decode("utf-8")
-            )
+            html += 'src="data:image/png;base64,{0}"/>'.format(base64.b64encode(buf.getvalue()).decode("utf-8"))
             buf.close()
         except Exception as err:
             print(err)
@@ -229,10 +228,7 @@ class SequanaBaseModule(object):
         return html div and js script as string.
         """
         option_list = (
-            "<li>{0}</li>\n".format(
-                self.create_link(os.path.basename(path), path, newtab)
-            )
-            for path in path_list
+            "<li>{0}</li>\n".format(self.create_link(os.path.basename(path), path, newtab)) for path in path_list
         )
         html = """
 <div id="jq-dropdown-{1}" class="jq-dropdown jq-dropdown-tip jq-dropdown-scroll">
@@ -271,9 +267,7 @@ class SequanaBaseModule(object):
 
         if captions:
             if len(files) != len(captions):
-                raise ValueError(
-                    "captions and files must be of same length with 1-to-1 mapping"
-                )
+                raise ValueError("captions and files must be of same length with 1-to-1 mapping")
         else:
             captions = [filename.split("/")[-1] for filename in files]
 

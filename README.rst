@@ -22,9 +22,9 @@ SEQUANA
    :target: http://joss.theoj.org/papers/10.21105/joss.00352
    :alt: JOSS (journal of open source software) DOI
 
-.. image:: https://img.shields.io/badge/python-3.7%20%7C%203.8%20%7C3.9-blue.svg
+.. image:: https://img.shields.io/badge/python-3.8%20%7C%203.9%20%7C3.10-blue.svg
     :target: https://pypi.python.org/pypi/sequana
-    :alt: Python 3.7 | 3.8 | 3.9
+    :alt: Python 3.8 | 3.9 | 3.10
 
 .. image:: https://img.shields.io/github/issues/sequana/sequana.svg
     :target: https://github.com/sequana/sequana/issues
@@ -220,11 +220,13 @@ Changelog
 ========= ==========================================================================
 Version   Description
 ========= ==========================================================================
-0.14.7    * remove useless rules now in sequana-wrappers
+0.15.0    * add logo in reports
+          * RNADiff reports can now use shrinkage or not (optional)
+          * remove useless rules now in sequana-wrappers
           * update main README to add LORA in list of pipelines
-	  * Log2FC values are now **shrinked log2FC** values in volcano plot
-	    and report table. "NotShrinked" columns for Log2FC and Log2FCSE
-	    prior shrinkage are displayed in report table.
+          * Log2FC values are now **shrinked log2FC** values in volcano plot
+	        and report table. "NotShrinked" columns for Log2FC and Log2FCSE
+            prior shrinkage are displayed in report table.
 0.14.6    * add fasta_and_gff_annotation module to correct fasta and gff given a 
             vcf file.
           * add macs3 module to read output of macs3 peak detector.

@@ -37,7 +37,7 @@ import matplotlib.sphinxext
 release = version
 author = "Thomas Cokelaer"
 title = "Sequana"
-copyright = author + ", 2016-2021"
+copyright = author + ", 2016-2023"
 project = 'Sequana'
 
 
@@ -212,7 +212,7 @@ html_short_title = "sequana"
 
 # The name of an image file (relative to this directory) to place at the top
 # of the sidebar.
-#html_logo = "../../share/data/images/crx_logo.png"
+html_logo = "_static/logo_256x256.png"
 
 # The name of an image file (within the static path) to use as favicon of the
 # docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32
