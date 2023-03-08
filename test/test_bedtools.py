@@ -1,16 +1,14 @@
 import pytest
-import os
-
-from sequana import bedtools
-from sequana.tools import genbank_features_parser
 from easydev import TempFile
 
-
+from sequana import bedtools
+from sequana.gff3 import GFF3
 
 from . import test_dir
 
+
 def test_threshold():
-    t = bedtools.DoubleThresholds(-5,5)
+    t = bedtools.DoubleThresholds(-5, 5)
     assert t.low == -5
     assert t.high == 5
     assert t.low2 == -2.5
@@ -18,13 +16,12 @@ def test_threshold():
     assert t.low == -4
     assert t.high == 3
 
-    t = bedtools.DoubleThresholds(-8,8)
+    t = bedtools.DoubleThresholds(-8, 8)
     t.ldtr = 0.25
     t.hdtr = 0.25
     assert t.low2 == -2
     assert t.high2 == 2
     print(t)
-
 
     t.ldtr = 0.5
     t.hdtr = 0.5
@@ -89,11 +86,11 @@ def test_genomecov():
 
         chrom.compute_zscore()
         roi = chrom.get_rois()
-        with TempFile(suffix='.png') as fh:
+        with TempFile(suffix=".png") as fh:
             chrom.plot_coverage(filename=fh.name)
-        with TempFile(suffix='.png') as fh:
+        with TempFile(suffix=".png") as fh:
             chrom.plot_hist_zscore(filename=fh.name)
-        with TempFile(suffix='.png') as fh:
+        with TempFile(suffix=".png") as fh:
             chrom.plot_hist_normalized_coverage(filename=fh.name)
 
         len(chrom)
@@ -101,12 +98,11 @@ def test_genomecov():
         chrom.get_size()
         chrom.DOC
         chrom.CV
-    with TempFile(suffix='.csv') as fh:
+    with TempFile(suffix=".csv") as fh:
         bed.gc_window_size = 100
         bed.to_csv(fh.name)
 
-
-    #try wrong length:
+    # try wrong length:
 
     with pytest.raises(Exception):
         for chrom in bed:
@@ -114,23 +110,22 @@ def test_genomecov():
 
     # plotting
     bed.chr_list[0].plot_hist_coverage()
-    bed.chr_list[0].plot_hist_coverage(logx=False,logy=True)
-    bed.chr_list[0].plot_hist_coverage(logx=True,logy=False)
+    bed.chr_list[0].plot_hist_coverage(logx=False, logy=True)
+    bed.chr_list[0].plot_hist_coverage(logx=True, logy=False)
     with TempFile(suffix=".png") as fh:
-        bed.chr_list[0].plot_hist_coverage(logx=False,logy=False,
-            filename=fh.name)
+        bed.chr_list[0].plot_hist_coverage(logx=False, logy=False, filename=fh.name)
 
 
 def test_chromosome():
     filename = f"{test_dir}/data/bed/JB409847.bed"
     # using chunksize of 7000, we test odd number
-    bed = bedtools.GenomeCov(filename, f'{test_dir}/data/genbank/JB409847.gbk',chunksize=7000)
+    bed = bedtools.GenomeCov(filename, f"{test_dir}/data/genbank/JB409847.gbk", chunksize=7000)
     chrom = bed.chr_list[0]
     chrom.run(501, k=2, circular=True)
     print(chrom)
 
     # using chunksize of 7000, we test even number
-    bed = bedtools.GenomeCov(filename, f'{test_dir}/data/genbank/JB409847.gbk',chunksize=7000)
+    bed = bedtools.GenomeCov(filename, f"{test_dir}/data/genbank/JB409847.gbk", chunksize=7000)
     chrom = bed.chr_list[0]
     chrom.run(501, k=2, circular=True)
 
@@ -153,12 +148,13 @@ def test_chromosome():
 
     # zscore not computed yet, so error
     try:
-        chrom.plot_rois(3000, 8000) 
+        chrom.plot_rois(3000, 8000)
         assert False
     except:
         assert True
     chrom.run(4001)
-    chrom.plot_rois(3000, 8000) 
+    chrom.plot_rois(3000, 8000)
+
 
 def test_gc_content():
     bed = f"{test_dir}/data/bed/JB409847.bed"
@@ -169,12 +165,12 @@ def test_gc_content():
     cov.get_stats()
     ch = cov[0]
     ch.moving_average(4001, circular=True)
-    ch.running_median(4001,circular=True)
+    ch.running_median(4001, circular=True)
     ch.compute_zscore()
 
     ch.evenness
     ch.CV
-    assert ch.get_centralness() > 0.84 and ch.get_centralness()<0.85
+    assert ch.get_centralness() > 0.84 and ch.get_centralness() < 0.85
     with TempFile(suffix=".png") as fh:
         ch.plot_gc_vs_coverage(filename=fh.name)
 
@@ -183,29 +179,46 @@ def test_gc_content():
 
     ch.get_max_gc_correlation(fasta)
 
+
 def test_ChromosomeCovMultiChunk():
     filename = f"{test_dir}/data/bed/JB409847.bed"
     # using chunksize of 7000, we test odd number
-    bed = bedtools.GenomeCov(filename, f'{test_dir}/data/genbank/JB409847.gbk',chunksize=7000)
+    bed = bedtools.GenomeCov(filename, f"{test_dir}/data/genbank/JB409847.gbk", chunksize=7000)
     bed.compute_gc_content(f"{test_dir}/data/fasta/JB409847.fasta")
     chrom = bed.chr_list[0]
     res = chrom.run(501, k=2, circular=True)
     res.get_summary()
     res.get_rois()
 
+
 def test_binning():
-    filename = f'{test_dir}/data/bed/JB409847.bed'
+    filename = f"{test_dir}/data/bed/JB409847.bed"
     # using chunksize of 7000, we test odd number
-    bed = bedtools.GenomeCov(filename, f'{test_dir}/data/genbank/JB409847.gbk',chunksize=7000)
+    bed = bedtools.GenomeCov(filename, f"{test_dir}/data/genbank/JB409847.gbk", chunksize=7000)
     chrom = bed.chr_list[0]
     chrom.run(501, k=2, circular=True, binning=2, cnv_delta=100)
 
 
 def test_chromosome_intname():
     filename = f"{test_dir}/data/bed/unicycler.bed"
-    bed = bedtools.GenomeCov(filename, f'{test_dir}/data/genbank/unicycler.gbk',chunksize=6000)
+    bed = bedtools.GenomeCov(filename, f"{test_dir}/data/genbank/unicycler.gbk", chunksize=6000)
     chrom = bed.chr_list[0]
     chrom.run(501, k=2, circular=True)
     chrom.get_summary()
     chrom.get_rois()
 
+
+def test_annotate_with_gff3():
+    filename = f"{test_dir}/data/bed/subsample.bed"
+    bed_gbk = bedtools.GenomeCov(filename, annotation_file=f"{test_dir}/data/genbank/subsample.gb")
+    chrom = bed_gbk.chr_list[0]
+    chrom.run(10001, k=2)
+    chrom.get_summary()
+    rois_gbk = chrom.get_rois()
+    bed_gff = bedtools.GenomeCov(filename, annotation_file=f"{test_dir}/data/gff/subsample.gff3")
+    chrom = bed_gff.chr_list[0]
+    chrom.run(10001, k=2)
+    chrom.get_summary()
+    rois_gff = chrom.get_rois()
+    # the only diff seems to be the index number
+    assert rois_gff.df.equals(rois_gbk.df.reset_index(drop=True))

@@ -11,26 +11,22 @@
 #
 ##############################################################################
 """Utilities for the genome coverage"""
-import re
-import ast
 import os
 import sys
 import random
-
-from sequana import mixture
+from sequana.errors import BadFileFormat
+from sequana.gff3 import GFF3
 
 from sequana.lazy import pandas as pd
 from sequana.lazy import numpy as np
 from sequana.lazy import pylab
-from pylab import mean as pymean
 
 from sequana.tools import gc_content
 from sequana.genbank import GenBank
-from sequana.errors import SequanaException
 from sequana.summary import Summary
 from sequana.stats import evenness
 
-from easydev import do_profile, TempFile, Progress
+from easydev import TempFile, Progress
 
 import colorlog
 
@@ -188,7 +184,7 @@ class GenomeCov(object):
     def __init__(
         self,
         input_filename,
-        genbank_file=None,
+        annotation_file=None,
         low_threshold=-4,
         high_threshold=4,
         ldtr=0.5,
@@ -204,7 +200,7 @@ class GenomeCov(object):
             genomecov run. This is just a 3-column file. The first column is a
             string (chromosome), second column is the base postion and third
             is the coverage.
-        :param str genbank_file: annotation file of your referenve.
+        :param str annotation_file: annotation file of your reference (GFF3/Genbank).
         :param float low_threshold: threshold used to identify under-covered
             genomic region of interest (ROI). Must be negative
         :param float high_threshold: threshold used to identify over-covered
@@ -234,7 +230,7 @@ class GenomeCov(object):
         self._feature_dict = None
         self._gc_window_size = None
         self.gc_dict = None
-        self._genbank_filename = None
+        self._annotation_filename = None
         self._window_size = None
 
         self.chunksize = chunksize
@@ -242,8 +238,8 @@ class GenomeCov(object):
         self.quiet_progress = quiet_progress
 
         # the user choice have the priorities over csv file
-        if genbank_file:
-            self.genbank_filename = genbank_file
+        if annotation_file:
+            self.annotation_filename = annotation_file
 
         self.input_filename = input_filename
 
@@ -293,7 +289,7 @@ class GenomeCov(object):
         logger.error(
             "AttributeError: You can't set attribute.\n"
             "GenomeCov.feature_dict is set when"
-            "GenomeCov.genbank_filename is set."
+            "GenomeCov.annotation_filename is set."
         )
         sys.exit(1)
 
@@ -311,20 +307,23 @@ class GenomeCov(object):
             self._gc_window_size = n
 
     @property
-    def genbank_filename(self):
+    def annotation_filename(self):
         """Get or set the genbank filename to annotate ROI detected with
         :meth:`ChromosomeCov.get_roi`. Changing the genbank filename will
         configure the :attr:`GenomeCov.feature_dict`.
         """
-        return self._genbank_filename
+        return self._annotation_filename
 
-    @genbank_filename.setter
-    def genbank_filename(self, genbank_filename):
-        if os.path.isfile(genbank_filename):
-            self._genbank_filename = os.path.realpath(genbank_filename)
+    @annotation_filename.setter
+    def annotation_filename(self, annotation_filename):
+        if os.path.isfile(annotation_filename):
+            self._annotation_filename = os.path.realpath(annotation_filename)
 
-            gbk = GenBank(genbank_filename)
-            self._feature_dict = gbk.genbank_features_parser()
+            try:
+                gff = GFF3(annotation_filename)
+                self._feature_dict = gff.get_features_dict()
+            except BadFileFormat:
+                self._feature_dict = GenBank(annotation_filename).genbank_features_parser()
         else:
             logger.error("FileNotFoundError: The genbank file doesn't exist.")
             sys.exit(1)
@@ -475,8 +474,8 @@ class GenomeCov(object):
             self.thresholds.get_args(), self.window_size, self.circular
         )
 
-        if self.genbank_filename:
-            header += " genbank:" + self.genbank_filename
+        if self.annotation_filename:
+            header += " genbank:" + self.annotation_filename
 
         if self.gc_window_size:
             header += " gc_window_size:{0}".format(self.gc_window_size)
@@ -1800,7 +1799,7 @@ class FilteredGenomeCov(object):
         while feature["type"] in FilteredGenomeCov._feature_not_wanted:
             try:
                 feature = next(iter_feature)
-            except StopIteration: #pragma: no cover 
+            except StopIteration: #pragma: no cover
                 print(
                     "Features types ({0}) are not present in the annotation"
                     " file. Please change what types you want".format(feature["type"])
@@ -1813,36 +1812,31 @@ class FilteredGenomeCov(object):
             while feature["gene_end"] <= region["start"]:
                 try:
                     feature = next(iter_feature)
-                except:
+                except StopIteration:
                     break
             while feature["gene_start"] < region["end"]:
                 # A feature exist for detected ROI
                 feature_exist = True
                 # put locus_tag in gene field if gene doesn't exist
-                try:
-                    feature["gene"]
-                except KeyError: #pragma: no cover
+                if "gene" not in feature:
                     try:
                         feature["gene"] = feature["locus_tag"]
-                    except:
+                    except KeyError:
                         feature["gene"] = "None"
+
                 # put note field in product if product doesn't exist
-                try:
-                    feature["product"]
-                except KeyError: #pragma: no cover
+                if "product" not in feature:
                     try:
                         feature["product"] = feature["note"]
-                    except:
+                    except KeyError:
                         feature["product"] = "None"
-                # FIXME what that ?
-                # if region["start"] == 237433:
-                #    print(dict(region, **feature))
+
                 region_ann.append(dict(region, **feature))
                 try:
                     feature = next(iter_feature)
                 except StopIteration:
                     break
-            if feature_exist is False:
+            if not feature_exist:
                 region_ann.append(
                     dict(
                         region,
@@ -1863,7 +1857,7 @@ class FilteredGenomeCov(object):
         merge_df = pd.DataFrame(region_list)
         colnames = [
             "chr",
-            "start",
+             "start",
             "end",
             "size",
             "mean_cov",

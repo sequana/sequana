@@ -168,8 +168,8 @@ Issues: http://github.com/sequana/sequana
             default="INFO",
             help="set to DEBUG, INFO, WARNING, CRITICAL, ERROR")
         group = self.add_argument_group('Annotation')
-        group.add_argument("-b", "--genbank", dest="genbank",
-            type=str, default=None, help='a valid genbank annotation')
+        group.add_argument("-a", "--annotation", dest="annotation",
+            type=str, default=None, help='a valid gff3 or genbank annotation')
 
         # Group related to GC content
         group = self.add_argument_group("GC content related")
@@ -279,9 +279,9 @@ def main(args=None):
                                    genbank=True, fasta=False)
         return
 
-    if options.genbank:
-        assert os.path.exists(options.genbank), \
-            "%s does not exists" % options.genbank
+    if options.annotation:
+        assert os.path.exists(options.annotation), \
+            "%s does not exists" % options.annotation
 
     logger.info("Reading %s. This may take time depending on "
         "your input file" % options.input)
@@ -309,7 +309,7 @@ def main(args=None):
     else:
         chrom_list = [options.chromosome]
 
-    gc = GenomeCov(bedfile, options.genbank, options.low_threshold,
+    gc = GenomeCov(bedfile, options.annotation, options.low_threshold,
                    options.high_threshold, options.double_threshold,
                    options.double_threshold, chunksize=options.chunksize,
                    chromosome_list=chrom_list)
@@ -323,7 +323,7 @@ def main(args=None):
     # Now we scan the chromosomes,
     if len(gc.chrom_names) == 1:
         logger.warning("There is only one chromosome. Selected automatically.")
-        run_analysis(gc.chr_list[0], options, gc.feature_dict)
+        run_analysis(gc.chr_list[0], options)
     elif options.chromosome <-1 or options.chromosome > len(gc.chrom_names):
         msg = "invalid chromosome index; must be in [1;{}]".format(len(gc.chrom_names))
         logger.error(msg)
@@ -349,7 +349,7 @@ def main(args=None):
                   % (i + 1, len(gc), gc.chrom_names[i]))
             # since we read just one contig/chromosome, the chr_list contains
             # only one contig, so we access to it with index 0
-            run_analysis(gc.chr_list[i], options, gc.feature_dict)
+            run_analysis(gc.chr_list[i], options)
             # logging level seems to be reset to warning somewhere
             logger.setLevel(options.logging_level)
 
@@ -367,7 +367,7 @@ def main(args=None):
     logger.info("Done")
 
 
-def run_analysis(chrom, options, feature_dict):
+def run_analysis(chrom, options):
 
     logger.info("Computing some metrics")
     if chrom.DOC < 8:
@@ -461,7 +461,6 @@ def run_analysis(chrom, options, feature_dict):
                 command=" ".join(["sequana_coverage"] + sys.argv[1:]))
                 #directory=options.output_directory)
 
-if __name__ == "__main__": #pragma: no cover
-   import sys
-   main()#sys.argv)
 
+if __name__ == "__main__": #pragma: no cover
+    main()
