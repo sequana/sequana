@@ -2,7 +2,6 @@ import pytest
 from easydev import TempFile
 
 from sequana import bedtools
-from sequana.gff3 import GFF3
 
 from . import test_dir
 

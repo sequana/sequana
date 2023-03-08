@@ -12,23 +12,21 @@
 ##############################################################################
 """Utilities for the genome coverage"""
 import os
-import sys
 import random
-from sequana.errors import BadFileFormat
-from sequana.gff3 import GFF3
-
-from sequana.lazy import pandas as pd
-from sequana.lazy import numpy as np
-from sequana.lazy import pylab
-
-from sequana.tools import gc_content
-from sequana.genbank import GenBank
-from sequana.summary import Summary
-from sequana.stats import evenness
-
-from easydev import TempFile, Progress
+import sys
 
 import colorlog
+from easydev import Progress, TempFile
+
+from sequana.errors import BadFileFormat
+from sequana.genbank import GenBank
+from sequana.gff3 import GFF3
+from sequana.lazy import numpy as np
+from sequana.lazy import pandas as pd
+from sequana.lazy import pylab
+from sequana.stats import evenness
+from sequana.summary import Summary
+from sequana.tools import gc_content
 
 logger = colorlog.getLogger(__name__)
 
@@ -371,7 +369,9 @@ class GenomeCov(object):
         if Nchunk > 1:
             pb = Progress(Nchunk)
         i = 0
-        for chunk in pd.read_table(input_filename, header=None, sep="\t", usecols=[0], chunksize=self.chunksize, dtype="string"):
+        for chunk in pd.read_table(
+            input_filename, header=None, sep="\t", usecols=[0], chunksize=self.chunksize, dtype="string"
+        ):
             # accumulate length
             N += len(chunk)
 
@@ -563,7 +563,13 @@ class ChromosomeCov(object):
         N = self.bed.positions[self.chrom_name]["N"]
         toskip = self.bed.positions[self.chrom_name]["start"]
         self.iterator = pd.read_table(
-            self.bed.input_filename, skiprows=toskip, nrows=N, header=None, sep="\t", chunksize=self.chunksize, dtype={0: "string"}
+            self.bed.input_filename,
+            skiprows=toskip,
+            nrows=N,
+            header=None,
+            sep="\t",
+            chunksize=self.chunksize,
+            dtype={0: "string"},
         )
         if N <= self.chunksize:
             # we can load all data into memory:
@@ -993,7 +999,7 @@ class ChromosomeCov(object):
         data = data.replace(0, np.nan)
         data = data.dropna()
 
-        if data.empty: #pragma: no cover
+        if data.empty:  # pragma: no cover
             self._df["scale"] = np.ones(len(self.df), dtype=int)
             self._df["zscore"] = np.zeros(len(self.df), dtype=int)
             # define arbitrary values
@@ -1088,7 +1094,7 @@ class ChromosomeCov(object):
 
         try:
             filtered = self.get_rois()
-        except Exception as err: #pragma: no cover
+        except Exception as err:  # pragma: no cover
             raise (err)
         finally:
             # restore the original threshold
@@ -1156,7 +1162,7 @@ class ChromosomeCov(object):
                     return FilteredGenomeCov(data, self.thresholds, features[self.chrom_name], step=self.binning)
             else:
                 return FilteredGenomeCov(data, self.thresholds, step=self.binning)
-        except KeyError: #pragma: no cover
+        except KeyError:  # pragma: no cover
             logger.error(
                 "Column zscore is missing in data frame.\n"
                 "You must run compute_zscore before get low coverage."
@@ -1258,7 +1264,7 @@ class ChromosomeCov(object):
         if len(df) > 1000000 and sample is True:
             logger.info("sub sample data for plotting the coverage")
             NN = int(len(df) / 1000000)
-        else: #pragma: no cover
+        else:  # pragma: no cover
             NN = 1
 
         # the main coverage plot
@@ -1293,7 +1299,7 @@ class ChromosomeCov(object):
             m4 = high_zcov[high_zcov > 0]
             if len(m4) == 0:
                 m4 = 3
-            else: 
+            else:
                 m4 = m4.max(skipna=True)
             # ignore values equal to zero to compute mean average
             m3 = df[df["cov"] > 0]["cov"].mean()
@@ -1304,7 +1310,7 @@ class ChromosomeCov(object):
 
         try:
             pylab.tight_layout()
-        except: #pragma: no cover
+        except:  # pragma: no cover
             pass
 
         if filename:
@@ -1327,7 +1333,7 @@ class ChromosomeCov(object):
         pylab.xlabel("Z-score", fontsize=fontsize)
         try:
             pylab.tight_layout()
-        except: #pragma: no cover
+        except:  # pragma: no cover
             pass
         pylab.xlim([-max_z, max_z])
         if filename:
@@ -1344,7 +1350,7 @@ class ChromosomeCov(object):
         try:
             self.mixture_fitting.data = d
             self.mixture_fitting.plot(self.gaussians_params, bins=bins, Xmin=0, Xmax=max_z)
-        except ZeroDivisionError: #pragma: no cover
+        except ZeroDivisionError:  # pragma: no cover
             return
 
         pylab.grid(True)
@@ -1353,7 +1359,7 @@ class ChromosomeCov(object):
 
         try:
             pylab.tight_layout()
-        except: #pragma: no cover
+        except:  # pragma: no cover
             pass
         if filename:
             pylab.savefig(filename)
@@ -1370,7 +1376,7 @@ class ChromosomeCov(object):
         ec="k",
         filename=None,
         zorder=10,
-        **kw_hist
+        **kw_hist,
     ):
         """
 
@@ -1449,7 +1455,7 @@ class ChromosomeCov(object):
         ymax=100,
         contour=True,
         cmap="BrBG",
-        **kwargs
+        **kwargs,
     ):
         """Plot histogram 2D of the GC content versus coverage"""
         if Nlevels is None or Nlevels == 0:
@@ -1481,9 +1487,9 @@ class ChromosomeCov(object):
                     norm=norm,
                     fontsize=fontsize,
                     cmap=cmap,
-                    **kwargs
+                    **kwargs,
                 )
-            except: #pragma: no cover
+            except:  # pragma: no cover
                 h2.plot(
                     bins=bins,
                     xlabel="Per-base coverage",
@@ -1493,13 +1499,13 @@ class ChromosomeCov(object):
                     contour=False,
                     norm=norm,
                     fontsize=fontsize,
-                    **kwargs
+                    **kwargs,
                 )
 
         pylab.ylim([ymin, ymax])
         try:
             pylab.tight_layout()
-        except: #pragma: no cover
+        except:  # pragma: no cover
             pass
 
         if filename:
@@ -1563,7 +1569,7 @@ class ChromosomeCov(object):
                 X,
             ) = np.histogram(data, bins=bins, density=True)
             return {"X": list(X[1:]), "Y": list(Y)}
-        except: #pragma: no cover
+        except:  # pragma: no cover
             return {"X": [], "Y": []}
 
     def get_summary(self, C3=None, C4=None, stats=None, caller="sequana.bedtools"):
@@ -1799,7 +1805,7 @@ class FilteredGenomeCov(object):
         while feature["type"] in FilteredGenomeCov._feature_not_wanted:
             try:
                 feature = next(iter_feature)
-            except StopIteration: #pragma: no cover
+            except StopIteration:  # pragma: no cover
                 print(
                     "Features types ({0}) are not present in the annotation"
                     " file. Please change what types you want".format(feature["type"])
@@ -1847,7 +1853,7 @@ class FilteredGenomeCov(object):
                             "gene": None,
                             "strand": None,
                             "product": None,
-                        }
+                        },
                     )
                 )
         return region_ann
@@ -1857,7 +1863,7 @@ class FilteredGenomeCov(object):
         merge_df = pd.DataFrame(region_list)
         colnames = [
             "chr",
-             "start",
+            "start",
             "end",
             "size",
             "mean_cov",
