@@ -60,10 +60,8 @@ class GenBank:
 
         # then we read the features from the genbank
         records = self.genbank_features_parser()
-        contig_names_gbk = list(records.keys())
 
         # FIXME FastA is not very efficient for eukaryotes but is enough for now
-
         output = ""
         for name in records.keys():
             if name not in contig_names:
