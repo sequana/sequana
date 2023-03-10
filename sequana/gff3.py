@@ -576,27 +576,38 @@ class GFF3:
         text = text.replace("%28", "(").replace("%29", ")")  # brackets
         return text
 
-    def get_features_dict(self):
-        """Format feature dict for sequana_coverage."""
+    def get_simplify_dataframe(self):
+        """ Method to simplify the gff and keep only the most informative features.
+        """
         # Set weight for genetic type to sort them and keep only the most informative
         if self.df.empty:
             raise BadFileFormat("%s file is not a GFF3.", self.filename)
         genetype = ["tRNA", "rRNA", "CDS", "exon", "gene"]
         worst_score = len(genetype) + 1
         weight = {k: i for i, k in enumerate(genetype)}
-        df = self.df.filter(
-            ["seqid", "genetic_type", "start", "stop", "strand", "gene", "locus_tag", "product", "Note"], axis=1
-        )
+        # Note seems optional
+        if "Note" in self.df.columns:
+            df = self.df.filter(
+                ["seqid", "genetic_type", "start", "stop", "strand", "gene", "locus_tag", "product", "Note"], axis=1
+            )
+            df["product"] = df["product"].fillna(df["Note"])
+        else:
+            df = self.df.filter(
+                ["seqid", "genetic_type", "start", "stop", "strand", "gene", "locus_tag", "product"], axis=1
+            )
         # remove region and chromosome row
         df = df.drop(df.loc[df.genetic_type.isin({"region", "chromosome"})].index)
         df["gene"] = df["gene"].fillna(df.locus_tag)
-        df["product"] = df["product"].fillna(df["Note"])
         df["score"] = [weight.get(g_t, worst_score) for g_t in df.genetic_type]
         # keep most informative features if on the same region
         best_idx = df.groupby(["seqid", "start", "stop"])["score"].idxmin()
+        return df.loc[best_idx].reset_index(drop=True)
+
+    def get_features_dict(self):
+        """Format feature dict for sequana_coverage."""
+        df = self.get_simplify_dataframe()
         # rename column to fit for sequana_coverage
-        df = df.loc[best_idx].set_index("seqid").rename(
+        df = df.set_index("seqid").rename(
             columns={"start": "gene_start", "stop": "gene_end", "genetic_type": "type"}
         )
         return {chr: df.loc[chr].to_dict("records") for chr in df.index.unique()}
-

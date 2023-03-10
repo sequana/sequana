@@ -1,0 +1,11 @@
+##sequence-region lennygene 2878897
+##species https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=1337
+lennygene	RefSeq	region	1	2878897	.	+	.	ID=lennygene:1..2878897;Dbxref=taxon:426430;Is_circular=true;Name=ANONYMOUS;gbkey=Src;genome=chromosome;mol_type=genomic DNA;strain=Newman;sub-species=aureus
+lennygene	RefSeq	gene	517	1878	.	+	.	ID=gene-LNNF_RS00005;Name=touta;gbkey=Gene;gene=touta;gene_biotype=protein_coding;locus_tag=LNNF_RS00005;old_locus_tag=LNNF_0001
+lennygene	Protein Homology	CDS	517	1878	.	+	0	ID=cds-WP;Parent=gene-LNNF_RS00005;Dbxref=Genbank:WP_0;Name=WP_00;gbkey=CDS;gene=touta;inference=COORDINATES: similar to AA sequence:RefSeq;locus_tag=LNNF_RS00005;product=toutouta;protein_id=WP_00;transl_table=11
+lennygene	RefSeq	gene	18325	20292	.	+	.	ID=gene-LNNF_RS00070;Name=lenny;gbkey=Gene;gene=lenny;gene_biotype=protein_coding;locus_tag=LNNF_RS00070;old_locus_tag=LNNF_0013
+lennygene	Protein Homology	CDS	18325	20292	.	+	0	ID=cds-WP_1;Parent=gene-LNNF_RS00070;Dbxref=Genbank:WP_134.1;Name=WP_00134.1;gbkey=CDS;gene=lenny;inference=COORDINATES: similar to AA sequence:RefSeq:;locus_tag=LNNF_RS00070;product=( ͡° ͜ʖ ͡°);protein_id=WP;transl_table=11
+lennygene	RefSeq	gene	708437	709360	.	+	.	ID=gene-LNNF_RS03565;Name=antilenny;gbkey=Gene;gene=antilenny;gene_biotype=protein_coding;gene_synonym=darklenny;locus_tag=LNNF_RS03565;old_locus_tag=LNNF_0627
+lennygene	Protein Homology	CDS	708437	709360	.	+	0	ID=cds-W;Parent=gene-LNNF_RS03565;Dbxref=Genbank:fzegez;Name=WP;gbkey=CDS;gene=antilenny;inference=COORDINATES: similar to AA sequence:RefSeq:;locus_tag=LNNF_RS03565;product=(͡ ͡° ͜ つ ͡͡°) ;protein_id=gerge;transl_table=11
+lennygene	RefSeq	gene	1281726	1282607	.	+	.	ID=gene-LNNF_RS06585;Name=gg;gbkey=Gene;gene=gg;gene_biotype=protein_coding;locus_tag=LNNF_RS06585;old_locus_tag=LNNF_1167
+lennygene	Protein Homology	CDS	1281726	1282607	.	+	0	ID=cds-W;Parent=gene-LNNF_RS06585;Dbxref=Genbank:fezgz;Name=gezfzfg;gbkey=CDS;gene=gg;inference=COORDINATES: similar to AA sequence:RefSeq:;locus_tag=LNNF_RS06585;product=goodgame;protein_id=WP_zgzfz;transl_table=11

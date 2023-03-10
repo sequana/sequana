@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- CCS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Roboto font -->
+    <link rel="preconnect" href="https://fonts.gstatic.com" />
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20,700,0,0" />
+    <style>
+      html, body, table{
+        font-family: Roboto;
+      }
+    </style>
+  </head>
+  <body class="h-full flex flex-row font-sans text-base font-normal">
+    <!--sidebar-->
+    <div class="h-full fixed z-10 text-white transition-all" id="sidebar">
+      <div class="h-full flex flex-row items-center">
+        <div class="h-full py-12 px-6 bg-sky-600 flex flex-col justify-between w-64">
+          <div>
+            <p class="text-3xl font-semibold">
+              Variant Calling Comparison
+            </p>
+            <p class="text-xl font-light">
+              {{ title }}
+            </p>
+          <!--Create checkbox to select which column we want to see-->
+          <div class="flex flex-col mt-5" id="checkBoxes">
+            <p class="mb-2">Untick checkbox to hide some column</p>
+            {% for column in hideable_columns %}
+              <div>
+                <input class="ml-2" type="checkbox" id="{{column}}" name="{{column}}" checked/>
+                <label for="{{column}}">{{column}}</label>
+              </div>
+            {% endfor %}
+          </div>
+        </div>
+        <div>
+          Powered by <a href="https://github.com/sequana/sequana">Sequana</a>
+        </div>
+        </div>
+        <div class="w-5 h-8 py-1 -ml-1 bg-sky-600 rounded-r-full cursor-pointer" id="sidebarButton">
+          <span class="rotate-180 -ml-1 material-symbols-outlined">arrow_forward_ios</span>
+        </div>
+      </div>
+    </div>
+    <!--Main-->
+    <div class="ml-64 p-8 text-base font-light leading-8 text- slate-700 flex-auto transition-all" id="main">
+      {% for sample, variants in comparisons.items() %}
+      {% if variants %}
+        <div class="flex flex-row mb-3">
+          <h2 class="text-2xl font-semibold">{{sample}}</h2>
+          <button id="button_{{loop.index0}}" class="ml-3 px-2 bg-sky-700 text-white rounded-lg shadow-md">
+            Download CSV
+          </button>
+        </div> 
+        <div class="overflow-x-auto w-full mb-3">
+          <table class="w-full border-collapse table-auto mb-3 font-light text-sm" id="tab-{{sample}}">
+            <thead class="font-medium border-b-2 border-zinc-700">
+              {% for header in variants[0].keys() %}
+              <th class="text-right py-1 px-3">{{header}}</th>
+              {% endfor %}
+            </thead>
+            <tbody>
+              {% for variant in variants %}
+              <tr class="border-t border-zinc-700">
+                {% for key, value in variant.items() %}
+                  <td class="
+                    text-right py-1 px-3 whitespace-nowrap
+                    {{ 'font-semibold' if key in sample }}
+                    {{
+                      'bg-white' if variant['impact'] == 'MODIFIER' else
+                      'bg-emerald-50' if variant['impact'] == 'LOW' else 
+                      'bg-emerald-200' if variant['impact'] == 'MODERATE' else 'bg-emerald-300'
+                    }}
+                  ">
+                    {{ "%.2f" % value if key in floating_keys else value }}
+                  </td>
+                {% endfor %}
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% endif %}
+      {% endfor %}
+    </div>
+    <!--Javascript-->
+    <script>
+      const tables = document.getElementsByTagName("table");
+      
+      function getIndexToHide(colname) {
+        /*Retrieve index of the colname*/
+        const header = tables[0].rows[0];
+        for (let cell of header.cells) {
+          if (colname === cell.textContent)
+            return cell.cellIndex;           
+        } 
+      }
+
+      function hideColumns(colname, checked) {
+        const indexToHide = getIndexToHide(colname);
+        const displayValue = checked ? "table-cell" : "none";
+        for (let table of tables) {
+          for (let row of table.rows) {
+            row.cells[indexToHide].style.display = displayValue;
+          }
+        }
+      }
+
+      function downloadCsv(table_index) {
+        const table = tables[table_index];
+        const csv = [].map.call(table.rows, (row) => {
+          return [].map.call(row.querySelectorAll("th, td"), (cell) => cell.innerText).join(",");
+        })
+        const csvFile = new Blob([csv.join("\n")], {type: "text/csv"});
+        const downloadLink = document.createElement("a");
+        downloadLink.href = window.URL.createObjectURL(csvFile);
+        downloadLink.download = `comparison_${table_index}.csv`;
+        downloadLink.click();
+      }
+
+      /* add listener and set initial state */
+      for (let checkBox of document.querySelectorAll("#checkBoxes input")) {
+        hideColumns(checkBox.name, checkBox.checked);
+        checkBox.addEventListener("change", function() {
+          hideColumns(this.name, this.checked);
+        })
+      }
+
+      /* add download links*/
+      for (let button of document.querySelectorAll("button")) {
+        button.addEventListener("click", function() {
+          const index = this.id.replace("button_", "");
+          downloadCsv(parseInt(index));
+        })
+      }
+
+      /* sidebar transitions */
+      document.getElementById("sidebarButton").addEventListener("click", function() {
+        document.getElementById("sidebar").classList.toggle("-translate-x-64");
+        document.getElementById("main").classList.toggle("ml-64");
+        this.firstElementChild.classList.toggle("rotate-180");
+      })
+
+    </script>
+  </body>
+</html>

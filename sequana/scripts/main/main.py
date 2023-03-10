@@ -33,6 +33,7 @@ from .taxonomy import taxonomy
 from .utils import CONTEXT_SETTINGS
 from .mapping import mapping
 from .lane_merging import lane_merging
+from .variants_comparison import variants_comparison
 
 
 @click.group(context_settings=CONTEXT_SETTINGS)
@@ -77,3 +78,4 @@ main.add_command(salmon_cli, name="salmon")
 main.add_command(samplesheet)
 main.add_command(summary)
 main.add_command(taxonomy)
+main.add_command(variants_comparison)
