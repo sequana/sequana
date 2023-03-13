@@ -17,6 +17,7 @@ import colorlog
 import shutil
 
 from sequana.ribodesigner import RiboDesigner
+from sequana.scripts.common import teardown
 
 from .utils import CONTEXT_SETTINGS
 
@@ -25,18 +26,6 @@ logger = colorlog.getLogger(__name__)
 
 
 
-def teardown(workdir):
-    # common function to be used by subcommands to store called command
-    from pathlib import Path
-    from easydev import mkdirs
-
-    workdir = Path(workdir)
-    mkdirs(workdir / ".sequana")
-    with open(Path(workdir) / ".sequana" / "info.txt", "w") as fout:
-        from sequana import version
-
-        fout.write(f"# sequana version: {version}\n")
-        fout.write(" ".join(["sequana"] + sys.argv[1:]))
 
 # =====================================================================================
 # Ribodepletion custom probes designer
