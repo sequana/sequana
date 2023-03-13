@@ -10,6 +10,7 @@
 #
 ##############################################################################
 import sys
+import pathlib
 
 import click
 import colorlog
@@ -23,23 +24,50 @@ from .utils import CONTEXT_SETTINGS
 logger = colorlog.getLogger(__name__)
 
 
+
+def teardown(workdir):
+    # common function to be used by subcommands to store called command
+    from pathlib import Path
+    from easydev import mkdirs
+
+    workdir = Path(workdir)
+    mkdirs(workdir / ".sequana")
+    with open(Path(workdir) / ".sequana" / "info.txt", "w") as fout:
+        from sequana import version
+
+        fout.write(f"# sequana version: {version}\n")
+        fout.write(" ".join(["sequana"] + sys.argv[1:]))
+
 # =====================================================================================
 # Ribodepletion custom probes designer
 # =====================================================================================
 @click.command(context_settings=CONTEXT_SETTINGS)
 @click.argument("fasta", type=click.Path(exists=True))
 @click.argument("gff", type=click.Path(exists=True))
-@click.option("--output-directory", default="out_ribodesigner", type=click.Path(exists=False))
-@click.option("--seq-type", default="rRNA", help="The annotation type (column 3 in gff) to target for probes.")
-@click.option("--max-n-probes", default=384, type=click.INT, help="The maximum number of probes to design.")
-@click.option("--threads", default=4, type=click.INT, help="The number of threads to use for cd-hit-est.")
-@click.option("--identity-step", default=0.01, type=click.FLOAT, help="The number of threads to use for cd-hit-est.")
+@click.option("--output-directory", show_default=True, default="out_ribodesigner", type=click.Path(exists=False))
+@click.option(
+    "--seq-type", default="rRNA", show_default=True, help="The annotation type (column 3 in gff) to target for probes."
+)
+@click.option(
+    "--max-n-probes", default=384, show_default=True, type=click.INT, help="The maximum number of probes to design."
+)
+@click.option(
+    "--threads", default=4, show_default=True, type=click.INT, help="The number of threads to use for cd-hit-est."
+)
+@click.option(
+    "--identity-step",
+    default=0.01,
+    show_default=True,
+    type=click.FLOAT,
+    help="The number of threads to use for cd-hit-est.",
+)
 @click.option("--output-image", default=None)
 @click.option(
     "--force",
     default=False,
     is_flag=True,
     type=click.BOOL,
+    show_default=True,
     help="If output directory exists, use this option to erase previous results",
 )
 def ribodesigner(**kwargs):
@@ -56,4 +84,8 @@ def ribodesigner(**kwargs):
     RiboDesigner(**kwargs).run()
     if kwargs["output_image"]:
         from pylab import savefig
+
         savefig("/".join([kwargs["output_directory"], kwargs["output_image"]]))
+
+
+    teardown(kwargs["output_directory"])

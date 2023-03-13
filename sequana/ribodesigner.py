@@ -63,7 +63,7 @@ class RiboDesigner(object):
         force=False,
         threads=4,
         identity_step=0.01,
-        **kwargs
+        **kwargs,
     ):
         # Input
         self.fasta = fasta
@@ -123,7 +123,7 @@ class RiboDesigner(object):
         logger.debug(f"\t" + filtered_gff.to_string().replace("\n", "\n\t"))
 
         filtered_gff.to_csv(self.filtered_gff)
-        
+
     def _get_probe_and_step_len(self, seq):
         """Calculates the probe_len and inter_probe_space for a ribosomal sequence.
 
@@ -131,9 +131,10 @@ class RiboDesigner(object):
         <=>
         n = (ribo_len + inter_probe_space) / (prob_len + inter_probe_space)
         """
+
         seq_len = len(seq.sequence)
 
-        probe_lens = range(50, 40, -1)
+        probe_lens = range(60, 40, -1)
         inter_probe_space = range(20, 10, -1)
 
         for probe_len, inter_probe_space in product(probe_lens, inter_probe_space):
@@ -191,9 +192,7 @@ class RiboDesigner(object):
 
         self.probes_df = pd.concat(probes_dfs)
         self.probes_df["kept_after_clustering"] = True
-        self.probes_df["bed_color"] = self.probes_df.kept_after_clustering.map(
-            {True: "21,128,0", False: "128,64,0"}
-        )
+        self.probes_df["bed_color"] = self.probes_df.kept_after_clustering.map({True: "21,128,0", False: "128,64,0"})
 
     def export_to_fasta(self):
         """From the self.probes_df, export to FASTA and CSV files."""
@@ -210,7 +209,9 @@ class RiboDesigner(object):
 
         # Do not cluster if number of probes already inferior to defined threshold
         if not force and self.probes_df.shape[0] <= self.max_n_probes:
-            logger.info(f"Number of probes already inferior to {self.max_n_probes}. No clustering will be performed.")
+            logger.info(
+                f"Number of probes {self.probes_df.shape[0]} already inferior to {self.max_n_probes}. No clustering will be performed."
+            )
             return False
         else:
             return True
@@ -253,15 +254,14 @@ class RiboDesigner(object):
         pylab.xlabel("Sequence identity", fontsize=16)
         pylab.ylabel("Number of probes", fontsize=16)
 
-
         # Extract the best identity threshold
         best_thres = df.query("n_probes <= @self.max_n_probes").seq_id_thres.max()
 
         if not np.isnan(best_thres):
             n_probes = df.query("seq_id_thres == @best_thres").loc[:, "n_probes"].values[0]
 
-            self.json['n_probes'] = int(n_probes)
-            self.json['best_thres'] = best_thres
+            self.json["n_probes"] = int(n_probes)
+            self.json["best_thres"] = best_thres
 
             logger.info(f"Best clustering threshold: {best_thres}, with {n_probes} probes.")
             shutil.copy(outdir / f"clustered_{best_thres}.fas", self.clustered_probes_fasta)
@@ -271,13 +271,15 @@ class RiboDesigner(object):
                 {True: "21,128,0", False: "128,64,0"}
             )
             self.probes_df["clustering_thres"] = best_thres
-            pylab.plot(best_thres, n_probes, 'o', label="Final number of probes")
+            pylab.plot(best_thres, n_probes, "o", label="Final number of probes")
             pylab.legend()
         else:
-            logger.warning(f"No identity threshold was found to have as few as {self.max_n_probes} probes.")
+            logger.warning(
+                f"No identity threshold was found to have as few as {self.max_n_probes} probes. Keep all probes. Set a valid value with --max-n-probes between {df.n_probes.min()} (min) and {df.n_probes.max()} (max)"
+            )
 
         self.clustering_df = df.sort_values("seq_id_thres")
-        
+
         return self.probes_df.query("kept_after_clustering == True")
 
     def export_to_csv_bed(self):
@@ -287,7 +289,7 @@ class RiboDesigner(object):
             df = self.cluster_probes()
         else:
             df = self.probes_df
-            
+
         df.to_csv(self.clustered_probes_csv, index=False, columns=["seq_id", "sequence"])
 
         self.probes_df.to_csv(
