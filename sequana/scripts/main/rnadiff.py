@@ -19,6 +19,7 @@ from pathlib import Path
 from sequana import GFF3
 from sequana.rnadiff import RNADesign, RNADiffAnalysis
 from sequana.utils import config
+from sequana.scripts.common import teardown
 
 from .utils import CONTEXT_SETTINGS, common_logger
 
@@ -46,20 +47,6 @@ def rnadiff_auto_batch_column(ctx, args, incomplete):
         logger.warning("No batch effect included in your design file")
     else:
         return [c for c in batch if incomplete in c[0]]
-
-
-def teardown(workdir):
-    # common function to be used by subcommands to store called command
-    from pathlib import Path
-    from easydev import mkdirs
-
-    workdir = Path(workdir)
-    mkdirs(workdir / ".sequana")
-    with open(Path(workdir) / ".sequana" / "info.txt", "w") as fout:
-        from sequana import version
-
-        fout.write(f"# sequana version: {version}\n")
-        fout.write(" ".join(["sequana"] + sys.argv[1:]))
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
