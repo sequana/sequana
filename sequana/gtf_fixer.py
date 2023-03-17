@@ -12,9 +12,6 @@
 ##############################################################################
 """Utilities for GTF files"""
 from collections import defaultdict
-import sys
-
-from sequana.fastq import FastQ
 
 import colorlog
 
@@ -37,7 +34,6 @@ class GTFFixer:
         features = defaultdict(int)
         logger.info("Scanning file")
         count = 0
-        exon_ids = []
         with open(self.filename, "r") as fin:
             with open(output, "w") as fout:
                 line = fin.readline()
@@ -54,7 +50,7 @@ class GTFFixer:
                             annotations = dict(
                                 [x.strip().split(maxsplit=1) for x in entries[8].split(";") if len(x.strip())]
                             )
-                        except:
+                        except IndexError:
                             logger.warning("warning line {}. could not parse annotations correctly".format(count))
 
                         # if exon feature, we want to make sure the ID are unique by
@@ -78,6 +74,11 @@ class GTFFixer:
                                         newline += "exon_id {};".format(exon_id)
                             newline += ";\n"
                             line = newline
+
+                            # ugly but fast replacement.
+                            line = line.replace("%09", "\t").replace("%0A", "\n").replace("%0D", "\r")
+                            line = line.replace("%25", "%").replace("%3D", "=").replace("%26", "&").replace("%2C", ",")
+                            line = line.replace("%28", "(").replace("%29", ")")  # brackets
 
                         fout.write(line)
                     line = fin.readline()

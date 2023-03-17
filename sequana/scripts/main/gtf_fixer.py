@@ -12,7 +12,7 @@
 import click
 import colorlog
 
-from sequana.gtf import GTFFixer
+from sequana.gtf_fixer import GTFFixer
 
 from .utils import CONTEXT_SETTINGS
 
