@@ -10,3 +10,7 @@ dependencies:
 - cd-hit
 - kraken2
 - krona
+- bwa
+- snpeff
+- samtools
+- shustring
