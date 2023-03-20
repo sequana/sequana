@@ -43,8 +43,11 @@ def read_join_calling_vcf(vcf_file: str, qual_treshold: int):
 
 def get_gene_name(rec: VariantRecord):
     """Read effect field to get information."""
-    impact, effect, codon, aa, _, gene_name, *_ = rec.info["EFF"][0].split("(")[1].split("|")
-    if effect:
+    effect, info = rec.info["EFF"][0].split("(")
+    impact, trans_effect, codon, aa, _, gene_name, *_ = info.split("|")
+    if gene_name:
+        if trans_effect:
+            effect = trans_effect
         return [impact, effect, gene_name, codon, aa.split("/")[0].strip("p.")]
     return [impact, "UNKNOWN", "UNKNOWN", "NONE", "NONE"]
 
@@ -117,7 +120,7 @@ def variants_comparison(
         vcf = vcf[VCF_COLUMNS + sample_names]
 
     gff = GFF3(input_gff).get_simplify_dataframe().filter(["gene", "locus_tag", "product"], axis=1)
-    vcf = pd.merge(vcf, gff, on="gene")
+    vcf = pd.merge(vcf, gff, how="left", on="gene")
     comparisons = {
         f"{s1}_vs_{s2}": vcf.loc[~np.isclose(vcf[s1], vcf[s2], atol=0.3)].to_dict("records")
         for s1, s2 in combinations(sample_names, r=2)
