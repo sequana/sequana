@@ -8,7 +8,7 @@ on:
   pull_request:
     branches-ignore: []
   schedule:
-    - cron: '0 0 13 * *'
+    - cron: '0 0 1 * *'
 
 jobs:
   build-linux:
