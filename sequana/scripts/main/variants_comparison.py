@@ -119,8 +119,14 @@ def variants_comparison(
         sample_names = ordered_sample + [s for s in sample_names if s not in ordered_sample]
         vcf = vcf[VCF_COLUMNS + sample_names]
 
-    gff = GFF3(input_gff).get_simplify_dataframe().filter(["gene", "locus_tag", "product"], axis=1)
-    vcf = pd.merge(vcf, gff, how="left", on="gene")
+    # sometimes snpEff annotate using only locus_tag
+    gff = GFF3(input_gff)
+    merge_on = "gene"
+    if not any(gff.df.gene.isin(vcf.gene.unique())):
+        merge_on = "locus_tag"
+        vcf = vcf.rename(columns={"gene": "locus_tag"})
+    gff = gff.get_simplify_dataframe().filter(["gene", "locus_tag", "product"], axis=1)
+    vcf = pd.merge(vcf, gff, how="left", on=merge_on)
     comparisons = {
         f"{s1}_vs_{s2}": vcf.loc[~np.isclose(vcf[s1], vcf[s2], atol=0.3)].to_dict("records")
         for s1, s2 in combinations(sample_names, r=2)
