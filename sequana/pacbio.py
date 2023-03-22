@@ -682,7 +682,7 @@ class PacbioSubreads(PacbioBAMBase):
 
     def get_mean_nb_passes(self, min_length=50, max_length=1500000):
         query = "read_length>=@min_length and read_length <=@max_length"
-        dd = self.df.query(query).groupby("ZMW").agg(pylab.mean)["nb_passes"]
+        dd = self.df.query(query).groupby("ZMW")["nb_passes"].mean()
         return dd.mean()
 
     def boxplot_read_length_vs_passes(self, nmax=20, ax=None, whis=1.5, widths=0.6):

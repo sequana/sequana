@@ -43,7 +43,6 @@ from sequana.bed import BED
 from sequana.cigar import fetch_intron, fetch_exon
 
 import pysam
-from sequana import jsontool
 
 import colorlog
 

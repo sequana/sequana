@@ -1,14 +1,14 @@
-from sequana.gtf import GTFFixer
-from easydev import TempFile
+from sequana.gtf_fixer import GTFFixer
 
 prog = "sequana_gtf_fixer"
 from . import test_dir
-def test_input():
+def test_input(tmp_path):
     filename = f"{test_dir}/data/gtf/test_gtf_fixer.gtf"
 
-    with TempFile() as fout:
-        gtf = GTFFixer(filename)
-        gtf.fix(fout.name)
+
+    fout = tmp_path / "test.gtf"
+    gtf = GTFFixer(filename)
+    gtf.fix(fout)
 
 
 
