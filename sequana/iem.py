@@ -13,6 +13,9 @@
 "IEM class"
 import sys
 import collections
+import io
+
+from sequana.lazy import pandas as pd
 
 import colorlog
 
@@ -25,31 +28,30 @@ __all__ = ["IEM"]
 class IEM:
     """Reader and validator of IEM samplesheets
 
-    Sections are case-sensitive and denoted by a line starting and ending with square
-    brackets. Except for commas and end of line, no extra character after the
-    ending square bracket are authorised.
+    The IEM samplesheet reader and validator verifies the correctness of the sections
+    in the samplesheet, which are case-sensitive and are enclosed within square brackets.
+    Following the closing bracket, no additional characters are permitted, except
+    for commas and the end-of-line marker.
 
-    Sample sheet must begin with the [Header] section and end with the [Data]
-    section. Others can be ordered arbitraly.
+    The samplesheet must start with the [Header] section and end with
+    the [Data] section, with other sections arranged arbitrarily.
 
-    **Header** section must be on the first line. It contains records represented
-    as a series of key-value pairs. So, each line requires exactly two fields.
+    The [Header] section must appear on the first line and consist of
+    key-value pairs represented as records, with each line consisting
+    of precisely two fields.
 
-    **Settings** is an optional section with key-value pairs.
+    An optional [Settings] section can contain key-value pairs, and
+    the [Reads] section specifies the number of cycles per read, which
+    is exclusively required for MiSeq.
 
-    **Reads** contains number of cycles per read. Only required for MiSeq.
+    For the IEM samplesheet with adapters, the following fields must be
+    present: [Version], [Name], [Settings], [I7], [I5], [IndexPlateLayout].
 
-    For adapters IEM sample sheet those fields are known to be present:
-    [Version], [Name], [settings], [I7], [I5], [IndexPlateLayout].
-
-
-    **Data** section: it is required and must be located at the end of the
-    Sample Sheet file. The Data section is a CSV-like table.
-
-    No specific ordering of the column names is required and they are
-    not case-sensitive. At a minimum, the one column that is universally
-    required is Sample_ID, which provides a unique string identifier
-    for each sample.
+    The [Data] section, which is a table similar to CSV format, is required
+    and must be located at the end of the samplesheet file. There are no
+    specific ordering requirements for column names, and they are not
+    case-sensitive. At the very least, each sample must have a unique string
+    identifier in the Sample_ID column.
 
     Example of typical Data section to be used with bcl2fastq::
 
@@ -63,6 +65,16 @@ class IEM:
         A10004,Sample_D,D704,GAGATTCC,D501,TATAGCCT
 
 
+    **Sequana Standalone**
+
+    The standalone application **sequana** contains a subcommand based on this class::
+
+        sequana samplesheet
+
+    that can be used to check the correctness of a samplesheet::
+
+        sequana samplesheet --check SampleSheet.csv
+
     :references: illumina specifications 970-2017-004.pdf
     """
 
@@ -71,15 +83,13 @@ class IEM:
         if tryme:
             try:
                 self._scanner()
-            except:
+            except Exception:
                 pass
         else:
             self._scanner()
 
     def __repr__(self):
         txt = " %s entries\n" % (len(self.df))
-        # txt += "adapter type: %s\n" % (self.adapter_type)
-        # txt += "Instrument Type: %s " % (self.instrument)
         return txt
 
     def _line_cleaner(self, line, line_count):
@@ -129,67 +139,26 @@ class IEM:
         self.data = data
 
     def _get_df(self):
-        import pandas as pd
-        import io
 
-        # For official IEM sample sheet:
-        try:
-            df = pd.read_csv(io.StringIO("\n".join(self.data["Data"])))
-            if len(df.columns) == 0:
-                raise ValueError("Invalid sample sheet in the Data section")
-        except:
-            # all others are old samplesheet, non official, or si,plied version
-            # Usually just a CSV file where header is the only information
-            # available. The minimal we can have is 4 columns:
-            # sample name, index1 and index2 and possibly a project name
-            try:
-                df = pd.read_csv(self.filename)
-                df.rename({"SampleID": "Sample_ID"}, inplace=True, axis=1)
-
-                df.rename({"sample_name": "Sample_ID"}, inplace=True, axis=1)
-                df.rename({"index1": "Index1_ID"}, inplace=True, axis=1)
-                df.rename({"index2": "Index2_ID"}, inplace=True, axis=1)
-
-                if "Index Seq" in df.columns:
-                    # this is an old HiSeq format used at biomics. If two indices,
-                    # they were separated by a - character
-                    index_seq = df["Index Seq"]
-                    index1 = []
-                    index2 = []
-                    for this in df["Index Seq"].values:
-                        if isinstance(this, str):
-                            indices = this.split("-")
-                            index1.append(indices[0])
-                            if len(indices) == 2:
-                                index2.append(indices[1])
-                            else:
-                                index2.append(None)
-                        else:
-                            index1.append(None)
-                            index2.append(None)
-                    df["index"] = index1
-                    if index2:
-                        df["index2"] = index2
-                    df.drop("Index Seq", axis=1, inplace=True)
-            except Exception as err:
-                raise (err)
-
+        df = pd.read_csv(io.StringIO("\n".join(self.data["Data"])))
+        if len(df.columns) == 0:
+            raise ValueError("Invalid sample sheet in the Data section")
         return df
 
-    df = property(_get_df)
+    df = property(_get_df, doc="Returns the [data] section")
 
     def _get_samples(self):
         return self.df["Sample_ID"].values
 
-    samples = property(_get_samples)
+    samples = property(_get_samples, doc="returns the sample identifiers as a list")
 
     def _get_version(self):
         try:
             return self.header["IEMFileVersion"]
-        except:
+        except KeyError:
             return None
 
-    version = property(_get_version)
+    version = property(_get_version, doc="return the version of the IEM file")
 
     def validate(self):
         """This method checks whether the sample sheet is correctly formatted
@@ -200,7 +169,9 @@ class IEM:
             * inconsistent numbers of columns in the [DATA] section, which must be
               CSV-like section
             * Extra lines at the end are ignored
-            * special characters except are forbidden except - and _
+            * special characters are forbidden except - and _
+            * checks for Sample_ID column uniqueness
+            * checks for index uniqueness
 
         """
         # could use logger, but simpler for now
@@ -252,10 +223,22 @@ class IEM:
                         )
                     )
 
+        # check that IDs are unique and that sample Names are unique
+        if len(self.df.Sample_ID) != len(self.df.Sample_ID.unique()):
+            duplicated = self.df.Sample_ID[self.df.Sample_ID.duplicated()].values
+            duplicated = ",".join(duplicated)
+            sys.exit(f"Sample ID not unique. Duplicated entries: {duplicated}")
+
+        # check that indices are unique
+        indices = self.df["index"] + "," + self.df.I7_Index_ID.fillna("")
+        if indices.duplicated().sum() > 0:
+            duplicated = indices[indices.duplicated()].values
+            sys.exit(f"Looks like you have duplicated index I5 and/or I7 : {duplicated}")
+
     def _validate_line(self, line):
         # check number of columns
         if line.strip() and len(line.split(",")) != self.nb_col:
-            sys.exit(prefix + "Different number of column in [DATA] section on line: " + str(cnt))
+            sys.exit(f"Different number of column in [DATA] section on line: {self._cnt}")
 
     def _get_settings(self):
         data = {}
@@ -278,18 +261,18 @@ class IEM:
     def _get_instrument(self):
         try:
             return self.header["Instrument Type"]
-        except:
+        except KeyError:
             return None
 
-    instrument = property(_get_instrument)
+    instrument = property(_get_instrument, doc="returns instrument name")
 
     def _get_adapter_kit(self):
         try:
             return self.header["Index Adapters"]
-        except:
+        except KeyError:
             return None
 
-    index_adapters = property(_get_adapter_kit)
+    index_adapters = property(_get_adapter_kit, doc="returns index adapters")
 
     def _get_name(self):
         if len(self.data["Name"]) == 1:
@@ -300,27 +283,34 @@ class IEM:
     name = property(_get_name)
 
     def to_fasta(self, adapter_name=""):
+        """Extract adapters from [Adapter] section and save to Fasta"""
         ar1 = self.settings["Adapter"]
         try:
             ar2 = self.settings["AdapterRead2"]
-        except:
+        except KeyError:
             ar2 = ""
 
         for name, index in zip(self.df["I7_Index_ID"], self.df["index"]):
-            read = "{}{}{}".format(ar1, index, ar2)
+            read = f"{ar1}{index}{ar2}"
             frmt = {"adapter": adapter_name, "name": name, "index": index}
             print(">{adapter}_index_{name}|name:{name}|seq:{index}".format(**frmt))
             print(read)
 
         if "index2" in self.df.columns:
             for name, index in zip(self.df["I5_Index_ID"], self.df["index2"]):
-                read = "{}{}{}".format(ar1, index, ar2)
+                read = f"{ar1}{index}{ar2}"
                 frmt = {"adapter": adapter_name, "name": name, "index": index}
                 print(">{adapter}_index_{name}|name:{name}|seq:{index}".format(**frmt))
                 print(read)
 
     def quick_fix(self, output_filename):
+        """Fix sample sheet
 
+        Tyical error is when users save the samplesheet as CSV file in excel.
+        This may add trailing ; characters at the end of section, whic raises error
+        in bcl2fastq.
+
+        """
         found_data = False
         with open(self.filename) as fin:
             with open(output_filename, "w") as fout:
