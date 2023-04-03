@@ -225,15 +225,15 @@ Version   Description
           * remove useless rules now in sequana-wrappers
           * update main README to add LORA in list of pipelines
           * Log2FC values are now **shrinked log2FC** values in volcano plot
-	        and report table. "NotShrinked" columns for Log2FC and Log2FCSE
+            and report table. "NotShrinked" columns for Log2FC and Log2FCSE
             prior shrinkage are displayed in report table.
-0.14.6    * add fasta_and_gff_annotation module to correct fasta and gff given a 
+0.14.6    * add fasta_and_gff_annotation module to correct fasta and gff given a
             vcf file.
           * add macs3 module to read output of macs3 peak detector.
           * add idr module to read results of idr analysis
           * add phantom module to compute phantom peaks
           * add homer module to read annotation files from annotatePeaks
-0.14.5    * move start_pipeline standalone in 
+0.14.5    * move start_pipeline standalone in
             https://github.com/sequana/sequana_pipetools
           * update snpeff module to allows build command to have options
 0.14.4    * hotfix bug on kegg colorised pathways
@@ -243,13 +243,13 @@ Version   Description
 0.14.3    * new fisher metric in variant calling
           * ability to use several feature in rnaseq/rnadiff
           * pin several libaries due to regression during installs
-0.14.2    * Update ribodesigner 
+0.14.2    * Update ribodesigner
 0.14.1    * Kegg enrichment: add gene list 'all' and fix incomplete annotation case
           * New uniprot module for GO term enrichment and enrichment
             refactorisation (transparent for users)
 0.14.0    * pinned click>=8.1.0 due to API change (autocomplete)
           * moved tests around to decrease packaging from 16 to 4Mb
-          * ribodesigner: new plots, clustering and notebook         
+          * ribodesigner: new plots, clustering and notebook
 0.13.X    * Remove useless standalones or moved to main **sequana** command
           * Move sequana_lane_merging into a subcommand (sequana lane_merging)
           * General cleanup of documentation, test and links to pipelines
