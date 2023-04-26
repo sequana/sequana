@@ -220,6 +220,9 @@ Changelog
 ========= ==========================================================================
 Version   Description
 ========= ==========================================================================
+0.15.1    * Fix creation of images directory in modules report
+          * add missing test related to gff 
+          * Fix #804
 0.15.0    * add logo in reports
           * RNADiff reports can now use shrinkage or not (optional)
           * remove useless rules now in sequana-wrappers

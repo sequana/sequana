@@ -88,6 +88,7 @@ class SequanaBaseModule(object):
                 shutil.copy(filename, target)
 
         target = os.sep.join([self.output_dir, "images"])
+        os.makedirs(target, exist_ok=True)
         if os.path.isfile(target) is False:
             shutil.copy(config.logo, target)
 
