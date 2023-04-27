@@ -328,3 +328,22 @@ On a MacOSx conda environment (PYthon3.9), I could not build **datrie** with thi
 The solution was to set the AR variable::
 
     export AR=/usr/bin/ar
+
+
+pbindex
+---------
+
+Got this error when using pbindex on a bam file::
+
+    >|> 20230411 07:50:40.460 -|- FATAL -|- Run -|- 0x7f6a473e5b48|| -|- pbindex ERROR: [pbbam] BAM header ERROR: read group ID not found: a1e75744/3--3
+
+
+The bam file is missing the read group entry. This happenned when subsampling the original file. 
+
+Add the RG tag with the correct ID.
+
+You can do::
+
+    samtools view -H ORIGINAL.bam | egrp '@RG' > new_header.txt
+    samtools reheader new_header.txt sample.bam > corrected_sample.bam
+

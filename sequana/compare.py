@@ -68,8 +68,8 @@ class RNADiffCompare(Compare):
         common = set(A).intersection(B)
 
         if len(A) != len(B):
-            self.r1.df = self.r1.df.loc[common]
-            self.r2.df = self.r2.df.loc[common]
+            self.r1.df = self.r1.df.loc[list(common)]
+            self.r2.df = self.r2.df.loc[list(common)]
             self.r1.filt_df = self.r1.filter()
             self.r2.filt_df = self.r2.filter()
             self.r1.set_gene_lists()

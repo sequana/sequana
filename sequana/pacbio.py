@@ -1105,7 +1105,10 @@ class Barcoding:
     def __str__(self):
         PR = self.df_barcoded["Polymerase Reads"]
         MRL = self.df_barcoded["Mean Read Length"]
-        PR_NOBC = self.df_not_barcoded["Polymerase Reads"].values[0]
+        if len(self.df_not_barcoded):
+            PR_NOBC = self.df_not_barcoded["Polymerase Reads"].values[0]
+        else:
+            PR_NOBC = 0
 
         txt = "{} unique barcodes\n".format(len(self.df_barcoded))
         txt += "{} barcoded PR reads\n".format(PR.sum())

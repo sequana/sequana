@@ -11,6 +11,7 @@
 #
 ##############################################################################
 import os
+from collections import defaultdict
 
 import colorlog
 import pysam
@@ -105,6 +106,10 @@ class GFF3:
         with open(self.filename, "r") as reader:
             for line in reader:
 
+                # stop once FASTA starts
+                if line.startswith("##FASTA"):
+                    break
+
                 # Skip metadata and comments and empty lines
                 if line.startswith("#") or not line.strip():
                     continue
@@ -126,6 +131,7 @@ class GFF3:
                         item = item.split()[0].strip()
                     attributes.add(item)
 
+
         self._attributes = sorted(attributes)
         return self._attributes
 
@@ -139,6 +145,11 @@ class GFF3:
         with open(self.filename, "r") as reader:
             line = None
             for line in reader:
+
+                # stop once FASTA starts
+                if line.startswith("##FASTA"):
+                    break
+
                 # Skip metadata and comments
                 if line.startswith("#"):
                     continue
@@ -198,7 +209,6 @@ class GFF3:
                 else:
                     print(f"  - {attr}:No duplicates ({L} in total)")
                 results[typ][attr] = dups
-        import pandas as pd
 
         df = pd.DataFrame(results)
         return df
@@ -219,7 +229,6 @@ class GFF3:
         transcripts_df = transcripts_df.reset_index()
 
         results = {}
-        from collections import defaultdict
 
         results2 = defaultdict(list)
         for _id, data in transcripts_df[["ID", "Parent"]].iterrows():
@@ -236,6 +245,9 @@ class GFF3:
         count = 0
         with open(self.filename, "r") as fin, open(outfile, "w") as fout:
             for line in fin:
+                # stop once FASTA starts
+                if line.startswith("##FASTA"):
+                    break
                 split = line.rstrip().split("\t")
                 # skipping  biological_region saves lots of time
                 try:
@@ -445,6 +457,9 @@ class GFF3:
 
         with open(self.filename, "r") as reader:
             for line in reader:
+                # stop once FASTA starts
+                if line.startswith("##FASTA"):
+                    break
                 # Skip metadata and comments
                 if line.startswith("#"):
                     fout.write(line)
@@ -520,6 +535,9 @@ class GFF3:
         fout = open(output_filename, "w")
         with open(self.filename, "r") as reader:
             for line in reader:
+                # stop once FASTA starts
+                if line.startswith("##FASTA"):
+                    break
                 # Skip metadata and comments
                 if line.startswith("#"):
                     continue

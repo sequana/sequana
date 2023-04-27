@@ -402,6 +402,10 @@ class CutadaptModule(SequanaBaseModule):
                     # Could be a 5'/3' case ? if so another histogram is
                     # possible
                     df = pd.read_csv(io.StringIO(current_hist), sep="\t")
+
+                    #cast the 'error counts' that must be coherent for future concatenation
+                    df = df.astype({'error counts': str})
+
                     # reinitiate the variables
                     if cutadapt_mode != "b":
                         dfs[name] = df.set_index("length")
@@ -414,8 +418,10 @@ class CutadaptModule(SequanaBaseModule):
                         # therefore the second here.
                         if name in dfs:
                             if len(df):
-                                dfs[name] = dfs[name].append(df.set_index("length"))
+                                dfs[name] = pd.concat([dfs[name], df.set_index("length")])
+
                             scanning_histogram = False
+
                             dfs[name] = (
                                 dfs[name].reset_index().groupby("length").aggregate(sum)
                             )

@@ -748,7 +748,7 @@ class ChromosomeCov(object):
                 df.index = df["pos"]
                 # append
                 if binned_df is not None:
-                    binned_df = binned_df.append(df)
+                    binned_df = pd.concat([binned_df,df])
                 else:
                     binned_df = df
                 if N > 1:
@@ -1701,8 +1701,6 @@ class FilteredGenomeCov(object):
             if column in self.df.columns:
                 self.df[column] = self.df[column].astype(str)
                 self.df[column] = self.df[column].apply(func)
-        # self.df['end'] *= self.step
-        # self.df['start'] *= self.step
 
     def __iadd__(self, other):
         self.df = self.df.append(other.df)
