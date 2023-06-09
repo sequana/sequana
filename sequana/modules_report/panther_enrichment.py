@@ -276,15 +276,13 @@ function, CC for cellular components and BP for biological process.</p>
                     category=category,
                     ontology=ontology,
                 )
-
+                _temp_df[ontology].to_csv(f"{config.output_dir}/DEGs_enrichment_{category}_{ontology}.csv")
                 html += f"""
 <h3>{category.title()} - {ontology}</h3>
 <p>For {ontology}, we found {_plus[ontology]+_minus[ontology]} go terms.
 Showing {self.nmax} here below (at most). The full list is downlodable from the CSV
  file hereafter.</p> {image} <br>"""
-                html += self.get_html_table(
-                    _temp_df[ontology], f"GO_table_{category}_{ontology}"
-                )
+                html += self.get_html_table(_temp_df[ontology], f"GO_table_{category}_{ontology}")
             else:
                 html += f"""
 <h4>{category.title()} - {ontology}</h4><p>For {ontology} case, we found 0

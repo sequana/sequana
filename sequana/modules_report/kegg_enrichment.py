@@ -134,6 +134,7 @@ maximum of {self.nmax} pathways. </p>
                 img_barplot = self.create_embedded_png(self.plot_barplot, "filename", style=style, category=category)
                 img_scatter = self.create_embedded_png(self.plot_scatter, "filename", style=style, category=category)
                 js_table, html_table, fotorama = self.get_table(category)
+                df.to_csv(f"{config.output_dir}/DEGs_enrichment_{category}.csv")
             else:
                 img_barplot = img_scatter = js_table = html_table = fotorama = ""
 
