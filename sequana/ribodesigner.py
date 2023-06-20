@@ -15,11 +15,10 @@ import json
 import subprocess
 from pathlib import Path
 
-import pandas as pd
-import pylab
-import pysam
-import numpy as np
-import seaborn as sns
+from sequana.lazy import pandas as pd
+from sequana.lazy import pylab
+from sequana.lazy import pysam
+from sequana.lazy import numpy as np
 import shutil
 import datetime
 from itertools import product
@@ -79,7 +78,7 @@ class RiboDesigner(object):
         else:
             try:
                 self.outdir.mkdir()
-            except FileExistsError as err:
+            except FileExistsError as err: #pragma: no cover
                 logger.error(f"Output directory {output_directory} exists. Use --force or set force=True")
                 sys.exit(1)
 
@@ -141,7 +140,7 @@ class RiboDesigner(object):
             if ((seq_len + inter_probe_space) / (probe_len + inter_probe_space)).is_integer():
                 return probe_len, inter_probe_space
 
-        raise ValueError(f"No correct probe length/inter probe space combination was found for {seq.name}")
+        raise ValueError(f"No correct probe length/inter probe space combination was found for {seq.name}") #pragma: no cover
 
     def _get_probes_df(self, seq, probe_len, step_len):
         """Generate the Dataframe with probes information.
@@ -249,6 +248,8 @@ class RiboDesigner(object):
         # Dataframe with number of probes for each cdhit identity threshold
         pylab.clf()
         df = pd.DataFrame(res_dict)
+
+        import seaborn as sns # local import to speed up imports
         p = sns.lineplot(data=df, x="seq_id_thres", y="n_probes", markers=["o"])
         p.axhline(self.max_n_probes, alpha=0.8, linestyle="--", color="red", label="max number of probes requested")
         pylab.xlabel("Sequence identity", fontsize=16)
@@ -305,7 +306,12 @@ class RiboDesigner(object):
             json.dump(self.json, fout, indent=4, sort_keys=True)
 
     def run(self):
-        self.get_rna_pos_from_gff()
+
+        if self.gff:
+            self.get_rna_pos_from_gff()
+        else:
+            shutil.copy(self.fasta, self.ribo_sequences_fasta)
+
         self.get_all_probes()
         self.export_to_fasta()
         self.export_to_csv_bed()
