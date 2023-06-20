@@ -32,7 +32,7 @@ logger = colorlog.getLogger(__name__)
 # =====================================================================================
 @click.command(context_settings=CONTEXT_SETTINGS)
 @click.argument("fasta", type=click.Path(exists=True))
-@click.argument("gff", type=click.Path(exists=True))
+@click.argument("gff", type=click.Path(exists=True), default=None, required=False)
 @click.option("--output-directory", show_default=True, default="out_ribodesigner", type=click.Path(exists=False))
 @click.option(
     "--seq-type", default="rRNA", show_default=True, help="The annotation type (column 3 in gff) to target for probes."

@@ -16,7 +16,7 @@ import click
 import colorlog
 from pathlib import Path
 
-from sequana import GFF3
+from sequana.gff3 import GFF3
 from sequana.rnadiff import RNADesign, RNADiffAnalysis
 from sequana.utils import config
 from sequana.scripts.common import teardown

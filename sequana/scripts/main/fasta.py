@@ -17,7 +17,7 @@ import sys
 import click
 import colorlog
 
-from sequana import FastA
+from sequana.fasta import FastA
 
 from .utils import CONTEXT_SETTINGS
 

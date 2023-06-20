@@ -14,12 +14,12 @@ import os
 from collections import defaultdict
 
 import colorlog
-import pysam
 
 from sequana.errors import BadFileFormat
 
 logger = colorlog.getLogger(__name__)
 
+from sequana.lazy import pysam
 from sequana.lazy import pandas as pd
 
 __all__ = ["GFF3"]

@@ -171,7 +171,10 @@ class IEM:
             * Extra lines at the end are ignored
             * special characters are forbidden except - and _
             * checks for Sample_ID column uniqueness
-            * checks for index uniqueness
+            * checks for index uniqueness (if single index)
+            * checks for combo of dual indices uniqueness
+            * checks that sample names are unique
+
 
         """
         # could use logger, but simpler for now

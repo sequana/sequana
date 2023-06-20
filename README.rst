@@ -68,20 +68,20 @@ SEQUANA
             :target: https://pypi.python.org/pypi/sequana_pipetools
       - .. image:: https://github.com/sequana/sequana_pipetools/actions/workflows/main.yml/badge.svg
             :target: https://github.com/sequana/sequana_pipetools/actions/workflows/main.yml
-      -  
+      -  Not required
     * - `sequana-wrappers <https://github.com/sequana/sequana-wrappers>`_
       - Set of wrappers to build pipelines
       - Not on pypi
       - .. image:: https://github.com/sequana/sequana-wrappers/actions/workflows/main.yml/badge.svg
             :target: https://github.com/sequana/sequana-wrappers/actions/workflows/main.yml
-      -
+      - Not required
     * - `demultiplex <https://github.com/sequana/demultiplex>`_
       - Demultiplex your raw data
       - .. image:: https://badge.fury.io/py/sequana-demultiplex.svg
             :target: https://pypi.python.org/pypi/sequana-demultiplex
       - .. image:: https://github.com/sequana/demultiplex/actions/workflows/main.yml/badge.svg
             :target: https://github.com/sequana/demultiplex/actions/workflows/main.yml
-      -
+      - License restriction
     * - `denovo <https://github.com/sequana/denovo>`_
       - denovo sequencing data
       - .. image:: https://badge.fury.io/py/sequana-denovo.svg
@@ -114,6 +114,14 @@ SEQUANA
             :target: https://github.com/sequana/mapper/actions/workflows/main.yml
       - .. image:: https://github.com/sequana/mapper/actions/workflows/apptainer.yml/badge.svg
             :target: https://github.com/sequana/mapper/actions/workflows/apptainer.yml
+    * - `nanomerge <https://github.com/sequana/nanomerge>`_
+      - Merge barcoded (or unbarcoded) nanopore fastq and reporting
+      - .. image:: https://badge.fury.io/py/sequana-nanomerge.svg
+            :target: https://pypi.python.org/pypi/sequana-nanomerge
+      - .. image:: https://github.com/sequana/nanomerge/actions/workflows/main.yml/badge.svg
+            :target: https://github.com/sequana/nanomerge/actions/workflows/main.yml
+      - .. image:: https://github.com/sequana/nanomerge/actions/workflows/apptainer.yml/badge.svg
+            :target: https://github.com/sequana/nanomerge/actions/workflows/apptainer.yml
     * - `pacbio_qc <https://github.com/sequana/pacbio_qc>`_
       - Pacbio quality control
       - .. image:: https://badge.fury.io/py/sequana-pacbio-qc.svg
@@ -160,21 +168,32 @@ SEQUANA
             :target: https://pypi.python.org/pypi/sequana-laa
       - .. image:: https://github.com/sequana/laa/actions/workflows/main.yml/badge.svg
             :target: https://github.com/sequana/laa/actions/workflows/main.yml
-      -
+      - .. image:: https://github.com/sequana/laa/actions/workflows/apptainer.yml/badge.svg
+            :target: https://github.com/sequana/laa/actions/workflows/apptainer.yml
     * - `revcomp <https://github.com/sequana/revcomp>`_
       - reverse complement of sequence data
       - .. image:: https://badge.fury.io/py/sequana-revcomp.svg
             :target: https://pypi.python.org/pypi/sequana-revcomp
       - .. image:: https://github.com/sequana/revcomp/actions/workflows/main.yml/badge.svg
             :target: https://github.com/sequana/revcomp/actions/workflows/main.yml
-      -
+      - .. image:: https://github.com/sequana/revcomp/actions/workflows/apptainer.yml/badge.svg
+            :target: https://github.com/sequana/revcomp/actions/workflows/apptainer.yml
     * - `downsampling <https://github.com/sequana/downsampling>`_
       - downsample sequencing data
       - .. image:: https://badge.fury.io/py/sequana-downsampling.svg
             :target: https://pypi.python.org/pypi/sequana-downsampling
       - .. image:: https://github.com/sequana/downsampling/actions/workflows/main.yml/badge.svg
             :target: https://github.com/sequana/downsampling/actions/workflows/main.yml
-      -
+      - Not required
+    * - `depletion <https://github.com/sequana/depletion>`_
+      - remove/select reads mapping a reference
+      - .. image:: https://badge.fury.io/py/sequana-downsampling.svg
+            :target: https://pypi.python.org/pypi/sequana-depletion
+      - .. image:: https://github.com/sequana/depletion/actions/workflows/main.yml/badge.svg
+            :target: https://github.com/sequana/depletion/actions/workflows/main.yml
+      - 
+
+
 
 
 
@@ -220,6 +239,8 @@ Changelog
 ========= ==========================================================================
 Version   Description
 ========= ==========================================================================
+0.15.2    * ribodesigner can now accept an input fasta with no GFF assuming the 
+            fasta already contains the rRNA sequences 
 0.15.1    * Fix creation of images directory in modules report
           * add missing test related to gff 
           * Fix #804

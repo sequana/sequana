@@ -15,7 +15,7 @@ import shutil
 import colorlog
 import networkx as nx
 from bioservices import quickgo
-from sequana import sequana_data
+from sequana.datatools import sequana_data
 from sequana.lazy import pandas as pd
 
 logger = colorlog.getLogger(__name__)
