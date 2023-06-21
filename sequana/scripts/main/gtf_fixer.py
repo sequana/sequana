@@ -26,6 +26,5 @@ logger = colorlog.getLogger(__name__)
 def gtf_fixer(**kwargs):
     """Reads GTF and fix known issues (exon and genes uniqueness)"""
     gtf = GTFFixer(kwargs["input"])
-    res = gtf.fix_exons_uniqueness(kwargs["output"])
-    # res = gtf.fix_exons_uniqueness(kwargs['output'])
+    res = gtf.fix(kwargs["output"])
     print(res)

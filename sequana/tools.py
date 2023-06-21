@@ -18,15 +18,17 @@ import re
 import gzip
 import io
 from collections import Counter
+import subprocess
 
 from sequana.lazy import pandas as pd
 from sequana.lazy import numpy as np
-from sequana import BAM
+from sequana.lazy import pysam
+
+from sequana.bamtools import BAM
 
 from pysam import FastxFile
 from easydev import precision
 from easydev.misc import cmd_exists
-import subprocess
 from tqdm import tqdm
 import colorlog
 
@@ -36,14 +38,6 @@ logger = colorlog.getLogger(__name__)
 __all__ = ["StatsBAM2Mapped", "bam_to_mapped_unmapped_fastq", "GZLineCounter"]
 
 
-
-
-#try:
-#    _translate = string.maketrans("ACGTacgt", "TGCAtgca")
-#
-#    def bytes(x, dummy):
-#        return x
-#except:
 _translate = bytes.maketrans(b"ACGTacgt", b"TGCAtgca")
 
 

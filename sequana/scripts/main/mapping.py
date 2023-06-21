@@ -17,8 +17,8 @@ from snakemake import shell as shellcmd
 import click
 import colorlog
 
-from sequana import FastQ
-from sequana import FastA
+from sequana.fastq import FastQ
+from sequana.fasta import FastA
 
 from .utils import CONTEXT_SETTINGS
 

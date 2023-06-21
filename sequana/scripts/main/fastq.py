@@ -17,7 +17,7 @@ import sys
 import click
 import colorlog
 
-from sequana import FastQ
+from sequana.fastq import FastQ
 
 from .utils import CONTEXT_SETTINGS
 
