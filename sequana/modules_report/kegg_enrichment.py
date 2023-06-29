@@ -127,17 +127,17 @@ maximum of {self.nmax} pathways. </p>
         html = f""
 
         for category in tqdm(["down", "up", "all"], desc='scanning categories'):
-            df = self.ke.barplot(category, nmax=self.nmax)
+            df = self.ke.barplot(category, nmax=None)
             n_enriched = len(df)
 
-            if len(df):
+            if n_enriched:
                 img_barplot = self.create_embedded_png(self.plot_barplot, "filename", style=style, category=category)
                 img_scatter = self.create_embedded_png(self.plot_scatter, "filename", style=style, category=category)
                 js_table, html_table, fotorama = self.get_table(category)
                 df.to_csv(f"{config.output_dir}/DEGs_enrichment_{category}.csv")
             else:
                 img_barplot = img_scatter = js_table = html_table = fotorama = ""
-
+                
             html += f"""
 <h3>2.1 - KEGG pathways enriched in {category} regulated genes</h3>
 <p>{n_enriched} KEGG pathways are found enriched in {category} regulated genes</p>

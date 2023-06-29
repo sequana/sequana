@@ -234,7 +234,7 @@ class KEGGPathwayEnrichment:
         pylab.hist([len(v) for k, v in self.gene_sets.items()], bins=bins, lw=1, ec="k")
         pylab.title("{} gene sets".format(N))
         pylab.xlabel("Gene set sizes")
-        pylab.grid(True)
+        pylab.grid(True, alpha=0.5)
         a, b = pylab.xlim()
         pylab.xlim([0, b])
 
@@ -297,9 +297,10 @@ class KEGGPathwayEnrichment:
         df.reset_index(drop=True, inplace=True)
         df = df[df["Adjusted P-value"] <= cutoff]
 
-        if len(df) < nmax:
-            nmax = len(df)
-        df = df.iloc[0:nmax]
+        if nmax:
+            nmax = min(len(df), nmax)
+            df = df.iloc[0:nmax]
+
         df = df.sort_values("Adjusted P-value", ascending=False)
         df = df.rename({"Term": "pathway_id"}, axis=1)
         df = df[df.columns]
@@ -315,10 +316,10 @@ class KEGGPathwayEnrichment:
         pylab.barh(range(len(df)), -pylab.log10(df["Adjusted P-value"]))
 
         names = [x[0:40] + "..." if len(x) > 40 else x for x in df.name]
-        pylab.yticks(range(len(df)), names)
-        pylab.axvline(1.3, lw=2, ls="--", color="r")
-        pylab.grid(True)
-        pylab.xlabel("Adjusted p-value (log10)")
+        pylab.yticks(range(len(df)), names, fontsize=8)
+        pylab.axvline(1.3, lw=1, ls="--", color="r", alpha=0.8)
+        pylab.grid(True, alpha=0.5)
+        pylab.xlabel("Adjusted p-value (-log10)")
         pylab.ylabel("Gene sets")
         a, b = pylab.xlim()
         pylab.xlim([0, b])
@@ -331,20 +332,21 @@ class KEGGPathwayEnrichment:
         if len(df) == 0:
             return df
 
+        df = df.sort_values("Odds Ratio")
         pylab.clf()
         pylab.scatter(
-            -pylab.log10(df["Adjusted P-value"]),
+            df["Odds Ratio"],
             range(len(df)),
-            s=10 * df["size"],
-            c=-pylab.log10(df["Adjusted P-value"]),
+            s=df["size"],
+            c=df["Adjusted P-value"],
         )
 
-        pylab.xlabel("Odd ratio")
+        pylab.xlabel("Odds ratio")
         pylab.ylabel("Gene sets")
 
         names = [x[0:40] + "..." if len(x) > 40 else x for x in df.name]
 
-        pylab.yticks(range(len(df)), names)
+        pylab.yticks(range(len(df)), names, fontsize=8)
 
         a, b = pylab.xlim()
         pylab.xlim([0, b * 1.1 + 1])
@@ -352,7 +354,7 @@ class KEGGPathwayEnrichment:
         a, b = pylab.ylim()
         pylab.ylim([a - 0.5, b + 0.5])
 
-        pylab.grid(True)
+        pylab.grid(True, alpha=0.5)
         ax = pylab.gca()
 
         M = max(df["size"])
@@ -368,7 +370,6 @@ class KEGGPathwayEnrichment:
         ]
         ax.legend(handles=handles, loc="upper left", title="gene-set size")
 
-        pylab.axvline(1.3, lw=2, ls="--", color="r")
         ax = pylab.colorbar(pylab.gci())
         pylab.tight_layout()
         return df
