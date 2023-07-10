@@ -233,7 +233,11 @@ class IEM:
             sys.exit(f"Sample ID not unique. Duplicated entries: {duplicated}")
 
         # check that indices are unique
-        indices = self.df["index"] + "," + self.df.I7_Index_ID.fillna("")
+        if "index2" in self.df.columns:
+            indices = self.df["index"] + "," + self.df['index2']
+        else:
+            indices = self.df["index"]
+
         if indices.duplicated().sum() > 0:
             duplicated = indices[indices.duplicated()].values
             sys.exit(f"Looks like you have duplicated index I5 and/or I7 : {duplicated}")
