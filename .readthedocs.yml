@@ -3,7 +3,7 @@ sphinx:
     configuration: doc/conf.py
 
 
-formats: htmlzip
+formats: []
 
 python:
     version: 3.10
