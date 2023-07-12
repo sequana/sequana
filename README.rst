@@ -129,7 +129,7 @@ SEQUANA
       - .. image:: https://github.com/sequana/pacbio_qc/actions/workflows/main.yml/badge.svg
             :target: https://github.com/sequana/pacbio_qc/actions/workflows/main.yml
       - .. image:: https://github.com/sequana/pacbio_qc/actions/workflows/apptainer.yml/badge.svg
-            :target: https://github.com/sequana/pacbio_qcr/actions/workflows/apptainer.yml
+            :target: https://github.com/sequana/pacbio_qc/actions/workflows/apptainer.yml
     * - `ribofinder <https://github.com/sequana/ribofinder>`_
       - Find ribosomal content
       - .. image:: https://badge.fury.io/py/sequana-ribofinder.svg
@@ -241,6 +241,10 @@ Version   Description
 ========= ==========================================================================
 0.15.2    * ribodesigner can now accept an input fasta with no GFF assuming the 
             fasta already contains the rRNA sequences 
+          * Fix IEM module when dealing with double indexing
+          * Fix anchors in HTML reports (rnadiff module)
+          * refactorise compare module to take several rnadiff results as input
+          * enrichment improvements (export KEGG and GO as csv files
 0.15.1    * Fix creation of images directory in modules report
           * add missing test related to gff 
           * Fix #804

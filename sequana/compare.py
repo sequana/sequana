@@ -43,24 +43,28 @@ class RNADiffCompare(Compare):
         from sequana.compare import RNADiffCompare
         c = RNADiffCompare("data.csv", "data2.csv")
 
+        # change the l2fc to update venn plots
+        c.plot_venn_up()
+        c.r1.log2_fc = 1
+        c.r2.log2_fc = 1
+        c.plot_venn_up()
 
     """
 
-    def __init__(self, r1, r2, r3=None, design=None):
+    def __init__(self, *args, design=None):
 
-        if isinstance(r1, RNADiffTable):
-            self.r1 = r1
-        elif os.path.exists(r1):
-            self.r1 = RNADiffTable(r1)
-        else:
-            raise NotImplementedError
-
-        if isinstance(r2, RNADiffTable):
-            self.r2 = r2
-        elif os.path.exists(r2):
-            self.r2 = RNADiffTable(r2)
-        else:
-            raise NotImplementedError
+        self.rns = []
+        for rnadiff_csv in args:
+            if isinstance(rnadiff_csv, RNADiffTable):
+                self.rns.append(rnadiff_csv)
+            elif os.path.exists(rnadiff_csv):
+                self.rns.append(RNADiffTable(rnadiff_csv))
+            else:
+                raise NotImplementedError
+    
+        # aliases
+        self.r1 = self.rns[0]
+        self.r2 = self.rns[1]
 
         # keep only entries in common
         A = self.r1.df.index
@@ -76,8 +80,9 @@ class RNADiffCompare(Compare):
             self.r2.set_gene_lists()
             logger.info(f"Two sets are not equal. Kept {len(self.r1.df)} in common")
 
-    def plot_venn_down(self, labels=None, ax=None, title="Down expressed genes", mode="all"):
+    def plot_venn_down(self, labels=None, ax=None, title="Down expressed genes", mode="all", l2fc=0):
 
+        assert l2fc <= 0, "l2fc must be negative"
         kargs = {}
         kargs["title"] = title
         kargs["labels"] = labels
@@ -86,7 +91,7 @@ class RNADiffCompare(Compare):
         kargs["data2"] = set(self.r2.gene_lists["down"])
         self._venn(**kargs)
 
-    def plot_venn_up(self, labels=None, ax=None, title="Up expressed genes", mode="all"):
+    def plot_venn_up(self, labels=None, ax=None, title="Up expressed genes", mode="all", l2fc=0):
         """Venn diagram of cond1 from RNADiff result1 vs cond2 in RNADiff
         result 2
 
@@ -102,6 +107,7 @@ class RNADiffCompare(Compare):
             )
             c.plot_venn_up()
         """
+        assert l2fc >= 0, "l2fc must be positive"
         kargs = {}
         kargs["title"] = title
         kargs["labels"] = labels
@@ -194,7 +200,7 @@ class RNADiffCompare(Compare):
                     B = set(self.r2.df.query("(log2FoldChange>=@x or log2FoldChange<=-@x) and padj<@padj").index)
                 if len(A) == 0 or len(B) == 0:
                     # no overlap yet
-                    I.append(100)
+                    I.append(0)
                 else:
                     res = len(A.intersection(B)) / (len(A) + len(B) - len(A.intersection(B))) * 100
                     I.append(res)
@@ -208,12 +214,14 @@ class RNADiffCompare(Compare):
             except:
                 pass
             pylab.plot(X, I, "o-", label=str(padj))
+
+
         ax = pylab.gca()
         ax.set_ylabel("Jaccard similarity (intersection/union)")
         ax.set_xlabel("Fold change (log2)")
         ax2 = ax.twinx()
         for padj in padjs:
-            ax2.plot(X, common[padj], color="orange", ls="--")
+            ax2.plot(X, common[padj], ls="--")
         ax2.set_ylabel("Cardinality of the union ")
         ax.legend()
         ax.set_ylim([0, 100])
@@ -222,6 +230,8 @@ class RNADiffCompare(Compare):
             ax.axvline(-2, ls="--", color="r")
         else:
             ax.axvline(2, ls="--", color="r")
+
+        return I, common[padj]
 
     def plot_common_major_counts(
         self,
@@ -521,3 +531,54 @@ class RNADiffCompare(Compare):
 
         fig = pylab.gcf()
         fig.canvas.mpl_connect("pick_event", onpick)
+
+
+    def plot_geneset(self, indices, showlines=True, showdots=True, 
+            colors={'bodies': "blue", "cbars":"k", "dot":'blue', "cmins": "k", "cmaxes":"k"}):
+        """indices is a list that represents a gene sets
+
+
+        cmins, cmaxes, cbars are the colors of the bars inside the body of the violin plots
+
+
+        .. plot::
+
+            from sequana import sequana_data
+            from sequana.compare import RNADiffCompare
+
+            c = RNADiffCompare(
+                sequana_data("rnadiff_salmon.csv", "doc/rnadiff_compare"),
+                sequana_data("rnadiff_bowtie.csv", "doc/rnadiff_compare")
+            )
+            c.plot_volcano()
+            indices = c.r1.df.query("log2FoldChange>1 or log2FoldChange<-1").index.values
+            indices  = [x for x in indices if x in c.r1.df.index and x in c.r2.df.index]
+            c.plot_geneset(indices, showlines=True)
+
+        """
+        from matplotlib.pyplot import violinplot
+        from pylab import violinplot, xticks, clf, plot, ylabel, axhline
+
+        N = len(self.rns)
+        data = [self.rns[i].df.loc[indices]['log2FoldChange'].values for i in range(0, N)]
+
+        clf()
+        axhline(0, color="k", ls="--", zorder=-1)
+        vp = violinplot(data)
+        for x in vp['bodies']:
+            x.set_color(colors["bodies"])
+        vp['cbars'].set_color(colors["cbars"])
+        vp['cmins'].set_color(colors["cmins"])
+        vp['cmaxes'].set_color(colors["cmaxes"])
+
+        for i in range(N-1):
+            for x,y in zip(data[i], data[i+1]):
+                if showlines:
+                    plot([i+1,i+2],[x,y], 'or-', alpha=0.5)
+                else:
+                    plot([i+1,i+2],[x,y], 'or', alpha=0.5)
+
+        xticks(range(1, N+1), [f'C{i}' for i in range(1, N+1)], fontsize=16)
+        ylabel("log2 Fold Change", fontsize=16)
+
+        return data

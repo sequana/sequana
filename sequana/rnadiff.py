@@ -213,7 +213,7 @@ class RNADiffAnalysis:
         # For DeSeq2
         self.batch = batch
         self.model = f"~{batch + '+' + condition if batch else condition}"
-
+        logger.info(f"model: {self.model}")
         self.fit_type = fit_type
         self.beta_prior = "TRUE" if beta_prior else "FALSE"
         self.independent_filtering = "TRUE" if independent_filtering else "FALSE"
