@@ -122,7 +122,7 @@ class KEGGPathwayEnrichment:
         padj_cutoff=0.05,
         preload_directory=None,
         convert_input_gene_to_upper_case=False,
-        color_node_with_annotation='Name'
+        color_node_with_annotation="Name",
     ):
         """
 
@@ -161,7 +161,6 @@ class KEGGPathwayEnrichment:
         self._load_pathways(progress=progress, preload_directory=preload_directory)
 
         if isinstance(mapper, str):
-
             df = pd.read_csv(mapper)
             df = df.rename({"external_gene_name": "name", "ensembl_gene_id": "ensembl"}, axis=1)
             df.set_index("ensembl", inplace=True)
@@ -256,7 +255,6 @@ class KEGGPathwayEnrichment:
         }
 
     def _enrichr(self, category, background, verbose=True):
-
         if isinstance(category, list):
             gene_list = category
         else:
@@ -311,8 +309,13 @@ class KEGGPathwayEnrichment:
     def barplot(self, category, nmax=15):
         self._check_category(category)
         df = self.dfs[category].query("significative == True").head(nmax)
-        df = df.sort_values("Adjusted P-value (-log10)", ascending=False)
-        fig = px.bar(df, x="Adjusted P-value (-log10)", y="name", orientation='h')
+        df = df.sort_values("Adjusted P-value (-log10)")
+
+        fig = px.bar(df, x="Adjusted P-value (-log10)", y="name", orientation="h")
+
+        # To have all labels displayed
+        if len(df) > 20:
+            fig.update_layout(height=800)
 
         return fig
 
@@ -321,18 +324,28 @@ class KEGGPathwayEnrichment:
         df = self.dfs[category].query("significative == True").head(nmax)
 
         df.sort_values("Odds Ratio", inplace=True)
-        df = df.round({"Odds Ratio":2, "Combined Score":2})
-        fig = px.scatter(df, x="Odds Ratio", y="name", color="Combined Score", size="size", hover_data=["Combined Score", "Adjusted P-value", "Overlap"], color_continuous_scale="Viridis")
-        
+        df = df.round({"Odds Ratio": 2, "Combined Score": 2})
+        fig = px.scatter(
+            df,
+            x="Odds Ratio",
+            y="name",
+            color="Combined Score",
+            size="size",
+            hover_data=["Combined Score", "Adjusted P-value", "Overlap"],
+            color_continuous_scale="Viridis",
+        )
+
+        # To have all labels displayed
+        if len(df) > 20:
+            fig.update_layout(height=800)
+
         return fig
 
     def _get_summary_pathway(self, pathway_ID, df, l2fc=0, padj=0.05):
-
         genes = self.df_pathways.loc[pathway_ID]["GENE"]
 
         df_down = df.query("padj<=@padj and log2FoldChange<=-@l2fc").copy()
         df_up = df.query("padj<=@padj and log2FoldChange>=@l2fc").copy()
-
 
         # for the color, we need to find the match between names and the annotation
         # since names is suppose to have been populated with the annotaion, it should be
@@ -340,15 +353,14 @@ class KEGGPathwayEnrichment:
         df_down["Name"] = df_down[self.color_node_with_annotation]
         df_up["Name"] = df_up[self.color_node_with_annotation]
 
-
-        # in principle, the KEGG pathays field 'GENE' is stored as 
+        # in principle, the KEGG pathays field 'GENE' is stored as
         # "GENE":{key: value} and the values are the NAME, a semi column, and a description
         # hence the split on ; herebelow:
         # unfortunately, there are special cases to handle such as vibrio cholera (vc)
         mapper = {}
-        if self.kegg.organism.startswith('vc'):
+        if self.kegg.organism.startswith("vc"):
             for k, v in genes.items():
-                #the value is just the description. Let us assume that the name is also the ID
+                # the value is just the description. Let us assume that the name is also the ID
                 mapper[k] = k
         else:
             for k, v in genes.items():
@@ -454,13 +466,14 @@ class KEGGPathwayEnrichment:
         return colors
 
     def save_pathway(self, pathway_ID, df, scale=None, show=False, filename=None):
-
         summary = self._get_summary_pathway(pathway_ID, df)
         colors = self._get_colors(summary)
 
         count_up = len(summary.query("type == '+'"))
         count_down = len(summary.query("type == '-'"))
-        logger.info(f"pathway {pathway_ID} total genes: {len(summary)}. Found {count_down} down-regulated and {count_up} up-regulated")
+        logger.info(
+            f"pathway {pathway_ID} total genes: {len(summary)}. Found {count_down} down-regulated and {count_up} up-regulated"
+        )
 
         url = "https://www.kegg.jp/kegg-bin/show_pathway"
         # dcolor = "white"  --> does not work with the post requests unlike get
@@ -489,9 +502,7 @@ class KEGGPathwayEnrichment:
 
         return summary
 
-    def save_significant_pathways(
-        self, category, nmax=20, tag="", outdir="."
-    ):  # pragma: no cover
+    def save_significant_pathways(self, category, nmax=20, tag="", outdir="."):  # pragma: no cover
         """category should be up, down or all"""
 
         # select the relevant pathways
@@ -544,11 +555,8 @@ class KEGGPathwayEnrichment:
             df = self.dfs[category]
 
             if not df.empty:
-
                 df.to_csv(outdir / (common_out.name + ".csv"))
-                df.query("significative == True").to_csv(
-                    outdir / (common_out.name + "_significant.csv")
-                )
+                df.query("significative == True").to_csv(outdir / (common_out.name + "_significant.csv"))
 
                 self.barplot(category).write_image(outdir / (common_out.name + "_barplot.png"))
                 self.scatterplot(category).write_image(outdir / (common_out.name + "_scatterplot.png"))

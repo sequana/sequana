@@ -14,6 +14,8 @@
 import colorlog
 from sequana.lazy import pandas as pd
 from sequana.lazy import pylab
+import plotly.express as px
+
 
 logger = colorlog.getLogger(__name__)
 
@@ -123,7 +125,6 @@ class PlotGOTerms:
         include_negative_enrichment=False,
         compute_levels=False,
     ):
-
         if ontologies is None:
             ontologies = {"MF", "BP", "CC"}
         assert sort_by in ["pValue", "fold_enrichment", "fdr"]
@@ -180,7 +181,7 @@ class PlotGOTerms:
                 # FIXME
                 # in rare cases, imd are not found in _get_graph()
                 # need to add them back here with a dummy level
-                for ID in subdf['id'].values:
+                for ID in subdf["id"].values:
                     if ID not in goid_levels:
                         goid_levels[ID] = 10
 
@@ -200,13 +201,11 @@ class PlotGOTerms:
         pvalue=0.05,
         cmap="summer_r",
         sort_by="fold_enrichment",
-        show_pvalues=False,
         include_negative_enrichment=False,
         fdr_threshold=0.05,
         compute_levels=True,
         progress=True,
     ):
-
         df, subdf = self._get_plot_go_terms_data(
             category,
             ontologies=ontologies,
@@ -222,220 +221,39 @@ class PlotGOTerms:
         if df is None or subdf is None:
             return
 
-        # now, for the subdf, which is used to plot the results, we add dummy
-        # rows to make the yticks range scale nicer.
-        M = 10
-        datum = subdf.iloc[-1].copy()
-        datum.fdr = 0
-        datum.number_in_list = 0
-        datum.fold_enrichment = 1
-        datum.label = ""
-        datum["id"] = ""
-        datum["level"] = ""
-
-        while len(subdf) < 10:
-            subdf = pd.concat([datum.to_frame().T, subdf], axis=0)
-
-        # here, we try to figure out a proper layout
-        N = len(subdf)
-        size_factor = 10000 / len(subdf)
-        max_size = subdf.number_in_list.max()
-        # ignore the dummy values
-        min_size = min([x for x in subdf.number_in_list.values if x != 0])
-        # here we define a size for each GO entry.
-        # For the dummy entries, size is null (int(bool(x))) makes sure
-        # it is not shown
-        sizes = [
-            max(max_size * 0.2, x) * int(bool(x))
-            for x in size_factor * subdf.number_in_list.values / subdf.number_in_list.max()
-        ]
-
-        m1 = min([x for x in sizes if x != 0])
-        m3 = max(sizes)
-        m2 = m1 + (m3 - m1) / 2
-
-        # The plot itself. we stretch when there is lots of features
-        if len(subdf) > 25:
-            fig = pylab.figure(num=1)
-            fig.set_figwidth(10)
-            fig.set_figheight(8)
-        else:
-            fig = pylab.figure(num=1)
-            fig.set_figwidth(10)
-            fig.set_figheight(6)
-
-        pylab.clf()
-        if log:
-            pylab.scatter(
-                [pylab.log2(x) if x else 0 for x in subdf.fold_enrichment],
-                range(len(subdf)),
-                c=subdf.fdr,
-                s=sizes,
-                cmap=cmap,
-                alpha=0.8,
-                ec="k",
-                vmin=0,
-                vmax=fdr_threshold,
-                zorder=10,
-            )
-        else:
-            pylab.scatter(
-                subdf.fold_enrichment,
-                range(len(subdf)),
-                c=subdf.fdr,
-                cmap=cmap,
-                s=sizes,
-                ec="k",
-                alpha=0.8,
-                vmin=0,
-                vmax=fdr_threshold,
-                zorder=10,
-            )
-
-        # set color bar height
-        pylab.grid(zorder=-10)
-        ax2 = pylab.colorbar(shrink=0.5)
-        ax2.ax.set_ylabel("FDR")
-
-        # define the labels
-        max_label_length = 45
-        labels = [x if len(x) < max_label_length else x[0 : max_label_length - 3] + "..." for x in list(subdf.label)]
-        ticks = []
-        for level, ID, label in zip(subdf["level"], subdf.id, labels):
-            if ID:
-                if level:
-                    ticks.append(f"{ID} ({level}) ;  {label.title()}")
-                else:
-                    ticks.append(f"{ID} ; {label.title()}")
-            else:
-                ticks.append("")
-
-        # Refine the fontsize of ylabel if not many
-        if len(subdf) < 10:
-            pylab.yticks(range(N), ticks, fontsize=fontsize, ha="left")
-        else:
-            pylab.yticks(range(N), ticks, fontsize=fontsize, ha="left")
-
-        yax = pylab.gca().get_yaxis()
-        try:
-            pad = [x.label1.get_window_extent().width for x in yax.majorTicks]
-            yax.set_tick_params(pad=max(pad))
-        except:
-            yax.set_tick_params(pad=60 * fontsize * 0.7)
-        yax.set_tick_params(pad=60 * fontsize * 0.6)
-
-        # deal with the x-axis now. what is the range ?
-        fc_max = subdf.fold_enrichment.max(skipna=True)
-        fc_min = subdf.fold_enrichment.min(skipna=True)
-        # go into log2 space
-        fc_max = pylab.log2(fc_max)
-        fc_min = pylab.log2(fc_min)
-        abs_max = max(fc_max, abs(fc_min), 1)
+        # Filter out depleted pathway
+        if not include_negative_enrichment:
+            subdf = subdf.query("fold_enrichment > 1")
 
         if log:
-            fc_max = abs_max * 1.5
-        else:
-            fc_max = 2**abs_max * 1.2
-
-        pylab.axvline(0, color="k", lw=2)
-        if log:
-            pylab.xlabel("Fold Enrichment (log2)")
-        else:
-            pylab.xlabel("Fold Enrichment")
-
-        # dealwith fold change below 0.
-        if include_negative_enrichment:
-            pylab.xlim([-fc_max, fc_max])
-        else:
-            pylab.xlim([0, fc_max])
-        pylab.tight_layout()
-
-        # The pvalues:
-        if show_pvalues:
-            ax = pylab.gca().twiny()
-            # ax.set_xlim([0, max(-pylab.log10(subdf.pValue))*1.2])
-            pvalues = [-pylab.log10(pv) if pv > 0 else 0 for pv in subdf.pValue]
-
-            ax.set_xlim([0, max(pvalues) * 1.2])
-            ax.set_xlabel("p-values (log10)", fontsize=12)
-            ax.plot(pvalues, range(len(subdf)), label="pvalue", lw=2, color="k")
-            ax.axvline(1.33, lw=1, ls="--", color="grey", label="pvalue=0.05")
-            pylab.tight_layout()
-            pylab.legend(loc="lower right")
-
-        # now, let us add a legend
-        s1 = pylab.scatter([], [], s=m1, marker="o", color="#555555", ec="k")
-        s2 = pylab.scatter([], [], s=m2, marker="o", color="#555555", ec="k")
-        s3 = pylab.scatter([], [], s=m3, marker="o", color="#555555", ec="k")
-
-        if len(subdf) <= 10:
-            labelspacing = 1.5 * 2
-            borderpad = 1.5
-            handletextpad = 2
-        elif len(subdf) < 20:
-            labelspacing = 1.5 * 2
-            borderpad = 1
-            handletextpad = 2
-        else:
-            labelspacing = 1.5
-            borderpad = 2
-            handletextpad = 2
-
-        # get back the dataframe without the dummies
-        subdf = subdf.query("number_in_list>0")
-        if len(subdf) >= 3:
-            leg = pylab.legend(
-                (s1, s2, s3),
-                (
-                    str(int(min_size)),
-                    str(int(min_size + (max_size - min_size) / 2)),
-                    str(int(max_size)),
-                ),
-                scatterpoints=1,
-                loc="lower right",
-                ncol=1,
-                frameon=True,
-                title="gene-set size",
-                labelspacing=labelspacing,
-                borderpad=borderpad,
-                handletextpad=handletextpad,
-                fontsize=8,
-            )
-        elif len(subdf) >= 2:
-            leg = pylab.legend(
-                (s1, s3),
-                (str(int(min_size)), str(int(max_size))),
-                scatterpoints=1,
-                loc="lower right",
-                ncol=1,
-                frameon=True,
-                title="gene-set size",
-                labelspacing=labelspacing,
-                borderpad=borderpad,
-                handletextpad=handletextpad,
-                fontsize=8,
+            subdf["log2_fold_enrichment"] = [pylab.log2(x) if x else 0 for x in subdf.fold_enrichment]
+            fig = px.scatter(
+                subdf,
+                x="log2_fold_enrichment",
+                y="label",
+                color="fdr",
+                size="number_in_list",
+                hover_data=["id", "label", "level", "fold_enrichment", "fdr", "number_in_list"],
+                color_continuous_scale="Viridis",
+                labels={"log2_fold_enrichment": "Fold enrichment (log2)", "label": "GO term", "fdr": "FDR"},
             )
         else:
-            leg = pylab.legend(
-                (s1,),
-                (str(int(min_size)),),
-                scatterpoints=1,
-                loc="lower right",
-                ncol=1,
-                frameon=True,
-                title="gene-set size",
-                labelspacing=labelspacing,
-                borderpad=borderpad,
-                handletextpad=handletextpad,
-                fontsize=8,
+            fig = px.scatter(
+                subdf,
+                x="fold_enrichment",
+                y="label",
+                color="fdr",
+                size="number_in_list",
+                hover_data=["fold_enrichment", "label", "fdr", "number_in_list", "id", "level"],
+                color_continuous_scale="Viridis",
+                labels={"log2_fold_enrichment": "Fold enrichment (log2)", "label": "GO term", "fdr": "FDR"},
             )
 
-        frame = leg.get_frame()
-        frame.set_facecolor("#b4aeae")
-        frame.set_edgecolor("black")
-        frame.set_alpha(1)
+        # To have all labels displayed
+        if len(df) > 20:
+            fig.update_layout(height=800)
 
-        return df
+        return fig
 
     def save_chart(self, df, filename="chart.png"):
         self.quick_go_graph.save_chart(df, filename)
