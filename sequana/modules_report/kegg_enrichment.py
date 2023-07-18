@@ -14,6 +14,7 @@
 import ast
 import os
 import sys
+from pathlib import Path
 
 from sequana.lazy import pandas as pd
 from sequana.lazy import pylab
@@ -23,6 +24,7 @@ from sequana.utils.datatables_js import DataTable
 from sequana.enrichment.kegg import KEGGPathwayEnrichment
 
 from tqdm import tqdm
+from plotly import offline
 
 import colorlog
 
@@ -49,7 +51,7 @@ class ModuleKEGGEnrichment(SequanaBaseModule):
             "kegg_background": None,
             "mapper": None,
             "preload_directory": None,
-            "color_node_with_annotation": 'Name',
+            "color_node_with_annotation": "Name",
             "plot_logx": True,
         },
         command="",
@@ -63,6 +65,10 @@ class ModuleKEGGEnrichment(SequanaBaseModule):
         self.enrichment_params = enrichment_params
         self.data = dataframe
         self.organism = kegg_name
+        self.csv_directory = Path(config.output_dir) / "tables"
+        self.plot_directory = Path(config.output_dir) / "plots"
+        self.csv_directory.mkdir()
+        self.plot_directory.mkdir()
 
         if self.enrichment_params["preload_directory"]:
             pathname = self.enrichment_params["preload_directory"]
@@ -77,8 +83,7 @@ class ModuleKEGGEnrichment(SequanaBaseModule):
             mapper=self.enrichment_params["mapper"],
             background=self.enrichment_params["kegg_background"],
             preload_directory=self.enrichment_params["preload_directory"],
-            color_node_with_annotation=self.enrichment_params['color_node_with_annotation']
-
+            color_node_with_annotation=self.enrichment_params["color_node_with_annotation"],
         )
 
         self.create_report_content()
@@ -126,24 +131,27 @@ maximum of {self.nmax} pathways. </p>
 
         html = f""
 
-        for category in tqdm(["down", "up", "all"], desc='scanning categories'):
-            df = self.ke.barplot(category, nmax=None)
-            n_enriched = len(df)
+        for category in tqdm(["down", "up", "all"], desc="scanning categories"):
+            df = self.ke.dfs[category]
+            if len(df) == 0:
+                n_enriched = 0
+            else:
+                n_enriched = len(df.query("significative == True"))
 
             if n_enriched:
-                img_barplot = self.create_embedded_png(self.plot_barplot, "filename", style=style, category=category)
-                img_scatter = self.create_embedded_png(self.plot_scatter, "filename", style=style, category=category)
+                html_barplot = self.plot_barplot(category=category)
+                html_scatter = self.plot_scatter(category=category)
                 js_table, html_table, fotorama = self.get_table(category)
-                df.to_csv(f"{config.output_dir}/DEGs_enrichment_{category}.csv")
+                df.query("significative == True").to_csv(self.csv_directory / f"DEGs_enrichment_{category}.csv")
             else:
-                img_barplot = img_scatter = js_table = html_table = fotorama = ""
-                
+                html_barplot = html_scatter = js_table = html_table = fotorama = ""
+
             html += f"""
 <h3>2.1 - KEGG pathways enriched in {category} regulated genes</h3>
 <p>{n_enriched} KEGG pathways are found enriched in {category} regulated genes</p>
 <br>
-{img_barplot}
-{img_scatter}
+{html_barplot}
+{html_scatter}
 <hr>
 {js_table} {html_table}
 <hr>
@@ -156,19 +164,20 @@ log2 fold change of 4 or 40 will have the same darkest color.). </p>
 """
         self.sections.append({"name": "2 - KEGG", "anchor": "kegg", "content": html})
 
-    def plot_barplot(self, filename, category=None):
-        self.ke.barplot(category, nmax=self.nmax)
-        pylab.savefig(filename)
+    def plot_barplot(self, category=None):
+        fig = self.ke.barplot(category, nmax=self.nmax)
+        html_barplot_plotly = offline.plot(fig, output_type="div", include_plotlyjs=False)
+        return html_barplot_plotly
 
-    def plot_scatter(self, filename, category=None):
-        self.ke.scatterplot(category, nmax=self.nmax)
-        pylab.savefig(filename)
+    def plot_scatter(self, category=None):
+        fig = self.ke.scatterplot(category, nmax=self.nmax)
+        html_scatter_plotly = offline.plot(fig, output_type="div", include_plotlyjs=False)
+        return html_scatter_plotly
 
     def get_table(self, category):
         # Results down (pathway info)
         # html_before_table = """<p>Enrichment pathways summary</p>"""
-
-        df = self.ke.barplot(category, nmax=self.nmax)
+        df = self.ke.dfs[category].query("significative == True").copy()
 
         if len(df):
             links = ["https://www.genome.jp/dbget-bin/www_bget?path:{}".format(x) for x in df["pathway_id"]]
@@ -179,6 +188,8 @@ log2 fold change of 4 or 40 will have the same darkest color.). </p>
                     "name",
                     "size",
                     "Overlap",
+                    "Odds Ratio",
+                    "Combined Score",
                     "P-value",
                     "Adjusted P-value",
                     "Genes",
@@ -192,8 +203,11 @@ log2 fold change of 4 or 40 will have the same darkest color.). </p>
             files = []
             logger.info(f"Saving {len(df)} pathways")
             for ID in df["pathway_id"]:
-                df_pathways = self.ke.save_pathway(ID, self.data, filename=f"{config.output_dir}/{ID}.png")
-                files.append(f"{ID}.png")
+                plot_file = self.plot_directory / f"{ID}.png"
+                df_pathways = self.ke.save_pathway(ID, self.data, filename=plot_file)
+                # Files path should be relative to the location of the enrichment.html file
+                # ie relative to self.output_dir (.parents[1] here)
+                files.append(plot_file.relative_to(plot_file.parents[1]))
             fotorama = self.add_fotorama(files, width=800)
 
             datatable = DataTable(df, f"kegg_{category}")

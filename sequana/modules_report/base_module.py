@@ -253,7 +253,6 @@ class SequanaBaseModule(object):
         file_thumbnails=None,
         captions=None,
     ):
-
         if self._fotorama_js_added is False:
             script = """
         <!-- jQuery 1.8 or later, 33 KB -->
@@ -270,7 +269,7 @@ class SequanaBaseModule(object):
             if len(files) != len(captions):
                 raise ValueError("captions and files must be of same length with 1-to-1 mapping")
         else:
-            captions = [filename.split("/")[-1] for filename in files]
+            captions = [filename.name for filename in files]
 
         script += '<div class="fotorama" fzyz-keyboard="true" '
         if thumbnails is True:

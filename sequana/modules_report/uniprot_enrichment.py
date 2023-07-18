@@ -13,6 +13,7 @@
 """Module to write enrichment report"""
 import os
 import sys
+from pathlib import Path
 
 from sequana.lazy import pandas as pd
 from sequana.lazy import pylab
@@ -51,9 +52,9 @@ class ModuleUniprotEnrichment(SequanaBaseModule):
         """.. rubric:: constructor"""
         super().__init__()
         self.title = "UniProt Enrichment (GO terms)"
-        self.taxon_id = summary['taxon']
-        self.taxon_name = summary['taxon_name']
-        self.compa = summary['name']
+        self.taxon_id = summary["taxon"]
+        self.taxon_name = summary["taxon_name"]
+        self.compa = summary["name"]
 
         self.command = command
         self.gene_lists = gene_lists
@@ -77,15 +78,13 @@ class ModuleUniprotEnrichment(SequanaBaseModule):
         self.sections = list()
         self.summary()
         self.add_go()
-        self.sections.append(
-            {"name": "5 - Info", "anchor": "command", "content": self.command}
-        )
+        self.sections.append({"name": "5 - Info", "anchor": "command", "content": self.command})
 
     def summary(self):
         """Add information."""
 
-        total_up = len(self.gene_lists['up'])
-        total_down = len(self.gene_lists['down'])
+        total_up = len(self.gene_lists["up"])
+        total_down = len(self.gene_lists["down"])
         total = total_up + total_down
         log2fc = self.enrichment_params["log2_fc"]
 
@@ -93,8 +92,8 @@ class ModuleUniprotEnrichment(SequanaBaseModule):
         _taxon_id = self.taxon_id
         _taxon_name = self.taxon_name
 
-        js=""
-        html_table= ""
+        js = ""
+        html_table = ""
         self.sections.append(
             {
                 "name": "1 - Summary",
@@ -175,7 +174,7 @@ function, CC for cellular components and BP for biological process.</p>
         )
 
         # we move the "Genes" to the end
-        df = df[[x for x in df.columns if x != "Genes"] + ['Genes']]
+        df = df[[x for x in df.columns if x != "Genes"] + ["Genes"]]
 
         first_col = df.pop("Term")
         df.insert(0, "Term", first_col)
@@ -219,10 +218,8 @@ function, CC for cellular components and BP for biological process.</p>
 <p>For {ontology}, we found {n_go_terms} go terms.
 Showing {self.nmax} here below (at most). The full list is downlodable from the CSV
  file hereafter.</p> {image} <br>"""
-                html += self.get_html_table(
-                    df, f"GO_table_{category}_{ontology}"
-                )
-                filenames.append(f"chart_{category}_{ontology}.png")
+                html += self.get_html_table(df, f"GO_table_{category}_{ontology}")
+                filenames.append(Path(f"chart_{category}_{ontology}.png"))
             else:
                 html += f"""
 <h4>{category.title()} - {ontology}</h4><p>For {ontology} case, we found 0

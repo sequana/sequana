@@ -20,13 +20,14 @@ import colorlog
 import colormap
 import requests
 from bioservices import KEGG
-from matplotlib_venn import venn2_unweighted, venn3_unweighted
 from sequana.enrichment.gsea import GSEA
 from sequana.lazy import numpy as np
 from sequana.lazy import pandas as pd
 from sequana.lazy import pylab
 from sequana.summary import Summary
 from tqdm import tqdm
+import plotly.express as px
+
 
 logger = colorlog.getLogger(__name__)
 
@@ -103,10 +104,10 @@ class KEGGPathwayEnrichment:
         ke = KEGGPathwayEnrichment("path_to_rnadiff", "mmu", mapper=df,
             preload_directory="kegg_pathways/mmu")
 
-        df = ke.scatterplot('down')
+        ke.scatterplot('down')
         tight_layout()
         savefig("B4052_T1vsT0_KE_scatterplot_down.png")
-        df = ke.scatterplot('up')
+        ke.scatterplot('up')
         savefig("B4052_T1vsT0_KE_scatterplot_up.png")
 
     """
@@ -118,9 +119,10 @@ class KEGGPathwayEnrichment:
         progress=True,
         mapper=None,
         background=None,
+        padj_cutoff=0.05,
         preload_directory=None,
         convert_input_gene_to_upper_case=False,
-        color_node_with_annotation='Name'
+        color_node_with_annotation="Name",
     ):
         """
 
@@ -154,10 +156,11 @@ class KEGGPathwayEnrichment:
             self.background = len(self.kegg.list(self.kegg.organism).split("\n"))
         logger.info("Set number of genes to {}".format(self.background))
 
+        self.padj_cutoff = padj_cutoff
+
         self._load_pathways(progress=progress, preload_directory=preload_directory)
 
         if isinstance(mapper, str):
-
             df = pd.read_csv(mapper)
             df = df.rename({"external_gene_name": "name", "ensembl_gene_id": "ensembl"}, axis=1)
             df.set_index("ensembl", inplace=True)
@@ -247,12 +250,11 @@ class KEGGPathwayEnrichment:
         self.enrichment = {
             category: self._enrichr(category, background=background) for category in self.gene_lists.keys()
         }
+        self.dfs = {
+            category: self._get_final_df(self.enrichment[category].results) for category in self.gene_lists.keys()
+        }
 
-    def _enrichr(self, category, background=None, verbose=True):
-
-        if background is None:
-            background = self.background
-
+    def _enrichr(self, category, background, verbose=True):
         if isinstance(category, list):
             gene_list = category
         else:
@@ -284,103 +286,66 @@ class KEGGPathwayEnrichment:
 
         return enr
 
-    def _get_final_df(self, df, cutoff=0.05, nmax=10):
+    def _get_final_df(self, df):
         # takes the df and populate the name and size of the found pathways
         # we also sort by adjusted p-value
-        # we keep adj p-value <=0.05
         if len(df) == 0:
             return df
 
         df = df.copy()
         df["name"] = [self.pathways[x]["NAME"] for x in df.Term]
         df = df.sort_values("Adjusted P-value")
+
+        df["Adjusted P-value (-log10)"] = -np.log10(df["Adjusted P-value"])
         df.reset_index(drop=True, inplace=True)
-        df = df[df["Adjusted P-value"] <= cutoff]
 
-        if nmax:
-            nmax = min(len(df), nmax)
-            df = df.iloc[0:nmax]
-
-        df = df.sort_values("Adjusted P-value", ascending=False)
+        df = df.sort_values("Adjusted P-value")
         df = df.rename({"Term": "pathway_id"}, axis=1)
         df = df[df.columns]
+
+        df["significative"] = df["Adjusted P-value"] < self.padj_cutoff
         return df
 
-    def barplot(self, category, cutoff=0.05, nmax=10):
+    def barplot(self, category, nmax=15):
         self._check_category(category)
-        df = self._get_final_df(self.enrichment[category].results, cutoff=cutoff, nmax=nmax)
-        if len(df) == 0:
-            return df
+        df = self.dfs[category].query("significative == True").head(nmax)
+        df = df.sort_values("Adjusted P-value (-log10)")
 
-        pylab.clf()
-        pylab.barh(range(len(df)), -pylab.log10(df["Adjusted P-value"]))
+        fig = px.bar(df, x="Adjusted P-value (-log10)", y="name", orientation="h")
 
-        names = [x[0:40] + "..." if len(x) > 40 else x for x in df.name]
-        pylab.yticks(range(len(df)), names, fontsize=8)
-        pylab.axvline(1.3, lw=1, ls="--", color="r", alpha=0.8)
-        pylab.grid(True, alpha=0.5)
-        pylab.xlabel("Adjusted p-value (-log10)")
-        pylab.ylabel("Gene sets")
-        a, b = pylab.xlim()
-        pylab.xlim([0, b])
-        pylab.tight_layout()
-        return df
+        # To have all labels displayed
+        if len(df) > 20:
+            fig.update_layout(height=800)
 
-    def scatterplot(self, category, cutoff=0.05, nmax=15, gene_set_size=[]):
+        return fig
+
+    def scatterplot(self, category, nmax=15):
         self._check_category(category)
-        df = self._get_final_df(self.enrichment[category].results, cutoff=cutoff, nmax=nmax)
-        if len(df) == 0:
-            return df
+        df = self.dfs[category].query("significative == True").head(nmax)
 
-        df = df.sort_values("Odds Ratio")
-        pylab.clf()
-        pylab.scatter(
-            df["Odds Ratio"],
-            range(len(df)),
-            s=df["size"],
-            c=df["Adjusted P-value"],
+        df.sort_values("Odds Ratio", inplace=True)
+        df = df.round({"Odds Ratio": 2, "Combined Score": 2})
+        fig = px.scatter(
+            df,
+            x="Odds Ratio",
+            y="name",
+            color="Combined Score",
+            size="size",
+            hover_data=["Combined Score", "Adjusted P-value", "Overlap"],
+            color_continuous_scale="Viridis",
         )
 
-        pylab.xlabel("Odds ratio")
-        pylab.ylabel("Gene sets")
+        # To have all labels displayed
+        if len(df) > 20:
+            fig.update_layout(height=800)
 
-        names = [x[0:40] + "..." if len(x) > 40 else x for x in df.name]
-
-        pylab.yticks(range(len(df)), names, fontsize=8)
-
-        a, b = pylab.xlim()
-        pylab.xlim([0, b * 1.1 + 1])
-
-        a, b = pylab.ylim()
-        pylab.ylim([a - 0.5, b + 0.5])
-
-        pylab.grid(True, alpha=0.5)
-        ax = pylab.gca()
-
-        M = max(df["size"])
-        if M > 100:
-            l1, l2, l3 = "10", "100", str(M)
-        else:
-            l1, l2, l3 = str(round(M / 3)), str(round(M * 2 / 3)), str(M)
-
-        handles = [
-            pylab.Line2D([0], [0], marker="o", markersize=5, label=l1, ls=""),
-            pylab.Line2D([0], [0], marker="o", markersize=10, label=l2, ls=""),
-            pylab.Line2D([0], [0], marker="o", markersize=15, label=l3, ls=""),
-        ]
-        ax.legend(handles=handles, loc="upper left", title="gene-set size")
-
-        ax = pylab.colorbar(pylab.gci())
-        pylab.tight_layout()
-        return df
+        return fig
 
     def _get_summary_pathway(self, pathway_ID, df, l2fc=0, padj=0.05):
-
         genes = self.df_pathways.loc[pathway_ID]["GENE"]
 
         df_down = df.query("padj<=@padj and log2FoldChange<=-@l2fc").copy()
         df_up = df.query("padj<=@padj and log2FoldChange>=@l2fc").copy()
-
 
         # for the color, we need to find the match between names and the annotation
         # since names is suppose to have been populated with the annotaion, it should be
@@ -388,15 +353,14 @@ class KEGGPathwayEnrichment:
         df_down["Name"] = df_down[self.color_node_with_annotation]
         df_up["Name"] = df_up[self.color_node_with_annotation]
 
-
-        # in principle, the KEGG pathays field 'GENE' is stored as 
+        # in principle, the KEGG pathays field 'GENE' is stored as
         # "GENE":{key: value} and the values are the NAME, a semi column, and a description
         # hence the split on ; herebelow:
         # unfortunately, there are special cases to handle such as vibrio cholera (vc)
         mapper = {}
-        if self.kegg.organism.startswith('vc'):
+        if self.kegg.organism.startswith("vc"):
             for k, v in genes.items():
-                #the value is just the description. Let us assume that the name is also the ID
+                # the value is just the description. Let us assume that the name is also the ID
                 mapper[k] = k
         else:
             for k, v in genes.items():
@@ -502,13 +466,14 @@ class KEGGPathwayEnrichment:
         return colors
 
     def save_pathway(self, pathway_ID, df, scale=None, show=False, filename=None):
-
         summary = self._get_summary_pathway(pathway_ID, df)
         colors = self._get_colors(summary)
 
         count_up = len(summary.query("type == '+'"))
         count_down = len(summary.query("type == '-'"))
-        logger.info(f"pathway {pathway_ID} total genes: {len(summary)}. Found {count_down} down-regulated and {count_up} up-regulated")
+        logger.info(
+            f"pathway {pathway_ID} total genes: {len(summary)}. Found {count_down} down-regulated and {count_up} up-regulated"
+        )
 
         url = "https://www.kegg.jp/kegg-bin/show_pathway"
         # dcolor = "white"  --> does not work with the post requests unlike get
@@ -537,20 +502,15 @@ class KEGGPathwayEnrichment:
 
         return summary
 
-    def save_significant_pathways(
-        self, category, cutoff=0.05, nmax=20, background=None, tag="", outdir="."
-    ):  # pragma: no cover
+    def save_significant_pathways(self, category, nmax=20, tag="", outdir="."):  # pragma: no cover
         """category should be up, down or all"""
 
-        if background is None:
-            background = self.background
-
         # select the relevant pathways
-        df = self._enrichr(category, background).results
-        df = self._get_final_df(df, cutoff=cutoff, nmax=nmax)
+        df = self.dfs[category].query("significative == True")
         logger.warning("Found {} pathways to save".format(len(df)))
-        if len(df) == nmax:
+        if len(df) > nmax:
             logger.warning("Restricted pathways to {}".format(nmax))
+            df = df.head(nmax)
 
         logger.info("saving {} deregulated pathways".format(len(df)))
 
@@ -592,21 +552,14 @@ class KEGGPathwayEnrichment:
         for category in self.gene_lists.keys():
             common_out = Path(f"{tag}_kegg_gsea_{category}_degs")
 
-            results = self.enrichment[category].results
+            df = self.dfs[category]
 
-            if not results.empty:
+            if not df.empty:
+                df.to_csv(outdir / (common_out.name + ".csv"))
+                df.query("significative == True").to_csv(outdir / (common_out.name + "_significant.csv"))
 
-                # FIXME: For now fixing a nmax to 10000 to be sure to have all results
-                # (this could be improved by having self.complete_df and self.filtered_df attributes)
-                self._get_final_df(results, cutoff=1, nmax=10000).to_csv(outdir / (common_out.name + ".csv"))
-                self._get_final_df(results, cutoff=0.05, nmax=10000).to_csv(
-                    outdir / (common_out.name + "_significant.csv")
-                )
-
-                self.barplot(category)
-                pylab.savefig(outdir / (common_out.name + "_barplot.png"), dpi=200)
-                self.scatterplot(category)
-                pylab.savefig(outdir / (common_out.name + "_scatterplot.png"), dpi=200)
+                self.barplot(category).write_image(outdir / (common_out.name + "_barplot.png"))
+                self.scatterplot(category).write_image(outdir / (common_out.name + "_scatterplot.png"))
 
             # In case of no enrichment results, create empty files stating so
             else:
