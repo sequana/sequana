@@ -1,3 +1,4 @@
-sphinx>=3
+sphinx<7
 sphinx_rtd_theme
 sequana_sphinxext
+pillow<=9.5.0
