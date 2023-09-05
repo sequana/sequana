@@ -281,7 +281,7 @@ class SAMBAMbase:
         count = 0
         I, D, M, L, mapq, flags, NM, rnames = [], [], [], [], [], [], [], []
         S = []
-        for i, a in tadm(enumerate(self._data), leave=False, disable=not progress):
+        for i, a in tqdm(enumerate(self._data), leave=False, disable=not progress):
             # tags and cigar populated  if there is a match
             # if we use --cs cigar is not populated so we can only look at tags
             # tags can be an empty list

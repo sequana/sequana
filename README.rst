@@ -239,6 +239,7 @@ Changelog
 ========= ==========================================================================
 Version   Description
 ========= ==========================================================================
+0.15.3    * add sequana.viz.plotly module. use tqdm in bamtools module
 0.15.2    * ribodesigner can now accept an input fasta with no GFF assuming the 
             fasta already contains the rRNA sequences 
           * Fix IEM module when dealing with double indexing
