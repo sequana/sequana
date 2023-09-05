@@ -30,19 +30,23 @@
 import json
 import math
 
+
 from collections import Counter, OrderedDict, defaultdict
+
+from tqdm import tqdm
 
 from bx.intervals.intersection import Interval, IntervalTree
 from bx.bitset import BinnedBitSet
 from bx.bitset_builders import binned_bitsets_from_list
+
 from sequana.lazy import pandas as pd
 from sequana.lazy import numpy as np
 from sequana.lazy import pylab
+from sequana.lazy import pysam
 
 from sequana.bed import BED
 from sequana.cigar import fetch_intron, fetch_exon
 
-import pysam
 
 import colorlog
 
@@ -175,8 +179,7 @@ class SAMBAMbase:
     @_reset
     def __len__(self):
         if self._N is None:
-            logger.warning("Scanning the BAM. Please wait")
-            self._N = sum(1 for _ in self._data)
+            self._N = sum([1 for _ in tqdm(self._data, leave=False)])
             self.reset()
         return self._N
 
@@ -222,7 +225,7 @@ class SAMBAMbase:
         return pylab.mean([abs(x) for x in data])
 
     @_reset
-    def get_df(self, max_align=-1):
+    def get_df(self, max_align=-1, progress=True):
         flags = []
         starts = []
         ends = []
@@ -231,7 +234,7 @@ class SAMBAMbase:
         querynames = []
         querylengths = []
         cigar = []
-        for i, a in enumerate(self._data):
+        for i, a in tqdm(enumerate(self._data), leave=False, disable=not progress):
             flags.append(a.flag)
             starts.append(a.reference_start)
             ends.append(a.reference_end)
@@ -259,7 +262,7 @@ class SAMBAMbase:
         return df
 
     @_reset
-    def get_df_concordance(self, max_align=-1):
+    def get_df_concordance(self, max_align=-1, progress=True):
         """This methods returns a dataframe with Insert, Deletion, Match,
         Substitution, read length, concordance (see below for a definition)
 
@@ -278,7 +281,7 @@ class SAMBAMbase:
         count = 0
         I, D, M, L, mapq, flags, NM, rnames = [], [], [], [], [], [], [], []
         S = []
-        for i, a in enumerate(self._data):
+        for i, a in tadm(enumerate(self._data), leave=False, disable=not progress):
             # tags and cigar populated  if there is a match
             # if we use --cs cigar is not populated so we can only look at tags
             # tags can be an empty list
@@ -753,13 +756,18 @@ class SAMBAMbase:
         """Count flags/mapq/read length in one pass."""
         if self._summary is not None:
             return self._summary
+        else:
+            # make sure we reset the pointer to the first read
+            self.reset()
 
         mapq_dict = {}
         read_length_dict = {}
         flag_dict = {}
         mean_qualities = []
         count = 0
-        for read in self:
+
+
+        for read in tqdm(self, leave=False):
             self._count_item(mapq_dict, read.mapq)
             self._count_item(flag_dict, read.flag)
             if read.is_unmapped is False:
@@ -836,6 +844,22 @@ class SAMBAMbase:
         pylab.grid()
         pylab.xlabel("Read length", fontsize=16)
         pylab.legend()
+
+    def plotly_hist_read_length(self, log_y=False, title="", xlabel="Read length (bp)", 
+        ylabel="count", **kwargs):
+        """Histogram of the read length using plotly
+
+        :param log_y:
+        :param title:
+
+        any additional arguments is pass to the plotly.express.hist function
+        """
+        import plotly.express as px
+
+        X, Y = self._get_read_length()
+        data = [x for x,y in self.summary['read_length'].items() for i in range(y)]
+        fig = px.histogram(data, labels={"x":xlabel, "y":ylabel}, log_y=log_y, title=title, **kwargs)
+        return fig
 
     def get_stats(self):
         """Return basic stats about the reads
@@ -1501,6 +1525,45 @@ SN	pairs on different chromosomes:	0
         df.query("F<32 and F!=4")["S"].hist(bins=100, log=True)
         pylab.xlabel("Soft clip length", fontsize=16)
         pylab.ylabel("#", fontsize=16)
+
+    def get_query_start(self, read):
+        """ Get start of the query read."""
+        CLIP_FLAG = {4, 5}
+        strand = -1 if read.is_reverse else 0
+        if read.cigar[strand][0] in CLIP_FLAG:
+            return read.cigar[strand][1]
+        return 0
+
+    def get_query_end(self, read):
+        """ Get end of the query read."""
+        strand = 0 if read.is_reverse else -1
+        CLIP_FLAG = {4, 5}
+        if read.cigar[strand][0] in CLIP_FLAG:
+            return read.infer_read_length() - read.cigar[strand][1]
+        return read.infer_read_length()
+
+    def to_paf(self):
+        with pysam.AlignmentFile(self.filename) as bam_in:
+            info = [
+                (
+                    align.reference_name,
+                    align.reference_start,
+                    align.reference_end,
+                    '-' if align.is_reverse else '+',
+                    align.flag,
+                    align.mapq,
+                    align.cigarstring,
+                    align.query_name,
+                    align.infer_read_length(),
+                    get_query_start(align),
+                    get_query_end(align)
+                ) for align in takewhile(lambda x: x.reference_start < 10, bam_in)
+            ]
+
+        COLNAMES = ['r_name', 'r_start', 'r_end', 'strand', 'flag', 'mapq', 'cigar', 'q_name', 'q_len', 'q_start', 'q_end']
+        paf = pd.DataFrame(info, columns=COLNAMES)
+        return paf
+
 
 
 class SAM(SAMBAMbase):
