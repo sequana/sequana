@@ -296,7 +296,7 @@ class VCF_freebayes:
         pylab.bar(x=list(range(len(keys))), height=[variants[k] for k in keys])
         pylab.xticks(range(len(keys)), keys)
 
-    def manhattan_plot(self, chrom_name):
+    def manhattan_plot(self, chrom_name, bins=200):
         self.rewind()
         positions = defaultdict(list)
         for item in self:
@@ -307,7 +307,7 @@ class VCF_freebayes:
         N = len(positions)
         fig, axs = pylab.subplots(nrows=N, ncols=1, sharex='row')
         for i, k in enumerate(positions.keys()):
-            axs[i].hist(positions[k], bins=1000)
+            axs[i].hist(positions[k], bins=bins)
             axs[i].set_ylabel(k)
 
 

@@ -52,9 +52,7 @@ class SummaryBase(SequanaBaseModule):
         l, c = self.create_hide_section("Dep", "collapse/expand", content, hide=True)
         self.sections.append(
             {
-                "name": "Dependencies {0}".format(
-                    self.add_float_right("<small>{0}</small>".format(l))
-                ),
+                "name": "Dependencies {0}".format(self.add_float_right("<small>{0}</small>".format(l))),
                 "anchor": "dependencies",
                 "content": c,
             }
@@ -100,6 +98,7 @@ class SummaryModule(SummaryBase):
     def __init__(self, data, intro="", output_filename="summary.html"):
         """ """
         super().__init__()
+        print("SummaryModule will be deprecated in the future. Use SummaryModule2 for now")
         self.json = data
         for this in ["inputs", "outputs"]:
             assert this in self.json
@@ -134,18 +133,14 @@ class SummaryModule(SummaryBase):
         # create links list
         html_list = "<li>{0}</li>"
         links = [
-            html_list.format(
-                self.create_link(os.path.basename(i), i, newtab=False, download=True)
-            )
-            for i in inputs
+            html_list.format(self.create_link(os.path.basename(i), i, newtab=False, download=True)) for i in inputs
         ]
         links = "<ul>{0}</ul>".format("\n".join(links))
         self.sections.append(
             {
                 "name": "Inputs",
                 "anchor": "input",
-                "content": "<p>Link to the original data analysed.</p>\n"
-                "{0}".format(links),
+                "content": "<p>Link to the original data analysed.</p>\n" "{0}".format(links),
             }
         )
 
@@ -157,10 +152,7 @@ class SummaryModule(SummaryBase):
         # create links list
         html_list = "<li>{0}</li>"
         links = [
-            html_list.format(
-                self.create_link(os.path.basename(i), i, newtab=False, download=True)
-            )
-            for i in outputs
+            html_list.format(self.create_link(os.path.basename(i), i, newtab=False, download=True)) for i in outputs
         ]
         links = "<ul>{0}</ul>".format("\n".join(links))
         self.sections.append(
@@ -177,16 +169,13 @@ class SummaryModule(SummaryBase):
         output_dir = "html"
         html = [self.copy_file(i, output_dir) for i in self.json["html"]]
         html_list = "<li>{0}</li>"
-        links = [
-            html_list.format(self.create_link(os.path.basename(i), i)) for i in html
-        ]
+        links = [html_list.format(self.create_link(os.path.basename(i), i)) for i in html]
         links = "<ul>{0}</ul>".format("\n".join(links))
         self.sections.append(
             {
                 "name": "External HTML",
                 "anchor": "ext_html",
-                "content": "<p>Link to HTML pages created by the pipeline.</p>\n{0}"
-                "\n".format(links),
+                "content": "<p>Link to HTML pages created by the pipeline.</p>\n{0}" "\n".format(links),
             }
         )
 
@@ -261,6 +250,7 @@ class SummaryModule2(SummaryBase):
         if workflow:
             self.workflow()
         self.dependencies()
+        self.caller()
 
     def workflow(self):
         img = self.json["rulegraph"]
@@ -270,9 +260,7 @@ class SummaryModule2(SummaryBase):
         try:
             with open(snakefile, "r") as fp:
                 code = self.add_code_section(fp.read(), "python")
-            sf = self.create_hide_section(
-                "Sf", "Show/hide Snakemake file", code, hide=True
-            )
+            sf = self.create_hide_section("Sf", "Show/hide Snakemake file", code, hide=True)
             sf = "\n".join(sf)
         except:
             sf = "no snakefile found in .sequana/"
@@ -281,9 +269,7 @@ class SummaryModule2(SummaryBase):
         try:
             with open(configfile, "r") as fp:
                 code = self.add_code_section(fp.read(), "yaml")
-                c = self.create_hide_section(
-                    "C", "Show/hide config file", code, hide=True
-                )
+                c = self.create_hide_section("C", "Show/hide config file", code, hide=True)
                 c = "\n".join(c)
         except:
             c = "no config found in .sequana/"
@@ -321,10 +307,19 @@ class SummaryModule2(SummaryBase):
         l, c = self.create_hide_section("Dep", "collapse/expand", content, hide=True)
         self.sections.append(
             {
-                "name": "Dependencies {0}".format(
-                    self.add_float_right("<small>{0}</small>".format(l))
-                ),
+                "name": "Dependencies {0}".format(self.add_float_right("<small>{0}</small>".format(l))),
                 "anchor": "dependencies",
                 "content": c,
             }
         )
+
+    def caller(self):
+
+        try:
+            with open(".sequana/info.txt") as fin:
+                command = fin.readlines()
+                command = "<pre>" + "\n".join([x for x in command if not x.startswith("#")]) + "</pre>"
+        except Exception as err:
+            print(err)
+            command = "unknown"
+        self.sections.append({"name": "Command", "anchor": "command", "content": command})
