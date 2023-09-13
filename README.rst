@@ -240,6 +240,10 @@ Changelog
 Version   Description
 ========= ==========================================================================
 0.15.3    * add sequana.viz.plotly module. use tqdm in bamtools module
+          * KEGG API changed. We update sequana to use headless server and keep 
+            the feature of annotated and colored pathway.
+          * Various improvements on KEGG enrichment including saving pathways, 
+            addition --comparison option in sequana sub-command, plotly plots, etc
 0.15.2    * ribodesigner can now accept an input fasta with no GFF assuming the 
             fasta already contains the rRNA sequences 
           * Fix IEM module when dealing with double indexing
