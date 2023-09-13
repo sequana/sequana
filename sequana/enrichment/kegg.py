@@ -15,6 +15,9 @@ import glob
 import json
 import os
 from pathlib import Path
+import urllib
+import time
+import shutil
 
 import colorlog
 import colormap
@@ -110,6 +113,19 @@ class KEGGPathwayEnrichment:
         ke.scatterplot('up')
         savefig("B4052_T1vsT0_KE_scatterplot_up.png")
 
+
+    Pathways are loaded from KEGG which may take some time. For development or production, you may want
+    to save the KEGG pathways is a given place. Note however, that the pathways that are enriched will
+    still be downloaded for the final annotation and image creation
+
+    To save the pathways locally to load them later do as follows (here for human)::
+
+        ke = KEGGPathwayEnrichment({}, organism="hsa")
+        ke._save_pathways("all_pathways/")
+
+        # load them back next time
+        ke = KEGGPathwayEnrichment({}, organism="hsa", preload_directory="all_pathways")
+
     """
 
     def __init__(
@@ -123,6 +139,7 @@ class KEGGPathwayEnrichment:
         preload_directory=None,
         convert_input_gene_to_upper_case=False,
         color_node_with_annotation="Name",
+        used_genes=None
     ):
         """
 
@@ -140,21 +157,69 @@ class KEGGPathwayEnrichment:
         self.kegg = KEGG(cache=True)
         self.kegg.organism = organism
         self.summary = Summary("KEGGPathwayEnrichment")
+        self.gene_lists = gene_lists
+
+        # What is the intersection between the gene names found in KEGG and 
+        # the used names used within the RNAdiff analysis (and therefore the 
+        # gene names to be found in gene_lists)
+        # First, we get the list of KEGG names and print number of genes
+        kegg_gene_names = self.kegg.list(self.kegg.organism).strip()
+        N_kegg_genes = len(kegg_gene_names.split("\n"))
+        logger.info(f"Number of KEGG genes for {organism}: {N_kegg_genes}")
+        # then, we extract the fourth columns that contains gene names and synonyms
+        kegg_gene_names = [x.split("\t")[3] for x in kegg_gene_names.split("\n") if len(x.split("\t"))==4]
+        kegg_gene_names = [y.strip() for x in kegg_gene_names for y in x.split(";")]
+        kegg_gene_names = [y.strip() for x in kegg_gene_names for y in x.split(",")]
+
+        def _get_intersection_kegg_genes(genes):
+            return len(set(kegg_gene_names).intersection(set(genes))) / len(genes) * 100
+
+        dge_genes = set([x for k,v in gene_lists.items() for x in v])
+
+        mapped = [
+            _get_intersection_kegg_genes(gene_lists['down']),
+            _get_intersection_kegg_genes(gene_lists['up']),
+            _get_intersection_kegg_genes(gene_lists['all'])]
+
+        lengths = [
+            len(gene_lists['down']),
+            len(gene_lists['up']),
+            len(gene_lists['all'])
+        ]
+        category = ["down", "up", "all"]
+
+        if used_genes is not None:
+            lengths.append(len(used_genes))
+            category.append("all genes")
+            intersection = _get_intersection_kegg_genes(used_genes)
+            logger.info(f"Percentage of genes used in RNAdiff and found in KEGG: {intersection}")
+            mapped.append(intersection)
+            # if no background provided, let us use the numbe of found genes
+            if background is None:
+                background = len(used_genes)
+
+        self.overlap_stats = pd.DataFrame({
+            "category": category,
+            "mapped_percentage": mapped,
+            "N": lengths }
+        )
+
+
+        # Define the background
+        if background:
+            self.background = background
+            logger.info(f"User-defined background: {self.background}")
+        else:
+            self.background = N_kegg_genes
+            logger.info(f"Background defined as number of KEGG genes: {self.background} ")
+
         self.summary.add_params(
             {
                 "organism": organism,
                 "mapper": (True if mapper is not None else False),
-                "background": background,
+                "background": self.background,
             }
         )
-
-        self.gene_lists = gene_lists
-
-        if background:
-            self.background = background
-        else:
-            self.background = len(self.kegg.list(self.kegg.organism).split("\n"))
-        logger.info("Set number of genes to {}".format(self.background))
 
         self.padj_cutoff = padj_cutoff
 
@@ -179,19 +244,26 @@ class KEGGPathwayEnrichment:
         if cat not in self.gene_lists.keys():
             raise ValueError(f"category must be set to one of {self.gene_lists.keys()}. You provided {cat}")
 
+    def _save_pathways(self, out_directory):
+
+        outdir = Path(out_directory)
+        outdir.mkdir(exist_ok=True)
+        with open(outdir / f"{self.kegg.organism}.json", "w") as fout:
+            json.dump(self.pathways, fout)
+
+
     def _load_pathways(self, progress=True, preload_directory=None):
         # This is just loading all pathways once for all
         self.pathways = {}
+
         if preload_directory:
             # preload is a directory with all pathways in it
-
-            pathways = glob.glob(preload_directory + "/*json")
-            logger.info(f"Loading {len(pathways)} pathways from local files in {preload_directory}.")
-            for name in tqdm(pathways):
-                key = name.strip(".json").split("/")[-1]
-                with open(name, "r") as fin:
-                    data = json.load(fin)
-                    self.pathways[key] = data
+            indir = Path(preload_directory)
+            logger.info(f"Loading pathways from local files in {preload_directory}. Expecting a file named {self.kegg.organism}.json")
+            with open(indir / f"{self.kegg.organism}.json", "r") as fin:
+                data = json.load(fin)
+                self.pathways = data
+            logger.info(f"Loaded {len(self.pathways)} pathways.")
         else:  # pragma: no cover  #not tested due to slow call
             for ID in tqdm(self.kegg.pathwayIds, desc="Downloading KEGG pathways"):
                 self.pathways[ID.replace("path:", "")] = self.kegg.parse(self.kegg.get(ID))
@@ -319,6 +391,33 @@ class KEGGPathwayEnrichment:
 
         return fig
 
+    def barplot_up_and_down(self, nmax=15):
+        import plotly.graph_objects as go
+
+        dfup = self.dfs["up"].query("significative == True").head(nmax)
+        dfdown = self.dfs["down"].query("significative == True").head(nmax)
+        names = sorted(list(set(list(dfdown['name'].values) + list(dfup['name'].values))))
+        names = names[::-1]
+
+        U = [dfup.query("name == @name")['size'].values[0] if name in dfup['name'].values else 0 for name in names]
+        D = [-dfdown.query("name == @name")['size'].values[0] if name in dfdown['name'].values else 0 for name in names]
+
+
+        fig = go.Figure()
+        fig.add_trace(go.Bar(y=names, x=U,
+                      marker_color='blue', orientation="h",
+                      name='Up'))
+        fig.add_trace(go.Bar(y=names, x=D,
+                      base=0, orientation="h",
+                      marker_color='red',
+                      name='Down'
+                      ))
+
+        fig.update_layout(barmode='stack', xaxis_title="Number of Genes")
+
+
+        return fig
+
     def scatterplot(self, category, nmax=15):
         self._check_category(category)
         df = self.dfs[category].query("significative == True").head(nmax)
@@ -377,7 +476,10 @@ class KEGGPathwayEnrichment:
         summary_pvalues = []
         summary_fcs = []
 
+
+
         if self.mapper is not None:
+
             if "Name" not in df_down.columns:
                 df_down["Name"] = df_down["ID"]
                 Names = []
@@ -454,15 +556,24 @@ class KEGGPathwayEnrichment:
                 l2fc = -4
             elif l2fc >= 4:
                 l2fc = 4
-            # to get a value in the range 0,1 expectd by the colormap
+            # to get a value in the range 0,1 expected by the colormap
             l2fc = (l2fc + 4) / 8
 
             color = colormap.rgb2hex(*cmap(l2fc)[0:3], normalised=True)
 
-            if l2fc < 0.2:
-                colors[kegg_id] = f"{color},grey"
-            else:
-                colors[kegg_id] = f"{color},black"
+            # this is to reduce URL length until a POST solution is found.
+            # all entries with low l2fc below |1| are ignored
+            # 0.625 <=> l2fc = 1
+            # 0.375 <=> l2fc = -1
+            if l2fc >= 0.625 or  l2fc<=0.375:
+                colors[kegg_id] = f"{color}"
+
+            # 0.125 <==> l2fc = -3 here color is very dark, text should be in another color 
+            if l2fc < 0.125 or l2fc>0.875:
+                colors[kegg_id] = f"{color},white"
+            #else:  #FIXME for now, genes not in the annotation/rnadiff are also ignored
+            # to keep URL short
+            #    colors[kegg_id] = f"{color}"
         return colors
 
     def save_pathway(self, pathway_ID, df, scale=None, show=False, filename=None):
@@ -476,31 +587,100 @@ class KEGGPathwayEnrichment:
         )
 
         url = "https://www.kegg.jp/kegg-bin/show_pathway"
-        # dcolor = "white"  --> does not work with the post requests unlike get
-        # requests
+
         params = {
             "map": pathway_ID,
-            "multi_query": "\r\n".join(["{} {}".format(k, v) for k, v in colors.items()]),
+            "multi_query": "\r\n".join([f"{k} {v}" for k, v in colors.items()]),
         }
-
-        self.params = params
-
-        html_page = requests.post(url, data=params)
-
-        self.tmp = html_page
-        html_page = html_page.content.decode()
-
-        links_to_png = [x for x in html_page.split() if "png" in x and x.startswith("src")]
-        link_to_png = links_to_png[0].replace("src=", "").replace('"', "")
-        r = requests.get("https://www.kegg.jp/{}".format(link_to_png))
 
         if filename is None:
             filename = f"{pathway_ID}.png"
 
-        with open(filename, "wb") as fout:
-            fout.write(r.content)
+        try:
+            # let us try the selenium solution. If it works, we overwrite the previous image
+            urlsel = url + f"?map={pathway_ID}&multi_query=" 
+            #print(urlsel)
+            #print("\\r\\n".join([f"{k} {v}" for k, v in colors.items()]))
+            urlsel +=  urllib.parse.quote("\r\n".join([f"{k} {v}" for k, v in colors.items()]))
+            if len(urlsel) >= 2048:
+                logger.warning(f"EXCESS. consider increasing l2fc: {len(urlsel)}, {len(colors)}")
+            self._download_kegg_image(urlsel, pathway_ID)
+            # in theory one should have an image called PATHWAYID_date_ID.png
+            # we need to renae it
+            filenames = glob.glob(f"{pathway_ID}@2x_*png")
+            if len(filenames) > 1:
+                logger.warning(f"expected one PNG file. found several KEGG PNG files: {filenames}. please remove them. Moving the first one found")
+            if len(filenames) == 0:
+                logger.warning("no files were saved using headless call. roll back to requests ")
+            # filename is defined above by the user or as pathway_ID.png
+            shutil.move(filenames[0], filename)
+        except Exception as err:
+            print(err)
+
+            # color do not work anymore since Aug 2023 but this allows us to get the image
+            # in case the new implementation (above) fails
+            self.params = params
+            html_page = requests.post(url, data=params)
+            self.tmp = html_page
+            html_page = html_page.content.decode()
+
+            try:
+                links_to_png = [x for x in html_page.split() if "png" in x and x.startswith("src")]
+                link_to_png = links_to_png[0].replace("src=", "").replace('"', "")
+                r = requests.get(f"https://www.kegg.jp/{link_to_png}")
+                with open(filename, "wb") as fout:
+                    fout.write(r.content)
+            except IndexError:
+                logger.warning(f"could not create image for {pathway_ID}")
 
         return summary
+
+    def _download_kegg_image(self, url, pathwayID):
+
+        from selenium import webdriver
+        from selenium.webdriver.common.by import By
+        from selenium.webdriver.chrome.service import Service as ChromeService
+        from selenium.webdriver.common.action_chains import ActionChains
+        from selenium.webdriver.support.ui import WebDriverWait
+        from selenium.webdriver.support import expected_conditions as EC
+
+        # Define the path to the Chrome WebDriver executable
+        webdriver_path = '/home/cokelaer/TESTKEGG/chromedriver' 
+
+        # Set up the WebDriver with options
+        chrome_options = webdriver.ChromeOptions()
+        chrome_options.binary_location = '/usr/bin/google-chrome'  # Path to your Chrome executable
+        chrome_options.add_argument('--headless')  # Optional: run Chrome in headless mode (no GUI)
+
+        # Create a ChromeService object with the WebDriver path
+        chrome_service = ChromeService(executable_path=webdriver_path)
+
+        logger.info(f'Creating driver to access KEGG website for {pathwayID}')
+        # Create a WebDriver instance
+        driver = webdriver.Chrome(service=chrome_service, options=chrome_options)
+
+        # Navigate to the web page. Wait 10s for the page to be updated with the requests
+        # somehow the WebDriverWait is not enough. Requests larger than 2048 characters will fail
+        # here, FIXME with a javascript of post requests but not easy.
+        driver.get(url)
+        time.sleep(10)
+
+        # Find and click the menu tab 'download-menu'
+        download_menu = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, 'downloadMenu')))
+
+        # Use ActionChains to hover over the "Download" menu item
+        actions = ActionChains(driver)
+        actions.move_to_element(download_menu).perform()
+
+        logger.info('Downloading image\n')
+        image_link = WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.LINK_TEXT, 'Image (png) file 2x')))
+        actions.move_to_element(image_link).click().perform()
+
+        # Wait for the download to complete (you can use a more robust approach to wait for the file to be ready)
+        time.sleep(5)
+
+        # Close the WebDriver
+        driver.quit()
 
     def save_significant_pathways(self, category, nmax=20, tag="", outdir="."):  # pragma: no cover
         """category should be up, down or all"""

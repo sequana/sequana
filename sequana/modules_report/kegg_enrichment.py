@@ -11,13 +11,9 @@
 #
 ##############################################################################
 """Module to write KEGG enrichment report"""
-import ast
 import os
 import sys
 from pathlib import Path
-
-from sequana.lazy import pandas as pd
-from sequana.lazy import pylab
 
 from sequana.modules_report.base_module import SequanaBaseModule
 from sequana.utils.datatables_js import DataTable
@@ -55,7 +51,7 @@ class ModuleKEGGEnrichment(SequanaBaseModule):
             "plot_logx": True,
         },
         command="",
-        used_genes=None
+        used_genes=None,
     ):
         """.. rubric:: constructor"""
         super().__init__()
@@ -85,9 +81,8 @@ class ModuleKEGGEnrichment(SequanaBaseModule):
             background=self.enrichment_params["kegg_background"],
             preload_directory=self.enrichment_params["preload_directory"],
             color_node_with_annotation=self.enrichment_params["color_node_with_annotation"],
-            used_genes=used_genes
+            used_genes=used_genes,
         )
-
 
         self.create_report_content()
         self.create_html("enrichment.html")
@@ -105,7 +100,6 @@ class ModuleKEGGEnrichment(SequanaBaseModule):
         total = total_up + total_down
         log2fc = self.enrichment_params["log2_fc"]
 
-
         # table of undertermined IDs
         datatable = DataTable(self.ke.overlap_stats, "unmapped")
         datatable.datatable.datatable_options = {
@@ -118,10 +112,8 @@ class ModuleKEGGEnrichment(SequanaBaseModule):
         js = datatable.create_javascript_function()
         html_table = datatable.create_datatable(float_format="%E")
 
-
         # information about background
         bkg = self.ke.background
-
 
         self.sections.append(
             {
@@ -161,8 +153,7 @@ maximum of {self.nmax} pathways. </p>
             print(err)
             pass
 
-
-        for category in ["down", "up", "all"]: 
+        for category in ["down", "up", "all"]:
             df = self.ke.dfs[category]
             if len(df) == 0:
                 n_enriched = 0
