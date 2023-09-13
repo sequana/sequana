@@ -79,6 +79,12 @@ command""",
     help="""a place where to find the pathways for each organism""",
 )
 @click.option(
+    "--comparison",
+    type=click.STRING,
+    default=None,
+    help="""By default analyses all comparisons found in input file. You may set one specifically with this argument.""",
+)
+@click.option(
     "--max-pathways",
     type=click.INT,
     default=40,
@@ -107,7 +113,7 @@ def enrichment_kegg(**kwargs):
     \b
 
         sequana enrichment-kegg rnadiff/rnadiff.csv --log2-foldchange-cutoff 2 \\
-            --kegg-name lbi --annotation-attribute file.gff
+            --kegg-name lbi --annotation-attribute gene_name
 
 
     """
@@ -157,7 +163,14 @@ def enrichment_kegg(**kwargs):
     )  # no filter on number of genes
 
     output_directory = kwargs["output_directory"]
+
+    if kwargs['comparison']:
+        to_remove = [x for x in gene_lists.keys() if x != kwargs['comparison']]
+        for x in to_remove:
+            del gene_lists[x]
+
     for compa, gene_dict in gene_lists.items():
+
         if keggname.startswith("vc"):
             logger.warning("Vibrio Cholera annotation old_locus_tag processed to be compatible with KEGG/Sequana")
             if kwargs["annotation_attribute"] == "old_locus_tag":

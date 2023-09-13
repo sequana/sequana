@@ -864,7 +864,7 @@ class RNADiffResults:
             df.reset_index(inplace=True)
 
             if annot_col not in df.columns:
-                logger.error(f"{annot_col} not found in input file. Use one of {df.columns}")
+                logger.error(f"attribute '{annot_col}' not found in input file. Use one of {df.columns}")
                 sys.exit(1)
 
             if Nmax:
