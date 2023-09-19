@@ -11,13 +11,9 @@
 #
 ##############################################################################
 """Module to write KEGG enrichment report"""
-import ast
 import os
 import sys
 from pathlib import Path
-
-from sequana.lazy import pandas as pd
-from sequana.lazy import pylab
 
 from sequana.modules_report.base_module import SequanaBaseModule
 from sequana.utils.datatables_js import DataTable
@@ -55,6 +51,7 @@ class ModuleKEGGEnrichment(SequanaBaseModule):
             "plot_logx": True,
         },
         command="",
+        used_genes=None,
     ):
         """.. rubric:: constructor"""
         super().__init__()
@@ -67,8 +64,8 @@ class ModuleKEGGEnrichment(SequanaBaseModule):
         self.organism = kegg_name
         self.csv_directory = Path(config.output_dir) / "tables"
         self.plot_directory = Path(config.output_dir) / "plots"
-        self.csv_directory.mkdir()
-        self.plot_directory.mkdir()
+        self.csv_directory.mkdir(exist_ok=True)
+        self.plot_directory.mkdir(exist_ok=True)
 
         if self.enrichment_params["preload_directory"]:
             pathname = self.enrichment_params["preload_directory"]
@@ -84,6 +81,7 @@ class ModuleKEGGEnrichment(SequanaBaseModule):
             background=self.enrichment_params["kegg_background"],
             preload_directory=self.enrichment_params["preload_directory"],
             color_node_with_annotation=self.enrichment_params["color_node_with_annotation"],
+            used_genes=used_genes,
         )
 
         self.create_report_content()
@@ -102,6 +100,21 @@ class ModuleKEGGEnrichment(SequanaBaseModule):
         total = total_up + total_down
         log2fc = self.enrichment_params["log2_fc"]
 
+        # table of undertermined IDs
+        datatable = DataTable(self.ke.overlap_stats, "unmapped")
+        datatable.datatable.datatable_options = {
+            "scrollX": "true",
+            "pageLength": 10,
+            "scrollCollapse": "true",
+            "dom": "Bfrtip",
+            "buttons": ["copy", "csv"],
+        }
+        js = datatable.create_javascript_function()
+        html_table = datatable.create_datatable(float_format="%E")
+
+        # information about background
+        bkg = self.ke.background
+
         self.sections.append(
             {
                 "name": "1 - Summary",
@@ -116,10 +129,12 @@ differentially expressed genes is made of {total_up} up and {total_down} down ge
 <p> In the following plots you can find the first KEGG Pathways that are enriched, keeping a 
 maximum of {self.nmax} pathways. </p>
 
-<p>The KEGG name used is {self.organism}.<br>
+<p>The KEGG name used is <b>{self.organism}</b>.
 
+<p>This table gives you (column N) the number of genes used when performing the enrichment on up-regulated genes (up), down-regulated genes, and when we take all up and down regulated genes (all). We also provide the total number of genes that were analysed in the differential analysis (all genes). This number may be lower that the number of genes found in the annotation if a filter was applied. Finally, using those genes, the provide the percentage of those genes that were found in the KEGG database. the Enrichment analysis relies on a background. This background was defined as {self.ke.background} </p>
 
-
+{js}{html_table}
+<br>
 
 """,
             }
@@ -129,9 +144,16 @@ maximum of {self.nmax} pathways. </p>
         logger.info("Enrichment module: kegg term")
         style = "width:45%"
 
-        html = f""
+        html = ""
 
-        for category in tqdm(["down", "up", "all"], desc="scanning categories"):
+        try:
+            html_barplot_up_and_down = self.plot_barplot_up_and_down()
+            html += f"<p>Here are the enrichment kegg pathways and the number of up and down genes found in each of them.</p>{html_barplot_up_and_down}"
+        except Exception as err:
+            print(err)
+            pass
+
+        for category in ["down", "up", "all"]:
             df = self.ke.dfs[category]
             if len(df) == 0:
                 n_enriched = 0
@@ -144,11 +166,11 @@ maximum of {self.nmax} pathways. </p>
                 js_table, html_table, fotorama = self.get_table(category)
                 df.query("significative == True").to_csv(self.csv_directory / f"DEGs_enrichment_{category}.csv")
             else:
-                html_barplot = html_scatter = js_table = html_table = fotorama = ""
+                html_barplot = html_barplot_up_and_down = html_scatter = js_table = html_table = fotorama = ""
 
             html += f"""
 <h3>2.1 - KEGG pathways enriched in {category} regulated genes</h3>
-<p>{n_enriched} KEGG pathways are found enriched in {category} regulated genes</p>
+<p>{n_enriched} KEGG pathways are found enriched using the {category} regulated genes</p>
 <br>
 {html_barplot}
 {html_scatter}
@@ -173,6 +195,11 @@ log2 fold change of 4 or 40 will have the same darkest color.). </p>
         fig = self.ke.scatterplot(category, nmax=self.nmax)
         html_scatter_plotly = offline.plot(fig, output_type="div", include_plotlyjs=False)
         return html_scatter_plotly
+
+    def plot_barplot_up_and_down(self, category=None):
+        fig = self.ke.barplot_up_and_down(nmax=self.nmax)
+        html_plotly = offline.plot(fig, output_type="div", include_plotlyjs=False)
+        return html_plotly
 
     def get_table(self, category):
         # Results down (pathway info)
@@ -202,7 +229,7 @@ log2 fold change of 4 or 40 will have the same darkest color.). </p>
 
             files = []
             logger.info(f"Saving {len(df)} pathways")
-            for ID in df["pathway_id"]:
+            for ID in tqdm(df["pathway_id"], desc=f"Processing category {category}"):
                 plot_file = self.plot_directory / f"{ID}.png"
                 df_pathways = self.ke.save_pathway(ID, self.data, filename=plot_file)
                 # Files path should be relative to the location of the enrichment.html file

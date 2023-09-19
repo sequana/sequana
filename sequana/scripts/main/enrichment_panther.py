@@ -184,3 +184,9 @@ def enrichment_panther(**kwargs):
             command=" ".join(["sequana"] + sys.argv[1:]),
             ontologies=ontologies,
         )
+
+    p = Path(f"{output_directory}/.sequana")
+    p.mkdir(exist_ok=True)
+    with open(p / "info.txt", "w") as fout:
+        command = " ".join(["sequana"] + sys.argv[1:])
+        fout.write(command)

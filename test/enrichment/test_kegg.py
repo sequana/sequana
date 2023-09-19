@@ -17,7 +17,7 @@ def test_ke(tmpdir):
     from sequana import logger
     logger.setLevel('INFO')
     ke = KEGGPathwayEnrichment(gene_lists, "eco",
-            preload_directory=f"{test_dir}/data/kegg_pathways/eco/")
+            preload_directory=f"{test_dir}/data/kegg_pathways/")
 
     with pytest.raises(ValueError):
         ke.barplot('dummy')

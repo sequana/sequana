@@ -11,6 +11,7 @@
 ##############################################################################
 import os
 import sys
+from pathlib import Path
 
 import click
 import colorlog
@@ -39,6 +40,7 @@ logger = colorlog.getLogger(__name__)
     "--kegg-name",
     type=click.STRING,
     default=None,
+    required=True,
     help="a valid KEGG name (hsa for human, mmu for mus musculus); See the taxonomy command to retrieve other names",
 )
 @click.option(
@@ -77,6 +79,12 @@ command""",
     help="""a place where to find the pathways for each organism""",
 )
 @click.option(
+    "--comparison",
+    type=click.STRING,
+    default=None,
+    help="""By default analyses all comparisons found in input file. You may set one specifically with this argument.""",
+)
+@click.option(
     "--max-pathways",
     type=click.INT,
     default=40,
@@ -87,7 +95,8 @@ command""",
     "--kegg-background",
     type=click.INT,
     default=None,
-    help="""a background for kegg enrichment. If None, set to number of genes found in KEGG""",
+    help="""a background for kegg enrichment. If None, set to the number of genes 
+used in the differential analysis (input file rnadfiff.csv).""",
 )
 @click.option("--output-directory", default="enrichment_kegg")
 @common_logger
@@ -104,7 +113,7 @@ def enrichment_kegg(**kwargs):
     \b
 
         sequana enrichment-kegg rnadiff/rnadiff.csv --log2-foldchange-cutoff 2 \\
-            --kegg-name lbi --annotation-attribute file.gff
+            --kegg-name lbi --annotation-attribute gene_name
 
 
     """
@@ -119,7 +128,7 @@ def enrichment_kegg(**kwargs):
         "kegg_background": kwargs["kegg_background"],
         "preload_directory": kwargs["kegg_pathways_directory"],
         "plot_logx": not kwargs["plot_linearx"],
-        "color_node_with_annotation": kwargs['annotation_attribute']
+        "color_node_with_annotation": kwargs["annotation_attribute"],
     }
     filename = kwargs["biomart"]
     if filename and os.path.exists(filename) is False:
@@ -134,10 +143,15 @@ def enrichment_kegg(**kwargs):
     dirpath = os.path.dirname(os.path.abspath(kwargs["name"]))
     rnadiff = RNADiffResults(dirpath, index_col=0, header=[0, 1])
 
+    # Let us extract the gene names that were used in the
+    # differential analysis
+    annot_col = kwargs["annotation_attribute"]
+    used_genes = rnadiff.annotation[annot_col].loc[rnadiff.df.index].values
+
+    logger.info(f"{len(used_genes)} genes were analysed in the differential analysis")
+
     # now that we have loaded all results from a rnadiff analysis, let us
     # perform the enrichment for each comparison found in the file
-    annot_col = kwargs["annotation_attribute"]
-
     padj = params["padj"]
     log2fc = params["log2_fc"]
 
@@ -149,24 +163,32 @@ def enrichment_kegg(**kwargs):
     )  # no filter on number of genes
 
     output_directory = kwargs["output_directory"]
+
+    if kwargs['comparison']:
+        to_remove = [x for x in gene_lists.keys() if x != kwargs['comparison']]
+        for x in to_remove:
+            del gene_lists[x]
+
     for compa, gene_dict in gene_lists.items():
 
-        if keggname.startswith('vc'):
+        if keggname.startswith("vc"):
             logger.warning("Vibrio Cholera annotation old_locus_tag processed to be compatible with KEGG/Sequana")
-            if kwargs['annotation_attribute'] == 'old_locus_tag':
+            if kwargs["annotation_attribute"] == "old_locus_tag":
+
                 def get_kegg_id(x):
                     try:
-                        a, b = x.split(',')
-                        if a[0:3] == 'VC_':
+                        a, b = x.split(",")
+                        if a[0:3] == "VC_":
                             return a
                         else:
                             return b
                     except:
                         return x
-                for cat in ['up', 'down', 'all']:
+
+                for cat in ["up", "down", "all"]:
                     gene_dict[cat] = [get_kegg_id(x) for x in gene_dict[cat]]
-                old_locus_tag = rnadiff.annotation['old_locus_tag'].values
-                rnadiff.annotation['old_locus_tag'] = [get_kegg_id(x) for x in old_locus_tag]
+                old_locus_tag = rnadiff.annotation["old_locus_tag"].values
+                rnadiff.annotation["old_locus_tag"] = [get_kegg_id(x) for x in old_locus_tag]
 
         config.output_dir = f"{output_directory}/{compa}"
         os.makedirs(f"{output_directory}", exist_ok=True)
@@ -184,4 +206,11 @@ def enrichment_kegg(**kwargs):
             df,
             enrichment_params=params,
             command=" ".join(["sequana"] + sys.argv[1:]),
+            used_genes=used_genes,
         )
+
+    p = Path(f"{output_directory}/.sequana")
+    p.mkdir(exist_ok=True)
+    with open(p / "info.txt", "w") as fout:
+        command = " ".join(["sequana"] + sys.argv[1:])
+        fout.write(command)
