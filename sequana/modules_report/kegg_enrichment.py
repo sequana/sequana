@@ -131,7 +131,7 @@ maximum of {self.nmax} pathways. </p>
 
 <p>The KEGG name used is <b>{self.organism}</b>.
 
-<p>This table gives you (column N) the number of genes used when performing the enrichment on up-regulated genes (up), down-regulated genes, and when we take all up and down regulated genes (all). We also provide the total number of genes that were analysed in the differential analysis (all genes). This number may be lower that the number of genes found in the annotation if a filter was applied. Finally, using those genes, the provide the percentage of those genes that were found in the KEGG database. the Enrichment analysis relies on a background. This background was defined as {self.ke.background} </p>
+<p>This table gives you (column N) the number of genes used when performing the enrichment on up-regulated genes (up), down-regulated genes, and when we take all up and down regulated genes (all). We also provide the total number of genes that were analysed in the differential analysis (all genes). This number may be lower that the number of genes found in the annotation if a filter was applied. Finally, using those genes, we provide the percentage of those genes that were found in the KEGG database. the Enrichment analysis relies on a background. This background was defined as {self.ke.background} </p>
 
 {js}{html_table}
 <br>
