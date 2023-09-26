@@ -96,7 +96,7 @@ command""",
     type=click.INT,
     default=None,
     help="""a background for kegg enrichment. If None, set to the number of genes 
-used in the differential analysis (input file rnadfiff.csv).""",
+used in the differential analysis (input file rnadiff.csv).""",
 )
 @click.option("--output-directory", default="enrichment_kegg")
 @common_logger

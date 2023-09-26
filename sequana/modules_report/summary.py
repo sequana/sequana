@@ -291,18 +291,54 @@ class SummaryModule2(SummaryBase):
             }
         )
 
+    def get_table_versions(self):
+        """Return third party tools from the requirements.txt and their versions."""
+
+
+        # if no version.txt is found, return nothing
+        if os.path.exists(".sequana/versions.txt") is False:
+            return ""
+
+        versions = []
+        tools = []
+        with open(".sequana/versions.txt", "r") as fin:
+            for line in fin.readlines():
+                tool, version = line.split()
+                versions.append(version)
+                tools.append(tool)
+
+        df = pd.DataFrame({"tool": tools, "version": versions})
+        df["sort"] = df["tool"].str.lower()
+        df.sort_values(by="sort", axis=0, inplace=True)
+        df.drop("sort", axis=1, inplace=True)
+        datatable = DataTable(df, "dep_and_version")
+        datatable.datatable.datatable_options = {
+            "paging": "false",
+            "bFilter": "false",
+            "bInfo": "false",
+            "bSort": "false",
+        }
+        js = datatable.create_javascript_function()
+        html = datatable.create_datatable()
+        return js + "\n" + html
+
     def dependencies(self):
         """Table with all python dependencies and a text file with tools
         needed and their versions.
         """
-        html_table = self.get_table_dependencies()
+
+        html_table_versions = self.get_table_versions()
+        html_table_deps = self.get_table_dependencies()
         pypi = self.create_link("Pypi", "http://pypi.python.org")
 
         req = self.create_link("requirements", ".sequana/env.yml")
+
+
         content = (
-            "<p>Dependencies downloaded from bioconda "
-            "<b>{2}</b></p>"
-            "<p>Python dependencies (<b>{0}</b>){1}</p>".format(pypi, html_table, req)
+            "<p>Third party tools can be found within containers (see config file) if you use --use-apptainers options. Otherwise, here is a list of required dependencies and their versions.</p>"
+            "<p>{3}</p>"
+            "<p>A conda environment was found and installed package are here: <b>{2}</b></p>"
+            "<p>Python dependencies (<b>{0}</b>){1}</p>".format(pypi, html_table_deps, req, html_table_versions)
         )
         l, c = self.create_hide_section("Dep", "collapse/expand", content, hide=True)
         self.sections.append(

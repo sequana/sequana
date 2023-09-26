@@ -115,10 +115,10 @@ class KEGGPathwayEnrichment:
 
 
     Pathways are loaded from KEGG which may take some time. For development or production, you may want
-    to save the KEGG pathways is a given place. Note however, that the pathways that are enriched will
+    to save the KEGG pathways in a given place. Note however, that the pathways that are enriched will
     still be downloaded for the final annotation and image creation
 
-    To save the pathways locally to load them later do as follows (here for human)::
+    To save the pathways locally and load them later do as follows (here for human)::
 
         ke = KEGGPathwayEnrichment({}, organism="hsa")
         ke._save_pathways("all_pathways/")
