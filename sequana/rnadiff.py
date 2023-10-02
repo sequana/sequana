@@ -829,7 +829,7 @@ class RNADiffResults:
         )
         df.loc[:, ("statistics", "significative_comparisons")] = sign_compa
 
-        if self.annotation is not None and self.fc_attribute and self.fc_feature:
+        if self.annotation is not None:
             df = pd.concat([self.annotation, df], axis=1)
 
         return df
