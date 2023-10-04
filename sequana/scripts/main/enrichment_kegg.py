@@ -28,7 +28,7 @@ logger = colorlog.getLogger(__name__)
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
-@click.argument("name", type=click.Path(exists=True), nargs=1)
+@click.argument("rnadiff_directory", type=click.Path(exists=True, file_okay=False, dir_okay=True), nargs=1)
 @click.option(
     "--annotation-attribute",
     type=click.STRING,
@@ -98,6 +98,12 @@ command""",
     help="""a background for kegg enrichment. If None, set to the number of genes 
 used in the differential analysis (input file rnadiff.csv).""",
 )
+@click.option(
+    "--condition",
+    type=click.STRING,
+    default="condition",
+    help="""The name of the column used in the design file to define groups.""",
+)
 @click.option("--output-directory", default="enrichment_kegg")
 @common_logger
 def enrichment_kegg(**kwargs):
@@ -106,13 +112,13 @@ def enrichment_kegg(**kwargs):
 
     Example for the enrichment module:
 
-        sequana enrichment-kegg rnadiff.csv --log2-foldchange-cutoff 2 
+        sequana enrichment-kegg rnadiff_output_dir --log2-foldchange-cutoff 2 
 
     The KEGG pathways are loaded and it may take time. Once done, they are saved
     in kegg_pathways/organism and be loaded next time:
     \b
 
-        sequana enrichment-kegg rnadiff/rnadiff.csv --log2-foldchange-cutoff 2 \\
+        sequana enrichment-kegg rnadiff_output_dir --log2-foldchange-cutoff 2 \\
             --kegg-name lbi --annotation-attribute gene_name
 
 
@@ -139,9 +145,8 @@ def enrichment_kegg(**kwargs):
         logger.error("{} does not exists".format(filename))
         sys.exit(1)
 
-    logger.info(f"Reading RNAdiff results from {kwargs['name']}")
-    dirpath = os.path.dirname(os.path.abspath(kwargs["name"]))
-    rnadiff = RNADiffResults(dirpath, index_col=0, header=[0, 1])
+    logger.info(f"Reading RNAdiff results from {kwargs['rnadiff_directory']}")
+    rnadiff = RNADiffResults(kwargs["rnadiff_directory"], condition=kwargs["condition"])
 
     # Let us extract the gene names that were used in the
     # differential analysis
@@ -164,13 +169,12 @@ def enrichment_kegg(**kwargs):
 
     output_directory = kwargs["output_directory"]
 
-    if kwargs['comparison']:
-        to_remove = [x for x in gene_lists.keys() if x != kwargs['comparison']]
+    if kwargs["comparison"]:
+        to_remove = [x for x in gene_lists.keys() if x != kwargs["comparison"]]
         for x in to_remove:
             del gene_lists[x]
 
     for compa, gene_dict in gene_lists.items():
-
         if keggname.startswith("vc"):
             logger.warning("Vibrio Cholera annotation old_locus_tag processed to be compatible with KEGG/Sequana")
             if kwargs["annotation_attribute"] == "old_locus_tag":

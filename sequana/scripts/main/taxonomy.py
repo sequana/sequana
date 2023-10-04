@@ -60,5 +60,5 @@ def taxonomy(**kwargs):
             # maybe it is a taxon ID ?
             f4 = df[[True if pattern in str(x) else False for x in df.taxon_id]]
             indices = list(f4.index)
-        indices = set(indices)
+        indices = list(set(indices))
         print(df.loc[indices])

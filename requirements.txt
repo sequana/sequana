@@ -27,6 +27,7 @@ snakemake>=7.16
 scikit-learn
 scipy
 seaborn
+selenium
 statsmodels
 tqdm
 xlrd

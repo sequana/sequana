@@ -94,25 +94,13 @@ class KEGGPathwayEnrichment:
                 axis=1)
         df = df.set_index("ensembl", inplace=True)
 
-        KEGGPathwayEnrichment("path_to_rnadiff", "mmu", mapper=df)
-
-    More generally, when starting KEGGPathwayEnrichment, we read all pathways.
-
-    This may change with time. So, you can save the pathways::
-
-        ke.export_pathways_to_json()
-
-    And read them back::
-
-        ke = KEGGPathwayEnrichment("path_to_rnadiff", "mmu", mapper=df,
-            preload_directory="kegg_pathways/mmu")
+        ke = KEGGPathwayEnrichment("path_to_rnadiff", "mmu", mapper=df)
 
         ke.scatterplot('down')
         tight_layout()
         savefig("B4052_T1vsT0_KE_scatterplot_down.png")
         ke.scatterplot('up')
         savefig("B4052_T1vsT0_KE_scatterplot_up.png")
-
 
     Pathways are loaded from KEGG which may take some time. For development or production, you may want
     to save the KEGG pathways in a given place. Note however, that the pathways that are enriched will
@@ -121,7 +109,7 @@ class KEGGPathwayEnrichment:
     To save the pathways locally and load them later do as follows (here for human)::
 
         ke = KEGGPathwayEnrichment({}, organism="hsa")
-        ke._save_pathways("all_pathways/")
+        ke.save_pathways("all_pathways/")
 
         # load them back next time
         ke = KEGGPathwayEnrichment({}, organism="hsa", preload_directory="all_pathways")
@@ -172,8 +160,11 @@ class KEGGPathwayEnrichment:
         kegg_gene_names = [y.strip() for x in kegg_gene_names for y in x.split(",")]
 
         def _get_intersection_kegg_genes(genes):
-            return len(set(kegg_gene_names).intersection(set(genes))) / len(genes) * 100
-
+            if len(genes) == 0:
+                return "NA"
+            else:
+                return len(set(kegg_gene_names).intersection(set(genes))) / len(genes) * 100
+            
         dge_genes = set([x for k,v in gene_lists.items() for x in v])
 
         mapped = [
@@ -244,7 +235,7 @@ class KEGGPathwayEnrichment:
         if cat not in self.gene_lists.keys():
             raise ValueError(f"category must be set to one of {self.gene_lists.keys()}. You provided {cat}")
 
-    def _save_pathways(self, out_directory):
+    def save_pathways(self, out_directory):
 
         outdir = Path(out_directory)
         outdir.mkdir(exist_ok=True)
@@ -744,17 +735,3 @@ class KEGGPathwayEnrichment:
             # In case of no enrichment results, create empty files stating so
             else:
                 (outdir / (common_out.name + "_NO_RESULTS")).touch()
-
-    def export_pathways_to_json(self, outdir="kegg_pathways"):
-        # This is useful to keep an exact track of the pathways that were used.
-        # They can be loaded back. If so, we use kegg service only in
-        # :meth:`find_pathways_by_gene` method and
-
-        outdir = outdir + "/" + self.kegg.organism
-        os.makedirs(outdir, exist_ok=True)
-
-        for key, data in self.pathways.items():
-            output_json = f"{outdir}/{key}.json"
-            if not os.path.exists(output_json):
-                with open(output_json, "w") as fout:
-                    json.dump(data, fout)

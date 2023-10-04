@@ -704,8 +704,8 @@ class RNADiffResults:
                 logger.warning("Since you provided a GFF file you must provide the feature and attribute to be used.")
             self.annotation = self.read_annot(gff)
         else:
-            self.annotation = pd.read_csv(self.path / "rnadiff.csv", index_col=0, header=[0, 1])
-            self.annotation = self.annotation["annotation"]
+            annots = pd.read_csv(self.path / "rnadiff.csv", index_col=0, header=[0, 1])
+            self.annotation = annots.loc[:, "annotation"]
 
         # some filtering attributes
         self._alpha = alpha
@@ -793,9 +793,6 @@ class RNADiffResults:
         # It may happen that a GFF has duplicated IDs ! For instance ecoli
         # has 20 duplicated ID that are part 1 and 2 of the same gene
         df = df[~df.index.duplicated(keep="last")]
-
-        df.columns = pd.MultiIndex.from_product([["annotation"], df.columns])
-
         return df
 
     def _get_total_df(self, filtered=False):
@@ -830,7 +827,9 @@ class RNADiffResults:
         df.loc[:, ("statistics", "significative_comparisons")] = sign_compa
 
         if self.annotation is not None:
-            df = pd.concat([self.annotation, df], axis=1)
+            annot = self.annotation.copy()
+            annot.columns = pd.MultiIndex.from_product([["annotation"], annot.columns])
+            df = pd.concat([annot, df], axis=1)
 
         return df
 
