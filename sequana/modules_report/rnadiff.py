@@ -291,7 +291,7 @@ considered.</p> {}<hr>""".format(
         def best_count(filename):
             pylab.ioff()
             pylab.clf()
-            self.rnadiff.plot_feature_most_present()
+            self.rnadiff.plot_most_expressed_features()
             pylab.savefig(filename)
             pylab.close()
 
