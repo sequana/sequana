@@ -105,7 +105,6 @@ class GFF3:
         attributes = set()
         with open(self.filename, "r") as reader:
             for line in reader:
-
                 # stop once FASTA starts
                 if line.startswith("##FASTA"):
                     break
@@ -131,7 +130,6 @@ class GFF3:
                         item = item.split()[0].strip()
                     attributes.add(item)
 
-
         self._attributes = sorted(attributes)
         return self._attributes
 
@@ -145,7 +143,6 @@ class GFF3:
         with open(self.filename, "r") as reader:
             line = None
             for line in reader:
-
                 # stop once FASTA starts
                 if line.startswith("##FASTA"):
                     break
@@ -195,13 +192,11 @@ class GFF3:
     df = property(_get_df)
 
     def get_duplicated_attributes_per_genetic_type(self):
-
         results = {}
         for typ in self.features:
             results[typ] = {}
             print("{}: {} entries".format(typ, len(self.df.query("genetic_type==@typ"))))
             for attr in sorted(self.attributes):
-
                 L = len(self.df.query("genetic_type==@typ")[attr].dropna())
                 dups = self.df.query("genetic_type==@typ")[attr].dropna().duplicated().sum()
                 if dups > 0:
@@ -241,7 +236,6 @@ class GFF3:
         self.df.to_csv(filename, index=False)
 
     def read_and_save_selected_features(self, outfile, features=["gene"]):
-
         count = 0
         with open(self.filename, "r") as fin, open(outfile, "w") as fout:
             for line in fin:
@@ -265,7 +259,6 @@ class GFF3:
                 replace_seqid='locus_tag')
         """
         with open(filename, "w") as fout:
-
             fout.write("#gff-version 3\n#Custom gff from sequana\n")
             count = 0
             from collections import defaultdict
@@ -595,8 +588,7 @@ class GFF3:
         return text
 
     def get_simplify_dataframe(self):
-        """ Method to simplify the gff and keep only the most informative features.
-        """
+        """Method to simplify the gff and keep only the most informative features."""
         # Set weight for genetic type to sort them and keep only the most informative
         if self.df.empty:
             raise BadFileFormat("%s file is not a GFF3.", self.filename)
@@ -615,7 +607,10 @@ class GFF3:
             )
         # remove region and chromosome row
         df = df.drop(df.loc[df.genetic_type.isin({"region", "chromosome"})].index)
-        df["gene"] = df["gene"].fillna(df.locus_tag)
+        try:
+            df["gene"] = df["gene"].fillna(df.locus_tag)
+        except KeyError:
+            pass
         df["score"] = [weight.get(g_t, worst_score) for g_t in df.genetic_type]
         # keep most informative features if on the same region
         best_idx = df.groupby(["seqid", "start", "stop"])["score"].idxmin()
@@ -625,7 +620,5 @@ class GFF3:
         """Format feature dict for sequana_coverage."""
         df = self.get_simplify_dataframe()
         # rename column to fit for sequana_coverage
-        df = df.set_index("seqid").rename(
-            columns={"start": "gene_start", "stop": "gene_end", "genetic_type": "type"}
-        )
+        df = df.set_index("seqid").rename(columns={"start": "gene_start", "stop": "gene_end", "genetic_type": "type"})
         return {chr: df.loc[chr].to_dict("records") for chr in df.index.unique()}

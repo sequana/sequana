@@ -1190,6 +1190,42 @@ class RNADiffResults:
             ylabel="Density",
         )
 
+    def plot_most_expressed_features(self, N=20):
+
+        pylab.clf()
+
+        # we will normalise to get pourcentage
+        S = self.counts_raw.sum(axis=0)
+
+        # let us make a copy
+        dd = self.counts_raw.copy()
+        dd = dd.divide(S) * 100 # percentage
+
+        # average of each genes to ordered them by expression
+        ordered_genes = dd.mean(axis=1).sort_values(ascending=False).index
+        subdf = dd.loc[ordered_genes[0:N]]
+
+        conditions = sorted(self.design_df.condition.unique())
+        for condition in conditions:
+            for i, sample, in enumerate(self.design_df.query("condition == @condition").index):
+                if i == 0:
+                    pylab.plot(subdf[sample], color=self.design_df.loc[sample].group_color, label=condition)
+                else:
+                    pylab.plot(subdf[sample], color=self.design_df.loc[sample].group_color)
+
+        pylab.legend()
+
+
+        self._format_plot(
+            title="",
+            xlabel="Most expressed genes",
+            ylabel="Percentage (%)"
+        )
+        pylab.xticks(range(0,len(subdf)), subdf.index, rotation=90)
+        try: pylab.tight_layout()
+        except: pass
+        return subdf
+
     def plot_feature_most_present(self, fontsize=None, xticks_fontsize=None):
         """"""
         if fontsize is None:

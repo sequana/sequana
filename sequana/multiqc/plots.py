@@ -174,8 +174,7 @@ class FeatureCounts(Reader):
 
         fig = go.Figure()
 
-
-        columns = ["Assigned", "Unassigned: Multi Mapping", "Unassigned: No Features", "Unassigned: Ambiguity"]
+        columns = ["Assigned", "Unassigned: Unmapped", "Unassigned: No Features", "Unassigned: Ambiguity"]
         S = self.df[columns].sum(axis=1).values
         df = self.df[columns].divide(S, axis=0) * 100
         df["Sample"] = self.df["Sample"]
@@ -190,10 +189,10 @@ class FeatureCounts(Reader):
                     marker_color="#7cb5ec",
                 ),
                 go.Bar(
-                    name="Unassigned: Multi Mapping",
+                    name="Unassigned: Unmapped",
                     y=df.Sample,
                     orientation="h",
-                    x=df["Unassigned: Multi Mapping"],
+                    x=df["Unassigned: Unmapped"],
                     marker_color="#434348"
                 ),
                 go.Bar(
