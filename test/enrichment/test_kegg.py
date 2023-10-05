@@ -26,6 +26,7 @@ def test_ke(tmpdir):
     ke.plot_genesets_hist()
     ke.scatterplot("down")
     assert ke.find_pathways_by_gene("moaA")
+    ke.barplot_up_and_down()
 
     # save one pathway (just one to speed up things)
     outpng = tmpdir.join("test.png")
