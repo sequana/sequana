@@ -63,7 +63,7 @@ class ITOL:
 
     def __init__(self, tree, APIkey=None, projectName=None):
         """.. rubric:: constructor"""
-        
+
         self.itol = Itol()
         assert tree.endswith(".tree.txt"), "Your input tree must end in .tree.txt"
 
@@ -91,9 +91,9 @@ class ITOL:
             self.params["projectName"] = projectName
 
     def add_file(self, filename):
-        try: # itol 4.0.1
+        try:  # itol 4.0.1
             self.itol.add_file(filename)
-        except AttributeError: #itol 4.1.0
+        except AttributeError:  # itol 4.1.0
             self.itol.add_file(Path(filename))
         N = len(self.itol.files) - 1  # remove the input tree file
         self.params["datasets_visible"] = ",".join([str(x) for x in range(0, N)])

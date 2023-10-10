@@ -58,10 +58,7 @@ class CoverageModule(SequanaBaseModule):
         try:
             html_list = self.create_chromosome_reports()
         except TypeError:
-            msg = (
-                "Data must be either a csv file or a :class:`GenomeCov` "
-                "instance where zscore is computed."
-            )
+            msg = "Data must be either a csv file or a :class:`GenomeCov` " "instance where zscore is computed."
             raise TypeError(msg)
 
         self.title = "Main coverage report ({0})".format(config.sample_name)
@@ -116,9 +113,7 @@ class CoverageModule(SequanaBaseModule):
         page_list = []
         for chrom in self.bed:
             logger.info("Creating coverage report {}".format(chrom.chrom_name))
-            chrom_report = ChromosomeCoverageModule(
-                chrom, datatable_js, region_window=self.region_window
-            )
+            chrom_report = ChromosomeCoverageModule(chrom, datatable_js, region_window=self.region_window)
             page_list.append(chrom_report.html_page)
         return page_list
 
@@ -159,9 +154,7 @@ class ChromosomeCoverageModule(SequanaBaseModule):
     created by CoverageModule.
     """
 
-    def __init__(
-        self, chromosome, datatable, region_window=200000, options=None, command=""
-    ):
+    def __init__(self, chromosome, datatable, region_window=200000, options=None, command=""):
         """
 
         :param chromosome:
@@ -186,19 +179,14 @@ class ChromosomeCoverageModule(SequanaBaseModule):
         self.datatable = datatable
         self.command = command
         self.command += "\nSequana version: {}".format(config.version)
-        self.title = "Coverage analysis of chromosome {0}".format(
+        self.title = "Coverage analysis of chromosome {0}".format(self.chromosome.chrom_name)
+
+        self.intro = "<p>The genome coverage analysis of the chromosome " "<b>{0}</b>.</p>".format(
             self.chromosome.chrom_name
         )
 
-        self.intro = (
-            "<p>The genome coverage analysis of the chromosome "
-            "<b>{0}</b>.</p>".format(self.chromosome.chrom_name)
-        )
-
         self.create_report_content(directory, options=options)
-        self.html_page = "{0}{1}{2}.cov.html".format(
-            directory, os.sep, self.chromosome.chrom_name
-        )
+        self.html_page = "{0}{1}{2}.cov.html".format(directory, os.sep, self.chromosome.chrom_name)
 
         self.create_html(self.html_page)
 
@@ -253,10 +241,7 @@ class ChromosomeCoverageModule(SequanaBaseModule):
             {
                 "name": name,
                 "anchor": anchor,
-                "content": (
-                    "<p>Large data sets (--chunk-size argument "
-                    "used), skipped plotting.</p>"
-                ),
+                "content": ("<p>Large data sets (--chunk-size argument " "used), skipped plotting.</p>"),
             }
         )
 
@@ -266,9 +251,7 @@ class ChromosomeCoverageModule(SequanaBaseModule):
             self._add_large_data_section("Coverage", "coverage")
             return
 
-        image = self.create_embedded_png(
-            self.chromosome.plot_coverage, input_arg="filename"
-        )
+        image = self.create_embedded_png(self.chromosome.plot_coverage, input_arg="filename")
 
         self.sections.append(
             {
@@ -280,9 +263,7 @@ class ChromosomeCoverageModule(SequanaBaseModule):
                 "z-scores on a per-base level. The red lines indicates the "
                 "z-scores at plus or minus N standard deviations, where N is "
                 "chosen by the user. (default:4). Only a million point are "
-                "shown. This may explain some visual discrepancies with. </p>\n{0}".format(
-                    image
-                ),
+                "shown. This may explain some visual discrepancies with. </p>\n{0}".format(image),
             }
         )
 
@@ -292,9 +273,7 @@ class ChromosomeCoverageModule(SequanaBaseModule):
             self._add_large_data_section("Coverage histogram", "cov_barplot")
             return
 
-        image1 = self.create_embedded_png(
-            self.chromosome.plot_hist_coverage, input_arg="filename", style="width:45%"
-        )
+        image1 = self.create_embedded_png(self.chromosome.plot_hist_coverage, input_arg="filename", style="width:45%")
         image2 = self.create_embedded_png(
             self.chromosome.plot_hist_coverage,
             input_arg="filename",
@@ -354,14 +333,8 @@ class ChromosomeCoverageModule(SequanaBaseModule):
         # figure out the boundary. Indeed, you can imagine a BED file
         # that does not start at position zero, but from POS1>0 to POS2
 
-        links = [
-            "{0}/{0}_{1}_{2}.html".format(name, i, min(i + W, maxpos))
-            for i in range(shift, shift + N, W)
-        ]
-        intra_links = (
-            "{0}_{1}_{2}.html".format(name, i, min(i + W, maxpos))
-            for i in range(shift, shift + N, W)
-        )
+        links = ["{0}/{0}_{1}_{2}.html".format(name, i, min(i + W, maxpos)) for i in range(shift, shift + N, W)]
+        intra_links = ("{0}_{1}_{2}.html".format(name, i, min(i + W, maxpos)) for i in range(shift, shift + N, W))
 
         combobox = self.create_combobox(links, "sub", True)
         combobox_intra = self.create_combobox(intra_links, "sub", False)
@@ -369,13 +342,9 @@ class ChromosomeCoverageModule(SequanaBaseModule):
 
         # break the chromosome as pieces of 200,000 bp
         for i in range(shift, shift + N, W):
-            SubCoverageModule(
-                chrom, rois, combobox_intra, datatable, i, min(i + W, maxpos), directory
-            )
+            SubCoverageModule(chrom, rois, combobox_intra, datatable, i, min(i + W, maxpos), directory)
 
-        self.sections.append(
-            {"name": "Subcoverage", "anchor": "subcoverage", "content": combobox}
-        )
+        self.sections.append({"name": "Subcoverage", "anchor": "subcoverage", "content": combobox})
         return links
 
     def _init_datatable_function(self, rois):
@@ -399,11 +368,9 @@ class ChromosomeCoverageModule(SequanaBaseModule):
         stats = self.chromosome.get_stats()
 
         description = {
-            "BOC": "breadth of coverage: the proportion (in %s) "
-            + " of the genome covered by at least one read.",
+            "BOC": "breadth of coverage: the proportion (in %s) " + " of the genome covered by at least one read.",
             "CV": "the coefficient of variation.",
-            "DOC": "the sequencing depth (Depth of Coverage), that is the "
-            + "average the genome coverage.",
+            "DOC": "the sequencing depth (Depth of Coverage), that is the " + "average the genome coverage.",
             "MAD": "median of the absolute median deviation defined as median(|X-median(X)|).",
             "Median": "Median of the coverage.",
             "STD": "standard deviation.",
@@ -421,8 +388,7 @@ class ChromosomeCoverageModule(SequanaBaseModule):
             {
                 "name": "Basic stats",
                 "anchor": "basic_stats",
-                "content": "<p>Here are some basic statistics about the "
-                "genome coverage.</p>\n{0}".format(stats),
+                "content": "<p>Here are some basic statistics about the " "genome coverage.</p>\n{0}".format(stats),
             }
         )
 
@@ -502,9 +468,7 @@ class ChromosomeCoverageModule(SequanaBaseModule):
 
     def gc_vs_coverage(self):
         """3 dimensional plot of GC content versus coverage."""
-        image = self.create_embedded_png(
-            self.chromosome.plot_gc_vs_coverage, input_arg="filename"
-        )
+        image = self.create_embedded_png(self.chromosome.plot_gc_vs_coverage, input_arg="filename")
         corr = self.chromosome.get_gc_correlation()
         self.sections.append(
             {
@@ -516,9 +480,7 @@ class ChromosomeCoverageModule(SequanaBaseModule):
                 "<p>Note: the correlation coefficient has to be between -1.0 "
                 "and 1.0. A coefficient of 0 means no correlation, while a "
                 "coefficient of -1 or 1 means an existing "
-                "correlation between GC and Coverage</p>".format(
-                    corr, self.chromosome.bed.gc_window_size, image
-                ),
+                "correlation between GC and Coverage</p>".format(corr, self.chromosome.bed.gc_window_size, image),
             }
         )
 
@@ -528,9 +490,7 @@ class ChromosomeCoverageModule(SequanaBaseModule):
             self._add_large_data_section("Normalised coverage", "normalised_coverage")
             return
 
-        image = self.create_embedded_png(
-            self.chromosome.plot_hist_normalized_coverage, input_arg="filename"
-        )
+        image = self.create_embedded_png(self.chromosome.plot_hist_normalized_coverage, input_arg="filename")
         self.sections.append(
             {
                 "name": "Normalised coverage",
@@ -547,9 +507,7 @@ class ChromosomeCoverageModule(SequanaBaseModule):
             self._add_large_data_section("Z-Score distribution", "zscore_distribution")
             return
 
-        image = self.create_embedded_png(
-            self.chromosome.plot_hist_zscore, input_arg="filename"
-        )
+        image = self.create_embedded_png(self.chromosome.plot_hist_zscore, input_arg="filename")
         self.sections.append(
             {
                 "name": "Z-Score distribution",
@@ -586,15 +544,12 @@ class SubCoverageModule(SequanaBaseModule):
 
         self.start = start
         self.stop = stop
-        self.title = (
-            "Coverage analysis of chromosome {0}<br>"
-            "positions {1} and {2}".format(self.chromosome.chrom_name, start, stop)
+        self.title = "Coverage analysis of chromosome {0}<br>" "positions {1} and {2}".format(
+            self.chromosome.chrom_name, start, stop
         )
         self.create_report_content()
         self.create_html(
-            "{0}{4}{1}{4}{1}_{2}_{3}.html".format(
-                directory, self.chromosome.chrom_name, start, stop, os.sep
-            )
+            "{0}{4}{1}{4}{1}_{2}_{3}.html".format(directory, self.chromosome.chrom_name, start, stop, os.sep)
         )
 
     def create_report_content(self):
@@ -622,9 +577,7 @@ class SubCoverageModule(SequanaBaseModule):
         # create CanvasJS stuff
         cjs = CanvasJSLineGraph(csv, "cov", x_col, y_col)
         # set options
-        cjs.set_options(
-            {"zoomEnabled": "true", "zoomType": "x", "exportEnabled": "true"}
-        )
+        cjs.set_options({"zoomEnabled": "true", "zoomType": "x", "exportEnabled": "true"})
         # set title
         cjs.set_title("Genome Coverage")
         # set legend

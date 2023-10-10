@@ -106,8 +106,7 @@ class STAR(Reader):
 
         # get percentage
 
-
-        df = self.df[["Sample"]+[x for x in self.df.columns if "_percent" in x]]
+        df = self.df[["Sample"] + [x for x in self.df.columns if "_percent" in x]]
 
         fig = go.Figure(
             data=[
@@ -119,45 +118,44 @@ class STAR(Reader):
                     marker_color="#437bb1",
                 ),
                 go.Bar(
-                    name="Mapped to multiple loci", 
-                    y=df.Sample, 
-                    orientation="h", 
-                    x=df["multimapped_percent"], 
-                    marker_color="#7cb5ec"
+                    name="Mapped to multiple loci",
+                    y=df.Sample,
+                    orientation="h",
+                    x=df["multimapped_percent"],
+                    marker_color="#7cb5ec",
                 ),
                 go.Bar(
-                    name="Mapped to too many loci", 
-                    y=df.Sample, 
-                    orientation="h", 
-                    x=df["multimapped_toomany_percent"], 
-                    marker_color="#f7a35c"
+                    name="Mapped to too many loci",
+                    y=df.Sample,
+                    orientation="h",
+                    x=df["multimapped_toomany_percent"],
+                    marker_color="#f7a35c",
                 ),
                 go.Bar(
-                    name="Unmapped: to many mismatches", 
-                    y=df.Sample, 
-                    orientation="h", 
-                    x=df["unmapped_mismatches_percent"], 
-                    marker_color="#e63491"
+                    name="Unmapped: to many mismatches",
+                    y=df.Sample,
+                    orientation="h",
+                    x=df["unmapped_mismatches_percent"],
+                    marker_color="#e63491",
                 ),
                 go.Bar(
-                    name="Unmapped: too short", 
-                    y=df.Sample, 
-                    orientation="h", 
-                    x=df["unmapped_tooshort_percent"], 
-                    marker_color="#b1084c"
+                    name="Unmapped: too short",
+                    y=df.Sample,
+                    orientation="h",
+                    x=df["unmapped_tooshort_percent"],
+                    marker_color="#b1084c",
                 ),
                 go.Bar(
-                    name="Unmapped: other", 
-                    y=df.Sample, 
-                    orientation="h", 
-                    x=df["unmapped_other_percent"], 
-                    marker_color="#028ce2"
+                    name="Unmapped: other",
+                    y=df.Sample,
+                    orientation="h",
+                    x=df["unmapped_other_percent"],
+                    marker_color="#028ce2",
                 ),
             ]
         )
 
-        fig.update_layout(barmode="stack", title="Alignment Scores", 
-            xaxis_title="Mapping rate (percentage)")
+        fig.update_layout(barmode="stack", title="Alignment Scores", xaxis_title="Mapping rate (percentage)")
 
         if html_code:
             return fig
@@ -193,31 +191,30 @@ class FeatureCounts(Reader):
                     y=df.Sample,
                     orientation="h",
                     x=df["Unassigned: Unmapped"],
-                    marker_color="#434348"
+                    marker_color="#434348",
                 ),
                 go.Bar(
                     name="Unassigned: No Features",
                     y=df.Sample,
                     orientation="h",
                     x=df["Unassigned: No Features"],
-                    marker_color="#90ed7d"
+                    marker_color="#90ed7d",
                 ),
                 go.Bar(
                     name="Unassigned: Ambiguity",
                     y=df.Sample,
                     orientation="h",
                     x=df["Unassigned: Ambiguity"],
-                    marker_color="#f7a35c"
+                    marker_color="#f7a35c",
                 ),
             ]
         )
 
-        fig.update_layout(barmode="stack", title="FeatureCounts: Assignments", 
-            xaxis_title="Annotation rate (percentage)")
+        fig.update_layout(
+            barmode="stack", title="FeatureCounts: Assignments", xaxis_title="Annotation rate (percentage)"
+        )
 
         if html_code:
             return fig
         else:
             fig.show()
-
-

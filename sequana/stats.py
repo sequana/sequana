@@ -49,7 +49,7 @@ def moving_average(data, n):
 
 
 def evenness(data):
-    """Return Evenness of the coverage
+    r"""Return Evenness of the coverage
 
     :Reference: Konrad Oexle, Journal of Human Genetics 2016, Evaulation
         of the evenness score in NGS.
@@ -58,11 +58,11 @@ def evenness(data):
 
     .. math::
 
-        C = mean(X)
-        D2 = X[X<=C]
-        N = len(X)
-        n = len(D2)
-        E = 1 - (n - sum(D2) / C) / N
+        C &= mean(X)\\
+        D2 &= X[X<=C]\\
+        N &= len(X)\\
+        n &= len(D2)\\
+        E &= 1 - (n - sum(D2) / C) / N
 
     """
     coverage = pd.Series(data)
@@ -74,7 +74,6 @@ def evenness(data):
     if len(D2) == 0:  # pragma: no cover
         return 1
     else:
-
         return 1.0 - (len(D2) - sum(D2) / C) / len(coverage)
 
 

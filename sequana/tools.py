@@ -177,7 +177,6 @@ def bam_to_mapped_unmapped_fastq(filename, output_directory=None, progress=True)
     # loop through the BAM (make sure it is rewinded)
     bam.reset()
 
-
     for this in tqdm(bam, disable=not progress):
         if this.flag & 256:
             # Unmapped reads are in the BAM file but have no valid assigned
@@ -192,7 +191,6 @@ def bam_to_mapped_unmapped_fastq(filename, output_directory=None, progress=True)
             if this.is_paired is False:
                 stats["unpaired"] += 1
         else:
-
             # quick hack
             if this.is_read1:
                 suffix = b"/1"
@@ -228,7 +226,7 @@ def bam_to_mapped_unmapped_fastq(filename, output_directory=None, progress=True)
                 else:
                     R2_mapped.write(txt)
                     stats["R2_mapped"] += 1
-            else: #pragma: no cover
+            else:  # pragma: no cover
                 # This should be a single read
                 # assert self.is_paired is False
                 stats["unpaired"] += 1
@@ -245,7 +243,6 @@ def bam_to_mapped_unmapped_fastq(filename, output_directory=None, progress=True)
     if bam.is_paired:
         R2_mapped.close()
         R2_unmapped.close()
-
 
     R1_mapped.close()
     R1_unmapped.close()
@@ -278,7 +275,6 @@ def bam_get_paired_distance(filename):
 
     for fragment in b:
         if not fragment.is_unmapped and not fragment.mate_is_unmapped and fragment.is_read1:
-
             # get the mate:
             mate = next(b)
 
@@ -457,7 +453,7 @@ class GZLineCounter(object):
         self.filename = filename
         if cmd_exists("zcat"):
             self.use_zcat = True
-        else: #pragma: no cover
+        else:  # pragma: no cover
             self.use_zcat = False
 
     def __len__(self):

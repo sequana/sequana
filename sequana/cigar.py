@@ -185,7 +185,6 @@ def fetch_exon(chrom, start, cigar):
 
 
 def fetch_intron(chrom, start, cigar):
-
     # equivalence:
     # c = 0 -> M
     # c = 1 -> I

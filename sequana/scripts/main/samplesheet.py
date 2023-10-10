@@ -40,7 +40,7 @@ def samplesheet(**kwargs):
         iem = IEM(name, tryme=True)
         if kwargs["output"]:
             filename = kwargs["output"]
-        else: #pragma: no cover
+        else:  # pragma: no cover
             filename = name + ".fixed"
         logger.info("Saving fixed version in {}".format(filename))
         iem.quick_fix(output_filename=filename)

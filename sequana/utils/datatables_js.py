@@ -27,13 +27,14 @@
 from collections import OrderedDict
 
 import colorlog
+
 logger = colorlog.getLogger(__name__)
 
 from sequana.lazy import pandas as pd
 
 
 class DataTableFunction(object):
-    """ Class that contains Jquery DataTables function and options.
+    """Class that contains Jquery DataTables function and options.
 
     Example:
 
@@ -52,14 +53,14 @@ class DataTableFunction(object):
                            for i, df in enumerate(df_list)]
 
     Here, the datatable_options dictionary is used to fine tune the appearance
-    of the table. 
+    of the table.
 
     .. note::  DataTables add a number of elements around the table to control
         the table or show additional information about it. There are controlled
-        by the order in the document (**DOM**) defined as a string made of 
-        letters, each of them having a precise meaning. The order of the letter 
-        is important. For instance if **B** is first, the buttons are put before 
-        the table. If **B** is at the end, it is shown below the table. 
+        by the order in the document (**DOM**) defined as a string made of
+        letters, each of them having a precise meaning. The order of the letter
+        is important. For instance if **B** is first, the buttons are put before
+        the table. If **B** is at the end, it is shown below the table.
         Here are some of the valid letters and their meaning:
 
         - **B**: add the Buttons (copy/csv)
@@ -69,7 +70,7 @@ class DataTableFunction(object):
         - **t**: the table itself
         - **p**: pagination control
 
-        Each option can be specified multiple times (with the exception of the 
+        Each option can be specified multiple times (with the exception of the
         table itself).
 
     .. note:: other useful options are:
@@ -85,6 +86,7 @@ class DataTableFunction(object):
     All options of datatable:
         https://datatables.net/reference/option/
     """
+
     def __init__(self, df, html_id, index=False):
         """.. rubric:: contructor
 
@@ -92,7 +94,7 @@ class DataTableFunction(object):
         :param str html_id: the ID used in the HTML file.
         """
         self.index = index
-        # Mars 2022. added 'id' in front of the id to avoid issue with is 
+        # Mars 2022. added 'id' in front of the id to avoid issue with is
         # starting with a number, which is not allowed in HTML
         self._html_id = f"id_{html_id}"
         self._datatable_options = dict()
@@ -100,14 +102,14 @@ class DataTableFunction(object):
 
     @property
     def html_id(self):
-        """ Get the html_id, which cannot be set by the user after the
+        """Get the html_id, which cannot be set by the user after the
         instanciation of the class.
         """
         return self._html_id
 
     @property
     def datatable_options(self):
-        """ Get, set or delete the DataTable options. Setter takes a dict as
+        """Get, set or delete the DataTable options. Setter takes a dict as
         parameter with the desired options and updates the current dictionary.
 
         Example::
@@ -123,20 +125,18 @@ class DataTableFunction(object):
     @datatable_options.setter
     def datatable_options(self, d):
         try:
-            d['buttons'] = self._add_export_visible(d['buttons'])
+            d["buttons"] = self._add_export_visible(d["buttons"])
         except KeyError:
             pass
         self._datatable_options.update(d)
 
     def _add_export_visible(self, buttons):
-        """ Add option to disable the exporting of hidden columns
-        """
+        """Add option to disable the exporting of hidden columns"""
         try:
             for b in buttons:
-                b.update({'exportOptions': {'columns': ':visible'}})
+                b.update({"exportOptions": {"columns": ":visible"}})
         except AttributeError:
-            buttons = [{'extend': b, 'exportOptions': {'columns': ':visible'}}
-                      for b in buttons]
+            buttons = [{"extend": b, "exportOptions": {"columns": ":visible"}} for b in buttons]
         return buttons
 
     @datatable_options.deleter
@@ -145,16 +145,16 @@ class DataTableFunction(object):
 
     @property
     def datatable_columns(self):
-        """ Get datatable_columns dictionary. It is automatically set from the
+        """Get datatable_columns dictionary. It is automatically set from the
         dataframe you want to plot.
         """
         return self._datatable_columns
 
     def _set_datatable_columns(self, df):
-        """ Fill :attr:`DataTableFunction.datatable_columns` with header of
+        """Fill :attr:`DataTableFunction.datatable_columns` with header of
         :param:`DataTableFunction.df`.
         """
-        if isinstance(df, pd.Series): #pragma: no cover
+        if isinstance(df, pd.Series):  # pragma: no cover
             return {}
 
         if self.index is True:
@@ -165,8 +165,7 @@ class DataTableFunction(object):
         return column_dict
 
     def create_javascript_function(self):
-        """ Return javascript to create the DataTable.
-        """
+        """Return javascript to create the DataTable."""
 
         js_function = """
 <script async type="text/javascript">
@@ -186,32 +185,28 @@ class DataTableFunction(object):
     }};
 </script>
 """
-        return js_function.format(self.html_id,
-                                  self._create_datatable_option())
+        return js_function.format(self.html_id, self._create_datatable_option())
 
     def _create_datatable_option(self):
-        """ Return DataTable options.
-        """
-        self.datatable_options['columns'] = self._create_columns_option()
+        """Return DataTable options."""
+        self.datatable_options["columns"] = self._create_columns_option()
         js = self._dict_to_string(self.datatable_options)
         js = "$(id).DataTable({{{0},data: results.data}});".format(js)
         return js
 
     def _create_columns_option(self):
-        """ Return string well formated with all columns options.
-        """
-        js = [self._coloption_2_str(key, value) for key, value in
-              self.datatable_columns.items()]
-        return '[{0}]'.format(',\n'.join(js))
+        """Return string well formated with all columns options."""
+        js = [self._coloption_2_str(key, value) for key, value in self.datatable_columns.items()]
+        return "[{0}]".format(",\n".join(js))
 
     def _coloption_2_str(self, name, options):
         s = "data:'{0}'".format(name)
         if options:
             s = "{0},\n{1}".format(s, self._dict_to_string(options))
-        return '{{{0}}}'.format(s)
+        return "{{{0}}}".format(s)
 
     def _dict_to_string(self, d):
-        """ Convert dict to string for CanvasJS.
+        """Convert dict to string for CanvasJS.
 
         Example:
 
@@ -221,19 +216,18 @@ class DataTableFunction(object):
 
             "key1:value1,key2:value2,key3:value3"
         """
-        s = ['{0}:{1}'.format(key, self._check_type(value)) for key, value in
-             d.items()]
-        return ',\n'.join(s)
+        s = ["{0}:{1}".format(key, self._check_type(value)) for key, value in d.items()]
+        return ",\n".join(s)
 
     def _check_type(self, value):
-        """ Check value type to fill javascript sections. String must be
+        """Check value type to fill javascript sections. String must be
         surrounded by quotes and not boolean or integer.
 
         Javascript variable must not be surrounded by quotes. Custom variables
         start with 'data_'.
         """
         try:
-            if not value.startswith(('true', 'false', 'function', '{', '[')):
+            if not value.startswith(("true", "false", "function", "{", "[")):
                 return "'{0}'".format(value)
         except AttributeError:
             return value
@@ -246,9 +240,9 @@ class DataTableFunction(object):
         :param str target_col: column to connect.
         """
         # hide the link column
-        try: #pragma: no cover
-            self.datatable_columns[link_col]['visible'] = 'false'
-        except KeyError: #pragma: no cover
+        try:  # pragma: no cover
+            self.datatable_columns[link_col]["visible"] = "false"
+        except KeyError:  # pragma: no cover
             keys = self.datatable_columns.keys()
             logger.warning(f"KeyError: Column name '{target_col}' does not exist. Use one of {keys}")
 
@@ -257,17 +251,20 @@ class DataTableFunction(object):
             fct = """function(data, type, row, meta){{
                 return '<a href="'+row.{0}+'" target="_blank">'+data+'</a>';
             }}
-            """.format(link_col)
-        else: #pragma: no cover
+            """.format(
+                link_col
+            )
+        else:  # pragma: no cover
             fct = """function(data, type, row, meta){{
                 return '<a href="'+row.{0}+'">'+data+'</a>';
             }}
-            """.format(link_col)
-        try: #pragma: no cover
-            self.datatable_columns[target_col]['render'] = fct
-        except KeyError: #pragma: no cover
-            logger.warning("KeyError: Column name '{0}' does not exist."
-                           .format(target_col))
+            """.format(
+                link_col
+            )
+        try:  # pragma: no cover
+            self.datatable_columns[target_col]["render"] = fct
+        except KeyError:  # pragma: no cover
+            logger.warning("KeyError: Column name '{0}' does not exist.".format(target_col))
 
     def set_tooltips_to_column(self, tooltips_col, target_col):
         """Hide a column with tooltips and connect it with a column.
@@ -277,25 +274,25 @@ class DataTableFunction(object):
         """
         # hide tooltips
         try:
-            self.datatable_columns[tooltips_col]['visible'] = 'false'
-        except KeyError: 
-            logger.warning("KeyError: Column name '{0}' does not exist."
-                           .format(target_col))
+            self.datatable_columns[tooltips_col]["visible"] = "false"
+        except KeyError:
+            logger.warning("KeyError: Column name '{0}' does not exist.".format(target_col))
         # function to add tooltips
         fct = """function(data, type, row, meta){{
             return '<a href="#" data-toggle="tooltip" title="'+row.{0}+'">'+data+'</a>';
         }}
-        """.format(tooltips_col)
+        """.format(
+            tooltips_col
+        )
         try:
-            self.datatable_columns[target_col]['render'] = fct
+            self.datatable_columns[target_col]["render"] = fct
         except KeyError:
-            logger.warning("KeyError: Column name '{0}' does not exist."
-                           .format(target_col))
+            logger.warning("KeyError: Column name '{0}' does not exist.".format(target_col))
             pass
 
 
 class DataTable(object):
-    """ Class that contains html table which used a javascript function. 
+    """Class that contains html table which used a javascript function.
 
     You  must add in your HTML file the JS function
     (:meth:`DataTable.create_javascript_function`) and the HTML code
@@ -322,6 +319,7 @@ class DataTable(object):
     table but need to include the JS only once.
 
     """
+
     def __init__(self, df, html_id, datatable=None, index=False):
         """.. rubric:: contructor
 
@@ -334,7 +332,7 @@ class DataTable(object):
         """
         self.index = index
         self._df = df
-        # Mars 2022. added 'id' in front of the id to avoid issue with is 
+        # Mars 2022. added 'id' in front of the id to avoid issue with is
         # starting with a number, which is not allowed in HTML
         self._html_id = f"id_{html_id}"
         if datatable:
@@ -354,7 +352,7 @@ class DataTable(object):
         return self._html_id
 
     def create_datatable(self, style="width:100%", **kwargs):
-        """ Return string well formated to include in a HTML page.
+        """Return string well formated to include in a HTML page.
 
         :param str style: CSS option of your table.
         :param dict kwargs: parameters of :meth:`pandas.DataFrame.to_csv`.
@@ -368,50 +366,51 @@ class DataTable(object):
         {0} = null;
     }});
 </script>
-        """.format(self.html_id, self.datatable.html_id)
+        """.format(
+            self.html_id, self.datatable.html_id
+        )
         html += self._create_hidden_csv(**kwargs)
         html += self._create_html_table(style)
         return html
 
     def _create_hidden_csv(self, **kwargs):
-        """ Return the HTML code and the CSV code for your hidden CSV section.
+        """Return the HTML code and the CSV code for your hidden CSV section.
 
         :param **dict kwargs: parameters of :meth:`pandas.DataFrame.to_csv`.
         """
         csv = self._df.to_csv(index=self.index, **kwargs)
         html = '<pre id="csv_{0}">{1}</pre>'.format(self.html_id, csv.strip())
-        css = '<style>#csv_{0}{{display:none}}</style>'.format(self.html_id)
-        return '{0}\n{1}\n'.format(css, html)
+        css = "<style>#csv_{0}{{display:none}}</style>".format(self.html_id)
+        return "{0}\n{1}\n".format(css, html)
 
     def _create_html_table(self, style):
-        """ Just for set some option and header.
+        """Just for set some option and header.
 
         :param str style: css option of your table.
         """
         # set table id
         if style:
             style = 'style="{0}"'.format(style)
-        html_table = (
-            '<table id="table_{0}" class="display table text-center" {1}>'
-            .format(self.html_id, style)
-        )
+        html_table = '<table id="table_{0}" class="display table text-center" {1}>'.format(self.html_id, style)
         # create table's header
-        th = '<th>{0}</th>'
+        th = "<th>{0}</th>"
         if self.index is True:
             header = [th.format("")]
             header += [th.format(name) for name in self.df]
         else:
             header = [th.format(name) for name in self.df]
-        header = '<thead><tr>{0}</tr></thead>'.format("\n".join(header))
+        header = "<thead><tr>{0}</tr></thead>".format("\n".join(header))
         html_table = """
     {0}
         {1}
     </table>
-        """.format(html_table, header)
+        """.format(
+            html_table, header
+        )
         return html_table
 
     def create_javascript_function(self):
-        """ Generate the javascript function to create the DataTable in a HTML
+        """Generate the javascript function to create the DataTable in a HTML
         page.
         """
         return self.datatable.create_javascript_function()

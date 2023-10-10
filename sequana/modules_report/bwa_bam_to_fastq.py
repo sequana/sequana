@@ -98,6 +98,4 @@ class BWABAMtoFastQModule(SequanaBaseModule):
     def add_stats(self):
         html1 = self._get_html_stats()
         html2 = self._get_html_mapped_stats()
-        self.sections.append(
-            {"name": "Stats inputs", "anchor": "stats", "content": html1 + html2}
-        )
+        self.sections.append({"name": "Stats inputs", "anchor": "stats", "content": html1 + html2})

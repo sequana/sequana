@@ -283,14 +283,12 @@ class VCF_freebayes:
         return True
 
     def barplot(self):
-        """
-
-        """
+        """ """
         self.rewind()
         variants = defaultdict(int)
 
         for item in self:
-            variants[Variant(item).resume['type']] += 1
+            variants[Variant(item).resume["type"]] += 1
 
         keys = sorted(variants.keys())
         pylab.bar(x=list(range(len(keys))), height=[variants[k] for k in keys])
@@ -301,11 +299,11 @@ class VCF_freebayes:
         positions = defaultdict(list)
         for item in self:
             v = Variant(item).resume
-            if v['chr'] == chrom_name:
-                positions[v['type']].append(v['position'])
+            if v["chr"] == chrom_name:
+                positions[v["type"]].append(v["position"])
 
         N = len(positions)
-        fig, axs = pylab.subplots(nrows=N, ncols=1, sharex='row')
+        fig, axs = pylab.subplots(nrows=N, ncols=1, sharex="row")
         for i, k in enumerate(positions.keys()):
             axs[i].hist(positions[k], bins=bins)
             axs[i].set_ylabel(k)

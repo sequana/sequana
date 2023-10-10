@@ -50,9 +50,7 @@ class VariantCallingModule(SequanaBaseModule):
                         self.filter_dict = None
                     self.df = pd.read_csv(fp)
         except FileNotFoundError:
-            msg = (
-                "The csv file is not present. Please, check if your" " file is present."
-            )
+            msg = "The csv file is not present. Please, check if your" " file is present."
             raise FileNotFoundError(msg)
         except TypeError:
             self.df = data.df
@@ -115,8 +113,6 @@ class VariantCallingModule(SequanaBaseModule):
                 " of reads supporting the variants should be similar e.g balance of 0.5); the fisher "
                 "pvalue (variants with pvalue<0.05 should be rejected since the strand balance of"
                 "alternate and reference are different).</p><p>Note: the freebayes score can be"
-                " understood as 1 - P(locus is homozygous given the data)</p> {0}\n{1}\n".format(
-                    js, html_tab
-                ),
+                " understood as 1 - P(locus is homozygous given the data)</p> {0}\n{1}\n".format(js, html_tab),
             }
         )

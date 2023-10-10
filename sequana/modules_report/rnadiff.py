@@ -34,7 +34,6 @@ class RNAdiffModule(SequanaBaseModule):
     """
 
     def __init__(self, folder, gff, output_filename="summary.html", **kwargs):
-
         """.. rubric:: constructor"""
         super().__init__()
         self.title = "RNAdiff"
@@ -65,7 +64,6 @@ class RNAdiffModule(SequanaBaseModule):
         matplotlib.rc_file_defaults()
 
     def create_command_section(self):
-
         command = self.kwargs.get("command", "")
         self.sections.append({"name": f"{self._count_section} - Info", "anchor": "command", "content": command})
         self._count_section += 1
@@ -176,7 +174,6 @@ scale). Clicking on any of the link will lead you to the section of the comparis
         style = "width:65%"
 
         def dispersion(filename):
-
             pylab.ioff()
             pylab.clf()
             self.rnadiff.plot_dispersion()
@@ -193,7 +190,6 @@ scale). Clicking on any of the link will lead you to the section of the comparis
         style = "width:65%"
 
         def dendogram(filename):
-
             pylab.ioff()
             pylab.clf()
             self.rnadiff.plot_dendogram()
@@ -210,7 +206,6 @@ href="https://en.wikipedia.org/wiki/Ward%27s_method"> Ward method </a>. The data
         dendogram(f"{self.folder}/images/dendogram.png")
 
         def pca(filename):
-
             pylab.ioff()
             pylab.clf()
             variance = self.rnadiff.plot_pca(2, fontsize=self.kwargs.get("pca_fontsize", 10))
@@ -313,11 +308,9 @@ condition</p> {}<hr>""".format(
         self._count_section += 1
 
     def add_normalisation(self):
-
         style = "width:45%"
 
         def rawcount(filename):
-
             pylab.ioff()
             pylab.clf()
             self.rnadiff.plot_boxplot_rawdata()
@@ -332,7 +325,6 @@ condition</p> {}<hr>""".format(
             pylab.close()
 
         def normedcount(filename):
-
             pylab.ioff()
             pylab.clf()
             self.rnadiff.plot_boxplot_normeddata()
@@ -372,11 +364,9 @@ normalised counts.
         self._count_section += 1
 
     def add_upset_plot(self):
-
         style = "width:65%"
 
         def upsetplot(filename):
-
             pylab.ioff()
             pylab.clf()
             self.rnadiff.plot_upset()
@@ -406,7 +396,6 @@ around 0 corresponding to the diﬀerentially expressed features. This may not
 always be the case. </p>"""
 
         def plot_pvalue_hist(filename):
-
             pylab.ioff()
             pylab.clf()
             comp.plot_pvalue_hist()
@@ -414,7 +403,6 @@ always be the case. </p>"""
             pylab.close()
 
         def plot_padj_hist(filename):
-
             pylab.ioff()
             pylab.clf()
             comp.plot_padj_hist()
@@ -436,7 +424,6 @@ always be the case. </p>"""
         )
 
         def plot_volcano(filename):
-
             pylab.ioff()
             pylab.clf()
             comp.plot_volcano()
@@ -472,8 +459,9 @@ value as a function of the log2 ratio of diﬀerential expression. </p>"""
         df = comp.df.copy()  # .reset_index()
 
         # here we need to add the annotation if possible
+        print(self.rnadiff.annotation)
         try:
-            df = pd.concat([df, self.rnadiff.annotation.annotation.loc[[str(x) for x in comp.df.index]]], axis=1)
+            df = pd.concat([df, self.rnadiff.annotation.loc[[str(x) for x in comp.df.index]]], axis=1)
         except Exception as err:
             logger.critical(f"Could not add annotation. {err}")
 

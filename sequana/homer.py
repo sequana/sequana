@@ -29,7 +29,6 @@ __all__ = ["Homer"]
 
 class Homer:
     def __init__(self, filename):
-
         header = open(filename).readline().strip().split("\t")[1:]
 
         self.df = PandasReader(filename, sep="\t", skiprows=1, header=None).df
@@ -37,7 +36,6 @@ class Homer:
         self.df.fillna("NA", inplace=True)
 
     def pie_annotation(self, wedgeprops={"ec": "k"}, **kwargs):
-
         counts = Counter(self.df.Annotation)
         labels = [f"{k.split()[0]} ({str(v)})" for k, v in counts.items()]
         pylab.pie(counts.values(), labels=labels, wedgeprops=wedgeprops, **kwargs)

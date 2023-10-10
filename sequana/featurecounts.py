@@ -256,7 +256,6 @@ class MultiFeatureCount:
         self.probable_strand, self.df = get_most_probable_strand_consensus(self.rnaseq_folder, self.tolerance)
 
     def plot_strandness(self, fontsize=12, output_filename="strand_summary.png", savefig=False):
-
         df = self.df.sort_index(ascending=False)
         df["strandness"] = df["strandness"].T
         df["strandness"].plot(kind="barh")

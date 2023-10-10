@@ -97,7 +97,6 @@ class MultiKrakenResults:
         max_labels=50,
         max_sample_name_length=30,
     ):
-
         """Summary plot of reads classified."""
         df = self.get_df()
 
@@ -194,7 +193,6 @@ class MultiKrakenResults2:
     """
 
     def __init__(self, filenames, sample_names=None):
-
         self.filenames = filenames
         if sample_names is None:
             self.sample_names = list(range(1, len(filenames) + 1))

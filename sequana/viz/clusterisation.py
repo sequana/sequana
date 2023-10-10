@@ -84,10 +84,7 @@ class Cluster:
         data = self.scaler.fit_transform(data)
         return data, tokeep
 
-    def _plot(
-        self, Xr, pca=None, pc1=0, pc2=1, colors=None, show_labels=True, fontsize=10
-    ):
-
+    def _plot(self, Xr, pca=None, pc1=0, pc2=1, colors=None, show_labels=True, fontsize=10):
         if colors is None:
             colors = [self.colors[k] for k in self.labels]
             if len(colors) != len(Xr):
@@ -95,9 +92,7 @@ class Cluster:
         else:
             for k in self.labels:
                 if k not in colors.keys():
-                    logger.warning(
-                        "No key color for this sample: {}. Set to red".format(k)
-                    )
+                    logger.warning("No key color for this sample: {}. Set to red".format(k))
                     colors[k] = "r"
             colors = [colors[k] for k in self.labels]
 
@@ -118,23 +113,17 @@ class Cluster:
             for x, y in zip(Xr[:, pc1], Xr[:, pc2]):
                 x += dX / 40
                 y += dY / 40
-                ax.annotate(
-                    self.labels[count], (x, y), color=colors[count], fontsize=fontsize
-                )
+                ax.annotate(self.labels[count], (x, y), color=colors[count], fontsize=fontsize)
                 count += 1
                 if count > 100:
                     break
         if pca:
             pylab.xlabel(
-                "PC{} ({}%)".format(
-                    pc1 + 1, round(pca.explained_variance_ratio_[pc1] * 100, 2)
-                ),
+                "PC{} ({}%)".format(pc1 + 1, round(pca.explained_variance_ratio_[pc1] * 100, 2)),
                 fontsize=12,
             )
             pylab.ylabel(
-                "PC{} ({}%)".format(
-                    pc2 + 1, round(pca.explained_variance_ratio_[pc2] * 100, 2)
-                ),
+                "PC{} ({}%)".format(pc2 + 1, round(pca.explained_variance_ratio_[pc2] * 100, 2)),
                 fontsize=12,
             )
         pylab.grid(True)

@@ -99,17 +99,11 @@ class Volcano(object):
         """Add colors according to pvalue and fold change thresholds"""
 
         def coloring(row):
-            if (row.log2fc <= -self.log2fc_threshold) and (
-                row.log10pval >= self.pvalue_threshold
-            ):
+            if (row.log2fc <= -self.log2fc_threshold) and (row.log10pval >= self.pvalue_threshold):
                 return "royalblue"
-            if (row.log2fc >= self.log2fc_threshold) and (
-                row.log10pval >= self.pvalue_threshold
-            ):
+            if (row.log2fc >= self.log2fc_threshold) and (row.log10pval >= self.pvalue_threshold):
                 return "firebrick"
-            if (abs(row.log2fc) < self.log2fc_threshold) and (
-                row.log10pval >= self.pvalue_threshold
-            ):
+            if (abs(row.log2fc) < self.log2fc_threshold) and (row.log10pval >= self.pvalue_threshold):
                 return "black"
             else:
                 return "lightgrey"
@@ -125,9 +119,7 @@ class Volcano(object):
             if not row.annot:
                 continue
 
-            if (row.log10pval >= self.pvalue_threshold) and (
-                abs(row.log2fc) >= self.log2fc_threshold
-            ):
+            if (row.log10pval >= self.pvalue_threshold) and (abs(row.log2fc) >= self.log2fc_threshold):
                 texts.append(pylab.text(row.log2fc, row.log10pval, row.annot))
 
         adjust_text(texts, **kwargs)

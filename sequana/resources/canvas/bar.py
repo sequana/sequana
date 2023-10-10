@@ -1,6 +1,3 @@
-
-
-
 def stacked_bar(tag, title, datalist):
     """
 
@@ -18,15 +15,14 @@ def stacked_bar(tag, title, datalist):
     dataitems = ""
     for item in datalist:
         datatext = []
-        for k,v in item['data'].items():
-            datatext.append('{y:%s,label:"%s"}' % (v,k))
+        for k, v in item["data"].items():
+            datatext.append('{y:%s,label:"%s"}' % (v, k))
         datatext = ",\n        ".join(datatext)
 
-        params = {
-            "name": item['name'],
-            "datatext": datatext}
+        params = {"name": item["name"], "datatext": datatext}
 
-        dataitems += """
+        dataitems += (
+            """
       {
         type: "stackedBar100",
         showInLegend: true,
@@ -35,12 +31,11 @@ def stacked_bar(tag, title, datalist):
         %(datatext)s
         ]
         },
-    """ % params
+    """
+            % params
+        )
 
-    metadata = {
-        'tag': tag,
-        'title': title,
-        'dataitems': dataitems}
+    metadata = {"tag": tag, "title": title, "dataitems": dataitems}
 
     script = """
 <script type="text/javascript">
@@ -76,11 +71,9 @@ chart.render();
 
 
 class CanvasBar(object):
-    """
+    """ """
 
-    """
-    def __init__(self, data, title="", tag="", xlabel="",
-        ylabel_max_length=20, links=None, **kargs):
+    def __init__(self, data, title="", tag="", xlabel="", ylabel_max_length=20, links=None, **kargs):
         """
 
         :param data: a dataframe with name, value, url
@@ -89,18 +82,14 @@ class CanvasBar(object):
         self.tag = tag
 
         dataitems = "["
-        for x, y  in data.iterrows():
-            formatter = '{y:%(value)s,label:"%(name)s",click:onClick,url:"%(url)s"},' 
+        for x, y in data.iterrows():
+            formatter = '{y:%(value)s,label:"%(name)s",click:onClick,url:"%(url)s"},'
             dataitems += formatter % y
         dataitems += "]"
 
-        self.metadata = {
-            "dataitems": dataitems,
-            "title": self.title,
-            "xlabel":xlabel,
-            "tag": self.tag}
+        self.metadata = {"dataitems": dataitems, "title": self.title, "xlabel": xlabel, "tag": self.tag}
 
-    def to_html(self, options={'maxrange':None}):
+    def to_html(self, options={"maxrange": None}):
         script = """
     var chart = new CanvasJS.Chart("chartContainer%(tag)s",
     {
@@ -135,14 +124,11 @@ chart.render();
 """
 
         params = self.metadata.copy()
-        if options['maxrange']:
-            params['axisYmaximum'] = "maximum:%s," % options['maxrange']
+        if options["maxrange"]:
+            params["axisYmaximum"] = "maximum:%s," % options["maxrange"]
         else:
-            params['axisYmaximum'] = ""
+            params["axisYmaximum"] = ""
         return script % params
-#<div id="chartContainer%(tag)s" style="height: 300px; width: 100%%;">
 
 
-
-
-
+# <div id="chartContainer%(tag)s" style="height: 300px; width: 100%%;">

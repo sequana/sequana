@@ -35,7 +35,6 @@ class GenBank:
         self.filename = filename
 
     def get_types(self):
-
         records = self.genbank_features_parser()
         _types = set()
         for contig in records.keys():

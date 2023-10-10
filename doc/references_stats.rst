@@ -1,5 +1,5 @@
 
-.. _references:
+.. _references_stats:
 
 References (stats)
 ##################

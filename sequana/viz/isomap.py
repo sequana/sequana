@@ -17,10 +17,12 @@
 
 from sequana.lazy import pylab
 import colorlog
+
 logger = colorlog.getLogger(__name__)
 
 from sequana.viz import clusterisation
-__all__ = ['Isomap']
+
+__all__ = ["Isomap"]
 
 
 class Isomap(clusterisation.Cluster):
@@ -42,12 +44,22 @@ class Isomap(clusterisation.Cluster):
         p.plot(n_components=2)
 
     """
+
     def __init__(self, data, colors={}):
         super(Isomap, self).__init__(data, colors)
 
-    def plot(self, n_components=2, n_neighbors=5, transform="log", switch_x=False,
-            switch_y=False, switch_z=False, colors=None,
-            max_features=500, show_plot=True):
+    def plot(
+        self,
+        n_components=2,
+        n_neighbors=5,
+        transform="log",
+        switch_x=False,
+        switch_y=False,
+        switch_z=False,
+        colors=None,
+        max_features=500,
+        show_plot=True,
+    ):
         """
 
         :param n_components: at number starting at 2 or a value below 1
@@ -69,24 +81,21 @@ class Isomap(clusterisation.Cluster):
         self.Xr = Xr
 
         if switch_x:
-            Xr[:,0] *= -1
+            Xr[:, 0] *= -1
         if switch_y:
-            Xr[:,1] *= -1
+            Xr[:, 1] *= -1
         if switch_z:
-            Xr[:,2] *= -1
+            Xr[:, 2] *= -1
 
         # PC1 vs PC2
         if show_plot:
             pylab.figure(1)
-            self._plot(Xr, pca=None, pc1=0,pc2=1, colors=colors)
+            self._plot(Xr, pca=None, pc1=0, pc2=1, colors=colors)
 
-        if n_components >=3:
+        if n_components >= 3:
             if show_plot:
                 pylab.figure(2)
-                self._plot(Xr, pca=None, pc1=0,pc2=2, colors=colors)
+                self._plot(Xr, pca=None, pc1=0, pc2=2, colors=colors)
                 pylab.figure(3)
-                self._plot(Xr, pca=None, pc1=1,pc2=2, colors=colors)
+                self._plot(Xr, pca=None, pc1=1, pc2=2, colors=colors)
         return iso
-
-
-

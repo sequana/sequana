@@ -88,9 +88,7 @@ class BAMQCModule(SequanaBaseModule):
 
         return results
 
-        self.bam.plot_bar_flags(
-            logy=False, filename=self.directory + os.sep + "bar_flags.png"
-        )
+        self.bam.plot_bar_flags(logy=False, filename=self.directory + os.sep + "bar_flags.png")
         self.bam.plot_bar_mapq(filename=self.directory + os.sep + "bar_mapq.png")
 
     def add_flag_section(self):
@@ -112,9 +110,7 @@ class BAMQCModule(SequanaBaseModule):
         html = ""
         html += "{} {}".format(html_tab, js)
 
-        self.sections.append(
-            {"name": "Flags information", "anchor": "flags", "content": html}
-        )
+        self.sections.append({"name": "Flags information", "anchor": "flags", "content": html})
 
     def add_images_section(self):
         style = "width:65%"
@@ -137,6 +133,4 @@ class BAMQCModule(SequanaBaseModule):
 
         html3 = self.create_embedded_png(plotter3, "filename", style=style)
 
-        self.sections.append(
-            {"name": "Image", "anchor": "table", "content": html1 + html2 + html3}
-        )
+        self.sections.append({"name": "Image", "anchor": "table", "content": html1 + html2 + html3})

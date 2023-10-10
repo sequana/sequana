@@ -503,7 +503,6 @@ class SAMBAMbase:
 
     @_reset
     def mRNA_inner_distance(self, refbed, low_bound=-250, up_bound=250, step=5, sample_size=1000000, q_cut=30):
-
         """Estimate the inner distance of mRNA pair end fragment.
 
         ::
@@ -766,7 +765,6 @@ class SAMBAMbase:
         mean_qualities = []
         count = 0
 
-
         for read in tqdm(self, leave=False):
             self._count_item(mapq_dict, read.mapq)
             self._count_item(flag_dict, read.flag)
@@ -845,8 +843,7 @@ class SAMBAMbase:
         pylab.xlabel("Read length", fontsize=16)
         pylab.legend()
 
-    def plotly_hist_read_length(self, log_y=False, title="", xlabel="Read length (bp)", 
-        ylabel="count", **kwargs):
+    def plotly_hist_read_length(self, log_y=False, title="", xlabel="Read length (bp)", ylabel="count", **kwargs):
         """Histogram of the read length using plotly
 
         :param log_y:
@@ -857,8 +854,8 @@ class SAMBAMbase:
         import plotly.express as px
 
         X, Y = self._get_read_length()
-        data = [x for x,y in self.summary['read_length'].items() for i in range(y)]
-        fig = px.histogram(data, labels={"x":xlabel, "y":ylabel}, log_y=log_y, title=title, **kwargs)
+        data = [x for x, y in self.summary["read_length"].items() for i in range(y)]
+        fig = px.histogram(data, labels={"x": xlabel, "y": ylabel}, log_y=log_y, title=title, **kwargs)
         return fig
 
     def get_stats(self):
@@ -1527,7 +1524,7 @@ SN	pairs on different chromosomes:	0
         pylab.ylabel("#", fontsize=16)
 
     def get_query_start(self, read):
-        """ Get start of the query read."""
+        """Get start of the query read."""
         CLIP_FLAG = {4, 5}
         strand = -1 if read.is_reverse else 0
         if read.cigar[strand][0] in CLIP_FLAG:
@@ -1535,7 +1532,7 @@ SN	pairs on different chromosomes:	0
         return 0
 
     def get_query_end(self, read):
-        """ Get end of the query read."""
+        """Get end of the query read."""
         strand = 0 if read.is_reverse else -1
         CLIP_FLAG = {4, 5}
         if read.cigar[strand][0] in CLIP_FLAG:
@@ -1549,21 +1546,33 @@ SN	pairs on different chromosomes:	0
                     align.reference_name,
                     align.reference_start,
                     align.reference_end,
-                    '-' if align.is_reverse else '+',
+                    "-" if align.is_reverse else "+",
                     align.flag,
                     align.mapq,
                     align.cigarstring,
                     align.query_name,
                     align.infer_read_length(),
                     get_query_start(align),
-                    get_query_end(align)
-                ) for align in takewhile(lambda x: x.reference_start < 10, bam_in)
+                    get_query_end(align),
+                )
+                for align in takewhile(lambda x: x.reference_start < 10, bam_in)
             ]
 
-        COLNAMES = ['r_name', 'r_start', 'r_end', 'strand', 'flag', 'mapq', 'cigar', 'q_name', 'q_len', 'q_start', 'q_end']
+        COLNAMES = [
+            "r_name",
+            "r_start",
+            "r_end",
+            "strand",
+            "flag",
+            "mapq",
+            "cigar",
+            "q_name",
+            "q_len",
+            "q_start",
+            "q_end",
+        ]
         paf = pd.DataFrame(info, columns=COLNAMES)
         return paf
-
 
 
 class SAM(SAMBAMbase):

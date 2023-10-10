@@ -329,7 +329,6 @@ is below this parameter. If set to -1, not used. """,
 
 
 def main(args=None):
-
     if args is None:
         args = sys.argv[:]
 
@@ -451,7 +450,6 @@ def main(args=None):
 
 
 def run_analysis(chrom, options):
-
     logger.info("Computing some metrics")
     if chrom.DOC < 8:
         logger.warning(

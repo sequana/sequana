@@ -109,7 +109,7 @@ class PCA(clusterisation.Cluster):
         max_features=500,
         show_plot=True,
         fontsize=10,
-        adjust=True
+        adjust=True,
     ):
         """
 
@@ -126,12 +126,9 @@ class PCA(clusterisation.Cluster):
 
         pylab.clf()
 
-
         pca = PCA(n_components)
 
-        data, kept = self.scale_data(
-            transform_method=transform, max_features=max_features
-        )
+        data, kept = self.scale_data(transform_method=transform, max_features=max_features)
 
         # in rare cases, with sparse feature count matrix, NA may be included
         data[np.isnan(data)] = 0
@@ -149,11 +146,7 @@ class PCA(clusterisation.Cluster):
             Xr[:, 2] *= -1
 
         def adjust_func():
-            texts = [
-                x
-                for x in pylab.gca().get_children()
-                if "text.Annotation" in str(x.__class__)
-            ]
+            texts = [x for x in pylab.gca().get_children() if "text.Annotation" in str(x.__class__)]
             adjust_text(texts)
 
         # PC1 vs PC2

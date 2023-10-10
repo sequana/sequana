@@ -119,14 +119,12 @@ class Phantom:
     """
 
     def __init__(self, bamfile=None, binning=5, start=-500, stop=1500):
-
         self.start = start
         self.stop = stop
         self.binning = binning
         self.df = None
 
     def read_align(self, readfile):
-
         self.df = PandasReader(
             readfile, sep="\t", header=None, columns=["ref", "start", "end", "dummy", "quality", "strand"]
         ).df
@@ -172,7 +170,6 @@ class Phantom:
         return results, df_avc
 
     def stats(self, results, df_avc, bw=1):
-
         stats = {}
 
         # some simple stars about the reads
@@ -317,7 +314,6 @@ class Phantom:
         return stats
 
     def get_data(self, chrname, remove_anomalies=True):
-
         # Could be done once for all in read_alignment
         df = self.df.query("ref==@chrname")
 
@@ -338,7 +334,6 @@ class Phantom:
         return res
 
     def remove_anomalies(self, data, bin=1, trim_fraction=1e-3, z=5, return_indecies=False):
-
         zo = z * 3
 
         x = data["x"]
@@ -381,7 +376,6 @@ class Phantom:
         return [False if x in sit else True for x in data["x"]]
 
     def scc(self, data, llim=10):
-
         tt = (np.sign(data["x"]) * np.floor(data["x"].abs() / self.binning + 0.5)).value_counts()
 
         mu = tt.mean()

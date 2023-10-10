@@ -38,9 +38,7 @@ from sequana.utils.datatables_js import DataTable
 class FastQStatsModule(SequanaBaseModule):
     """Write HTML report of fastq stats analysis."""
 
-    def __init__(
-        self, input_directory, path_to_fastqc, output_filename=None, tag_R1="_R1_"
-    ):
+    def __init__(self, input_directory, path_to_fastqc, output_filename=None, tag_R1="_R1_"):
         """
         :param input_directory: where to find the json and boxplot image. The
             path where to find the data does not matter since the JSON and PNG
@@ -80,10 +78,7 @@ class FastQStatsModule(SequanaBaseModule):
         elif len(filenames) == 0:
             return
         else:
-            logger.warning(
-                "FastQStatsModule: more than 2 files "
-                "matched the pattern %s" % pattern
-            )
+            logger.warning("FastQStatsModule: more than 2 files " "matched the pattern %s" % pattern)
             return
         return filenames, mode
 
@@ -154,9 +149,7 @@ class FastQStatsModule(SequanaBaseModule):
         else:
             width = "65"
 
-        filename = os.path.split(filenames[0])[1].replace(
-            "_boxplot.png", "_fastqc.html"
-        )
+        filename = os.path.split(filenames[0])[1].replace("_boxplot.png", "_fastqc.html")
         href = self.path_to_fastqc + os.sep + filename
         html += """
    <figure style="float:left; width:{}%; padding:0px; margin:0px;">
@@ -167,9 +160,7 @@ class FastQStatsModule(SequanaBaseModule):
         )
 
         if len(filenames) == 2:
-            filename = os.path.split(filenames[1])[1].replace(
-                "_boxplot.png", "_fastqc.html"
-            )
+            filename = os.path.split(filenames[1])[1].replace("_boxplot.png", "_fastqc.html")
             href = self.path_to_fastqc + os.sep + filename
             html += """
    <figure style="float:right; width:{}%; padding:0px; margin:0px;">
@@ -183,6 +174,4 @@ class FastQStatsModule(SequanaBaseModule):
 
     def add_stats(self):
         html = self._get_stats_section()
-        self.sections.append(
-            {"name": "Stats inputs", "anchor": "stats", "content": html}
-        )
+        self.sections.append({"name": "Stats inputs", "anchor": "stats", "content": html})

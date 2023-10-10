@@ -178,7 +178,6 @@ class PantherEnrichment(Ontology, PlotGOTerms):
         fc_threshold = log2_fc_threshold
 
         for x in sorted(gene_lists.keys()):
-
             N = len(gene_lists[x])
             logger.info(f"Starting with {N} genes from category '{x}'")
 
@@ -248,7 +247,6 @@ class PantherEnrichment(Ontology, PlotGOTerms):
             )
 
     def get_mapping_stats(self):
-
         results = []
         for k in self.enrichment.keys():
             if self.enrichment[k]:
@@ -278,14 +276,13 @@ class PantherEnrichment(Ontology, PlotGOTerms):
         enrichment_test="FISHER",
         correction="FDR",
     ):
-
         # taxid=83333 # ecoli
         if taxid is None:
             taxid = self.taxon
 
         # nice bug from panterdb website. if 'php' is a gene name, no process is done
-        if 'php' in mygenes:
-            mygenes.remove('php')
+        if "php" in mygenes:
+            mygenes.remove("php")
 
         if isinstance(mygenes, list):
             mygenes = ",".join(mygenes)
@@ -347,8 +344,6 @@ class PantherEnrichment(Ontology, PlotGOTerms):
 
             # extract the ID and label of the go term and save
             # as primary keys
-
-
 
             for i, k in enumerate(results["result"]):
                 if results["result"][i]["term"]["label"] == "UNCLASSIFIED":
@@ -419,7 +414,7 @@ class PantherEnrichment(Ontology, PlotGOTerms):
         df["pct_diff_expr"] = df["number_in_list"] * 100 / df["number_in_reference"]
 
         # could happen that all fold enrichment are set to 'NaN'
-        df = df[df['fold_enrichment'] != 'NaN']
+        df = df[df["fold_enrichment"] != "NaN"]
         df["log2_fold_enrichment"] = pylab.log2(df["fold_enrichment"])
         df["abs_log2_fold_enrichment"] = abs(pylab.log2(df["fold_enrichment"]))
         df["expected"] = [int(x) for x in df.expected]

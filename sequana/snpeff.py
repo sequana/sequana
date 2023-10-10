@@ -49,7 +49,6 @@ class SnpEff(object):
     """
 
     def __init__(self, annotation, log=None, snpeff_datadir="data", fastafile=None, build_options=""):
-
         """.. rubric:: Constructor
 
         :param annotation: annotation reference.

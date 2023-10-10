@@ -44,7 +44,6 @@ class StatsFile(object):
                     pass
 
     def get_data_reads(self):
-
         lanes = []
         names = []
         reads = []
@@ -171,7 +170,6 @@ class StatsFile(object):
             pylab.savefig(filename, dpi=200)
 
     def barplot_summary(self, filename=None, color=["green", "red"], alpha=0.8):
-
         df = self.get_data_reads()
         under = df.query("name=='Undetermined'")
 

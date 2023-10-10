@@ -98,9 +98,9 @@ class VST:
         """
         try:
             # If a dataframe, we do not want to change it
-            y = gain * x + (gain ** 2) * 3.0 / 8.0 + sigma ** 2 - gain * mu
+            y = gain * x + (gain**2) * 3.0 / 8.0 + sigma**2 - gain * mu
             return (2.0 / gain) * np.sqrt(np.maximum(y, 0.0))
         except:
             x = np.array(x)
-            y = gain * x + (gain ** 2) * 3.0 / 8.0 + sigma ** 2 - gain * mu
+            y = gain * x + (gain**2) * 3.0 / 8.0 + sigma**2 - gain * mu
             return (2.0 / gain) * np.sqrt(np.maximum(y, 0.0))

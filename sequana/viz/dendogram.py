@@ -19,13 +19,13 @@ import matplotlib
 import pylab
 import scipy.cluster.hierarchy as hierarchy
 import scipy.spatial.distance as distance
-import numpy as np # get rid of this dependence
+import numpy as np  # get rid of this dependence
 
 import easydev
 import colormap
 from sequana.viz.linkage import Linkage
 
-__all__ = ['Dendogram']
+__all__ = ["Dendogram"]
 
 
 class Dendogram(Linkage):
@@ -54,12 +54,18 @@ class Dendogram(Linkage):
         g.plot()
 
     """
-    def __init__(self, data=None, method='complete', 
-                 metric='euclidean',
-                 cmap='yellow_black_blue',
-                 col_side_colors=None, side_colors=None,
-                 verbose=True, horizontal=True
-                 ):
+
+    def __init__(
+        self,
+        data=None,
+        method="complete",
+        metric="euclidean",
+        cmap="yellow_black_blue",
+        col_side_colors=None,
+        side_colors=None,
+        verbose=True,
+        horizontal=True,
+    ):
         """.. rubric:: constructor
 
         :param data: a dataframe or possibly a numpy matrix.
@@ -81,16 +87,16 @@ class Dendogram(Linkage):
                 self._df = data.copy()
         except AttributeError as err:
             print("input must be a pandas data frame or numpy matrix")
-            raise(err)
+            raise (err)
 
         self._method = method
         self._metric = metric
         self.horizontal = True
 
         # some default parameters
-        self.cluster_criterion = 'distance'
+        self.cluster_criterion = "distance"
         self.params = easydev.AttrDict()
-        self.params.side_colors = ['r', 'g', 'b', 'y', 'w', 'k', 'm']
+        self.params.side_colors = ["r", "g", "b", "y", "w", "k", "m"]
         self.params.cmap = cmap
 
         self.category = {}
@@ -100,29 +106,32 @@ class Dendogram(Linkage):
 
     def _get_df(self):
         return self._df
+
     def _set_df(self, data):
         self._df = data.copy()
+
     df = property(_get_df, _set_df)
     frame = property(_get_df, _set_df)
 
     def _get_method(self):
         return self._method
+
     def _set_method(self, value):
         self.check_method(value)
         self._method = value
+
     method = property(_get_method, _set_method)
 
     def _get_metric(self):
         return self._metric
+
     def _set_metric(self, value):
         self.check_metric(value)
         self._metric = value
+
     metric = property(_get_metric, _set_metric)
 
-    def plot(self, num=1, cmap=None, colorbar=True, 
-             figsize=(12, 8),
-             fontsize=None
-             ):
+    def plot(self, num=1, cmap=None, colorbar=True, figsize=(12, 8), fontsize=None):
         """
 
         Using as input::
@@ -152,23 +161,25 @@ class Dendogram(Linkage):
 
         if cmap is None:
             cmap = self.params.cmap
-        try:cmap = colormap.cmap_builder(cmap)
-        except:pass
+        try:
+            cmap = colormap.cmap_builder(cmap)
+        except:
+            pass
 
         # keep track of row and column names for later.
         header = self.frame.index
 
         # FIXME something clever for the fontsize
         if len(header) > 100 or len(header) > 100:
-            matplotlib.rcParams['font.size'] = 6
+            matplotlib.rcParams["font.size"] = 6
         if len(header) > 50 or len(header) > 50:
-            matplotlib.rcParams['font.size'] = 7
+            matplotlib.rcParams["font.size"] = 7
         if len(header) > 30 or len(header) > 30:
-            matplotlib.rcParams['font.size'] = 8
+            matplotlib.rcParams["font.size"] = 8
         else:
-            matplotlib.rcParams['font.size'] = 12
+            matplotlib.rcParams["font.size"] = 12
         if fontsize:
-            matplotlib.rcParams['font.size'] = fontsize
+            matplotlib.rcParams["font.size"] = fontsize
 
         # scaling min/max range
 
@@ -176,18 +187,18 @@ class Dendogram(Linkage):
         fig = pylab.figure(num=num, figsize=figsize)
         fig.clf()
 
-        Y = self.linkage(self.frame, self.method, self.metric )
+        Y = self.linkage(self.frame, self.method, self.metric)
 
-        Z = hierarchy.dendrogram(Y, orientation='right',
-             color_threshold=0,
-            above_threshold_color="k", distance_sort="descending")
-        ind1 = hierarchy.fcluster(Y, 0.7 * max(Y[:,2]), self.cluster_criterion)
+        Z = hierarchy.dendrogram(
+            Y, orientation="right", color_threshold=0, above_threshold_color="k", distance_sort="descending"
+        )
+        ind1 = hierarchy.fcluster(Y, 0.7 * max(Y[:, 2]), self.cluster_criterion)
 
         # apply the clustering for the array-dendrograms to the actual matrix data
-        idx1 = Z['leaves']
+        idx1 = Z["leaves"]
 
         # Rearrange the data frame in the order of the dendogram
-        self.frame = self.frame.iloc[idx1,:]
+        self.frame = self.frame.iloc[idx1, :]
         ticks = pylab.yticks()[0]
         pylab.yticks(ticks, self.frame.index)
         pylab.tight_layout()
@@ -199,15 +210,12 @@ class Dendogram(Linkage):
             gca = pylab.gca()
             X, Y = gca.get_position().get_points()
             f = pylab.gcf()
-            ax = f.add_axes([X[0], X[1], 0.02, Y[1]-X[1]])
+            ax = f.add_axes([X[0], X[1], 0.02, Y[1] - X[1]])
 
-            category= [self.category[x] for x in self.df.index]
+            category = [self.category[x] for x in self.df.index]
             dr = np.array(category, dtype=int)
-            dr.shape = (len(category),1)
+            dr.shape = (len(category), 1)
             cmap_r = matplotlib.colors.ListedColormap(self.params.side_colors)
-            ax.matshow(dr, aspect='auto', origin='lower', cmap=cmap_r)
+            ax.matshow(dr, aspect="auto", origin="lower", cmap=cmap_r)
             ax.set_xticks([])
             ax.set_yticks([])
-        
-
-

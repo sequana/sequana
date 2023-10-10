@@ -38,13 +38,6 @@ logger = colorlog.getLogger(__name__)
 __all__ = ["RNADiffAnalysis", "RNADiffResults", "RNADiffTable", "RNADesign"]
 
 
-def strip(text):
-    try:
-        return text.strip()
-    except AttributeError:
-        return text
-
-
 class RNADesign:
     """Simple RNA design handler"""
 
@@ -58,9 +51,21 @@ class RNADesign:
                 f"{reference} condition (for the reference) not found in the conditions of your design file"
             )
         self.reference = reference
+        self.check_condition()
+
+    def check_condition(self):
+        # set condition of the statistical model
+
+        columns = ",".join(self.df.columns)
+
+        # this is probably not required anymore since it is check in the Design class itself ?
+        if self.condition_col not in columns:  # pragma: no cover
+            logger.error(
+                f"""Your condition named '{self.condition_col}' is expected to be in the header of your design file but was not found. Candidates are: {columns}"""
+            )
+            sys.exit(1)
 
     def _get_conditions(self):
-
         try:
             return sorted(self.df[self.condition_col].unique())
         except KeyError:
@@ -158,7 +163,6 @@ class RNADiffAnalysis:
         minimum_mean_reads_per_gene=0,
         minimum_mean_reads_per_condition_per_gene=0,
     ):
-
         # if set, we can filter genes that have low counts (on average)
         self.minimum_mean_reads_per_gene = minimum_mean_reads_per_gene
         self.minimum_mean_reads_per_condition_per_gene = minimum_mean_reads_per_condition_per_gene
@@ -197,7 +201,6 @@ class RNADiffAnalysis:
 
         # the name of the condition in the design file
         self.condition = condition
-        self.check_condition()
 
         # Reads and check the count file
         self.counts = self.check_and_save_input_tables(sep_counts)
@@ -240,9 +243,9 @@ class RNADiffAnalysis:
             "beta_prior",
             "threads",
         ):
-            try:
+            try:  # pragma: no cover
                 getattr(self, attr)
-            except AttributeError as err:
+            except AttributeError as err:  # pragma: no cover
                 logger.error(f"Attribute {attr} missing in the RNADiffAnalysis class. cannot go further")
                 raise Exception(err)
 
@@ -258,7 +261,6 @@ Design overview:\n\
         return info
 
     def check_and_save_input_tables(self, sep_counts):
-
         # input may be an existing rnadiff.csv file create with FeatureCount
         # class, or (if it fails) a feature count file (tabulated with
         # Chr/Start/Geneid columns)
@@ -271,7 +273,7 @@ Design overview:\n\
                 comment="#",
                 low_memory=False,
             )
-        except ValueError:
+        except ValueError:  # pragma: no cover
             counts = FeatureCount(self.usr_counts).df
 
         Ncounts = len(counts)
@@ -309,18 +311,6 @@ Design overview:\n\
         counts.to_csv(self.counts_filename)
 
         return counts
-
-    def check_condition(self):
-        # set condition of the statistical model
-
-        columns = ",".join(self.design.columns)
-        if self.condition not in columns:
-            logger.error(
-                f"""Your condition named '{condition}' is expected to
-be in the header of your design file but was not found. Candidates are:
-    {columns}"""
-            )
-            sys.exit(1)
 
     def check_comparisons(self):
         # let us check the consistenct of the design and comparisons
@@ -379,7 +369,7 @@ or comparisons. possible values are {valid_conditions}"""
             ]
 
             data = f.read()
-            for msg in messages:
+            for msg in messages:  # pragma: no cover
                 if msg[0] in data:
                     logger.critical(msg[0] + msg[1])
 
@@ -420,7 +410,8 @@ class RNADiffTable:
         self._log2_fc = log2_fc
 
         self.df = pd.read_csv(self.path, index_col=0, sep=sep)
-        self.df.padj[self.df.padj == 0] = 1e-50
+
+        self.df.loc[self.df.padj == 0, "padj"] = 1e-50
         self.condition = condition
 
         self.filt_df = self.filter()
@@ -458,7 +449,6 @@ class RNADiffTable:
         return filt_df
 
     def set_gene_lists(self):
-
         only_drgs_df = self.filt_df.dropna(how="all")
 
         self.gene_lists = {
@@ -468,7 +458,6 @@ class RNADiffTable:
         }
 
     def summary(self):
-
         return pd.DataFrame(
             {
                 "log2_fc": self._log2_fc,
@@ -510,13 +499,13 @@ class RNADiffTable:
 
             if annotations is not None:
                 try:
-                    df = pd.concat([df, annotations.annotation], axis=1)
-                except Exception as err:
+                    df = pd.concat([df, annotations], axis=1)
+                except Exception as err:  # pragma: no cover
                     logger.warning(f"Could not merge rnadiff table with annotation. Full error is: {err}")
             df["log_adj_pvalue"] = -pylab.log10(df.padj)
             df["significance"] = ["<{}".format(padj) if x else ">={}".format(padj) for x in df.padj < padj]
 
-            if hover_name is not None:
+            if hover_name is not None:  # pragma: no cover
                 if hover_name not in df.columns:
                     logger.warning(f"hover_name {hover_name} not in the GFF attributes. Switching to automatic choice")
                     hover_name = None
@@ -611,11 +600,12 @@ class RNADiffTable:
         m2 = max(self.df[self.l2fc_name])
 
         limit = max(m1, m2)
-        try:
+        try:  # pragma: no cover
             bax.set_xlim([-limit, limit])
         except Exception:
             bax.xlim([-limit, limit])
-        try:
+
+        try:  # pragma: no cover
             y1, _ = bax.get_ylim()
             ax1 = bax.axs[0].set_ylim([br2, y1[1] * 1.1])
         except Exception:
@@ -624,19 +614,13 @@ class RNADiffTable:
         bax.axhline(-np.log10(0.05), lw=2, ls="--", color="r", label="pvalue threshold (0.05)")
 
     def plot_pvalue_hist(self, bins=60, fontsize=16, rotation=0):
-
-        pylab.hist(self.df.pvalue.dropna(), bins=bins, ec="k")
-        pylab.xlabel("raw p-value")
-        pylab.ylabel("Occurences")
-
-    def plot_pvalue_hist(self, bins=60, fontsize=16, rotation=0):
         pylab.hist(self.df.pvalue.dropna(), bins=bins, ec="k")
         pylab.grid(True)
         pylab.xlabel("raw p-value", fontsize=fontsize)
         pylab.ylabel("Occurences", fontsize=fontsize)
         try:
             pylab.tight_layout()
-        except Exception:
+        except Exception:  # pragma: no cover
             pass
 
     def plot_padj_hist(self, bins=60, fontsize=16):
@@ -646,7 +630,7 @@ class RNADiffTable:
         pylab.ylabel("Occurences", fontsize=fontsize)
         try:
             pylab.tight_layout()
-        except Exception:
+        except Exception:  # pragma: no cover
             pass
 
 
@@ -749,7 +733,6 @@ class RNADiffResults:
         self.df = pd.read_csv(filename, index_col=0, header=[0, 1])
 
     def import_tables(self):
-
         data = {
             compa.stem.replace("_degs_DESeq2", "").replace("-", "_"): RNADiffTable(
                 compa,
@@ -837,7 +820,6 @@ class RNADiffResults:
         return pd.concat(res.summary() for compa, res in self.comparisons.items())
 
     def report(self):
-
         template_file = "rnadiff_report.html"
         template_env = Environment(loader=PackageLoader("sequana", "resources/templates"))
         template = template_env.get_template(template_file)
@@ -846,7 +828,6 @@ class RNADiffResults:
             f.write(template.render({"table": self.summary().to_html(classes="table table-striped")}))
 
     def get_gene_lists(self, annot_col="index", Nmax=None, dropna=False):  # pragma: no cover
-
         gene_lists_dict = {}
 
         for compa in self.comparisons.keys():
@@ -929,10 +910,11 @@ class RNADiffResults:
         pylab.xlabel(xlabel)
         pylab.ylabel(ylabel)
 
-    def get_specific_commons(self, direction, compas=None, annot_col="index"):
+    # Probably not used anywhere.
+    def __get_specific_commons(self, direction, compas=None, annot_col="index"):  # pragma: no cover
         """Extract gene lists for all comparisons.
 
-        Genes are common (but specific, ie a gene appear only appears in the
+        Genes are in common (but specific, ie a gene  only appears in the
         combination considered) comparing all combinations of comparisons.
 
         :param direction: The regulation direction (up, down or all) of the gene
@@ -941,7 +923,6 @@ class RNADiffResults:
             names can be found with self.comparisons.keys()).
 
         """
-
         common_specific_dict = {}
 
         total_gene_lists = self.get_gene_lists(annot_col=annot_col)
@@ -1063,7 +1044,6 @@ class RNADiffResults:
         fontsize=10,
         adjust=True,
     ):
-
         """
 
         .. plot::
@@ -1191,7 +1171,6 @@ class RNADiffResults:
         )
 
     def plot_most_expressed_features(self, N=20):
-
         pylab.clf()
 
         # we will normalise to get pourcentage
@@ -1199,7 +1178,7 @@ class RNADiffResults:
 
         # let us make a copy
         dd = self.counts_raw.copy()
-        dd = dd.divide(S) * 100 # percentage
+        dd = dd.divide(S) * 100  # percentage
 
         # average of each genes to ordered them by expression
         ordered_genes = dd.mean(axis=1).sort_values(ascending=False).index
@@ -1207,7 +1186,10 @@ class RNADiffResults:
 
         conditions = sorted(self.design_df.condition.unique())
         for condition in conditions:
-            for i, sample, in enumerate(self.design_df.query("condition == @condition").index):
+            for (
+                i,
+                sample,
+            ) in enumerate(self.design_df.query("condition == @condition").index):
                 if i == 0:
                     pylab.plot(subdf[sample], color=self.design_df.loc[sample].group_color, label=condition)
                 else:
@@ -1215,15 +1197,12 @@ class RNADiffResults:
 
         pylab.legend()
 
-
-        self._format_plot(
-            title="",
-            xlabel="Most expressed genes",
-            ylabel="Percentage (%)"
-        )
-        pylab.xticks(range(0,len(subdf)), subdf.index, rotation=90)
-        try: pylab.tight_layout()
-        except: pass
+        self._format_plot(title="", xlabel="Most expressed genes", ylabel="Percentage (%)")
+        pylab.xticks(range(0, len(subdf)), subdf.index, rotation=90)
+        try:
+            pylab.tight_layout()
+        except:
+            pass
         return subdf
 
     def plot_feature_most_present(self, fontsize=None, xticks_fontsize=None):
@@ -1236,7 +1215,6 @@ class RNADiffResults:
         df = []
 
         for x, y in self.counts_raw.idxmax().items():
-
             most_exp_gene_count = self.counts_raw.stack().loc[y, x]
             total_sample_count = self.counts_raw.sum().loc[x]
 
@@ -1337,7 +1315,6 @@ class RNADiffResults:
         xticks_fontsize=None,
         **kwargs,
     ):
-
         import seaborn as sbn
 
         if fontsize is None:
@@ -1368,7 +1345,6 @@ class RNADiffResults:
         xticks_fontsize=None,
         **kwargs,
     ):
-
         import seaborn as sbn
 
         if fontsize is None:
@@ -1390,7 +1366,6 @@ class RNADiffResults:
         pylab.tight_layout()
 
     def plot_dispersion(self):
-
         pylab.plot(
             self.dds_stats.baseMean,
             self.dds_stats.dispGeneEst,
@@ -1453,7 +1428,6 @@ class RNADiffResults:
         figsize=(10, 15),
         annotation_column=None,
     ):
-
         assert comp in self.comparisons.keys()
         from sequana.viz import heatmap
 

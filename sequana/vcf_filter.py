@@ -66,7 +66,7 @@ class VCF:
         elif vcf.version == "4.2":
             logger.info("Reading VCF v 4.2 (freebayes)")
             self.vcf = VCF_freebayes(filename, **kwargs)
-        else: #pragma: no cover
+        else:  # pragma: no cover
             msg = """This VCF version is not recognised. Only v4.1 with mpileup and v4.2 with freebayes are handled"""
             raise ValueError(msg)
 
@@ -211,7 +211,7 @@ class VCF_mpileup_4dot1(VCFBase):
         """
         VT = self._get_variant_tag(vcf_line)
 
-        if filter_dict is None: #prama: no cover
+        if filter_dict is None:  # prama: no cover
             # a copy to avoid side effects
             filter_dict = self.filter_dict.copy()
 
@@ -220,7 +220,7 @@ class VCF_mpileup_4dot1(VCFBase):
             return False
 
         if self.apply_indel_filter:
-            if self.is_indel(vcf_line) is True: #pragma: no cover
+            if self.is_indel(vcf_line) is True:  # pragma: no cover
                 logger.debug("{}: filter out line {} (INDEL)".format(VT, iline))
                 return False
 
@@ -246,7 +246,7 @@ class VCF_mpileup_4dot1(VCFBase):
             # brackets to make a list and use eval function after setting
             # the local variable DP4 in the locals namespace
             # PV4 skip non morphic cases (no need to filter)
-            if key == "PV4" and not self.is_polymorphic(vcf_line): #pragma no cover
+            if key == "PV4" and not self.is_polymorphic(vcf_line):  # pragma no cover
                 return True
 
             # Filter such as " sum(DP[0], DP4[2])<60 "
@@ -268,7 +268,7 @@ class VCF_mpileup_4dot1(VCFBase):
 
             # key could be with an index e.g. "DP4[0]<4"
             if "[" in key:
-                if "]" not in key: #pragma: no cover
+                if "]" not in key:  # pragma: no cover
                     raise ValueError("Found invalid filter %s" % key)
                 else:
                     key, index = key.split("[", 1)
@@ -286,15 +286,15 @@ class VCF_mpileup_4dot1(VCFBase):
                         return False
                 else:
                     Nlist = len(vcf_line.INFO[key])
-                    if index > Nlist - 1: #pragma: no cover
+                    if index > Nlist - 1:  # pragma: no cover
                         raise ValueError("Index must be less than %s (starts at zero)" % Nlist)
                     if self._filter_info_field(vcf_line.INFO[key][index], value):
                         return False
-            except KeyError: #pragma no cover
+            except KeyError:  # pragma no cover
                 logger.debug("The information key {} doesn't exist in VCF file (line {}).".format(key, iline + 1))
         return True
 
-    def filter_vcf(self, output, filter_dict=None, output_filtered=None): #pragma: no cover
+    def filter_vcf(self, output, filter_dict=None, output_filtered=None):  # pragma: no cover
         """Read the vcf file and write the filter vcf file."""
         if filter_dict is None:
             # a copy to avoid side effects
@@ -325,7 +325,6 @@ class VCF_mpileup_4dot1(VCFBase):
         return {"N": N, "filtered": filtered, "unfiltered": unfiltered}
 
     def is_polymorphic(self, variant):
-
         if not len(variant.ALT):
             return False
 
@@ -336,16 +335,16 @@ class VCF_mpileup_4dot1(VCFBase):
         if not len(variant.ALT):
             return False
 
-        if "," in str(variant.ALT[0].value): #pragma: no cover
+        if "," in str(variant.ALT[0].value):  # pragma: no cover
             return True
-        if "," in str(variant.REF[0]): #pragma: no cover
+        if "," in str(variant.REF[0]):  # pragma: no cover
             return True
         if "INDEL" in variant.INFO.keys() and variant.INFO["INDEL"]:
             return True
         return False
 
     def is_valid_af1(self, variant, minimum_af1=0.95):
-        if "AF1" not in variant.INFO.keys(): #pragma: no cover
+        if "AF1" not in variant.INFO.keys():  # pragma: no cover
             return True
 
         if self.is_polymorphic(variant):
@@ -362,7 +361,7 @@ class VCF_mpileup_4dot1(VCFBase):
     def is_valid_dp4(self, variant, minimum_depth, minimum_depth_strand, minimum_ratio):
         """return true if valid"""
 
-        if "DP4" not in variant.INFO.keys(): #pragma: no cover
+        if "DP4" not in variant.INFO.keys():  # pragma: no cover
             return True
 
         ref_forward = variant.INFO["DP4"][0]
@@ -396,7 +395,7 @@ class VCF_mpileup_4dot1(VCFBase):
             # field equals "."
 
             # reference depth test for the reference allele
-            if count_reference < minimum_depth: #pragma: no cover
+            if count_reference < minimum_depth:  # pragma: no cover
                 return False
 
             # forward strand depth test for the reference allele

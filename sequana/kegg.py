@@ -26,7 +26,6 @@ class KEGGHelper:
     """A simple class to build kegg information"""
 
     def __init__(self):
-
         self.df = pd.read_csv(sequana_data("kegg.csv"), index_col=0)
         self.df.fillna("", inplace=True)
 

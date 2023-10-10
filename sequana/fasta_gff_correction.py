@@ -87,7 +87,6 @@ class FastaGFFCorrection:
 
         # let us open the output FastA file handler
         with open(outfile, "w") as fout:
-
             # we will keep track of shifts due to INDELs and their positions
             # for each chromosome. This information will be required if we also
             # want to correct the GFF file.
@@ -170,7 +169,6 @@ class FastaGFFCorrection:
 
         with open(gff_infile, "r") as fin, open(gff_outfile, "w") as fout:
             for line in fin:
-
                 # we can skip empty lines
                 if not line.strip():
                     continue
@@ -208,7 +206,6 @@ class FastaGFFCorrection:
                         if items[2] in ["gene", "CDS"]:
                             strand = items[6]
                             if strand == "+":
-
                                 # given a gene/CDS, first retrieve the start codon position
                                 # on the corrected sequence at start - 1 (-1 because python
                                 # uses 0-base convetion.
@@ -245,7 +242,6 @@ class FastaGFFCorrection:
                                 items[4] = str(stop_codon_position + 2)
 
                             elif strand == "-":
-
                                 # given a gene/CDS, first retrieve the start codon position
                                 # on the corrected sequence at start - 1 (-1 because python
                                 # uses 0-base convetion.
@@ -288,9 +284,11 @@ class FastaGFFCorrection:
 
     def find_start_codon_position(self, sequence, position, strand):
         """return position of start codon"""
- 
+
         try:
-            position, codon = self.codon.find_start_codon_position(sequence, position, strand, max_shift=self._start_codon_max_shift)
+            position, codon = self.codon.find_start_codon_position(
+                sequence, position, strand, max_shift=self._start_codon_max_shift
+            )
             return position
         except TypeError:
             logger.warning(f"Could not find start codon at position {position}. keep given position")
@@ -341,7 +339,6 @@ class FastaGFFCorrection:
             if ctg.name == chr_name:
                 seq = ctg.sequence
                 break
-
 
         d = defaultdict(int)
 

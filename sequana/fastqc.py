@@ -14,7 +14,6 @@ class FastQC:
     """
 
     def __init__(self):
-
         self.fastqc_data = {}
 
     def read_sample(self, filename, s_name):
@@ -27,7 +26,6 @@ class FastQC:
         temporary hack to read the sample data.
         """
         try:
-
             zz = zipfile.ZipFile(filename)
             file_contents = zz.open("{}{}".format(zz.namelist()[0], "fastqc_data.txt")).read().decode("utf8")
         except:
@@ -40,12 +38,10 @@ class FastQC:
         s_headers = None
         self.dup_keys = []
         for l in file_contents.splitlines():
-
-
-            # Hack to fix falco bug found in some versions where this 
+            # Hack to fix falco bug found in some versions where this
             # line is missing the # character in front of it
-            if l.startswith('Length\tCount'):
-                l = '#' + l
+            if l.startswith("Length\tCount"):
+                l = "#" + l
 
             if l == ">>END_MODULE":
                 section = None
@@ -70,7 +66,7 @@ class FastQC:
                 elif s_headers is not None:
                     s = l.split("\t")
                     row = dict()
-                    for (i, v) in enumerate(s):
+                    for i, v in enumerate(s):
                         v.replace("NaN", "0")
                         try:
                             v = float(v)
@@ -130,7 +126,6 @@ class FastQC:
         return int(bp)
 
     def plot_sequence_quality(self, max_score=40, ax=None):
-
         ymax = max_score + 1
         xmax = 0
         for sample in self.fastqc_data.keys():

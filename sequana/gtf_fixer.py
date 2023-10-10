@@ -27,7 +27,6 @@ class GTFFixer:
     """
 
     def __init__(self, filename):
-
         self.filename = filename
 
     def fix(self, output):

@@ -24,8 +24,7 @@ import colorlog
 logger = colorlog.getLogger(__name__)
 
 
-__all__ = ["VCFBase", "strand_ratio", "compute_frequency", "compute_strand_balance", 
-            "compute_fisher_strand_filter"]
+__all__ = ["VCFBase", "strand_ratio", "compute_frequency", "compute_strand_balance", "compute_fisher_strand_filter"]
 
 
 class VCFBase:
@@ -157,11 +156,11 @@ def compute_frequency(record):
 def compute_fisher_strand_filter(record):
     """Fisher strand filter (FS).
 
-    Sites where the numbers of reference/non-reference reads are highly correlated 
-    with the strands of the reads. Counting the number of reference reads on the forward 
-    strand and on the reverse strand, and the number of alternate reads on the forward and 
+    Sites where the numbers of reference/non-reference reads are highly correlated
+    with the strands of the reads. Counting the number of reference reads on the forward
+    strand and on the reverse strand, and the number of alternate reads on the forward and
     reverse strand should be equivalent. With these four numbers, we
-    construct a 2 x 2 contingency table and used the P-value from a Fisher’s exact test 
+    construct a 2 x 2 contingency table and used the P-value from a Fisher’s exact test
     to evaluate the correlation.
 
         from sequana import freebayes_vcf_filter
@@ -182,8 +181,10 @@ def compute_fisher_strand_filter(record):
 
     def _compute_FS(SAF, SAR, SRF, SRR):
         from sequana.lazy import scipy
-        stat, pvalue = scipy.stats.fisher_exact(table=[[SAF,SAR],[SRF, SRR]], alternative="two-sided")
+
+        stat, pvalue = scipy.stats.fisher_exact(table=[[SAF, SAR], [SRF, SRR]], alternative="two-sided")
         return pvalue
+
     FS = [_compute_FS(info["SAF"][i], info["SAR"][i], info["SRF"], info["SRR"]) for i in range(len(info["SAF"]))]
     return FS
 

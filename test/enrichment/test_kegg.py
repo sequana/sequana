@@ -16,7 +16,22 @@ def test_ke(tmpdir):
     from sequana import logger
 
     logger.setLevel("INFO")
-    ke = KEGGPathwayEnrichment(gene_lists, "eco", preload_directory=f"{test_dir}/data/kegg_pathways/")
+
+    # used genes should be all genes used in the analyses. We do not have it in this example, 
+    # so we just add up and down
+    ke = KEGGPathwayEnrichment(gene_lists, "eco", preload_directory=f"{test_dir}/data/kegg_pathways/",
+        used_genes = up+down)
+
+    # set background ourself
+    ke = KEGGPathwayEnrichment(gene_lists, "eco", preload_directory=f"{test_dir}/data/kegg_pathways/",
+        background=10000)
+
+    # let use use the kegg genes (no background, no used_genes)
+    ke = KEGGPathwayEnrichment(gene_lists, "eco", preload_directory=f"{test_dir}/data/kegg_pathways/",
+        )
+
+
+
 
     with pytest.raises(ValueError):
         ke.barplot("dummy")
@@ -36,3 +51,8 @@ def test_ke(tmpdir):
     # save all pathways (same as input)
     path = tmpdir.mkdir("pathways_tmp")
     ke.save_pathways(str(path))
+
+    ke.save_project("TEST", outdir=path)
+
+
+

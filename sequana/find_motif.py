@@ -72,7 +72,6 @@ class FindMotif:
         self.window = window
 
     def find_motif_from_sequence(self, seq, motif, window=None, local_threshold=None):
-
         if local_threshold is None:
             local_threshold = self.local_threshold
 
@@ -153,7 +152,6 @@ class FindMotif:
         windows=[10, 50, 100, 150, 200, 250, 500, 1000],
         local_threshold=5,
     ):
-
         found = None
         bam = BAM(bamfile)
         for aln in bam:

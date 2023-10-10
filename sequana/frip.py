@@ -39,7 +39,7 @@ class FRiP:
         self.df = PandasReader(filename, sep=",").df
 
     def plot(self):
-        """scatter plot of FRiP versus Reads in peaks """
+        """scatter plot of FRiP versus Reads in peaks"""
 
         pylab.clf()
         MX = self.df.FRiP.max()
@@ -56,7 +56,6 @@ class FRiP:
         pylab.ylim(0, pylab.ylim()[1])
         try:
             pylab.tight_layout()
-        except Exception: #pragma: no cover
+        except Exception:  # pragma: no cover
             pass
         pylab.grid()
-

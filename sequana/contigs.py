@@ -64,7 +64,6 @@ class ContigsBase(object):
         pylab.xlim(0, self.df["length"].max() + 10)
 
     def scatter_length_cov_gc(self, min_length=200, min_cov=10, grid=True, logy=False, logx=True):
-
         """Plot scatter length versus GC content
 
         :param min_length: add vertical line to indicate possible
@@ -112,7 +111,6 @@ class Contigs(ContigsBase):
     """
 
     def __init__(self, filename, mode="canu"):
-
         """.. rubric:: **Constructor**
 
         :param filename: input FastA file

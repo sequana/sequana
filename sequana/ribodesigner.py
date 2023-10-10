@@ -78,7 +78,7 @@ class RiboDesigner(object):
         else:
             try:
                 self.outdir.mkdir()
-            except FileExistsError as err: #pragma: no cover
+            except FileExistsError as err:  # pragma: no cover
                 logger.error(f"Output directory {output_directory} exists. Use --force or set force=True")
                 sys.exit(1)
 
@@ -109,7 +109,6 @@ class RiboDesigner(object):
 
         with pysam.Fastafile(self.fasta) as fas:
             with open(self.ribo_sequences_fasta, "w") as fas_out:
-
                 for row in filtered_gff.itertuples():
                     region = f"{row.seqid}:{row.start}-{row.end}"
                     seq_record = f">{region}\n{fas.fetch(region=region)}\n"
@@ -140,7 +139,9 @@ class RiboDesigner(object):
             if ((seq_len + inter_probe_space) / (probe_len + inter_probe_space)).is_integer():
                 return probe_len, inter_probe_space
 
-        raise ValueError(f"No correct probe length/inter probe space combination was found for {seq.name}") #pragma: no cover
+        raise ValueError(
+            f"No correct probe length/inter probe space combination was found for {seq.name}"
+        )  # pragma: no cover
 
     def _get_probes_df(self, seq, probe_len, step_len):
         """Generate the Dataframe with probes information.
@@ -185,7 +186,6 @@ class RiboDesigner(object):
 
         with pysam.FastxFile(self.ribo_sequences_fasta) as fas:
             for seq in fas:
-
                 probe_len, step_len = self._get_probe_and_step_len(seq)
                 probes_dfs.append(self._get_probes_df(seq, probe_len, step_len))
 
@@ -228,7 +228,6 @@ class RiboDesigner(object):
         res_dict = {"seq_id_thres": [], "n_probes": []}
 
         for seq_id_thres in np.arange(0.8, 1, self.identity_step).round(3):
-
             tmp_fas = outdir / f"clustered_{seq_id_thres}.fas"
             cmd = f"cd-hit-est -i {self.probes_fasta} -o {tmp_fas} -c {seq_id_thres} -n {self.threads}"
             logger.debug(f"Clustering probes with command: {cmd} (log in '{log_file}').")
@@ -249,7 +248,8 @@ class RiboDesigner(object):
         pylab.clf()
         df = pd.DataFrame(res_dict)
 
-        import seaborn as sns # local import to speed up imports
+        import seaborn as sns  # local import to speed up imports
+
         p = sns.lineplot(data=df, x="seq_id_thres", y="n_probes", markers=["o"])
         p.axhline(self.max_n_probes, alpha=0.8, linestyle="--", color="red", label="max number of probes requested")
         pylab.xlabel("Sequence identity", fontsize=16)
@@ -306,7 +306,6 @@ class RiboDesigner(object):
             json.dump(self.json, fout, indent=4, sort_keys=True)
 
     def run(self):
-
         if self.gff:
             self.get_rna_pos_from_gff()
         else:

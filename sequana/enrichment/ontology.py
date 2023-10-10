@@ -16,7 +16,6 @@ class Ontology:
     """Simple place holder for ontology information"""
 
     def __init__(self):
-
         self.ontologies = [
             "GO:0003674",
             "GO:0008150",

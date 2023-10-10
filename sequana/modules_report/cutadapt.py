@@ -153,10 +153,7 @@ class CutadaptModule(SequanaBaseModule):
             self.jinja["%sreads_kept_percent" % prefix],
         ]
         if self.mode != "pe":
-            df.index = [
-                this.replace("paired", "").replace("Pairs", "Reads")
-                for this in df.index
-            ]
+            df.index = [this.replace("paired", "").replace("Pairs", "Reads") for this in df.index]
         return df
 
     def _get_stat_section(self):
@@ -182,9 +179,7 @@ class CutadaptModule(SequanaBaseModule):
         return html
 
     def add_stat_section(self):
-        self.sections.append(
-            {"name": "Stats", "anchor": "stats", "content": self._get_stat_section()}
-        )
+        self.sections.append({"name": "Stats", "anchor": "stats", "content": self._get_stat_section()})
 
     def add_adapters_section(self):
         # Create a Table with adapters
@@ -251,12 +246,8 @@ class CutadaptModule(SequanaBaseModule):
         command = self.jinja["command"]
 
         html = "<p>Data type: {}  </p>".format(self.jinja["mode"])
-        html += '<div style="textwidth:80%">Command: <pre>{}</pre></div>'.format(
-            command
-        )
-        self.sections.append(
-            {"name": "Data and command used", "anchor": "cutadapt", "content": html}
-        )
+        html += '<div style="textwidth:80%">Command: <pre>{}</pre></div>'.format(command)
+        self.sections.append({"name": "Data and command used", "anchor": "cutadapt", "content": html})
 
     def add_histogram_section(self):
         """Show only histograms with at least 3 counts"""
@@ -285,9 +276,7 @@ class CutadaptModule(SequanaBaseModule):
                 pylab.savefig(filename)
                 pylab.close()  # need to close the figure otherwise warnings
 
-            imagehtml = self.create_embedded_png(
-                plotter, "filename", style="width:45%", key=key
-            )
+            imagehtml = self.create_embedded_png(plotter, "filename", style="width:45%", key=key)
             html += imagehtml
         html += "</div>\n"
 
@@ -296,8 +285,7 @@ class CutadaptModule(SequanaBaseModule):
             {
                 "name": "Histogram",
                 "anchor": "histogram",
-                "content": "<p>Here are the most representative/significant adapters found in the data</p>"
-                + html,
+                "content": "<p>Here are the most representative/significant adapters found in the data</p>" + html,
             }
         )
 
@@ -403,8 +391,8 @@ class CutadaptModule(SequanaBaseModule):
                     # possible
                     df = pd.read_csv(io.StringIO(current_hist), sep="\t")
 
-                    #cast the 'error counts' that must be coherent for future concatenation
-                    df = df.astype({'error counts': str})
+                    # cast the 'error counts' that must be coherent for future concatenation
+                    df = df.astype({"error counts": str})
 
                     # reinitiate the variables
                     if cutadapt_mode != "b":
@@ -422,9 +410,7 @@ class CutadaptModule(SequanaBaseModule):
 
                             scanning_histogram = False
 
-                            dfs[name] = (
-                                dfs[name].reset_index().groupby("length").aggregate(sum)
-                            )
+                            dfs[name] = dfs[name].reset_index().groupby("length").aggregate(sum)
                         else:
                             dfs[name] = df.set_index("length")
                             scanning_histogram = True
@@ -513,37 +499,21 @@ class CutadaptModule(SequanaBaseModule):
             return "({}%)".format(100 * int(round(value, 3) * 1000) / 1000.0)
 
         self.jinja["%stotal_reads" % prefix] = N
-        self.jinja["%sreads1_with_adapters" % prefix] = str(
-            cutter["records_with_adapters"][0]
-        )
-        self.jinja["%sreads1_with_adapters_percent" % prefix] = _format(
-            cutter["fraction_records_with_adapters"][0]
-        )
+        self.jinja["%sreads1_with_adapters" % prefix] = str(cutter["records_with_adapters"][0])
+        self.jinja["%sreads1_with_adapters_percent" % prefix] = _format(cutter["fraction_records_with_adapters"][0])
         # duplicated reads1 in reads for the single-end cae
         # This should be clean but is required for now to be compatibl
         # with the code used with cutadapt
-        self.jinja["%sreads_with_adapters" % prefix] = str(
-            cutter["records_with_adapters"][0]
-        )
-        self.jinja["%sreads_with_adapters_percent" % prefix] = _format(
-            cutter["fraction_records_with_adapters"][0]
-        )
+        self.jinja["%sreads_with_adapters" % prefix] = str(cutter["records_with_adapters"][0])
+        self.jinja["%sreads_with_adapters_percent" % prefix] = _format(cutter["fraction_records_with_adapters"][0])
 
         if self.mode == "pe":
-            self.jinja["%sreads2_with_adapters" % prefix] = cutter[
-                "records_with_adapters"
-            ][1]
-            self.jinja["%sreads2_with_adapters_percent" % prefix] = _format(
-                cutter["fraction_records_with_adapters"][1]
-            )
+            self.jinja["%sreads2_with_adapters" % prefix] = cutter["records_with_adapters"][1]
+            self.jinja["%sreads2_with_adapters_percent" % prefix] = _format(cutter["fraction_records_with_adapters"][1])
         self.jinja["%sreads_too_short" % prefix] = filters["records_filtered"]
-        self.jinja["%sreads_too_short_percent" % prefix] = _format(
-            filters["fraction_records_filtered"]
-        )
+        self.jinja["%sreads_too_short_percent" % prefix] = _format(filters["fraction_records_filtered"])
         self.jinja["%sreads_kept" % prefix] = formatters["records_written"]
-        self.jinja["%sreads_kept_percent" % prefix] = _format(
-            formatters["fraction_records_written"]
-        )
+        self.jinja["%sreads_kept_percent" % prefix] = _format(formatters["fraction_records_written"])
 
         self.jinja["command"] = "{} {} {}".format(
             "atropos", data["options"]["action"], " ".join(data["options"]["orig_args"])

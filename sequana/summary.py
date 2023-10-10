@@ -28,7 +28,7 @@ from sequana.utils.datatables_js import DataTable
 __all__ = ["Summary"]
 
 
-class MultiSummary(object): #pragma: no cover
+class MultiSummary(object):  # pragma: no cover
     """Helper class to read several json and create summary plots and HTML
     content"""
 
@@ -124,7 +124,6 @@ class Summary(object):
     """
 
     def __init__(self, name, sample_name="undefined", data={}, caller=None, pipeline_version=None):
-
         if os.path.exists(name) and name.endswith("json"):
             with open(name, "r") as fin:
                 data = json.loads(fin.read())

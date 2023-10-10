@@ -294,7 +294,6 @@ class SummaryModule2(SummaryBase):
     def get_table_versions(self):
         """Return third party tools from the requirements.txt and their versions."""
 
-
         # if no version.txt is found, return nothing
         if os.path.exists(".sequana/versions.txt") is False:
             return ""
@@ -333,7 +332,6 @@ class SummaryModule2(SummaryBase):
 
         req = self.create_link("requirements", ".sequana/env.yml")
 
-
         content = (
             "<p>Third party tools can be found within containers (see config file) if you use --use-apptainers options. Otherwise, here is a list of required dependencies and their versions.</p>"
             "<p>{3}</p>"
@@ -350,7 +348,6 @@ class SummaryModule2(SummaryBase):
         )
 
     def caller(self):
-
         try:
             with open(".sequana/info.txt") as fin:
                 command = fin.readlines()
