@@ -136,7 +136,6 @@ class Fitting(object):
         hist_kw={"color": "#5F9EA0", "edgecolor": "k"},
         ax=None,
     ):
-
         if ax:
             ax.hist(self.data, normed=normed, bins=bins, **hist_kw)
         else:
@@ -157,7 +156,6 @@ class Fitting(object):
         import scipy.stats as ss
 
         for i in range(self.k):
-
             mu, sigma, pi_ = self.results.mus[i], self.results.sigmas[i], self.results.pis[i]
             if ax:
                 ax.plot(X, [pi_ * ss.norm.pdf(x, mu, sigma) for x in X], "k--", alpha=0.7, lw=2)

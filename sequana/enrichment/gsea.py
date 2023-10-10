@@ -59,7 +59,7 @@ class GSEA:
                 verbose=verbose,
                 background=background,
                 outdir=outdir.name,
-                no_plot=self.no_plot
+                no_plot=self.no_plot,
             )
             if len(enr.results):
                 enr.results["Genes"] = [";".join(sorted(x.split(";"))) for x in enr.results["Genes"].values]
@@ -67,8 +67,8 @@ class GSEA:
         except ValueError:
             # if no hits, newest gseapy version will raise a ValueError
             from collections import namedtuple
-            
-            enrich = namedtuple('MyStruct', 'results')
-            enr = enrich(results=pd.DataFrame({'Genes':[], 'size':[], 'Term':[]}))
+
+            enrich = namedtuple("MyStruct", "results")
+            enr = enrich(results=pd.DataFrame({"Genes": [], "size": [], "Term": []}))
 
         return enr

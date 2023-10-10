@@ -74,7 +74,6 @@ class MACS3Reader:
     """
 
     def __init__(self, filename):
-
         # .xls is not stuctured similarly to .narrowPeak
         if filename.endswith(".xls"):
             #
@@ -228,7 +227,6 @@ class PeakConsensus:
         return df
 
     def plot_venn(self, title="", labels=[]):
-
         plot_venn(
             (
                 set(self.df_merged.query("category in ['first', 'both']").index),
@@ -238,7 +236,7 @@ class PeakConsensus:
         )
 
     def to_saf(self, filename):
-        """For now, all strand are categorised as strand + . 
+        """For now, all strand are categorised as strand + .
         strand not used in the pipeline for now."""
         df = self.df_merged.reset_index()
         df["strand"] = "+"

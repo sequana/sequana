@@ -57,7 +57,6 @@ class MGI:
             pylab.plot(self.df[this] / N * 100, label=this)
 
     def boxplot_quality(self, color_line="r", bgcolor="grey", color="yellow", lw=4, hold=False, ax=None):
-
         quality = self.df[[str(x) for x in range(42)]]  # not sure why we have phred score from 0 to 41
         N = self.metadata["ReadNum"]
         proba = quality / N

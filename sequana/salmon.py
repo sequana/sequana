@@ -44,7 +44,6 @@ class Salmon:
         # genes2trs is a dict with one gene sas key and a list of transcripts
 
     def get_feature_counts(self, feature=None, attribute=None):
-
         if self.df.Name.iloc[0].startswith("transcript:"):
             logger.info("salmon results start with transcript: tag. Eukaryotes mode")
             logger.info("Identifying the mapping transcript vs genes")
@@ -56,7 +55,6 @@ class Salmon:
         return results
 
     def get_feature_counts_eukaryotes(self, feature=None, attribute=None):
-
         if feature is None:
             feature = "gene"
 
@@ -229,7 +227,7 @@ star:
 
             if abs(length - length2) > 5:
                 logger.warning(f"GFF and salmon length for for {name} are quite different: {length} and {length2}")
-                #raise ValueError("length in gff and quant not the same")
+                # raise ValueError("length in gff and quant not the same")
             NumReads = int(self.df.query("Name==@name")["NumReads"].values[0])
             if name.startswith("gene"):
                 results += f"\n{name}\t{seqid}\t{starts}\t{stops}\t{strands}\t{length}\t{NumReads}"

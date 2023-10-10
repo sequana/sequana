@@ -21,7 +21,6 @@ logger = colorlog.getLogger(__name__)
 
 
 def sniffer(filename):
-
     try:
         if is_sam(filename):
             return "SAM"

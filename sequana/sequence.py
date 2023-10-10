@@ -183,7 +183,6 @@ class DNA(Sequence):
         codons_start=["ATG"],
         codons_start_rev=["CAT"],
     ):
-
         super(DNA, self).__init__(sequence, complement_in=b"ACGT", complement_out=b"TGCA", letters="ACGTN")
 
         self._window = None
@@ -295,7 +294,7 @@ class DNA(Sequence):
 
             i += 1
 
-            if i % 500000 == 0: #pragma: no cover
+            if i % 500000 == 0:  # pragma: no cover
                 logger.info("%d / %d" % (i, self.__len__()))
             # if in and out are the same : do nothing, append same result
             if out_nuc != in_nuc:
@@ -354,7 +353,7 @@ class DNA(Sequence):
         self._ignored_nuc = 1.0 - GC_content_total - AT_content_total
 
     def _get_AT_skew(self):
-        if self._AT_skew_slide is None: #pragma: no cover
+        if self._AT_skew_slide is None:  # pragma: no cover
             raise AttributeError("Please set a valid window to compute skew")
         else:
             return self._AT_skew_slide
@@ -362,19 +361,19 @@ class DNA(Sequence):
     AT_skew = property(_get_AT_skew)
 
     def _get_GC_skew(self):
-        if self._GC_skew_slide is None: #pragma: no cover
+        if self._GC_skew_slide is None:  # pragma: no cover
             raise AttributeError("Please set a valid window to compute skew")
         else:
             return self._GC_skew_slide
 
     GC_skew = property(_get_GC_skew)
 
-    def _create_template_fft(self, M=1000): #pragma: no cover
+    def _create_template_fft(self, M=1000):  # pragma: no cover
         M_3 = int(M / 3)
         W = [-0.5] * M_3 + list(np.linspace(-0.5, 0.5, M - 2 * M_3)) + [0.5] * M_3
         return list(W * np.hanning(M))
 
-    def _myfft_gc_skew(self, M): #pragma: no cover
+    def _myfft_gc_skew(self, M):  # pragma: no cover
         """
         x : GC_skew vector (list)
         param N: length of the GC skew vector
@@ -399,7 +398,7 @@ class DNA(Sequence):
         self._c_fft = c * 2.0 / N
 
     def plot_all_skews(self, figsize=(10, 12), fontsize=16, alpha=0.5):
-        if self._window is None: #pragma: no cover
+        if self._window is None:  # pragma: no cover
             raise AttributeError("Please set a valid window to compute skew")
 
         # create figure

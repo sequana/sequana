@@ -58,7 +58,6 @@ class DoubleThresholds(object):
     """
 
     def __init__(self, low=-3, high=3, ldtr=0.5, hdtr=0.5):
-
         assert ldtr >= 0.0 and ldtr <= 1.0, "ldrt parameter (low double threshold ratio) must be in [0,1]"
         assert hdtr >= 0.0 and hdtr <= 1.0, "hdrt parameter (high double threshold ratio) must be in [0,1]"
         assert low < 0, "low threshold must be negative"
@@ -748,7 +747,7 @@ class ChromosomeCov(object):
                 df.index = df["pos"]
                 # append
                 if binned_df is not None:
-                    binned_df = pd.concat([binned_df,df])
+                    binned_df = pd.concat([binned_df, df])
                 else:
                     binned_df = df
                 if N > 1:
@@ -1010,7 +1009,6 @@ class ChromosomeCov(object):
 
         # if len data > 100,000 select 100,000 data points randomly
         if len(data) > 100000:
-
             indices = random.sample(range(len(data)), 100000)
             data = [data.iloc[i] for i in indices]
 
@@ -1172,7 +1170,6 @@ class ChromosomeCov(object):
             sys.exit(1)
 
     def plot_rois(self, x1, x2, set_ylimits=False, rois=None, fontsize=16, color_high="r", color_low="g", clf=True):
-
         if rois is None:
             rois = self.rois
 
@@ -1573,7 +1570,6 @@ class ChromosomeCov(object):
             return {"X": [], "Y": []}
 
     def get_summary(self, C3=None, C4=None, stats=None, caller="sequana.bedtools"):
-
         if stats is None:
             stats = self.get_stats()
 

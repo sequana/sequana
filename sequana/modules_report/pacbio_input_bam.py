@@ -98,9 +98,7 @@ class PacbioInputBAMModule(SequanaBaseModule):
         html_tab = table.create_datatable(float_format="%d")
         html = "{} {}".format(html_tab, js)
 
-        self.sections.append(
-            {"name": "Basic stats on read length", "anchor": "table", "content": html}
-        )
+        self.sections.append({"name": "Basic stats on read length", "anchor": "table", "content": html})
 
     def add_png(self, key):
         text = ""

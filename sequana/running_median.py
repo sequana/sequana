@@ -151,7 +151,6 @@ class RunningMedian:
         return self.run()
 
     def run(self):
-
         # initialise with first W values and sort the values
         lc = self.container(self.data[: self.W])
         lc.sort()  #

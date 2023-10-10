@@ -34,7 +34,7 @@ logger = colorlog.getLogger(__name__)
 from sequana.utils.datatables_js import DataTable
 
 
-class PhixModule(SequanaBaseModule): #pragma: no cover (used in sequana_quality_control)
+class PhixModule(SequanaBaseModule):  # pragma: no cover (used in sequana_quality_control)
     """Write HTML report of fastq stats analysis."""
 
     def __init__(self, input_directory, output_filename=None, tag_R1="_R1_"):
@@ -74,9 +74,7 @@ class PhixModule(SequanaBaseModule): #pragma: no cover (used in sequana_quality_
         self.add_stats()
 
     def _get_files(self, pattern):
-        filenames = glob.glob(
-            os.sep.join([self.directory, self.phix_directory, pattern])
-        )
+        filenames = glob.glob(os.sep.join([self.directory, self.phix_directory, pattern]))
 
         if len(filenames) == 2:
             mode = "pe"
@@ -85,9 +83,7 @@ class PhixModule(SequanaBaseModule): #pragma: no cover (used in sequana_quality_
         elif len(filenames) == 0:
             return
         else:
-            logger.warning(
-                "PhixModule: more than 4 files " "matched the pattern %s" % pattern
-            )
+            logger.warning("PhixModule: more than 4 files " "matched the pattern %s" % pattern)
             return
         return filenames, mode
 
@@ -101,16 +97,13 @@ class PhixModule(SequanaBaseModule): #pragma: no cover (used in sequana_quality_
         from easydev import precision
 
         data = self._get_summary()
-        html = "Percentage of reads found with Phix: %s %%<br>" % precision(
-            data["contamination"], 3
-        )
+        html = "Percentage of reads found with Phix: %s %%<br>" % precision(data["contamination"], 3)
         # html += "Unpaired: %s <br>" % data['unpaired']
         # html += "duplicated: %s <br>" % data['duplicated']
         return html
 
     def _get_stats(self):
         filenames, mode = self._get_files("*.json")
-
 
         cols = [
             "A",

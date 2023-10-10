@@ -23,7 +23,6 @@ class CNVnator(object):
     """Reader of the CNVnator output file."""
 
     def __init__(self, filename):
-
         self.filename = filename
 
         self.df = pd.read_csv(filename, sep="\t", header=None)
@@ -36,7 +35,6 @@ class CNVnator(object):
         self.df["name"] = name
 
     def plot(self, chr_name, x1=None, x2=None, Y=20):
-
         df = self.df.query("name == @chr_name")
         for _, item in df.iterrows():
             if item["type"] == "deletion":

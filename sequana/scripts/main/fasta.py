@@ -33,9 +33,8 @@ logger = colorlog.getLogger(__name__)
     help="filename where to save results. to be used with --head, --tail",
 )
 @click.option("--count-sequences", is_flag=True)
-@click.option("--head", type=click.INT, help="number of sequences to extract from the head")
-@click.option("--merge", is_flag=True, help="merge all compressed input fastq files into a single file")
-@click.option("--tail", type=click.INT, help="number of reads to extract from the tail")
+@click.option("--merge", is_flag=True, help="merge all compressed input fasta files into a single file")
+@click.option("--save-contig-name", help="save sequence corresponding to this contig name")
 @click.option("--explode", is_flag=True, help="Create a fasta file for each sequence found in the original files")
 def fasta(**kwargs):
     """Set of useful utilities for FastA manipulation."""
@@ -71,3 +70,7 @@ def fasta(**kwargs):
         for filename in filenames:
             f = FastA(filename)
             f.explode()
+    elif kwargs["save_contig_name"]:
+        f = FastA(filename)
+        outname = kwargs["output"]
+        f.save_ctg_to_fasta(kwargs["save_contig_name"], outname)

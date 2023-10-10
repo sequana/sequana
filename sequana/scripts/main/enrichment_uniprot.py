@@ -123,7 +123,7 @@ def enrichment_uniprot(**kwargs):
 
 
     """
-    valid = {"MF", "BP",  "CC"}
+    valid = {"MF", "BP", "CC"}
 
     ontologies = eval(kwargs["ontologies"])
     for ontology in ontologies:
@@ -162,7 +162,6 @@ def enrichment_uniprot(**kwargs):
     rnadiff._alpha = params["padj"]
     gene_lists = rnadiff.get_gene_lists(annot_col=annot_col, Nmax=kwargs.get("max_genes", None), dropna=True)
 
-
     output_directory = kwargs["output_directory"]
     os.makedirs(output_directory, exist_ok=True)
 
@@ -173,30 +172,29 @@ def enrichment_uniprot(**kwargs):
         ue = UniprotEnrichment(gene_dict, 235443)
         ue.compute_enrichment()
 
-        for x in itertools.product(['up', 'down', 'all'], ['CC', 'BP', 'MF']):
+        for x in itertools.product(["up", "down", "all"], ["CC", "BP", "MF"]):
             mode, ont = x
             df = ue.plot_go_terms(mode, ontologies=[ont])
             if df is not None and len(df):
                 from pylab import savefig
-                savefig(f"{output_directory}/{compa}/plot_{mode}_{ont}.png", dpi=200)
-                ue.save_chart(df, f'{output_directory}/{compa}/chart_{mode}_{ont}.png')
-                df.to_csv(f'{output_directory}/{compa}/{mode}_{ont}.csv', sep=",")
 
+                savefig(f"{output_directory}/{compa}/plot_{mode}_{ont}.png", dpi=200)
+                ue.save_chart(df, f"{output_directory}/{compa}/chart_{mode}_{ont}.png")
+                df.to_csv(f"{output_directory}/{compa}/{mode}_{ont}.csv", sep=",")
 
         stats = {"taxon": taxon}
         stats["taxon_name"] = ue.taxon_name
-        stats["up"] = len(gene_dict['up'])
-        stats["down"] = len(gene_dict['down'])
-        stats["all"] = len(gene_dict['all'])
+        stats["up"] = len(gene_dict["up"])
+        stats["down"] = len(gene_dict["down"])
+        stats["all"] = len(gene_dict["all"])
         stats["name"] = compa
         with open(f"{output_directory}/{compa}/summary.json", "w") as fout:
             json.dump(stats, fout, indent=True)
-
 
         ModuleUniprotEnrichment(
             gene_dict,
             stats,
             enrichment_params=params,
             command=" ".join(["sequana"] + sys.argv[1:]),
-             ontologies=["CC", "BP", "MF"],
+            ontologies=["CC", "BP", "MF"],
         )

@@ -60,10 +60,10 @@ samtools sort -o REFERENCE.sorted.bam  REFERENCE.bam
     elif file1 is None:
         raise ValueError("--file1 must be used")
 
-    S = sum([len(this['sequence']) for this in FastQ(file1)])
+    S = sum([len(this["sequence"]) for this in FastQ(file1)])
 
     if file2:
-        S += sum([len(this['sequence']) for this in FastQ(file2)])
+        S += sum([len(this["sequence"]) for this in FastQ(file2)])
 
     ref = FastA(reference)
     coverage = float(S) / len(ref.sequences[0])

@@ -20,16 +20,17 @@
 from sequana.plots.canvasjs_base import CanvasJS
 
 import colorlog
+
 logger = colorlog.getLogger(__name__)
 
 
-
 class CanvasJSLineGraph(CanvasJS):
-    """ Class to create a CanvasJS linegraphe for an HTML page. It creates a
+    """Class to create a CanvasJS linegraphe for an HTML page. It creates a
     hidden pre section with your CSV. It is necessary embedded because browsers
     forbid the reading of data stored locally. Your html page need CanvasJS and
     PapaParse.
     """
+
     def __init__(self, csv, html_id, x_column, y_columns):
         """.. rubric:: constructor
 
@@ -46,28 +47,26 @@ class CanvasJSLineGraph(CanvasJS):
         self.y_columns = y_columns
         # create hidden csv
         self.html_cjs = self._create_hidden_csv()
-        self.html_cjs += '<script type="text/javascript">{0}\n'.format(
-            self._create_js_csv_parser())
+        self.html_cjs += '<script type="text/javascript">{0}\n'.format(self._create_js_csv_parser())
 
     def _create_hidden_csv(self):
-        """ Return the HTML code and the CSV code for your hidden CSV section.
-        """
+        """Return the HTML code and the CSV code for your hidden CSV section."""
         html = '<pre id="{0}">{1}</pre>'.format(self.html_id, self.csv)
-        css = '<style>#{0}{{display:none}}</style>'.format(self.html_id)
-        return '{0}\n{1}\n'.format(html, css)
+        css = "<style>#{0}{{display:none}}</style>".format(self.html_id)
+        return "{0}\n{1}\n".format(html, css)
 
     def _create_js_csv_parser(self):
-        """ Create the efficient javascript csv parser with PapaParse.
-        """
+        """Create the efficient javascript csv parser with PapaParse."""
         # Create variable name
         variable = ["data_{0}".format(name) for name in self.y_columns]
         # Create variable for javascript array
         init_var = ["var {0} = [];".format(name) for name in variable]
         init_var = "\n".join(init_var)
         # Fill arrays
-        fill_array = ["{0}.push({{x: curow.{1}, y: curow.{2}}});".format(v,
-                      self.x_column, n) for n, v in
-                      zip(self.y_columns, variable)]
+        fill_array = [
+            "{0}.push({{x: curow.{1}, y: curow.{2}}});".format(v, self.x_column, n)
+            for n, v in zip(self.y_columns, variable)
+        ]
         fill_array = "\n".join(fill_array)
         self.variables = ", ".join(variable)
         function = """
@@ -91,12 +90,14 @@ class CanvasJSLineGraph(CanvasJS):
             }}
         }});
     }};
-        """.format(self.html_id, init_var, fill_array, self.variables)
-        self.data_section = [{'dataPoints': var} for var in variable]
+        """.format(
+            self.html_id, init_var, fill_array, self.variables
+        )
+        self.data_section = [{"dataPoints": var} for var in variable]
         return function
 
     def set_axis_x(self, axis_attr=dict()):
-        """ Method to configure X axis of the line graph.
+        """Method to configure X axis of the line graph.
 
         :param dict axis_attr: dictionary with canvasjs axisX
             Attributes.
@@ -119,7 +120,7 @@ class CanvasJSLineGraph(CanvasJS):
         self._set_axis("axisX", axis_attr)
 
     def set_axis_y(self, axis_attr=dict()):
-        """ Method to configure first axis Y of the line graph.
+        """Method to configure first axis Y of the line graph.
 
         :param dict axis_attr: dictionary with canvasjs axisY
             Attributes.
@@ -138,10 +139,10 @@ class CanvasJSLineGraph(CanvasJS):
                                    'titleFontColor': '#5BC0DE',
                                    'labelFontColor': '#5BC0DE'})
         """
-        self._set_axis('axisY', axis_attr)
+        self._set_axis("axisY", axis_attr)
 
     def set_axis_y2(self, axis_attr=dict()):
-        """ Method to configure second axis Y of the line graph.
+        """Method to configure second axis Y of the line graph.
 
         :param dict axis_attr: dictionary with canvasjs axisY
             Attributes.
@@ -161,10 +162,10 @@ class CanvasJSLineGraph(CanvasJS):
                 'titleFontColor': '#5BC0DE',
                 'labelFontColor': '#5BC0DE'})
         """
-        self._set_axis('axisY2', axis_attr)
+        self._set_axis("axisY2", axis_attr)
 
     def create_canvasjs(self):
-        """ Method to convert all section as javascript function.
+        """Method to convert all section as javascript function.
 
         Return a string which contains command line to launch generation of plot,
         js function to create CanvasJS object and the html div that contains
@@ -189,6 +190,8 @@ class CanvasJSLineGraph(CanvasJS):
         processData_{0}(csv_{0});
     }});
 </script>
-        """.format(self.html_id)
+        """.format(
+            self.html_id
+        )
         js += self.create_div_chart_container("height: 450px; width: 100%;")
         return js

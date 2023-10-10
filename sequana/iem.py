@@ -116,7 +116,6 @@ class IEM:
         return line
 
     def _scanner(self):
-
         current_section = None
         data = collections.defaultdict(list)
         with open(self.filename, "r") as fin:
@@ -139,7 +138,6 @@ class IEM:
         self.data = data
 
     def _get_df(self):
-
         df = pd.read_csv(io.StringIO("\n".join(self.data["Data"])))
         if len(df.columns) == 0:
             raise ValueError("Invalid sample sheet in the Data section")
@@ -234,7 +232,7 @@ class IEM:
 
         # check that indices are unique
         if "index2" in self.df.columns:
-            indices = self.df["index"] + "," + self.df['index2']
+            indices = self.df["index"] + "," + self.df["index2"]
         else:
             indices = self.df["index"]
 
@@ -322,7 +320,6 @@ class IEM:
         with open(self.filename) as fin:
             with open(output_filename, "w") as fout:
                 for line in fin.readlines():
-
                     if line.startswith("[Data]"):
                         found_data = True
 

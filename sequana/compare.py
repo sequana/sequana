@@ -52,7 +52,6 @@ class RNADiffCompare(Compare):
     """
 
     def __init__(self, *args, design=None):
-
         self.rns = []
         for rnadiff_csv in args:
             if isinstance(rnadiff_csv, RNADiffTable):
@@ -61,7 +60,7 @@ class RNADiffCompare(Compare):
                 self.rns.append(RNADiffTable(rnadiff_csv))
             else:
                 raise NotImplementedError
-    
+
         # aliases
         self.r1 = self.rns[0]
         self.r2 = self.rns[1]
@@ -81,7 +80,6 @@ class RNADiffCompare(Compare):
             logger.info(f"Two sets are not equal. Kept {len(self.r1.df)} in common")
 
     def plot_venn_down(self, labels=None, ax=None, title="Down expressed genes", mode="all", l2fc=0):
-
         assert l2fc <= 0, "l2fc must be negative"
         kargs = {}
         kargs["title"] = title
@@ -117,7 +115,6 @@ class RNADiffCompare(Compare):
         self._venn(**kargs)
 
     def _venn(self, data1, data2, labels=None, ax=None, title="expressed genes"):
-
         from sequana.viz.venn import plot_venn
 
         if labels is None:
@@ -126,7 +123,6 @@ class RNADiffCompare(Compare):
         plot_venn([data1, data2], labels=labels, ax=ax, title=title)
 
     def plot_venn_all(self, labels=None, ax=None, title="all expressed genes", mode="all"):
-
         kargs = {}
         kargs["title"] = title
         kargs["labels"] = labels
@@ -214,7 +210,6 @@ class RNADiffCompare(Compare):
             except:
                 pass
             pylab.plot(X, I, "o-", label=str(padj))
-
 
         ax = pylab.gca()
         ax.set_ylabel("Jaccard similarity (intersection/union)")
@@ -352,7 +347,6 @@ class RNADiffCompare(Compare):
     def plot_volcano_differences(self, mode="all"):
         cond1, cond2 = "cond1", "cond2"
         labels = [cond1, cond2]
-
 
         A = self.r1.df.loc[self.r1.gene_lists[mode]]
         B = self.r2.df.loc[self.r2.gene_lists[mode]]
@@ -532,9 +526,13 @@ class RNADiffCompare(Compare):
         fig = pylab.gcf()
         fig.canvas.mpl_connect("pick_event", onpick)
 
-
-    def plot_geneset(self, indices, showlines=True, showdots=True, 
-            colors={'bodies': "blue", "cbars":"k", "dot":'blue', "cmins": "k", "cmaxes":"k"}):
+    def plot_geneset(
+        self,
+        indices,
+        showlines=True,
+        showdots=True,
+        colors={"bodies": "blue", "cbars": "k", "dot": "blue", "cmins": "k", "cmaxes": "k"},
+    ):
         """indices is a list that represents a gene sets
 
 
@@ -560,25 +558,25 @@ class RNADiffCompare(Compare):
         from pylab import violinplot, xticks, clf, plot, ylabel, axhline
 
         N = len(self.rns)
-        data = [self.rns[i].df.loc[indices]['log2FoldChange'].values for i in range(0, N)]
+        data = [self.rns[i].df.loc[indices]["log2FoldChange"].values for i in range(0, N)]
 
         clf()
         axhline(0, color="k", ls="--", zorder=-1)
         vp = violinplot(data)
-        for x in vp['bodies']:
+        for x in vp["bodies"]:
             x.set_color(colors["bodies"])
-        vp['cbars'].set_color(colors["cbars"])
-        vp['cmins'].set_color(colors["cmins"])
-        vp['cmaxes'].set_color(colors["cmaxes"])
+        vp["cbars"].set_color(colors["cbars"])
+        vp["cmins"].set_color(colors["cmins"])
+        vp["cmaxes"].set_color(colors["cmaxes"])
 
-        for i in range(N-1):
-            for x,y in zip(data[i], data[i+1]):
+        for i in range(N - 1):
+            for x, y in zip(data[i], data[i + 1]):
                 if showlines:
-                    plot([i+1,i+2],[x,y], 'or-', alpha=0.5)
+                    plot([i + 1, i + 2], [x, y], "or-", alpha=0.5)
                 else:
-                    plot([i+1,i+2],[x,y], 'or', alpha=0.5)
+                    plot([i + 1, i + 2], [x, y], "or", alpha=0.5)
 
-        xticks(range(1, N+1), [f'C{i}' for i in range(1, N+1)], fontsize=16)
+        xticks(range(1, N + 1), [f"C{i}" for i in range(1, N + 1)], fontsize=16)
         ylabel("log2 Fold Change", fontsize=16)
 
         return data

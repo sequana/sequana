@@ -20,7 +20,7 @@ from sequana.lazy import pylab
 from sequana.lazy import pandas as pd
 
 
-__all__ = ['Imshow']
+__all__ = ["Imshow"]
 
 
 class Imshow(VizInputSquare):
@@ -44,18 +44,30 @@ class Imshow(VizInputSquare):
         im.plot()
 
     """
+
     def __init__(self, x, verbose=True):
         """.. rubric:: constructor
 
-        :param x: input dataframe (or numpy matrix/array). 
+        :param x: input dataframe (or numpy matrix/array).
             Must be squared.
 
         """
         super(Imshow, self).__init__(x, verbose=verbose)
 
-    def plot(self, interpolation='None', aspect='auto', cmap='hot', tight_layout=True,
-        colorbar=True, fontsize_x=None, fontsize_y=None, rotation_x=90,
-        xticks_on=True, yticks_on=True, **kargs):
+    def plot(
+        self,
+        interpolation="None",
+        aspect="auto",
+        cmap="hot",
+        tight_layout=True,
+        colorbar=True,
+        fontsize_x=None,
+        fontsize_y=None,
+        rotation_x=90,
+        xticks_on=True,
+        yticks_on=True,
+        **kargs
+    ):
         """wrapper around imshow to plot a dataframe
 
         :param interpolation: set to None
@@ -76,18 +88,16 @@ class Imshow(VizInputSquare):
         pylab.imshow(data, interpolation=interpolation, aspect=aspect, cmap=cmap, **kargs)
 
         if fontsize_x == None:
-            fontsize_x = 16 #FIXME use default values
+            fontsize_x = 16  # FIXME use default values
         if fontsize_y == None:
-            fontsize_y = 16 #FIXME use default values
+            fontsize_y = 16  # FIXME use default values
 
         if yticks_on is True:
-            pylab.yticks(range(0, len(data.index)), data.index, 
-                fontsize=fontsize_y)
+            pylab.yticks(range(0, len(data.index)), data.index, fontsize=fontsize_y)
         else:
             pylab.yticks([])
         if xticks_on is True:
-            pylab.xticks(range(0, len(data.columns[:])), data.columns, 
-                fontsize=fontsize_x, rotation=rotation_x)
+            pylab.xticks(range(0, len(data.columns[:])), data.columns, fontsize=fontsize_x, rotation=rotation_x)
         else:
             pylab.xticks([])
 
@@ -99,7 +109,5 @@ class Imshow(VizInputSquare):
 
         # For some reasons, in newest version of python/mpl, this is required
         # for ylim, not for xlim
-        y1,y2 = pylab.ylim()
-        pylab.ylim([y1+0.5, y2-0.5])
-
-
+        y1, y2 = pylab.ylim()
+        pylab.ylim([y1 + 0.5, y2 - 0.5])

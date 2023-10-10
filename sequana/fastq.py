@@ -224,7 +224,6 @@ class FastQ(object):
     _N = 4
 
     def __init__(self, filename, verbose=False):
-
         self.filename = filename
         self.verbose = verbose
         self._count_reads = None
@@ -747,9 +746,9 @@ class FastQ(object):
             filtered = 0
             saved = 0
 
-            for count, lines in tqdm(enumerate(grouper(self._fileobj)), desc="sequana:fastq filter reads" 
-                ,disable=not progress):
-
+            for count, lines in tqdm(
+                enumerate(grouper(self._fileobj)), desc="sequana:fastq filter reads", disable=not progress
+            ):
                 identifier = lines[0].split()[0]
                 if lines[0].split()[0].decode() in identifiers_list:
                     filtered += 1

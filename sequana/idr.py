@@ -33,7 +33,7 @@ class IDR:
     Note that signalValue = rep1_signal + rep2_signal
 
     The score columns contains the scaled IDR value, min(int(log2(-125IDR), 1000).
-    This means that peaks with an IDR of 0 have a score of 1000. 
+    This means that peaks with an IDR of 0 have a score of 1000.
     A peak with an IDR of 0.05 has a score of int(-125log2(0.05)) = 540. Finally, a
     peaks with an IDR of 1.0 have a score of 0.
 
@@ -50,7 +50,6 @@ class IDR:
     """
 
     def __init__(self, filename, threshold=0.05):
-
         self.df = PandasReader(filename, sep="\t", header=None).df
 
         self.threshold = threshold
@@ -98,12 +97,12 @@ class IDR:
         ]
         try:
             self.df.columns = narrow_columns
-            self._mode = 'narrow'
+            self._mode = "narrow"
         except Exception:
             try:
                 self.df.columns = broad_columns
-                self._mode = 'broad'
-            except ValueError:  #pragma: no cover (empty dataframe)
+                self._mode = "broad"
+            except ValueError:  # pragma: no cover (empty dataframe)
                 pass
 
         if len(self.df):
@@ -121,8 +120,8 @@ class IDR:
     mode = property(_get_mode)
 
     def _get_N_significant_peaks(self):
-        if len(self.df) == 0: #pragma: no cover
-            return 
+        if len(self.df) == 0:  # pragma: no cover
+            return
         else:
             return len(self.df.query("idr<@self.threshold"))
 
@@ -194,7 +193,6 @@ class IDR:
             pylab.savefig(filename)
 
     def plot_idr_vs_peaks(self, filename=None, savefig=False):
-
         pylab.clf()
         X1 = pylab.linspace(0, self.threshold, 100)
         X2 = pylab.linspace(self.threshold, 1, 100)

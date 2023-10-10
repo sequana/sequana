@@ -40,8 +40,3 @@ class PandasReader:
                 self.df[x] = self.df[x].str.strip()
             except:
                 pass
-
-
-
-
-

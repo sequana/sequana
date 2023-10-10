@@ -93,7 +93,7 @@ def sequana_data(filename=None, where=None):
 
         def _get_valid_file(filename, directory):
             filename = os.sep.join([sharedir, directory, filename])
-            if os.path.exists(filename) is False: #pragma: no cover
+            if os.path.exists(filename) is False:  # pragma: no cover
                 return False
             else:
                 return filename

@@ -22,19 +22,37 @@ import scipy.spatial.distance as distance
 import easydev
 
 
-__all__ = ['Linkage']
+__all__ = ["Linkage"]
 
 
 class Linkage(object):
     """Linkage used in other tools such as Heatmap"""
 
-    methods = ["single", "complete", "average", "weighted", "centroid",
-        "median", "ward"]
-    metrics = ['braycurtis', 'canberra', 'chebyshev', 'cityblock',
-        'correlation', 'cosine', 'dice', 'euclidean', 'hamming',
-        'jaccard', 'jensenshannon', 'kulsinski', 'mahalanobis', 'matching',
-        'minkowski', 'rogerstanimoto', 'russellrao', 'seuclidean',
-        'sokalmichener', 'sokalsneath', 'sqeuclidean', 'yule']
+    methods = ["single", "complete", "average", "weighted", "centroid", "median", "ward"]
+    metrics = [
+        "braycurtis",
+        "canberra",
+        "chebyshev",
+        "cityblock",
+        "correlation",
+        "cosine",
+        "dice",
+        "euclidean",
+        "hamming",
+        "jaccard",
+        "jensenshannon",
+        "kulsinski",
+        "mahalanobis",
+        "matching",
+        "minkowski",
+        "rogerstanimoto",
+        "russellrao",
+        "seuclidean",
+        "sokalmichener",
+        "sokalsneath",
+        "sqeuclidean",
+        "yule",
+    ]
 
     def __init__(self):
         """.. rubric:: constructor
@@ -49,7 +67,7 @@ class Linkage(object):
 
     def check_method(self, value):
         # None is possible
-        # in R, in addition to single, complete, average, centroid, 
+        # in R, in addition to single, complete, average, centroid,
         # median and ward
         # there are  ward.D, wardD2 and mcquitty
         # default is complete
@@ -63,6 +81,6 @@ class Linkage(object):
 
         # hierarchy.ClusterWarning
         with warnings.catch_warnings():
-            warnings.filterwarnings('ignore')
+            warnings.filterwarnings("ignore")
             Y = hierarchy.linkage(D, method=method, metric=metric)
             return Y

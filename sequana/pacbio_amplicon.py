@@ -38,7 +38,6 @@ class Consensus:
             self.variants = []
 
     def identify_deletions(self):
-
         deletions = []
         for variant in self.variants:
             alt = variant.resume["alternative"]
@@ -65,7 +64,6 @@ class Consensus:
         return deletions
 
     def get_bases(self):
-
         # header of the consensus created by IGV, may have a warning in the
         # header, which should be ignored.
         toskip = 0
@@ -89,7 +87,6 @@ class Consensus:
         return df
 
     def run(self):
-
         # To normalise one need to ignore the insertions since there
         # are already included in the ACGT nucleotides
         cols = ["A", "C", "G", "T", "N", "DEL"]
@@ -148,7 +145,6 @@ class Consensus:
         return dd
 
     def save_consensus(self, output, identifier):
-
         dd = self.run()
         with open(output, "w") as fout:
             data = "".join(dd).replace("DEL", "")

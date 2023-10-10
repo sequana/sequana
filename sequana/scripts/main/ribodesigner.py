@@ -25,8 +25,6 @@ from .utils import CONTEXT_SETTINGS
 logger = colorlog.getLogger(__name__)
 
 
-
-
 # =====================================================================================
 # Ribodepletion custom probes designer
 # =====================================================================================
@@ -75,6 +73,5 @@ def ribodesigner(**kwargs):
         from pylab import savefig
 
         savefig("/".join([kwargs["output_directory"], kwargs["output_image"]]))
-
 
     teardown(kwargs["output_directory"])

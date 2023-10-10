@@ -971,7 +971,6 @@ class PBSim(object):
         self.bam_simul = BAMSimul(simul_bam)
 
     def target_distribution(self, xprime):
-
         """The target distribution
 
         Compute histogram. Get X, Y.  Given xprime, interpolate to get yprime

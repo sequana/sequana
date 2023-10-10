@@ -21,11 +21,10 @@
 """
 
 
-__all__ = ['hinton']
+__all__ = ["hinton"]
 
 
-def hinton(df, fig=1, shrink=2, method='square', bgcolor='grey',
-        cmap='gray_r', binarise_color=True):
+def hinton(df, fig=1, shrink=2, method="square", bgcolor="grey", cmap="gray_r", binarise_color=True):
     """Hinton plot (simplified version of correlation plot)
 
     :param df: the input data as a dataframe or list of items (list, array). See
@@ -55,12 +54,15 @@ def hinton(df, fig=1, shrink=2, method='square', bgcolor='grey',
     .. note:: Values must be between -1 and 1. No sanity check performed.
     """
     from sequana.viz import corrplot
+
     c = corrplot.Corrplot(df)
-    c.plot(colorbar=False, cmap=cmap, fig=fig,
-            method=method, facecolor=bgcolor,
-            shrink=shrink, label_color=bgcolor, 
-            binarise_color=binarise_color)
-
-
-
-
+    c.plot(
+        colorbar=False,
+        cmap=cmap,
+        fig=fig,
+        method=method,
+        facecolor=bgcolor,
+        shrink=shrink,
+        label_color=bgcolor,
+        binarise_color=binarise_color,
+    )

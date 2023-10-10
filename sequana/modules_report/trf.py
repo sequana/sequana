@@ -57,13 +57,11 @@ class TRFModule(SequanaBaseModule):
         self.add_images_section()
 
     def add_info(self):
-
         html = "<br>".join(self.trf.__repr__().split("\n"))
 
         self.sections.append({"name": "Information", "anchor": "info", "content": html})
 
     def add_table(self):
-
         datatable = DataTable(self.trf.df, "result", index=True)
         datatable.datatable.datatable_options = {
             "scrollX": "300px",
@@ -79,9 +77,7 @@ class TRFModule(SequanaBaseModule):
         html = ""
         html += "{} {}".format(html_tab, js)
 
-        self.sections.append(
-            {"name": "TRF results", "anchor": "results", "content": html}
-        )
+        self.sections.append({"name": "TRF results", "anchor": "results", "content": html})
 
     def add_images_section(self):
         style = "width:65%"
@@ -103,6 +99,4 @@ class TRFModule(SequanaBaseModule):
 
         html2 = self.create_embedded_png(plotter2, "filename", style=style)
 
-        self.sections.append(
-            {"name": "Image", "anchor": "table", "content": html1 + html2}
-        )
+        self.sections.append({"name": "Image", "anchor": "table", "content": html1 + html2})

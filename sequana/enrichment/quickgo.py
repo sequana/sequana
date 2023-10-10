@@ -28,7 +28,6 @@ class QuickGOGraph:
     """Used by :class:`PantherEnrichment` and :class:`UniprotEnrichment`"""
 
     def __init__(self):
-
         self._ancestors = {
             "MF": "GO:0003674",
             "CC": "GO:0005575",
@@ -66,7 +65,6 @@ class QuickGOGraph:
         annotations = {}
 
         for i, go_id in enumerate(go_ids):
-
             # retrieve info about a given GO ID
             info = self.quickgo.get_go_terms(go_id)
             annotations[go_id] = info
@@ -159,14 +157,12 @@ class QuickGOGraph:
             with open(filename, "wb") as fout:
                 fout.write(res.content)
         except:
-
             logger.warning("Could not create the GO chart. Maybe too many go IDs ({})".format(len(goids.split(","))))
 
             no_data = sequana_data("no_data.png")
             shutil.copy(no_data, filename)
 
     def get_go_description(self, go_ids):
-
         obsolets = []
         descriptions = []
         annotations = {}

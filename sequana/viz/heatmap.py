@@ -151,10 +151,7 @@ class Clustermap:
 
         self.yticklabels = self._convert_gene_names(yticklabels)
 
-        self.params = {'legend.fontsize': 16,
-                        'legend.sample': True,
-                        'legend.gene': True
-        }
+        self.params = {"legend.fontsize": 16, "legend.sample": True, "legend.gene": True}
 
     def _convert_gene_names(self, yticklabels):
         if isinstance(yticklabels, pd.Series):
@@ -163,9 +160,7 @@ class Clustermap:
             return yticklabels
 
     def _get_group_colors(self, groups_df, selection, palette):
-
         if isinstance(groups_df, pd.DataFrame):
-
             if selection:
                 groups_df = groups_df.loc[:, selection]
 
@@ -180,6 +175,7 @@ class Clustermap:
     def _do_legend(self, figure, color_dict, bbox_to_anchor):
         if color_dict:
             import matplotlib.patches as mpatches
+
             patches = [mpatches.Patch(color=c, label=l) for l, c in color_dict.items()]
             legend = pylab.legend(
                 loc="upper center",
@@ -187,7 +183,7 @@ class Clustermap:
                 bbox_to_anchor=bbox_to_anchor,
                 frameon=True,
                 title="Sample groups",
-                fontsize=self.params['legend.fontsize']
+                fontsize=self.params["legend.fontsize"],
             )
 
             figure.add_artist(legend)
@@ -208,10 +204,10 @@ class Clustermap:
 
         f = pylab.gca()
 
-        if self.params['legend.sample']:
+        if self.params["legend.sample"]:
             self._do_legend(f, self.sample_color_dict, (12, 2))
 
-        if self.params['legend.gene']:
+        if self.params["legend.gene"]:
             self._do_legend(f, self.gene_color_dict, (-2, -2))
 
         return p
@@ -239,13 +235,13 @@ class Heatmap(Linkage):
 
     side colors can be added:
 
-        h = viz.Heatmap(df, col_side_colors=['r', 'g', 'b', 'y', 'k']); 
-        h.category_column = category; 
+        h = viz.Heatmap(df, col_side_colors=['r', 'g', 'b', 'y', 'k']);
+        h.category_column = category;
         h.category_row = category
 
     where category is a dictionary with keys as df.columns and values as
     category defined by you. The number of colors in col_side_colors and
-    row_side_colors should match the number of category 
+    row_side_colors should match the number of category
 
     """
 
@@ -404,7 +400,7 @@ class Heatmap(Linkage):
             import colormap
 
             cmap = colormap.cmap_builder(cmap)
-        except Exception: #pragma: no cover
+        except Exception:  # pragma: no cover
             pass
 
         # keep track of row and column names for later.
@@ -496,9 +492,7 @@ class Heatmap(Linkage):
 
         # COMPUTATION DENDOGRAM 1 -------------------------------------
         if self.column_method:
-            Y = self.linkage(
-                self.frame.transpose(), self.column_method, self.column_metric
-            )
+            Y = self.linkage(self.frame.transpose(), self.column_method, self.column_metric)
             ax2 = fig.add_axes([ax2_x, ax2_y, ax2_w, ax2_h], frame_on=True)
 
             #     p=30,    truncate_mode=None,    color_threshold=None,    get_leaves=True,
@@ -577,9 +571,7 @@ class Heatmap(Linkage):
                 "  " + str(row_header[idx1[i]]),
                 verticalalignment="center",
             )
-            new_row_header.append(
-                row_header[idx1[i]] if self.row_method else row_header[i]
-            )
+            new_row_header.append(row_header[idx1[i]] if self.row_method else row_header[i])
 
         for i in range(self.frame.shape[1]):
             axm.text(
@@ -590,9 +582,7 @@ class Heatmap(Linkage):
                 verticalalignment="top",
                 horizontalalignment="center",
             )
-            new_column_header.append(
-                column_header[idx2[i]] if self.column_method else column_header[i]
-            )
+            new_column_header.append(column_header[idx2[i]] if self.column_method else column_header[i])
 
         # CATEGORY column ------------------------------
         if self.category_column:
@@ -631,9 +621,7 @@ class Heatmap(Linkage):
                 orientation = "vertical"
             else:
                 orientation = "horizontal"
-            cb = matplotlib.colorbar.ColorbarBase(
-                ax=axcb, cmap=cmap, norm=norm, orientation=orientation
-            )
+            cb = matplotlib.colorbar.ColorbarBase(ax=axcb, cmap=cmap, norm=norm, orientation=orientation)
             # axcb.set_title("whatever")
             # max_cb_ticks = 5
             # axcb.xaxis.set_major_locator(matplotlib.ticker.MaxNLocator(max_cb_ticks))

@@ -154,7 +154,6 @@ class LaneMerger(Common):
         return cmd
 
     def run(self, dry_run=False):
-
         processes = []
         for name in self.sampleIDs:
             print("{}, paired is {}".format(name, self.is_paired(name)))
@@ -245,7 +244,7 @@ def lane_merging(**kwargs):
     c = LaneMerger(
         pattern=kwargs["pattern"],
         outdir=kwargs["output_directory"],
-        queue=kwargs['slurm_queue'],
+        queue=kwargs["slurm_queue"],
         lanes=lanes,
         force=kwargs["force"],
     )

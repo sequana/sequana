@@ -95,7 +95,6 @@ class ENADownload(object):
         self.ena = ENA(cache=True)
 
     def ena_id_to_gi_number(self, identifiers):
-
         # Now, let us convert the ENA accession to NCBI GI number once for all.
         # We can fetch only at max 200 identifiers:
         logger.info("Fetching %s identifiers from NCBI" % len(identifiers))

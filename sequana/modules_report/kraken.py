@@ -60,7 +60,6 @@ class KrakenModule(SequanaBaseModule):
         return pd.read_csv(self.directory + os.sep + "kraken.csv")
 
     def _get_df_hierarchy(self):
-
         # read the kraken summary results and build a grouped dataframe on ranks
         df = pd.read_csv(self.directory + os.sep + "kraken.csv")
         df = df.fillna("")
@@ -106,7 +105,6 @@ class KrakenModule(SequanaBaseModule):
         return df
 
     def _get_summary_section(self):
-
         df = self._get_stats()
         if len(df) == 1 and df.iloc[0]["taxon"] == -1:
             pngimage = sequana_data("no_data.jpg")
@@ -145,7 +143,6 @@ Besides, be aware that closely related species may not be classified precisely.
         return html
 
     def _get_table_results(self):
-
         df = self._get_stats()
         url_ncbi = "https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id={}"
         df["links"] = [url_ncbi.format(taxon) for taxon in df["taxon"]]
@@ -194,9 +191,7 @@ Besides, be aware that closely related species may not be classified precisely.
 
     def add_summary_section(self):
         html = self._get_summary_section()
-        self.sections.append(
-            {"name": "Taxonomic content", "anchor": "kraken", "content": html}
-        )
+        self.sections.append({"name": "Taxonomic content", "anchor": "kraken", "content": html})
 
     def add_table_results_section(self):
         html = self._get_table_results()
@@ -264,7 +259,7 @@ classified and U for unclassified reads.</p><div>"""
             html = f"""<p>Here below you can find the summary of 1000
 unclassified reads blasted on a local blast DB. {krona} {js} {html_tab}</p><hr>"""
         else:
-            html =f"{krona}"
+            html = f"{krona}"
 
         self.sections.append(
             {

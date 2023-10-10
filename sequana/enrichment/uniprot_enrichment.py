@@ -171,7 +171,7 @@ class UniprotEnrichment(Ontology, PlotGOTerms):
         for i, x in enumerate(conv["Gene Names"]):
             names = x.split()
 
-            # Some gene names are very species-dependent. 
+            # Some gene names are very species-dependent.
             # A gene name may also be composed of several valid names
 
             # for cryptococcus, we keep first name starting with CNAG , otherwise we keep the first word only.
@@ -204,7 +204,6 @@ class UniprotEnrichment(Ontology, PlotGOTerms):
         )
         uniprot = UniProt(cache=True, verbose=True)
         df = uniprot.search(f"organism_name:{self.taxon}", frmt="tsv", columns=columns)
-
 
         try:
             df = pd.read_csv(io.StringIO(df), sep="\t")
@@ -269,7 +268,6 @@ class UniprotEnrichment(Ontology, PlotGOTerms):
         ontologies=None,
         background=None,
     ):
-
         if background is None:
             background = len(self.df_genes)
 
@@ -284,7 +282,6 @@ class UniprotEnrichment(Ontology, PlotGOTerms):
         stats = {}
 
         for ontology in ontologies:
-
             gs = GSEA(self.gene_sets[ontology])
             enr = gs.compute_enrichment(mygenes, verbose=False, background=background)
             result = enr.results[enr.results["Adjusted P-value"] < 0.05].copy()

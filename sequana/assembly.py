@@ -52,10 +52,10 @@ class BUSCO:
         try:
             self.df = pd.read_csv(filename, sep="\t", skiprows=4)
 
-            if "Status" not in self.df.columns: #pragma: no cover
+            if "Status" not in self.df.columns:  # pragma: no cover
                 # version 5.2.2
                 self.df = pd.read_csv(filename, sep="\t", skiprows=2)
-        except pd.io.parsers.python_parser.ParserError: #pragma: no cover
+        except pd.io.parsers.python_parser.ParserError:  # pragma: no cover
             # it may happen that the parsing is incorrect with some files
             self.df = pd.read_csv(filename, sep="\t", skiprows=2)
 
@@ -173,8 +173,7 @@ class BUSCO:
     """
         return string.format(self.get_summary_string(), C, S, D, F, M, N)
 
-
-    def save_core_genomes(self, contig_file, output_fasta_file='core.fasta'):
+    def save_core_genomes(self, contig_file, output_fasta_file="core.fasta"):
         """Save the core genome based on busco and assembly output
 
         The busco file must have been generated from an input contig file.
@@ -188,43 +187,39 @@ class BUSCO:
         If a gene from the core genome is missing, the extracted gene is made of 100 N's
         If a gene is duplicated, only the best entry (based on the score) is kept.
 
-        If there are 130 genes in the core genomes, the output will 
+        If there are 130 genes in the core genomes, the output will
         be a multi-sequence FASTA file made of 130 sequences.
 
         """
         # local import due to cyclic import
         from sequana import FastA
+
         f = FastA(contig_file)
 
         # if we have duplicated hits, we group them and take the best score
         # we then drop the ID to keep the index.
         # Note the fillna set to 0 to include 'Missing' entries
-        indices = self.df.fillna(0).groupby('ID')['Score'].nlargest(1).reset_index(level=0, drop=True).index
+        indices = self.df.fillna(0).groupby("ID")["Score"].nlargest(1).reset_index(level=0, drop=True).index
         subdf = self.df.loc[indices]
 
         # we sort the entries by gene (core genome) name
         # useful if we want to merge the sequences for a multiple alignment
 
-        with open(output_fasta_file, 'w') as fout:
-            for record in subdf.to_dict('records'):
-                type_ = record['Status']
-                if type_ == 'Missing':
-                    data = 'N' * 100
+        with open(output_fasta_file, "w") as fout:
+            for record in subdf.to_dict("records"):
+                type_ = record["Status"]
+                if type_ == "Missing":
+                    data = "N" * 100
                     fout.write(f">{ID}\t{type_}:{seqname}:{start}:{end}:{end-start}\n{data}\n")
                 else:
                     # get gene/contig information
-                    start = int(record['Gene Start'])
-                    ID = record['ID']    
-                    end = int(record['Gene End'])
-                    seqname = record['Sequence']
+                    start = int(record["Gene Start"])
+                    ID = record["ID"]
+                    end = int(record["Gene End"])
+                    seqname = record["Sequence"]
 
                     # save the core gene sequence
                     ctg_index = f.names.index(seqname)
                     data = f.sequences[ctg_index][start:end]
-                    data = "\n".join(textwrap.wrap(data,80))
+                    data = "\n".join(textwrap.wrap(data, 80))
                     fout.write(f">{ID}\t{type_}:{seqname}:{start}:{end}:{end-start}\n{data}\n")
-                    
-            
-
-
-

@@ -44,7 +44,6 @@ class KrakenDB:
     """Class to handle a kraken DB"""
 
     def __init__(self, filename):
-
         if isinstance(filename, KrakenDB):
             filename = filename.path
 
@@ -63,9 +62,7 @@ class KrakenDB:
         if os.path.exists(self.path + os.sep + "hash.k2d"):
             return "kraken2"
         else:  # pragma: no cover
-            logger.error(
-                "Sequana supports kraken2 only. Looks like an invalid kraken database directory"
-            )
+            logger.error("Sequana supports kraken2 only. Looks like an invalid kraken database directory")
 
     version = property(_get_database_version)
 
@@ -274,7 +271,7 @@ class KrakenResults(object):
                 usecols=[0, 2, 3],
                 chunksize=1000000,
             )
-        except (pd.errors.EmptyDataError,FileNotFoundError):  # pragma: no cover
+        except (pd.errors.EmptyDataError, FileNotFoundError):  # pragma: no cover
             logger.warning("Empty files. 100%% unclassified ?")
             self.unclassified = 0  # size of the input data set
             self.classified = 0
@@ -299,9 +296,7 @@ class KrakenResults(object):
         percentage = count / len(self._df) * 100
         if percentage >= 1:
             logger.warning(
-                "Found {} taxons of classified reads with root ID (1) ({} %)".format(
-                    count, round(percentage, 2)
-                )
+                "Found {} taxons of classified reads with root ID (1) ({} %)".format(count, round(percentage, 2))
             )
 
         # This gives the list of taxons as index and their amount
@@ -347,7 +342,6 @@ class KrakenResults(object):
     df = property(_get_df)
 
     def _get_df_with_taxon(self, dbname):
-
         df = self.get_taxonomy_db([int(x) for x in self.taxons.index])
         df["count"] = self.taxons.values
         df.reset_index(inplace=True)
@@ -359,7 +353,7 @@ class KrakenResults(object):
         try:
             df["percentage"] = df["count"] / df["count"].sum() * 100
         except ZeroDivisionError:
-            df['percentage'] = 0
+            df["percentage"] = 0
 
         starter = ["taxon", "count", "percentage"]
         df = df[starter + [x for x in df.columns if x not in starter]]
@@ -390,9 +384,7 @@ class KrakenResults(object):
 
         taxon_to_find = list(self.taxons.index)
         if len(taxon_to_find) == 0:
-            logger.warning(
-                "No reads were identified. You will need a more complete database"
-            )
+            logger.warning("No reads were identified. You will need a more complete database")
             self.output_filename = output_filename
             with open(output_filename, "w") as fout:
                 fout.write("%s\t%s" % (self.unclassified, "Unclassified"))
@@ -487,9 +479,7 @@ class KrakenResults(object):
             elif kingdom == "Archaea":
                 this_cmap = Colormap().cmap_linear("yellow", "yellow", "orange")
             else:
-                this_cmap = Colormap().cmap_linear(
-                    "light gray", "gray(w3c)", "dark gray"
-                )
+                this_cmap = Colormap().cmap_linear("light gray", "gray(w3c)", "dark gray")
 
             kingdom_colors.append(this_cmap(0.8))
             inner_colors.extend(this_cmap(np.linspace(0.6, 0.2, len(y))))
@@ -546,11 +536,7 @@ class KrakenResults(object):
             label = wedge.get_label()
             if mapper[label] > 1:
                 taxon = taxons.loc[label, "index"]
-                webbrowser.open(
-                    "https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id={}".format(
-                        taxon
-                    )
-                )
+                webbrowser.open("https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id={}".format(taxon))
             else:
                 wedge.set_color("white")
 
@@ -642,9 +628,7 @@ class KrakenResults(object):
         pylab.clf()
         self.dd = data
         if kind == "pie":
-            ax = data.plot(
-                kind=kind, cmap=cmap, autopct="%1.1f%%", radius=radius, **kargs
-            )
+            ax = data.plot(kind=kind, cmap=cmap, autopct="%1.1f%%", radius=radius, **kargs)
             pylab.ylabel(" ")
             for text in ax.texts:
                 #  large, x-small, small, None, x-large, medium, xx-small,
@@ -826,9 +810,7 @@ class KrakenPipeline(object):
         kraken_html = self.output_directory + os.sep + "kraken.html"
         status = self.kr.kraken_to_krona(output_filename=prefix + "kraken.out.summary")
         if status is True:
-            shell(
-                "ktImportText %s -o %s" % (prefix + "kraken.out.summary", kraken_html)
-            )
+            shell("ktImportText %s -o %s" % (prefix + "kraken.out.summary", kraken_html))
         else:
             shell("touch {}".format(kraken_html))
 
@@ -1090,16 +1072,13 @@ class KrakenSequential(object):
         # input databases may be stored in a file
         if isinstance(fof_databases, str) and os.path.exists(fof_databases):
             with open(fof_databases, "r") as fof:
-                self.databases = [
-                    absolute_path.split("\n")[0] for absolute_path in fof.readlines()
-                ]
+                self.databases = [absolute_path.split("\n")[0] for absolute_path in fof.readlines()]
         # or simply provided as a list
         elif isinstance(fof_databases, list):
             self.databases = fof_databases[:]
         else:
             raise TypeError(
-                "input databases must be a list of valid kraken2 "
-                "databases or a file (see documebntation)"
+                "input databases must be a list of valid kraken2 " "databases or a file (see documebntation)"
             )
 
         self.databases = [KrakenDB(x) for x in self.databases]
@@ -1122,8 +1101,7 @@ class KrakenSequential(object):
                 raise Exception
             elif force is True:
                 logger.warning(
-                    "Output directory %s already exists. You may "
-                    "overwrite existing results" % output_directory
+                    "Output directory %s already exists. You may " "overwrite existing results" % output_directory
                 )
 
         # list of input fastq files
@@ -1221,7 +1199,7 @@ class KrakenSequential(object):
             last_unclassified = self._list_kraken_input[-1]
 
             # If everything was classified, we can stop here
-            try: # handle special case of emmpty FastQ file
+            try:  # handle special case of emmpty FastQ file
                 try:
                     stat = os.stat(last_unclassified)
                     if stat.st_size == 0:
@@ -1276,7 +1254,6 @@ class KrakenSequential(object):
                 shutil.copy2(self._list_kraken_input[-1], self.unclassified_output)
             except:
                 for i, x in enumerate(self._list_kraken_input[-1]):
-
                     shutil.copy2(x, self.unclassified_output.replace("#", str(i + 1)))
 
         if self.classified_output:

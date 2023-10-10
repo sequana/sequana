@@ -35,6 +35,7 @@ from .cigar import Cigar
 from .coverage import Coverage
 from .fastq import FastQ, FastQC, Identifier
 from .fasta import FastA
+
 # contig import is after fasta due to cycling imports
 from .contigs import Contigs
 from .gff3 import GFF3

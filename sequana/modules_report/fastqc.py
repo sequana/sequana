@@ -61,9 +61,7 @@ class FastQCModule(SequanaBaseModule):
         links = glob.glob("{}".format(self.pattern))
         names = [filename.rsplit("/", 1)[1].split(".html")[0] for filename in links]
 
-        df = pd.DataFrame(
-            {"names": names, "links": [link.split(os.sep, 1)[1] for link in links]}
-        )
+        df = pd.DataFrame({"names": names, "links": [link.split(os.sep, 1)[1] for link in links]})
         df.sort_values(by="names")
 
         datatable = DataTable(df, "fastqc", index=False)

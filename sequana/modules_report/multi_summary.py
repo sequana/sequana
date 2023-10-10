@@ -57,9 +57,7 @@ class ReadSummary(object):
             trimming = d["percent"]["Pairs too short"]
         except KeyError:
             trimming = d["percent"]["Reads too short"]
-        return float(
-            trimming.replace("%", "").replace("(", "").replace(")", "").strip()
-        )
+        return float(trimming.replace("%", "").replace("(", "").replace(")", "").strip())
 
     def get_adapters_percent(self):
         d = self.get_cutadapt_stats()
@@ -132,9 +130,7 @@ class MultiSummary(SequanaBaseModule):
 
     """
 
-    def __init__(
-        self, pattern="**/summary.json", output_filename=None, verbose=True, **kargs
-    ):
+    def __init__(self, pattern="**/summary.json", output_filename=None, verbose=True, **kargs):
         super().__init__()
 
         from sequana import logger
@@ -168,9 +164,7 @@ class MultiSummary(SequanaBaseModule):
 
         self.jinja = {}
 
-        self.jinja[
-            "canvas"
-        ] = '<script type="text/javascript" src="js/canvasjs.min.js"></script>'
+        self.jinja["canvas"] = '<script type="text/javascript" src="js/canvasjs.min.js"></script>'
         self.jinja[
             "canvas"
         ] += """<script type="text/javascript">
@@ -297,9 +291,7 @@ phix and adapter removal)</td></tr>
 removal and trimming)</td></tr>
     </table>
 """
-        infohtml = self.create_hide_section(
-            "information", "(Show information)", caption, True
-        )
+        infohtml = self.create_hide_section("information", "(Show information)", caption, True)
         infohtml = "\n".join(infohtml)
 
         self.intro = introhtml + """ <hr><b>Summary</b>: """ + infohtml + html
@@ -320,9 +312,7 @@ removal and trimming)</td></tr>
 
     def _get_df(self, method_name):
         data = getattr(self, method_name)()
-        df = pd.DataFrame(
-            {"name": self.get_projects(), "value": data, "url": self.get_urls()}
-        )
+        df = pd.DataFrame({"name": self.get_projects(), "value": data, "url": self.get_urls()})
         return df
 
     def populate_output_total_reads(self):
@@ -334,9 +324,7 @@ removal and trimming)</td></tr>
         title = "Adapters content"
         df = self._get_df("get_adapters_percent")
         self.df["Adapters"] = df.copy()
-        self.df["Adapters"].rename(
-            {"value": "Adapters_content_(%)"}, axis=1, inplace=True
-        )
+        self.df["Adapters"].rename({"value": "Adapters_content_(%)"}, axis=1, inplace=True)
         cb = CanvasBar(df, "Adapters content", "adapters", xlabel="Percentage")
         self.jinja["canvas"] += cb.to_html()
         self.jinja["sections"].append(self._get_div("adapters", title))
@@ -346,9 +334,7 @@ removal and trimming)</td></tr>
         df = self._get_df("get_nreads_raw")
         self.df["N_raw"] = df.copy()
         self.df["N_raw"].rename({"value": "N_raw"}, axis=1, inplace=True)
-        cb = CanvasBar(
-            df, "Number of reads (raw data)", "nreads_raw", xlabel="Number of reads"
-        )
+        cb = CanvasBar(df, "Number of reads (raw data)", "nreads_raw", xlabel="Number of reads")
         self.jinja["canvas"] += cb.to_html()
         self.jinja["sections"].append(self._get_div("nreads_raw", title))
 
@@ -356,9 +342,7 @@ removal and trimming)</td></tr>
         title = "Mean quality (raw data)"
         df = self._get_df("get_mean_quality_samples")
         self.df["Mean_quality_raw"] = df.copy()
-        self.df["Mean_quality_raw"].rename(
-            {"value": "Mean_quality_raw"}, axis=1, inplace=True
-        )
+        self.df["Mean_quality_raw"].rename({"value": "Mean_quality_raw"}, axis=1, inplace=True)
         cb = CanvasBar(df, title, "mean_quality", xlabel="mean quality")
         self.jinja["canvas"] += cb.to_html(options={"maxrange": 40})
         self.jinja["sections"].append(self._get_div("mean_quality", title))
@@ -394,9 +378,7 @@ removal and trimming)</td></tr>
         return [x.data["project"] for x in self.summaries]
 
     def get_urls(self):
-        return [
-            x.replace("summary.json", "summary.html") for x in self.get_unique_names()
-        ]
+        return [x.replace("summary.json", "summary.html") for x in self.get_unique_names()]
 
     def get_unique_names(self):
         """reduce the filenames length removing the common suffix

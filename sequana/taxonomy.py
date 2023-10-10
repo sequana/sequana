@@ -107,7 +107,6 @@ class NCBITaxonomy:
         count = 0
         df_names = self.df_names.query("key == 'scientific name'").copy()
         with open(filename, "w") as fout:
-
             for taxid in self.df_nodes.index:
                 row = self.df_nodes.loc[taxid]
                 fout.write("ID                        : {}\n".format(taxid))
@@ -470,6 +469,6 @@ class Taxonomy(metaclass=Singleton):
             if record not in self.records:
                 toadd.append(record)
 
-        with open(self.database, "a") as fout: #pragma: no cover
+        with open(self.database, "a") as fout:  # pragma: no cover
             for record in toadd:
                 fout.write(tax.records[record]["raw"] + "//\n")

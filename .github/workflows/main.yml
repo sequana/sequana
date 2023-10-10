@@ -46,6 +46,7 @@ jobs:
       shell: bash -l {0}
       run: |
         pip install .[testing]
+        pip install kaleido  # required by plotly but sowehow not installed
 
     - name: testing
       shell: bash -l {0}

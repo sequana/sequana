@@ -14,8 +14,7 @@ What is Sequana ?
 
 #. A Python library dedicated to NGS analysis (e.g., tools to visualise standard NGS formats).
 #. A set of :ref:`pipelines <Pipelines>` dedicated to NGS in the form of Snakefiles
-   (Makefile-like with Python syntax based on snakemake framework) with more
-   than 80 re-usable rules (see :ref:`rules`).
+   (Makefile-like with Python syntax based on snakemake framework).
 #. Original tools to help in the creation of such pipelines including HTML reports.
 #. :ref:`Standalone applications<applications>`:
     #. :ref:`sequana_coverage<standalone_sequana_coverage>` ease the
@@ -129,13 +128,12 @@ User guide and reference
     applications
     sequanix.rst
     developers
-    rules
     wrappers
     references
-    references_viz
+    references_enrich
     references_stats
+    references_viz
     faqs
-    Changelog
     glossary
 
 

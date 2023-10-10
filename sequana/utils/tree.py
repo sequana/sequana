@@ -1,7 +1,7 @@
 from pathlib import Path
 
 
-class HTMLDirectory():
+class HTMLDirectory:
     def __init__(self, path=".", skip_pattern=[], pattern=None):
         self.path = path
         self.skip_pattern = skip_pattern
@@ -10,7 +10,7 @@ class HTMLDirectory():
     def get_html(self):
         paths = DisplayablePath.make_tree(Path(self.path))
 
-        html ="""
+        html = """
         <!DOCTYPE html>
         <html>
         <head>
@@ -43,7 +43,7 @@ class HTMLDirectory():
             if self.pattern:
                 if self.pattern in name:
                     html += '<a href="{}">{}</a><br>'.format(realpath, name) + "\n"
-                else: #pragma: no cover
+                else:  # pragma: no cover
                     pass
             else:
                 S = [item in name for item in self.skip_pattern]
@@ -51,6 +51,7 @@ class HTMLDirectory():
                     html += '<a href="{}">{}</a><br>'.format(realpath, name) + "\n"
         html += "</p></body></html>\n"
         return html
+
 
 class DisplayablePath(object):
     """
@@ -64,10 +65,11 @@ class DisplayablePath(object):
 
     Inspired from https://stackoverflow.com/questions/9727673/list-directory-tree-structure-in-python
     """
-    display_filename_prefix_middle =  "\u251c\u2500"
-    display_filename_prefix_last = '\u2514\u2500\u2500'
-    display_parent_prefix_middle = '    '
-    display_parent_prefix_last = '\u2502   '
+
+    display_filename_prefix_middle = "\u251c\u2500"
+    display_filename_prefix_last = "\u2514\u2500\u2500"
+    display_parent_prefix_middle = "    "
+    display_parent_prefix_last = "\u2502   "
 
     def __init__(self, path, parent_path, is_last):
         self.path = Path(str(path))
@@ -81,7 +83,7 @@ class DisplayablePath(object):
     @property
     def displayname(self):
         if self.path.is_dir():
-            return self.path.name + '/'
+            return self.path.name + "/"
         return self.path.name
 
     @classmethod
@@ -92,18 +94,12 @@ class DisplayablePath(object):
         displayable_root = cls(root, parent, is_last)
         yield displayable_root
 
-        children = sorted(list(path
-                               for path in root.iterdir()
-                               if criteria(path)),
-                          key=lambda s: str(s).lower())
+        children = sorted(list(path for path in root.iterdir() if criteria(path)), key=lambda s: str(s).lower())
         count = 1
         for path in children:
             is_last = count == len(children)
             if path.is_dir():
-                yield from cls.make_tree(path,
-                                         parent=displayable_root,
-                                         is_last=is_last,
-                                         criteria=criteria)
+                yield from cls.make_tree(path, parent=displayable_root, is_last=is_last, criteria=criteria)
             else:
                 yield cls(path, displayable_root, is_last)
             count += 1
@@ -116,19 +112,13 @@ class DisplayablePath(object):
         if self.parent is None:
             return self.displayname
 
-        _filename_prefix = (self.display_filename_prefix_last
-                            if self.is_last
-                            else self.display_filename_prefix_middle)
+        _filename_prefix = self.display_filename_prefix_last if self.is_last else self.display_filename_prefix_middle
 
-        parts = ['{!s} {!s}'.format(_filename_prefix,
-                                    self.displayname)]
+        parts = ["{!s} {!s}".format(_filename_prefix, self.displayname)]
 
         parent = self.parent
         while parent and parent.parent is not None:
-            parts.append(self.display_parent_prefix_middle
-                         if parent.is_last
-                         else self.display_parent_prefix_last)
+            parts.append(self.display_parent_prefix_middle if parent.is_last else self.display_parent_prefix_last)
             parent = parent.parent
 
-        return ''.join(reversed(parts))
-
+        return "".join(reversed(parts))

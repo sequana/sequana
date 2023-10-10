@@ -249,7 +249,7 @@ class FastA:
     def get_stats(self):
         """Return a dictionary with basic statistics
 
-        N the number of contigs, the N50 and L50, the min/max/mean 
+        N the number of contigs, the N50 and L50, the min/max/mean
         contig lengths and total length.
         """
         stats = {}
@@ -336,7 +336,6 @@ class FastA:
         """Select a contig and save in a file"""
         index = self.names.index(ctgname)
         with open("{}.fa".format(outname), "w") as fout:
-
             if max_length == -1:
                 fout.write(">{}\n{}".format(outname, self.sequences[index]))
             else:
@@ -373,4 +372,3 @@ class FastA:
                 fout.write(f">{ctgname}\n{seq}\n")
             else:
                 fout.write(f">{ctgname}\t{comment}\n{seq}\n")
-
