@@ -256,16 +256,18 @@ class PantherEnrichment(Ontology, PlotGOTerms):
                     U = self.enrichment[k][o]["input_list"]["unmapped_count"]
                     results.append([k, o, M, U])
         df = pd.DataFrame(results)
-        df[4] = 100 * df[2] / (df[3] + df[2])
-        df[5] = df[2] + df[3]
-        df.columns = [
-            "category",
-            "ontology",
-            "mapped",
-            "unmapped",
-            "mapped_percentage",
-            "total",
-        ]
+        if not df.empty:
+            df[4] = 100 * df[2] / (df[3] + df[2])
+            df[5] = df[2] + df[3]
+
+            df.columns = [
+                "category",
+                "ontology",
+                "mapped",
+                "unmapped",
+                "mapped_percentage",
+                "total",
+            ]
         return df
 
     def _compute_enrichment(

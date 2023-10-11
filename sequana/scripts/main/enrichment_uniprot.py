@@ -34,7 +34,7 @@ logger = colorlog.getLogger(__name__)
 # we should have corresponding option that starts with the module's name
 # This can also takes as input various types of data (e.g. FastA)
 @click.command(context_settings=CONTEXT_SETTINGS)
-@click.argument("name", type=click.Path(exists=True), nargs=1)
+@click.argument("rnadiff_directory", type=click.Path(exists=True, file_okay=False, dir_okay=True), nargs=1)
 @click.option(
     "--annotation-attribute",
     type=click.STRING,
@@ -100,6 +100,12 @@ PANTHER_PATHWAY, REACTOME_PATHWAY""",
     help="""Max number of enriched go terms to show in the plots (most
 enriched). All enriched GO terms are stored in tables""",
 )
+@click.option(
+    "--condition",
+    type=click.STRING,
+    default="condition",
+    help="""The name of the column used in the design file to define groups.""",
+)
 @click.option("--output-directory", show_default=True, default="enrichment_uniprot")
 @common_logger
 def enrichment_uniprot(**kwargs):
@@ -147,9 +153,8 @@ def enrichment_uniprot(**kwargs):
         "plot_compute_levels": kwargs["compute_levels"],
     }
 
-    logger.info(f"Reading RNAdiff results from {kwargs['name']}")
-    dirpath = os.path.dirname(os.path.abspath(kwargs["name"]))
-    rnadiff = RNADiffResults(dirpath, index_col=0, header=[0, 1])
+    logger.info(f"Reading RNAdiff results from {kwargs['rnadiff_directory']}")
+    rnadiff = RNADiffResults(kwargs["rnadiff_directory"], condition=kwargs["condition"])
 
     # now that we have loaded all results from a rnadiff analysis, let us
     # perform the enrichment for each comparison found in the file
