@@ -82,7 +82,7 @@ class ModulePantherEnrichment(SequanaBaseModule):
 
         # Compute the enrichment
         self.pe.compute_enrichment(ontologies=self.ontologies)
-        self.df_stats = self.pe.get_mapping_stats()[["category", "mapped_percentage", "total"]]
+        self.df_stats = self.pe.get_mapping_stats()
 
         self.create_report_content()
         self.create_html("enrichment.html")
