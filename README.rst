@@ -239,6 +239,8 @@ Changelog
 ========= ==========================================================================
 Version   Description
 ========= ==========================================================================
+0.15.5    * add mpileup module
+          * homogenization enrichment + fixup rnadiff
 0.15.4    * add plot for rnaseq/rnadiff
 0.15.3    * add sequana.viz.plotly module. use tqdm in bamtools module
           * KEGG API changed. We update sequana to use headless server and keep 
