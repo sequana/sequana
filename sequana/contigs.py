@@ -236,7 +236,8 @@ class Contigs(ContigsBase):
 
         pylab.xlabel("Contig length", fontsize=16)
         pylab.ylabel("nread support", fontsize=16)
-        pylab.tight_layout()
+
+        pylab.gcf().set_layout_engine("tight")
 
     def plot_scatter_contig_length_vs_nreads_cov(
         self, fontsize=16, vmin=0, vmax=50, min_nreads=20, min_length=5000, grid=True, logx=True, logy=True
@@ -296,7 +297,7 @@ class Contigs(ContigsBase):
         if logy:
             pylab.semilogy()
 
-        pylab.tight_layout()
+        pylab.gcf().set_layout_engine("tight")
 
     """def get_contig_per_chromosome(self):
         if self.bam is None:
