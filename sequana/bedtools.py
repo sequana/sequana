@@ -18,6 +18,8 @@ import sys
 import colorlog
 from easydev import Progress, TempFile
 
+from tqdm import tqdm
+
 from sequana.errors import BadFileFormat
 from sequana.genbank import GenBank
 from sequana.gff3 import GFF3
@@ -365,8 +367,6 @@ class GenomeCov(object):
             smallsize = os.path.getsize(fh.name)
 
         Nchunk = int(fullsize / smallsize)
-        if Nchunk > 1:
-            pb = Progress(Nchunk)
         i = 0
         for chunk in pd.read_table(
             input_filename, header=None, sep="\t", usecols=[0], chunksize=self.chunksize, dtype="string"
