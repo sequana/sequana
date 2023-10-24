@@ -250,17 +250,20 @@ class GenomeCov(object):
         # if not self.chr_list:
         # read bed file
         self.thresholds = DoubleThresholds(low_threshold, high_threshold, ldtr, hdtr)
-        if input_filename.endswith(".bed"):
-            self.chromosome_list = chromosome_list
-            self._scan_bed(input_filename)
-        else:
+
+        self.chromosome_list = chromosome_list
+
+        if not input_filename.endswith(".bed"):
             raise Exception(("Input file must be a BED file " "(chromosome/position/coverage columns"))
 
+        # scan BED files to set chromosome names
+        self._scan_bed(input_filename)
+
     def __getitem__(self, index):
-        return self.chr_list[index]
+        return self._chr_list[index]
 
     def __iter__(self):
-        return self.chr_list.__iter__()
+        return self._chr_list.__iter__()
 
     def __len__(self):
         return len(self.chrom_names)
@@ -360,6 +363,7 @@ class GenomeCov(object):
         self.chrom_names = []
 
         # rough estimate of the number of rows for the progress bar
+        logger.info("Estimating number of chunks to read")
         fullsize = os.path.getsize(self.input_filename)
         data = pd.read_table(input_filename, header=None, sep="\t", nrows=self.chunksize)
         with TempFile() as fh:
@@ -368,9 +372,9 @@ class GenomeCov(object):
 
         Nchunk = int(fullsize / smallsize)
         i = 0
-        for chunk in pd.read_table(
+        for chunk in tqdm(pd.read_table(
             input_filename, header=None, sep="\t", usecols=[0], chunksize=self.chunksize, dtype="string"
-        ):
+        ), total=Nchunk, disable=self.quiet_progress):
             # accumulate length
             N += len(chunk)
 
@@ -389,15 +393,12 @@ class GenomeCov(object):
                     positions[contig]["end"] = chunk.groups[contig].max()
             i += 1
             i = min(i, Nchunk)
-            if self.quiet_progress is False and Nchunk > 1:
-                pb.animate(i)
 
-        if self.quiet_progress is False and Nchunk > 1:
-            print()
         self.total_length = N
+
+        # Used in the main standalone
         for k in positions.keys():
             positions[k]["N"] = positions[k]["end"] - positions[k]["start"] + 1
-
         self.positions = positions
 
         tokeep = []
@@ -405,13 +406,22 @@ class GenomeCov(object):
             for this in self.chromosome_list:
                 tokeep.append(self.chrom_names[this])
             self.chrom_names = tokeep
-        self._set_chr_list()
 
-    def _set_chr_list(self):
-        self.chr_list = []
+    # here we have a property for back compatibility (v0.15.4 -> 0.15.5)
+    def _get_chr(self):
+        try:
+            return self._chr_list
+        except AttributeError:
+            self._fill_chr_list()
+            return self._chr_list
+
+    chr_list = property(_get_chr)
+
+    def _fill_chr_list(self):
+        self._chr_list = []
         for name in self.chrom_names:
-            logger.debug("Creating ChromosomeCov instance for {}".format(name))
-            self.chr_list.append(ChromosomeCov(self, name, self.thresholds, self.chunksize))
+            logger.info("Creating ChromosomeCov instance for {}".format(name))
+            self._chr_list.append(ChromosomeCov(self, name, self.thresholds, self.chunksize))
 
     def compute_gc_content(self, fasta_file, window_size=101, circular=False, letters=["G", "C", "c", "g"]):
         """Compute GC content of genome sequence.
@@ -450,7 +460,7 @@ class GenomeCov(object):
         return stats
 
     def hist(self, logx=True, logy=True, fignum=1, N=25, lw=2, **kwargs):
-        for chrom in self.chr_list:
+        for chrom in self._chr_list:
             try:
                 chrom.plot_hist_coverage(
                     logx=logx, logy=logy, fignum=fignum, N=N, histtype="step", hold=True, lw=lw, **kwargs
@@ -466,7 +476,7 @@ class GenomeCov(object):
         :param dict kwargs: parameters of :meth:`pandas.DataFrame.to_csv`.
         """
         # Concatenate all df
-        df_list = [chrom.df for chrom in self.chr_list]
+        df_list = [chrom.df for chrom in self._chr_list]
         df = pd.concat(df_list)
 
         header = "# sequana_coverage thresholds:{0} window_size:{1} circular:" "{2}".format(
@@ -481,7 +491,7 @@ class GenomeCov(object):
 
         with open(output_filename, "w") as fp:
             print("{0}".format(header), file=fp)
-            for chrom in self.chr_list:
+            for chrom in self._chr_list:
                 print("# {0}".format(chrom.get_gaussians()), file=fp)
             df.to_csv(fp, **kwargs)
 
@@ -788,12 +798,6 @@ class ChromosomeCov(object):
     @property
     def bed(self):
         return self._bed
-
-    """def get_df(self):
-        df = self.df.copy()
-        df.insert(0, "chr", self.chrom_name)
-        return df.set_index("chr", drop=True)
-    """
 
     def get_size(self):
         return self.__len__()
@@ -1306,7 +1310,7 @@ class ChromosomeCov(object):
             pylab.ylim([0, pylab.ylim()[1]])
 
         try:
-            pylab.tight_layout()
+            pylab.gcf().set_layout_engine("tight")
         except:  # pragma: no cover
             pass
 
@@ -1329,7 +1333,7 @@ class ChromosomeCov(object):
         self.df["zscore"][self.range[0] : self.range[1]].hist(grid=True, bins=bins, **hist_kargs)
         pylab.xlabel("Z-score", fontsize=fontsize)
         try:
-            pylab.tight_layout()
+            pylab.gcf().set_layout_engine("tight")
         except:  # pragma: no cover
             pass
         pylab.xlim([-max_z, max_z])
@@ -1355,7 +1359,7 @@ class ChromosomeCov(object):
         pylab.xlabel("Normalised per-base coverage")
 
         try:
-            pylab.tight_layout()
+            pylab.gcf().set_layout_engine("tight")
         except:  # pragma: no cover
             pass
         if filename:
@@ -1501,7 +1505,7 @@ class ChromosomeCov(object):
 
         pylab.ylim([ymin, ymax])
         try:
-            pylab.tight_layout()
+            pylab.gcf().set_layout_engine("tight")
         except:  # pragma: no cover
             pass
 

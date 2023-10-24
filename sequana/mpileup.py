@@ -241,7 +241,7 @@ class MPileup:
         pylab.xticks([0,1,2,3], ['A', 'C', 'G', 'T'], rotation=0)
         pylab.ylim([-0.5,3.5])
         try: #pragma: no cover
-            pylab.tight_layout()
+            pylab.gcf().set_layout_engine("tight")
         except: #pragma: no cover
             pass
         return matmut

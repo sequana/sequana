@@ -20,7 +20,7 @@ from easydev import mkdirs, shellcmd
 from easydev.console import purple
 
 from sequana import sequana_data
-from sequana.bedtools import GenomeCov
+from sequana.bedtools import GenomeCov, ChromosomeCov
 from sequana.modules_report.coverage import ChromosomeCoverageModule, CoverageModule
 from sequana.utils import config
 
@@ -361,13 +361,13 @@ def main(args=None):
     if options.annotation:
         assert os.path.exists(options.annotation), "%s does not exists" % options.annotation
 
-    logger.info("Reading %s. This may take time depending on " "your input file" % options.input)
+    logger.info(f"Reading {options.input}. This may take time ")
 
     # Convert BAM to BED
     if options.input.endswith(".bam"):
         bedfile = options.input.replace(".bam", ".bed")
         logger.info("Converting BAM into BED file")
-        shellcmd("bedtools genomecov -d -ibam %s > %s" % (options.input, bedfile))
+        shellcmd(f"bedtools genomecov -d -ibam {option.input} > {bedfile}")
     elif options.input.endswith(".bed"):
         bedfile = options.input
     else:
@@ -386,6 +386,7 @@ def main(args=None):
     else:
         chrom_list = [options.chromosome]
 
+    #
     gc = GenomeCov(
         bedfile,
         options.annotation,
@@ -425,12 +426,14 @@ def main(args=None):
             logger.info("    {} (starting pos: {}, ending pos: {}, length: {})".format(*data))
 
         # here we read chromosome by chromosome to save memory.
-        # However, if the data is small.
         for i, chrom in enumerate(chromosomes):
             logger.info("==================== analysing chrom/contig %s/%s (%s)" % (i + 1, len(gc), gc.chrom_names[i]))
             # since we read just one contig/chromosome, the chr_list contains
             # only one contig, so we access to it with index 0
-            run_analysis(gc.chr_list[i], options)
+
+            chrom_data = ChromosomeCov(gc, chrom, gc.thresholds, gc.chunksize)
+
+            run_analysis(chrom_data, options)
             # logging level seems to be reset to warning somewhere
             logger.setLevel(options.logging_level)
 

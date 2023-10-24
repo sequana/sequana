@@ -159,7 +159,7 @@ def test_gc_content():
     bed = f"{test_dir}/data/bed/JB409847.bed"
     fasta = f"{test_dir}/data/fasta/JB409847.fasta"
     cov = bedtools.GenomeCov(bed)
-    cov.chrom_names.append("dummy")
+    #cov.chrom_names.append("dummy")
     cov.compute_gc_content(fasta)
     cov.get_stats()
     ch = cov[0]
