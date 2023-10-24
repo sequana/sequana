@@ -126,7 +126,8 @@ class Phantom:
 
     def read_align(self, readfile):
         self.df = PandasReader(
-            readfile, sep="\t", header=None, columns=["ref", "start", "end", "dummy", "quality", "strand"]
+            readfile, sep="\t", header=None, names=["ref", "start", "end", "dummy", "quality", "strand"],
+            dtype={'ref': str, 'start': 'Int64', 'end': 'Int64', 'dummy': str, 'quality': 'Int64', 'strand': str}
         ).df
 
         self.read_length = round(pylab.median(self.df["end"] - self.df["start"]))

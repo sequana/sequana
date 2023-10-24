@@ -35,7 +35,7 @@ class IDR:
     The score columns contains the scaled IDR value, min(int(log2(-125IDR), 1000).
     This means that peaks with an IDR of 0 have a score of 1000.
     A peak with an IDR of 0.05 has a score of int(-125log2(0.05)) = 540. Finally, a
-    peaks with an IDR of 1.0 have a score of 0.
+    peaks with an IDR of 1.0 have a score of 0. Examples::
 
         IDR, score
         0.0039, 1000
