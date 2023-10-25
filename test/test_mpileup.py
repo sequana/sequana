@@ -30,5 +30,5 @@ def test_mpileup():
         assert True
 
     m.plot_mutation_matrix()
-    m.plot_total_errors(include_deletions=True, include_Ns=True)
+    m.plot_total_errors(["A"], include_deletions=True, include_Ns=True)
     m.plot_stack_bars(include_deletions=True)

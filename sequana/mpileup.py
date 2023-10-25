@@ -30,12 +30,13 @@ class MPileup:
 
     """
 
-    def __init__(self, filename, reference):
+    def __init__(self, filename, reference, progress=True):
         """
 
 
         reference must be a string of nucleotides.
         """
+
         if os.path.exists(filename) is False:
             raise IOError(f"filename {filename} does not exists")
         else:
@@ -47,6 +48,7 @@ class MPileup:
         except OSError: #pragma: no cover
             self.reference = reference
 
+        self.progress = progress
         self._df = None
 
     def _get_df(self):
@@ -56,7 +58,7 @@ class MPileup:
 
     df = property(_get_df)
 
-    def get_mutation(self, progress=True):
+    def get_mutation(self):
 
         # Dictionary to store base counts at each position
         counts = []
@@ -68,7 +70,7 @@ class MPileup:
             # -A means a deletion of A
             # The "^]" signifies a base that was at the start of a read
             # and the "$" signifies a base that was at the end of a read.
-            for k, line in enumerate(tqdm(pileup_file, disable=not progress)):
+            for k, line in enumerate(tqdm(pileup_file, disable=not self.progress)):
                 base_counts = {"A": 0, "C": 0, "T": 0, "G": 0, "N": 0, "*": 0}
                 parts = line.strip().split()
                 position = int(parts[1])  # Position in the reference genome
@@ -127,7 +129,7 @@ class MPileup:
         # Print base counts at each position
         data = []
         for position, count in enumerate(counts):
-            S = sum(count.values()) - count["coverage"]
+            S = sum(count.values()) - count["coverage"] + count["*"]
             # * characters are for deletions but could also be  used when coverage is zero
             if count["coverage"] == 0:
                 S -= count["*"]
@@ -155,7 +157,7 @@ class MPileup:
 
         return df
 
-    def plot_stack_bars(self, include_deletions=False):
+    def plot_stack_bars(self, include_deletions=False, ec='k'):
         """Plot error on A, C, G, T as a bar stacked plot.
 
         """
@@ -168,19 +170,29 @@ class MPileup:
         X1, X2 = 1, len(self.reference)+1
 
         pylab.clf()
-        pylab.bar(range(X1+1,X2+1), A, width=1, ec='k', label='A')
-        pylab.bar(range(X1+1,X2+1), C, bottom=A, width=1, ec='k', label='C')
-        pylab.bar(range(X1+1,X2+1), G, bottom=A + C, width=1, ec='k', label='G')
-        pylab.bar(range(X1+1,X2+1), T, bottom=A + C + G, width=1, ec='k', label='T')
+        pylab.bar(range(X1+1,X2+1), A, width=1, ec=ec, label='A')
+        pylab.bar(range(X1+1,X2+1), C, bottom=A, width=1, ec=ec, label='C')
+        pylab.bar(range(X1+1,X2+1), G, bottom=A + C, width=1, ec=ec, label='G')
+        pylab.bar(range(X1+1,X2+1), T, bottom=A + C + G, width=1, ec=ec, label='T')
         if include_deletions:
-            pylab.bar(range(X1+1,X2+1), D, bottom=A + C + G + T, width=1, ec='k', label='D')
+            pylab.bar(range(X1+1,X2+1), D, bottom=A + C + G + T, width=1, ec=ec, label='D')
         pylab.legend()
         pylab.xlabel("Position", fontsize=16)
         pylab.ylabel("Error rate (percentage)", fontsize=16)
 
-    def get_total_errors(self, include_deletions=False, include_Ns=False):
+    def set_GC_to_AT_mutations(self):
+        """Compute the mutation errors GC->AT
 
-        nucs = ['A', 'C', 'G', 'T']
+        Here, we only consider mutation G->A, G->T, C->A, C->T.
+        We sum the ->A an ->T errors. So, if the reference is A or T the errors is zeros.
+
+        """
+
+        AT = self.df[['A', 'T']].sum(axis=1).values
+        self.df['GC_to_AT'] = [AT[i] if x['ref'] in 'GC' else 0 for i,x in self.df.iterrows()]
+
+    def get_total_errors(self, nucs=['A', 'C', 'G', 'T'], include_deletions=False, include_Ns=False):
+
         if include_Ns:
             nucs += ['N']
         if include_deletions:
@@ -188,9 +200,9 @@ class MPileup:
 
         return self.df[nucs].sum(axis=1)
 
-    def plot_total_errors(self, include_deletions=False, include_Ns=False  ):
+    def plot_total_errors(self, nucs, include_deletions=False, include_Ns=False):
 
-        errors = self.get_total_errors(include_deletions=include_deletions, include_Ns=include_Ns)
+        errors = self.get_total_errors(nucs, include_deletions=include_deletions, include_Ns=include_Ns)
         N = len(self.df)
         pylab.plot(range(1, N+1), errors)
 
@@ -229,7 +241,7 @@ class MPileup:
         pylab.xticks([0,1,2,3], ['A', 'C', 'G', 'T'], rotation=0)
         pylab.ylim([-0.5,3.5])
         try: #pragma: no cover
-            pylab.tight_layout()
+            pylab.gcf().set_layout_engine("tight")
         except: #pragma: no cover
             pass
         return matmut

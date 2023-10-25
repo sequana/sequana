@@ -29,13 +29,19 @@ __all__ = ["Homer"]
 
 class Homer:
     def __init__(self, filename):
+        self.filename = filename
         header = open(filename).readline().strip().split("\t")[1:]
 
         self.df = PandasReader(filename, sep="\t", skiprows=1, header=None).df
-        self.df.columns = ["ID"] + header
-        self.df.fillna("NA", inplace=True)
+
+        if len(self.df):
+            self.df.columns = ["ID"] + header
+            self.df.fillna("NA", inplace=True)
 
     def pie_annotation(self, wedgeprops={"ec": "k"}, **kwargs):
-        counts = Counter(self.df.Annotation)
-        labels = [f"{k.split()[0]} ({str(v)})" for k, v in counts.items()]
-        pylab.pie(counts.values(), labels=labels, wedgeprops=wedgeprops, **kwargs)
+        if len(self.df):
+
+            annotations = [x.split()[0] for x in self.df.Annotation]
+            counts = Counter(annotations)
+            labels = [f"{k.split()[0]} ({str(v)})" for k, v in counts.items()]
+            pylab.pie(counts.values(), labels=labels, wedgeprops=wedgeprops, **kwargs)
