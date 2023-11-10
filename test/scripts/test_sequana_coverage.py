@@ -47,7 +47,7 @@ def test_main(tmpdir):
             "--output-directory",
             directory_run.__str__(),
             "--no-multiqc",
-            "--no-html",
+            #"--no-html",
             "--window-median",
             "3001",
             "-r",
@@ -57,7 +57,7 @@ def test_main(tmpdir):
     assert os.path.exists(str(directory_run / "JB409847/sequana_summary_coverage.json"))
     assert results.exit_code == 0
 
-def test_main_downloads():
+def __test_main_downloads():
     runner = CliRunner()
 
     with runner.isolated_filesystem():

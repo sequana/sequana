@@ -4,7 +4,7 @@ from sequana import bedtools
 from . import test_dir
 
 def test_canvasjs_linegraph():
-    bed = bedtools.GenomeCov(f"{test_dir}/data/bed/JB409847.bed",
+    bed = bedtools.SequanaCoverage(f"{test_dir}/data/bed/JB409847.bed",
         reference_file=f"{test_dir}/data/fasta/JB409847.fasta")
 
 

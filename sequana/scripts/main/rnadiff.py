@@ -24,20 +24,7 @@ from sequana.scripts.common import teardown
 
 from .utils import CONTEXT_SETTINGS, common_logger
 
-
-click.rich_click.USE_MARKDOWN = True
-click.rich_click.SHOW_METAVARS_COLUMN = False
-click.rich_click.APPEND_METAVARS_HELP = True
-click.rich_click.STYLE_ERRORS_SUGGESTION = "magenta italic"
-click.rich_click.SHOW_ARGUMENTS = True
-click.rich_click.FOOTER_TEXT = "AUTHORS: Thomas Cokelaer, Etienne Kornobis -- Documentation: http://sequana.readthedocs.io -- Issues: http://github.com/sequana/sequana"
-
-
-
-
 logger = colorlog.getLogger(__name__)
-
-
 
 
 def rnadiff_auto_batch_column(ctx, args, incomplete):

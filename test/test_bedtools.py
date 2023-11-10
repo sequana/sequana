@@ -41,22 +41,22 @@ def test_genomecov():
 
     # wrong file
     with pytest.raises(Exception):
-        bed = bedtools.GenomeCov("dummy.csv")
+        bed = bedtools.SequanaCoverage("dummy.csv")
 
     # wrong threshold
     with pytest.raises(Exception):
-        bed = bedtools.GenomeCov(filename, high_threshold=2)
+        bed = bedtools.SequanaCoverage(filename, high_threshold=2)
 
     # wrong threshold
     with pytest.raises(Exception):
-        bed = bedtools.GenomeCov(filename, low_threshold=-2)
+        bed = bedtools.SequanaCoverage(filename, low_threshold=-2)
 
     # wrong genbank
     #with pytest.raises(SystemExit):
-    #    bed = bedtools.GenomeCov(filename, "dummy.gbk")
+    #    bed = bedtools.SequanaCoverage(filename, "dummy.gbk")
 
     # !now let us read the good data sets by chunk
-    bed = bedtools.GenomeCov(filename, f"{test_dir}/data/genbank/JB409847.gbk", chunksize=5000)
+    bed = bedtools.SequanaCoverage(filename, f"{test_dir}/data/genbank/JB409847.gbk", chunksize=5000)
     for c in bed:
         c.run(1001, k=2)
 
@@ -116,24 +116,24 @@ def test_genomecov():
 def test_chromosome():
     filename = f"{test_dir}/data/bed/JB409847.bed"
     # using chunksize of 7000, we test odd number
-    bed = bedtools.GenomeCov(filename, f"{test_dir}/data/genbank/JB409847.gbk", chunksize=7000)
+    bed = bedtools.SequanaCoverage(filename, f"{test_dir}/data/genbank/JB409847.gbk", chunksize=7000)
     chrom = bed[0]
     chrom.run(501, k=2, circular=True)
     print(chrom)
 
     # using chunksize of 7000, we test even number
-    bed = bedtools.GenomeCov(filename, f"{test_dir}/data/genbank/JB409847.gbk", chunksize=7000)
+    bed = bedtools.SequanaCoverage(filename, f"{test_dir}/data/genbank/JB409847.gbk", chunksize=7000)
     chrom = bed[0]
     chrom.run(501, k=2, circular=True)
 
     # no chunksize
-    bed = bedtools.GenomeCov(filename, f"{test_dir}/data/genbank/JB409847.gbk")
+    bed = bedtools.SequanaCoverage(filename, f"{test_dir}/data/genbank/JB409847.gbk")
     chrom = bed[0]
     chrom.run(501, k=2, circular=True)
     print(chrom)
 
     # no chunksize
-    bed = bedtools.GenomeCov(filename, f"{test_dir}/data/genbank/JB409847.gbk")
+    bed = bedtools.SequanaCoverage(filename, f"{test_dir}/data/genbank/JB409847.gbk")
     chrom = bed[0]
     try:
         chrom._coverage_scaling()
@@ -156,7 +156,7 @@ def test_chromosome():
 def test_gc_content():
     bed = f"{test_dir}/data/bed/JB409847.bed"
     fasta = f"{test_dir}/data/fasta/JB409847.fasta"
-    cov = bedtools.GenomeCov(bed, reference_file=fasta)
+    cov = bedtools.SequanaCoverage(bed, reference_file=fasta)
     cov.get_stats()
     ch = cov[0]
     ch.moving_average(4001, circular=True)
@@ -178,7 +178,7 @@ def test_gc_content():
 def test_ChromosomeCovMultiChunk():
     filename = f"{test_dir}/data/bed/JB409847.bed"
     # using chunksize of 7000, we test odd number
-    bed = bedtools.GenomeCov(filename, f"{test_dir}/data/genbank/JB409847.gbk", chunksize=7000, 
+    bed = bedtools.SequanaCoverage(filename, f"{test_dir}/data/genbank/JB409847.gbk", chunksize=7000, 
         reference_file=f"{test_dir}/data/fasta/JB409847.fasta")
     chrom = bed[0]
     res = chrom.run(501, k=2, circular=True)
@@ -189,14 +189,14 @@ def test_ChromosomeCovMultiChunk():
 def test_binning():
     filename = f"{test_dir}/data/bed/JB409847.bed"
     # using chunksize of 7000, we test odd number
-    bed = bedtools.GenomeCov(filename, f"{test_dir}/data/genbank/JB409847.gbk", chunksize=7000)
+    bed = bedtools.SequanaCoverage(filename, f"{test_dir}/data/genbank/JB409847.gbk", chunksize=7000)
     chrom = bed[0]
     chrom.run(501, k=2, circular=True, binning=2, cnv_delta=100)
 
 
 def test_chromosome_intname():
     filename = f"{test_dir}/data/bed/unicycler.bed"
-    bed = bedtools.GenomeCov(filename, f"{test_dir}/data/genbank/unicycler.gbk", chunksize=6000)
+    bed = bedtools.SequanaCoverage(filename, f"{test_dir}/data/genbank/unicycler.gbk", chunksize=6000)
     chrom = bed[0]
     chrom.run(501, k=2, circular=True)
     chrom.get_summary()
@@ -205,12 +205,12 @@ def test_chromosome_intname():
 
 def test_annotate_with_gff3():
     filename = f"{test_dir}/data/bed/subsample.bed"
-    bed_gbk = bedtools.GenomeCov(filename, annotation_file=f"{test_dir}/data/genbank/subsample.gb")
+    bed_gbk = bedtools.SequanaCoverage(filename, annotation_file=f"{test_dir}/data/genbank/subsample.gb")
     chrom = bed_gbk[0]
     chrom.run(10001, k=2)
     chrom.get_summary()
     rois_gbk = chrom.get_rois()
-    bed_gff = bedtools.GenomeCov(filename, annotation_file=f"{test_dir}/data/gff/subsample.gff3")
+    bed_gff = bedtools.SequanaCoverage(filename, annotation_file=f"{test_dir}/data/gff/subsample.gff3")
     chrom = bed_gff[0]
     chrom.run(10001, k=2)
     chrom.get_summary()

@@ -6,12 +6,12 @@ Coverage module example
 """
 #################################################
 #
-from sequana import GenomeCov
+from sequana import SequanaCoverage
 from sequana import sequana_data
 bedfile = sequana_data("JB409847.bed")
 ################################################
 # Reading input BED file
-gc = GenomeCov(bedfile)
+gc = SequanaCoverage(bedfile)
 
 
 ##########################################################

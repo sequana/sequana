@@ -1398,7 +1398,7 @@ SN	pairs on different chromosomes:	0
                     self.deletions.extend([x[1] for x in this.cigartuples if x[0] == 2])
 
     def plot_coverage(self, chrom=None):
-        """Please use :class:`GenomeCov` for more sophisticated
+        """Please use :class:`SequanaCoverage` for more sophisticated
         tools to plot the genome coverage
 
         .. plot::

@@ -10,6 +10,7 @@
 #
 ##############################################################################
 import click
+import rich_click as click
 
 from sequana import version
 
@@ -36,6 +37,16 @@ from .lane_merging import lane_merging
 from .variants_comparison import variants_comparison
 
 
+click.rich_click.USE_MARKDOWN = True
+click.rich_click.SHOW_METAVARS_COLUMN = False
+click.rich_click.APPEND_METAVARS_HELP = True
+click.rich_click.STYLE_ERRORS_SUGGESTION = "magenta italic"
+click.rich_click.SHOW_ARGUMENTS = True
+click.rich_click.FOOTER_TEXT = "Authors: Thomas Cokelaer, Dimitri Desvillechabrol, Etienne Kornobis -- Documentation: http://sequana.readthedocs.io -- Issues: http://github.com/sequana/sequana"
+
+
+
+
 @click.group(context_settings=CONTEXT_SETTINGS)
 @click.version_option(version=version)
 def main(**kwargs):
@@ -50,7 +61,6 @@ def main(**kwargs):
 
     To setup completion, type this command depending on your shell (bash):
 
-    \b
         eval "$(_SEQUANA_COMPLETE=source_bash sequana)"
         eval "$(_SEQUANA_COMPLETE=source_zsh sequana)"
         eval (env _SEQUANA_COMPLETE=source_fish sequana)

@@ -37,8 +37,8 @@ logger = colorlog.getLogger(__name__)
 
 
 class CutadaptModule(SequanaBaseModule):
-    """Write HTML report of coverage analysis. This class takes either a
-    :class:`GenomeCov` instances or a csv file where analysis are stored.
+    """Write HTML report of cutadapt analysis
+
     """
 
     def __init__(self, cutadapt_log, sample_name, output_filename=None):

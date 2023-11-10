@@ -9,8 +9,8 @@
 #  documentation: http://sequana.readthedocs.io
 #
 ##############################################################################
-import click
 import colorlog
+import rich_click as click
 
 from .utils import CONTEXT_SETTINGS, common_logger
 
@@ -43,7 +43,7 @@ def taxonomy(**kwargs):
 
         k = KEGGHelper()
         results = k.search(kwargs["search_kegg"].lower())
-        print(results)
+        print(results.to_string())
     elif kwargs["search_panther"]:
         import pandas as pd
         from sequana import sequana_data
@@ -61,4 +61,4 @@ def taxonomy(**kwargs):
             f4 = df[[True if pattern in str(x) else False for x in df.taxon_id]]
             indices = list(f4.index)
         indices = list(set(indices))
-        print(df.loc[indices])
+        print(df.loc[indices].to_string())

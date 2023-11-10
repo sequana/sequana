@@ -12,6 +12,7 @@
 import sys
 
 import click
+import rich_click as click
 import colorlog
 
 from .utils import CONTEXT_SETTINGS

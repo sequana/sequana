@@ -30,6 +30,7 @@ from sequana.modules_report.kraken import KrakenModule
 from sequana.taxonomy import Taxonomy
 from sequana.utils import config
 
+
 logger = colorlog.getLogger(__name__)
 
 

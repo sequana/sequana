@@ -4,7 +4,7 @@ from sequana.utils.datatables_js import DataTable, DataTableFunction
 from . import test_dir
 
 def test_datatables():
-        bed = bedtools.GenomeCov(f"{test_dir}/data/bed/JB409847.bed",
+        bed = bedtools.SequanaCoverage(f"{test_dir}/data/bed/JB409847.bed",
                                 annotation_file=f"{test_dir}/data/genbank/JB409847.gbk", 
                                 reference_file=f"{test_dir}/data/fasta/JB409847.fasta")
 

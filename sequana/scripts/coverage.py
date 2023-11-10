@@ -32,7 +32,7 @@ from easydev import AttrDict, shellcmd
 
 from sequana import sequana_data
 from sequana import version as sequana_version
-from sequana.bedtools import ChromosomeCov, GenomeCov
+from sequana.bedtools import ChromosomeCov, SequanaCoverage
 from sequana.modules_report.coverage import ChromosomeCoverageModule, CoverageModule
 from sequana.utils import config
 from sequana.scripts.common import teardown
@@ -73,7 +73,7 @@ click.rich_click.OPTION_GROUPS = {
         },
         {
             "name": "Output files",
-            "options": ["--no-html", "--no-multiqc", "--output-directory"],
+            "options": ["--no-multiqc", "--output-directory"],
         },
         {
             "name": "Behaviour",
@@ -205,13 +205,13 @@ def download_genbank(ctx, param, value):
     show_default=True,
     help="Do not create any multiqc HTML page.",
 )
-@click.option(
-    "--no-html",
-    "skip_html",
-    is_flag=True,
-    show_default=False,
-    help="Do not create any HTML reports. Save ROIs and statistics only.",
-)
+#FIXME currently broken. requires complete refactoring of coverage module
+#@click.option(
+#    "skip_html",
+#    is_flag=True,
+#    show_default=False,
+#    help="Do not create any HTML reports. Save ROIs and statistics only.",
+#)
 @click.option("--output-directory", "output_directory", default="report", help="name of the output (report) directory.")
 @click.option(
     "-r",
@@ -390,7 +390,7 @@ def main(**kwargs):
         chrom_list = []
 
     # initialisation (reading BED to get positions of chromosomes and chromosome names
-    gc = GenomeCov(
+    gc = SequanaCoverage(
         bedfile,
         options.annotation,
         options.low_threshold,
@@ -419,6 +419,8 @@ def main(**kwargs):
         # only one contig, so we access to it with index 0
 
         # Performs the computation and reporting for a given chromosome
+        # This call performs the analysis, and creates the HTML page
+        # if HTML is creates, it fills the gc._html_list variable
         chrom_data = ChromosomeCov(gc, chrom, gc.thresholds, gc.chunksize)
         run_analysis(chrom_data, options)
 
@@ -429,9 +431,10 @@ def main(**kwargs):
         logger.setLevel(options.logging_level)
 
     # ugly but works for now. extra output_directory must be removed
-    html_list = list(glob.glob(f"{options.output_directory}/*/*.cov.html"))
-    html_list = [x.replace(f"{options.output_directory}/", "") for x in html_list]
-    CoverageModule(gc, html_list=html_list)
+    #html_list = list(glob.glob(f"{options.output_directory}/*/*.cov.html"))
+    #html_list = [x.replace(f"{options.output_directory}/", "") for x in html_list]
+
+    CoverageModule(gc)
 
     if options.skip_multiqc is False:
         logger.info("Creating multiqc report")
@@ -512,11 +515,7 @@ def run_analysis(chrom, options):
     # Create directory and save ROIs
     ROIs.df.to_csv(f"{directory}/rois.csv")
 
-    if options.skip_html:
-        return
 
-    # Create plots and HTML reports
-    #chrom.plot_coverage(f"{directory}/coverage.png")
     logger.info(f"Creating report in {options.output_directory}. Please wait")
 
     if chrom._mode == "chunks":
@@ -526,7 +525,7 @@ def run_analysis(chrom, options):
         chrom,
         datatable=CoverageModule.init_roi_datatable(ROIs),
         options={"W": NW, "k": options.k, "ROIs": ROIs, "circular": options.circular},
-        command=" ".join(["sequana_coverage"] + sys.argv[1:]),
+        command=" ".join(["sequana_coverage"] + sys.argv[1:]), 
     )
 
 

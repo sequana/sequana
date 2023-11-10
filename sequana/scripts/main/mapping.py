@@ -15,6 +15,7 @@ import os
 from snakemake import shell as shellcmd
 
 import click
+import rich_click as click
 import colorlog
 
 from sequana.fastq import FastQ
