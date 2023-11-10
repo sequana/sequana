@@ -173,7 +173,7 @@ class MultiKrakenResults:
         ax.legend(labels, title="kingdom", bbox_to_anchor=(1, 1))
 
         try:  # pragma: no cover
-            pylab.tight_layout()
+            pylab.gcf().set_layout_engine("tight")
         except:  # pragma: no cover
             pass
 
@@ -296,7 +296,7 @@ class MultiKrakenResults2:
         ax.legend(df.columns, title="DBs ", bbox_to_anchor=(1, 1))
 
         try:  # pragma: no cover
-            pylab.tight_layout()
+            pylab.gcf().set_layout_engine("tight")
         except:  # pragma: no cover
             pass
 

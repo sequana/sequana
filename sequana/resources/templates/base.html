@@ -36,7 +36,7 @@
     <header>
 
     <div>
-    <img style="float:left ; border:0px; width=80px ; height:80px; position:relative; left:0px" src="images/logo_256x256.png">
+    <img style="float:left ; border:0px; width=80px ; height:80px; position:relative; left:0px" src="{{ module.path }}images/logo_256x256.png">
     </div>
       <h1 class="title">{{ module.title }}</h1>
       <h2 class="subtitle">
@@ -44,6 +44,9 @@
         (v{{ config.version }})
       {% if config.pipeline_version %}
         and <a href="https://github.com/sequana/{{ config.pipeline_name}}">sequana_{{ config.pipeline_name  }}</a> (v{{config.pipeline_version}})
+      {% endif %}
+      {% if config.sequana_wrappers %}
+        and <a href="https://github.com/sequana/sequana-wrappers">sequana-wrappers</a> ({{config.sequana_wrappers}})
       {% endif %}
       </h2>
     </header>

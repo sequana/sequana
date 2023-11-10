@@ -68,7 +68,7 @@ class HistCumSum(object):
         pylab.grid(self.grid)
         pylab.title(self.title)
         try:
-            pylab.tight_layout()
+            pylab.gcf().set_layout_engine("tight")
         except:
             pass
 
@@ -179,7 +179,7 @@ class PacbioBAMBase(object):
             pylab.grid(True)
         pylab.xlim([0, 100])
         try:
-            pylab.tight_layout()
+            pylab.gcf().set_layout_engine("tight")
         except:
             pass
 
@@ -1054,7 +1054,7 @@ class Barcoding:
         pylab.legend()
         pylab.ylim(ymin=0)
         try:
-            pylab.tight_layout()
+            pylab.gcf().set_layout_engine("tight")
         except:
             pass
 
@@ -1070,7 +1070,7 @@ class Barcoding:
         pylab.xlabel("Number of Polymerase Reads", fontsize=fontsize)
         pylab.ylabel("Number of Barcoded Samples", fontsize=fontsize)
         try:
-            pylab.tight_layout()
+            pylab.gcf().set_layout_engine("tight")
         except:
             pass
 
@@ -1079,7 +1079,7 @@ class Barcoding:
         pylab.xlabel("Mean Polymerase Read Length", fontsize=fontsize)
         pylab.ylabel("Number of Barcoded Samples", fontsize=fontsize)
         try:
-            pylab.tight_layout()
+            pylab.gcf().set_layout_engine("tight")
         except:
             pass
 
@@ -1088,7 +1088,7 @@ class Barcoding:
         pylab.xlabel("Number of subreads", fontsize=fontsize)
         pylab.ylabel("Number of Barcoded Samples", fontsize=fontsize)
         try:
-            pylab.tight_layout()
+            pylab.gcf().set_layout_engine("tight")
         except:
             pass
 
@@ -1097,7 +1097,7 @@ class Barcoding:
         pylab.xlabel("Mean Barcode Quality", fontsize=fontsize)
         pylab.ylabel("Number of Barcoded Samples", fontsize=fontsize)
         try:
-            pylab.tight_layout()
+            pylab.gcf().set_layout_engine("tight")
         except:
             pass
 

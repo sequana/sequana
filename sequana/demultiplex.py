@@ -163,7 +163,7 @@ class StatsFile(object):
         else:
             pylab.xlabel("Number of reads")
         try:
-            pylab.tight_layout()
+            pylab.gcf().set_layout_engine("tight")
         except:
             pass
         if filename:
@@ -229,7 +229,7 @@ class StatsFile(object):
             pass
 
         try:
-            pylab.tight_layout()
+            pylab.gcf().set_layout_engine("tight")
         except Exception as err:
             print(err)
         return data

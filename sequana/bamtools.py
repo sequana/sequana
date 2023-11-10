@@ -1160,7 +1160,7 @@ SN	pairs on different chromosomes:	0
             barplot = df.plot(kind="bar", grid=True)
         pylab.xlabel("flags", fontsize=fontsize)
         pylab.ylabel("count", fontsize=fontsize)
-        pylab.tight_layout()
+        pylab.gcf().set_layout_engine("tight")
         if filename:
             pylab.savefig(filename)
         return barplot
@@ -1259,7 +1259,7 @@ SN	pairs on different chromosomes:	0
         df.plot(kind="hist", bins=range(0, df.max().values[0] + 1), legend=False, grid=True, logy=True)
         pylab.xlabel("MAPQ", fontsize=fontsize)
         pylab.ylabel("Count", fontsize=fontsize)
-        pylab.tight_layout()
+        pylab.gcf().set_layout_engine("tight")
         if filename:
             pylab.savefig(filename)
 
@@ -1680,7 +1680,7 @@ class MultiBAM:
             self.df.sum(axis=1).plot(kind="bar")
         pylab.ylabel("Number of reads", fontsize=14)
         pylab.title("Number of mapped reads per sample", fontsize=14)
-        pylab.tight_layout()
+        pylab.gcf().set_layout_engine("tight")
 
     def plot_alignments_per_chromosome(self):
         # on a given sample, let us keep total number of alignments (for

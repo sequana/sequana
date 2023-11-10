@@ -67,3 +67,5 @@ from .trf import TRF
 
 # The standalone app
 from . import scripts
+
+from .modules_report.summary import SequanaReport

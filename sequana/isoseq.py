@@ -356,7 +356,7 @@ class PacbioIsoSeqMappedIsoforms(object):
 
         ts.plot(kind="bar", color="r")
         try:
-            pylab.tight_layout()
+            pylab.gcf().set_layout_engine("tight")
         except:
             pass
         return ts
@@ -380,7 +380,7 @@ class PacbioIsoSeqMappedIsoforms(object):
         if plot:
             mapped.plot(kind="bar")
             pylab.title(title)
-            pylab.tight_layout()
+            pylab.gcf().set_layout_engine("tight")
         # data.to_csv(path + "_hq_sirv_grouped.csv")
         return mapped, self.df
 
@@ -566,7 +566,7 @@ class PacbioIsoSeqMultipleIsoforms(object):
         dd.plot(kind="bar")
         pylab.xlabel("")
         pylab.legend(self.labels, ncol=ncol)
-        pylab.tight_layout()
+        pylab.gcf().set_layout_engine("tight")
         return dd
 
     def spikes_found(self, spikes_filename=None):
@@ -595,7 +595,7 @@ class PacbioIsoSeqMultipleIsoforms(object):
         lengths = [self.SIRV_lengths[x] for x in data.index]
         data.plot(kind="bar")
         pylab.plot(np.array(lengths) / ratio)
-        pylab.tight_layout()
+        pylab.gcf().set_layout_engine("tight")
         return data
 
 

@@ -11,12 +11,12 @@
 #
 ##############################################################################
 
-from sequana.lazy import pylab
+import colorlog
+
 from sequana.lazy import pandas as pd
+from sequana.lazy import pylab
 from sequana.utils.pandas import PandasReader
 from sequana.viz.venn import plot_venn
-
-import colorlog
 
 logger = colorlog.getLogger(__name__)
 

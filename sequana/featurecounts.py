@@ -266,7 +266,7 @@ class MultiFeatureCount:
         pylab.axvline(0.5, ls="--", color="k")
         pylab.xlabel("Strandness", fontsize=fontsize)
         try:
-            pylab.tight_layout()
+            pylab.gcf().set_layout_engine("tight")
         except Exception:
             pass
         if savefig:  # pragma: no cover

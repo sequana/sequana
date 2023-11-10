@@ -55,7 +55,7 @@ class FRiP:
         pylab.xlim(0, pylab.xlim()[1])
         pylab.ylim(0, pylab.ylim()[1])
         try:
-            pylab.tight_layout()
+            pylab.gcf().set_layout_engine("tight")
         except Exception:  # pragma: no cover
             pass
         pylab.grid()
