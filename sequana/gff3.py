@@ -12,9 +12,10 @@
 ##############################################################################
 import os
 from collections import defaultdict
-
+from deprecated import deprecated
 import colorlog
 
+from sequana.annotation import Annotation
 from sequana.errors import BadFileFormat
 
 logger = colorlog.getLogger(__name__)
@@ -25,7 +26,7 @@ from sequana.lazy import pandas as pd
 __all__ = ["GFF3"]
 
 
-class GFF3:
+class GFF3(Annotation):
     """Read a GFF file, version 3
 
 
@@ -50,12 +51,8 @@ class GFF3:
     """
 
     def __init__(self, filename, skip_types=["biological_region"]):
-        self.filename = filename
-        assert os.path.exists(filename)
-        self._df = None
-        self._features = set()
-        self._attributes = set()
-        self.skip_types = skip_types
+        super().__init__(filename, skip_types=skip_types)
+
 
     def _get_features(self):
         """Extract unique GFF feature types
@@ -90,13 +87,20 @@ class GFF3:
 
     features = property(_get_features)
 
-    def get_attributes(self, feature=None, sep=";"):
+
+    def get_attributes(self, feature=None, sep="; "):
         """Return list of possible attributes
 
         If feature is provided, must be valid and used as a filter
         to keep only entries for that feature.
 
         ~10 seconds on mouse genome GFF file.
+
+        sep must be "; " with extra space to cope with special cases
+        where an attribute has several entries separated by ; e.g.:
+
+            BP="GO:0006412"; MF="GO:0005524;GO:0004004;"
+
         """
         # This is used by the rnaseq pipeline and should be kept fast
         if self._attributes:
@@ -108,9 +112,8 @@ class GFF3:
                 # stop once FASTA starts
                 if line.startswith("##FASTA"):
                     break
-
                 # Skip metadata and comments and empty lines
-                if line.startswith("#") or not line.strip():
+                if line.startswith("#") or not line.strip(): #pragma: no cover
                     continue
 
                 split = line.rstrip().split("\t")
@@ -334,6 +337,7 @@ class GFF3:
             if x in ["=", " "]:
                 sep = x
                 break
+
         if sep is None:
             logger.error(f"Your GFF/GTF does not seem to be correct ({text}). Expected a = or space as separator")
             sys.exit(1)
@@ -346,7 +350,13 @@ class GFF3:
 
         # split into mutliple attributes
         # GTF ends in ; so we need to strip it
-        split = text.rstrip(";").split(";")
+        split = text.rstrip(";")
+
+        # some GFF uses ; and a space as separator but usually, it is just ; with no surrounding spaces.
+        if "; " in split:
+            split = text.split("; ")
+        else:
+            split = text.split(";")
 
         for attr in split:
             # make sure there is no trailing spaces
@@ -360,6 +370,7 @@ class GFF3:
             attributes[attr[:idx]] = value.replace('"', "").replace("%3B", ";").replace("%20", " ")
         return attributes
 
+    @deprecated(reason="Not used anymore.", version='0.16.0')
     def create_files_for_rnadiff(
         self,
         outname,
@@ -592,24 +603,22 @@ class GFF3:
         # Set weight for genetic type to sort them and keep only the most informative
         if self.df.empty:
             raise BadFileFormat("%s file is not a GFF3.", self.filename)
-        genetype = ["tRNA", "rRNA", "CDS", "exon", "gene"]
+        genetype = ["tRNA", "rRNA", "ncRNA", "CDS", "exon", "gene", "tRNA"]
         worst_score = len(genetype) + 1
         weight = {k: i for i, k in enumerate(genetype)}
         # Note seems optional
-        if "Note" in self.df.columns:
-            df = self.df.filter(
-                ["seqid", "genetic_type", "start", "stop", "strand", "gene", "locus_tag", "product", "Note"], axis=1
-            )
-            df["product"] = df["product"].fillna(df["Note"])
-        else:
-            df = self.df.filter(
-                ["seqid", "genetic_type", "start", "stop", "strand", "gene", "locus_tag", "product"], axis=1
-            )
+
+        tokeep = [x for x in ["seqid", "genetic_type", "start", "stop", "strand", 
+                              "gene", "gene_id", "gene_name", 
+                              "locus_tag", "Note", "product"] if x in self.df.columns]
+
+        df = self.df.filter(tokeep, axis = 1)
+
         # remove region and chromosome row
         df = df.drop(df.loc[df.genetic_type.isin({"region", "chromosome"})].index)
         try:
             df["gene"] = df["gene"].fillna(df.locus_tag)
-        except KeyError:
+        except (KeyError,AttributeError):
             pass
         df["score"] = [weight.get(g_t, worst_score) for g_t in df.genetic_type]
         # keep most informative features if on the same region
