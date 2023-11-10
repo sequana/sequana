@@ -25,6 +25,7 @@ try:
         # directory. Because we populate the report.files ourself, we can put
         # whatever name except it the MultiqcModule expects a specific name
 
+        report.init()
         report.files = {"sequana_pacbio_qc":
             [{'filesize': 5913, 'fn': sequana_data('summary_pacbio_qc1.json'), 'root': '.'},
              {'filesize': 5731, 'fn': sequana_data('summary_pacbio_qc2.json'), 'root': '.'},
@@ -33,6 +34,7 @@ try:
         pacbio_qc.MultiqcModule()
 
     def test_quality_control():
+        report.init()
         report.files = {"sequana_quality_control":
             [ { 'fn': sequana_data('summary_qc.json'), 'root': '.'}]
         }
@@ -40,6 +42,7 @@ try:
 
 
     def test_coverage():
+        report.init()
         report.files = {"sequana_coverage":
             [ { 'fn': sequana_data('summary_coverage1.json'), 'root': '.'},
               { 'fn': sequana_data('summary_coverage1.json'), 'root': '.'}]
@@ -47,6 +50,7 @@ try:
         coverage.MultiqcModule()
 
     def test_sequana_bamtools():
+        report.init()
         report.files = {"sequana_bamtools_stats":
             [ { 'fn': sequana_data('summary_bamtools_stats.txt'), 'root': '.'},
               { 'fn': sequana_data('summary_bamtools_stats.txt'), 'root': '.'}]
@@ -54,6 +58,7 @@ try:
         bamtools_stats.MultiqcModule()
 
     def test_kraken():
+        report.init()
         report.files = {"sequana_kraken":
             [ { 'fn': sequana_data('summary_kraken.json'), 'root': '.'},
 
@@ -67,3 +72,5 @@ except TypeError:
     pass
 except:
     raise IOError
+    
+

@@ -10,27 +10,25 @@
 #  documentation: http://sequana.readthedocs.io
 #
 ##############################################################################
-import sys
 import subprocess
-from pathlib import Path
+import sys
 from itertools import combinations
-
-from jinja2 import Environment, PackageLoader
-import seaborn as sns
-import upsetplot as upset
-
-from sequana.lazy import pandas as pd
-from sequana.lazy import pylab
-from sequana.lazy import numpy as np
-from sequana.gff3 import GFF3
-from sequana.viz import Volcano
-from sequana.enrichment import PantherEnrichment
-from sequana.enrichment import KEGGPathwayEnrichment
-from sequana.featurecounts import FeatureCount
-
-from easydev import AttrDict, cmd_exists
+from pathlib import Path
 
 import colorlog
+import seaborn as sns
+import upsetplot as upset
+from easydev import AttrDict
+from jinja2 import Environment, PackageLoader
+from upsetplot.plotting import _process_data
+
+from sequana.enrichment import KEGGPathwayEnrichment, PantherEnrichment
+from sequana.featurecounts import FeatureCount
+from sequana.gff3 import GFF3
+from sequana.lazy import numpy as np
+from sequana.lazy import pandas as pd
+from sequana.lazy import pylab
+from sequana.viz import Volcano
 
 logger = colorlog.getLogger(__name__)
 
@@ -619,7 +617,7 @@ class RNADiffTable:
         pylab.xlabel("raw p-value", fontsize=fontsize)
         pylab.ylabel("Occurences", fontsize=fontsize)
         try:
-            pylab.tight_layout()
+            pylab.gcf().set_layout_engine("tight")
         except Exception:  # pragma: no cover
             pass
 
@@ -629,7 +627,7 @@ class RNADiffTable:
         pylab.xlabel("Adjusted p-value", fontsize=fontsize)
         pylab.ylabel("Occurences", fontsize=fontsize)
         try:
-            pylab.tight_layout()
+            pylab.gcf().set_layout_engine("tight")
         except Exception:  # pragma: no cover
             pass
 
@@ -990,7 +988,7 @@ class RNADiffResults:
         pylab.title("Total read count per sample", fontsize=fontsize)
         pylab.xticks(rotation=rotation, ha="right", fontsize=xticks_fontsize)
         try:
-            pylab.tight_layout()
+            pylab.gcf().set_layout_engine("tight")
         except Exception:
             pass
 
@@ -1030,7 +1028,7 @@ class RNADiffResults:
         pylab.ylabel("Proportion of null counts (%)")
         pylab.grid(True, zorder=0)
         try:
-            pylab.tight_layout()
+            pylab.gcf().set_layout_engine("tight")
         except Exception:
             pass
 
@@ -1200,7 +1198,7 @@ class RNADiffResults:
         self._format_plot(title="", xlabel="Most expressed genes", ylabel="Percentage (%)")
         pylab.xticks(range(0, len(subdf)), subdf.index, rotation=90)
         try:
-            pylab.tight_layout()
+            pylab.gcf().set_layout_engine("tight")
         except:
             pass
         return subdf
@@ -1266,7 +1264,7 @@ class RNADiffResults:
 
         pylab.sca(ax)
 
-        pylab.tight_layout()
+        pylab.gcf().set_layout_engine("tight")
 
     def plot_dendogram(
         self,
@@ -1279,11 +1277,9 @@ class RNADiffResults:
 
         assert transform_method in ["log", "anscombe", None]
         # first we take the normalised data
-        from sequana.viz import clusterisation
-        from sequana.viz import dendogram
+        from sequana.viz import clusterisation, dendogram
 
         cluster = clusterisation.Cluster(self.counts_norm)
-        # cluster = clusterisation.Cluster(self.df[self.sample_names])
         if transform_method is not None:
             data = cluster.scale_data(transform_method=transform_method, max_features=max_features)
             df = pd.DataFrame(data[0])
@@ -1291,7 +1287,6 @@ class RNADiffResults:
             df.columns = self.counts_norm.columns
         else:
             df = pd.DataFrame(self.counts_norm)
-            # df.index = data[1]
             df.columns = self.counts_norm.columns
 
         d = dendogram.Dendogram(
@@ -1334,7 +1329,7 @@ class RNADiffResults:
         ax.set_ylabel("Counts (raw) in log10 scale")
         ax.set_yscale("log")
         self._format_plot(ylabel="Raw count distribution", fontsize=xticks_fontsize)
-        pylab.tight_layout()
+        pylab.gcf().set_layout_engine("tight")
 
     def plot_boxplot_normeddata(
         self,
@@ -1363,7 +1358,7 @@ class RNADiffResults:
         pylab.xticks(pos, labs, rotation=rotation)
         ax.set(yscale="log")
         self._format_plot(ylabel="Normalised count distribution")
-        pylab.tight_layout()
+        pylab.gcf().set_layout_engine("tight")
 
     def plot_dispersion(self):
         pylab.plot(
@@ -1451,8 +1446,13 @@ class RNADiffResults:
 
         return ax
 
-    def plot_upset(self, force=False):
-        """Plot the upset plot (alternative to venn diagram)."""
+    def plot_upset(self, force=False, max_subsets=20):
+        """Plot the upset plot (alternative to venn diagram).
+
+
+        with many comparisons, plots may be quite large. We can reduce the width
+        by ignoring the small subsets. We fix the max number of subsets to 20 for now.
+        """
 
         if len(self.comparisons) > 6 and not force:
             logger.warning("Upset plots are not computed for more than 6 comparisons.")
@@ -1472,4 +1472,20 @@ class RNADiffResults:
         # From a dataframe of booleans, get data structure needed for upset
         # ie a dictionnary with comparisons as keys and list of DEG as values.
         data = df.apply(lambda x: list(x.index[x])).to_dict()
-        upset.UpSet(upset.from_contents(data), subset_size="count", sort_by="cardinality").plot()
+
+        # let us figure out how many subsets we will have
+        updata = _process_data(upset.from_contents(data),
+            sort_by="cardinality", subset_size="count",
+            sum_over=None, sort_categories_by='cardinality')
+        subsets = updata[2]
+
+        if len(subsets) > max_subsets:
+            min_subset_size = updata[2].values[max_subsets]
+        else:
+            min_subset_size = Npne
+
+        # now let us do the plotting
+        upset.UpSet(upset.from_contents(data), subset_size="count", sort_by="cardinality", 
+            totals_plot_elements=4, intersection_plot_elements=len(data),
+            min_subset_size=min_subset_size
+            ).plot()

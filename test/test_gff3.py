@@ -3,6 +3,13 @@ from easydev import TempFile
 
 from . import test_dir
 
+def test_wrong_input():
+    try:
+        gff = GFF3(f"{test_dir}/data/missing")
+        assert False
+    except IOError:
+        assert True
+
 
 def test_various_gff():
     gff = GFF3(f"{test_dir}/data/test_small.gff3")
@@ -23,6 +30,9 @@ def test_various_gff():
     gff = GFF3(f"{test_dir}/data/gff/lenny.gff")
     df = gff.df
 
+
+    gff = GFF3(f"{test_dir}/data/gff/Ld1S.gff")
+    df = gff.df
 
 def test_process_attributes():
     gff = GFF3(f"{test_dir}/data/mm10_truncated.gff")
@@ -45,10 +55,10 @@ def test_read_and_save_selected_features(tmpdir):
 
 def test_get_feature_dict():
     gff = GFF3(f"{test_dir}/data/ecoli_truncated.gff")
+    gff.features
     gff.get_features_dict()
 
-
-def test_fasta_presence_is_ok(tmpdir):
+def test_attributes(tmpdir):
     g = GFF3(f"{test_dir}/data/gff/lenny.gff")
     assert g.attributes
 
@@ -59,23 +69,10 @@ def test_to_bed(tmpdir):
     gff.to_bed(outname, "gene")
 
 
-def test_gff_rnadiff():
-    gff = GFF3(f"{test_dir}/data/saccer3_truncated.gff")
-    df = gff.df
-    gff.get_duplicated_attributes_per_genetic_type()
-    with TempFile() as fout:
-        gff.create_files_for_rnadiff(fout.name)
-
-        import pandas as pd
-
-        df1 = pd.read_csv("{}_gene_lengths.tsv".format(fout.name), sep="\t")
-        # changed in 21/07/2021 from 31755 to 29199.
-        # not clear why the sum was 31755 before. 291999 check manually in the
-        # GFF file
-        assert df1.Length.sum() == 29199
-
-    with TempFile() as fout:
-        gff.save_annotation_to_csv(fout.name)
+def test_to_fasta(tmpdir):
+    outname = tmpdir.join("test.fasta")
+    gff = GFF3(f"{test_dir}/data/gff/ecoli_MG1655.gff")
+    gff.to_fasta(f"{test_dir}/data/fasta/ecoli_MG1655.fa", outname)
 
 
 def test_gff_to_gtf():

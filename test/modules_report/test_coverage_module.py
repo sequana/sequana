@@ -7,10 +7,9 @@ from .. import test_dir
 
 def test_coverage_module(tmpdir):
 
-    bed = bedtools.GenomeCov(f"{test_dir}/data/bed/JB409847.bed")
-    fasta = f"{test_dir}/data/fasta/JB409847.fasta"
-    bed.compute_gc_content(fasta)
-    c = bed.chr_list[0]
+    bed = bedtools.GenomeCov(f"{test_dir}/data/bed/JB409847.bed", 
+        reference_file=f"{test_dir}/data/fasta/JB409847.fasta")
+    c = bed[0]
     c.run(4001)
 
     directory = tmpdir.mkdir('test_coverage_module')
