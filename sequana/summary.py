@@ -129,6 +129,7 @@ class Summary(object):
                 data = json.loads(fin.read())
                 self._name = data["name"]
                 self.description = data["description"]
+                self.pipeline_version = data.get("pipeline_version", None)
                 self._data_description = data["data_description"]
                 self.sample_name = data["sample_name"]
                 self.data = data["data"]
