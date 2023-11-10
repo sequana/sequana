@@ -294,7 +294,8 @@ class Corrplot(Linkage):
         ytickslocs = np.arange(len(labels))
         ax.set_yticks(ytickslocs)
         ax.set_yticklabels(labels, fontsize=fontsize, color=label_color)
-        plt.tight_layout()
+        plt.gcf().set_layout_engine("tight")
+        
 
         # shift the limits to englobe the patches correctly
         # This should be here afer set_xticks

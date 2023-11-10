@@ -105,7 +105,7 @@ class Imshow(VizInputSquare):
             pylab.colorbar()
 
         if tight_layout:
-            pylab.tight_layout()
+            pylab.gcf().set_layout_engine("tight")
 
         # For some reasons, in newest version of python/mpl, this is required
         # for ylim, not for xlim
