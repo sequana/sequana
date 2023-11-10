@@ -1,5 +1,4 @@
-from __future__ import absolute_import
-from multiqc import config
+from multiqc.utils import config
 
 
 # Add search patterns and config options for the things that are used in
