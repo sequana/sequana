@@ -174,11 +174,11 @@ scale). Clicking on any of the link will lead you to the section of the comparis
         style = "width:65%"
 
         def dispersion(filename):
-            pylab.ioff()
-            pylab.clf()
-            self.rnadiff.plot_dispersion()
-            pylab.savefig(filename)
-            pylab.close()
+            with pylab.ioff():
+                pylab.clf()
+                self.rnadiff.plot_dispersion()
+                pylab.savefig(filename)
+                pylab.close()
 
         html = """<p>dispersion of the fitted data to the model</p>{}<hr>""".format(
             self.create_embedded_png(dispersion, "filename", style=style)
@@ -190,11 +190,23 @@ scale). Clicking on any of the link will lead you to the section of the comparis
         style = "width:65%"
 
         def dendogram(filename):
-            pylab.ioff()
-            pylab.clf()
-            self.rnadiff.plot_dendogram()
-            pylab.savefig(filename)
-            pylab.close()
+            with pylab.ioff():
+                pylab.clf()
+                import warnings
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore")
+                    self.rnadiff.plot_dendogram()
+                    try:
+                        # Here, tight layout is not comaptible with dendogram
+                        # Yet, if we call it and plot again, we get the expected layout.
+                        # otherwise, colormap is kind of shifted and not as large as the plot itself.
+                        pylab.tight_layout()
+                    except Exception:
+                        # This does not work right now in v0.16.0 but should be used in future
+                        pylab.gcf().set_layout_engine("tight")
+                    self.rnadiff.plot_dendogram()
+                    pylab.savefig(filename)
+                    pylab.close()
 
         html_dendogram = """<p>The following image shows a hierarchical
 clustering of the whole sample set. An euclidean distance is computed between
@@ -318,7 +330,7 @@ condition</p> {}<hr>""".format(
             xticklabels = ax.get_xticklabels()
             ax.set_xticklabels(xticklabels, rotation=45, ha="right")
             try:
-                pylab.tight_layout()
+                pylab.set_engine_layout("tight")
             except:
                 pass
             pylab.savefig(filename)
@@ -332,7 +344,7 @@ condition</p> {}<hr>""".format(
             xticklabels = ax.get_xticklabels()
             ax.set_xticklabels(xticklabels, rotation=45, ha="right")
             try:
-                pylab.tight_layout()
+                pylab.set_engine_layout("tight")
             except:
                 pass
             pylab.savefig(filename)
@@ -459,7 +471,6 @@ value as a function of the log2 ratio of diﬀerential expression. </p>"""
         df = comp.df.copy()  # .reset_index()
 
         # here we need to add the annotation if possible
-        print(self.rnadiff.annotation)
         try:
             df = pd.concat([df, self.rnadiff.annotation.loc[[str(x) for x in comp.df.index]]], axis=1)
         except Exception as err:

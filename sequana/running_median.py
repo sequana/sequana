@@ -50,7 +50,7 @@ class RunningMedian:
     as proposed in https://gist.github.com/f0k/2f8402e4dfb6974bfcf1 and was
     adapted to our needs included object oriented implementation.
 
-    .. note:: a circular running median is implemented in :class:`sequana.bedtools.GenomeCov`
+    .. note:: a circular running median is implemented in :class:`sequana.bedtools.SequanaCoverage`
 
     ::
 

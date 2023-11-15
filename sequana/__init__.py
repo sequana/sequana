@@ -30,7 +30,7 @@ from .datatools import sequana_data
 from .assembly import *
 from .bamtools import BAM, SAMFlags, SAM, CRAM
 from .bed import BED
-from .bedtools import GenomeCov
+from .bedtools import SequanaCoverage
 from .cigar import Cigar
 from .coverage import Coverage
 from .fastq import FastQ, FastQC, Identifier
@@ -67,3 +67,5 @@ from .trf import TRF
 
 # The standalone app
 from . import scripts
+
+from .modules_report.summary import SequanaReport

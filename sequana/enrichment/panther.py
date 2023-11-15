@@ -474,7 +474,7 @@ class PantherEnrichment(Ontology, PlotGOTerms):
             else:
                 labels.append(this[0:50] + "...")
         pylab.pie(df.query("number_in_list!=0").number_in_list, labels=labels)
-        pylab.tight_layout()
+        pylab.gcf().set_layout_engine("tight")
 
     def save_chart(self, df, filename="chart.png"):
         """

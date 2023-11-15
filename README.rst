@@ -239,10 +239,13 @@ Changelog
 ========= ==========================================================================
 Version   Description
 ========= ==========================================================================
-0.15.5    * add mpileup module
+0.16.0    * add mpileup module
           * homogenization enrichment + fixup rnadiff
-          * Allow sequana_coverage to handle small eukaryotes in a more memory 
+          * Complete refactoring of sequana coverage module.
+            Allow sequana_coverage to handle small eukaryotes in a more memory 
             efficient way.
+          * use click for the sequana_taxonomy and sequana_coverage and 
+            sequana rnadiff command
           * Small fixup on homer, idr and phantom modules (for chipseq pipeline)
 0.15.4    * add plot for rnaseq/rnadiff
 0.15.3    * add sequana.viz.plotly module. use tqdm in bamtools module

@@ -11,6 +11,8 @@
 #
 ##############################################################################
 import re
+
+from sequana.annotation import Annotation
 from sequana.fasta import FastA
 
 import colorlog
@@ -21,9 +23,13 @@ logger = colorlog.getLogger(__name__)
 __all__ = ["GenBank"]
 
 
-# TODO: we should factorise gff and genbank in a parent class (Annotation)
-class GenBank:
-    """
+class GenBank(Annotation):
+    """This class reads a Genbank file
+
+    This is kept for back compatibility but most code in Sequana
+    will rely on :class:`sequana.gff3.GFF3` instead. So please, transform
+    your genbank to GFF3 format if possible.
+
     ::
 
         gg = GenBank()
@@ -31,10 +37,27 @@ class GenBank:
 
     """
 
-    def __init__(self, filename):
-        self.filename = filename
+    def __init__(self, filename, skip_types=["biological_region"]):
+        super().__init__(filename, skip_types=skip_types)
 
-    def get_types(self):
+    # property from parent class
+    def _get_features(self):
+        if self._features:
+            features = self._features
+        else:
+            records = self.genbank_features_parser()
+            _types = set()
+            for contig in records.keys():
+                for feature in records[contig]:
+                    _type = feature["type"]
+                    _types.add(_type)
+            self._features = sorted(_types)
+        return self._features
+
+    features = property(_get_features)
+
+    def get_types(self): #pragma no cover
+        logger.warning("genbank.GenBank.get_types is deprecrated. Please use features property")
         records = self.genbank_features_parser()
         _types = set()
         for contig in records.keys():
@@ -44,9 +67,8 @@ class GenBank:
         return sorted(_types)
 
     def extract_fasta(self, fastafile, features=["rRNA"]):
-        types = self.get_types()
         for feature in features:
-            if feature not in types:
+            if feature not in self.features:
                 raise ValueError("{} not found".format(feature))
 
         # fasta may have several contig/chromosome names

@@ -37,49 +37,60 @@ __all__ = ["CoverageModule", "ChromosomeCoverageModule"]
 
 class CoverageModule(SequanaBaseModule):
     """Write HTML report of coverage analysis. This class takes either a
-    :class:`GenomeCov` instances or a csv file where analysis are stored.
+    :class:`SequanaCoverage` instances or a csv file where analysis are stored.
     """
 
     def __init__(self, data, region_window=200000):
         """.. rubric:: constructor
 
         :param data: it can be a csv filename created by sequana_coverage or a
-            :class:`bedtools.GenomeCov` object.
+            :class:`bedtools.SequanaCoverage` object.
         :param region_window:
         """
         super().__init__()
         self.region_window = region_window
 
-        if isinstance(data, bedtools.GenomeCov):
+        if isinstance(data, bedtools.SequanaCoverage):
             self.bed = data
         else:
             raise TypeError
 
-        try:
-            html_list = self.create_chromosome_reports()
-        except TypeError:
-            msg = "Data must be either a csv file or a :class:`GenomeCov` " "instance where zscore is computed."
-            raise TypeError(msg)
+        if len(self.bed._html_list) == 0:
+            try:
+                html_list = self.create_chromosome_reports()
+            except TypeError:
+                msg = "Data must be either a csv file or a :class:`GenomeCov` " "instance where zscore is computed."
+                raise TypeError(msg)
+        else:
+            html_list = sorted(list(self.bed._html_list))
 
-        self.title = "Main coverage report ({0})".format(config.sample_name)
+        self.title = f"Main coverage report ({config.sample_name})"
         self.intro = (
-            "<p>Report the coverage of your sample ({0}) to check the "
+            f"<p>Report the coverage of your sample ({config.sample_name}) to check the "
             "quality of your mapping and to highlight regions of "
-            "interest (under and over covered).</p>".format(config.sample_name)
+            "interest (under and over covered).</p>"
         )
-        self.create_report_content(html_list)
-        self.create_html("sequana_coverage.html")
 
-    def create_report_content(self, html_list):
+        # set the chromosome tables
         self.sections = list()
+
         self.create_chromosome_table(html_list)
+
+        # and create final HTML
+        self.create_html("sequana_coverage.html")
 
     def create_chromosome_table(self, html_list):
         """Create table with links to chromosome reports"""
         df = pd.DataFrame(
             [
-                [chrom.chrom_name, chrom.get_size(), chrom.DOC, chrom.CV, page]
-                for chrom, page in zip(self.bed.chr_list, html_list)
+                [
+                    chrom,
+                    self.bed._basic_stats[chrom]['length'],
+                    self.bed._basic_stats[chrom]['DOC'],
+                    self.bed._basic_stats[chrom]['CV'],
+                    page
+                ]
+                for chrom, page in zip(self.bed.chrom_names, html_list)
             ],
             columns=["chromosome", "size", "mean_coverage", "coef_variation", "link"],
         )
@@ -104,7 +115,7 @@ class CoverageModule(SequanaBaseModule):
 
     def create_chromosome_reports(self):
         """Create HTML report for each chromosome present in data."""
-        # FIXME: why bed[0] (i.e. first chromosome)
+        # We choose the first chromosome, to build a common javascript object
         datatable_js = CoverageModule.init_roi_datatable(self.bed[0])
         chrom_output_dir = config.output_dir
         if not os.path.exists(chrom_output_dir):
@@ -112,7 +123,7 @@ class CoverageModule(SequanaBaseModule):
 
         page_list = []
         for chrom in self.bed:
-            logger.info("Creating coverage report {}".format(chrom.chrom_name))
+            logger.info(f"Creating coverage report {chrom.chrom_name}")
             chrom_report = ChromosomeCoverageModule(chrom, datatable_js, region_window=self.region_window)
             page_list.append(chrom_report.html_page)
         return page_list
@@ -154,7 +165,7 @@ class ChromosomeCoverageModule(SequanaBaseModule):
     created by CoverageModule.
     """
 
-    def __init__(self, chromosome, datatable, region_window=200000, options=None, command=""):
+    def __init__(self, chromosome, datatable, region_window=200000, options=None, command="", skip_html=False):
         """
 
         :param chromosome:
@@ -175,6 +186,7 @@ class ChromosomeCoverageModule(SequanaBaseModule):
         else:
             self.path = "../"
 
+
         self.chromosome = chromosome
         self.datatable = datatable
         self.command = command
@@ -184,11 +196,16 @@ class ChromosomeCoverageModule(SequanaBaseModule):
         self.intro = "<p>The genome coverage analysis of the chromosome " "<b>{0}</b>.</p>".format(
             self.chromosome.chrom_name
         )
-
         self.create_report_content(directory, options=options)
-        self.html_page = "{0}{1}{2}.cov.html".format(directory, os.sep, self.chromosome.chrom_name)
 
+        if skip_html:
+            return
+
+        self.html_page = "{0}{1}{2}.cov.html".format(directory, os.sep, self.chromosome.chrom_name)
         self.create_html(self.html_page)
+
+        # inform the main coverage instance that HTML is ready
+        self.chromosome.bed._html_list = self.chromosome.bed._html_list.union([self.html_page])
 
     def create_report_content(self, directory, options=None):
         """Generate the sections list to fill the HTML report."""
@@ -197,7 +214,7 @@ class ChromosomeCoverageModule(SequanaBaseModule):
         if self.chromosome._mode == "memory":
             # nothing to do, all computations should be already available
             # and in memory
-            rois = self.chromosome.get_rois()
+            rois = self.chromosome.rois
         elif self.chromosome._mode == "chunks":
             # we need to reset the data to the first chunk
             # and compute the median and zscore. So, first, we save the entire
@@ -324,7 +341,7 @@ class ChromosomeCoverageModule(SequanaBaseModule):
 
         # create directory
 
-        chrom_output_dir = os.sep.join([config.output_dir, str(directory), str(name)])
+        chrom_output_dir = os.sep.join([config.output_dir, str(directory), "subplots"])
         if not os.path.exists(chrom_output_dir):
             os.makedirs(chrom_output_dir)
 
@@ -333,7 +350,7 @@ class ChromosomeCoverageModule(SequanaBaseModule):
         # figure out the boundary. Indeed, you can imagine a BED file
         # that does not start at position zero, but from POS1>0 to POS2
 
-        links = ["{0}/{0}_{1}_{2}.html".format(name, i, min(i + W, maxpos)) for i in range(shift, shift + N, W)]
+        links = ["subplots/{0}_{1}_{2}.html".format(name, i, min(i + W, maxpos)) for i in range(shift, shift + N, W)]
         intra_links = ("{0}_{1}_{2}.html".format(name, i, min(i + W, maxpos)) for i in range(shift, shift + N, W))
 
         combobox = self.create_combobox(links, "sub", True)
@@ -549,7 +566,7 @@ class SubCoverageModule(SequanaBaseModule):
         )
         self.create_report_content()
         self.create_html(
-            "{0}{4}{1}{4}{1}_{2}_{3}.html".format(directory, self.chromosome.chrom_name, start, stop, os.sep)
+            "{0}{4}subplots{4}{1}_{2}_{3}.html".format(directory, self.chromosome.chrom_name, start, stop, os.sep)
         )
 
     def create_report_content(self):

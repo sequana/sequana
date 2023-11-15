@@ -4,12 +4,11 @@ from sequana.utils.datatables_js import DataTable, DataTableFunction
 from . import test_dir
 
 def test_datatables():
-        bed = bedtools.GenomeCov(f"{test_dir}/data/bed/JB409847.bed",
-                                 f"{test_dir}/data/genbank/JB409847.gbk")
-        fasta = f"{test_dir}/data/fasta/JB409847.fasta"
-        bed.compute_gc_content(fasta)
+        bed = bedtools.SequanaCoverage(f"{test_dir}/data/bed/JB409847.bed",
+                                annotation_file=f"{test_dir}/data/genbank/JB409847.gbk", 
+                                reference_file=f"{test_dir}/data/fasta/JB409847.fasta")
 
-        c = bed.chr_list[0]
+        c = bed[0]
         c.run(4001)
         rois = c.get_rois()
         rois.df['link'] = 'test'

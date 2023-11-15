@@ -12,6 +12,7 @@
 import os
 
 import click
+import rich_click as click
 import colorlog
 
 from sequana.gff3 import GFF3

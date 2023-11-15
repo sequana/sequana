@@ -8,6 +8,7 @@ colormap
 cookiecutter
 cython
 docutils
+deprecated
 easydev>=0.11.1
 gseapy>=0.13
 itolapi
@@ -15,13 +16,14 @@ lxml
 matplotlib
 matplotlib-venn
 mock
-multiqc<=1.11
+multiqc
 pandas>=0.22
 plotly
 psutil
 pykwalify
 vcfpy
 pysam>=0.16
+rich_click
 ruamel.yaml>=0.16.0
 snakemake>=7.16
 scikit-learn

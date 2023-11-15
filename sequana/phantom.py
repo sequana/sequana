@@ -306,7 +306,7 @@ class Phantom:
         pylab.xlim(self.start, self.stop)
         pylab.grid(True, zorder=-20)
         try:
-            pylab.tight_layout()
+            pylab.gcf().set_layout_engine("tight")
         except:
             pass
         stats["NSC"] = NSC

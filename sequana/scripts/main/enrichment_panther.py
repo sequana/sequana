@@ -14,6 +14,7 @@ import sys
 from pathlib import Path
 
 import click
+import rich_click as click
 import colorlog
 
 from sequana.modules_report import ModulePantherEnrichment

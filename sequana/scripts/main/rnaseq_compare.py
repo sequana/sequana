@@ -10,6 +10,7 @@
 #
 ##############################################################################
 import click
+import rich_click as click
 import colorlog
 from pylab import savefig
 

@@ -1,6 +1,8 @@
 # source
 # http://nbviewer.ipython.org/github/tritemio/notebooks/blob/master/Mixture_Model_Fitting.ipynb
 
+import warnings
+
 from easydev import DevTools, AttrDict
 
 devtools = DevTools()
@@ -65,8 +67,10 @@ class GaussianMixtureModel(object):
         return data
 
     def log_likelihood(self, params, sample):
-        res = -1 * pylab.log(self.pdf(sample, params)).sum()
-        return res
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            res = -1 * pylab.log(self.pdf(sample, params)).sum()
+            return res
 
 
 class Fitting(object):
@@ -336,7 +340,9 @@ class EM(Fitting):
 
                 # self.model.pdf(self.data, p_new,normalise=False).sum()!=0:
                 gamma[k, :] = pi_[k] * ss.norm.pdf(self.data, mu[k], sig[k])
-                gamma[k, :] /= self.model.pdf(self.data, p_new, normalise=False)
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore")
+                    gamma[k, :] /= self.model.pdf(self.data, p_new, normalise=False)
                 """else:
                     gamma[k, :] = pi_[k]*pylab.normpdf(self.data, mu[k],
                         sig[k])/(self.model.pdf(self.data, p_new,

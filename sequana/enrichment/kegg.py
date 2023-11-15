@@ -97,7 +97,6 @@ class KEGGPathwayEnrichment:
         ke = KEGGPathwayEnrichment("path_to_rnadiff", "mmu", mapper=df)
 
         ke.scatterplot('down')
-        tight_layout()
         savefig("B4052_T1vsT0_KE_scatterplot_down.png")
         ke.scatterplot('up')
         savefig("B4052_T1vsT0_KE_scatterplot_up.png")

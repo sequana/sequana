@@ -15,11 +15,11 @@
 #
 ##############################################################################
 """Heatmap and dendograms"""
-import matplotlib
-import pylab
+from sequana.lazy import pylab
+from sequana.lazy import scipy
+from sequana.lazy import numpy as np
 import scipy.cluster.hierarchy as hierarchy
 import scipy.spatial.distance as distance
-import numpy as np  # get rid of this dependence
 
 import easydev
 import colormap
@@ -156,6 +156,7 @@ class Dendogram(Linkage):
 
 
         """
+        import matplotlib
         # save all parameters in a dict
         layout = {}
 
@@ -184,7 +185,7 @@ class Dendogram(Linkage):
         # scaling min/max range
 
         # Scale the figure window size #
-        fig = pylab.figure(num=num, figsize=figsize)
+        fig = pylab.figure(num=num, figsize=figsize, layout="tight")
         fig.clf()
 
         Y = self.linkage(self.frame, self.method, self.metric)
@@ -201,7 +202,6 @@ class Dendogram(Linkage):
         self.frame = self.frame.iloc[idx1, :]
         ticks = pylab.yticks()[0]
         pylab.yticks(ticks, self.frame.index)
-        pylab.tight_layout()
 
         # reorder the flat cluster to match the order of the leaves the dendrogram
         ind1 = ind1[idx1]
@@ -219,3 +219,4 @@ class Dendogram(Linkage):
             ax.matshow(dr, aspect="auto", origin="lower", cmap=cmap_r)
             ax.set_xticks([])
             ax.set_yticks([])
+

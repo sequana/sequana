@@ -15,7 +15,7 @@ RNASEQ_DIR = f"{test_dir}/featurecounts/featurecounts_ex1"
 RNASEQ_NEW_1= f"{test_dir}/featurecounts/new_rnaseq_output"
 
 
-def __test_file():
+def test_file():
     RNASEQ_DIR_0 = f"{test_dir}/featurecounts/rnaseq_0"
     assert os.path.isdir(RNASEQ_DIR_0)
     assert os.path.isdir(RNASEQ_DIR_0+"/sample1")
@@ -34,14 +34,6 @@ def test_featurecounts():
     assert (
         fc.get_most_probable_strand_consensus(RNASEQ_DIR_undef, tolerance=0.1)[0] == -1
     )
-
-    # FIXME. how to handle the case where same amount of e.g 0 and 2 or 0 and 1
-    # etc ? 
-    #try:
-    #    fc.get_most_probable_strand_consensus(RNASEQ_DIR_noconsensus, tolerance=0.1)
-    #    assert False
-    #except IOError:
-    #    assert True
 
 def test_multi_feature_counts():
     ff = fc.MultiFeatureCount(RNASEQ_DIR_0, 0.15)

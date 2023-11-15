@@ -15,6 +15,7 @@ import json
 import itertools
 
 import click
+import rich_click as click
 import colorlog
 
 from sequana.enrichment.uniprot_enrichment import UniprotEnrichment
