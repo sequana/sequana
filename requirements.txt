@@ -16,7 +16,7 @@ lxml
 matplotlib
 matplotlib-venn
 mock
-multiqc
+multiqc<1.18
 pandas>=0.22
 plotly
 psutil

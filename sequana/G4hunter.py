@@ -12,9 +12,7 @@ from sequana.lazy import pandas as pd
 from sequana.stats import moving_average
 
 # Compute running average (excluding the last k bases)
-
-
-from easydev import do_profile
+#from sequana.cython.g4hunter import cython_base_score
 
 
 class G4Hunter:
@@ -32,7 +30,6 @@ class G4Hunter:
 
     remove read_file and GFinder
 
-
     Cleanup of write_sequences function --> 1.2s    Gain of 25/1.2s = 20. Not bad.
 
     To speedup things, we would need a better algorithm using e.g. convolution.
@@ -49,11 +46,12 @@ class G4Hunter:
         self.score = score
 
     def base_score(self, line):
+        #return np.array(cython_base_score(line))
         return self.base_score_python(line)
 
-    def base_score_numpy(self, line):
-        """Elegant but twice as slow as pure python..."""
-        item, scores = 0, []
+    """def base_score_numpy(self, line):
+        #Elegant but twice as slow as pure python...
+        scores = []
         counterG = 0
         counterC = 0
 
@@ -84,9 +82,10 @@ class G4Hunter:
             scores[i - counterC + 1 :] = -np.minimum(counterC, 4)
 
         return scores
+    """
 
     def base_score_python(self, line):
-        item, scores = 0, []
+        scores = []
         counterG = 0
         counterC = 0
 
@@ -153,7 +152,7 @@ class G4Hunter:
         LLISTE = len(LISTE)
 
         # a cast but faster access later
-        LISTE = tuple(LISTE)
+        LISTE = LISTE
 
         if LLISTE > 1:
             c = LISTE[i + 1]
@@ -173,9 +172,7 @@ class G4Hunter:
                     _long = len(seq)
 
                     LINE = f"{a} \t {a + k + self.window} \t {seq} \t {_long} \t {MR}\n"
-                    
                     fileout.write(LINE)
-
                     mean_scores.append(abs(MR))
 
                     k = 0
