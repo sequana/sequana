@@ -205,7 +205,7 @@ def enrichment_kegg(**kwargs):
         df = pd.concat([df, rnadiff.annotation.loc[df.index].copy()], axis=1)
         df.reset_index(inplace=True)
 
-        ModuleKEGGEnrichment(
+        m = ModuleKEGGEnrichment(
             gene_dict,
             keggname,
             df,
@@ -219,3 +219,5 @@ def enrichment_kegg(**kwargs):
     with open(p / "info.txt", "w") as fout:
         command = " ".join(["sequana"] + sys.argv[1:])
         fout.write(command)
+
+    m.ke.save_pathways(f"{output_directory}/.sequana")

@@ -35,9 +35,9 @@ class G4Hunter:
 
     Cleanup of write_seaquences function --> 1.2s    Gain of 25/1.2s = 20. Not bad.
 
-    To speeup things, we would need a better algorithm using e.g. convolution.
+    To speedup things, we would need a better algorithm using e.g. convolution.
+    Tentative with numpy does not seem promising. 
 
-    
     19.3 seconds on Ld1S
     1.4 seconds on Lepto
 
