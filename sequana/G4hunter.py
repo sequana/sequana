@@ -33,7 +33,7 @@ class G4Hunter:
     remove read_file and GFinder
 
 
-    Cleanup of write_seaquences function --> 1.2s    Gain of 25/1.2s = 20. Not bad.
+    Cleanup of write_sequences function --> 1.2s    Gain of 25/1.2s = 20. Not bad.
 
     To speedup things, we would need a better algorithm using e.g. convolution.
     Tentative with numpy does not seem promising. 
@@ -247,7 +247,7 @@ class G4Hunter:
             G4Seq = self.get_G4(rec.sequence, file1, scores, rec.name)
             if len(G4Seq) > 0:
                 # 13% dont la moitié dans base_ccore
-                mean_scores = self.write_seaquences(rec.sequence, file2, scores, G4Seq, rec.name)
+                mean_scores = self.write_sequences(rec.sequence, file2, scores, G4Seq, rec.name)
         fin = time.time()
 
         file1.close()
