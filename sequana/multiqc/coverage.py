@@ -4,6 +4,7 @@
 import os
 import re
 from math import log10
+from pathlib import Path
 
 # prevent boring warning (version 1.0)
 import logging
@@ -34,7 +35,6 @@ class MultiqcModule(BaseMultiqcModule):
         self.sequana_data = dict()
         self.sequana_desc = {}
         self.sequana_root = {}
-        self.sequana_caller = {}
 
         # Do we have a unique chromosome/contig name ?
         chrom_names = set([])
@@ -62,8 +62,6 @@ class MultiqcModule(BaseMultiqcModule):
                 # convert into string in case
                 key = data["sample_name"] + "/" + str(data["data"]["chrom_name"])
 
-            # in any case, just keep track of key / chrom_name
-
             # sometimes keys/name of chromosomes are just integer, so we need to
             # convert to string
             self._maps[key] = data["sample_name"] + "/" + str(data["data"]["chrom_name"])
@@ -71,10 +69,6 @@ class MultiqcModule(BaseMultiqcModule):
             self.sequana_data[key] = data["data"]
             self.sequana_desc[key] = data["data_description"]
             self.sequana_root[key] = myfile["root"]
-            try:
-                self.sequana_caller[key] = data["caller"]
-            except:
-                self.sequana_caller[key] = "undefined"
         if len(self.sequana_data) == 0:
             log.debug("No samples found: sequana_coverage")
             raise UserWarning
@@ -82,20 +76,27 @@ class MultiqcModule(BaseMultiqcModule):
         info = "<ul>"
         for this in sorted(self.sequana_data.keys()):
             sample_name, chrom_name = self._maps[this].split("/")
-            # sample_name, chrom_name = this.split("/")
 
             root = self.sequana_root[this]
 
-            # sequana_coverage store multiqc locally
-            # the pipelines stores it in ./multiqc/ the only way to have the
-            # correct path is to figure out who creates the summary file for
-            # multiqc. If sequana_coverage, no need to alter the path but if
-            # the multiqc were create by the pipelines, you need to come back to
-            # the root of the pipeline
-            if self.sequana_caller[this] in ["sequana_coverage", "sequana.bedtools"]:
-                subpath = ""
+            # sequana_coverage stores multiqc locally
+            # the pipelines stores it in ./multiqc/. We need to handle both cases here
+
+            p1 = Path(config.working_dir).absolute()
+            p2 = Path(config.output_dir).absolute()
+
+            if len(str(p1)) > len(str(p2)):
+                pp = p1.relative_to(p2)
             else:
-                subpath = "../"
+                pp = p2.relative_to(p1)
+
+            if len(pp.parts):
+                subpath = "/".join([".." for x in pp.parts])
+
+                if root.startswith("./"):
+                    root = root[1:]
+            else:
+                subpath = ""
 
             info += '<li><a href="{}/{}.cov.html">{}</a></li>'.format(subpath + root, chrom_name, this)
         info += "</ul>"
