@@ -239,6 +239,7 @@ Changelog
 ========= ==========================================================================
 Version   Description
 ========= ==========================================================================
+0.16.1    * hotfix missing module
 0.16.0    * add mpileup module
           * homogenization enrichment + fixup rnadiff
           * Complete refactoring of sequana coverage module.
