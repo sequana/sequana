@@ -2,6 +2,10 @@ import sys
 import os
 from setuptools import setup, find_packages
 
+# for a future release
+# from Cython.Build import cythonize
+# ext_modules = cythonize(["sequana/cython/*.pyx"])
+
 
 _MAJOR = 0
 _MINOR = 16
@@ -141,6 +145,7 @@ setup(
     # packages that will be copied from sequana/ into sequana/
     # Note, however, that e.g. ./pipelines must be added
     zip_safe=False,
+    #ext_modules = ext_modules,
     entry_points={
         "console_scripts": [
             "sequana=sequana.scripts.main.main:main",

@@ -29,6 +29,7 @@ from sequana import sequana_config_path as scfg
 from sequana.modules_report.kraken import KrakenModule
 from sequana.taxonomy import Taxonomy
 from sequana.utils import config
+from sequana import version as sequana_version
 
 
 logger = colorlog.getLogger(__name__)
@@ -125,6 +126,7 @@ click.rich_click.OPTION_GROUPS = {
     help="Update the local NCBI taxonomy database to the last version",
 )
 @click.option("--level", "level", default="INFO", type=click.Choice(["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]))
+@click.version_option(sequana_version)
 def main(**kwargs):
     """Welcome to SEQUANA - Taxonomy standalone
 

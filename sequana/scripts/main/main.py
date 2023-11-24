@@ -21,6 +21,7 @@ from .enrichment_uniprot import enrichment_uniprot
 from .fasta import fasta
 from .fastq import fastq
 from .feature_count import feature_counts
+from .g4hunter import g4hunter
 from .gff_to_gtf import gff_to_gtf
 from .gff_to_light_gff import gff_to_light_gff
 from .gtf_fixer import gtf_fixer
@@ -61,7 +62,7 @@ def main(**kwargs):
 
     To setup completion, type this command depending on your shell (bash):
 
-        eval "$(_SEQUANA_COMPLETE=source_bash sequana)"
+        eval "$(_SEQUANA_COMPLETE=bash_source sequana)"
         eval "$(_SEQUANA_COMPLETE=source_zsh sequana)"
         eval (env _SEQUANA_COMPLETE=source_fish sequana)
 
@@ -76,6 +77,7 @@ main.add_command(enrichment_uniprot)
 main.add_command(fastq)
 main.add_command(fasta)
 main.add_command(feature_counts)
+main.add_command(g4hunter)
 main.add_command(gff_to_gtf)
 main.add_command(gff_to_light_gff)
 main.add_command(gtf_fixer)

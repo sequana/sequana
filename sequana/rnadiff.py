@@ -1482,7 +1482,7 @@ class RNADiffResults:
         if len(subsets) > max_subsets:
             min_subset_size = updata[2].values[max_subsets]
         else:
-            min_subset_size = Npne
+            min_subset_size = None
 
         # now let us do the plotting
         upset.UpSet(upset.from_contents(data), subset_size="count", sort_by="cardinality", 
