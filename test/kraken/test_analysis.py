@@ -18,6 +18,8 @@ database = sequana_config_path + os.sep + "kraken2_dbs/toydb"
 
 @pytest.fixture
 def download():
+
+    os.makedirs("/home/runner/.config/sequana/kraken2_dbs/toydb", exist_ok=True)
     kd = KrakenDownload()
     kd.download("toydb")
 

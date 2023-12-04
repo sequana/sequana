@@ -13,7 +13,6 @@ import os
 import sys
 from pathlib import Path
 
-import click
 import rich_click as click
 import colorlog
 import pandas as pd
@@ -22,7 +21,7 @@ from sequana.modules_report import ModuleKEGGEnrichment
 from sequana.rnadiff import RNADiffResults
 from sequana.utils import config
 
-from .utils import CONTEXT_SETTINGS, common_logger
+from sequana.scripts.utils import CONTEXT_SETTINGS, common_logger
 
 
 logger = colorlog.getLogger(__name__)

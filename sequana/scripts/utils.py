@@ -11,11 +11,16 @@
 ##############################################################################
 import functools
 
-import click
 import rich_click as click
 
 
 CONTEXT_SETTINGS = {"help_option_names": ["-h", "--help"]}
+
+click.rich_click.USE_MARKDOWN = True
+click.rich_click.SHOW_METAVARS_COLUMN = False
+click.rich_click.APPEND_METAVARS_HELP = True
+click.rich_click.STYLE_ERRORS_SUGGESTION = "magenta italic"
+click.rich_click.SHOW_ARGUMENTS = True
 
 
 # This is a recipe from https://stackoverflow.com/questions/48391777/nargs-equivalent-for-options-in-click

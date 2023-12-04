@@ -12,7 +12,6 @@
 import sys
 import pathlib
 
-import click
 import rich_click as click
 import colorlog
 import shutil
@@ -20,7 +19,7 @@ import shutil
 from sequana.ribodesigner import RiboDesigner
 from sequana.scripts.common import teardown
 
-from .utils import CONTEXT_SETTINGS
+from sequana.scripts.utils import CONTEXT_SETTINGS
 
 
 logger = colorlog.getLogger(__name__)
