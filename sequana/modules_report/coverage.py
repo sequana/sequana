@@ -59,7 +59,7 @@ class CoverageModule(SequanaBaseModule):
             try:
                 html_list = self.create_chromosome_reports()
             except TypeError:
-                msg = "Data must be either a csv file or a :class:`GenomeCov` " "instance where zscore is computed."
+                msg = "Data must be either a csv file or a :class:`SequanaCoverage` " "instance where zscore is computed."
                 raise TypeError(msg)
         else:
             html_list = sorted(list(self.bed._html_list))
@@ -643,7 +643,7 @@ class SubCoverageModule(SequanaBaseModule):
                 index=i,
                 data_dict={
                     "type": "line",
-                    "name": "Filtered coverage",
+                    "name": "Coverage 2",
                     "showInLegend": "true",
                     "color": "#D9534F",
                     "lineColor": "#D9534F",

@@ -239,6 +239,8 @@ Changelog
 ========= ==========================================================================
 Version   Description
 ========= ==========================================================================
+0.16.2    * save coverage PNG image (regression)
+          * Update taxonomy/coverage standalone (regression) and more tests
 0.16.1    * hotfix missing module
 0.16.0    * add mpileup module
           * homogenization enrichment + fixup rnadiff
