@@ -276,7 +276,9 @@ class MultiFeatureCount:
 class FeatureCountMerger:
     """Merge several feature counts files"""
 
-    def __init__(self, pattern="*feature.out", fof=[]):
+    def __init__(self, pattern="*feature.out", fof=[], skiprows=1):
+
+        self.skiprows = skiprows
         if len(fof):
             self.filenames = fof
         else:
@@ -290,9 +292,9 @@ class FeatureCountMerger:
                 logger.critical(f"file x not found")
                 sys.exit(1)
 
-        self.df = pd.read_csv(self.filenames[0], sep="\t", skiprows=1)
+        self.df = pd.read_csv(self.filenames[0], sep="\t", skiprows=self.skiprows)
         for filename in self.filenames[1:]:
-            other_df = pd.read_csv(filename, sep="\t", skiprows=1)
+            other_df = pd.read_csv(filename, sep="\t", skiprows=self.skiprows)
             self.df = pd.merge(self.df, other_df)
 
     def to_tsv(self, output_filename="all_features.out"):
