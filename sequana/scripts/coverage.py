@@ -20,11 +20,7 @@ import sys
 
 import rich_click as click
 
-click.rich_click.USE_MARKDOWN = True
-click.rich_click.SHOW_METAVARS_COLUMN = False
-click.rich_click.APPEND_METAVARS_HELP = True
-click.rich_click.STYLE_ERRORS_SUGGESTION = "magenta italic"
-click.rich_click.SHOW_ARGUMENTS = True
+from .utils import CONTEXT_SETTINGS
 
 
 import colorlog
@@ -205,13 +201,6 @@ def download_genbank(ctx, param, value):
     show_default=True,
     help="Do not create any multiqc HTML page.",
 )
-#FIXME currently broken. requires complete refactoring of coverage module
-#@click.option(
-#    "skip_html",
-#    is_flag=True,
-#    show_default=False,
-#    help="Do not create any HTML reports. Save ROIs and statistics only.",
-#)
 @click.option("--output-directory", "output_directory", default="report", help="name of the output (report) directory.")
 @click.option(
     "-r",
@@ -430,9 +419,6 @@ def main(**kwargs):
         # logging level seems to be reset to warning somewhere
         logger.setLevel(options.logging_level)
 
-    # ugly but works for now. extra output_directory must be removed
-    #html_list = list(glob.glob(f"{options.output_directory}/*/*.cov.html"))
-    #html_list = [x.replace(f"{options.output_directory}/", "") for x in html_list]
 
     CoverageModule(gc)
 
@@ -479,6 +465,7 @@ def run_analysis(chrom, options):
     results = chrom.run(
         NW, options.k, circular=options.circular, binning=options.binning, cnv_delta=options.cnv_clustering
     )
+    chrom.plot_coverage(f"{directory}/coverage.png")
 
     if chrom.DOC < 8:
         logger.warning(

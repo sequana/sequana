@@ -1,6 +1,5 @@
 from itertools import chain, combinations
 
-import click
 import rich_click as click
 import colorlog
 
@@ -10,7 +9,7 @@ from jinja2 import Environment, PackageLoader
 from pysam import VariantFile, VariantRecord
 
 from sequana.gff3 import GFF3
-from sequana.scripts.main.utils import CONTEXT_SETTINGS, common_logger
+from sequana.scripts.utils import CONTEXT_SETTINGS, common_logger
 
 logger = colorlog.getLogger(__name__)
 

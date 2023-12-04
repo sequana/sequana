@@ -13,6 +13,7 @@
 import os
 import sys
 import shutil
+from pathlib import PosixPath, Path
 
 from easydev import execute, TempFile, md5
 
@@ -380,7 +381,7 @@ class KrakenResults(object):
         :return: status: True is everything went fine otherwise False
         """
         if output_filename is None:
-            output_filename = self.filename + ".summary"
+            output_filename = str(self.filename) + ".summary"
 
         taxon_to_find = list(self.taxons.index)
         if len(taxon_to_find) == 0:
@@ -740,10 +741,7 @@ class KrakenPipeline(object):
         """
         # Set and create output directory
         self.output_directory = output_directory
-        try:
-            os.makedirs(output_directory)
-        except FileExistsError:
-            pass
+        os.makedirs(output_directory, exist_ok=True)
 
         self.database = database
         self.ka = KrakenAnalysis(fastq, database, threads, confidence=confidence)
@@ -765,7 +763,7 @@ class KrakenPipeline(object):
 
         """
         # Run Kraken (KrakenAnalysis)
-        kraken_results = self.output_directory + os.sep + "kraken.out"
+        kraken_results = self.output_directory / "kraken.out"
 
         self.ka.run(
             output_filename=kraken_results,
@@ -784,33 +782,33 @@ class KrakenPipeline(object):
         except Exception as err:
             logger.warning(err)
             self.kr.plot(kind="pie")
-        pylab.savefig(self.output_directory + os.sep + "kraken.png")
+        pylab.savefig(self.output_directory / "kraken.png")
 
         # we save information about the unclassified reads (length)
         try:
             self.kr.boxplot_classified_vs_read_length()
-            pylab.savefig(self.output_directory + os.sep + "boxplot_read_length.png")
+            pylab.savefig(self.output_directory / "boxplot_read_length.png")
         except Exception as err:
             logger.warning("boxplot read length could not be computed")
 
         try:
             self.kr.histo_classified_vs_read_length()
-            pylab.savefig(self.output_directory + os.sep + "hist_read_length.png")
+            pylab.savefig(self.output_directory / "hist_read_length.png")
         except Exception as err:
             logger.warning("hist read length could not be computed")
 
-        prefix = self.output_directory + os.sep
+        prefix = self.output_directory 
 
-        self.kr.kraken_to_json(prefix + "kraken.json", self.dbname)
-        self.kr.kraken_to_csv(prefix + "kraken.csv", self.dbname)
+        self.kr.kraken_to_json(prefix / "kraken.json", self.dbname)
+        self.kr.kraken_to_csv(prefix / "kraken.csv", self.dbname)
 
         # Transform to Krona HTML
         from snakemake import shell
 
-        kraken_html = self.output_directory + os.sep + "kraken.html"
-        status = self.kr.kraken_to_krona(output_filename=prefix + "kraken.out.summary")
+        kraken_html = self.output_directory / "kraken.html"
+        status = self.kr.kraken_to_krona(output_filename=prefix / "kraken.out.summary")
         if status is True:
-            shell("ktImportText %s -o %s" % (prefix + "kraken.out.summary", kraken_html))
+            shell("ktImportText %s -o %s" % (prefix / "kraken.out.summary", kraken_html))
         else:
             shell("touch {}".format(kraken_html))
 
@@ -883,7 +881,8 @@ class KrakenAnalysis(object):
         self.confidence = confidence
 
         # Fastq input
-        if isinstance(fastq, str):
+
+        if isinstance(fastq, (str, PosixPath)):
             self.paired = False
             self.fastq = [fastq]
         elif isinstance(fastq, list):
@@ -895,7 +894,8 @@ class KrakenAnalysis(object):
                 raise IOError(("You must provide 1 or 2 files"))
             self.fastq = fastq
         else:
-            raise ValueError("Expected a fastq filename or list of 2 fastq filenames")
+            print(type(fastq), len(fastq))
+            raise ValueError(f"Expected a fastq filename or list of 2 fastq filenames Got {fastq}")
 
     def run(
         self,
@@ -927,13 +927,13 @@ class KrakenAnalysis(object):
         # make sure the required output directories exist:
         # and that the output filenames ends in .fastq
         if output_filename_classified:
-            assert output_filename_classified.endswith(".fastq")
+            assert output_filename_classified.name.endswith(".fastq")
             dirname = os.path.dirname(output_filename_classified)
             if os.path.exists(dirname) is False:
                 os.makedirs(dirname)
 
         if output_filename_unclassified:
-            assert output_filename_unclassified.endswith(".fastq")
+            assert output_filename_unclassified.name.endswith(".fastq")
             dirname = os.path.dirname(output_filename_unclassified)
             if os.path.exists(dirname) is False:
                 os.makedirs(dirname)
@@ -1074,11 +1074,11 @@ class KrakenSequential(object):
             with open(fof_databases, "r") as fof:
                 self.databases = [absolute_path.split("\n")[0] for absolute_path in fof.readlines()]
         # or simply provided as a list
-        elif isinstance(fof_databases, list):
+        elif isinstance(fof_databases, (list, tuple)):
             self.databases = fof_databases[:]
         else:
             raise TypeError(
-                "input databases must be a list of valid kraken2 " "databases or a file (see documebntation)"
+                "input databases must be a list of valid kraken2 " "databases or a file (see documentation)"
             )
 
         self.databases = [KrakenDB(x) for x in self.databases]
@@ -1128,7 +1128,7 @@ class KrakenSequential(object):
         logger.info("Analysing data using database {}".format(db))
 
         # a convenient alias
-        _pathto = lambda x: self.output_directory + x
+        _pathto = lambda x: self.output_directory / x
 
         # the output is saved in this file
         if self.paired:
@@ -1156,7 +1156,7 @@ class KrakenSequential(object):
         else:
             only_classified_output = True
 
-        file_kraken_out = self.output_directory + "/kraken_{}.out".format(iteration)
+        file_kraken_out = self.output_directory / "kraken_{}.out".format(iteration)
 
         # The analysis itself
         analysis = KrakenAnalysis(inputs, db, self.threads, confidence=self.confidence)
@@ -1212,7 +1212,7 @@ class KrakenSequential(object):
                 break
 
         # concatenate all kraken output files
-        file_output_final = self.output_directory + os.sep + "%s.out" % output_prefix
+        file_output_final = self.output_directory / f"{output_prefix}.out"
         with open(file_output_final, "w") as outfile:
             for fname in self._list_kraken_output:
                 with open(fname) as infile:
@@ -1224,27 +1224,27 @@ class KrakenSequential(object):
 
         try:
             result.histo_classified_vs_read_length()
-            pylab.savefig(self.output_directory + os.sep + "hist_read_length.png")
+            pylab.savefig(self.output_directory / "hist_read_length.png")
         except Exception as err:
             logger.warning("hist read length could not be computed")
 
         try:
             result.boxplot_classified_vs_read_length()
-            pylab.savefig(self.output_directory + os.sep + "boxplot_read_length.png")
+            pylab.savefig(self.output_directory / "boxplot_read_length.png")
         except Exception as err:
             logger.warning("hist read length could not be computed")
 
         # TODO: this looks similar to the code in KrakenPipeline. could be factorised
-        result.to_js("%s%s%s.html" % (self.output_directory, os.sep, output_prefix))
+        result.to_js("%s.html" % (self.output_directory / output_prefix))
         try:
             result.plot2(kind="pie")
         except Exception as err:
             logger.warning(err)
             result.plot(kind="pie")
-        pylab.savefig(self.output_directory + os.sep + "kraken.png")
-        prefix = self.output_directory + os.sep
-        result.kraken_to_json(prefix + "kraken.json", dbname)
-        result.kraken_to_csv(prefix + "kraken.csv", dbname)
+        pylab.savefig(self.output_directory / "kraken.png")
+        prefix = self.output_directory 
+        result.kraken_to_json(prefix / "kraken.json", dbname)
+        result.kraken_to_csv(prefix / "kraken.csv", dbname)
 
         # remove kraken intermediate files (including unclassified files)
         if self.unclassified_output:
@@ -1317,9 +1317,9 @@ class KrakenDownload(object):
 
     def __init__(self, output_dir=None):
         if output_dir is None:
-            self.output_dir = f"{sequana_config_path}{os.sep}kraken2_dbs"
+            self.output_dir = Path(f"{sequana_config_path}") / "kraken2_dbs"
         else:
-            self.output_dir = output_dir
+            self.output_dir = Path(output_dir)
 
     def download(self, name, verbose=True):
         if name == "toydb":
@@ -1333,11 +1333,8 @@ class KrakenDownload(object):
 
         Checks the md5 checksums. About 32Mb of data
         """
-        base = f"{self.output_dir}{os.sep}toydb"
-        try:
-            os.makedirs(base)
-        except FileExistsError:
-            pass
+        base = self.output_dir / "toydb"
+        base.mkdir(exist_ok=True)
 
         baseurl = "https://github.com/sequana/data/raw/main/"
 
@@ -1354,7 +1351,7 @@ class KrakenDownload(object):
 
         for filename, md5sum in zip(filenames, md5sums):
             url = baseurl + f"kraken2_toydb/{filename}"
-            filename = base + os.sep + filename
+            filename = base / filename
             if os.path.exists(filename) and md5(filename) == md5sum:
                 logger.warning(f"{filename} already present with good md5sum")
             else:

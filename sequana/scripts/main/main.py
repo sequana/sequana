@@ -9,7 +9,6 @@
 #  documentation: http://sequana.readthedocs.io
 #
 ##############################################################################
-import click
 import rich_click as click
 
 from sequana import version

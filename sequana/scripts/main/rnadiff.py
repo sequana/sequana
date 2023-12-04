@@ -22,7 +22,7 @@ from sequana.utils import config
 from sequana.scripts.common import teardown
 
 
-from .utils import CONTEXT_SETTINGS, common_logger
+from sequana.scripts.utils import CONTEXT_SETTINGS, common_logger
 
 logger = colorlog.getLogger(__name__)
 

@@ -11,13 +11,12 @@
 ##############################################################################
 import os
 
-import click
 import rich_click as click
 import colorlog
 
 from sequana.gff3 import GFF3
 
-from .utils import CONTEXT_SETTINGS, common_logger
+from sequana.scripts.utils import CONTEXT_SETTINGS, common_logger
 
 
 logger = colorlog.getLogger(__name__)

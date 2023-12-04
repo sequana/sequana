@@ -14,7 +14,6 @@ import sys
 import json
 import itertools
 
-import click
 import rich_click as click
 import colorlog
 
@@ -24,7 +23,7 @@ from sequana.modules_report import ModulePantherEnrichment
 from sequana.rnadiff import RNADiffResults
 from sequana.utils import config
 
-from .utils import CONTEXT_SETTINGS, common_logger, OptionEatAll
+from sequana.scripts.utils import CONTEXT_SETTINGS, common_logger, OptionEatAll
 
 
 logger = colorlog.getLogger(__name__)

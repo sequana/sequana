@@ -20,9 +20,14 @@
 import argparse
 import os
 import sys
+import json
+from pathlib import Path
+import ast
 
 import colorlog
+
 import rich_click as click
+
 from sequana import KrakenDownload, KrakenPipeline, KrakenSequential
 from sequana import sequana_config_path as cfg
 from sequana import sequana_config_path as scfg
@@ -31,17 +36,27 @@ from sequana.taxonomy import Taxonomy
 from sequana.utils import config
 from sequana import version as sequana_version
 
+from .utils import OptionEatAll, CONTEXT_SETTINGS
 
 logger = colorlog.getLogger(__name__)
 
 
-click.rich_click.USE_MARKDOWN = True
-click.rich_click.SHOW_METAVARS_COLUMN = False
-click.rich_click.APPEND_METAVARS_HELP = True
-click.rich_click.STYLE_ERRORS_SUGGESTION = "magenta italic"
-click.rich_click.SHOW_ARGUMENTS = True
+def update_taxonomy(ctx, param, value): #pragma: no cover
+    if value:
+        tax = Taxonomy()
+        click.echo(f"Will overwrite the local database taxonomy.dat in {cfg}")
+        tax.download_taxonomic_file(overwrite=True)
+        sys.exit(0)
+    return value
 
-CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
+
+def download_database(ctx, param, value):
+    if value:
+        kd = KrakenDownload()
+        kd.download(value)
+        sys.exit()
+    return value
+
 
 click.rich_click.OPTION_GROUPS = {
     "sequana_taxonomy": [
@@ -62,8 +77,14 @@ click.rich_click.OPTION_GROUPS = {
         },
         {
             "name": "Output files",
-            "options": ["--show-html", "--no-multiqc", "--output-directory", "--keep-temp-files", 
-                    "--unclassified-out", "--classified-out"],
+            "options": [
+                "--show-html",
+                "--no-multiqc",
+                "--output-directory",
+                "--keep-temp-files",
+                "--unclassified-out",
+                "--classified-out",
+            ],
         },
         {
             "name": "Behaviour",
@@ -73,19 +94,47 @@ click.rich_click.OPTION_GROUPS = {
 }
 
 
+# callback for --databases multiple arguments
+def check_databases(ctx, param, value):
+    if value:
+        # click transform the input databases  (tuple) into a string
+        # we need to convert it back to a tuple before checking the databases
+        values = ast.literal_eval(value)
+        for db in values:
+
+            guess = os.sep.join([scfg, "kraken2_dbs", db]) # sequana path
+            if not os.path.exists(guess) and not os.path.exists(db):
+                logger.error(f"{db} does not exists. Check its path name")
+                sys.exit(1)
+    return ast.literal_eval(value)
+
 
 @click.command(context_settings=CONTEXT_SETTINGS)
-@click.option("-1", "--file1", "file1", type=click.Path(), help="""Please use --input-file1 """)
-@click.option("-2", "--file2", "file2", type=click.Path(), help="""Please use --input-file2 """)
-@click.option("-1", "--input-file1", "file1", type=click.Path(), required=True, help="""R1 fastq file (zipped) """)
-@click.option("-2", "--input-file2", "file2", type=click.Path(), help="""R2 fastq file (zipped) """)
+@click.option(
+    "-1", "--file1", "file1", type=click.Path(file_okay=True, dir_okay=False), help="""Deprecated. Please use --input-file1 """
+)
+@click.option(
+    "-2", "--file2", "file2", type=click.Path(file_okay=True, dir_okay=False), help="""Deprecated. Please use --input-file2 """
+)
+@click.option(
+    "-1",
+    "--input-file1",
+    "file1",
+    type=click.Path(file_okay=True, dir_okay=False),
+    required=True,
+    help="""R1 fastq file (zipped) """,
+)
+@click.option(
+    "-2", "--input-file2", "file2", type=click.Path(file_okay=True, dir_okay=False), help="""R2 fastq file (zipped) """
+)
 @click.option(
     "--databases",
     "databases",
-    type=click.Path(),
-    nargs="+",
     required=True,
-    help="Path to a valid Kraken database(s). If you do not have any, use--download option. You may use several, in which case, an iterative taxonomy is performed as explained in online sequana  documentation (see HierarchicalKRaken"
+    type=click.STRING,
+    cls=OptionEatAll,
+    callback=check_databases,
+    help="Path to a valid Kraken database(s). If you do not have any, use --download option. You may use several, in which case, a sequential taxonomy is performed as explained in the online sequana  documentation (see HierarchicalKraken"
     "",
 )
 @click.option(
@@ -100,29 +149,27 @@ click.rich_click.OPTION_GROUPS = {
     "keep_temp_files",
     default=False,
     is_flag=True,
-    help="keep temporary files (hierarchical case with several databases",
+    help="keep temporary files (hierarchical case with several databases). Not recommended (could be large files)",
 )
 @click.option("--thread", "thread", type=click.INT, help="number of threads to use (default 4)", default=4)
-@click.option(
-    "--show-html",
-    "html",
-    is_flag=True,
-    help="Results are stored in report/ directory and results are not shown by default",
-)
 @click.option(
     "--download",
     "download",
     default=None,
     type=click.Choice(["toydb"]),
+    callback=download_database,
+    is_eager=True,
     help="A toydb example to be downloaded.",
 )
-@click.option("--unclassified-out", help="save unclassified sequences to filename")
-@click.option("--classified-out", help="save classified sequences to filename")
-@click.option("--confidence", type=click.FLOAT, default=0, show_default=True, help="confidence (kraken2 DB only)")
+@click.option("--unclassified-out", default=None, type=click.Path(), help="save unclassified sequences to filename")
+@click.option("--classified-out", default=None, type=click.Path(), help="save classified sequences to filename")
+@click.option("--confidence", type=click.FLOAT, default=0, show_default=True, help="confidence parameter (kraken2 parameter). Should be between 0 and 1. Represents fraction of error on the read")
 @click.option(
     "--update-taxonomy",
     is_flag=True,
     show_default=True,
+    callback=update_taxonomy,
+    is_eager=True,
     help="Update the local NCBI taxonomy database to the last version",
 )
 @click.option("--level", "level", default="INFO", type=click.Choice(["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]))
@@ -132,20 +179,20 @@ def main(**kwargs):
 
     ----
 
-    This standalone tool takes as input one or two (paired-end) FastQ files. 
-    Utilizing Kraken, Krona, and some codecs from Sequana, it aims to identify 
+    This standalone tool takes as input one or two (paired-end) FastQ files.
+    Utilizing Kraken, Krona, and some codecs from Sequana, it aims to identify
     the taxon/organism that matches each read found in the input files.
 
-    Kraken requires an input database. We provide three databases, but you 
+    Kraken requires an input database. We provide three databases, but you
     can also use Sequana to help you build a customized one.
 
     - **toydb**: This database contains only a few measles viruses. Its size
        is only 32Mb and should be used for testing and examples only.
-    - **minikraken**: Provided by Kraken's authors, it is about 4Gb and 
+    - **minikraken**: Provided by Kraken's authors, it is about 4Gb and
       contains viruses and bacteria only.
-    - **Sequana-built database**: This 8Gb database is stored on the Synapse 
-      website, and you will need an account on synapse.org. It contains 
-      approximately 22,000 species, including viruses, bacteria, Homo 
+    - **Sequana-built database**: This 8Gb database is stored on the Synapse
+      website, and you will need an account on synapse.org. It contains
+      approximately 22,000 species, including viruses, bacteria, Homo
       sapiens, fungi, and more.
 
     Each database can be downloaded using the following command:
@@ -156,7 +203,7 @@ def main(**kwargs):
 
         sequana_taxonomy --file1 R1.fastq --file2 R2.fastq
            --databases /home/user/.config/sequana/kraken_toydb
-           --show-html --thread 4
+           --thread 4
 
     ----
 
@@ -170,38 +217,15 @@ def main(**kwargs):
 
     logger.setLevel(options.level)
 
-    if options.update_taxonomy is True:
-        tax = Taxonomy()
-        logger.info("Will overwrite the local database taxonomy.dat in {}".format(cfg))
-        tax.download_taxonomic_file(overwrite=True)
-        sys.exit(0)
-
-    if options.download:
-        kd = KrakenDownload()
-        kd.download(options.download)
-        sys.exit()
-
-    fastq = []
-    if options.file1:
-        if os.path.exists(options.file1) is False:
-            logger.error(f"{options.file1} not found")
-            sys.exit(1)
-        fastq.append(options.file1)
+    fastq = [options.file1]
     if options.file2:
-        if os.path.exists(options.file2) is False:
-            logger.error(f"{options.file1} not found")
-            sys.exit(1)
         fastq.append(options.file2)
-
-    if options.databases is None:
-        logger.critical("You must provide a database")
-        sys.exit(1)
 
     databases = []
     for database in options.databases:
         guess = os.sep.join([scfg, "kraken2_dbs", database])
         if os.path.exists(guess):  # in Sequana path
-            databases.append(guess)
+            databases.append(Path(guess))
         elif os.path.exists(database):  # local database
             databases.append(database)
         else:
@@ -212,8 +236,7 @@ def main(**kwargs):
             logger.error(msg)
             raise IOError
 
-    output_directory = options.directory + os.sep + "kraken"
-    os.makedirs(output_directory, exist_ok=True)
+    output_directory = Path(options.directory) / "kraken"
 
     # if there is only one database, use the pipeline else KrakenHierarchical
     _pathto = lambda x: f"{options.directory}/kraken/{x}" if x else x
@@ -221,7 +244,7 @@ def main(**kwargs):
         logger.info("Using 1 database")
         k = KrakenPipeline(
             fastq,
-            databases[0],
+            options.databases[0],
             threads=options.thread,
             output_directory=output_directory,
             confidence=options.confidence,
@@ -235,9 +258,9 @@ def main(**kwargs):
         logger.info("Using %s databases" % len(databases))
         k = KrakenSequential(
             fastq,
-            databases,
+            options.databases,
             threads=options.thread,
-            output_directory=output_directory + os.sep,
+            output_directory=output_directory,
             force=True,
             keep_temp_files=options.keep_temp_files,
             output_filename_unclassified=_pathto(options.unclassified_out),
@@ -245,9 +268,7 @@ def main(**kwargs):
         )
         summary = k.run(output_prefix="kraken")
 
-    with open(output_directory + "/summary.json", "w") as fh:
-        import json
-
+    with open(output_directory / "summary.json", "w") as fh:
         json.dump(summary, fh, indent=4)
 
     # This statements sets the directory where HTML will be saved
@@ -257,11 +278,8 @@ def main(**kwargs):
     # output_filename is relative to the config.output_dir defined above
     kk = KrakenModule(output_directory, output_filename="summary.html")
 
-    logger.info("Open ./%s/summary.html" % options.directory)
-    logger.info("or ./%s/kraken/kraken.html" % options.directory)
-
-    if options.html is True:
-        ss.onweb()
+    logger.info(f"Open ./{options.directory}/summary.html")
+    logger.info(f"or ./{options.directory}/kraken/kraken.html")
 
 
 if __name__ == "__main__":

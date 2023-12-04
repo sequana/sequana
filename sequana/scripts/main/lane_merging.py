@@ -19,11 +19,10 @@ from subprocess import STDOUT
 
 from snakemake import shell as shellcmd
 
-import click
 import rich_click as click
 import colorlog
 
-from .utils import CONTEXT_SETTINGS, OptionEatAll
+from sequana.scripts.utils import CONTEXT_SETTINGS, OptionEatAll
 
 
 logger = colorlog.getLogger(__name__)

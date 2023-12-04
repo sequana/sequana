@@ -57,11 +57,11 @@ class KrakenModule(SequanaBaseModule):
         self.add_blast_section()
 
     def _get_stats(self):
-        return pd.read_csv(self.directory + os.sep + "kraken.csv")
+        return pd.read_csv(self.directory / "kraken.csv")
 
     def _get_df_hierarchy(self):
         # read the kraken summary results and build a grouped dataframe on ranks
-        df = pd.read_csv(self.directory + os.sep + "kraken.csv")
+        df = pd.read_csv(self.directory / "kraken.csv")
         df = df.fillna("")
         ranks = [
             "kingdom",
@@ -110,7 +110,7 @@ class KrakenModule(SequanaBaseModule):
             pngimage = sequana_data("no_data.jpg")
             extra = "<p> no reads could be identified with the given the database(s)."
         else:
-            pngimage = self.directory + os.sep + "kraken.png"
+            pngimage = self.directory / "kraken.png"
             extra = """<p>The following <b>clickable image</b> is a simplified 
 version (only genus are shown) of an interactive and more detailled version 
 based on Krona. Finally, note that the unclassified species in the pie plot 
@@ -136,7 +136,7 @@ Besides, be aware that closely related species may not be classified precisely.
     <br>
 """.format(
             extra,
-            self.directory.split(os.sep, 1)[1],
+            str(self.directory).split(os.sep, 1)[1],
             self.png_to_embedded_png(pngimage),
         )
 
@@ -219,11 +219,11 @@ are not covering the diversity of the sequencing runs, or because reads are of
 poor quality. For instance, they may be too short. Here below are information
 concerning the read length of unclassified reads. Here below C stands for
 classified and U for unclassified reads.</p><div>"""
-        pngimage = self.directory + os.sep + "boxplot_read_length.png"
+        pngimage = self.directory / "boxplot_read_length.png"
         if os.path.exists(pngimage):
             html += self.png_to_embedded_png(pngimage)
 
-        pngimage = self.directory + os.sep + "hist_read_length.png"
+        pngimage = self.directory / "hist_read_length.png"
         if os.path.exists(pngimage):
             html += self.png_to_embedded_png(pngimage)
         html += "</div>"
