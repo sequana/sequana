@@ -15,9 +15,9 @@
 #
 ##############################################################################
 
-from sequana.lazy import pylab
-
 import colorlog
+
+from sequana.lazy import pylab
 
 logger = colorlog.getLogger(__name__)
 
@@ -70,8 +70,8 @@ class MDS(clusterisation.Cluster):
         :param transform: can be 'log' or 'anscombe', log is just log10. count
             with zeros, are set to 1
         """
-        from sklearn.manifold import MDS
         import numpy as np
+        from sklearn.manifold import MDS
 
         if clf:
             pylab.clf()

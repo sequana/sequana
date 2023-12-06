@@ -22,11 +22,11 @@
 ##############################################################################
 """Volcano plot"""
 
+from adjustText import adjust_text
+
+from sequana.lazy import numpy as np
 from sequana.lazy import pandas as pd
 from sequana.lazy import pylab as pylab
-from sequana.lazy import numpy as np
-
-from adjustText import adjust_text
 
 __all__ = ["Volcano"]
 

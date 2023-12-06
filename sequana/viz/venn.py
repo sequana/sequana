@@ -16,8 +16,8 @@
 #
 ##############################################################################
 from matplotlib_venn import venn2_unweighted, venn3_unweighted
-from sequana.lazy import pylab
 
+from sequana.lazy import pylab
 
 __all__ = ["plot_venn"]
 
@@ -76,7 +76,7 @@ def plot_venn(subsets, labels=None, title=None, ax=None, alpha=0.8, weighted=Fal
 
     # pylab.clf()
     if len(subsets) == 2:
-        from matplotlib_venn import venn2_unweighted, venn2_circles, venn2
+        from matplotlib_venn import venn2, venn2_circles, venn2_unweighted
 
         if weighted:
             venn_function = venn2
@@ -84,7 +84,7 @@ def plot_venn(subsets, labels=None, title=None, ax=None, alpha=0.8, weighted=Fal
             venn_function = venn2_unweighted
         venn_circles = venn2_circles
     elif len(subsets) == 3:
-        from matplotlib_venn import venn3_unweighted, venn3_circles, venn3
+        from matplotlib_venn import venn3, venn3_circles, venn3_unweighted
 
         if weighted:
             venn_function = venn3

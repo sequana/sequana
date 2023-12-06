@@ -17,10 +17,10 @@
 
 """Heatmap and dendograms"""
 import warnings
+
+import easydev
 import scipy.cluster.hierarchy as hierarchy
 import scipy.spatial.distance as distance
-import easydev
-
 
 __all__ = ["Linkage"]
 

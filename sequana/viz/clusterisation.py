@@ -15,8 +15,9 @@
 #
 ##############################################################################
 
-from sequana.lazy import pylab
 import colorlog
+
+from sequana.lazy import pylab
 
 logger = colorlog.getLogger(__name__)
 

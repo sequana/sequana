@@ -17,24 +17,22 @@
 
 """
 import string
-import matplotlib.pyplot as plt
-import matplotlib.cm as cm
-from matplotlib.patches import Ellipse, Circle, Rectangle, Wedge
-from matplotlib.collections import PatchCollection
-import scipy.cluster.hierarchy as hierarchy
-from colormap import cmap_builder
-
-
-from sequana.viz.linkage import Linkage
 
 import colorlog
+import matplotlib.cm as cm
+import matplotlib.pyplot as plt
+import scipy.cluster.hierarchy as hierarchy
+from colormap import cmap_builder
+from matplotlib.collections import PatchCollection
+from matplotlib.patches import Circle, Ellipse, Rectangle, Wedge
+
+from sequana.viz.linkage import Linkage
 
 logger = colorlog.getLogger(__name__)
 
 
-from sequana.lazy import pandas as pd
 from sequana.lazy import numpy as np
-
+from sequana.lazy import pandas as pd
 
 __all__ = ["Corrplot"]
 
@@ -295,7 +293,6 @@ class Corrplot(Linkage):
         ax.set_yticks(ytickslocs)
         ax.set_yticklabels(labels, fontsize=fontsize, color=label_color)
         plt.gcf().set_layout_engine("tight")
-        
 
         # shift the limits to englobe the patches correctly
         # This should be here afer set_xticks
