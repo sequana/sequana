@@ -135,6 +135,7 @@ setup(
         "sequana.rules": ["*/*.rules", "*/*/*.rules", "*/*/*/*.rules"],
         "sequana.pipelines": ["*/*"],
         "sequana.resources.data": ["*.*"],  # use *.* for files and not ./adapters
+        "sequana.resources.doc": ["*", "*/*", "*/*/*"],
         "sequana.resources.examples": ["*"],
         "sequana.resources.templates": ["*.R"],
         "sequana.resources.images": ["*"],
