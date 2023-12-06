@@ -3,3 +3,4 @@ sphinx_rtd_theme
 sequana_sphinxext
 pillow<=9.5.0
 sphinx_gallery
+sphinx_copybutton
