@@ -15,18 +15,16 @@ import os
 import sys
 from pathlib import Path
 
-from sequana.lazy import pandas as pd
-from sequana.lazy import pylab
-
-from sequana.modules_report.base_module import SequanaBaseModule
-from sequana.utils.datatables_js import DataTable
-from sequana.enrichment.panther import PantherEnrichment
-from sequana.utils import config
+import colorlog
+from easydev import Progress
 from plotly import offline
 
-from easydev import Progress
-
-import colorlog
+from sequana.enrichment.panther import PantherEnrichment
+from sequana.lazy import pandas as pd
+from sequana.lazy import pylab
+from sequana.modules_report.base_module import SequanaBaseModule
+from sequana.utils import config
+from sequana.utils.datatables_js import DataTable
 
 logger = colorlog.getLogger(__name__)
 
@@ -126,10 +124,10 @@ class ModulePantherEnrichment(SequanaBaseModule):
 
 <p>In the following sections, you will find the GO
 terms enrichment. The input data for those analyis is the output of the RNADiff
-analysis where adjusted p-values above 0.05 are excluded. Moreover, we removed 
+analysis where adjusted p-values above 0.05 are excluded. Moreover, we removed
 candidates with log2 fold change below {log2fc}. Using these filters, the list of
 differentially expressed genes is made of {total_up} up and {total_down} down genes (total {total})</p>
-<p> In the following plots you can find the first GO terms that are enriched, keeping a 
+<p> In the following plots you can find the first GO terms that are enriched, keeping a
 maximum of {self.nmax} identifiers. </p>
 
 <p>The taxon used is {_taxon_name} (ID {_taxon_id}).<br>

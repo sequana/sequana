@@ -12,9 +12,9 @@
 ##############################################################################
 
 
+from sequana.lazy import numpy as np
 from sequana.lazy import pandas as pd
 from sequana.lazy import pylab
-from sequana.lazy import numpy as np
 
 
 class MGI:

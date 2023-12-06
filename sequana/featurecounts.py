@@ -11,16 +11,16 @@
 #
 ##############################################################################
 """feature counts related tools"""
+import glob
 import os
 import re
-import glob
 import sys
 from pathlib import Path
 
+import colorlog
+
 from sequana.lazy import pandas as pd
 from sequana.lazy import pylab
-
-import colorlog
 
 logger = colorlog.getLogger(__name__)
 

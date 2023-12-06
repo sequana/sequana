@@ -12,18 +12,16 @@
 #
 ##############################################################################
 """Utilities to access to online FASTA, taxon, lineage ..."""
-import os
+import ftplib
 import glob
 import math
-import ftplib
-
-from easydev import AttrDict, execute, Progress
-
-from sequana.lazy import pandas as pd
-
-from bioservices import ENA, EUtils
+import os
 
 import colorlog
+from bioservices import ENA, EUtils
+from easydev import AttrDict, Progress, execute
+
+from sequana.lazy import pandas as pd
 
 logger = colorlog.getLogger(__name__)
 

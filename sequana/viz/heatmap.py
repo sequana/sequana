@@ -15,16 +15,15 @@
 #
 ##############################################################################
 """Heatmap and dendograms"""
-from sequana.lazy import pylab
-from sequana.lazy import scipy
-from sequana.lazy import numpy as np
-from sequana.lazy import pandas as pd
+import easydev
 
 # FIXME speed up this import
 import scipy.cluster.hierarchy as hierarchy
 import scipy.spatial.distance as distance
 
-import easydev
+from sequana.lazy import numpy as np
+from sequana.lazy import pandas as pd
+from sequana.lazy import pylab, scipy
 from sequana.viz.linkage import Linkage
 
 __all__ = ["Heatmap", "Clustermap"]

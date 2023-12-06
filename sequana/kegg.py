@@ -10,11 +10,10 @@
 #  Documentation: http://sequana.readthedocs.io
 #  Contributors:  https://github.com/sequana/sequana/graphs/contributors
 ##############################################################################
-from sequana import sequana_data
-
-from sequana.lazy import pandas as pd
-
 import colorlog
+
+from sequana import sequana_data
+from sequana.lazy import pandas as pd
 
 logger = colorlog.getLogger(__name__)
 

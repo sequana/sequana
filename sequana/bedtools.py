@@ -11,31 +11,25 @@
 #
 ##############################################################################
 """Utilities for the genome coverage"""
-import os
-import gc
 import copy
-
+import gc
+import os
 import random
 import sys
 from collections import Counter
 
 import colorlog
 from easydev import Progress, TempFile
-
 from tqdm import tqdm
 
 from sequana.errors import BadFileFormat
 from sequana.genbank import GenBank
 from sequana.gff3 import GFF3
-
 from sequana.lazy import numpy as np
 from sequana.lazy import pandas as pd
-from sequana.lazy import pylab
-from sequana.lazy import pysam
-
+from sequana.lazy import pylab, pysam
 from sequana.stats import evenness
 from sequana.summary import Summary
-from sequana.tools import gc_content
 
 logger = colorlog.getLogger(__name__)
 
@@ -135,7 +129,7 @@ class DoubleThresholds(object):
     def __str__(self):
         txt = f"Low threshold: {self.low}\n"
         txt += f"High threshold: {self.high}\n"
-        txt += f"double-low threshold: {self.low2}\n" 
+        txt += f"double-low threshold: {self.low2}\n"
         txt += f"double-high threshold: {self.high2}"
         return txt
 
@@ -164,7 +158,7 @@ class SequanaCoverage(object):
         # you can change the thresholds:
         gencov.thresholds.low = -4
         gencov.thresholds.high = 4
-        gencov.compute_gc_content(reference)
+        #gencov.compute_gc_content(reference)
 
         gencov = SequanaCoverage(filename)
         for chrom in gencov:
@@ -200,7 +194,7 @@ class SequanaCoverage(object):
         quiet_progress=False,
         chromosome_list=[],
         reference_file=None,
-        gc_window_size=101
+        gc_window_size=101,
     ):
         """.. rubric:: constructor
 
@@ -251,14 +245,13 @@ class SequanaCoverage(object):
         self._rois = {}
         self._html_list = set()
 
-        #setters
+        # setters
         if annotation_file:
             self.annotation_file = annotation_file
 
         self.chunksize = chunksize
         self.force = force
         self.quiet_progress = quiet_progress
-
 
         if high_threshold < 2.5 and self.force is False:
             raise ValueError("high threshold must be >=2.5")
@@ -278,7 +271,9 @@ class SequanaCoverage(object):
         if chromosome_list:
             for chrom in chromosome_list:
                 if chrom not in self.chrom_names:
-                    raise ValueError(f"You provided an incorrect chromosome name ({chrom}). Please chose one amongst {self.chrom_names}")
+                    raise ValueError(
+                        f"You provided an incorrect chromosome name ({chrom}). Please chose one amongst {self.chrom_names}"
+                    )
             self.chrom_names = chromosome_list
 
     def __getitem__(self, index):
@@ -352,12 +347,14 @@ class SequanaCoverage(object):
 
                 # just to be equivalent to the GFF, we fill genes with locus tag
                 # See get_simplify_dataframe from GFF3 class. FIXME should be uniformed
-                for chrom_name, values in self._feature_dict.items(): #loop over chromosomes
+                for (
+                    chrom_name,
+                    values,
+                ) in self._feature_dict.items():  # loop over chromosomes
                     # values is a list of dictionaries
                     for i, value in enumerate(values):
-                        if "gene" not in value and 'locus_tag' in value:
-                            self._feature_dict[chrom_name][i]["gene"] = value['locus_tag']
-
+                        if "gene" not in value and "locus_tag" in value:
+                            self._feature_dict[chrom_name][i]["gene"] = value["locus_tag"]
 
         else:
             logger.error("FileNotFoundError: The genbank file doesn't exist.")
@@ -372,7 +369,6 @@ class SequanaCoverage(object):
 
     @window_size.setter
     def window_size(self, n):
-        binning = 1
         if n % 2 == 0:
             self._window_size = n + 1
         else:
@@ -406,10 +402,18 @@ class SequanaCoverage(object):
 
         Nchunk = int(fullsize / smallsize)
         i = 0
-        for chunk in tqdm(pd.read_table(
-            self.input_filename, header=None, sep="\t", usecols=[0], 
-            chunksize=self.chunksize, dtype="string"
-        ), total=Nchunk, disable=self.quiet_progress):
+        for chunk in tqdm(
+            pd.read_table(
+                self.input_filename,
+                header=None,
+                sep="\t",
+                usecols=[0],
+                chunksize=self.chunksize,
+                dtype="string",
+            ),
+            total=Nchunk,
+            disable=self.quiet_progress,
+        ):
             # accumulate length
             N += len(chunk)
 
@@ -423,7 +427,10 @@ class SequanaCoverage(object):
             chunk = chunk.groupby(0)
             for contig in contigs:
                 if contig not in positions:
-                    positions[contig] = {"start": chunk.groups[contig].min(), "end": chunk.groups[contig].max()}
+                    positions[contig] = {
+                        "start": chunk.groups[contig].min(),
+                        "end": chunk.groups[contig].max(),
+                    }
                 else:
                     positions[contig]["end"] = chunk.groups[contig].max()
             i += 1
@@ -435,7 +442,6 @@ class SequanaCoverage(object):
         for k in positions.keys():
             positions[k]["N"] = positions[k]["end"] - positions[k]["start"] + 1
         self.positions = positions
-
 
     def get_stats(self):
         """Return basic statistics for each chromosome
@@ -456,7 +462,6 @@ class SequanaCoverage(object):
                 stats[chrom.chrom_name] = chrom.get_stats()
                 self._stats[chrom_name] = stats[chrom_name].copy()
         return stats
-
 
 
 class ChromosomeCov(object):
@@ -595,7 +600,7 @@ class ChromosomeCov(object):
         if self.binning > 1:
             return self._length
         else:
-            return int(self.bed.positions[self.chrom_name]['N'])
+            return int(self.bed.positions[self.chrom_name]["N"])
         #    return self.df.__len__()
 
     def _set_chunk(self, chunk):
@@ -756,14 +761,14 @@ class ChromosomeCov(object):
         self._rois = results.get_rois()
 
         self.bed._basic_stats[self.chrom_name] = {
-            'DOC': self.DOC,
-            'CV': self.CV,
-            'length': len(self)
+            "DOC": self.DOC,
+            "CV": self.CV,
+            "length": len(self),
         }
         # duplicated call to results.get_rois() FIXME
         self.bed._rois[self.chrom_name] = results.get_rois()
 
-        #self._html_list = self._html_list.union(f"{sample}/{sample}.cov.html")
+        # self._html_list = self._html_list.union(f"{sample}/{sample}.cov.html")
 
         return results
 
@@ -981,7 +986,10 @@ class ChromosomeCov(object):
             self._df["scale"] = np.ones(len(self.df), dtype=int)
             self._df["zscore"] = np.zeros(len(self.df), dtype=int)
             # define arbitrary values
-            self.gaussians_params = [{"mu": 0.5, "pi": 0.15, "sigma": 0.1}, {"mu": 1, "pi": 0.85, "sigma": 0.1}]
+            self.gaussians_params = [
+                {"mu": 0.5, "pi": 0.15, "sigma": 0.1},
+                {"mu": 1, "pi": 0.85, "sigma": 0.1},
+            ]
             self.best_gaussian = self._get_best_gaussian()
 
             return
@@ -1134,7 +1142,12 @@ class ChromosomeCov(object):
                 if alternative:
                     return FilteredGenomeCov(data, self.thresholds, features[alternative], step=self.binning)
                 else:
-                    return FilteredGenomeCov(data, self.thresholds, features[self.chrom_name], step=self.binning)
+                    return FilteredGenomeCov(
+                        data,
+                        self.thresholds,
+                        features[self.chrom_name],
+                        step=self.binning,
+                    )
             else:
                 return FilteredGenomeCov(data, self.thresholds, step=self.binning)
         except KeyError:  # pragma: no cover
@@ -1146,14 +1159,31 @@ class ChromosomeCov(object):
             )
             sys.exit(1)
 
-    def plot_rois(self, x1, x2, set_ylimits=False, rois=None, fontsize=16, color_high="r", color_low="g", clf=True):
+    def plot_rois(
+        self,
+        x1,
+        x2,
+        set_ylimits=False,
+        rois=None,
+        fontsize=16,
+        color_high="r",
+        color_low="g",
+        clf=True,
+    ):
         if rois is None:
             rois = self.rois
 
         high = rois.get_high_rois().query("end>@x1 and start<@x2")
         low = rois.get_low_rois().query("end>@x1 and start<@x2")
 
-        self.plot_coverage(x1=x1, x2=x2, set_ylimits=set_ylimits, sample=False, fontsize=fontsize, clf=clf)
+        self.plot_coverage(
+            x1=x1,
+            x2=x2,
+            set_ylimits=set_ylimits,
+            sample=False,
+            fontsize=fontsize,
+            clf=clf,
+        )
 
         for start, end, cov in zip(high.start, high.end, high.mean_cov):
             pylab.plot([start, end], [cov, cov], lw=2, color=color_high, marker="o")
@@ -1242,7 +1272,13 @@ class ChromosomeCov(object):
             NN = 1
 
         # the main coverage plot
-        (p1,) = pylab.plot(df["cov"][::NN], color=main_color, label="Coverage", linewidth=main_lw, **main_kwargs)
+        (p1,) = pylab.plot(
+            df["cov"][::NN],
+            color=main_color,
+            label="Coverage",
+            linewidth=main_lw,
+            **main_kwargs,
+        )
         axes.append(p1)
         labels.append("Coverage")
 
@@ -1254,8 +1290,20 @@ class ChromosomeCov(object):
 
         # The threshold curves
         if th_lw > 0:
-            (p3,) = pylab.plot(high_zcov[::NN], linewidth=th_lw, color=th_color, ls=th_ls, label="Thresholds")
-            (p4,) = pylab.plot(low_zcov[::NN], linewidth=th_lw, color=th_color, ls=th_ls, label="_nolegend_")
+            (p3,) = pylab.plot(
+                high_zcov[::NN],
+                linewidth=th_lw,
+                color=th_color,
+                ls=th_ls,
+                label="Thresholds",
+            )
+            (p4,) = pylab.plot(
+                low_zcov[::NN],
+                linewidth=th_lw,
+                color=th_color,
+                ls=th_ls,
+                label="_nolegend_",
+            )
             axes.append(p3)
             labels.append("Thresholds")
 
@@ -1368,22 +1416,56 @@ class ChromosomeCov(object):
         maxcov = data.max()
         if logx is True and logy is True:
             bins = pylab.logspace(0, pylab.log10(maxcov), N)
-            pylab.hist(data, bins=bins, log=True, label=self.chrom_name, alpha=alpha, ec=ec, zorder=zorder, **kw_hist)
+            pylab.hist(
+                data,
+                bins=bins,
+                log=True,
+                label=self.chrom_name,
+                alpha=alpha,
+                ec=ec,
+                zorder=zorder,
+                **kw_hist,
+            )
             pylab.semilogx()
             pylab.xlabel("Coverage (log scale)", fontsize=fontsize)
             pylab.ylabel("Count (log scale)", fontsize=fontsize)
         elif logx is False and logy is True:
-            pylab.hist(data, bins=N, log=True, label=self.chrom_name, alpha=alpha, ec=ec, zorder=zorder, **kw_hist)
+            pylab.hist(
+                data,
+                bins=N,
+                log=True,
+                label=self.chrom_name,
+                alpha=alpha,
+                ec=ec,
+                zorder=zorder,
+                **kw_hist,
+            )
             pylab.xlabel("Coverage", fontsize=fontsize)
             pylab.ylabel("Count (log scale)", fontsize=fontsize)
         elif logx is True and logy is False:
             bins = pylab.logspace(0, pylab.log10(maxcov), N)
-            pylab.hist(data, bins=N, label=self.chrom_name, alpha=alpha, zorder=zorder, ec=ec, **kw_hist)
+            pylab.hist(
+                data,
+                bins=N,
+                label=self.chrom_name,
+                alpha=alpha,
+                zorder=zorder,
+                ec=ec,
+                **kw_hist,
+            )
             pylab.xlabel("Coverage (log scale)", fontsize=fontsize)
             pylab.ylabel("Count", fontsize=fontsize)
             pylab.semilogx()
         else:
-            pylab.hist(data, bins=N, label=self.chrom_name, alpha=alpha, zorder=zorder, ec=ec, **kw_hist)
+            pylab.hist(
+                data,
+                bins=N,
+                label=self.chrom_name,
+                alpha=alpha,
+                zorder=zorder,
+                ec=ec,
+                **kw_hist,
+            )
             pylab.xlabel("Coverage", fontsize=fontsize)
             pylab.ylabel("Count", fontsize=fontsize)
         pylab.grid(True)
@@ -1439,14 +1521,20 @@ class ChromosomeCov(object):
         data["gc"] *= 100
         data = data.dropna()
         if bins is None:
-            bins = [100, min(int(data["gc"].max() - data["gc"].min() + 1), max(5, self.bed.gc_window_size - 10))]
+            bins = [
+                100,
+                min(
+                    int(data["gc"].max() - data["gc"].min() + 1),
+                    max(5, self.bed.gc_window_size - 10),
+                ),
+            ]
             bins[0] = max(10, min(bins[0], self.df["cov"].max()))
 
         # FIXME jan 2018 there is currently an annoying warning in Hist2D
         import warnings
 
         with warnings.catch_warnings():
-            #warnings.simplefilter("ignore")
+            # warnings.simplefilter("ignore")
             from sequana.viz import Hist2D
 
             h2 = Hist2D(data)
@@ -1492,9 +1580,9 @@ class ChromosomeCov(object):
         (default window size is 101)
 
         """
-        self.df['gc'] = self._gc_content[self.df.index[0]-1:self.df.index[-1]]
+        self.df["gc"] = self._gc_content[self.df.index[0] - 1 : self.df.index[-1]]
         C = self.df[["cov", "gc"]].corr().iloc[0, 1]
-        del self.df['gc']
+        del self.df["gc"]
         gc.collect()
         return C
 
@@ -1507,6 +1595,7 @@ class ChromosomeCov(object):
 
         """
         from scipy.optimize import fmin
+
         pylab.clf()
         corrs = []
         wss = []
@@ -1521,7 +1610,6 @@ class ChromosomeCov(object):
             corrs.append(corr)
             wss.append(ws)
             return corr
-
 
         res = fmin(func, guess, xtol=1, disp=False)  # guess is 200
         pylab.plot(wss, corrs, "o")
@@ -1595,7 +1683,6 @@ class ChromosomeCov(object):
             "BOC": "Breadth of Coverage",
             "DOC": "Depth of Coverage",
             "chrom_name": "name of the contig/chromosome",
-            "length": "length of the contig/chromosome",
             "CV": "coefficient of variation of the DOC",
             "ROI": "number of regions of interest found",
             "C3": "Centralness (1 - ratio outliers by genome length) using zscore of 3",
@@ -1633,7 +1720,7 @@ class ChromosomeCov(object):
         if "gc" in self.df.columns:
             stats["GC"] = self.df["gc"].mean() * 100
 
-        stats['length'] = len(self)
+        stats["length"] = len(self)
 
         return stats
 
@@ -1649,7 +1736,7 @@ class ChromosomeCov(object):
         else:
             gc_window_size = ws
 
-        mid = int(gc_window_size / 2.)
+        mid = int(gc_window_size / 2.0)
 
         for chrom in fasta:
             if chrom.name == self.chrom_name:
@@ -1680,16 +1767,22 @@ class ChromosomeCov(object):
         self._gc_content = chrom_gc_content[self.chrom_name]
 
 
-
 class FilteredGenomeCov(object):
     """Select a subset of :class:`ChromosomeCov`
 
     :target: developers only
     """
 
-    _feature_not_wanted = { "regulatory", "source"}
+    _feature_not_wanted = {"regulatory", "source"}
 
-    def __init__(self, df, threshold, feature_list=None, step=1, apply_threshold_after_merging=True):
+    def __init__(
+        self,
+        df,
+        threshold,
+        feature_list=None,
+        step=1,
+        apply_threshold_after_merging=True,
+    ):
         """.. rubric:: constructor
 
         :param df: dataframe with filtered position used within

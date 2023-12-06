@@ -14,7 +14,7 @@
 #  documentation: http://sequana.readthedocs.io
 #
 ##############################################################################
-""" Utilities to create a Jquery DataTable for your HTML file. 
+""" Utilities to create a Jquery DataTable for your HTML file.
 
 
 .. autosummary::

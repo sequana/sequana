@@ -1,8 +1,7 @@
 from sequana import BED
 
-
-
 from . import test_dir
+
 
 def test_bed():
     bedfile = f"{test_dir}/data/bed/hg38_chr18.bed"
@@ -25,15 +24,9 @@ def test_wrong_file():
     except:
         assert False
 
-
     # This function uses _get_line that returns {} if a line is incorrectly
     # constructed (12 columns). Previous try/except uses get_exons that simply
     # fails
     b.get_CDS_exons()
 
-
     assert b._get_line("1 2 3") == {}
-
-
-
-

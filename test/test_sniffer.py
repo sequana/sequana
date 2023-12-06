@@ -2,6 +2,7 @@ from sequana.sniffer import sniffer
 
 from . import test_dir
 
+
 def test_sniffer():
     assert sniffer(f"{test_dir}/data/sam/test_measles.sam") == "SAM"
     assert sniffer(f"{test_dir}/data/bam/test_measles.bam") == "BAM"

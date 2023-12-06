@@ -15,14 +15,13 @@ import re
 from collections import Counter
 from functools import wraps
 
-from sequana import sequana_config_path
-from sequana.lazy import pandas as pd
-from sequana.utils.singleton import Singleton
-from sequana.misc import wget
-
+import colorlog
 from easydev import TempFile
 
-import colorlog
+from sequana import sequana_config_path
+from sequana.lazy import pandas as pd
+from sequana.misc import wget
+from sequana.utils.singleton import Singleton
 
 logger = colorlog.getLogger(__name__)
 
@@ -59,7 +58,7 @@ class NCBITaxonomy:
         """
         tax_id                  -- node id in GenBank taxonomy database
         parent tax_id               -- parent node id in GenBank taxonomy database
-        rank                    -- rank of this node (superkingdom, kingdom, ...) 
+        rank                    -- rank of this node (superkingdom, kingdom, ...)
         embl code               -- locus-name prefix; not unique
         division id             -- see division.dmp file
         inherited div flag  (1 or 0)        -- 1 if node inherits division from parent
@@ -73,7 +72,22 @@ class NCBITaxonomy:
         """
 
         try:
-            self.df_nodes.columns = ["taxid", "parent", "rank", 4, 5, "gc_id", "mt_id", 7, 8, 9, 10, 11, 12, 13]
+            self.df_nodes.columns = [
+                "taxid",
+                "parent",
+                "rank",
+                4,
+                5,
+                "gc_id",
+                "mt_id",
+                7,
+                8,
+                9,
+                10,
+                11,
+                12,
+                13,
+            ]
             del self.df_nodes[13]
         except:
             self.df_nodes.columns = ["taxid", "parent", "rank", 4, 5]
@@ -225,6 +239,7 @@ class Taxonomy(metaclass=Singleton):
         Do not overwrite the file by default.
         """
         import ftplib
+
         from sequana import sequana_config_path
 
         if os.path.exists(self.database) and overwrite is False:
@@ -254,8 +269,8 @@ class Taxonomy(metaclass=Singleton):
             self.ftp.cwd("pub")
             self.ftp.cwd("taxonomy")
             logger.warning("Downloading and saving in %s from ncbi ftp" % self.database)
-            import tempfile
             import shutil
+            import tempfile
 
             with tempfile.TemporaryDirectory() as tmpdir:
                 filename = tmpdir + os.sep + "taxdump.tar.gz"

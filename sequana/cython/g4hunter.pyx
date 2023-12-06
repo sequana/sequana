@@ -45,6 +45,3 @@ cdef _cython_base_score(str line):
 
 def cython_base_score(line):
     return _cython_base_score(line)
-
-
-

@@ -12,16 +12,17 @@
 ##############################################################################
 import os
 from collections import defaultdict
-from deprecated import deprecated
+
 import colorlog
+from deprecated import deprecated
 
 from sequana.annotation import Annotation
 from sequana.errors import BadFileFormat
 
 logger = colorlog.getLogger(__name__)
 
-from sequana.lazy import pysam
 from sequana.lazy import pandas as pd
+from sequana.lazy import pysam
 
 __all__ = ["GFF3"]
 
@@ -52,7 +53,6 @@ class GFF3(Annotation):
 
     def __init__(self, filename, skip_types=["biological_region"]):
         super().__init__(filename, skip_types=skip_types)
-
 
     def _get_features(self):
         """Extract unique GFF feature types
@@ -87,7 +87,6 @@ class GFF3(Annotation):
 
     features = property(_get_features)
 
-
     def get_attributes(self, feature=None, sep="; "):
         """Return list of possible attributes
 
@@ -113,7 +112,7 @@ class GFF3(Annotation):
                 if line.startswith("##FASTA"):
                     break
                 # Skip metadata and comments and empty lines
-                if line.startswith("#") or not line.strip(): #pragma: no cover
+                if line.startswith("#") or not line.strip():  # pragma: no cover
                     continue
 
                 split = line.rstrip().split("\t")
@@ -370,7 +369,7 @@ class GFF3(Annotation):
             attributes[attr[:idx]] = value.replace('"', "").replace("%3B", ";").replace("%20", " ")
         return attributes
 
-    @deprecated(reason="Not used anymore.", version='0.16.0')
+    @deprecated(reason="Not used anymore.", version="0.16.0")
     def create_files_for_rnadiff(
         self,
         outname,
@@ -608,17 +607,31 @@ class GFF3(Annotation):
         weight = {k: i for i, k in enumerate(genetype)}
         # Note seems optional
 
-        tokeep = [x for x in ["seqid", "genetic_type", "start", "stop", "strand", 
-                              "gene", "gene_id", "gene_name", 
-                              "locus_tag", "Note", "product"] if x in self.df.columns]
+        tokeep = [
+            x
+            for x in [
+                "seqid",
+                "genetic_type",
+                "start",
+                "stop",
+                "strand",
+                "gene",
+                "gene_id",
+                "gene_name",
+                "locus_tag",
+                "Note",
+                "product",
+            ]
+            if x in self.df.columns
+        ]
 
-        df = self.df.filter(tokeep, axis = 1)
+        df = self.df.filter(tokeep, axis=1)
 
         # remove region and chromosome row
         df = df.drop(df.loc[df.genetic_type.isin({"region", "chromosome"})].index)
         try:
             df["gene"] = df["gene"].fillna(df.locus_tag)
-        except (KeyError,AttributeError):
+        except (KeyError, AttributeError):
             pass
         df["score"] = [weight.get(g_t, worst_score) for g_t in df.genetic_type]
         # keep most informative features if on the same region

@@ -1,10 +1,11 @@
 import json
-from sequana.enrichment.uniprot_enrichment import UniprotEnrichment
+
 import pandas as pd
 import pytest
 
-from . import test_dir
+from sequana.enrichment.uniprot_enrichment import UniprotEnrichment
 
+from . import test_dir
 
 # computed
 # res = pe.panther.get_enrichment(gene_lists['up'], 83333, "GO:0003674", "FISHER", "FDR")
@@ -20,7 +21,7 @@ def get_gene_lists():
     down = list(down.Name)
     up = up[0:200]
     down = down[0:200]
-    return {'up': up, 'down': down, 'all': up+down}
+    return {"up": up, "down": down, "all": up + down}
 
 
 def test_uniprot(mocker, tmpdir):
@@ -31,13 +32,13 @@ def test_uniprot(mocker, tmpdir):
     try:
         pe.compute_enrichment(ontologies=["MF"])
 
-        df = pe.plot_go_terms("up", ontologies='MF', compute_levels=False)
-        df = pe.plot_go_terms("up", ontologies='MF', compute_levels=False, log=True, show_pvalues=True)
-        df = pe.plot_go_terms("up", ontologies='MF', compute_levels=False, log=True, include_negative_enrichment=True)
+        df = pe.plot_go_terms("up", ontologies="MF", compute_levels=False)
+        df = pe.plot_go_terms("up", ontologies="MF", compute_levels=False, log=True, show_pvalues=True)
+        df = pe.plot_go_terms("up", ontologies="MF", compute_levels=False, log=True, include_negative_enrichment=True)
 
         pe.plot_piechart(df)
 
-        outpng = tmpdir.join('test.png')
+        outpng = tmpdir.join("test.png")
         pe.save_chart(df, outpng)
     except KeyError:
         pass

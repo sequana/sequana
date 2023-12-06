@@ -18,16 +18,15 @@
 """Module to write coverage report"""
 import os
 
+import colorlog
 import pandas as pd
 
 from sequana import bedtools
 from sequana.modules_report.base_module import SequanaBaseModule
+from sequana.modules_report.summary import SummaryModule
+from sequana.plots.canvasjs_linegraph import CanvasJSLineGraph
 from sequana.utils import config
 from sequana.utils.datatables_js import DataTable, DataTableFunction
-from sequana.plots.canvasjs_linegraph import CanvasJSLineGraph
-from sequana.modules_report.summary import SummaryModule
-
-import colorlog
 
 logger = colorlog.getLogger(__name__)
 
@@ -59,7 +58,9 @@ class CoverageModule(SequanaBaseModule):
             try:
                 html_list = self.create_chromosome_reports()
             except TypeError:
-                msg = "Data must be either a csv file or a :class:`SequanaCoverage` " "instance where zscore is computed."
+                msg = (
+                    "Data must be either a csv file or a :class:`SequanaCoverage` " "instance where zscore is computed."
+                )
                 raise TypeError(msg)
         else:
             html_list = sorted(list(self.bed._html_list))
@@ -85,10 +86,10 @@ class CoverageModule(SequanaBaseModule):
             [
                 [
                     chrom,
-                    self.bed._basic_stats[chrom]['length'],
-                    self.bed._basic_stats[chrom]['DOC'],
-                    self.bed._basic_stats[chrom]['CV'],
-                    page
+                    self.bed._basic_stats[chrom]["length"],
+                    self.bed._basic_stats[chrom]["DOC"],
+                    self.bed._basic_stats[chrom]["CV"],
+                    page,
                 ]
                 for chrom, page in zip(self.bed.chrom_names, html_list)
             ],
@@ -185,7 +186,6 @@ class ChromosomeCoverageModule(SequanaBaseModule):
             directory = "."
         else:
             self.path = "../"
-
 
         self.chromosome = chromosome
         self.datatable = datatable

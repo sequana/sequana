@@ -12,16 +12,13 @@
 ##############################################################################
 import os
 
+import colorlog
+import rich_click as click
 from snakemake import shell as shellcmd
 
-import rich_click as click
-import colorlog
-
-from sequana.fastq import FastQ
 from sequana.fasta import FastA
-
+from sequana.fastq import FastQ
 from sequana.scripts.utils import CONTEXT_SETTINGS
-
 
 logger = colorlog.getLogger(__name__)
 
@@ -43,10 +40,10 @@ bwa index REFERENCE\
 samtools faidx REFERENCE
 
 # mapping
-bwa mem -t 4 -R @RG\\tID:1\\tSM:1\\tPL:illumina -T 30 REFERENCE FASTQ_FILES  | samtools 
+bwa mem -t 4 -R @RG\\tID:1\\tSM:1\\tPL:illumina -T 30 REFERENCE FASTQ_FILES  | samtools
 view -Sbh -> REFERENCE.bam
 
-samtools sort -o REFERENCE.sorted.bam  REFERENCE.bam 
+samtools sort -o REFERENCE.sorted.bam  REFERENCE.bam
     """
     reference = kwargs["reference"]
     file1 = kwargs["file1"]

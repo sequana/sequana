@@ -49,27 +49,27 @@ No. of allowed errors:
 
 Overview of removed sequences (5'):
 length count expect max.err error counts
-                            0 1         
+                            0 1
 ------ ----- ------ ------- ------------
-     6     7  146.3       0 7           
-     7     3   36.6       0 3           
-    10     1    4.6       1 0 1         
-    11     1    2.3       1 0 1         
-    12     1    1.1       1 1           
-    13     1    0.3       1 1           
-    17     1    0.0       1 1           
-    18     1    0.0       1 1           
-    19     2    0.0       1 2           
+     6     7  146.3       0 7
+     7     3   36.6       0 3
+    10     1    4.6       1 0 1
+    11     1    2.3       1 0 1
+    12     1    1.1       1 1
+    13     1    0.3       1 1
+    17     1    0.0       1 1
+    18     1    0.0       1 1
+    19     2    0.0       1 2
 
 
 Overview of removed sequences (3' or within):
 length count expect max.err error counts
-                            0  1        
+                            0  1
 ------ ----- ------ ------- ------------
-     6    40  146.3       0 40          
-     7     4   36.6       0 4           
-     8     1   18.3       0 1           
-    10     5    4.6       1 0  5        
+     6    40  146.3       0 40
+     7     4   36.6       0 4
+     8     1   18.3       0 1
+    10     5    4.6       1 0  5
 
 --------------------------------------------------------
 Adapter Nextera_transposase_seq_1|name:transposase_seq_1
@@ -87,20 +87,20 @@ No. of allowed errors:
 
 Overview of removed sequences (5'):
 length count  expect max.err error counts
-                             0  1        
+                             0  1
 ------ ----- ------- ------- ------------
-     6    17 1,170.3       0 17          
-     7    11   585.2       0 11          
-    10     1    36.6       1 0  1        
+     6    17 1,170.3       0 17
+     7    11   585.2       0 11
+    10     1    36.6       1 0  1
 
 
 Overview of removed sequences (3' or within):
 length count  expect max.err error counts
-                             0 1         
+                             0 1
 ------ ----- ------- ------- ------------
-     6     5 1,170.3       0 5           
-     7     2   585.2       0 2           
-    10     1    36.6       1 0 1         
+     6     5 1,170.3       0 5
+     7     2   585.2       0 2
+    10     1    36.6       1 0 1
 
 --------------------------------------------------------
 Adapter Nextera_transposase_seq_2|name:transposase_seq_2
@@ -118,16 +118,16 @@ No. of allowed errors:
 
 Overview of removed sequences (5'):
     length      count     expect    max.err error c...
-                                                      
+
 ---------- ---------- ---------- ---------- ----------
 
 
 Overview of removed sequences (3' or within):
 length count  expect max.err error counts
-                             0           
+                             0
 ------ ----- ------- ------- ------------
-     6    13 1,170.3       0 13          
-     7     5   292.6       0 5           
+     6    13 1,170.3       0 13
+     7     5   292.6       0 5
 
 -------------------------------------------------
 Adapter Nextera_index_N501|name:N501|seq:TAGATCGC
@@ -145,16 +145,16 @@ No. of allowed errors:
 
 Overview of removed sequences (5'):
 length count expect max.err error counts
-                            0  1        
+                            0  1
 ------ ----- ------ ------- ------------
-     6    26  146.3       0 26          
-     7     8   36.6       0 8           
-    11     2    2.3       1 0  2        
+     6    26  146.3       0 26
+     7     8   36.6       0 8
+    11     2    2.3       1 0  2
 
 
 Overview of removed sequences (3' or within):
     length      count     expect    max.err error c...
-                                                      
+
 ---------- ---------- ---------- ---------- ----------
 
 -------------------------------------------------
@@ -164,4 +164,3 @@ Adapter Nextera_index_N502|name:N502|seq:CTCTCTAT
 Sequence                                            Type           Length Trimmed (x)
 --------------------------------------------------- -------------- ------ -----------
 AATGATACGGCGACCACCGAGATCTACACCTCTCTATTCGTCGGCAGCGTC variable 5'/3'     51           0
-

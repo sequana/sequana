@@ -16,10 +16,8 @@
 ##############################################################################
 
 
-from sequana.viz import Imshow
 from sequana.lazy import numpy as np
 from sequana.lazy import pandas as pd
-
 
 __all__ = ["ANOVA"]
 
@@ -66,7 +64,10 @@ class ANOVA(object):
         return F, P
 
     def imshow_anova_pairs(self, log=True, **kargs):
+        # avoids circular imports
         import scipy.stats
+
+        from sequana.viz import Imshow
 
         N = len(self.df.columns)
 

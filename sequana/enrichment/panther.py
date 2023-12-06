@@ -12,13 +12,14 @@
 ##############################################################################
 
 import colorlog
+from tqdm import tqdm
+
 from sequana.enrichment.ontology import Ontology
 from sequana.enrichment.plot_go_terms import PlotGOTerms
 from sequana.enrichment.quickgo import QuickGOGraph
 from sequana.lazy import numpy as np
 from sequana.lazy import pandas as pd
 from sequana.lazy import pylab
-from tqdm import tqdm
 
 logger = colorlog.getLogger(__name__)
 

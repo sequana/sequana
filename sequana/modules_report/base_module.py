@@ -16,16 +16,16 @@
 #
 ##############################################################################
 """Generic module is the parent module of all other module"""
+import base64
+import io
 import os
 import shutil
-import io
-import base64
 
+import colorlog
 from jinja2 import Environment, PackageLoader
 
 # from reports import HTMLTable
 from sequana.utils import config
-import colorlog
 
 logger = colorlog.getLogger(__name__)
 

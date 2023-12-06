@@ -11,11 +11,10 @@
 #
 ##############################################################################
 
+import colorlog
 import pandas as pd
 
 from sequana.gff3 import GFF3
-
-import colorlog
 
 logger = colorlog.getLogger(__name__)
 
@@ -140,7 +139,7 @@ class Salmon:
         """
 
 In [179]: genes2trs['gene:ENSMUSG00000000028']
-Out[179]: 
+Out[179]:
 ['transcript:ENSMUST00000000028',
  'transcript:ENSMUST00000096990',
  'transcript:ENSMUST00000115585']

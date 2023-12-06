@@ -9,9 +9,9 @@ assignees: ''
 
 # Please fill this information if known:
 
-- sequana version: 
+- sequana version:
 
-# Description of your problem with error message 
+# Description of your problem with error message
 
 ```
 ERROR message here

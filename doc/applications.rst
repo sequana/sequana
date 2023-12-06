@@ -18,12 +18,12 @@ Sequanix: GUI for snakemake workflows
 :Name: sequanix
 
 
-This GUI can be used to load Snakefile and their configuration file. A 
-working directory has to be set. Once done, the configuration file can be 
+This GUI can be used to load Snakefile and their configuration file. A
+working directory has to be set. Once done, the configuration file can be
 changed in the GUI. Finally, one can run the snakefile and see the progress.
 Tooltips are automatically created from the configuration file (if documented).
 
-Since snakemake has the ability to run jobs locally or on a cluster, this 
+Since snakemake has the ability to run jobs locally or on a cluster, this
 application can also be run either locally or a distributed computing platform
 (e.g., cluster with slurm scheduler). Of course, this means you can use a X
 environment on your cluster (ssh -X should do it).
@@ -105,13 +105,6 @@ You will need to download databases. We provide a toy example::
 
     sequana_taxonomy --download toydb
 
-and the official kraken DB (4Gb)::
-
-    sequana_taxonomy --download minikraken
-
-A database of 8Gb is available. See
-https://github.com/sequana/data/tree/master/sequana_db1 for instructions and
-details (bacteria, viruses, human, organelles, ...).
 
 fastq related
 -------------
@@ -127,13 +120,3 @@ fastq related
 ::
 
     sequana fastq test.fastq.gz --head 10000 -o output.fastq.gz
-
-
-sequana_compressor
----------------------
-
-:Description: standalone on top of the compressor pipeline to
-    compress/decompress FastQ files in different formats, recursively 
-    and using multithreaded and multicore tools. 
-:Status: Production
-

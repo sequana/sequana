@@ -384,7 +384,15 @@ or comparisons. possible values are {valid_conditions}"""
 
 
 class RNADiffTable:
-    def __init__(self, path, alpha=0.05, log2_fc=0, sep=",", condition="condition", shrinkage=True):
+    def __init__(
+        self,
+        path,
+        alpha=0.05,
+        log2_fc=0,
+        sep=",",
+        condition="condition",
+        shrinkage=True,
+    ):
         """A representation of the results of a single rnadiff comparison
 
         Expect to find output of RNADiffAnalysis file named after condt1_vs_cond2_degs_DESeq2.csv
@@ -1189,7 +1197,11 @@ class RNADiffResults:
                 sample,
             ) in enumerate(self.design_df.query("condition == @condition").index):
                 if i == 0:
-                    pylab.plot(subdf[sample], color=self.design_df.loc[sample].group_color, label=condition)
+                    pylab.plot(
+                        subdf[sample],
+                        color=self.design_df.loc[sample].group_color,
+                        label=condition,
+                    )
                 else:
                     pylab.plot(subdf[sample], color=self.design_df.loc[sample].group_color)
 
@@ -1474,9 +1486,13 @@ class RNADiffResults:
         data = df.apply(lambda x: list(x.index[x])).to_dict()
 
         # let us figure out how many subsets we will have
-        updata = _process_data(upset.from_contents(data),
-            sort_by="cardinality", subset_size="count",
-            sum_over=None, sort_categories_by='cardinality')
+        updata = _process_data(
+            upset.from_contents(data),
+            sort_by="cardinality",
+            subset_size="count",
+            sum_over=None,
+            sort_categories_by="cardinality",
+        )
         subsets = updata[2]
 
         if len(subsets) > max_subsets:
@@ -1485,7 +1501,11 @@ class RNADiffResults:
             min_subset_size = None
 
         # now let us do the plotting
-        upset.UpSet(upset.from_contents(data), subset_size="count", sort_by="cardinality", 
-            totals_plot_elements=4, intersection_plot_elements=len(data),
-            min_subset_size=min_subset_size
-            ).plot()
+        upset.UpSet(
+            upset.from_contents(data),
+            subset_size="count",
+            sort_by="cardinality",
+            totals_plot_elements=4,
+            intersection_plot_elements=len(data),
+            min_subset_size=min_subset_size,
+        ).plot()

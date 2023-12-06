@@ -11,13 +11,14 @@
 #
 ##############################################################################
 
-import os
 import glob
+import os
+
+import colorlog
+
 from sequana import version
 from sequana.lazy import pandas as pd
 from sequana.lazy import pylab
-
-import colorlog
 
 logger = colorlog.getLogger(__name__)
 
@@ -109,7 +110,10 @@ class CanuScanner:
     def plot_correction_check1(self, alpha=0.5):
         try:
             tn = pd.read_csv(
-                self.getfile("correction/2-correction/*.estimate.tn.log"), sep="\t", header=None, usecols=[0, 1, 2, 3]
+                self.getfile("correction/2-correction/*.estimate.tn.log"),
+                sep="\t",
+                header=None,
+                usecols=[0, 1, 2, 3],
             )
             pylab.plot(tn[1], tn[3], "x", color="purple", label="TN", alpha=alpha)
         except:
@@ -117,7 +121,10 @@ class CanuScanner:
 
         try:
             fn = pd.read_csv(
-                self.getfile("correction/2-correction/*.estimate.fn.log"), sep="\t", header=None, usecols=[0, 1, 2, 3]
+                self.getfile("correction/2-correction/*.estimate.fn.log"),
+                sep="\t",
+                header=None,
+                usecols=[0, 1, 2, 3],
             )
             pylab.plot(fn[1], fn[3], "x", color="green", label="FN", alpha=alpha)
         except:
@@ -125,7 +132,10 @@ class CanuScanner:
 
         try:
             fp = pd.read_csv(
-                self.getfile("correction/2-correction/*.estimate.fp.log"), sep="\t", header=None, usecols=[0, 1, 2, 3]
+                self.getfile("correction/2-correction/*.estimate.fp.log"),
+                sep="\t",
+                header=None,
+                usecols=[0, 1, 2, 3],
             )
             pylab.plot(fp[1], fp[3], "x", color="cyan", label="FP", alpha=alpha)
         except:
@@ -133,7 +143,10 @@ class CanuScanner:
 
         try:
             tp = pd.read_csv(
-                self.getfile("correction/2-correction/*.estimate.tp.log"), sep="\t", header=None, usecols=[0, 1, 2, 3]
+                self.getfile("correction/2-correction/*.estimate.tp.log"),
+                sep="\t",
+                header=None,
+                usecols=[0, 1, 2, 3],
             )
             pylab.plot(tp[1], tp[3], "x", color="orange", label="TP", alpha=alpha)
         except:
@@ -154,7 +167,9 @@ low quality regions in the reads. """  # from canu report
 
     def hist_read_length2(self, fontsize=16):
         df = pd.read_csv(
-            self.getfile("correction/2-correction/*.original-expected-corrected-length.dat"), sep="\t", header=None
+            self.getfile("correction/2-correction/*.original-expected-corrected-length.dat"),
+            sep="\t",
+            header=None,
         )
         pylab.clf()
         df[1].hist(bins=100, alpha=0.5, density=True, label="original")

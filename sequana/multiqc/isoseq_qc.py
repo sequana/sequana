@@ -1,16 +1,15 @@
 #!/usr/bin/env python
 
 """ MultiQC module to parse output from sequana"""
-import os
-import re
-
 # prevent boring warning (version 1.0)
 import logging
+import os
+import re
 
 logging.captureWarnings(True)
 from multiqc import config
 from multiqc.modules.base_module import BaseMultiqcModule
-from multiqc.plots import linegraph, table, heatmap, bargraph
+from multiqc.plots import bargraph, heatmap, linegraph, table
 
 logging.captureWarnings(False)
 

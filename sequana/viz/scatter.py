@@ -21,8 +21,8 @@
 
 :author: Thomas Cokelaer
 """
-from sequana.lazy import pylab
 from sequana.lazy import pandas as pd
+from sequana.lazy import pylab
 from sequana.viz.core import VizInput2D
 
 __all__ = ["ScatterHist"]

@@ -24,48 +24,52 @@ from easydev import CustomConfig
 configuration = CustomConfig("sequana", verbose=False)
 sequana_config_path = configuration.user_config_dir
 
-# This must be import before all other modules (sequana_data function)
-from .codon import Codon
-from .datatools import sequana_data
+# The standalone app
+from . import scripts
 from .assembly import *
-from .bamtools import BAM, SAMFlags, SAM, CRAM
+from .bamtools import BAM, CRAM, SAM, SAMFlags
 from .bed import BED
 from .bedtools import SequanaCoverage
 from .cigar import Cigar
-from .coverage import Coverage
-from .fastq import FastQ, FastQC, Identifier
-from .fasta import FastA
+
+# This must be import before all other modules (sequana_data function)
+from .codon import Codon
 
 # contig import is after fasta due to cycling imports
 from .contigs import Contigs
-from .gff3 import GFF3
-from .freebayes_vcf_filter import VCF_freebayes
-from .freebayes_bcf_filter import BCF_freebayes
-from .itol import ITOL
-from .krona import KronaMerger
-
-from .kraken.analysis import KrakenResults, KrakenPipeline, KrakenAnalysis, KrakenDownload, KrakenSequential, KrakenDB
-from .kraken.multikraken import MultiKrakenResults, MultiKrakenResults2
+from .coverage import Coverage
+from .datatools import sequana_data
+from .enrichment.gsea import GSEA
+from .enrichment.kegg import KEGGPathwayEnrichment
 
 # enrichment
 from .enrichment.mart import Mart
-from .enrichment.kegg import KEGGPathwayEnrichment
 from .enrichment.panther import PantherEnrichment
-from .enrichment.gsea import GSEA
-
-from .idr import IDR
+from .fasta import FastA
+from .fastq import FastQ, FastQC, Identifier
+from .featurecounts import FeatureCount
+from .freebayes_bcf_filter import BCF_freebayes
+from .freebayes_vcf_filter import VCF_freebayes
+from .gff3 import GFF3
 from .homer import Homer
+from .idr import IDR
+from .itol import ITOL
+from .kraken.analysis import (
+    KrakenAnalysis,
+    KrakenDB,
+    KrakenDownload,
+    KrakenPipeline,
+    KrakenResults,
+    KrakenSequential,
+)
+from .kraken.multikraken import MultiKrakenResults, MultiKrakenResults2
+from .krona import KronaMerger
 from .macs3 import MACS3Reader, PeakConsensus
+from .modules_report.summary import SequanaReport
 from .pacbio import PacbioSubreads
 from .phred import Quality
 from .rnadiff import RNADiffResults
-from .featurecounts import FeatureCount
 from .running_median import RunningMedian
+from .sequence import DNA, RNA, Repeats, Sequence
 from .snpeff import SnpEff
-from .sequence import DNA, RNA, Sequence, Repeats
 from .trf import TRF
-
-# The standalone app
-from . import scripts
-
-from .modules_report.summary import SequanaReport

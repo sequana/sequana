@@ -12,10 +12,10 @@
 ##############################################################################
 import re
 
+import colorlog
+
 from sequana.annotation import Annotation
 from sequana.fasta import FastA
-
-import colorlog
 
 logger = colorlog.getLogger(__name__)
 
@@ -56,7 +56,7 @@ class GenBank(Annotation):
 
     features = property(_get_features)
 
-    def get_types(self): #pragma no cover
+    def get_types(self):  # pragma no cover
         logger.warning("genbank.GenBank.get_types is deprecrated. Please use features property")
         records = self.genbank_features_parser()
         _types = set()
@@ -150,7 +150,12 @@ class GenBank(Annotation):
                         start = pos[0]
                         end = pos[-1]
                         strand = "-" if split_line[1].startswith("c") else "+"
-                        new_feature = {"type": t, "gene_start": start, "gene_end": end, "strand": strand}
+                        new_feature = {
+                            "type": t,
+                            "gene_start": start,
+                            "gene_end": end,
+                            "strand": strand,
+                        }
 
                     # recover qualifier bound with feature
                     else:

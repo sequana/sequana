@@ -1,8 +1,9 @@
 """This is a MultiQC plugin re-used temporarely here"""
-import zipfile
 import re
-from sequana.lazy import pylab
+import zipfile
+
 from sequana.lazy import pandas as pd
+from sequana.lazy import pylab
 
 
 class FastQC:
@@ -56,7 +57,10 @@ class FastQC:
                     # Special case: Total Deduplicated Percentage header line
                     if s_headers[0] == "Total Deduplicated Percentage":
                         self.fastqc_data[s_name]["basic_statistics"].append(
-                            {"measure": "total_deduplicated_percentage", "value": float(s_headers[1])}
+                            {
+                                "measure": "total_deduplicated_percentage",
+                                "value": float(s_headers[1]),
+                            }
                         )
                     else:
                         if s_headers[1] == "Relative count":

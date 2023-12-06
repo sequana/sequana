@@ -13,14 +13,13 @@
 ##############################################################################
 """Module to write differential regulation analysis report"""
 
+import colorlog
+
 from sequana.lazy import pandas as pd
 from sequana.lazy import pylab
-
 from sequana.modules_report.base_module import SequanaBaseModule
-from sequana.utils.datatables_js import DataTable
 from sequana.rnadiff import RNADiffResults
-
-import colorlog
+from sequana.utils.datatables_js import DataTable
 
 logger = colorlog.getLogger(__name__)
 
@@ -165,7 +164,7 @@ for that feature.</p>
 Expression (DGE) analysis. You can find two entries per comparison. The first
 one has no filter except for an adjusted p-value of 0.05. The second shows the
 expressed genes with a filter of the log2 fold change of 1 (factor 2 in a normal
-scale). Clicking on any of the link will lead you to the section of the comparison. 
+scale). Clicking on any of the link will lead you to the section of the comparison.
 {js_all} {html} </p>""",
             }
         )
@@ -193,6 +192,7 @@ scale). Clicking on any of the link will lead you to the section of the comparis
             with pylab.ioff():
                 pylab.clf()
                 import warnings
+
                 with warnings.catch_warnings():
                     warnings.simplefilter("ignore")
                     self.rnadiff.plot_dendogram()
@@ -351,7 +351,7 @@ condition</p> {}<hr>""".format(
             pylab.close()
 
         html_boxplot = """<p>A normalization of the data is performed to correct
-the systematic technical biases due to different counts across samples. The 
+the systematic technical biases due to different counts across samples. The
 normalization is performed with DESeq2. It relies on the hypothess that most
 features are not differentially expressed. It computes a scaling factor for each
 sample. Normalized read counts are obtained by dividing raw read counts by the
@@ -402,7 +402,7 @@ normalised counts.
 
         description = """<p>
 When the dispersion estimation and model fitting is done, statistical testing is
-performed. The distribution of raw p-values computed by the statistical test 
+performed. The distribution of raw p-values computed by the statistical test
 is expected to be a mixture of a uniform distribution on [0, 1] and a peak
 around 0 corresponding to the diﬀerentially expressed features. This may not
 always be the case. </p>"""

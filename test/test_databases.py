@@ -1,10 +1,12 @@
-from sequana import databases
-import os
 import glob
+import os
+
 import pytest
 import pytest_timeout
-
 import requests
+
+from sequana import databases
+
 from . import test_dir
 
 
@@ -35,9 +37,7 @@ def test_NCBITaxonReader():
     # data test files were created using the taxons 11234 and 2697049
 
     # constructor with existing files
-    n = databases.NCBITaxonReader(
-        f"{test_dir}/data/names_filtered.dmp", f"{test_dir}/data/nodes_filtered.dmp"
-    )
+    n = databases.NCBITaxonReader(f"{test_dir}/data/names_filtered.dmp", f"{test_dir}/data/nodes_filtered.dmp")
 
     # constructor zith no files
     n = databases.NCBITaxonReader()
@@ -79,7 +79,6 @@ def test_NCBIDownload(tmpdir):
     n.download_assembly_report("fungi", output=path)
 
 
-
 @pytest.mark.xfail(reason="too slow", method="thread")
 @pytest.mark.timeout(10)
 def test_ENADownload(tmpdir):
@@ -87,6 +86,4 @@ def test_ENADownload(tmpdir):
     n = databases.ENADownload()
     n.download_fasta("K01711.1", output_dir=str(path))
     n.download_fasta(["K01711.1", "dummy"], output_dir=str(path))
-    n.download_fasta(
-        f"{test_dir}/data/test_eutils_list_accession_number.txt", output_dir=str(path)
-    )
+    n.download_fasta(f"{test_dir}/data/test_eutils_list_accession_number.txt", output_dir=str(path))

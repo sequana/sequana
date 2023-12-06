@@ -1,5 +1,5 @@
 name: Publish to PyPI
-on: 
+on:
   workflow_dispatch:
   push:
     tags:
@@ -37,4 +37,3 @@ jobs:
       with:
         user: __token__
         password: ${{ secrets.PYPI_API_TOKEN }}
-

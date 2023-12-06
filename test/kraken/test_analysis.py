@@ -1,15 +1,18 @@
-from sequana import sequana_config_path, sequana_data
+import os
+import tempfile
+
+import pytest
+
 from sequana import (
     KrakenAnalysis,
     KrakenDB,
     KrakenDownload,
     KrakenPipeline,
-    KrakenSequential,
     KrakenResults,
+    KrakenSequential,
+    sequana_config_path,
+    sequana_data,
 )
-import os
-import tempfile
-import pytest
 
 from . import test_dir
 
@@ -19,7 +22,8 @@ database = sequana_config_path + os.sep + "kraken2_dbs/toydb"
 @pytest.fixture
 def download():
 
-    os.makedirs("/home/runner/.config/sequana/kraken2_dbs/toydb", exist_ok=True)
+    home = os.path.expanduser("~")
+    os.makedirs(f"{home}/.config/sequana/kraken2_dbs/toydb", exist_ok=True)
     kd = KrakenDownload()
     kd.download("toydb")
 
@@ -62,14 +66,10 @@ def test_kraken_sequential(download):
     file2 = sequana_data("Hm2_GTGAAA_L005_R2_001.fastq.gz", "data")
 
     # Test paired data with 2 kraken1 DB
-    kt = KrakenSequential(
-        [file1, file2], [database, database], output_directory=p.name, force=True
-    )
+    kt = KrakenSequential([file1, file2], [database, database], output_directory=p.name, force=True)
     kt.run()
 
-    kt = KrakenSequential(
-        file1, [database, database], output_directory=p.name, force=True
-    )
+    kt = KrakenSequential(file1, [database, database], output_directory=p.name, force=True)
     kt.run()
 
     p.cleanup()

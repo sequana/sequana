@@ -18,20 +18,18 @@ import os
 import subprocess
 import sys
 
-import rich_click as click
-
-from .utils import CONTEXT_SETTINGS
-
-
 import colorlog
+import rich_click as click
 from easydev import AttrDict, shellcmd
 
 from sequana import sequana_data
 from sequana import version as sequana_version
 from sequana.bedtools import ChromosomeCov, SequanaCoverage
 from sequana.modules_report.coverage import ChromosomeCoverageModule, CoverageModule
-from sequana.utils import config
 from sequana.scripts.common import teardown
+from sequana.utils import config
+
+from .utils import CONTEXT_SETTINGS
 
 logger = colorlog.getLogger(__name__)
 
@@ -419,7 +417,6 @@ def main(**kwargs):
         # logging level seems to be reset to warning somewhere
         logger.setLevel(options.logging_level)
 
-
     CoverageModule(gc)
 
     if options.skip_multiqc is False:
@@ -486,7 +483,7 @@ def run_analysis(chrom, options):
     logger.info(
         "Fitted central distribution (first chunk): mu=%s, sigma=%s, pi=%s"
         % (round(mu, 3), round(sigma, 3), round(pi, 3))
-        )
+    )
 
     # some information about the ROIs found
     logger.info(
@@ -502,7 +499,6 @@ def run_analysis(chrom, options):
     # Create directory and save ROIs
     ROIs.df.to_csv(f"{directory}/rois.csv")
 
-
     logger.info(f"Creating report in {options.output_directory}. Please wait")
 
     if chrom._mode == "chunks":
@@ -512,7 +508,7 @@ def run_analysis(chrom, options):
         chrom,
         datatable=CoverageModule.init_roi_datatable(ROIs),
         options={"W": NW, "k": options.k, "ROIs": ROIs, "circular": options.circular},
-        command=" ".join(["sequana_coverage"] + sys.argv[1:]), 
+        command=" ".join(["sequana_coverage"] + sys.argv[1:]),
     )
 
 

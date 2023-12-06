@@ -1,15 +1,14 @@
 #!/usr/bin/env python
 """ MultiQC module to parse output from sequana"""
+import json
+import logging
 import os
 import re
 
-import logging
-import json
-
 logging.captureWarnings(True)
 from multiqc import config
-from multiqc.plots import linegraph, table, heatmap, bargraph
 from multiqc.modules.base_module import BaseMultiqcModule
+from multiqc.plots import bargraph, heatmap, linegraph, table
 
 logging.captureWarnings(False)
 

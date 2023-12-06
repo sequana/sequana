@@ -17,7 +17,6 @@
 """Core function for the plotting tools"""
 from sequana.lazy import pandas as pd
 
-
 __all__ = ["VizInput2D"]
 
 

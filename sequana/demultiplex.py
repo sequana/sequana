@@ -11,10 +11,11 @@
 #
 ##############################################################################
 import json
-from sequana.lazy import pylab
-from sequana.lazy import pandas as pd
 
 import colorlog
+
+from sequana.lazy import pandas as pd
+from sequana.lazy import pylab
 
 logger = colorlog.getLogger(__name__)
 
@@ -149,7 +150,15 @@ class StatsFile(object):
 
         all_data.plot(kind="barh", alpha=alpha, zorder=1, width=width, ec="k")
 
-        under.plot(kind="barh", alpha=alpha, color="red", ax=pylab.gca(), zorder=1, width=width, ec="k")
+        under.plot(
+            kind="barh",
+            alpha=alpha,
+            color="red",
+            ax=pylab.gca(),
+            zorder=1,
+            width=width,
+            ec="k",
+        )
         self.all_data = all_data
         self.under = under
         if len(all_data) < 100:
@@ -217,7 +226,10 @@ class StatsFile(object):
         pylab.xlabel("Number of reads", fontsize=12)
         pylab.ylabel("")
         pylab.grid(True)
-        pylab.legend(["Lane {}".format(x) for x in range(1, len(df.columns) + 1)], loc="lower right")
+        pylab.legend(
+            ["Lane {}".format(x) for x in range(1, len(df.columns) + 1)],
+            loc="lower right",
+        )
 
         # here we plot a vertical line corresponding to the median of reads
         # found in determined indices

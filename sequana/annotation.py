@@ -16,7 +16,6 @@ __all__ = ["Annotation"]
 
 
 class Annotation:
-
     def __init__(self, filename, skip_types=["biological_region"]):
 
         if not os.path.exists(filename):
@@ -27,11 +26,3 @@ class Annotation:
         self._features = None
         self._attributes = None
         self.skip_types = skip_types
-
-
-
-
-
-
-
-

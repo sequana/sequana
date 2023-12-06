@@ -4,6 +4,7 @@ import filecmp
 from pathlib import Path
 
 from click.testing import CliRunner
+
 from sequana.ribodesigner import RiboDesigner
 from sequana.scripts.main import ribodesigner
 
@@ -23,9 +24,7 @@ def test_ribodesigner(tmp_path):
 
 
 def test_ribodesigner_no_gff(tmp_path):
-    rd = RiboDesigner(
-        fasta=resources_dir / "sample_rRNA_only.fas", gff=None, output_directory=tmp_path, force=True
-    )
+    rd = RiboDesigner(fasta=resources_dir / "sample_rRNA_only.fas", gff=None, output_directory=tmp_path, force=True)
     rd.run()
     assert filecmp.cmp(tmp_path / "probes_sequences.fas", resources_dir / "probes_sequences.fas")
     assert filecmp.cmp(tmp_path / "clustered_probes.fas", resources_dir / "clustered_probes.fas")

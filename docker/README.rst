@@ -32,4 +32,3 @@ the commented line here below::
 
 Back on your local directory, you should now see a ./report directory with the
 results of the analysis.
-

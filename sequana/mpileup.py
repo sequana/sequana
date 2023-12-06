@@ -13,13 +13,13 @@
 """Tools to manipulate output of mpileup software"""
 
 import os
+
 from tqdm import tqdm
 
 from sequana import FastA
-from sequana.lazy import pysam
-from sequana.lazy import pandas as pd
 from sequana.lazy import numpy as np
-from sequana.lazy import pylab
+from sequana.lazy import pandas as pd
+from sequana.lazy import pylab, pysam
 from sequana.viz import Imshow
 
 
@@ -45,7 +45,7 @@ class MPileup:
         try:
             f = FastA(reference)
             self.reference = f.sequences[0]
-        except OSError: #pragma: no cover
+        except OSError:  # pragma: no cover
             self.reference = reference
 
         self.progress = progress
@@ -122,7 +122,7 @@ class MPileup:
                             i += 1
                         elif x == "$":
                             i += 1
-                        else: #pragma: no cover
+                        else:  # pragma: no cover
                             raise NotImplementedError
                 counts.append(base_counts)
 
@@ -157,25 +157,30 @@ class MPileup:
 
         return df
 
-    def plot_stack_bars(self, include_deletions=False, ec='k'):
-        """Plot error on A, C, G, T as a bar stacked plot.
+    def plot_stack_bars(self, include_deletions=False, ec="k"):
+        """Plot error on A, C, G, T as a bar stacked plot."""
+        A = self.df["A"].values
+        C = self.df["C"].values
+        G = self.df["G"].values
+        T = self.df["T"].values
+        D = self.df["D"].values
 
-        """
-        A = self.df['A'].values
-        C = self.df['C'].values
-        G = self.df['G'].values
-        T = self.df['T'].values
-        D = self.df['D'].values
-
-        X1, X2 = 1, len(self.reference)+1
+        X1, X2 = 1, len(self.reference) + 1
 
         pylab.clf()
-        pylab.bar(range(X1+1,X2+1), A, width=1, ec=ec, label='A')
-        pylab.bar(range(X1+1,X2+1), C, bottom=A, width=1, ec=ec, label='C')
-        pylab.bar(range(X1+1,X2+1), G, bottom=A + C, width=1, ec=ec, label='G')
-        pylab.bar(range(X1+1,X2+1), T, bottom=A + C + G, width=1, ec=ec, label='T')
+        pylab.bar(range(X1 + 1, X2 + 1), A, width=1, ec=ec, label="A")
+        pylab.bar(range(X1 + 1, X2 + 1), C, bottom=A, width=1, ec=ec, label="C")
+        pylab.bar(range(X1 + 1, X2 + 1), G, bottom=A + C, width=1, ec=ec, label="G")
+        pylab.bar(range(X1 + 1, X2 + 1), T, bottom=A + C + G, width=1, ec=ec, label="T")
         if include_deletions:
-            pylab.bar(range(X1+1,X2+1), D, bottom=A + C + G + T, width=1, ec=ec, label='D')
+            pylab.bar(
+                range(X1 + 1, X2 + 1),
+                D,
+                bottom=A + C + G + T,
+                width=1,
+                ec=ec,
+                label="D",
+            )
         pylab.legend()
         pylab.xlabel("Position", fontsize=16)
         pylab.ylabel("Error rate (percentage)", fontsize=16)
@@ -188,15 +193,15 @@ class MPileup:
 
         """
 
-        AT = self.df[['A', 'T']].sum(axis=1).values
-        self.df['GC_to_AT'] = [AT[i] if x['ref'] in 'GC' else 0 for i,x in self.df.iterrows()]
+        AT = self.df[["A", "T"]].sum(axis=1).values
+        self.df["GC_to_AT"] = [AT[i] if x["ref"] in "GC" else 0 for i, x in self.df.iterrows()]
 
-    def get_total_errors(self, nucs=['A', 'C', 'G', 'T'], include_deletions=False, include_Ns=False):
+    def get_total_errors(self, nucs=["A", "C", "G", "T"], include_deletions=False, include_Ns=False):
 
         if include_Ns:
-            nucs += ['N']
+            nucs += ["N"]
         if include_deletions:
-            nucs += ['D']
+            nucs += ["D"]
 
         return self.df[nucs].sum(axis=1)
 
@@ -204,58 +209,43 @@ class MPileup:
 
         errors = self.get_total_errors(nucs, include_deletions=include_deletions, include_Ns=include_Ns)
         N = len(self.df)
-        pylab.plot(range(1, N+1), errors)
+        pylab.plot(range(1, N + 1), errors)
 
-        pylab.axhline(pylab.mean(errors), ls='--', color='gray')
+        pylab.axhline(pylab.mean(errors), ls="--", color="gray")
         pylab.xlabel("Position", fontsize=16)
         pylab.ylabel("Error rate (%)", fontsize=16)
-        pylab.xlim([0, N+1])
+        pylab.xlim([0, N + 1])
 
         return errors
-
 
     # Error rate are the sum of the illumina errors and biological errors
     # WT is suppose to be compose of illumina error and the WT errors
     # we can suctract the WT error
 
     def plot_mutation_matrix(self, x1=0, x2=None, vmin=0, vmax=None, cmap="hot_r"):
-        matmut = np.zeros((4,4))
+        matmut = np.zeros((4, 4))
         if x2 == None:
             x2 = len(self.reference)
 
         pylab.clf()
-        for i, xref in enumerate('ACGT'):
-            for j, y in enumerate('ACGT'):
+        for i, xref in enumerate("ACGT"):
+            for j, y in enumerate("ACGT"):
                 if xref == y:
-                    matmut[i,j] = 0
+                    matmut[i, j] = 0
                 else:
-                    datum = self.df.query('ref == @xref and (position >= @x1 and position <=@x2)')[y].mean()
-                    matmut[i,j] = datum
+                    datum = self.df.query("ref == @xref and (position >= @x1 and position <=@x2)")[y].mean()
+                    matmut[i, j] = datum
         matmut = pd.DataFrame(matmut)
-        matmut.index = ['A', 'C', 'G', 'T']
-        matmut.columns = ['A', 'C', 'G', 'T']
+        matmut.index = ["A", "C", "G", "T"]
+        matmut.columns = ["A", "C", "G", "T"]
         Imshow(matmut).plot(cmap=cmap, vmin=vmin, vmax=vmax)
 
-        pylab.ylabel('Reference', fontsize=16)
-        pylab.xlabel('Mutation', fontsize=16)
-        pylab.xticks([0,1,2,3], ['A', 'C', 'G', 'T'], rotation=0)
-        pylab.ylim([-0.5,3.5])
-        try: #pragma: no cover
+        pylab.ylabel("Reference", fontsize=16)
+        pylab.xlabel("Mutation", fontsize=16)
+        pylab.xticks([0, 1, 2, 3], ["A", "C", "G", "T"], rotation=0)
+        pylab.ylim([-0.5, 3.5])
+        try:  # pragma: no cover
             pylab.gcf().set_layout_engine("tight")
-        except: #pragma: no cover
+        except:  # pragma: no cover
             pass
         return matmut
-
-
-
-
-
-
-
-
-
-
-
-
-
-

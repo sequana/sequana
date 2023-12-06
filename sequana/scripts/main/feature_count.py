@@ -9,11 +9,10 @@
 #  documentation: http://sequana.readthedocs.io
 #
 ##############################################################################
-import rich_click as click
 import colorlog
+import rich_click as click
 
 from sequana.scripts.utils import CONTEXT_SETTINGS, common_logger
-
 
 logger = colorlog.getLogger(__name__)
 

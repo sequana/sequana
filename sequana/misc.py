@@ -11,13 +11,14 @@
 #
 ##############################################################################
 """.. rubric:: misc utilities"""
-import os
 import glob
-from sequana.lazy import numpy as np
-import platform
+import os
 import pathlib
+import platform
 
 import colorlog
+
+from sequana.lazy import numpy as np
 
 logger = colorlog.getLogger(__name__)
 

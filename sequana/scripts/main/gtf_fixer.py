@@ -9,13 +9,11 @@
 #  documentation: http://sequana.readthedocs.io
 #
 ##############################################################################
-import rich_click as click
 import colorlog
+import rich_click as click
 
 from sequana.gtf_fixer import GTFFixer
-
 from sequana.scripts.utils import CONTEXT_SETTINGS
-
 
 logger = colorlog.getLogger(__name__)
 

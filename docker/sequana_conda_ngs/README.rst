@@ -4,7 +4,7 @@ Docker **sequana_conda_ngs**
 Overview
 ---------
 
-This is a Docker image on top on sequana/sequana_ngs that installs 
+This is a Docker image on top on sequana/sequana_ngs that installs
 conda packages (NGS specific) for **Sequana**.
 
 
@@ -44,5 +44,3 @@ Push on hub.docker.com::
 Run the local image (not a pulled one in this example)::
 
     sudo docker run -it sequana_conda_ngs
-
-

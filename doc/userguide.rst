@@ -9,9 +9,9 @@ applications are usually simpler, they may not have all features or parameters
 offered by the pipelines. Since version 0.8.0, most pipelines have been moved to
 different repository with one repository per pipeline. This was done to make
 pipelines independe and the Sequana more modular and effective for deployment in
-production mode. 
+production mode.
 
-The :ref:`Tutorial`, :ref:`pipelines`, :ref:`case_examples` 
+The :ref:`Tutorial`, :ref:`pipelines`, :ref:`case_examples`
 sections provide many examples on their usage. Check also the Gallery section
 for code snippets.
 
@@ -38,15 +38,15 @@ using :func:`~sequana.sequana_data` function. The test case is a virus (about
     filename = sequana_data('JB409847.bed')
 
 
-We can then use the :class:`~sequana.bedtools.GenomeCov` class to read the
+We can then use the :class:`~sequana.bedtools.SequanaCoverage` class to read the
 file::
 
-    from sequana import GenomeCov
-    gc = GenomeCov(filename)
+    from sequana import SequanaCoverage
+    gc = SequanaCoverage(filename)
 
 Select a chromosome (first one) and compute the running median::
 
-    chrom = gc[0] 
+    chrom = gc[0]
     chrom.running_median(n=5001, circular=True)
     chrom.compute_zscore()
 
@@ -59,8 +59,8 @@ and finally plot the coverage together with confidence interval (3 sigma)::
 
     from sequana import sequana_data
     filename = sequana_data('JB409847.bed')
-    from sequana import GenomeCov
-    gc = GenomeCov(filename)
+    from sequana import SequanaCoverage
+    gc = SequanaCoverage(filename)
 
     chrom = gc[0]
     chrom.running_median(n=5001, circular=True)
@@ -91,7 +91,7 @@ across all reads of a FastQ file.
 
     fastqc = FastQC(filename)
     print(fastqc.fastq)
-    for x in 'ACGT': 
+    for x in 'ACGT':
         fastqc.get_actg_content()[x].hist(alpha=0.5, label=x, histtype='step', lw=3, bins=10)
 
     from pylab import legend
@@ -104,7 +104,7 @@ Many more functionalities are available. The reference guide should help you.
 **Sequana** provides standalone applications
 ============================================
 
-The Python example about the coverage is actually quite useful. We 
+The Python example about the coverage is actually quite useful. We
 therefore decided to provide a standalone
 application. There are other standalone applications listed in
 :ref:`applications` section.
@@ -112,7 +112,7 @@ application. There are other standalone applications listed in
 The one related to the coverage example shown above is named
 **sequana_coverage**. If you have a BED file, type::
 
-    sequana_coverage  -i <BEDFILENAME> 
+    sequana_coverage  -i <BEDFILENAME>
 
 If your organism has a circular DNA, add ``-o``. You can play with the window
 size for the running median using ``-w``.
@@ -130,7 +130,7 @@ An additional feature is the report using  ``--show-html`` option.
 In **Sequana**, in addition to the library and standalone applications, we also
 provide a set of pipelines (see :ref:`pipelines` section). Originally, pipeline
 were provided with Sequana, inside the same source repository. Since version
-0.8.0, pipeline have their own repository. For instance, 
+0.8.0, pipeline have their own repository. For instance,
 :ref:`pipeline_vc` is available on
 https://github.com/sequana/variant_calling.
 We will not describe all pipelines here below since new ones may appear now and
@@ -149,7 +149,7 @@ The --upgrade option is to make sure you install the newest version.
 
 To check if the installation is successful, just type::
 
-    sequana_ariant_calling --help
+    sequana_variant_calling --help
 
 
 Usage
@@ -170,7 +170,7 @@ The generic section allows use to print the help with --help, to set the level
 of information printed to the screen (--level), the version (--version).
 Pipelines can be run locally or on a SLURM clusters. This can be set with the
 --run-mode option. Note, however, that this option is set automatically to
-slurm-mode if slurm commands are found (e.g. sbatch). 
+slurm-mode if slurm commands are found (e.g. sbatch).
 
 The *slurm* section can be used to set slurm options for Snakemake. If you do
 not know what it means, let it be the defaults values. Just note that memory
@@ -178,7 +178,7 @@ usage is set to 4Gb by default and number of cores is limited to 4 per job.
 
 The *snakemake* section allows you to set to maximum number of jobs to be used,
 which is set to 4 (if run-mode is set to local) and 40 (if run-mode is set to
-slurm). 
+slurm).
 
 The --working-directory is set to the name of the pipeline and is the important
 parameter. It tells sequana where to store the pipeline files (e.g., snakemake,
@@ -263,4 +263,3 @@ report::
     r = BAMQCModule(filename, "bam.html")
 
 that results can be shown in `bam.html <_static/bam.html>`_
-

@@ -10,27 +10,25 @@
 #
 ##############################################################################
 """General tools"""
-import os
-import string
-import glob
-import json
-import re
 import gzip
 import io
-from collections import Counter
+import json
+import os
+import re
+import string
 import subprocess
+from collections import Counter
 
-from sequana.lazy import pandas as pd
-from sequana.lazy import numpy as np
-from sequana.lazy import pysam
-
-from sequana.bamtools import BAM
-
-from pysam import FastxFile
+import colorlog
 from easydev import precision
 from easydev.misc import cmd_exists
+from pysam import FastxFile
 from tqdm import tqdm
-import colorlog
+
+from sequana.bamtools import BAM
+from sequana.lazy import numpy as np
+from sequana.lazy import pandas as pd
+from sequana.lazy import pysam
 
 logger = colorlog.getLogger(__name__)
 

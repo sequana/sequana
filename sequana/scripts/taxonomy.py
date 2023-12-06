@@ -18,30 +18,29 @@
 ##############################################################################
 """Standalone dedicated to taxonomic content (kraken)"""
 import argparse
+import ast
+import json
 import os
 import sys
-import json
 from pathlib import Path
-import ast
 
 import colorlog
-
 import rich_click as click
 
 from sequana import KrakenDownload, KrakenPipeline, KrakenSequential
 from sequana import sequana_config_path as cfg
 from sequana import sequana_config_path as scfg
+from sequana import version as sequana_version
 from sequana.modules_report.kraken import KrakenModule
 from sequana.taxonomy import Taxonomy
 from sequana.utils import config
-from sequana import version as sequana_version
 
-from .utils import OptionEatAll, CONTEXT_SETTINGS
+from .utils import CONTEXT_SETTINGS, OptionEatAll
 
 logger = colorlog.getLogger(__name__)
 
 
-def update_taxonomy(ctx, param, value): #pragma: no cover
+def update_taxonomy(ctx, param, value):  # pragma: no cover
     if value:
         tax = Taxonomy()
         click.echo(f"Will overwrite the local database taxonomy.dat in {cfg}")
@@ -102,7 +101,7 @@ def check_databases(ctx, param, value):
         values = ast.literal_eval(value)
         for db in values:
 
-            guess = os.sep.join([scfg, "kraken2_dbs", db]) # sequana path
+            guess = os.sep.join([scfg, "kraken2_dbs", db])  # sequana path
             if not os.path.exists(guess) and not os.path.exists(db):
                 logger.error(f"{db} does not exists. Check its path name")
                 sys.exit(1)
@@ -111,10 +110,18 @@ def check_databases(ctx, param, value):
 
 @click.command(context_settings=CONTEXT_SETTINGS)
 @click.option(
-    "-1", "--file1", "file1", type=click.Path(file_okay=True, dir_okay=False), help="""Deprecated. Please use --input-file1 """
+    "-1",
+    "--file1",
+    "file1",
+    type=click.Path(file_okay=True, dir_okay=False),
+    help="""Deprecated. Please use --input-file1 """,
 )
 @click.option(
-    "-2", "--file2", "file2", type=click.Path(file_okay=True, dir_okay=False), help="""Deprecated. Please use --input-file2 """
+    "-2",
+    "--file2",
+    "file2",
+    type=click.Path(file_okay=True, dir_okay=False),
+    help="""Deprecated. Please use --input-file2 """,
 )
 @click.option(
     "-1",
@@ -163,7 +170,13 @@ def check_databases(ctx, param, value):
 )
 @click.option("--unclassified-out", default=None, type=click.Path(), help="save unclassified sequences to filename")
 @click.option("--classified-out", default=None, type=click.Path(), help="save classified sequences to filename")
-@click.option("--confidence", type=click.FLOAT, default=0, show_default=True, help="confidence parameter (kraken2 parameter). Should be between 0 and 1. Represents fraction of error on the read")
+@click.option(
+    "--confidence",
+    type=click.FLOAT,
+    default=0,
+    show_default=True,
+    help="confidence parameter (kraken2 parameter). Should be between 0 and 1. Represents fraction of error on the read",
+)
 @click.option(
     "--update-taxonomy",
     is_flag=True,

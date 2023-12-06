@@ -12,12 +12,12 @@
 ##############################################################################
 """Python script to filter a VCF file"""
 import sys
-import vcfpy
-
-from sequana.vcftools import VCFBase
-from sequana.freebayes_vcf_filter import VCF_freebayes
 
 import colorlog
+import vcfpy
+
+from sequana.freebayes_vcf_filter import VCF_freebayes
+from sequana.vcftools import VCFBase
 
 logger = colorlog.getLogger(__name__)
 
@@ -227,7 +227,10 @@ class VCF_mpileup_4dot1(VCFBase):
         # DP4
         if self.apply_dp4_filter and "DP4" in vcf_line.INFO:
             status = self.is_valid_dp4(
-                vcf_line, self.dp4_minimum_depth, self.dp4_minimum_depth_strand, self.dp4_minimum_ratio
+                vcf_line,
+                self.dp4_minimum_depth,
+                self.dp4_minimum_depth_strand,
+                self.dp4_minimum_ratio,
             )
             if not status:
                 logger.debug("{}: filter out DP4 line {} {}".format(VT, iline, vcf_line.INFO["DP4"]))

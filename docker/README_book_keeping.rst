@@ -34,7 +34,7 @@ Back on your local directory, you should now see a ./report directory with the
 results of the analysis.
 
 
-Docker containers in details (obsolet) 
+Docker containers in details (obsolet)
 =======================================
 
 .. warning:: this is mostly obsolet since we now use biocontainer but this
@@ -66,13 +66,13 @@ Now, you should be ready to try it. To start an interactive session, type::
 
     cd <Directory_with_data>
     docker run -v $PWD:/home/sequana/data -it sequana/sequana
-    
+
 
 Standalone
 ----------------
 
 The primary goal of the docker is to make it possible to quickly test the
-standalones. For now, we expose only one docker. Please see specific 
+standalones. For now, we expose only one docker. Please see specific
 documentation following the links here below:
 
 - sequana_coverage: (https://github.com/sequana/sequana/tree/main/docker/sequana_coverage)
@@ -101,7 +101,7 @@ This opens an interactive shell with latest sequana library pre-installed. For i
 start an IPython shell::
 
     ipython
- 
+
 and import the library::
 
     import sequana
@@ -118,7 +118,7 @@ practical if you have your own files or want to open the HTML page stored in
 
     exit
 
-and do it the proper way. Go to a working directory (or your computer )and start the 
+and do it the proper way. Go to a working directory (or your computer )and start the
 docker image again as follows::
 
     docker run -v $PWD:/home/sequana/data -it sequana/sequana

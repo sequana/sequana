@@ -19,14 +19,12 @@
 """Module to write coverage report"""
 import os
 
-from sequana import sequana_data
-from sequana.modules_report.base_module import SequanaBaseModule
-
-from sequana.lazy import pandas as pd
-
-from sequana.utils.datatables_js import DataTable
-
 import colorlog
+
+from sequana import sequana_data
+from sequana.lazy import pandas as pd
+from sequana.modules_report.base_module import SequanaBaseModule
+from sequana.utils.datatables_js import DataTable
 
 logger = colorlog.getLogger(__name__)
 
@@ -111,23 +109,23 @@ class KrakenModule(SequanaBaseModule):
             extra = "<p> no reads could be identified with the given the database(s)."
         else:
             pngimage = self.directory / "kraken.png"
-            extra = """<p>The following <b>clickable image</b> is a simplified 
-version (only genus are shown) of an interactive and more detailled version 
-based on Krona. Finally, note that the unclassified species in the pie plot 
-may correspond to species not present in the data base or adapters (if not 
+            extra = """<p>The following <b>clickable image</b> is a simplified
+version (only genus are shown) of an interactive and more detailled version
+based on Krona. Finally, note that the unclassified species in the pie plot
+may correspond to species not present in the data base or adapters (if not
 removed).</p>"""
 
         html = """
     <p>Overview of the Taxonomic content of the filtered reads. </p>
-    <p>The taxonomic analysis is performed with Kraken (see database name in 
+    <p>The taxonomic analysis is performed with Kraken (see database name in
 the configuration file. The analysis is performed with a Kmer
 approach.
 The details about the database itself are available in the <a
 href="http://sequana.readthedocs.io">Sequana documentation</a>.
 The taxonomic analysis should give a good idea of the content of the FastQ
 files but should be used as a sanity check. Indeed, species absent
-from the database won't be detected leading to false detection (close species 
-may be detected instead). 
+from the database won't be detected leading to false detection (close species
+may be detected instead).
 Besides, be aware that closely related species may not be classified precisely.
 </p>
 
@@ -182,8 +180,8 @@ Besides, be aware that closely related species may not be classified precisely.
         }
         js = datatable.create_javascript_function()
         html_tab = datatable.create_datatable(float_format="%.3g")
-        html = """<p>The following table uses the same data as above. However, 
-        we have here a hierarchical representation grouping taxons per common lineage. 
+        html = """<p>The following table uses the same data as above. However,
+        we have here a hierarchical representation grouping taxons per common lineage.
         <b>DO NOT SORT the table or you will loose the hiearchy</b>"""
         html += f"{html_tab} {js}"
 

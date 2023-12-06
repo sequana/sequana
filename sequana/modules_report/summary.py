@@ -14,11 +14,11 @@
 """Module to write summary.html have all information about the pipeline and
 to visit other analysis"""
 import os
+
+import easydev
 from deprecated import deprecated
 
 from sequana.lazy import pandas as pd
-
-import easydev
 from sequana.modules_report.base_module import SequanaBaseModule
 from sequana.utils import config
 from sequana.utils.datatables_js import DataTable
@@ -507,5 +507,3 @@ class SequanaReport(SummaryBase):
             print(err)
             command = "unknown"
         self.sections.append({"name": "Command", "anchor": "command", "content": command})
-
-

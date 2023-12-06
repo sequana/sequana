@@ -23,5 +23,3 @@ Push on hub.docker.com::
 Run the local image (not a pulled one in this example)::
 
     sudo docker run -it sequana/sequana_core
-
-

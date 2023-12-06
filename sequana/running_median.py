@@ -20,9 +20,9 @@
 
 """
 from bisect import bisect_left, insort
-import numpy as np
 
 import colorlog
+import numpy as np
 
 logger = colorlog.getLogger(__name__)
 

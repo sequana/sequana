@@ -14,9 +14,8 @@
 ##############################################################################
 from pathlib import Path
 
-from sequana.utils.pandas import PandasReader
-
 from sequana.lazy import pylab
+from sequana.utils.pandas import PandasReader
 
 __all__ = ["FRiP"]
 
@@ -48,7 +47,13 @@ class FRiP:
         for bamfile in self.df["bamfile"]:
             label = Path(bamfile).parent
             self.df.query("bamfile==@bamfile").plot(
-                x="FRiP", y="in_peaks", marker="o", alpha=0.5, lw=0, label=label, ax=pylab.gca()
+                x="FRiP",
+                y="in_peaks",
+                marker="o",
+                alpha=0.5,
+                lw=0,
+                label=label,
+                ax=pylab.gca(),
             )
         pylab.ylabel("Reads in peaks")
         pylab.xlabel("FRiP")

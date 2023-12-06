@@ -15,6 +15,7 @@ from collections import Counter, defaultdict
 
 import colorlog
 from bioservices import UniProt
+
 from sequana.enrichment.gsea import GSEA
 from sequana.enrichment.ontology import Ontology
 from sequana.enrichment.plot_go_terms import PlotGOTerms

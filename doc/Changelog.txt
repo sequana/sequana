@@ -31,13 +31,13 @@ Changelog
   * databses.ENADownload class removed (the ftp used are deprecated and not maintained
     by EBI)
   * kraken refactorisation: kraken1 support removed. kraken_builder.py module not required
-    anymore. Old code still intereting has been moved to databases.py 
-    The kraken.py module was split into analysis.py and multikraken.py into a new sub directory called kraken. 
+    anymore. Old code still intereting has been moved to databases.py
+    The kraken.py module was split into analysis.py and multikraken.py into a new sub directory called kraken.
     This should be transparent for the user and developer. See PR
   * All tools related to pipelines have be move to an external Python package (sequana_pipetools, on pypi )
   * All tools related to sphinx extension have be move to an external Python package (sequana_sphinext, on pypi)
   * Rules are still in used but will be replaced little by little by an external Python package (sequana-wrappers, on github)
-  * github action now included for a better CI 
+  * github action now included for a better CI
   * Lots of cleanup !
 
 
@@ -102,7 +102,7 @@ Module concerned: rnadiff, compare, featurecounts and enrichment
 * rnadiff HTML report can now show the locus_tag in volcano plot
 * rules star_index uses floor instead of round for small genomes to agree with
   star index recommandation
-* add MultiFeatureCounts() class to read several feature counts 
+* add MultiFeatureCounts() class to read several feature counts
 
 0.9.6
 -----
@@ -110,15 +110,15 @@ Module concerned: rnadiff, compare, featurecounts and enrichment
 * BUGS:
 
     * Fix star_index rule (regression bug) reported in https://github.com/sequana/sequana_rnaseq/issues/7
-    
+
 
 * IMPROVMENTS/CHANGES:
 
     * add plot() method in Repeats class
-    * featurecounts: sort the output dataframe columns 
-    * sequana CLI: summary/enrichment sub command allows to switch 
-      between log/linear scale + option to compute the GO levels and 
-      empty plots are now shown 
+    * featurecounts: sort the output dataframe columns
+    * sequana CLI: summary/enrichment sub command allows to switch
+      between log/linear scale + option to compute the GO levels and
+      empty plots are now shown
 
 
 
@@ -127,7 +127,7 @@ Module concerned: rnadiff, compare, featurecounts and enrichment
 0.9.5
 -----
 
-* rules fastqc: allows handling of bam files. remove sanity checks on empty files. 
+* rules fastqc: allows handling of bam files. remove sanity checks on empty files.
 * rules falco: new rules added (similar to fastqc)
 * module snaketools: PipelineManagerGeneric set paired field to "undefined"
   since this is suppose to deal with bam, or other non-fastq files
@@ -180,7 +180,7 @@ for developers
   old (https://github.com/Cibiv/NextGenMap/issues/3) (2)  mark_duplicates and
   features_counts rules needed o change some parameters, now keywords in snakemake
 * add new viz module called dendogram
-* add new report module for rnadiff. 
+* add new report module for rnadiff.
 * add new report module for KeggPathway and Panther
 * Add solution to convert ensembl ID to gene name fr the KeggPathwayEnrichment
 * Sequana main script has now a 'summary' command. Integrated the RNADiff and
@@ -204,7 +204,7 @@ for developers
 
     * implemented rnadiff module
     * implemented go term enrichment
-    * implemented feature counts 
+    * implemented feature counts
     * implemented plot.viz.venn
     * implemented compare module (for rnadiff comparison)
 
@@ -215,8 +215,8 @@ for developers
 * CHANGES:
 
     * module kraken: better label in plot2 method to avoid long label to be cut
-    * module compare: fix label in comparative plots 
-    * module modules_report/bases now include title in the embedded image 
+    * module compare: fix label in comparative plots
+    * module modules_report/bases now include title in the embedded image
 
 
 0.8.5
@@ -242,7 +242,7 @@ for developers
 
 * MultiKrakenResults set nan tp zeros
 * fasta module: new filter() method to keep or exclude some entries
-* CHANGES: 
+* CHANGES:
 
     * pipeline_common: PipelineManager renamed into SequanaManager to avoid same
       name as in snaketools.PipelineManager
@@ -257,8 +257,8 @@ for developers
       directory. we can now import exiting project to fill the config file automatically
     * module fastqc to plot static images of fastqc contents. The parsing method
       was adapted from multiqc.module.fastqc itself as a quick hack to
-      incorporate in the sequana_fastqc pipeline 
-    
+      incorporate in the sequana_fastqc pipeline
+
 
 0.8.3
 -----
@@ -275,7 +275,7 @@ for developers
     * sequana_taxonomy now handles both kraken1 and kraken2 databases
       the taxonomy databases is now downloaded from ncbi directly and build
       within sequana. The standalone can download the taxonomy data itself with
-      --download-taxonomy option. New pipeline available on 
+      --download-taxonomy option. New pipeline available on
       github/sequana/sequana_taxonom
     * rename KrakenHierarchical into KrakenSequential
     * refactoring of kraken.py and kraken_builder to include kraken2
@@ -290,7 +290,7 @@ for developers
 * NEWs
 
     * 7 new modules in sequana.viz dedicated to visualisation, in particular
-      dendogram, corrplot, hist2D from biokit project (merging with sequana) 
+      dendogram, corrplot, hist2D from biokit project (merging with sequana)
       together with a bunch of notebooks
     * NEW bed module to include a BED class to read 12-column BED files.
     * gff3 module: a new method to create utility files for the rnaseq pipeline
@@ -344,7 +344,7 @@ New pipelines have been added such as sequana_downsampling and sequana_mapper.
 
 * NEWS:
 
-    * snpeff now includes GFF input file input as an option (in addition to 
+    * snpeff now includes GFF input file input as an option (in addition to
       the GBK)
     * new module trf for tandem repeat finder output.
     * new scripts:
@@ -374,35 +374,35 @@ New pipelines have been added such as sequana_downsampling and sequana_mapper.
       name to be unique but underlying tool uses regular expression. So, this was
       buggy when chrom name were starting with same string. e.g chr1 anc chr11.
     * multiqc section of sequana_coverage: duplicate chrom names across multiple
-      samples were shown as a single entry in the report. 
+      samples were shown as a single entry in the report.
     * draft version of multiqc for sequna_quality_control now available
 * MAJOR CHANGES/FIXES:
 
    * The main script 'sequana' is redundant with the new framework of
      pipelines. It has been removed in this version
-   * sequana_coverage now handles low coverage correctly in the 
+   * sequana_coverage now handles low coverage correctly in the
      HTML reports.Fix the ylimits of the coverage plot for low coverage.
    * cutadapt rules was failing due to a stricter optional/positional argument
      handling. Fixed the rule accordingly.
    * sequana_lane_merging is now ready for production. changes made: copy of
-     the script in the local directory, not the data directory. 
+     the script in the local directory, not the data directory.
    * RNASeq pipeline: removed sartools, kraken. Fixed bamCoverage rule. Simplify
      usage related to indexing and mapping. Fixed igvtools rule. Fixed the
      reoderSam rule (wrong executable). Fixed a incorrect parameter name in
      bamCoverage rule. Fixed incorrect Snakemake syntax in the fastq_screen
      rule and RNAseQC. Fixed another deprecated rule: fastq_screen_report.
-   * New pipeline_common module to be used by all pipelines 
+   * New pipeline_common module to be used by all pipelines
 * MINOR CHANGES/FIXES
 
     * snaketools:
 
           * pipelines discovery updated in ModuleFinderSingleton. Finally
-            fixed the lost of comments in the config when saved. 
-          * Removed onweb() method. 
+            fixed the lost of comments in the config when saved.
+          * Removed onweb() method.
           * Fixed the loss of comments when saving yaml file after an update
-            of the key/value. 
+            of the key/value.
           * remove check_sequana_fields.
-          * more tests and cleanup 
+          * more tests and cleanup
     * demultiplex: fix a Pandas deprecated warning (add sort argument in pd.concat)
     * python dependencies not in conda are not harcoded inside the setup.py
       (itolapi). add cython into the list of requirements.
@@ -410,7 +410,7 @@ New pipelines have been added such as sequana_downsampling and sequana_mapper.
     * The check_config_with_schema function now performs the validation
       correctly
     * Fix stdout of the fastqc, unpigz, bowtie1 and bowtie2 rules
-    * Atropos 2.0 changed its API. fastq module compat with atropos 1.0 and 2.0 
+    * Atropos 2.0 changed its API. fastq module compat with atropos 1.0 and 2.0
 
 
 0.7.2
@@ -430,7 +430,7 @@ New pipelines have been added such as sequana_downsampling and sequana_mapper.
     * added test file and test for SIRVRerence class (partial fix of issue #504)
     * added Makefile class in snaketools to help building pipeline
     * added MultiKrakenResults class
-    * sequanix and snaketools now handle the presence of a multiqc_config 
+    * sequanix and snaketools now handle the presence of a multiqc_config
       file in the pipeline module
     * add laa multiqc
 
@@ -468,7 +468,7 @@ New pipelines have been added such as sequana_downsampling and sequana_mapper.
 * CHANGES:
 
     * refactoring of bamtools. added SAM and CRAM classes. remove the
-      plot_acgt_content method. Instead of inheriting from pysam.Alignement, 
+      plot_acgt_content method. Instead of inheriting from pysam.Alignement,
       we store the data as an attribute.
 
 * FIXES:
@@ -506,8 +506,8 @@ New pipelines have been added such as sequana_downsampling and sequana_mapper.
 
     * sequana_coverage. Major refactoring of bedtools module to handle large
       data sets (human), and provide ability to focus on CNVs using an
-      additional naive clustering (merge_rois_into_cnvs method) and binning. 
-      We can also analyse data chunk by chunk (to avoid filling the memory). 
+      additional naive clustering (merge_rois_into_cnvs method) and binning.
+      We can also analyse data chunk by chunk (to avoid filling the memory).
       added a plot_rois function
     * sequana_coverage standalone: add the --chunksize, --cnv-clustering and
       --binning options.
@@ -544,10 +544,10 @@ New pipelines have been added such as sequana_downsampling and sequana_mapper.
 
     * pin kraken version to 1.1 (newest on bioconda)
     * MAJOR REFACTORING of bedtools and sequana_coverage standalone. In
-      particular, change default window size to 20,001 or a fifth of genome 
+      particular, change default window size to 20,001 or a fifth of genome
       length (for small genome); speed up code; add plot_roi function, uses
       multiqc for summary page; add log2 ratio column. See
-      https://github.com/sequana/sequana/issues/495 for details. 
+      https://github.com/sequana/sequana/issues/495 for details.
       Scan large files by chunk. Add a snakemake that can be used in sequanix.
     * remove the sequana_report standalone, which was not finalised and won't be
       used in the future. We will use multiqc instead.
@@ -555,7 +555,7 @@ New pipelines have been added such as sequana_downsampling and sequana_mapper.
 0.6.3.post1
 ~~~~~~~~~~~~~
 
-- a bug fix in the sequanix GUI and singularity. a statement related to the 
+- a bug fix in the sequanix GUI and singularity. a statement related to the
   ruamel.yaml package causes trouble if version is not 0.15. A temporary fix
   consisted in adding a try/except (the statement is just a warning.filter and
   has no impact on analysis)
@@ -622,7 +622,7 @@ New pipelines have been added such as sequana_downsampling and sequana_mapper.
 
    * add missing file for the RNAseq pipeline in the setup.py
    * Fix RTD building
-   * Fix reag_tag filtering https://github.com/sequana/sequana/issues/480 
+   * Fix reag_tag filtering https://github.com/sequana/sequana/issues/480
    * Set singularity hub (v2.4)
 
 Prior 0.5.X
@@ -639,7 +639,7 @@ Prior 0.5.X
 
     * pipeline pacbio_qc: finalise output tree structure.
     * pipeline quality_control: add sanity check (thread must be >1 for
-      atropos) and run fastqc on unmapped data (rather than mapped).  
+      atropos) and run fastqc on unmapped data (rather than mapped).
     * pin atropos version to 1.1.10 and added to requirements.txt
     * Fix parsing of atropos report
     * Update FastQC significantly to use atropos FastqReader instead of pysam.FastxFile
@@ -668,11 +668,11 @@ Prior 0.5.X
    * Set -t thread options correctly in the different rules (e.g. cutadapt)
    * pipeline variant_calling: fix the VCF inputs when snpeff is off .
      See https://github.com/sequana/sequana/issues/471
-   * pipeline quality_control. Fix regression bug introduced by the use 
-     of sambamba in the bwa_mem_dynamic rule (see 
+   * pipeline quality_control. Fix regression bug introduced by the use
+     of sambamba in the bwa_mem_dynamic rule (see
      ihttps://github.com/sequana/sequana/issues/472)
    * Fix wrong total bases values in summary report of the quality_control
-     pipeline computed in FastQC class (see 
+     pipeline computed in FastQC class (see
      https://github.com/sequana/sequana/issues/470)
    * pipeline pacbio_qc: hard-coded the number of threads to 4 otherwise may
          fail on clusters. Does not change the pipeline or analysis itself
@@ -680,10 +680,10 @@ Prior 0.5.X
    * Fix genbank_parser when the genbank contains several concatenated genbank
      entries. This fixes the coverage reports CSV file that had missing
      annotations.
-   * Fix regression bug introduced in rule bwa_mem_dynamic that messed 
+   * Fix regression bug introduced in rule bwa_mem_dynamic that messed
      up R1 and R2 order as compared to samtools by using sambamba. Fixed by
      using -N parameter.
-   * Fix the -p option to be before the input whenever pigz is used in a rules. 
+   * Fix the -p option to be before the input whenever pigz is used in a rules.
      Indeed -p may be ignored otherwise e.g. on clusters.
 
 * Updates:
@@ -713,7 +713,7 @@ Tag a stable release
 
   * pipeline: variant calling cleanup and finalised
   * pipeline: denovo updated (busco) and cleanup and finalised
-  * pipeline: pacbio_qc finalised 
+  * pipeline: pacbio_qc finalised
   * pipeline: rnaseq: finalised
   * module pacbio:  speed up initialisation; add a random_selection method; add a summary method;
 
@@ -729,7 +729,7 @@ Tag a stable release
 * CHANGES:
 
   * remove random() function from FastQ (useless and will be put in new module
-    simulation)  
+    simulation)
 
 
 0.4.1 July 2017
@@ -829,7 +829,7 @@ Tag a stable release
     - Fix #352 : allow gc window size to be even (warning is shown and +1 to
       window size)
     - Fix # 354: cutadapt report that was mixing up R1/R2 trimming in the images.
-    - --output-directory in sequana_coverage was failing 
+    - --output-directory in sequana_coverage was failing
     - in coverage, centralness was buggy (regression) and use number of ROIs
       instead of the total base length #347
     - Fix multi_report summary for single end case #349
@@ -837,7 +837,7 @@ Tag a stable release
 0.1.20 - Feb 2017
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-* CHANGES: 
+* CHANGES:
 
     - remove pyquickhelper dependencies and add a simple rest2html function in
       misc module.
@@ -851,13 +851,13 @@ Tag a stable release
     - misc module: factorise on_cluster() function used in compressor scripts to
         be used in other tools such as sequanix
     - compressor: limits max number of jobs to 20 (can be bypass manually),
-      prevent run on TARS if snakemake-cluster not provided. 
+      prevent run on TARS if snakemake-cluster not provided.
     - rules:
         - dag: now the snakemake is called inside a temporary directory to avoid
-          clash with the current snakemake process. This avoid error message. 
+          clash with the current snakemake process. This avoid error message.
           Fixes https://github.com/sequana/sequana/issues/331
     - __init__ was optimized as well as many modules to make use of the lazy
-      import mechanism. The reporting package is not part of the exposed module. 
+      import mechanism. The reporting package is not part of the exposed module.
       So::
 
          from sequana import BAMReport
@@ -870,8 +870,8 @@ Tag a stable release
 
     - Sequanix stable version
     - add TrueSeq adaptors
-    - add lazy import mechanism to speed up the time to import sequana, which 
-      speeds up the --help in the standalone 
+    - add lazy import mechanism to speed up the time to import sequana, which
+      speeds up the --help in the standalone
 
 
 0.1.17/0.1.18 - Jan 2017
@@ -879,7 +879,7 @@ Tag a stable release
 
 :Main NEWS: The GUI was completed and the current pipelines stabilised (RNA-seq,
     quality control, variant calling). The test suite was switched from nosetests to
-    pytest, in particular to perform tests more eaasily on the Qt GUI. 
+    pytest, in particular to perform tests more eaasily on the Qt GUI.
 
 
 * BUG Fixes:
@@ -897,7 +897,7 @@ Tag a stable release
 
     - sequana_compressor: for conversion from e.g gz to bz2, use a pipe instead
         of double IO. Updated docs and tests ready for production.
-    - sequana standalone: 
+    - sequana standalone:
       - --pattern changed to --input-pattern
       - --output-directory changed to --working-directory
     - remove pipetools module (obsolet)
@@ -1116,4 +1116,3 @@ prior 0.1.5 June 2016
 * BUG:
 
   - Fix bug in running median (shift)
-

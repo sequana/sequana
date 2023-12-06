@@ -12,10 +12,10 @@
 ##############################################################################
 import textwrap
 
-from sequana.lazy import pylab
-from sequana.lazy import pandas as pd
-
 import colorlog
+
+from sequana.lazy import pandas as pd
+from sequana.lazy import pylab
 
 logger = colorlog.getLogger(__name__)
 

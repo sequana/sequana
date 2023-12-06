@@ -15,8 +15,9 @@
 #
 ##############################################################################
 
-from sequana.lazy import pylab
 import colorlog
+
+from sequana.lazy import pylab
 
 logger = colorlog.getLogger(__name__)
 
@@ -68,8 +69,8 @@ class Isomap(clusterisation.Cluster):
         :param transform: can be 'log' or 'anscombe', log is just log10. count
             with zeros, are set to 1
         """
-        from sklearn.manifold import Isomap
         import numpy as np
+        from sklearn.manifold import Isomap
 
         pylab.clf()
 

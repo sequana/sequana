@@ -11,22 +11,19 @@
 #
 ##############################################################################
 import os
-import sys
 import shutil
-from pathlib import PosixPath, Path
-
-from easydev import execute, TempFile, md5
-
-from sequana.lazy import pandas as pd
-from sequana.lazy import pylab
-from sequana.lazy import numpy as np
-
-from sequana.misc import wget
-from sequana import sequana_config_path
-
-from colormap import Colormap
+import sys
+from pathlib import Path, PosixPath
 
 import colorlog
+from colormap import Colormap
+from easydev import TempFile, execute, md5
+
+from sequana import sequana_config_path
+from sequana.lazy import numpy as np
+from sequana.lazy import pandas as pd
+from sequana.lazy import pylab
+from sequana.misc import wget
 
 logger = colorlog.getLogger(__name__)
 
@@ -797,7 +794,7 @@ class KrakenPipeline(object):
         except Exception as err:
             logger.warning("hist read length could not be computed")
 
-        prefix = self.output_directory 
+        prefix = self.output_directory
 
         self.kr.kraken_to_json(prefix / "kraken.json", self.dbname)
         self.kr.kraken_to_csv(prefix / "kraken.csv", self.dbname)
@@ -1242,7 +1239,7 @@ class KrakenSequential(object):
             logger.warning(err)
             result.plot(kind="pie")
         pylab.savefig(self.output_directory / "kraken.png")
-        prefix = self.output_directory 
+        prefix = self.output_directory
         result.kraken_to_json(prefix / "kraken.json", dbname)
         result.kraken_to_csv(prefix / "kraken.csv", dbname)
 

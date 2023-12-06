@@ -15,10 +15,9 @@
 #
 ##############################################################################
 """Imshow utility"""
-from sequana.viz.core import VizInputSquare
-from sequana.lazy import pylab
 from sequana.lazy import pandas as pd
-
+from sequana.lazy import pylab
+from sequana.viz.core import VizInputSquare
 
 __all__ = ["Imshow"]
 

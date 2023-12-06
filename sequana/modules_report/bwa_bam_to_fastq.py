@@ -17,17 +17,16 @@
 #
 ##############################################################################
 """Module to write coverage report"""
-import os
 import glob
 import io
+import os
 
-from sequana.modules_report.base_module import SequanaBaseModule
-from sequana.utils import config
+import colorlog
 
 from sequana.lazy import pandas as pd
 from sequana.lazy import pylab
-
-import colorlog
+from sequana.modules_report.base_module import SequanaBaseModule
+from sequana.utils import config
 
 logger = colorlog.getLogger(__name__)
 
@@ -56,8 +55,9 @@ class BWABAMtoFastQModule(SequanaBaseModule):
         self.add_stats()
 
     def _get_html_stats(self):
-        from sequana.tools import StatsBAM2Mapped
         from easydev import precision
+
+        from sequana.tools import StatsBAM2Mapped
 
         data = StatsBAM2Mapped(self.directory + "bwa_mem_stats.json").data
         html = "Reads with Phix: %s %%<br>" % precision(data["contamination"], 3)

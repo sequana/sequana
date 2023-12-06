@@ -12,16 +12,16 @@
 #
 ##############################################################################
 """ Tools to launch snpEff."""
-import re
-import sys
 import os
+import re
 import shutil
 import subprocess as sp
+import sys
 
-from sequana.resources import snpeff
-from sequana import sequana_data
-from sequana import FastA
 import colorlog
+
+from sequana import FastA, sequana_data
+from sequana.resources import snpeff
 
 logger = colorlog.getLogger(__name__)
 
@@ -48,7 +48,14 @@ class SnpEff(object):
     snpeff_datadir).
     """
 
-    def __init__(self, annotation, log=None, snpeff_datadir="data", fastafile=None, build_options=""):
+    def __init__(
+        self,
+        annotation,
+        log=None,
+        snpeff_datadir="data",
+        fastafile=None,
+        build_options="",
+    ):
         """.. rubric:: Constructor
 
         :param annotation: annotation reference.

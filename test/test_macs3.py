@@ -19,12 +19,12 @@ def test_macs3reader():
 
 def test_peakconsensus(tmpdir):
 
-    pc = PeakConsensus(f"{test_dir}/data/macs3/example_rep1_peaks.narrowPeak",
-                        f"{test_dir}/data/macs3/example_rep2_peaks.narrowPeak")
+    pc = PeakConsensus(
+        f"{test_dir}/data/macs3/example_rep1_peaks.narrowPeak", f"{test_dir}/data/macs3/example_rep2_peaks.narrowPeak"
+    )
     df = pc.merge()
-    assert len(df) ==7
+    assert len(df) == 7
     pc.plot_venn()
-
 
     fout = tmpdir.join("out.saf")
     pc.to_saf(fout)

@@ -7,14 +7,16 @@ QC pacbio example
 """
 
 ########################################
-# First, let us get a data set example. 
+# First, let us get a data set example.
 # Note the .bam extension
 from sequana import sequana_data
-dataset  = sequana_data("test_pacbio_subreads.bam")
+
+dataset = sequana_data("test_pacbio_subreads.bam")
 
 #############################################
 # Create a :class:`sequana.pacbio.BAMPacbio` instance
 from sequana.pacbio import PacbioSubreads
+
 qc = PacbioSubreads(dataset)
 
 #########################################

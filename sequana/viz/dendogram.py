@@ -15,14 +15,13 @@
 #
 ##############################################################################
 """Heatmap and dendograms"""
-from sequana.lazy import pylab
-from sequana.lazy import scipy
-from sequana.lazy import numpy as np
+import colormap
+import easydev
 import scipy.cluster.hierarchy as hierarchy
 import scipy.spatial.distance as distance
 
-import easydev
-import colormap
+from sequana.lazy import numpy as np
+from sequana.lazy import pylab, scipy
 from sequana.viz.linkage import Linkage
 
 __all__ = ["Dendogram"]
@@ -157,6 +156,7 @@ class Dendogram(Linkage):
 
         """
         import matplotlib
+
         # save all parameters in a dict
         layout = {}
 
@@ -219,4 +219,3 @@ class Dendogram(Linkage):
             ax.matshow(dr, aspect="auto", origin="lower", cmap=cmap_r)
             ax.set_xticks([])
             ax.set_yticks([])
-

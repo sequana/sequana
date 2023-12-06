@@ -1,4 +1,4 @@
-from sequana import sequana_data, sequana_config_path
+from sequana import sequana_config_path, sequana_data
 
 
 def test_config_directory():
@@ -13,6 +13,6 @@ def test_sequana_data():
     except ValueError:
         assert True
     except:
-        assert False 
+        assert False
 
     sequana_data("Hm2_GTGAAA_L005_R1_001.fastq.gz", "data")

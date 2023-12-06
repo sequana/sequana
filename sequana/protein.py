@@ -3,13 +3,12 @@ import string
 import subprocess
 from collections import Counter, deque
 
-from sequana.lazy import pandas as pd
-from sequana.lazy import numpy as np
-from sequana.lazy import pylab
-
-from sequana.sequence import Sequence
-
 import colorlog
+
+from sequana.lazy import numpy as np
+from sequana.lazy import pandas as pd
+from sequana.lazy import pylab
+from sequana.sequence import Sequence
 
 logger = colorlog.getLogger(__name__)
 

@@ -12,6 +12,7 @@
 import rich_click as click
 
 from sequana import version
+from sequana.scripts.utils import CONTEXT_SETTINGS
 
 from .biomart import biomart
 from .enrichment_kegg import enrichment_kegg
@@ -24,6 +25,8 @@ from .g4hunter import g4hunter
 from .gff_to_gtf import gff_to_gtf
 from .gff_to_light_gff import gff_to_light_gff
 from .gtf_fixer import gtf_fixer
+from .lane_merging import lane_merging
+from .mapping import mapping
 from .ribodesigner import ribodesigner
 from .rnadiff import rnadiff
 from .rnaseq_compare import rnaseq_compare
@@ -31,11 +34,7 @@ from .salmon import salmon_cli
 from .samplesheet import samplesheet
 from .summary import summary
 from .taxonomy import taxonomy
-from .utils import CONTEXT_SETTINGS
-from .mapping import mapping
-from .lane_merging import lane_merging
 from .variants_comparison import variants_comparison
-
 
 click.rich_click.USE_MARKDOWN = True
 click.rich_click.SHOW_METAVARS_COLUMN = False
@@ -43,8 +42,6 @@ click.rich_click.APPEND_METAVARS_HELP = True
 click.rich_click.STYLE_ERRORS_SUGGESTION = "magenta italic"
 click.rich_click.SHOW_ARGUMENTS = True
 click.rich_click.FOOTER_TEXT = "Authors: Thomas Cokelaer, Dimitri Desvillechabrol, Etienne Kornobis -- Documentation: http://sequana.readthedocs.io -- Issues: http://github.com/sequana/sequana"
-
-
 
 
 @click.group(context_settings=CONTEXT_SETTINGS)

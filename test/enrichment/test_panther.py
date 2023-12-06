@@ -1,7 +1,9 @@
 import json
-from sequana import PantherEnrichment
+
 import pandas as pd
 import pytest
+
+from sequana import PantherEnrichment
 
 from . import test_dir
 

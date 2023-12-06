@@ -13,7 +13,6 @@ import functools
 
 import rich_click as click
 
-
 CONTEXT_SETTINGS = {"help_option_names": ["-h", "--help"]}
 
 click.rich_click.USE_MARKDOWN = True

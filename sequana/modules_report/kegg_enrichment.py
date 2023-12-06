@@ -15,14 +15,13 @@ import os
 import sys
 from pathlib import Path
 
+import colorlog
+from plotly import offline
+from tqdm import tqdm
+
+from sequana.enrichment.kegg import KEGGPathwayEnrichment
 from sequana.modules_report.base_module import SequanaBaseModule
 from sequana.utils.datatables_js import DataTable
-from sequana.enrichment.kegg import KEGGPathwayEnrichment
-
-from tqdm import tqdm
-from plotly import offline
-
-import colorlog
 
 logger = colorlog.getLogger(__name__)
 
@@ -123,10 +122,10 @@ class ModuleKEGGEnrichment(SequanaBaseModule):
 
 <p>In the following sections, you will find the KEGG Pathway enrichment.
 The input data for those analyis is the output of the RNADiff
-analysis where adjusted p-values above 0.05 are excluded. Moreover, we removed 
+analysis where adjusted p-values above 0.05 are excluded. Moreover, we removed
 candidates with log2 fold change below {log2fc}. Using these filters, the list of
 differentially expressed genes is made of {total_up} up and {total_down} down genes (total {total})</p>
-<p> In the following plots you can find the first KEGG Pathways that are enriched, keeping a 
+<p> In the following plots you can find the first KEGG Pathways that are enriched, keeping a
 maximum of {self.nmax} pathways. </p>
 
 <p>The KEGG name used is <b>{self.organism}</b>.
@@ -178,7 +177,7 @@ maximum of {self.nmax} pathways. </p>
 {js_table} {html_table}
 <hr>
 <p>Here below are the pathways with gene colored according to their fold change.
-Blue colors are for down-regulated genes and Orange are for up-regulated genes. 
+Blue colors are for down-regulated genes and Orange are for up-regulated genes.
 (Note that absolute log2 fold change above 4 are clipped to 4; So a gene with a
 log2 fold change of 4 or 40 will have the same darkest color.). </p>
 {fotorama}

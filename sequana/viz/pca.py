@@ -12,11 +12,11 @@
 #
 ##############################################################################
 
+import colorlog
+from adjustText import adjust_text
+
 from sequana.lazy import pylab
 from sequana.viz import clusterisation
-
-from adjustText import adjust_text
-import colorlog
 
 logger = colorlog.getLogger(__name__)
 
@@ -121,8 +121,8 @@ class PCA(clusterisation.Cluster):
         """
         assert transform in ["log", "anscombe"]
 
-        from sklearn.decomposition import PCA
         import numpy as np
+        from sklearn.decomposition import PCA
 
         pylab.clf()
 

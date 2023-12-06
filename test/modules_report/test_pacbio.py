@@ -1,7 +1,9 @@
-from sequana.modules_report import pacbio_input_bam
 from easydev import TempFile
 
+from sequana.modules_report import pacbio_input_bam
+
 from . import test_dir
+
 
 def test_pacbio_input_bam(tmpdir):
     # we need a summary and a bunch of images
@@ -9,6 +11,7 @@ def test_pacbio_input_bam(tmpdir):
 
     # mock the PNG files found in the summary
     import json
+
     summary = json.load(open(filename))
     pngname = f"{test_dir}/data/no_data.jpg"
     summary["images"]["gc_vs_length"] = pngname
@@ -26,13 +29,11 @@ def test_pacbio_input_bam(tmpdir):
     ff = TempFile()
 
     from sequana.utils import config
+
     config.output_dir = "/tmp"
-    #here, ff.name is of the form /tmp/djhfjh4dz so we need to remove the /tmp
+    # here, ff.name is of the form /tmp/djhfjh4dz so we need to remove the /tmp
     pacbio_input_bam.PacbioInputBAMModule(summary_file.name, ff.name.split("/")[1])
 
     # cleanup
     summary_file.delete()
     ff.delete()
-
-
-

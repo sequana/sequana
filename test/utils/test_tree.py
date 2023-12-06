@@ -1,7 +1,4 @@
-
-
 from sequana.utils import tree
-
 
 
 def test_tree():

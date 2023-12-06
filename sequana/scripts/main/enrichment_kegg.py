@@ -13,16 +13,14 @@ import os
 import sys
 from pathlib import Path
 
-import rich_click as click
 import colorlog
 import pandas as pd
+import rich_click as click
 
 from sequana.modules_report import ModuleKEGGEnrichment
 from sequana.rnadiff import RNADiffResults
-from sequana.utils import config
-
 from sequana.scripts.utils import CONTEXT_SETTINGS, common_logger
-
+from sequana.utils import config
 
 logger = colorlog.getLogger(__name__)
 
@@ -95,7 +93,7 @@ command""",
     "--kegg-background",
     type=click.INT,
     default=None,
-    help="""a background for kegg enrichment. If None, set to the number of genes 
+    help="""a background for kegg enrichment. If None, set to the number of genes
 used in the differential analysis (input file rnadiff.csv).""",
 )
 @click.option(
@@ -112,7 +110,7 @@ def enrichment_kegg(**kwargs):
 
     Example for the enrichment module:
 
-        sequana enrichment-kegg rnadiff_output_dir --log2-foldchange-cutoff 2 
+        sequana enrichment-kegg rnadiff_output_dir --log2-foldchange-cutoff 2
 
     The KEGG pathways are loaded and it may take time. Once done, they are saved
     in kegg_pathways/organism and be loaded next time:

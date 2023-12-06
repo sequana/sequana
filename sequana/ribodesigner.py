@@ -10,22 +10,20 @@
 #
 ##############################################################################
 """Ribodesigner module"""
-import sys
+import datetime
 import json
+import shutil
 import subprocess
+import sys
+from itertools import product
 from pathlib import Path
 
-from sequana.lazy import pandas as pd
-from sequana.lazy import pylab
-from sequana.lazy import pysam
-from sequana.lazy import numpy as np
-import shutil
-import datetime
-from itertools import product
-
 from sequana import logger
-from sequana.tools import reverse_complement
 from sequana.fasta import FastA
+from sequana.lazy import numpy as np
+from sequana.lazy import pandas as pd
+from sequana.lazy import pylab, pysam
+from sequana.tools import reverse_complement
 
 logger.setLevel("INFO")
 
@@ -91,7 +89,11 @@ class RiboDesigner(object):
         self.clustered_probes_bed = self.outdir / "clustered_probes.bed"
         self.output_json = self.outdir / "ribodesigner.json"
 
-        self.json = {"max_n_probes": max_n_probes, "identity_step": identity_step, "feature": seq_type}
+        self.json = {
+            "max_n_probes": max_n_probes,
+            "identity_step": identity_step,
+            "feature": seq_type,
+        }
 
     def get_rna_pos_from_gff(self):
         """Convert a GFF file into a pandas DataFrame filtered according to the
@@ -102,7 +104,17 @@ class RiboDesigner(object):
             self.gff,
             sep="\t",
             comment="#",
-            names=["seqid", "source", "seq_type", "start", "end", "score", "strand", "phase", "attributes"],
+            names=[
+                "seqid",
+                "source",
+                "seq_type",
+                "start",
+                "end",
+                "score",
+                "strand",
+                "phase",
+                "attributes",
+            ],
         )
 
         filtered_gff = gff.query("seq_type == @self.seq_type")
@@ -158,7 +170,15 @@ class RiboDesigner(object):
         starts = [start for start in range(0, len(seq.sequence) - probe_len + 1, probe_len + step_len)]
         stops = [start + probe_len for start in starts]
 
-        df = pd.DataFrame({"name": seq.name, "start": starts, "stop": stops, "strand": "+", "score": 0})
+        df = pd.DataFrame(
+            {
+                "name": seq.name,
+                "start": starts,
+                "stop": stops,
+                "strand": "+",
+                "score": 0,
+            }
+        )
         df["sequence"] = [seq.sequence[row.start : row.stop] for row in df.itertuples()]
         df["seq_id"] = df["name"] + f"_+_" + df["start"].astype(str) + "_" + df["stop"].astype(str)
 
@@ -168,7 +188,15 @@ class RiboDesigner(object):
         rev_starts = [int((starts[i + 1] + starts[i]) / 2) for i in range(0, len(starts) - 1)]
         rev_stops = [start + probe_len for start in rev_starts]
 
-        df_rev = pd.DataFrame({"name": seq.name, "start": rev_starts, "stop": rev_stops, "strand": "-", "score": 0})
+        df_rev = pd.DataFrame(
+            {
+                "name": seq.name,
+                "start": rev_starts,
+                "stop": rev_stops,
+                "strand": "-",
+                "score": 0,
+            }
+        )
         df_rev["sequence"] = [sequence[row.start : row.stop] for row in df_rev.itertuples()]
         df_rev["seq_id"] = df_rev["name"] + f"_-_" + df_rev["start"].astype(str) + "_" + df_rev["stop"].astype(str)
 
@@ -251,7 +279,13 @@ class RiboDesigner(object):
         import seaborn as sns  # local import to speed up imports
 
         p = sns.lineplot(data=df, x="seq_id_thres", y="n_probes", markers=["o"])
-        p.axhline(self.max_n_probes, alpha=0.8, linestyle="--", color="red", label="max number of probes requested")
+        p.axhline(
+            self.max_n_probes,
+            alpha=0.8,
+            linestyle="--",
+            color="red",
+            label="max number of probes requested",
+        )
         pylab.xlabel("Sequence identity", fontsize=16)
         pylab.ylabel("Number of probes", fontsize=16)
 
@@ -298,7 +332,17 @@ class RiboDesigner(object):
             sep="\t",
             index=False,
             header=None,
-            columns=["name", "start", "stop", "sequence", "score", "strand", "start", "stop", "bed_color"],
+            columns=[
+                "name",
+                "start",
+                "stop",
+                "sequence",
+                "score",
+                "strand",
+                "start",
+                "stop",
+                "bed_color",
+            ],
         )
 
     def export_to_json(self):

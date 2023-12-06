@@ -1,7 +1,9 @@
-from sequana.viz.pca import PCA
 import pandas as pd
 
+from sequana.viz.pca import PCA
+
 from . import test_dir
+
 
 def test_pca():
 
@@ -10,9 +12,7 @@ def test_pca():
     df = df.set_index("Id")
 
     p = PCA(df)
-    p = PCA(df, colors={
-        "A1": "r", "A2": "r", "A3": "r",
-        "B1": "b", "B2": "b", "B3": "b"})
+    p = PCA(df, colors={"A1": "r", "A2": "r", "A3": "r", "B1": "b", "B2": "b", "B3": "b"})
 
     # default
     p.plot()
