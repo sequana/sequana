@@ -1,10 +1,9 @@
 from itertools import chain, combinations
 
-import rich_click as click
 import colorlog
-
 import numpy as np
 import pandas as pd
+import rich_click as click
 from jinja2 import Environment, PackageLoader
 from pysam import VariantFile, VariantRecord
 

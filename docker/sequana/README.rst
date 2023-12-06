@@ -20,6 +20,3 @@ Build the image::
 Push on hub.docker.com::
 
    sh push.sh
-
-
-

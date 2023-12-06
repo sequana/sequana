@@ -6,4 +6,3 @@ omit =
     *sequana/resources/*
     *sequana/rules/*
     */__init__.py*
-    

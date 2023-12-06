@@ -13,9 +13,10 @@
 "LAA tools (pacbio)"
 import glob
 
-from sequana.freebayes_vcf_filter import VCF_freebayes, Variant
-from sequana import BAM
 import colorlog
+
+from sequana import BAM
+from sequana.freebayes_vcf_filter import Variant, VCF_freebayes
 
 logger = colorlog.getLogger(__name__)
 

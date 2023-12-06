@@ -4,7 +4,7 @@ Docker **sequana_conda_core**
 Overview
 ---------
 
-This is a Docker image on top on sequana/sequana_core that installs 
+This is a Docker image on top on sequana/sequana_core that installs
 conda and common scientific Python packages.
 
 Description
@@ -41,5 +41,3 @@ Push on hub.docker.com::
 Run the local image (not a pulled one in this example)::
 
     sudo docker run -it sequana_conda_core
-
-

@@ -29,8 +29,14 @@ class Codon:
     """
 
     codons = {
-        "start": {"+": frozenset({"ATG", "TTG", "GTG"}), "-": frozenset({"CAT", "CAA", "CAC"})},
-        "stop": {"+": frozenset({"TAG", "TGA", "TAA"}), "-": frozenset({"TTA", "TCA", "CTA"})},
+        "start": {
+            "+": frozenset({"ATG", "TTG", "GTG"}),
+            "-": frozenset({"CAT", "CAA", "CAC"}),
+        },
+        "stop": {
+            "+": frozenset({"TAG", "TGA", "TAA"}),
+            "-": frozenset({"TTA", "TCA", "CTA"}),
+        },
     }
 
     def __init__(self):

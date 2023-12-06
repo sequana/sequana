@@ -13,11 +13,10 @@
 #
 ##############################################################################
 
-from sequana.lazy import pylab
-from sequana.utils.pandas import PandasReader
-
 import colorlog
 
+from sequana.lazy import pylab
+from sequana.utils.pandas import PandasReader
 
 logger = colorlog.getLogger(__name__)
 
@@ -183,10 +182,18 @@ class IDR:
         # rank versus IDR scores
         f, axes = pylab.subplots(2, 1)
         df = self.df
-        axes[0].plot(range(len(df)), df.sort_values(by="rep1_rank", ascending=False)["local_idr"], "o")
+        axes[0].plot(
+            range(len(df)),
+            df.sort_values(by="rep1_rank", ascending=False)["local_idr"],
+            "o",
+        )
         axes[0].set_ylabel("log10 IDR for replicate 1")
         axes[0].axvline(len(self.df) - self.N_significant_peaks, color="b", ls="--")
-        axes[1].plot(range(len(df)), df.sort_values(by="rep2_rank", ascending=False)["local_idr"], "ro")
+        axes[1].plot(
+            range(len(df)),
+            df.sort_values(by="rep2_rank", ascending=False)["local_idr"],
+            "ro",
+        )
         axes[1].set_ylabel("log10 IDR for replicate 2")
         axes[1].axvline(len(self.df) - self.N_significant_peaks, color="b", ls="--")
         if savefig:

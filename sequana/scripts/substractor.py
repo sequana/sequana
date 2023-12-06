@@ -14,20 +14,18 @@
 #
 ##############################################################################
 """Substract genomes from the raw reads"""
-import os
-import sys
 import argparse
 import glob
-from subprocess import STDOUT
+import os
 import subprocess
-
-from easydev.console import purple
-
-from sequana.bamtools import SAM
-from sequana import FastQ
-from sequana import logger
+import sys
+from subprocess import STDOUT
 
 import colorlog
+from easydev.console import purple
+
+from sequana import FastQ, logger
+from sequana.bamtools import SAM
 
 logger = colorlog.getLogger(__name__)
 

@@ -1,6 +1,7 @@
-import sys
 import os
-from setuptools import setup, find_packages
+import sys
+
+from setuptools import find_packages, setup
 
 # for a future release
 # from Cython.Build import cythonize
@@ -9,7 +10,7 @@ from setuptools import setup, find_packages
 
 _MAJOR = 0
 _MINOR = 16
-_MICRO = 2
+_MICRO = 3
 version = "%d.%d.%d" % (_MAJOR, _MINOR, _MICRO)
 release = "%d.%d" % (_MAJOR, _MINOR)
 
@@ -57,10 +58,9 @@ if on_rtd:
     requirements += extra_packages
     # replace gseapy by gseapy<0.11 to make sure RTD works
     # indeed gseapy requires rust, not installed by default on RTD.
-    gseapy =  [i for i,x in enumerate(requirements) if x.startswith('gseapy')]
-    if gseapy: # for future, if dropped
-        requirements[gseapy[0]] = 'gseapy<0.11'
-
+    gseapy = [i for i, x in enumerate(requirements) if x.startswith("gseapy")]
+    if gseapy:  # for future, if dropped
+        requirements[gseapy[0]] = "gseapy<0.11"
 
 
 if sys.version_info.major == 2 or on_rtd:
@@ -145,7 +145,7 @@ setup(
     # packages that will be copied from sequana/ into sequana/
     # Note, however, that e.g. ./pipelines must be added
     zip_safe=False,
-    #ext_modules = ext_modules,
+    # ext_modules = ext_modules,
     entry_points={
         "console_scripts": [
             "sequana=sequana.scripts.main.main:main",

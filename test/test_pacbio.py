@@ -1,24 +1,25 @@
-from sequana.pacbio import BAMSimul, PBSim, PacbioSubreads, Barcoding
 from easydev import TempFile
+
+from sequana.pacbio import BAMSimul, Barcoding, PacbioSubreads, PBSim
 
 # DO NOT USE TEST DIR FOR NOW. This is used in the examples
 from . import test_dir
+
 
 def test_pacbio():
     filename = f"{test_dir}/data/bam/test_pacbio_subreads.bam"
     b = PacbioSubreads(filename)
     assert len(b) == 130
     b.df
-    #assert b.nb_pass[1] == 130
-
+    # assert b.nb_pass[1] == 130
 
     with TempFile() as fh:
         b.filter_length(fh.name, threshold_min=500)
 
-    print(b)   #  check length
+    print(b)  #  check length
 
-    assert b.stats['mean_GC'] > 62.46
-    assert b.stats['mean_GC'] < 65.47
+    assert b.stats["mean_GC"] > 62.46
+    assert b.stats["mean_GC"] < 65.47
 
     b.summary()
 
@@ -71,8 +72,7 @@ def test_pacbio_random():
         b.random_selection(fh.name, nreads=10)
 
     with TempFile() as fh:
-        b.random_selection(fh.name,  expected_coverage=10,
-            reference_length=10000)
+        b.random_selection(fh.name, expected_coverage=10, reference_length=10000)
 
 
 def test_bamsim():
@@ -95,6 +95,7 @@ def test_pbsim():
     with TempFile() as fh:
         ss.run(bins=100, step=50, output_filename=fh.name)
     from pylab import close
+
     close()
 
 
@@ -103,7 +104,6 @@ def test_barcoding():
     bc = Barcoding(data)
 
     import tempfile
+
     with tempfile.TemporaryDirectory() as tempdir:
         bc.plot_and_save_all(directory=tempdir)
-
-

@@ -1,18 +1,18 @@
-import os
 import glob
-from pathlib import Path
+import os
 import time
+from pathlib import Path
 
 from tqdm import tqdm
 
 from sequana import FastA
-from sequana.lazy import pylab as plt
 from sequana.lazy import numpy as np
 from sequana.lazy import pandas as pd
+from sequana.lazy import pylab as plt
 from sequana.stats import moving_average
 
 # Compute running average (excluding the last k bases)
-#from sequana.cython.g4hunter import cython_base_score
+# from sequana.cython.g4hunter import cython_base_score
 
 
 class G4Hunter:
@@ -33,7 +33,7 @@ class G4Hunter:
     Cleanup of write_sequences function --> 1.2s    Gain of 25/1.2s = 20. Not bad.
 
     To speedup things, we would need a better algorithm using e.g. convolution.
-    Tentative with numpy does not seem promising. 
+    Tentative with numpy does not seem promising.
 
     19.3 seconds on Ld1S
     1.4 seconds on Lepto
@@ -46,7 +46,7 @@ class G4Hunter:
         self.score = score
 
     def base_score(self, line):
-        #return np.array(cython_base_score(line))
+        # return np.array(cython_base_score(line))
         return self.base_score_python(line)
 
     """def base_score_numpy(self, line):
@@ -128,7 +128,6 @@ class G4Hunter:
         # moreover, we can then use mean/round from numpy
         return np.array(scores)
 
-
     def get_G4(self, line, fileout, scores, header):
         fileout.write(">" + header + "\n Start \t End \t Sequence\t Length \t Score\n")
 
@@ -178,7 +177,7 @@ class G4Hunter:
                     k = 0
                     i += 1
                     a = LISTE[i]
-                #3 and 3%
+                # 3 and 3%
                 b = LISTE[i]
                 c = LISTE[i + 1]
             I += 1
@@ -277,7 +276,15 @@ class G4HunterReader:
                     # split the comment, get only the identifier and ignore the first > character
                     if len(data):
                         self.data_merged[ID] = pd.DataFrame(
-                            data, columns=["Start", "End", "Sequence", "Length", "Score", "NBR"]
+                            data,
+                            columns=[
+                                "Start",
+                                "End",
+                                "Sequence",
+                                "Length",
+                                "Score",
+                                "NBR",
+                            ],
                         )
                     data = []
                     ID = line.strip().split()[0][1:]
@@ -288,12 +295,27 @@ class G4HunterReader:
                     items = line.strip().split("\t")
                     items = [x.strip() for x in items]
                     if len(items) == 5:
-                        datum = [int(items[0]), int(items[1]), items[2], int(items[3]), float(items[4]), None]
+                        datum = [
+                            int(items[0]),
+                            int(items[1]),
+                            items[2],
+                            int(items[3]),
+                            float(items[4]),
+                            None,
+                        ]
                         data.append(datum)
                     elif len(items) == 6:
-                        datum = [int(items[0]), int(items[1]), items[2], int(items[3]), float(items[4]), int(items[5])]
+                        datum = [
+                            int(items[0]),
+                            int(items[1]),
+                            items[2],
+                            int(items[3]),
+                            float(items[4]),
+                            int(items[5]),
+                        ]
                         data.append(datum)
                 if len(data):
                     self.data_merged[ID] = pd.DataFrame(
-                        data, columns=["Start", "End", "Sequence", "Length", "Score", "NBR"]
+                        data,
+                        columns=["Start", "End", "Sequence", "Length", "Score", "NBR"],
                     )

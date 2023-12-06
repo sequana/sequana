@@ -52,7 +52,7 @@ def test_genomecov():
         bed = bedtools.SequanaCoverage(filename, low_threshold=-2)
 
     # wrong genbank
-    #with pytest.raises(SystemExit):
+    # with pytest.raises(SystemExit):
     #    bed = bedtools.SequanaCoverage(filename, "dummy.gbk")
 
     # !now let us read the good data sets by chunk
@@ -95,7 +95,7 @@ def test_genomecov():
         print(chrom)
         chrom.DOC
         chrom.CV
-    #with TempFile(suffix=".csv") as fh:
+    # with TempFile(suffix=".csv") as fh:
     #    bed.gc_window_size = 100
     #    bed.to_csv(fh.name)
 
@@ -178,8 +178,12 @@ def test_gc_content():
 def test_ChromosomeCovMultiChunk():
     filename = f"{test_dir}/data/bed/JB409847.bed"
     # using chunksize of 7000, we test odd number
-    bed = bedtools.SequanaCoverage(filename, f"{test_dir}/data/genbank/JB409847.gbk", chunksize=7000, 
-        reference_file=f"{test_dir}/data/fasta/JB409847.fasta")
+    bed = bedtools.SequanaCoverage(
+        filename,
+        f"{test_dir}/data/genbank/JB409847.gbk",
+        chunksize=7000,
+        reference_file=f"{test_dir}/data/fasta/JB409847.fasta",
+    )
     chrom = bed[0]
     res = chrom.run(501, k=2, circular=True)
     res.get_summary()
@@ -217,6 +221,8 @@ def test_annotate_with_gff3():
     rois_gff = chrom.get_rois()
     # the only diff seems to be the index number and genbank includes genes and CDS
     # whereas GFF includes CDS only -- oct 2023
-    assert rois_gbk.df.query("type in ['CDS', None,  'rRNA']").reset_index(drop=True).equals(rois_gff.df.reset_index(drop=True))
-
-
+    assert (
+        rois_gbk.df.query("type in ['CDS', None,  'rRNA']")
+        .reset_index(drop=True)
+        .equals(rois_gff.df.reset_index(drop=True))
+    )

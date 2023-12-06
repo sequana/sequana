@@ -19,7 +19,6 @@
 import ast
 
 from sequana.lazy import pandas as pd
-
 from sequana.modules_report.base_module import SequanaBaseModule
 from sequana.utils.datatables_js import DataTable
 

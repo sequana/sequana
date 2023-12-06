@@ -1,5 +1,6 @@
-from sequana.enrichment.mart import Mart
 import pytest
+
+from sequana.enrichment.mart import Mart
 
 
 @pytest.mark.xfail(reason="too slow or service may be down")
@@ -9,4 +10,3 @@ def test_mart():
     df = conv.query()
     df.set_index("ensembl_gene_id")
     #    conv.save(df)
-

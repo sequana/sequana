@@ -9,22 +9,20 @@
 #  documentation: http://sequana.readthedocs.io
 #
 ##############################################################################
+import itertools
+import json
 import os
 import sys
-import json
-import itertools
 
-import rich_click as click
 import colorlog
+import rich_click as click
 
 from sequana.enrichment.uniprot_enrichment import UniprotEnrichment
-from sequana.modules_report.uniprot_enrichment import ModuleUniprotEnrichment
 from sequana.modules_report import ModulePantherEnrichment
+from sequana.modules_report.uniprot_enrichment import ModuleUniprotEnrichment
 from sequana.rnadiff import RNADiffResults
+from sequana.scripts.utils import CONTEXT_SETTINGS, OptionEatAll, common_logger
 from sequana.utils import config
-
-from sequana.scripts.utils import CONTEXT_SETTINGS, common_logger, OptionEatAll
-
 
 logger = colorlog.getLogger(__name__)
 
@@ -117,12 +115,12 @@ def enrichment_uniprot(**kwargs):
     Example::
 
         sequana enrichment-uniprot rnadiff.csv --taxon 10090
-            --log2-foldchange-cutoff 2 
+            --log2-foldchange-cutoff 2
 
         sequana enrichment rnadiff/rnadiff.csv
             --taxon 189518 \
-            --log2-foldchange-cutoff 2 
-            --ontologies MF 
+            --log2-foldchange-cutoff 2
+            --ontologies MF
 
     \b
     Valid ontologies are: MF, BP, CC

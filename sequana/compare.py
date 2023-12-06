@@ -11,18 +11,17 @@
 #
 ##############################################################################
 
-from pathlib import Path
-import re
 import os
-
-from sequana.lazy import pandas as pd
-from sequana.lazy import pylab
-from sequana.lazy import numpy as np
-from matplotlib_venn import venn2_unweighted, venn3_unweighted
-
-from sequana.rnadiff import RNADiffTable
+import re
+from pathlib import Path
 
 import colorlog
+from matplotlib_venn import venn2_unweighted, venn3_unweighted
+
+from sequana.lazy import numpy as np
+from sequana.lazy import pandas as pd
+from sequana.lazy import pylab
+from sequana.rnadiff import RNADiffTable
 
 logger = colorlog.getLogger(__name__)
 
@@ -157,7 +156,14 @@ class RNADiffCompare(Compare):
         c = corrplot.Corrplot(df).plot(upper=upper, lower=lower)
         return df.corr()
 
-    def plot_jaccard_distance(self, mode, padjs=[0.0001, 0.001, 0.01, 0.05, 0.1], Nfc=50, smooth=False, window=5):
+    def plot_jaccard_distance(
+        self,
+        mode,
+        padjs=[0.0001, 0.001, 0.01, 0.05, 0.1],
+        Nfc=50,
+        smooth=False,
+        window=5,
+    ):
         assert mode in ["down", "up", "all"]
         pylab.clf()
 
@@ -284,7 +290,12 @@ class RNADiffCompare(Compare):
         max_common = len(set(A.index).intersection(set(B.index)))
         pylab.clf()
         if len(A) > len(B):
-            pylab.axhline(max_common / len(A) * 100, color="r", ls="--", label="min set intersection")
+            pylab.axhline(
+                max_common / len(A) * 100,
+                color="r",
+                ls="--",
+                label="min set intersection",
+            )
             pylab.axvline(len(B), ls="--", color="k", label="rank of minor set")
         else:
             pylab.axhline(max_common / len(B) * 100, color="r", ls="--", label="min set intersect")
@@ -336,12 +347,21 @@ class RNADiffCompare(Compare):
         Bc = B.loc[AB]
 
         pylab.plot(
-            self.r1.df.loc[common].log2FoldChange, self.r2.df.loc[common].log2FoldChange, "ko", alpha=0.5, markersize=1
+            self.r1.df.loc[common].log2FoldChange,
+            self.r2.df.loc[common].log2FoldChange,
+            "ko",
+            alpha=0.5,
+            markersize=1,
         )
         pylab.plot(Ac.log2FoldChange, Bc.log2FoldChange, "or", alpha=0.5)
         pylab.plot(Ao.log2FoldChange, self.r2.df.loc[Ao.index].log2FoldChange, "*b", alpha=0.5)
         pylab.plot(
-            Bo.log2FoldChange, self.r1.df.loc[Bo.index].log2FoldChange, color="cyan", marker="o", lw=0, alpha=0.5
+            Bo.log2FoldChange,
+            self.r1.df.loc[Bo.index].log2FoldChange,
+            color="cyan",
+            marker="o",
+            lw=0,
+            alpha=0.5,
         )
 
     def plot_volcano_differences(self, mode="all"):
@@ -531,7 +551,13 @@ class RNADiffCompare(Compare):
         indices,
         showlines=True,
         showdots=True,
-        colors={"bodies": "blue", "cbars": "k", "dot": "blue", "cmins": "k", "cmaxes": "k"},
+        colors={
+            "bodies": "blue",
+            "cbars": "k",
+            "dot": "blue",
+            "cmins": "k",
+            "cmaxes": "k",
+        },
     ):
         """indices is a list that represents a gene sets
 
@@ -555,7 +581,7 @@ class RNADiffCompare(Compare):
 
         """
         from matplotlib.pyplot import violinplot
-        from pylab import violinplot, xticks, clf, plot, ylabel, axhline
+        from pylab import axhline, clf, plot, violinplot, xticks, ylabel
 
         N = len(self.rns)
         data = [self.rns[i].df.loc[indices]["log2FoldChange"].values for i in range(0, N)]

@@ -82,22 +82,31 @@ class Bowtie2(Reader):
                         marker_color="#17478f",
                     ),
                     go.Bar(
-                        name="SE multimapped", y=df.Sample, orientation="h", x=df["SE multimapped"], marker_color="#e2780d"
+                        name="SE multimapped",
+                        y=df.Sample,
+                        orientation="h",
+                        x=df["SE multimapped"],
+                        marker_color="#e2780d",
                     ),
                     go.Bar(
-                        name="SE not alinged", y=df.Sample, orientation="h", x=df["SE not aligned"], marker_color="#9f1416"
+                        name="SE not alinged",
+                        y=df.Sample,
+                        orientation="h",
+                        x=df["SE not aligned"],
+                        marker_color="#9f1416",
                     ),
                 ]
             )
         else:
-            columns = ["PE mapped uniquely", 
-                        "PE mapped discordantly uniquely",	
-                        "PE one mate mapped uniquely",
-                        "PE multimapped",
-                        "PE one mate multimapped",
-                        "PE neither mate aligned"]
+            columns = [
+                "PE mapped uniquely",
+                "PE mapped discordantly uniquely",
+                "PE one mate mapped uniquely",
+                "PE multimapped",
+                "PE one mate multimapped",
+                "PE neither mate aligned",
+            ]
             colors = ["#20568f", "#5c94ca", "#95ceff", "#f7a35c", "#ffeb75", "#981919"]
-
 
             S = self.df[columns].sum(axis=1).values
             df = self.df[columns].divide(S, axis=0) * 100
@@ -111,12 +120,11 @@ class Bowtie2(Reader):
                         orientation="h",
                         x=df[column],
                         marker_color=color,
-                    ) for column,color in zip(columns, colors)
+                    )
+                    for column, color in zip(columns, colors)
                 ],
-                layout_xaxis_range=[0,100]
+                layout_xaxis_range=[0, 100],
             )
-
-
 
         fig.update_layout(barmode="stack", title="", xaxis_title="Mapping rate (percentage)")
 

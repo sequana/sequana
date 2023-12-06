@@ -1,9 +1,10 @@
-from sequana import fastq, sequana_data, FastQ
-from sequana.fastq import is_fastq
-from easydev import TempFile
 import os
+
+from easydev import TempFile
 from numpy import mean
 
+from sequana import FastQ, fastq, sequana_data
+from sequana.fastq import is_fastq
 
 from . import test_dir
 
@@ -14,7 +15,7 @@ data = f"{test_dir}/data/fastq/test.fastq"
 def test_basic():
     assert is_fastq(data) == True
     f = fastq.FastQ(data)
-    assert f.stats() == {'N': 250, 'mean_read_length': 101.0, 'sum_read_length': 25250}
+    assert f.stats() == {"N": 250, "mean_read_length": 101.0, "sum_read_length": 25250}
     f.get_lengths()
 
     ft = TempFile()
@@ -25,6 +26,7 @@ def test_select_reads():
     f = fastq.FastQ(data)
     ft = TempFile()
     f.select_reads(["HISEQ:426:C5T65ACXX:5:2302:4953:2090"], output_filename=ft.name)
+
 
 def test_fastq_unzipped():
 
@@ -68,7 +70,7 @@ def test_split():
     # general tests
     f = fastq.FastQ(data)
     try:
-        f.split_lines(250) # not a multiple of 4
+        f.split_lines(250)  # not a multiple of 4
         assert False
     except:
         assert True
@@ -94,8 +96,7 @@ def test_split():
     outputs = f.split_lines(500, gzip=True)
     remove_files(outputs)
 
-
-    f.split_lines(1000000) is None # too many
+    f.split_lines(1000000) is None  # too many
 
     # cleanup
     os.remove(f"{test_dir}/data/fastq/test_1_1000.fastq.gz")
@@ -106,8 +107,7 @@ def test_filter():
     # keeps all
 
     with TempFile() as fh:
-        f.filter(min_bp=80, max_bp=120, output_filename=fh.name,
-            progress=False)
+        f.filter(min_bp=80, max_bp=120, output_filename=fh.name, progress=False)
         assert len(f) == 250
         ff = FastQ(fh.name)
         assert len(ff) == 250
@@ -123,6 +123,7 @@ def test_filter():
     with TempFile() as fh:
         f.filter(output_filename=fh.name)
 
+
 def remove_files(filenames):
     for filename in filenames:
         os.remove(filename)
@@ -131,15 +132,13 @@ def remove_files(filenames):
 def test_identifiers():
     f = fastq.FastQ(data)
     identifier = fastq.Identifier(f.next()["identifier"])
-    assert identifier.version == 'Illumina_1.8+'
+    assert identifier.version == "Illumina_1.8+"
 
     identifier = fastq.Identifier(f.next()["identifier"], "Illumina_1.8+")
-    assert identifier.version == 'Illumina_1.8+'
-
+    assert identifier.version == "Illumina_1.8+"
 
     identifier = fastq.Identifier("@prefix:1_13_573/1")
     assert identifier.version == "unknown"
-
 
     identifier = fastq.Identifier("@SEQ:1:1101:9010:3891#0/1")
     identifier = fastq.Identifier("@SEQ:1:1101:9010:3891#0/1", version="Illumina_1.4+")
@@ -147,12 +146,13 @@ def test_identifiers():
     print(identifier)
     identifier.__repr__()
 
+
 def test_others():
     # kmer
     f = fastq.FastQ(data)
     f.to_kmer_content()
 
-    #krona
+    # krona
     with TempFile() as fh:
         f.to_krona(5, fh.name)
 
@@ -166,21 +166,18 @@ def test_others():
     assert f1 == f2
 
 
-
 def test_fastqc():
     qc = fastq.FastQC(data)
     qc.boxplot_quality()
     qc.histogram_gc_content()
     GC = mean(qc.gc_list)
-    assert GC>0 and GC<100
+    assert GC > 0 and GC < 100
     qc.histogram_sequence_lengths()
     qc.histogram_sequence_lengths(logy=False)
     qc.plot_acgt_content()
 
     stats = qc.get_stats()
-    assert stats['A'][0] == 6952
-    assert stats['T'][0] == 6400
-    assert stats['C'][0] == 6129
-    assert stats['G'][0] == 5768
-
-
+    assert stats["A"][0] == 6952
+    assert stats["T"][0] == 6400
+    assert stats["C"][0] == 6129
+    assert stats["G"][0] == 5768

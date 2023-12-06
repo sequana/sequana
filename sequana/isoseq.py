@@ -14,16 +14,13 @@ import glob
 import os
 from collections import Counter
 
-
-from sequana.lazy import pandas as pd
-from sequana.lazy import numpy as np
-from sequana import FastQ, FastA
-from sequana.pacbio import PacbioSubreads
-from sequana.lazy import pylab
-from sequana import phred
-
-
 import colorlog
+
+from sequana import FastA, FastQ, phred
+from sequana.lazy import numpy as np
+from sequana.lazy import pandas as pd
+from sequana.lazy import pylab
+from sequana.pacbio import PacbioSubreads
 
 logger = colorlog.getLogger(__name__)
 
@@ -335,8 +332,20 @@ class PacbioIsoSeqMappedIsoforms(object):
             bins = range(0, len(df.reference_length.max()), 100)
         mapped = df[df.reference_name != -1]
         unmapped = df[df.reference_name == -1]
-        pylab.hist(mapped.reference_length, bins=bins, alpha=0.5, label="mapped {}".format(len(mapped)), density=False)
-        pylab.hist(unmapped.reference, bins=bins, alpha=0.5, label="unmapped {}".format(len(unmapped)), density=False)
+        pylab.hist(
+            mapped.reference_length,
+            bins=bins,
+            alpha=0.5,
+            label="mapped {}".format(len(mapped)),
+            density=False,
+        )
+        pylab.hist(
+            unmapped.reference,
+            bins=bins,
+            alpha=0.5,
+            label="unmapped {}".format(len(unmapped)),
+            density=False,
+        )
         pylab.xlabel("Isoform length")
         pylab.legend()
 
@@ -428,7 +437,14 @@ class SIRVReference:
         # drop header
         df.reset_index(inplace=True, drop=True)
 
-        df.columns = ["sirv_id", "annotation", "length", "length_polyA", "sequence_with_polya", "sequence"]
+        df.columns = [
+            "sirv_id",
+            "annotation",
+            "length",
+            "length_polyA",
+            "sequence_with_polya",
+            "sequence",
+        ]
 
         # remove and replace sequence column using sequence_with_poly and
         # removing the polyA
@@ -640,7 +656,12 @@ class GeneCoverage:
         txt += "Undetected genes: {} ({:.2f}%)\n".format(S0, S0 / L * 100)
         return txt
 
-    def plot(self, X=[0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.95, 0.99, 0.999, 1], fontsize=16, label=None):
+    def plot(
+        self,
+        X=[0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.95, 0.99, 0.999, 1],
+        fontsize=16,
+        label=None,
+    ):
         """plot percentage of genes covered (y axis) as a function of percentage
         of genes covered at least by X percent (x-axis).
 

@@ -1,15 +1,15 @@
-from sequana import Quality
-from sequana import phred
+from sequana import Quality, phred
 
 
 def test_quality():
 
-    q = Quality('ABC')
+    q = Quality("ABC")
     q.plot()
     assert q.mean_quality == 33
 
-    q = phred.QualitySanger('ABC')
-    q = phred.QualitySolexa('ABC')
+    q = phred.QualitySanger("ABC")
+    q = phred.QualitySolexa("ABC")
+
 
 def test_ascii_to_quality():
     assert phred.ascii_to_quality("!") == 0
@@ -28,12 +28,11 @@ def test_quality_to_proba():
 
 
 def test_others():
-    #sanger proba quality
+    # sanger proba quality
     assert phred.proba_to_quality_sanger(0) == 93
     assert phred.proba_to_quality_sanger(0.0001) == 40
     assert phred.proba_to_quality_sanger(1) == 0
     assert phred.proba_to_quality_sanger(2) == 0
-
 
     # solexa proba quality
     assert phred.proba_to_quality_solexa(0) == 62
@@ -41,10 +40,9 @@ def test_others():
     assert phred.proba_to_quality_solexa(0.99) == -5
     assert phred.proba_to_quality_solexa(2) == -5
 
-
     # solexa and sanger quality are similar. In this exampl, sanger ones
     # is slighlty larger
-    assert phred.quality_solexa_to_quality_sanger(64) > 64.
+    assert phred.quality_solexa_to_quality_sanger(64) > 64.0
 
     #
     # inverse here

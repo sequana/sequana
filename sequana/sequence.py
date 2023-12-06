@@ -14,14 +14,13 @@ import string
 import subprocess
 from collections import Counter, deque
 
-from sequana.fasta import FastA
-from sequana.lazy import pandas as pd
-from sequana.lazy import numpy as np
-from sequana.lazy import pylab
-
+import colorlog
 from easydev import do_profile
 
-import colorlog
+from sequana.fasta import FastA
+from sequana.lazy import numpy as np
+from sequana.lazy import pandas as pd
+from sequana.lazy import pylab
 
 logger = colorlog.getLogger(__name__)
 
@@ -489,7 +488,14 @@ class DNA(Sequence):
                     len_ORF = d_vars["end_f"][j] - d_vars["begin_f"][j]
                     len_CDS = d_vars["end_f"][j] - d_vars["pos_ATG_f"][j]
                     self._ORF_pos.append(
-                        [d_vars["begin_f"][j], d_vars["end_f"][j], frame + 1, d_vars["pos_ATG_f"][j], len_ORF, len_CDS]
+                        [
+                            d_vars["begin_f"][j],
+                            d_vars["end_f"][j],
+                            frame + 1,
+                            d_vars["pos_ATG_f"][j],
+                            len_ORF,
+                            len_CDS,
+                        ]
                     )
                 d_vars["begin_f"][j] = i + 1
                 d_vars["pos_ATG_f"][j] = np.nan
@@ -562,7 +568,14 @@ class DNA(Sequence):
 
         # convert result to dataframe
         self._ORF_pos = pd.DataFrame(self._ORF_pos)
-        self._ORF_pos.columns = ["begin_pos", "end_pos", "frame", "pos_ATG", "len_ORF", "len_CDS"]
+        self._ORF_pos.columns = [
+            "begin_pos",
+            "end_pos",
+            "frame",
+            "pos_ATG",
+            "len_ORF",
+            "len_CDS",
+        ]
 
     def _get_ORF_pos(self):
         if self._ORF_pos is None:
@@ -618,8 +631,18 @@ class DNA(Sequence):
         n_CDS = self._ORF_pos["len_CDS"].dropna().shape[0]
 
         # plot for all ORF and CDS
-        pylab.hist(self._ORF_pos["len_ORF"].dropna(), alpha=alpha, label="ORF, N = " + str(n_ORF), bins=bins)
-        pylab.hist(self._ORF_pos["len_CDS"].dropna(), alpha=alpha, label="CDS, N = " + str(n_CDS), bins=bins)
+        pylab.hist(
+            self._ORF_pos["len_ORF"].dropna(),
+            alpha=alpha,
+            label="ORF, N = " + str(n_ORF),
+            bins=bins,
+        )
+        pylab.hist(
+            self._ORF_pos["len_CDS"].dropna(),
+            alpha=alpha,
+            label="CDS, N = " + str(n_CDS),
+            bins=bins,
+        )
         pylab.xlabel(xlabel)
         pylab.ylabel(ylabel)
         pylab.legend()
@@ -641,10 +664,18 @@ class DNA(Sequence):
             nb_res_CDS.append(self._ORF_pos[self._ORF_pos["frame"] == fr]["len_CDS"].dropna().shape[0])
 
         pylab.bar(
-            np.array(frames) - (bar_width / 2), nb_res_ORF, bar_width, alpha=alpha, label="ORF N = %d" % sum(nb_res_ORF)
+            np.array(frames) - (bar_width / 2),
+            nb_res_ORF,
+            bar_width,
+            alpha=alpha,
+            label="ORF N = %d" % sum(nb_res_ORF),
         )
         pylab.bar(
-            np.array(frames) + (bar_width / 2), nb_res_CDS, bar_width, alpha=alpha, label="CDS N = %d" % sum(nb_res_CDS)
+            np.array(frames) + (bar_width / 2),
+            nb_res_CDS,
+            bar_width,
+            alpha=alpha,
+            label="CDS N = %d" % sum(nb_res_CDS),
         )
         pylab.xlabel(xlabel)
         pylab.ylabel(ylabel)

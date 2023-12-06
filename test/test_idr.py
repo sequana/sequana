@@ -4,11 +4,12 @@ from sequana.idr import IDR
 
 from . import test_dir
 
+
 def test_idr(tmpdir):
 
-    fout = tmpdir.join('test.png')
+    fout = tmpdir.join("test.png")
 
-    for mode in ['narrow', 'broad']:
+    for mode in ["narrow", "broad"]:
         idr = IDR(f"{test_dir}/data/IDR/{mode}.csv")
         assert idr.mode == mode
         len(idr)

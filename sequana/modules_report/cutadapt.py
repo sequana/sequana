@@ -17,29 +17,24 @@
 #
 ##############################################################################
 """Module to write coverage report"""
-import os
 import io
 import json
+import os
 from collections import Counter
 
-
-from sequana.modules_report.base_module import SequanaBaseModule
-from sequana.utils import config
+import colorlog
 
 from sequana.lazy import pandas as pd
 from sequana.lazy import pylab
-
+from sequana.modules_report.base_module import SequanaBaseModule
+from sequana.utils import config
 from sequana.utils.datatables_js import DataTable
-
-import colorlog
 
 logger = colorlog.getLogger(__name__)
 
 
 class CutadaptModule(SequanaBaseModule):
-    """Write HTML report of cutadapt analysis
-
-    """
+    """Write HTML report of cutadapt analysis"""
 
     def __init__(self, cutadapt_log, sample_name, output_filename=None):
         """

@@ -11,19 +11,14 @@
 #
 ##############################################################################
 """Utilities to manipulate FastA files"""
-import os
 import textwrap
 from collections import defaultdict
 
-from sequana.lazy import pandas as pd
-from sequana import VCF_freebayes
-from sequana import FastA
-from sequana import Codon
-from sequana import GFF3
-
+import colorlog
 from pysam import FastxFile
 
-import colorlog
+from sequana import GFF3, Codon, FastA, VCF_freebayes
+from sequana.lazy import pandas as pd
 
 logger = colorlog.getLogger(__name__)
 

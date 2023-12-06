@@ -14,4 +14,3 @@ conda install numpy matplotlib pandas scipy ipython graphviz -y
 cp /home/sequana/miniconda3/lib/python3.5/site-packages/matplotlib/mpl-data/matplotlibrc .
 sed -i -e 's/Qt4Agg/Agg/'g matplotlibrc
 sed -i -e 's/Qt5Agg/Agg/'g matplotlibrc
-

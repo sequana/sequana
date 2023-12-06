@@ -8,7 +8,7 @@ bridges the gap between those tools, Kraken databases and a simple interface to
 get a quick taxonomic overview of the FastQ content.
 
 For more information, please see the :mod:`sequana.kraken` module documentation.
-Note that this feature is also part of the :ref:`pipeline_quality_control` pipeline. 
+Note that this feature is also part of the :ref:`pipeline_quality_control` pipeline.
 
 Although we will use the **Sequana** library hereafter, note that there is also
 a standalone application named **sequana_taxonomy**.
@@ -18,7 +18,7 @@ a standalone application named **sequana_taxonomy**.
 # Context
 # ----------
 # running the kraken analysis takes some time so we do provide
-# an output directly. The output file can be analysed within 
+# an output directly. The output file can be analysed within
 # Sequana to plot a Pie chart but also Javascript Krona results
 # The kraken format is as follows::
 #
@@ -31,21 +31,21 @@ a standalone application named **sequana_taxonomy**.
 #
 # The taxon are not readable so we first need to get the scientific names
 # Besides, the lineage would be useful. This is done in Sequana using
-# the :class:`sequana.kraken.KrakenResults`. See following example. 
-
+# the :class:`sequana.kraken.KrakenResults`. See following example.
 
 
 ##############################################
-# Example 
+# Example
 # --------
 #
 # In the following example, we use the results of a kraken analysis. The
 # original toy data files contains 1500 reads mostly related to Measles virus
 #
 from sequana import KrakenResults, sequana_data
+
 test_file = sequana_data("test_kraken.out", "examples")
 k = KrakenResults(test_file)
-df = k.plot(kind='pie', delete_krona_file=True)
+df = k.plot(kind="pie", delete_krona_file=True)
 print(df)
 
 
@@ -56,12 +56,13 @@ print(df)
 #
 # A more interactive plot can be obtained using Krona if installed:
 from sequana import KrakenResults, sequana_data
+
 test_file = sequana_data("test_kraken.out", "examples")
 import easydev
+
 if easydev.cmd_exists("ktImportText"):
     k = KrakenResults(test_file)
     k.to_js()  # The output filame is krona.html by default
 
 #######################################################################
 # An example is available in  `Krona example <../_static/krona.html>`_
-

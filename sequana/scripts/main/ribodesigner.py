@@ -9,18 +9,16 @@
 #  documentation: http://sequana.readthedocs.io
 #
 ##############################################################################
-import sys
 import pathlib
-
-import rich_click as click
-import colorlog
 import shutil
+import sys
+
+import colorlog
+import rich_click as click
 
 from sequana.ribodesigner import RiboDesigner
 from sequana.scripts.common import teardown
-
 from sequana.scripts.utils import CONTEXT_SETTINGS
-
 
 logger = colorlog.getLogger(__name__)
 

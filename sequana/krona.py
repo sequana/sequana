@@ -12,8 +12,9 @@
 ##############################################################################
 import collections
 
-from sequana.lazy import pandas as pd
 import colorlog
+
+from sequana.lazy import pandas as pd
 
 logger = colorlog.getLogger(__name__)
 

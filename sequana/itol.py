@@ -10,15 +10,15 @@
 #  documentation: http://sequana.readthedocs.io
 #
 ##############################################################################
-import colorlog
 from pathlib import Path
+
+import colorlog
 
 logger = colorlog.getLogger(__name__)
 
 
 from itolapi import Itol
 from itolapi.itol import ItolExport
-
 
 __all__ = ["ITOL"]
 

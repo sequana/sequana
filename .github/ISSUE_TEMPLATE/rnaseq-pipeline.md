@@ -10,10 +10,10 @@ assignees: ''
 
 # Please fill those information if known:
 
-- sequana version: 
+- sequana version:
 - sequana_rnaseq pipeline version
 
-# Description of your problem with error message 
+# Description of your problem with error message
 
 ```
 ERROR message here

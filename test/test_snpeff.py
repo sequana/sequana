@@ -1,10 +1,13 @@
 import os
+
 import pytest
 
 from sequana import snpeff
+
 from . import test_dir
 
-sharedir=f"{test_dir}/data/vcf"
+sharedir = f"{test_dir}/data/vcf"
+
 
 def test_snpeff_gff_no_fasta(tmpdir):
     outdir = tmpdir.mkdir("snpeff")
@@ -15,11 +18,12 @@ def test_snpeff_gff_no_fasta(tmpdir):
     # must be first to enforce call to _add_custom_db method
     with pytest.raises(SystemExit):
         # missing fasta
-        mydata = snpeff.SnpEff(annotation=f"{test_dir}/data/gff/ecoli_MG1655.gff",
-            log=log, snpeff_datadir=outdir, fastafile="dummy")
+        mydata = snpeff.SnpEff(
+            annotation=f"{test_dir}/data/gff/ecoli_MG1655.gff", log=log, snpeff_datadir=outdir, fastafile="dummy"
+        )
 
 
-# Fails on CI action. commented for now 
+# Fails on CI action. commented for now
 # FIXME
 def _test_snpeff_gff_with_fasta(tmpdir):
     outdir = tmpdir.mkdir("snpeff")
@@ -28,8 +32,13 @@ def _test_snpeff_gff_with_fasta(tmpdir):
     html = outdir.join("snpeff.html")
 
     # test a GFF file
-    mydata = snpeff.SnpEff(annotation=f"{test_dir}/data/gff/ecoli_MG1655.gff",
-        log=log, snpeff_datadir=outdir, fastafile=f"{test_dir}/data/fasta/ecoli_MG1655.fa")
+    mydata = snpeff.SnpEff(
+        annotation=f"{test_dir}/data/gff/ecoli_MG1655.gff",
+        log=log,
+        snpeff_datadir=outdir,
+        fastafile=f"{test_dir}/data/fasta/ecoli_MG1655.fa",
+    )
+
 
 def test_snpeff_gbk(tmpdir):
     outdir = tmpdir.mkdir("snpeff")
@@ -39,6 +48,7 @@ def test_snpeff_gbk(tmpdir):
 
     mydata = snpeff.SnpEff(annotation=f"{sharedir}/JB409847.gbk", log=log, snpeff_datadir=outdir)
     mydata.launch_snpeff(f"{sharedir}/JB409847.vcf", output, html_output=html)
+
 
 def test_snpeff_gbk_no_log(tmpdir):
     outdir = tmpdir.mkdir("snpeff")
@@ -62,18 +72,15 @@ def test_snpeff_download(tmpdir):
 
     outdir = tmpdir.mkdir("snpeff")
 
-    snpeff.download_fasta_and_genbank("K01711", tag="test",
-        outdir=outdir)
+    snpeff.download_fasta_and_genbank("K01711", tag="test", outdir=outdir)
 
     with pytest.raises(ValueError):
-        snpeff.download_fasta_and_genbank("dummyK01711", tag="test",
-            outdir=outdir)
+        snpeff.download_fasta_and_genbank("dummyK01711", tag="test", outdir=outdir)
 
 
 def test_add_locus_no_modification(tmpdir):
-    outdir = tmpdir.mkdir('snpeff')
-    mydata = snpeff.SnpEff(annotation=f"{sharedir}/JB409847.gbk",
-        snpeff_datadir=outdir)
+    outdir = tmpdir.mkdir("snpeff")
+    mydata = snpeff.SnpEff(annotation=f"{sharedir}/JB409847.gbk", snpeff_datadir=outdir)
 
     fastafile = f"{sharedir}/JB409847.fasta"
     mydata.add_locus_in_fasta(fastafile, outdir + "/test.fasta")
@@ -81,7 +88,7 @@ def test_add_locus_no_modification(tmpdir):
 
 def test_add_locus_with_modification(tmpdir):
 
-    outdir = tmpdir.mkdir('snpeff')
+    outdir = tmpdir.mkdir("snpeff")
 
     # Alter the original GBK to alter the locus name
     data = open(f"{sharedir}/JB409847.gbk", "r").read()

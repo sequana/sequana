@@ -14,23 +14,24 @@
 import glob
 import json
 import os
-from pathlib import Path
-import urllib
-import time
 import shutil
+import time
+import urllib
+from os.path import expanduser
+from pathlib import Path
 
 import colorlog
 import colormap
+import plotly.express as px
 import requests
 from bioservices import KEGG
+from tqdm import tqdm
+
 from sequana.enrichment.gsea import GSEA
 from sequana.lazy import numpy as np
 from sequana.lazy import pandas as pd
 from sequana.lazy import pylab
 from sequana.summary import Summary
-from tqdm import tqdm
-import plotly.express as px
-
 
 logger = colorlog.getLogger(__name__)
 
@@ -477,20 +478,24 @@ class KEGGPathwayEnrichment:
                     logger.warning("Skipped {}(kegg ID {}). could not find mapping".format(name, kegg_id))
             mapper = new_mapper
 
+        df_down["Name"] = df_down["Name"].str.lower()
+        df_up["Name"] = df_up["Name"].str.lower()
+
         for name, kegg_id in mapper.items():
+
             summary_names.append(name)
             summary_keggids.append(kegg_id)
 
             if name.lower() in {x.lower() for x in df_down.Name.fillna("undefined")}:
-                padj = -pylab.log10(df_down.query("Name==@name").padj.values[0])
-                fc = df_down.query("Name==@name").log2FoldChange.values[0]
+                padj = -pylab.log10(df_down.query("Name==@name.lower()").padj.values[0])
+                fc = df_down.query("Name==@name.lower()").log2FoldChange.values[0]
                 summary_fcs.append(fc)
                 summary_pvalues.append(padj)
                 summary_types.append("-")
             elif name.lower() in {x.lower() for x in df_up.Name.fillna("undefined")}:
-                padj = -pylab.log10(df_up.query("Name==@name").padj.values[0])
+                padj = -pylab.log10(df_up.query("Name==@name.lower()").padj.values[0])
                 summary_pvalues.append(padj)
-                fc = df_up.query("Name==@name").log2FoldChange.values[0]
+                fc = df_up.query("Name==@name.lower()").log2FoldChange.values[0]
                 summary_fcs.append(fc)
                 summary_types.append("+")
             else:
@@ -610,14 +615,20 @@ class KEGGPathwayEnrichment:
 
     def _download_kegg_image(self, url, pathwayID):
         from selenium import webdriver
-        from selenium.webdriver.common.by import By
         from selenium.webdriver.chrome.service import Service as ChromeService
         from selenium.webdriver.common.action_chains import ActionChains
-        from selenium.webdriver.support.ui import WebDriverWait
+        from selenium.webdriver.common.by import By
         from selenium.webdriver.support import expected_conditions as EC
+        from selenium.webdriver.support.ui import WebDriverWait
 
         # Define the path to the Chrome WebDriver executable
-        webdriver_path = "/home/cokelaer/TESTKEGG/chromedriver"
+        # Drivers can be found here : https://pypi.org/project/selenium/
+        home = expanduser("~")
+        webdriver_path = f"{home}/.config/sequana/chromedriver"
+        if os.path.exists(webdriver_path) is False:
+            logger.critical(
+                "To annotate KEGG image, you currently need chrome and a valid/compatible selenium driver for chroe. Please see https://pypi.org/project/selenium"
+            )
 
         # Set up the WebDriver with options
         chrome_options = webdriver.ChromeOptions()

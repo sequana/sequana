@@ -11,11 +11,11 @@
 #
 ##############################################################################
 """Sniffer"""
-from sequana.bamtools import is_bam, is_sam, is_cram
-from sequana.fastq import is_fastq
-from sequana.fasta import is_fasta
-
 import colorlog
+
+from sequana.bamtools import is_bam, is_cram, is_sam
+from sequana.fasta import is_fasta
+from sequana.fastq import is_fastq
 
 logger = colorlog.getLogger(__name__)
 

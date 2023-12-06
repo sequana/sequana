@@ -9,21 +9,18 @@
 #  documentation: http://sequana.readthedocs.io
 #
 ##############################################################################
-import os
 import glob
+import os
 import re
 import subprocess
-
 from shutil import which
 from subprocess import STDOUT
 
+import colorlog
+import rich_click as click
 from snakemake import shell as shellcmd
 
-import rich_click as click
-import colorlog
-
 from sequana.scripts.utils import CONTEXT_SETTINGS, OptionEatAll
-
 
 logger = colorlog.getLogger(__name__)
 

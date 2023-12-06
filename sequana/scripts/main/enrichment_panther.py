@@ -13,15 +13,13 @@ import os
 import sys
 from pathlib import Path
 
-import rich_click as click
 import colorlog
+import rich_click as click
 
 from sequana.modules_report import ModulePantherEnrichment
 from sequana.rnadiff import RNADiffResults
+from sequana.scripts.utils import CONTEXT_SETTINGS, OptionEatAll, common_logger
 from sequana.utils import config
-
-from sequana.scripts.utils import CONTEXT_SETTINGS, common_logger, OptionEatAll
-
 
 logger = colorlog.getLogger(__name__)
 
@@ -114,15 +112,15 @@ def enrichment_panther(**kwargs):
     Example for the enrichment module:
 
         sequana enrichment-panther rnadiff.csv --panther-taxon 10090
-            --log2-foldchange-cutoff 2 
+            --log2-foldchange-cutoff 2
 
         sequana enrichment rnadiff/rnadiff.csv
             --panther-taxon 189518 \
-            --log2-foldchange-cutoff 2 
+            --log2-foldchange-cutoff 2
             --ontologies MF SLIM_MF
 
     \b
-    Valid ontologies are: MF, BP, CC, SLIM_MF, SLIM_BP, SLIM_CC, 
+    Valid ontologies are: MF, BP, CC, SLIM_MF, SLIM_BP, SLIM_CC,
     PROTEIN, "PANTHER_PATHWAY", "REACTOME_PATHWAY"
 
 

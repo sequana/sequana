@@ -17,17 +17,15 @@
 #
 ##############################################################################
 """Module to write coverage report"""
-import os
 import io
 import json
+import os
 
-from sequana.modules_report.base_module import SequanaBaseModule
-from sequana.utils import config
-
+from sequana.lazy import pandas
 from sequana.lazy import pandas as pd
 from sequana.lazy import pylab
-from sequana.lazy import pandas
-
+from sequana.modules_report.base_module import SequanaBaseModule
+from sequana.utils import config
 from sequana.utils.datatables_js import DataTable
 
 

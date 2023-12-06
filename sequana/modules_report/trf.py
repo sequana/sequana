@@ -26,13 +26,10 @@
 """
 import os
 
-from sequana.lazy import pandas as pd
-from sequana.modules_report.base_module import SequanaBaseModule
-
 from sequana import TRF
-
+from sequana.lazy import pandas as pd
 from sequana.lazy import pylab
-
+from sequana.modules_report.base_module import SequanaBaseModule
 from sequana.utils.datatables_js import DataTable
 from sequana.utils.df2html import df2html
 

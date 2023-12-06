@@ -1,10 +1,10 @@
-from sequana.scripts import taxonomy
-from sequana import logger
-from sequana import sequana_data
 import os
-import pytest
 
+import pytest
 from click.testing import CliRunner
+
+from sequana import logger, sequana_data
+from sequana.scripts import taxonomy
 
 prog = "sequana_taxonomy"
 
@@ -23,7 +23,7 @@ def test_analysis(tmpdir):
 
     # FIXME. Those calls do not return 0 (why ?)
     results = runner.invoke(taxonomy.main, ["--download", "toydb"])
-    #assert results.exit_code == 0
+    # assert results.exit_code == 0
 
     # FIXME. Those calls do not return 0 (why ?)
     results = runner.invoke(
@@ -31,16 +31,34 @@ def test_analysis(tmpdir):
     )
     # assert results.exit_code == 0
 
-    results = runner.invoke(taxonomy.main, ["--input-file1", file1, "--input-file2", file2, 
-        "--output-directory",
-        directory.__str__(),
-        "--databases", "toydb"])
-    #assert results.exit_code == 0
+    results = runner.invoke(
+        taxonomy.main,
+        [
+            "--input-file1",
+            file1,
+            "--input-file2",
+            file2,
+            "--output-directory",
+            directory.__str__(),
+            "--databases",
+            "toydb",
+        ],
+    )
+    # assert results.exit_code == 0
 
     results = runner.invoke(
-        taxonomy.main, ["--input-file1", file1, "--input-file2", file2, "--databases", "toydb", "toydb",
-        "--output-directory",
-        directory.__str__()]
+        taxonomy.main,
+        [
+            "--input-file1",
+            file1,
+            "--input-file2",
+            file2,
+            "--databases",
+            "toydb",
+            "toydb",
+            "--output-directory",
+            directory.__str__(),
+        ],
     )
     # assert results.exit_code == 0
 
@@ -56,4 +74,3 @@ def test_help():
         pass
     else:
         raise Exception
-

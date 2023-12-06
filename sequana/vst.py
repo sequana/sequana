@@ -11,8 +11,9 @@
 #
 ##############################################################################
 """Simple VST transformation"""
-from sequana.lazy import numpy as np
 import colorlog
+
+from sequana.lazy import numpy as np
 
 logger = colorlog.getLogger(__name__)
 

@@ -17,7 +17,7 @@ class HTMLDirectory:
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">'
 
         <style type="text/css">
-        <!-- 
+        <!--
   BODY { font-family : ariel, monospace, sans-serif; }
   P { font-weight: normal; font-family : ariel, monospace, sans-serif; color: black; background-color: transparent;}
   B { font-weight: normal; color: black; background-color: transparent;}

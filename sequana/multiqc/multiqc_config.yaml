@@ -46,7 +46,7 @@ extra_fn_clean_exts:
     - _tophat
     - _star_aligned
     - _fastqc
-    
+
     #- type: remove
     #  pattern: '.sorted'
     #- type: regex
@@ -117,7 +117,7 @@ sp:
 # Specify a custom logo to add to reports (uncomment to use)
 custom_logo: null         # '/path/to/logo.png'
 custom_logo_url: null     # 'https://www.example.com'
-custom_logo_title: "Institut Pasteur, Biomics platform" 
+custom_logo_title: "Institut Pasteur, Biomics platform"
 subtitle: ""            # Grey text below title
 intro_text: ""          # Set to False to remove, or your own text
 

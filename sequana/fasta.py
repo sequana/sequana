@@ -14,13 +14,13 @@
 import os
 import textwrap
 
-from sequana.stats import N50, L50
-from sequana.lazy import pylab
-from sequana.lazy import numpy as np
-
-from pysam import FastxFile
-import tqdm
 import colorlog
+import tqdm
+from pysam import FastxFile
+
+from sequana.lazy import numpy as np
+from sequana.lazy import pylab
+from sequana.stats import L50, N50
 
 logger = colorlog.getLogger(__name__)
 

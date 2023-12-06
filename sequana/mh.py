@@ -12,11 +12,12 @@
 ##############################################################################
 
 
-from random import uniform, gauss
-from sequana.lazy import numpy as np
-from sequana.lazy import pylab
+from random import gauss, uniform
 
 import colorlog
+
+from sequana.lazy import numpy as np
+from sequana.lazy import pylab
 
 logger = colorlog.getLogger(__name__)
 

@@ -17,16 +17,15 @@
 #
 ##############################################################################
 """Module to write coverage report"""
-import os
-import io
 import glob
+import io
+import os
 
-from sequana.modules_report.base_module import SequanaBaseModule
+import colorlog
 
 from sequana.lazy import pandas as pd
 from sequana.lazy import pylab
-
-import colorlog
+from sequana.modules_report.base_module import SequanaBaseModule
 
 logger = colorlog.getLogger(__name__)
 

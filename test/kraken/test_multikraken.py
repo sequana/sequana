@@ -1,4 +1,4 @@
-from sequana import MultiKrakenResults2, MultiKrakenResults
+from sequana import MultiKrakenResults, MultiKrakenResults2
 
 from . import test_dir
 

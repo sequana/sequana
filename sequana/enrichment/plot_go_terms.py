@@ -12,10 +12,10 @@
 ##############################################################################
 
 import colorlog
-from sequana.lazy import pandas as pd
-from sequana.lazy import pylab
 import plotly.express as px
 
+from sequana.lazy import pandas as pd
+from sequana.lazy import pylab
 
 logger = colorlog.getLogger(__name__)
 

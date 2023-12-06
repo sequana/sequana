@@ -1,11 +1,22 @@
-from sequana.bamtools import SAM, BAM, CRAM,  Alignment, SAMFlags
-from sequana.bamtools import is_bam, is_cram, is_sam
-from sequana.modules_report.bamqc import BAMQCModule
-from easydev import TempFile
-import pytest
 import os
 
+import pytest
+from easydev import TempFile
+
+from sequana.bamtools import (
+    BAM,
+    CRAM,
+    SAM,
+    Alignment,
+    SAMFlags,
+    is_bam,
+    is_cram,
+    is_sam,
+)
+from sequana.modules_report.bamqc import BAMQCModule
+
 from . import test_dir
+
 
 def test_is_sam_bam():
 
@@ -14,6 +25,7 @@ def test_is_sam_bam():
 
     datatest = f"{test_dir}/data/bam/test_measles.bam"
     assert is_bam(datatest) is True
+
 
 def test_is_cram():
     datatest = f"{test_dir}/data/cram/test_measles.cram"
@@ -56,25 +68,27 @@ def test_bam(tmpdir):
     with TempFile() as fh:
         s.to_fastq(fh.name)
         from sequana import FastQ
+
         ff = FastQ(fh.name)
         len(ff) == len(s)
 
     # plotting
-    with TempFile(suffix='.png') as fh:
+    with TempFile(suffix=".png") as fh:
         s.plot_bar_flags(filename=fh.name, logy=True)
         s.plot_bar_flags(filename=fh.name)
 
-    with TempFile(suffix='.png') as fh:
+    with TempFile(suffix=".png") as fh:
         s.plot_bar_mapq(filename=fh.name)
 
     s.get_gc_content()
     s.get_length_count()
     s.plot_gc_content()
     try:
-        s.plot_gc_content(bins=[1,2,10])
+        s.plot_gc_content(bins=[1, 2, 10])
         assert False
     except:
         assert True
+
 
 @pytest.mark.xfail(reason="matplotlib fill_between fails  under py38/39 dev 2022")
 def test_boxqualities():
@@ -88,10 +102,13 @@ def test_boxqualities():
 def test_cram():
     datatest = f"{test_dir}/data/cram/test_measles.cram"
     s = CRAM(datatest)
-    assert s.summary == {'flags': {77: 6, 83: 14, 99: 10, 141: 6, 147: 10, 163: 14},
-         'mapq': {0: 12, 60: 48},
-         'mean_quality': 33.666171617161723,  
-         'read_length': {79: 2, 81: 1, 93: 1, 101: 44}}
+    assert s.summary == {
+        "flags": {77: 6, 83: 14, 99: 10, 141: 6, 147: 10, 163: 14},
+        "mapq": {0: 12, 60: 48},
+        "mean_quality": 33.666171617161723,
+        "read_length": {79: 2, 81: 1, 93: 1, 101: 44},
+    }
+
 
 def test_bam_others():
     datatest = f"{test_dir}/data/bam/measles.fa.sorted.bam"
@@ -128,27 +145,31 @@ def test_bamreport(tmpdir):
     datatest = f"{test_dir}/data/bam/test.bam"
     directory = tmpdir.mkdir("bam")
     from sequana.utils import config
+
     config.output_dir = directory.__str__()
     r = BAMQCModule(datatest, "bam.html")
 
 
 def test_cs():
     from sequana.bamtools import CS
-    assert  CS('-a:6-g:14+g:2+c:9*ac:10-a:13-a') ==  {'D': 4, 'I': 2, 'M': 54, 'S': 1}
-    assert  CS('-a:6-g:14+g:2+c:9*ac:10-a:13-a:2*ac') ==  {'D': 4, 'I': 2, 'M': 56, 'S': 2}
-    assert  CS('-a:6-g:14+g:2+c:9*ac:10-a:13-a:1+g') ==  {'D': 4, 'I': 3, 'M': 55, 'S': 1}
+
+    assert CS("-a:6-g:14+g:2+c:9*ac:10-a:13-a") == {"D": 4, "I": 2, "M": 54, "S": 1}
+    assert CS("-a:6-g:14+g:2+c:9*ac:10-a:13-a:2*ac") == {"D": 4, "I": 2, "M": 56, "S": 2}
+    assert CS("-a:6-g:14+g:2+c:9*ac:10-a:13-a:1+g") == {"D": 4, "I": 3, "M": 55, "S": 1}
 
 
 def test_cs_in_bam():
     b = BAM(f"{test_dir}/data/bam/test_CS_tiny.bam")
-    assert  b.summary == {
-        'flags': {0: 2, 16: 2},
-         'mapq': {60: 4},
-         'mean_quality': 0.0,
-         'read_length': {1772: 1, 10779: 1, 13726: 1, 20480: 1}}
+    assert b.summary == {
+        "flags": {0: 2, 16: 2},
+        "mapq": {60: 4},
+        "mean_quality": 0.0,
+        "read_length": {1772: 1, 10779: 1, 13726: 1, 20480: 1},
+    }
     df = b.get_df_concordance()
     import math
-    del df['rname']
+
+    del df["rname"]
     assert math.floor(df.sum().sum()) == 103813  # exact is 103769.5600734975
 
 
@@ -158,32 +179,30 @@ def test_insert_size():
     d3 = f"{test_dir}/data/bam/test.bam"
     d4 = f"{test_dir}/data/bam/test_CS_tiny.bam"
 
-
-    b1  = BAM(d1)
+    b1 = BAM(d1)
     # test max_entries
     assert len(b1._get_insert_size_data(10)) == 7
     b1.get_estimate_insert_size(100)
     b1.get_estimate_insert_size()
     b1.plot_insert_size()
 
-    #b2  = BAM(d2)
-    #b2.get_estimate_insert_size()
-    
-    b3  = BAM(d3)
+    # b2  = BAM(d2)
+    # b2.get_estimate_insert_size()
+
+    b3 = BAM(d3)
     b3.get_estimate_insert_size()
-    
-    b4  = BAM(d4)
+
+    b4 = BAM(d4)
     assert b4.get_estimate_insert_size() == 0
 
 
 def test_strandness():
     b = BAM(f"{test_dir}/data/bam/test_hg38_chr18.bam")
     res = b.infer_strandness(f"{test_dir}/data/bed/hg38_chr18.bed", 200000)
-    assert res[0] == 'Paired-end'
-    assert res[1]> 0.94
-    assert res[2]<0.06
+    assert res[0] == "Paired-end"
+    assert res[1] > 0.94
+    assert res[2] < 0.06
     assert res[3] < 0.0011
-
 
 
 def test_mRNA_inner_distance():
@@ -191,5 +210,4 @@ def test_mRNA_inner_distance():
     df = b.mRNA_inner_distance(f"{test_dir}/data/bed/hg38_chr18.bed")
     # Total read pairs  used 382
     # mean insert size: 88.3975155279503
-    assert df[0]['val'].mean() >1436 and df[0]['val'].mean()<1437
-
+    assert df[0]["val"].mean() > 1436 and df[0]["val"].mean() < 1437

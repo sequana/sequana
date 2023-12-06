@@ -13,18 +13,22 @@
 """
 Python script to filter a VCF file
 """
-import sys
 
+import colorlog
 import vcfpy
 
 from sequana.lazy import pylab
 
-import colorlog
-
 logger = colorlog.getLogger(__name__)
 
 
-__all__ = ["VCFBase", "strand_ratio", "compute_frequency", "compute_strand_balance", "compute_fisher_strand_filter"]
+__all__ = [
+    "VCFBase",
+    "strand_ratio",
+    "compute_frequency",
+    "compute_strand_balance",
+    "compute_fisher_strand_filter",
+]
 
 
 class VCFBase:

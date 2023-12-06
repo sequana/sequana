@@ -32,7 +32,6 @@ def test_dna():
     except:
         assert True
 
-
     # read a file and tests the __len__ method
     dna = DNA(datafile)
     assert len(dna) == 15894
@@ -68,7 +67,7 @@ def test_repeats():
     assert len(rep.begin_end_repeat_position) == 156
     rep.do_merge = False
     assert len(rep.begin_end_repeat_position) == 158
-    assert rep.df_shustring.shape == (15888,2)
+    assert rep.df_shustring.shape == (15888, 2)
     assert rep.longest_shustring == 15
 
     # test histogram
@@ -86,5 +85,5 @@ def test_gc_skew():
     dna = DNA(datafile)
     dna.window = 100
     dna.plot_all_skews()
-    for x in dna: # test the iterator
+    for x in dna:  # test the iterator
         pass

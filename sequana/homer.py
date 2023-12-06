@@ -14,12 +14,12 @@
 #
 ##############################################################################
 
-from sequana.lazy import pylab
-from sequana.utils.pandas import PandasReader
+from collections import Counter
 
 import colorlog
 
-from collections import Counter
+from sequana.lazy import pylab
+from sequana.utils.pandas import PandasReader
 
 logger = colorlog.getLogger(__name__)
 

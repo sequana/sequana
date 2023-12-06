@@ -11,18 +11,16 @@
 ##############################################################################
 import os
 import sys
-
-import rich_click as click
-import colorlog
 from pathlib import Path
+
+import colorlog
+import rich_click as click
 
 from sequana.gff3 import GFF3
 from sequana.rnadiff import RNADesign, RNADiffAnalysis
-from sequana.utils import config
 from sequana.scripts.common import teardown
-
-
 from sequana.scripts.utils import CONTEXT_SETTINGS, common_logger
+from sequana.utils import config
 
 logger = colorlog.getLogger(__name__)
 
@@ -50,23 +48,29 @@ def rnadiff_auto_batch_column(ctx, args, incomplete):
         return [c for c in batch if incomplete in c[0]]
 
 
-
-
 click.rich_click.OPTION_GROUPS = {
     "sequana rnadiff": [
         {
             "name": "Required",
             "options": ["--design", "--features", "--annotation-file", "--feature-name", "--attribute-name"],
         },
-
         {
             "name": "DeSEQ2 statistical analysis / design",
-            "options": ["--beta-prior", "--condition", "--batch", "--comparisons", "--cooks-cutoff",
-"--independent-filtering", "--fit-type", "--keep-all-conditions", "--minimum-mean-reads-per-gene", 
-"--minimum-mean-reads-per-condition-per-gene",
-"--shrinkage",  "--reference"],
+            "options": [
+                "--beta-prior",
+                "--condition",
+                "--batch",
+                "--comparisons",
+                "--cooks-cutoff",
+                "--independent-filtering",
+                "--fit-type",
+                "--keep-all-conditions",
+                "--minimum-mean-reads-per-gene",
+                "--minimum-mean-reads-per-condition-per-gene",
+                "--shrinkage",
+                "--reference",
+            ],
         },
-
         {
             "name": "Informative options",
             "options": ["--help"],
@@ -75,22 +79,20 @@ click.rich_click.OPTION_GROUPS = {
 }
 
 
-
-
 @click.command(context_settings=CONTEXT_SETTINGS)
 @click.option(
     "--design",
     type=click.Path(),
     required=True,
     default="design.csv",
-    help="The design file in CSV format (see documentation above)"
+    help="The design file in CSV format (see documentation above)",
 )
 @click.option(
     "--features",
     type=click.Path(),
     required=True,
     default="all_features.out",
-    help="The merged features counts. Output of the sequana_rnaseq pipeline"
+    help="The merged features counts. Output of the sequana_rnaseq pipeline",
 )
 @click.option(
     "--annotation-file",
@@ -222,93 +224,94 @@ a hover name to be used with this option""",
 def rnadiff(**kwargs):
     """**Sequana RNADiff**: differential analysis and reporting.
 
-    ----
+     ----
 
-    The **Sequana rnadiff** command performs the differential analysis of input RNAseq data using
-    DeSEQ2 behind the scene.
+     The **Sequana rnadiff** command performs the differential analysis of input RNAseq data using
+     DeSEQ2 behind the scene.
 
-    The command line looks like
+     The command line looks like
 
-        sequana rnadiff --annotation Lepto.gff --design design.csv --features all_features.out --feature-name gene --attribute-name ID
+         sequana rnadiff --annotation Lepto.gff --design design.csv --features all_features.out --feature-name gene --attribute-name ID
 
-    This command performs the differential analysis of feature counts using DESeq2.
-    A HTML report is created as well as a set of output files, including summary
-    tables of the analysis.
+     This command performs the differential analysis of feature counts using DESeq2.
+     A HTML report is created as well as a set of output files, including summary
+     tables of the analysis.
 
-    The expected input is a tabulated file which is the aggregation of feature counts
-    for each sample. This file is produced by the Sequana RNA-seq pipeline
-    (https://github.com/sequana/rnaseq).
+     The expected input is a tabulated file which is the aggregation of feature counts
+     for each sample. This file is produced by the Sequana RNA-seq pipeline
+     (https://github.com/sequana/rnaseq).
 
-    It is named all_features.out and looks like:
+     It is named all_features.out and looks like:
 
-       Geneid   Chr Start End Strand Length BAM1  BAM2  BAM3  BAM4
-       ENSG0001 1       1  10      +     10 120    130   140  150
-       ENSG0002 2       1  10      +     10 120    130     0    0
+        Geneid   Chr Start End Strand Length BAM1  BAM2  BAM3  BAM4
+        ENSG0001 1       1  10      +     10 120    130   140  150
+        ENSG0002 2       1  10      +     10 120    130     0    0
 
-   To perform this analysis, you will also need the GFF file used during the RNA-seq
-   analysis.
+    To perform this analysis, you will also need the GFF file used during the RNA-seq
+    analysis.
 
-   You also need a design file that give the correspondance
-   between the sample names found in the feature_count file above and the
-   conditions of your RNA-seq analysis. The design looks like:
+    You also need a design file that give the correspondance
+    between the sample names found in the feature_count file above and the
+    conditions of your RNA-seq analysis. The design looks like:
 
-           label,condition
-           BAM1,condition_A
-           BAM2,condition_A
-           BAM3,condition_B
-           BAM4,condition_B
+            label,condition
+            BAM1,condition_A
+            BAM2,condition_A
+            BAM3,condition_B
+            BAM4,condition_B
 
-    The feature-name is the feature that was used in your counting.
-    The attribute-name is the main attribute to use in the HTML reports.
-    Note however, that all attributes found in your GFF file are repored
-    in the HTML page
+     The feature-name is the feature that was used in your counting.
+     The attribute-name is the main attribute to use in the HTML reports.
+     Note however, that all attributes found in your GFF file are repored
+     in the HTML page
 
-    Batch effet can be included by adding a column in the design.csv file. For
-    example if called 'day', you can take this information into account using
-    '--batch day'
+     Batch effet can be included by adding a column in the design.csv file. For
+     example if called 'day', you can take this information into account using
+     '--batch day'
 
-    By default, when comparing conditions, all combination are computed. If
-    you have N conditions, we compute the N(N-1)/2 comparisons. The
-    reference is automatically chosen as the last one found in the design
-    file. In this example:
+     By default, when comparing conditions, all combination are computed. If
+     you have N conditions, we compute the N(N-1)/2 comparisons. The
+     reference is automatically chosen as the last one found in the design
+     file. In this example:
 
-        label,condition
-        BAM1,A
-        BAM2,A
-        BAM3,B
-        BAM4,B
+         label,condition
+         BAM1,A
+         BAM2,A
+         BAM3,B
+         BAM4,B
 
-    we compare A versus B. If you do not want that behaviour, use
-    '--reference A'.
+     we compare A versus B. If you do not want that behaviour, use
+     '--reference A'.
 
-    In a more complex design,
+     In a more complex design,
 
-        label,condition
-        BAM1,A
-        BAM2,A
-        BAM3,B
-        BAM4,B
-        BAM5,C
-        BAM6,C
+         label,condition
+         BAM1,A
+         BAM2,A
+         BAM3,B
+         BAM4,B
+         BAM5,C
+         BAM6,C
 
-    The comparisons are A vs B, A vs C and B vs C.
-    If you wish to perform different comparisons or restrict the
-    combination, you can use a comparison input file. For instance, to
-    perform the C vs A  and C vs B comparisons only, create this
-    file (e.g. comparison.csv):
+     The comparisons are A vs B, A vs C and B vs C.
+     If you wish to perform different comparisons or restrict the
+     combination, you can use a comparison input file. For instance, to
+     perform the C vs A  and C vs B comparisons only, create this
+     file (e.g. comparison.csv):
 
-        alternative,reference
-        C,A
-        C,B
+         alternative,reference
+         C,A
+         C,B
 
-    and use '--comparison comparison.csv'.
+     and use '--comparison comparison.csv'.
 
 
     """
-    from sequana import logger
     import pandas as pd
-    from sequana.modules_report.rnadiff import RNAdiffModule
     from easydev import cmd_exists
+
+    from sequana import logger
+    from sequana.modules_report.rnadiff import RNAdiffModule
 
     logger.setLevel(kwargs["logger"])
 

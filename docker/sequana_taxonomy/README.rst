@@ -35,5 +35,3 @@ Build the image::
 Push it on hub.docker.com::
 
     sh push.sh
-
-

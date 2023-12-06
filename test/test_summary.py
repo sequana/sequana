@@ -2,9 +2,10 @@ from sequana.summary import Summary
 
 from . import test_dir
 
+
 def test_summary():
-    s = Summary("test2", sample_name="chr1",data={"mean":1})
-    assert s.data == {"mean":1}
+    s = Summary("test2", sample_name="chr1", data={"mean": 1})
+    assert s.data == {"mean": 1}
     assert s.version
     assert s.date
     d = s.as_dict()
@@ -26,9 +27,8 @@ def test_summary():
     except:
         assert True
 
-
     # test data_description
-    s = Summary("test2", data={"mean":1})
+    s = Summary("test2", data={"mean": 1})
     s.data_description = {"mean": "mean of the data set"}
     assert s.data_description == {"mean": "mean of the data set"}
     try:
@@ -38,6 +38,7 @@ def test_summary():
         assert True
 
     from easydev import TempFile
+
     with TempFile(suffix=".json") as fh:
         s.to_json(fh.name)
 

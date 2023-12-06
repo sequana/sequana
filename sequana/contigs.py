@@ -10,14 +10,13 @@
 #  documentation: http://sequana.readthedocs.io
 #
 ##############################################################################
-from sequana.lazy import pylab
-from sequana.lazy import pandas as pd
-from sequana.lazy import numpy as np
+import colorlog
 
 from sequana import tools
-from sequana import FastA
-
-import colorlog
+from sequana.fasta import FastA
+from sequana.lazy import numpy as np
+from sequana.lazy import pandas as pd
+from sequana.lazy import pylab
 
 logger = colorlog.getLogger(__name__)
 
@@ -184,11 +183,27 @@ class Contigs(ContigsBase):
                 covStat = covStat.split("=")[1]
                 nreads[i] = int(read)
                 covStats[i] = float(covStat)
-        df = pd.DataFrame({"GC": list(GC), "length": lengths, "name": names, "nread": nreads, "covStat": covStats})
+        df = pd.DataFrame(
+            {
+                "GC": list(GC),
+                "length": lengths,
+                "name": names,
+                "nread": nreads,
+                "covStat": covStats,
+            }
+        )
         self._df = df.copy()
         return df
 
-    def plot_contig_length_vs_nreads(self, fontsize=16, min_length=5000, min_nread=10, grid=True, logx=True, logy=True):
+    def plot_contig_length_vs_nreads(
+        self,
+        fontsize=16,
+        min_length=5000,
+        min_nread=10,
+        grid=True,
+        logx=True,
+        logy=True,
+    ):
         """Plot contig length versus nreads
 
         In canu, contigs have the number of reads that support them.
@@ -240,7 +255,15 @@ class Contigs(ContigsBase):
         pylab.gcf().set_layout_engine("tight")
 
     def plot_scatter_contig_length_vs_nreads_cov(
-        self, fontsize=16, vmin=0, vmax=50, min_nreads=20, min_length=5000, grid=True, logx=True, logy=True
+        self,
+        fontsize=16,
+        vmin=0,
+        vmax=50,
+        min_nreads=20,
+        min_length=5000,
+        grid=True,
+        logx=True,
+        logy=True,
     ):
         """Scatter plot showing number of support reads and contig lengths
 
@@ -314,7 +337,7 @@ class Contigs(ContigsBase):
 
     def stats(self):
         """Return N50, L50 and total cumulated length"""
-        from sequana.stats import N50, L50
+        from sequana.stats import L50, N50
 
         length = self.df["length"]
         return {"N50": N50(length), "total_length": sum(length), "L50": L50(length)}

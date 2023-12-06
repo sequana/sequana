@@ -11,19 +11,19 @@
 #
 ##############################################################################
 """simple summary class to handle summary data with metadata"""
-import time
-import os
 import json
+import os
+import time
 from pathlib import Path
 
-from sequana.lazy import pandas as pd
 import colorlog
+
+from sequana.lazy import pandas as pd
 
 logger = colorlog.getLogger(__name__)
 
 
 from sequana.utils.datatables_js import DataTable
-
 
 __all__ = ["Summary"]
 

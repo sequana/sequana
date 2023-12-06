@@ -20,7 +20,7 @@
     MultiBAM
     SAM
     SAMFlags
-    SAMBAMbase 
+    SAMBAMbase
 
 .. note:: BAM being the compressed version of SAM files, we do not
     implement any functionalities related to SAM files. We strongly encourage
@@ -29,26 +29,19 @@
 """
 import json
 import math
-
-
 from collections import Counter, OrderedDict, defaultdict
 
-from tqdm import tqdm
-
-from bx.intervals.intersection import Interval, IntervalTree
+import colorlog
 from bx.bitset import BinnedBitSet
 from bx.bitset_builders import binned_bitsets_from_list
-
-from sequana.lazy import pandas as pd
-from sequana.lazy import numpy as np
-from sequana.lazy import pylab
-from sequana.lazy import pysam
+from bx.intervals.intersection import Interval, IntervalTree
+from tqdm import tqdm
 
 from sequana.bed import BED
-from sequana.cigar import fetch_intron, fetch_exon
-
-
-import colorlog
+from sequana.cigar import fetch_exon, fetch_intron
+from sequana.lazy import numpy as np
+from sequana.lazy import pandas as pd
+from sequana.lazy import pylab, pysam
 
 logger = colorlog.getLogger(__name__)
 
@@ -341,7 +334,18 @@ class SAMBAMbase:
 
         df = pd.DataFrame([C, L, I, D, M, mapq, flags, NM, S, rnames])
         df = df.T
-        df.columns = ["concordance", "length", "I", "D", "M", "mapq", "flags", "NM", "mismatch", "rname"]
+        df.columns = [
+            "concordance",
+            "length",
+            "I",
+            "D",
+            "M",
+            "mapq",
+            "flags",
+            "NM",
+            "mismatch",
+            "rname",
+        ]
         return df
 
     def __iter__(self):
@@ -502,7 +506,15 @@ class SAMBAMbase:
         return [protocol, spec1, spec2, other]
 
     @_reset
-    def mRNA_inner_distance(self, refbed, low_bound=-250, up_bound=250, step=5, sample_size=1000000, q_cut=30):
+    def mRNA_inner_distance(
+        self,
+        refbed,
+        low_bound=-250,
+        up_bound=250,
+        step=5,
+        sample_size=1000000,
+        q_cut=30,
+    ):
         """Estimate the inner distance of mRNA pair end fragment.
 
         ::
@@ -797,7 +809,14 @@ class SAMBAMbase:
         Y = [self.summary["read_length"][k] for k in X]
         return X, Y
 
-    def plot_insert_size(self, max_entries=100000, bins=100, upper_bound=1000, lower_bound=-1000, absolute=False):
+    def plot_insert_size(
+        self,
+        max_entries=100000,
+        bins=100,
+        upper_bound=1000,
+        lower_bound=-1000,
+        absolute=False,
+    ):
         """
 
         This gives an idea of the insert size without taking into account any
@@ -1256,7 +1275,13 @@ SN	pairs on different chromosomes:	0
 
         """
         df = self.get_mapq_as_df()
-        df.plot(kind="hist", bins=range(0, df.max().values[0] + 1), legend=False, grid=True, logy=True)
+        df.plot(
+            kind="hist",
+            bins=range(0, df.max().values[0] + 1),
+            legend=False,
+            grid=True,
+            logy=True,
+        )
         pylab.xlabel("MAPQ", fontsize=fontsize)
         pylab.ylabel("Count", fontsize=fontsize)
         pylab.gcf().set_layout_engine("tight")

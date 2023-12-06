@@ -11,29 +11,27 @@
 #
 ##############################################################################
 """Utilities to manipulate FASTQ and Reads"""
-import os
-import zlib
-from itertools import islice
 import gzip
+import os
 import subprocess
-from functools import wraps
+import zlib
 from collections import Counter, defaultdict
+from functools import wraps
+from itertools import islice
+
+import pysam
+from easydev import Progress
+from tqdm import tqdm
 
 from sequana.lazy import numpy as np
 from sequana.lazy import pandas as pd
 from sequana.lazy import pylab
 from sequana.tools import GZLineCounter
 
-from tqdm import tqdm
-from easydev import Progress
-
-import pysam
-
 try:
     from itertools import izip_longest
 except:
     from itertools import zip_longest as izip_longest
-
 
 import colorlog
 
@@ -254,7 +252,10 @@ class FastQ(object):
             self._count_lines = self.count_lines()
         return self._count_lines
 
-    n_lines = property(_get_count_lines, doc="return number of lines (should be 4 times number of reads)")
+    n_lines = property(
+        _get_count_lines,
+        doc="return number of lines (should be 4 times number of reads)",
+    )
 
     def __len__(self):
         return self.n_reads
@@ -470,7 +471,11 @@ class FastQ(object):
         cherries_set = set(cherries)
 
         with open(output_filename, "w") as fh:
-            for i, read in tqdm(enumerate(fastq), desc="sequana:fastq selecting random reads", disable=not progress):
+            for i, read in tqdm(
+                enumerate(fastq),
+                desc="sequana:fastq selecting random reads",
+                disable=not progress,
+            ):
                 if i in cherries_set:
                     fh.write(read.__str__() + "\n")
                 else:
@@ -720,7 +725,14 @@ class FastQ(object):
                 fout.write("{}\n{}\n".format(this["identifier"].decode(), this["sequence"].decode()))
         return
 
-    def filter(self, identifiers_list=[], min_bp=None, max_bp=None, progress=True, output_filename="filtered.fastq"):
+    def filter(
+        self,
+        identifiers_list=[],
+        min_bp=None,
+        max_bp=None,
+        progress=True,
+        output_filename="filtered.fastq",
+    ):
         """Save reads in a new file if there are not in the identifier_list
 
         :param int min_bp: ignore reads with length shorter than min_bp
@@ -747,7 +759,9 @@ class FastQ(object):
             saved = 0
 
             for count, lines in tqdm(
-                enumerate(grouper(self._fileobj)), desc="sequana:fastq filter reads", disable=not progress
+                enumerate(grouper(self._fileobj)),
+                desc="sequana:fastq filter reads",
+                disable=not progress,
             ):
                 identifier = lines[0].split()[0]
                 if lines[0].split()[0].decode() in identifiers_list:
@@ -756,7 +770,9 @@ class FastQ(object):
                     N = len(lines[1])
                     if N <= max_bp and N >= min_bp:
                         buf += "{}{}+\n{}".format(
-                            lines[0].decode("utf-8"), lines[1].decode("utf-8"), lines[3].decode("utf-8")
+                            lines[0].decode("utf-8"),
+                            lines[1].decode("utf-8"),
+                            lines[3].decode("utf-8"),
                         )
                         saved += 1
                     else:

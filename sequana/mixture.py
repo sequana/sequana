@@ -3,7 +3,7 @@
 
 import warnings
 
-from easydev import DevTools, AttrDict
+from easydev import AttrDict, DevTools
 
 devtools = DevTools()
 
@@ -11,7 +11,6 @@ from sequana.lazy import numpy as np
 from sequana.lazy import pylab
 
 from . import criteria
-
 
 half_log_two_pi = 0.5 * np.log(2 * np.pi)
 
@@ -160,11 +159,27 @@ class Fitting(object):
         import scipy.stats as ss
 
         for i in range(self.k):
-            mu, sigma, pi_ = self.results.mus[i], self.results.sigmas[i], self.results.pis[i]
+            mu, sigma, pi_ = (
+                self.results.mus[i],
+                self.results.sigmas[i],
+                self.results.pis[i],
+            )
             if ax:
-                ax.plot(X, [pi_ * ss.norm.pdf(x, mu, sigma) for x in X], "k--", alpha=0.7, lw=2)
+                ax.plot(
+                    X,
+                    [pi_ * ss.norm.pdf(x, mu, sigma) for x in X],
+                    "k--",
+                    alpha=0.7,
+                    lw=2,
+                )
             else:
-                pylab.plot(X, [pi_ * ss.norm.pdf(x, mu, sigma) for x in X], "k--", alpha=0.7, lw=2)
+                pylab.plot(
+                    X,
+                    [pi_ * ss.norm.pdf(x, mu, sigma) for x in X],
+                    "k--",
+                    alpha=0.7,
+                    lw=2,
+                )
 
 
 class GaussianMixtureFitting(Fitting):
@@ -200,7 +215,10 @@ class GaussianMixtureFitting(Fitting):
         return self._method
 
     def _set_method(self, method):
-        devtools.check_param_in_list(method, ["Nelder-Mead", "Powell", "CG", "BFGS", "Newton-CG", "Anneal", "L-BFGS-B"])
+        devtools.check_param_in_list(
+            method,
+            ["Nelder-Mead", "Powell", "CG", "BFGS", "Newton-CG", "Anneal", "L-BFGS-B"],
+        )
         self._method = method
 
     method = property(_get_method, _set_method)

@@ -5,7 +5,7 @@ Sequana contributing guidelines
 Issues
 ======
 
-You have an issue ? You found a bug ? Please submit an issue with 
+You have an issue ? You found a bug ? Please submit an issue with
 
 - a description of the problem
 - the version of Sequana used (and the pipeline name and version if the issue is related to a pipeline)
@@ -25,8 +25,8 @@ any help you give.
 
 When submitting a pull request, we ask you to check the following:
 
-1. **Unit tests**, **documentation**, and **code style** are in order. 
-   
+1. **Unit tests**, **documentation**, and **code style** are in order.
+
    It's also OK to submit work in progress if you're unsure of what
    this exactly means, in which case you'll likely be asked to make
    some further changes.

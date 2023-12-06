@@ -11,11 +11,11 @@
 #
 ##############################################################################
 
-from sequana import BAM, FastQ
-from sequana.lazy import pylab
-from sequana.lazy import pandas as pd
-
 import colorlog
+
+from sequana import BAM, FastQ
+from sequana.lazy import pandas as pd
+from sequana.lazy import pylab
 
 logger = colorlog.getLogger(__name__)
 
@@ -108,7 +108,14 @@ class FindMotif:
         return df
 
     def find_motif_bam(
-        self, filename, motif, window=200, figure=False, savefig=False, local_threshold=None, global_threshold=None
+        self,
+        filename,
+        motif,
+        window=200,
+        figure=False,
+        savefig=False,
+        local_threshold=None,
+        global_threshold=None,
     ):
         from sequana import BAM
 
@@ -132,7 +139,10 @@ class FindMotif:
                 off = a.query_alignment_start
                 # pylab.clf()
                 if figure:
-                    pylab.plot(range(off + a.reference_start, off + a.reference_start + len(seq)), X1)
+                    pylab.plot(
+                        range(off + a.reference_start, off + a.reference_start + len(seq)),
+                        X1,
+                    )
                     if savefig:
                         pylab.savefig("{}_{}_{}.png".format(a.reference_name, S, a.query_name.replace("/", "_")))
 
@@ -226,7 +236,11 @@ class FindMotif:
             if seq:
                 count += 1
                 X1 = [seq[i : i + window].count(motif) for i in range(len(seq))]
-                pylab.plot(range(aln.reference_start, aln.reference_start + len(seq)), X1, label=aln.query_name)
+                pylab.plot(
+                    range(aln.reference_start, aln.reference_start + len(seq)),
+                    X1,
+                    label=aln.query_name,
+                )
         print("Showing {} entries after filtering".format(count))
         max_theo = int(1.2 * window / len(motif))
         pylab.ylim([0, max_theo])

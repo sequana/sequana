@@ -11,10 +11,10 @@
 ##############################################################################
 import json
 
+import colorlog
+
 from sequana.lazy import pandas as pd
 from sequana.lazy import pylab
-
-import colorlog
 
 logger = colorlog.getLogger(__name__)
 

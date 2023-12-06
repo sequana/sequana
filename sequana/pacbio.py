@@ -11,23 +11,22 @@
 #
 ##############################################################################
 """Pacbio QC and stats"""
-import os
 import collections
 import json
+import os
 import random
 
-from sequana.lazy import pylab
-from sequana.lazy import numpy as np
-from sequana.lazy import pandas as pd
+import colorlog
 import pysam
 
-import colorlog
+from sequana.lazy import numpy as np
+from sequana.lazy import pandas as pd
+from sequana.lazy import pylab
 
 logger = colorlog.getLogger(__name__)
 
 
 from sequana.summary import Summary
-
 
 __all__ = ["PacbioMappedBAM", "PacbioSubreads", "PBSim", "BAMSimul", "Barcoding"]
 
@@ -109,7 +108,12 @@ class PacbioBAMBase(object):
         # are split on 80-characters length)
         from snakemake import shell
 
-        cmd = "samtools %s  -@ %s %s > %s" % (mode, threads, self.filename, output_filename)
+        cmd = "samtools %s  -@ %s %s > %s" % (
+            mode,
+            threads,
+            self.filename,
+            output_filename,
+        )
         logger.info("Please be patient")
         logger.info("This may be long depending on your input data file: ")
         logger.info("typically, a minute per  500,000 reads")
@@ -134,7 +138,16 @@ class PacbioBAMBase(object):
         self._to_fastX("fasta", output_filename, threads=threads)
 
     def hist_GC(
-        self, bins=50, alpha=0.5, hold=False, fontsize=12, grid=True, xlabel="GC %", ylabel="#", label="", title=None
+        self,
+        bins=50,
+        alpha=0.5,
+        hold=False,
+        fontsize=12,
+        grid=True,
+        xlabel="GC %",
+        ylabel="#",
+        label="",
+        title=None,
     ):
         """Plot histogram GC content
 
@@ -184,7 +197,14 @@ class PacbioBAMBase(object):
             pass
 
     def plot_GC_read_len(
-        self, hold=False, fontsize=12, bins=[200, 60], grid=True, xlabel="GC %", ylabel="#", cmap="BrBG"
+        self,
+        hold=False,
+        fontsize=12,
+        bins=[200, 60],
+        grid=True,
+        xlabel="GC %",
+        ylabel="#",
+        cmap="BrBG",
     ):
         """Plot GC content versus read length
 
@@ -218,7 +238,10 @@ class PacbioBAMBase(object):
         res = h.plot(bins=bins, contour=False, norm="log", Nlevels=6, cmap=cmap)
         pylab.xlabel("Read length", fontsize=fontsize)
         pylab.ylabel("GC %", fontsize=fontsize)
-        pylab.title("GC %% vs length \n Mean length : %.2f , Mean GC : %.2f" % (mean_len, mean_GC), fontsize=fontsize)
+        pylab.title(
+            "GC %% vs length \n Mean length : %.2f , Mean GC : %.2f" % (mean_len, mean_GC),
+            fontsize=fontsize,
+        )
         pylab.ylim([0, 100])
         if grid is True:
             pylab.grid(True)
@@ -489,7 +512,12 @@ class PacbioSubreads(PacbioBAMBase):
                         shift = np.random.randint(stride)
 
     def random_selection(
-        self, output_filename, nreads=None, expected_coverage=None, reference_length=None, read_lengths=None
+        self,
+        output_filename,
+        nreads=None,
+        expected_coverage=None,
+        reference_length=None,
+        read_lengths=None,
     ):
         """Select random reads
 
@@ -617,10 +645,30 @@ class PacbioSubreads(PacbioBAMBase):
 
         bins = pylab.linspace(0, maxSNR, bins)
 
-        pylab.hist(self._df.loc[:, "snr_A"].clip(upper=maxSNR), alpha=alpha, label="A", bins=bins)
-        pylab.hist(self._df.loc[:, "snr_C"].clip(upper=maxSNR), alpha=alpha, label="C", bins=bins)
-        pylab.hist(self._df.loc[:, "snr_G"].clip(upper=maxSNR), alpha=alpha, label="G", bins=bins)
-        pylab.hist(self._df.loc[:, "snr_T"].clip(upper=maxSNR), alpha=alpha, label="T", bins=bins)
+        pylab.hist(
+            self._df.loc[:, "snr_A"].clip(upper=maxSNR),
+            alpha=alpha,
+            label="A",
+            bins=bins,
+        )
+        pylab.hist(
+            self._df.loc[:, "snr_C"].clip(upper=maxSNR),
+            alpha=alpha,
+            label="C",
+            bins=bins,
+        )
+        pylab.hist(
+            self._df.loc[:, "snr_G"].clip(upper=maxSNR),
+            alpha=alpha,
+            label="G",
+            bins=bins,
+        )
+        pylab.hist(
+            self._df.loc[:, "snr_T"].clip(upper=maxSNR),
+            alpha=alpha,
+            label="T",
+            bins=bins,
+        )
         pylab.legend()
         pylab.xlabel(xlabel, fontsize=fontsize)
         pylab.ylabel(ylabel, fontsize=fontsize)
@@ -979,7 +1027,16 @@ class PBSim(object):
         """
         return np.interp(xprime, self.X[1 : self.bins + 1], self.Y)
 
-    def run(self, bins=50, xmin=0, xmax=30000, step=1000, burn=1000, alpha=1, output_filename=None):
+    def run(
+        self,
+        bins=50,
+        xmin=0,
+        xmax=30000,
+        step=1000,
+        burn=1000,
+        alpha=1,
+        output_filename=None,
+    ):
         # compute histogram of the input reads once for all to be used
         # in the target_distribution method
         self.bins = bins

@@ -1,8 +1,10 @@
 import os
 
+from easydev import TempFile
+
 from sequana import FastA
 from sequana.fasta import is_fasta
-from easydev import TempFile
+
 from . import test_dir
 
 

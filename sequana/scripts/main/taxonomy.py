@@ -14,7 +14,6 @@ import rich_click as click
 
 from sequana.scripts.utils import CONTEXT_SETTINGS, common_logger
 
-
 logger = colorlog.getLogger(__name__)
 
 
@@ -46,6 +45,7 @@ def taxonomy(**kwargs):
         print(results.to_string())
     elif kwargs["search_panther"]:
         import pandas as pd
+
         from sequana import sequana_data
 
         df = pd.read_csv(sequana_data("panther.csv"), index_col=0)

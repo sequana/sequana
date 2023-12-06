@@ -11,12 +11,12 @@
 #
 ##############################################################################
 """Retrieve data from sequana library"""
-import os
-import easydev
-import glob
 import collections
+import glob
+import os
 
 import colorlog
+import easydev
 
 logger = colorlog.getLogger(__name__)
 
@@ -72,7 +72,7 @@ def sequana_data(filename=None, where=None):
 
     if filename is None:
         for thisdir in directories:
-            print("From %s directory:" % thisdir)
+            print(f"From %s directory:" % thisdir)
             for filename in glob.glob(sharedir + "/%s/*" % thisdir):
                 filename = os.path.split(filename)[1]
                 to_ignore = ["__init__.py", "__pycache__"]
@@ -101,6 +101,7 @@ def sequana_data(filename=None, where=None):
         # try to introspect the different directories
         # return filename if found otherwise raise error
         for thisdir in directories:
+            print(thisdir)
             if _get_valid_file(filename, thisdir):
                 return _get_valid_file(filename, thisdir)
         raise FileNotFoundError(f"unknown file {filename}. Type sequana_data() to get a list of valid names")

@@ -82,7 +82,7 @@ class CanvasJS(object):
         # if you want to hide legend and data on click
         if hide_on_click:
             hide_attr = """function(e){
-                if (typeof(e.dataSeries.visible) === "undefined" || 
+                if (typeof(e.dataSeries.visible) === "undefined" ||
                     e.dataSeries.visible) {
                     e.dataSeries.visible = false;
                 }

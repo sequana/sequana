@@ -6,8 +6,8 @@ Coverage module example
 """
 #################################################
 #
-from sequana import SequanaCoverage
-from sequana import sequana_data
+from sequana import SequanaCoverage, sequana_data
+
 bedfile = sequana_data("JB409847.bed")
 ################################################
 # Reading input BED file
@@ -29,5 +29,3 @@ print(chrom.get_centralness())
 ########################################################
 # Plotting
 chrom.plot_coverage()
-
-

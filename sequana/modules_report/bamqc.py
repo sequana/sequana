@@ -26,14 +26,11 @@
 """
 import os
 
-from sequana.lazy import pandas as pd
-from sequana.modules_report.base_module import SequanaBaseModule
-
-from sequana.bamtools import SAMFlags
 from sequana import BAM
-
+from sequana.bamtools import SAMFlags
+from sequana.lazy import pandas as pd
 from sequana.lazy import pylab
-
+from sequana.modules_report.base_module import SequanaBaseModule
 from sequana.utils.datatables_js import DataTable
 
 __all__ = ["BAMQCModule"]

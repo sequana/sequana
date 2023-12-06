@@ -12,11 +12,10 @@
 import sys
 
 import click
-import rich_click as click
 import colorlog
+import rich_click as click
 
 from sequana.scripts.utils import CONTEXT_SETTINGS
-
 
 logger = colorlog.getLogger(__name__)
 
@@ -83,6 +82,7 @@ def summary(**kwargs):
             print(stats)
     elif module == "bam":
         import pandas as pd
+
         from sequana import BAM
 
         for filename in names:
@@ -92,6 +92,7 @@ def summary(**kwargs):
             print(df)
     elif module == "gff":
         import pandas as pd
+
         from sequana import GFF3
 
         for filename in names:

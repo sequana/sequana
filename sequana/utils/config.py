@@ -19,14 +19,14 @@
 """ Sequana report config contains configuration informations to create HTML
 report with Jinja2.
 """
-import sys
-import os
-import pkg_resources
 import glob
-from pathlib import Path
+import os
+import sys
 from datetime import datetime
+from pathlib import Path
 
 import easydev
+import pkg_resources
 
 time_now = datetime.now().strftime("%m-%d-%Y %H:%M:%S")
 

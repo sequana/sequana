@@ -2,6 +2,7 @@ from sequana.cnv import CNVnator
 
 from . import test_dir
 
+
 def test_cnvnator():
 
     data = f"{test_dir}/data/txt/test_cnvnator.txt"

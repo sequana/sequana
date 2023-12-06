@@ -14,13 +14,12 @@
 #
 ##############################################################################
 
+import colorlog
+
+from sequana.lazy import numpy as np
 from sequana.lazy import pandas as pd
 from sequana.lazy import pylab
-from sequana.lazy import numpy as np
 from sequana.utils.pandas import PandasReader
-
-
-import colorlog
 
 logger = colorlog.getLogger(__name__)
 
@@ -126,8 +125,18 @@ class Phantom:
 
     def read_align(self, readfile):
         self.df = PandasReader(
-            readfile, sep="\t", header=None, names=["ref", "start", "end", "dummy", "quality", "strand"],
-            dtype={'ref': str, 'start': 'Int64', 'end': 'Int64', 'dummy': str, 'quality': 'Int64', 'strand': str}
+            readfile,
+            sep="\t",
+            header=None,
+            names=["ref", "start", "end", "dummy", "quality", "strand"],
+            dtype={
+                "ref": str,
+                "start": "Int64",
+                "end": "Int64",
+                "dummy": str,
+                "quality": "Int64",
+                "strand": str,
+            },
         ).df
 
         self.read_length = round(pylab.median(self.df["end"] - self.df["start"]))
@@ -297,7 +306,13 @@ class Phantom:
         # whs = df[df > threshold].index.max()
         # pylab.axvline(whs, ls='--', color='k', lw=1)
         Y0, Y1 = pylab.ylim()
-        pylab.plot([phantom.idxmax(), phantom.idxmax()], [Y0, phantom.max()], ls="--", color="k", lw=1)
+        pylab.plot(
+            [phantom.idxmax(), phantom.idxmax()],
+            [Y0, phantom.max()],
+            ls="--",
+            color="k",
+            lw=1,
+        )
         pylab.plot([df.idxmax(), df.idxmax()], [Y0, df.max()], ls="--", color="r", lw=2)
         # pylab.fill_betweenx(ylim, 10,85, color='grey', alpha=0.5)
         pylab.ylim(ylim)

@@ -11,13 +11,13 @@
 #
 ##############################################################################
 "IEM class"
-import sys
 import collections
 import io
-
-from sequana.lazy import pandas as pd
+import sys
 
 import colorlog
+
+from sequana.lazy import pandas as pd
 
 logger = colorlog.getLogger(__name__)
 

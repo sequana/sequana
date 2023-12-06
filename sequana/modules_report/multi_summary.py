@@ -10,14 +10,12 @@
 import glob
 import json
 
-from sequana.modules_report.base_module import SequanaBaseModule
-
+import colorlog
 from easydev import DevTools
-from sequana.resources.canvas.bar import CanvasBar
 
 from sequana.lazy import pandas as pd
-
-import colorlog
+from sequana.modules_report.base_module import SequanaBaseModule
+from sequana.resources.canvas.bar import CanvasBar
 
 logger = colorlog.getLogger(__name__)
 
@@ -278,7 +276,7 @@ page. The table contains the following columns:</p>
    <b>Table caption</b>
     <table>
         <tr><td>N_raw</td><td>Number of reads in the data</td></tr>
-        <tr><td>GC_raw_(%)</td><td>GC content in percentage in the raw data 
+        <tr><td>GC_raw_(%)</td><td>GC content in percentage in the raw data
 across all reads</td></tr>
         <tr><td>Mean_quality_raw</td><td>Mean quality across all reads all bases
 in the raw data</td></tr>

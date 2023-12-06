@@ -1,7 +1,9 @@
-from sequana.gff3 import GFF3
 from easydev import TempFile
 
+from sequana.gff3 import GFF3
+
 from . import test_dir
+
 
 def test_wrong_input():
     try:
@@ -30,9 +32,9 @@ def test_various_gff():
     gff = GFF3(f"{test_dir}/data/gff/lenny.gff")
     df = gff.df
 
-
     gff = GFF3(f"{test_dir}/data/gff/Ld1S.gff")
     df = gff.df
+
 
 def test_process_attributes():
     gff = GFF3(f"{test_dir}/data/mm10_truncated.gff")
@@ -57,6 +59,7 @@ def test_get_feature_dict():
     gff = GFF3(f"{test_dir}/data/ecoli_truncated.gff")
     gff.features
     gff.get_features_dict()
+
 
 def test_attributes(tmpdir):
     g = GFF3(f"{test_dir}/data/gff/lenny.gff")

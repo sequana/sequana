@@ -15,7 +15,7 @@
 FastQ quality are stored as characters. The phred scales indicates the range of characters.
 
 In general, characters goes from ! to ~ that is from 33 to 126 in an ascii
-table. This convention starts at 33 because characters before ! may cause trouble 
+table. This convention starts at 33 because characters before ! may cause trouble
 (e.g. white spaces). This scale is the Sanger scale. There are 2 other scales
 that could be used ranging from 59 to 126 (illumina 1) and from 64 to 126 (illumina 1.3+).
 
@@ -40,7 +40,7 @@ corresponding to a character string extracted from a FastQ read.
 
 
 In this example, we use :class:`Quality` class where the default offset is 33
-(Sanger). We compare the quality for another offset 
+(Sanger). We compare the quality for another offset
 
 .. plot::
     :include-source:
@@ -57,10 +57,10 @@ In this example, we use :class:`Quality` class where the default offset is 33
 
 
 """
+import colorlog
+
 from sequana.lazy import numpy as np
 from sequana.lazy import pylab
-
-import colorlog
 
 logger = colorlog.getLogger(__name__)
 
@@ -70,7 +70,6 @@ quality += r"""QRSTUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxyz{|}~"""
 
 
 from math import log10
-
 
 __all__ = ["Quality", "proba_to_quality_sanger", "quality_to_proba_sanger"]
 

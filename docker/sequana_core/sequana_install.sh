@@ -13,5 +13,3 @@ apt-get install libpng-dev -y
 apt-get install zlib1g-dev -y
 apt-get install make -y
 apt-get install xvfb -y
-
-

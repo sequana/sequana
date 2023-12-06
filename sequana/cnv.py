@@ -10,11 +10,11 @@
 #  documentation: http://sequana.readthedocs.io
 #
 ##############################################################################
-from sequana.lazy import pandas as pd
-from sequana.lazy import pylab
+import colorlog
 from pylab import plot
 
-import colorlog
+from sequana.lazy import pandas as pd
+from sequana.lazy import pylab
 
 logger = colorlog.getLogger(__name__)
 
