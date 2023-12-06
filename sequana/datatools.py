@@ -101,7 +101,6 @@ def sequana_data(filename=None, where=None):
         # try to introspect the different directories
         # return filename if found otherwise raise error
         for thisdir in directories:
-            print(thisdir)
             if _get_valid_file(filename, thisdir):
                 return _get_valid_file(filename, thisdir)
         raise FileNotFoundError(f"unknown file {filename}. Type sequana_data() to get a list of valid names")
