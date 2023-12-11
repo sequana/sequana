@@ -13,6 +13,7 @@ import itertools
 import json
 import os
 import sys
+from pathlib import Path
 
 import colorlog
 import rich_click as click
@@ -85,8 +86,7 @@ logger = colorlog.getLogger(__name__)
     "--ontologies",
     default=("MF", "BP", "CC"),
     help="""Provide the ontologies to be included in the analysis and HTML report.
-Valid choices are: from MF, BP, CC, SLIM_MF, SLIM_BP, SLIM_CC, PROTEIN,
-PANTHER_PATHWAY, REACTOME_PATHWAY""",
+Valid choices are: from MF, BP, CC""",
     cls=OptionEatAll,
     show_default=True,
 )
@@ -201,3 +201,8 @@ def enrichment_uniprot(**kwargs):
             command=" ".join(["sequana"] + sys.argv[1:]),
             ontologies=["CC", "BP", "MF"],
         )
+    p = Path(f"{output_directory}/.sequana")
+    p.mkdir(exist_ok=True)
+    with open(p / "info.txt", "w") as fout:
+        command = " ".join(["sequana"] + sys.argv[1:])
+        fout.write(command)

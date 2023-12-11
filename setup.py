@@ -10,7 +10,7 @@ from setuptools import find_packages, setup
 
 _MAJOR = 0
 _MINOR = 16
-_MICRO = 3
+_MICRO = 4
 version = "%d.%d.%d" % (_MAJOR, _MINOR, _MICRO)
 release = "%d.%d" % (_MAJOR, _MINOR)
 
