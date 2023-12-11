@@ -60,8 +60,8 @@ class ModulePantherEnrichment(SequanaBaseModule):
         self.nmax = enrichment_params.get("nmax", 50)
         self.csv_directory = Path(config.output_dir) / "tables"
         self.plot_directory = Path(config.output_dir) / "plots"
-        self.csv_directory.mkdir()
-        self.plot_directory.mkdir()
+        self.csv_directory.mkdir(exist_ok=True)
+        self.plot_directory.mkdir(exist_ok=True)
 
         # compute the enrichment here once for all, This may take time
         from sequana import logger

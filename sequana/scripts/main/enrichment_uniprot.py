@@ -13,6 +13,7 @@ import itertools
 import json
 import os
 import sys
+from pathlib import Path
 
 import colorlog
 import rich_click as click
@@ -201,3 +202,8 @@ def enrichment_uniprot(**kwargs):
             command=" ".join(["sequana"] + sys.argv[1:]),
             ontologies=["CC", "BP", "MF"],
         )
+    p = Path(f"{output_directory}/.sequana")
+    p.mkdir(exist_ok=True)
+    with open(p / "info.txt", "w") as fout:
+        command = " ".join(["sequana"] + sys.argv[1:])
+        fout.write(command)
