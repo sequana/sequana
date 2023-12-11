@@ -86,8 +86,7 @@ logger = colorlog.getLogger(__name__)
     "--ontologies",
     default=("MF", "BP", "CC"),
     help="""Provide the ontologies to be included in the analysis and HTML report.
-Valid choices are: from MF, BP, CC, SLIM_MF, SLIM_BP, SLIM_CC, PROTEIN,
-PANTHER_PATHWAY, REACTOME_PATHWAY""",
+Valid choices are: from MF, BP, CC""",
     cls=OptionEatAll,
     show_default=True,
 )

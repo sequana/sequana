@@ -502,6 +502,8 @@ class RNADiffTable:
             from plotly import express as px
 
             df = self.df.copy()
+            # ignore genes with undefined pvalues
+            df = df[~df.padj.isnull()]
 
             if annotations is not None:
                 try:
@@ -602,8 +604,11 @@ class RNADiffTable:
             bax.xlabel("fold change")
             bax.ylabel("log10 adjusted p-value")
 
-        m1 = abs(min(self.df[self.l2fc_name]))
-        m2 = max(self.df[self.l2fc_name])
+        # we set the limits by finding max and min fold change.
+        # Note, however, that we should ignore null pvalue
+        l2fc = self.df[~self.df.padj.isnull()][self.l2fc_name]
+        m1 = abs(min(l2fc))
+        m2 = max(l2fc)
 
         limit = max(m1, m2)
         try:  # pragma: no cover
