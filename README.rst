@@ -243,6 +243,7 @@ Changelog
 ========= ==========================================================================
 Version   Description
 ========= ==========================================================================
+0.16.4    * hot fixes on RNAdiff reports and enrichments
 0.16.3    * Remove all rules (see https://github.com/sequana/sequana-wrappers)
             instead
           * add precommit for developers and applied to all modules and doc

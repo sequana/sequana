@@ -1333,7 +1333,7 @@ class RNADiffResults:
             data=self.counts_raw.clip(1),
             linewidth=linewidth,
             fliersize=fliersize,
-            palette=self.design_df.group_color,
+            palette=[self.design_df.group_color.loc[x] for x in self.counts_raw.columns],
             **kwargs,
         )
         pos, labs = pylab.xticks()
@@ -1363,7 +1363,7 @@ class RNADiffResults:
             data=self.counts_norm.clip(1),
             linewidth=linewidth,
             fliersize=fliersize,
-            palette=self.design_df.group_color,
+            palette=[self.design_df.group_color.loc[x] for x in self.counts_norm.columns],
             **kwargs,
         )
         pos, labs = pylab.xticks()

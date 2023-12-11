@@ -154,7 +154,7 @@ maximum of {self.nmax} pathways. </p>
 
         for category in ["down", "up", "all"]:
             df = self.ke.dfs[category]
-            if len(df) == 0:
+            if len(df) == 0 or "significative" not in df:
                 n_enriched = 0
             else:
                 n_enriched = len(df.query("significative == True"))

@@ -284,10 +284,15 @@ class UniprotEnrichment(Ontology, PlotGOTerms):
 
         for ontology in ontologies:
             gs = GSEA(self.gene_sets[ontology])
+
             enr = gs.compute_enrichment(mygenes, verbose=False, background=background)
-            result = enr.results[enr.results["Adjusted P-value"] < 0.05].copy()
-            description = self._get_go_description(result["Term"].values)
-            result["description"] = description
+            if len(enr.results):
+                result = enr.results[enr.results["Adjusted P-value"] < 0.05].copy()
+                description = self._get_go_description(result["Term"].values)
+                result["description"] = description
+            else:
+                result = enr.results
+                result["description"] = []
 
             enrichment[ontology] = {"result": result}
 
@@ -355,13 +360,15 @@ class UniprotEnrichment(Ontology, PlotGOTerms):
         df["total_genes"] = len(self.df_genes)
 
         logger.warning("fold enrichment currently set to log10(adjusted pvalue)")
-        df["fold_enrichment"] = -pylab.log10(df["pValue"])
-
-        df["log2_fold_enrichment"] = pylab.log2(df["fold_enrichment"])
-        df["abs_log2_fold_enrichment"] = abs(pylab.log2(df["fold_enrichment"]))
+        try:
+            df["fold_enrichment"] = -pylab.log10(df["pValue"])
+            df["log2_fold_enrichment"] = pylab.log2(df["fold_enrichment"])
+            df["abs_log2_fold_enrichment"] = abs(pylab.log2(df["fold_enrichment"]))
+            df = df.query("fdr<=@fdr").copy()
+        except KeyError:
+            pass
 
         # filter out FDR>0.05
-        df = df.query("fdr<=@fdr").copy()
         logger.info("Found {} GO terms after keeping only FDR<{}".format(len(df), fdr))
 
         return df
