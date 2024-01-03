@@ -407,7 +407,7 @@ def main(**kwargs):
 
         # Performs the computation and reporting for a given chromosome
         # This call performs the analysis, and creates the HTML page
-        # if HTML is creates, it fills the gc._html_list variable
+        # if HTML is created, it fills the gc._html_list variable
         chrom_data = ChromosomeCov(gc, chrom, gc.thresholds, gc.chunksize)
         run_analysis(chrom_data, options)
 
