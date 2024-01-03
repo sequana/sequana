@@ -1331,7 +1331,7 @@ class KrakenDownload(object):
         Checks the md5 checksums. About 32Mb of data
         """
         base = self.output_dir / "toydb"
-        base.mkdir(exist_ok=True)
+        base.mkdir(exist_ok=True, parents=True)
 
         baseurl = "https://github.com/sequana/data/raw/main/"
 

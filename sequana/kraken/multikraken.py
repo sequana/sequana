@@ -51,23 +51,26 @@ class MultiKrakenResults:
             "name",
         ]
 
-    def get_df(self, limit=5):
+    def get_df(self, limit=5, rank="kingdom"):
+        if rank not in self.ranks:
+            raise ValueError(f"rank must be in {self.ranks}")
+
         data = {}
         for sample, filename in zip(self.sample_names, self.filenames):
             df = pd.read_csv(filename)
             count = df["count"].sum()
-            if "kingdom" not in df.columns:  # pragma: no cover
+            if rank not in df.columns:  # pragma: no cover
                 for name in self.ranks:
                     df[name] = "Unclassified"
 
-            df = df.groupby("kingdom")["percentage"].sum()
+            df = df.groupby(rank)["percentage"].sum()
             # if a taxon is obsolete, the kingdom is empty.
             # We will set the kingdom as Unclassified and raise a warning
             # if the count is > 5%
             if " " in df.index:
                 percent = df.loc[" "]
                 if percent > limit:
-                    logger.warning("Found {}% of taxons with no kingdom".format(percent))
+                    logger.warning(f"Found {percent}% of taxons with no {rank}")
                 if "Unclassified" in df.index:
                     df.loc["Unclassified"] += df.loc[" "]
                     df.drop(" ", inplace=True)
@@ -96,9 +99,10 @@ class MultiKrakenResults:
         ytick_fontsize=10,
         max_labels=50,
         max_sample_name_length=30,
+        rank="kingdom",
     ):
         """Summary plot of reads classified."""
-        df = self.get_df()
+        df = self.get_df(rank=rank)
 
         # remove count from the summary graph
         df.drop("Count", inplace=True)
@@ -170,7 +174,7 @@ class MultiKrakenResults:
                 pylab.xticks([1], [""])
             pylab.xlim([-0.5, len(df.columns) - 0.5])
 
-        ax.legend(labels, title="kingdom", bbox_to_anchor=(1, 1))
+        ax.legend(labels, title=f"{rank}", bbox_to_anchor=(1, 1))
 
         try:  # pragma: no cover
             pylab.gcf().set_layout_engine("tight")
