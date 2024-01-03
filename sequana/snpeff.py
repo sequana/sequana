@@ -156,7 +156,7 @@ class SnpEff(object):
         rc = snp_build.returncode
 
         if rc != 0:  # pragma: no cover
-            logger.error("snpEff build return a non-zero code")
+            logger.error(f"snpEff build return a non-zero code. See {self.log_file} for details")
             sys.exit(rc)
 
     def _add_db_in_config(self):
