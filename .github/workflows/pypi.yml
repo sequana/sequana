@@ -11,20 +11,20 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
     - uses: actions/checkout@main
-    - name: Set up Python 3.7
-      uses: actions/setup-python@v1
+    - name: Set up Python 3.8
+      uses: actions/setup-python@v2
       with:
-        python-version: 3.7
+        python-version: 3.8
 
-    - name: Install package
+    - name: Install package 
       run: |
-          pip install build
+          pip install build poetry
 
     - name: Build source tarball
       run: |
           rm -rf dist;
-          python setup.py sdist
-
+          poetry build
+ 
     - name: Publish distribution to Test PyPI
       uses: pypa/gh-action-pypi-publish@release/v1
       with:
