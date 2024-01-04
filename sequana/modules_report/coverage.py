@@ -63,7 +63,7 @@ class CoverageModule(SequanaBaseModule):
                 )
                 raise TypeError(msg)
         else:
-            html_list = sorted(list(self.bed._html_list))
+            html_list = list(self.bed._html_list)
 
         self.title = f"Main coverage report ({config.sample_name})"
         self.intro = (
@@ -82,6 +82,7 @@ class CoverageModule(SequanaBaseModule):
 
     def create_chromosome_table(self, html_list):
         """Create table with links to chromosome reports"""
+
         df = pd.DataFrame(
             [
                 [
@@ -89,9 +90,9 @@ class CoverageModule(SequanaBaseModule):
                     self.bed._basic_stats[chrom]["length"],
                     self.bed._basic_stats[chrom]["DOC"],
                     self.bed._basic_stats[chrom]["CV"],
-                    page,
+                    f"{chrom}/{chrom}.cov.html",
                 ]
-                for chrom, page in zip(self.bed.chrom_names, html_list)
+                for chrom in self.bed.chrom_names
             ],
             columns=["chromosome", "size", "mean_coverage", "coef_variation", "link"],
         )

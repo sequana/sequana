@@ -133,7 +133,7 @@ class RNADiffAnalysis:
     """
 
     _template_file = "rnadiff_light_template.R"
-    _template_env = Environment(loader=PackageLoader("sequana", "resources/templates"))
+    _template_env = Environment(loader=PackageLoader("sequana", "resources/scripts"))
     template = _template_env.get_template(_template_file)
 
     def __init__(

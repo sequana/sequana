@@ -78,7 +78,7 @@ class UniprotEnrichment(Ontology, PlotGOTerms):
         df = e.plot_go_terms(['MF', 'CC', 'BP'],
                 log=False, include_negative_enrichment=False,
                 fontsize=8, sort_by='fold_enrichment',
-                show_pvalues=True, fdr_threshold=0.05)
+                fdr_threshold=0.05)
 
     """
 
@@ -113,10 +113,6 @@ class UniprotEnrichment(Ontology, PlotGOTerms):
 
         self._taxon = None
         self.taxon = taxon
-
-        # panther accepts onyl ~2-3000 genes at max. Let us restrict the analysis
-        # to the first 2000 genes based on their log2 fold change 2000 + and
-        # 2000 negatives
 
         msg = "Ignoring DEGs with adjusted p-value > {} and fold change in [{}, {}]".format(
             padj_threshold, 1 / (2**log2_fc_threshold), 2**log2_fc_threshold
