@@ -3,8 +3,8 @@ from sequana import sequana_data
 
 def test_sequana_data():
 
-    f1 = sequana_data("Institut_Pasteur.png")
-    f2 = sequana_data("Institut_Pasteur.png", "images")
+    f1 = sequana_data("logo_256x256.png")
+    f2 = sequana_data("logo_256x256.png", "images")
     assert f1 == f2
 
 
@@ -12,7 +12,7 @@ def test_sequana_data_star():
     # all files in a specific directory (a list)
     f1 = sequana_data("*", "images")
     assert isinstance(f1, list)
-    assert "Institut_Pasteur.png" in f1
+    assert "logo_256x256.png" in f1
 
     # all files (return a dict)
     f1 = sequana_data("*")

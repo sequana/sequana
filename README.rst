@@ -243,6 +243,11 @@ Changelog
 ========= ==========================================================================
 Version   Description
 ========= ==========================================================================
+0.16.5    * refactor to use pyproject instead of setuptools
+          * remove pkg_resources (future deprecation)
+          * remove unused requirements (cookiecutter, adjusttext, docutuils, mock,
+            psutil, pykwalify)
+          * cleanup resources (e.g. moving canvas/bar.py into viz)
 0.16.4    * hot fixes on RNAdiff reports and enrichments
 0.16.3    * Remove all rules (see https://github.com/sequana/sequana-wrappers)
             instead

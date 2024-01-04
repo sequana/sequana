@@ -13,10 +13,10 @@
 """Retrieve data from sequana library"""
 import collections
 import glob
+import inspect
 import os
 
 import colorlog
-import easydev
 
 logger = colorlog.getLogger(__name__)
 
@@ -50,8 +50,13 @@ def sequana_data(filename=None, where=None):
     .. note:: this does not handle wildcards. The * means retrieve all files.
 
     """
-    sequana_path = easydev.get_package_location("sequana")
-    sharedir = os.sep.join([sequana_path, "sequana", "resources"])
+    from pathlib import Path
+
+    import sequana
+
+    sequana_path = Path(inspect.getfile(sequana)).parent
+
+    sharedir = str(Path(sequana_path) / "resources")
     directories = ["data", "testing", "examples", "images", "scripts", "doc"]
 
     if filename == "*":

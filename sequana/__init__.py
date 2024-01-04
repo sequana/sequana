@@ -1,9 +1,16 @@
-import pkg_resources
+from importlib import metadata
 
-try:
-    version = pkg_resources.require("sequana")[0].version
-except:
-    version = ">=0.11.0"
+
+def get_package_version(package_name):
+    try:
+        version = metadata.version(package_name)
+        return version
+    except metadata.PackageNotFoundError:
+        return f"{package_name} not found"
+
+
+version = get_package_version("sequana")
+
 
 from easydev.logging_tools import Logging
 

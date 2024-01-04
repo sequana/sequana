@@ -11,11 +11,10 @@ import glob
 import json
 
 import colorlog
-from easydev import DevTools
 
 from sequana.lazy import pandas as pd
 from sequana.modules_report.base_module import SequanaBaseModule
-from sequana.resources.canvas.bar import CanvasBar
+from sequana.viz.bar import CanvasBar
 
 logger = colorlog.getLogger(__name__)
 
@@ -141,7 +140,6 @@ class MultiSummary(SequanaBaseModule):
             "Sequana Quality control Summary will not be maintained. Please use sequana_fastqc for QCs, sequana_multitax for Taxonomy."
         )
         self.title = "Sequana multiple summary"
-        self.devtools = DevTools()
 
         self.filenames = list(glob.iglob(pattern, recursive=True))
 

@@ -1,9 +1,0 @@
-sequana_coverage
-sequana_demultiplex
-sequana_denovo
-sequana_fastqc
-sequana_fastqc
-sequana_mapper
-sequana_quality_control
-sequana_rnaseq
-sequana_variant_calling

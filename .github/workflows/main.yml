@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - dev
+  workflow_dispatch:
   pull_request:
     branches-ignore: []
   schedule:
@@ -16,7 +17,7 @@ jobs:
     strategy:
       max-parallel: 5
       matrix:
-        python: [3.8, 3.9, '3.10']
+        python: [3.8, 3.9, '3.10', '3.11']
       fail-fast: false
 
 
@@ -45,13 +46,15 @@ jobs:
     - name: install package itself
       shell: bash -l {0}
       run: |
-        pip install .[testing]
+        pip install poetry
+        poetry install --with dev,pipelines
+        #pip install .[testing]
         pip install kaleido  # required by plotly but sowehow not installed
 
     - name: testing
       shell: bash -l {0}
       run: |
-        pytest --cov-report term-missing --cov=sequana
+        poetry run pytest --cov-report term-missing --cov=sequana
 
     - name: coveralls
       shell: bash -l {0}
