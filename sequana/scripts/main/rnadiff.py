@@ -99,7 +99,7 @@ click.rich_click.OPTION_GROUPS = {
     "annotation",
     type=click.Path(),
     default=None,
-    required=True,
+    required=False,
     help="""The annotation GFF file used to perform the feature count""",
 )
 @click.option(
