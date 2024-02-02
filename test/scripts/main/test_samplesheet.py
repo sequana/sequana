@@ -14,13 +14,13 @@ def test_sequana_app(tmpdir):
     runner = CliRunner()
 
     # The samplesheet command
-    filename1 = f"{test_dir}/data/csv/test_expdesign_wrong.csv"
-    filename2 = f"{test_dir}/data/csv/test_expdesign_miseq_illumina_1.csv"
+    filename1 = f"{test_dir}/data/iem/wrong/test_expdesign_wrong.csv"
+    filename2 = f"{test_dir}/data/iem/good//test_expdesign_miseq_illumina_1.csv"
     results = runner.invoke(script.samplesheet, ["--help"])
     assert results.exit_code == 0
 
     results = runner.invoke(script.samplesheet, [filename1, "--check"])
-    assert results.exit_code == 0
+    assert results.exit_code == 1
 
     results = runner.invoke(script.samplesheet, [filename2, "--check"])
     assert results.exit_code == 0
