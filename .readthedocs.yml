@@ -17,7 +17,7 @@ python:
     install:
         - method: pip
           path: .
-        - requirements: requirements_pipelines.txt
+        - requirements: doc/requirements_pipelines.txt
         - requirements: doc/requirements.txt
 
 # if present, this section is used and python section ignored before sphinx is built
