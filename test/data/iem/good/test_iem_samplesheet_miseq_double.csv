@@ -16,7 +16,7 @@ ReverseComplement,0
 Adapter,AGATCGGAAGAGCACACGTCTGAACTCCAGTCA
 AdapterRead2,AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT
 [Data]
-Sample_ID,Sample_Plate,Sample_Well,Index_Plate_Well,I7_Index_ID,index,I5_Index_ID,index2,Sample_Project,Description
+Sample_ID,Sample_Name,Sample_Well,Index_Plate_Well,I7_Index_ID,index,I5_Index_ID,index2,Sample_Project,Description
 AGRO1,,,A02,UDI0009,AGTTCAGG,UDI0009,CCAACAGA,B4051,
 AGRO2,,,B02,UDI0010,GACCTGAA,UDI0010,TTGGTGAG,B4051,
 AGRO3,,,C02,UDI0011,TCTCTACT,UDI0011,CGCGGTTC,B4051,
