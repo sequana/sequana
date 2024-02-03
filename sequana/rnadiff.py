@@ -58,10 +58,9 @@ class RNADesign:
 
         # this is probably not required anymore since it is check in the Design class itself ?
         if self.condition_col not in columns:  # pragma: no cover
-            logger.error(
-                f"""Your condition named '{self.condition_col}' is expected to be in the header of your design file but was not found. Candidates are: {columns}"""
-            )
-            sys.exit(1)
+            msg = f"""Your condition named '{self.condition_col}' is expected to be in the header of your design file but was not found. Candidates are: {columns}"""
+            logger.error(msg)
+            sys.exit(msg)
 
     def _get_conditions(self):
         try:

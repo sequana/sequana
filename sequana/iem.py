@@ -13,6 +13,7 @@
 "IEM class"
 import collections
 import io
+import os
 import sys
 
 import colorlog
@@ -78,19 +79,36 @@ class IEM:
     :references: illumina specifications 970-2017-004.pdf
     """
 
-    def __init__(self, filename, tryme=False):
-        self.filename = filename
-        if tryme:
-            try:
-                self._scanner()
-            except Exception:
-                pass
-        else:
-            self._scanner()
+    expected_headers_fields = [
+        "IEMFileVersion",
+        "Investigator Name",
+        "Instrument Type",
+        "Experiment Name",
+        "Date",
+        "Workflow",
+        "Application",
+        "Assay",
+        "Description",
+        "Chemistry",
+        "Index Adapters",
+    ]
 
-    def __repr__(self):
-        txt = " %s entries\n" % (len(self.df))
-        return txt
+    expected_settings_fields = ["Adapter", "ReverseComplement", "CustomRead1PrimerMix"]
+
+    expected_data_headers = {"SE": [], "PE": []}
+
+    def __init__(self, filename):
+
+        self.filename = filename
+        if not os.path.exists(self.filename):
+            raise IOError(f"{filename} does not exist")
+        # figures out the sections in the sample sheet.
+        # we use a try/except so that even in case of failure, we can still use
+        # quickfix or attributes.
+        try:
+            self._scan_sections()
+        except Exception as err:  # pragma: no cover
+            print(err)
 
     def _line_cleaner(self, line, line_count):
         # We can get rid of EOL and spaces
@@ -102,20 +120,19 @@ class IEM:
 
         # if we are dealing with a section title, we can cleanup the
         # line. A section must start with '[' and ends with ']' but
-        # there could be spaces and commands.
+        # there could be spaces and commands. If it ends with a ; then
+        # the section will not be found as expected since this is
+        # sympatomatic of further issues
         if line.startswith("["):
             # [Header], ,, ,\n becomes [Header]
             line = line.strip(", ")  # note the space AND comma
-            if line.endswith("]") is False:
-                raise ValueError(
-                    "Found incorrect syntax on line {}: {}. Maybe an extra character such as ; ".format(
-                        line_count, line
-                    )
-                )
 
         return line
 
-    def _scanner(self):
+    def _scan_sections(self):
+        # looks for special section Header/Data/Reads/Settings
+        # Data/Header must be found. Others may be optional
+
         current_section = None
         data = collections.defaultdict(list)
         with open(self.filename, "r") as fin:
@@ -128,25 +145,30 @@ class IEM:
                     current_section = name
                 else:
                     data[current_section] += [line]
+            # if line.startswith("[") and line.endswith("]"):
+            #    name = line.lstrip("[").rstrip("]")
+            #    current_section = name
+            #    data[current_section] = ""
 
-        if "Header" not in data.keys():  # pragma: no cover
-            logger.warning("Input file must contain [Header]")
-
-        if "Data" not in data.keys():  # pragma: no cover
-            logger.warning("Input file must contain [Data]")
-
-        self.data = data
+        self.sections = data
 
     def _get_df(self):
-        df = pd.read_csv(io.StringIO("\n".join(self.data["Data"])))
-        if len(df.columns) == 0:
-            raise ValueError("Invalid sample sheet in the Data section")
-        return df
+        if "Data" in self.sections:
+            if self.sections["Data"]:
+                df = pd.read_csv(io.StringIO("\n".join(self.sections["Data"])))
+                return df
+            else:
+                return pd.DataFrame()
+        else:  # pragma: no cover
+            return pd.DataFrame()
 
     df = property(_get_df, doc="Returns the [data] section")
 
     def _get_samples(self):
-        return self.df["Sample_ID"].values
+        try:
+            return self.df["Sample_ID"].values
+        except AttributeError:  # pragma: no cover
+            return "No Sample_ID found in the Data header section"
 
     samples = property(_get_samples, doc="returns the sample identifiers as a list")
 
@@ -157,6 +179,173 @@ class IEM:
             return None
 
     version = property(_get_version, doc="return the version of the IEM file")
+
+    def checker(self):
+        results = []
+
+        # Check presence of sections
+        for section in ["Data"]:
+            if section not in self.sections.keys():
+                results.append({"msg": f"The [{section}] section is missing.", "status": "Error"})
+                # if no data present, no need to keep going
+                return results
+            else:
+                results.append({"msg": f"The [{section}] section is present as expected.", "status": "Success"})
+
+        for section in ["Reads", "Header", "Settings"]:
+            if section not in self.sections.keys():
+                results.append({"msg": f"The [{section}] section is missing", "status": "Warning"})
+            else:
+                results.append({"msg": f"The [{section}] section is present as expected.", "status": "Success"})
+
+        def _tryme(meth):
+            try:
+                status = meth()
+                results.append(status)
+            except Exception as err:  # pragma: no cover
+                results.append({"msg": err, "status": "Error"})
+
+        # Checks of the Data section
+        _tryme(self._check_unique_sample_name)
+        _tryme(self._check_unique_indices)
+        _tryme(self._check_data_column_names)
+        _tryme(self._check_alpha_numerical)
+        _tryme(self._check_semi_column_presence)
+        _tryme(self._check_data_section_csv_format)
+
+        if "index" in self.df.columns:
+            _tryme(self._check_homogene_I7_length)
+
+        if "index2" in self.df.columns:
+            _tryme(self._check_homogene_I5_length)
+
+        return results
+
+    def _check_unique_sample_name(self):
+        # check that sample names are unique and that sample Names are unique too
+
+        if "Sample_ID" not in self.df.columns:
+            return {
+                "name": "check_unique_sample_name",
+                "msg": "Sample ID not found in the header of the [Data] section",
+                "status": "Error",
+            }
+
+        if len(self.df.Sample_ID) != len(self.df.Sample_ID.unique()):
+            duplicated = self.df.Sample_ID[self.df.Sample_ID.duplicated()].values
+            duplicated = ",".join([str(x) for x in duplicated])
+            return {
+                "name": "check_unique_sample_name",
+                "msg": f"Sample ID not unique. Duplicated entries: {duplicated}",
+                "status": "Error",
+            }
+        else:
+            return {"name": "check_unique_sample_name", "msg": "Sample ID uniqueness", "status": "Success"}
+
+    def _check_unique_indices(self):
+        if "index2" in self.df.columns:
+            indices = self.df["index"] + "," + self.df["index2"]
+            msg = "You have duplicated index I7/I5."
+        elif "index" in self.df.columns:
+            indices = self.df["index"]
+            msg = "You have duplicated index I7."
+        else:
+            return {"msg": f"column 'index' not found in the header of the [Data] section.", "status": "Error"}
+
+        if indices.duplicated().sum() > 0:
+            duplicated = indices[indices.duplicated()].values
+            try:
+                IDs = self.df[indices.duplicated()].Sample_ID.values
+                IDs = ", ".join([str(x) for x in IDs])
+                IDs = f"related to sample IDs: {IDs}"
+            except Exception as err:  # pragma: no cover
+                IDs = ""
+
+            return {"msg": f"{msg} {duplicated} {IDs}", "status": "Error"}
+        else:
+            return {"msg": "Indices are unique.", "status": "Success"}
+
+    def _check_data_column_names(self):
+        msg = ""
+        errors = []
+        warnings = []
+        # check whether minimal columns are included
+        for x in ["Sample_ID", "Sample_Name", "I7_Index_ID", "index", "Sample_Project", "Description"]:
+            if x not in self.df.columns:
+                errors.append(x)
+
+        for x in ["Sample_Plate", "Sample_Well", "Lane", "Index_Plate", "Index_Plate_Well"]:
+            # I5_Index_ID,index2,
+            if x not in self.df.columns:
+                warnings.append(x)
+
+        if len(errors):
+            errors = ",".join(errors)
+            msg = f"Some columns are missing in the [Data] section: {errors}"
+            return {"msg": msg, "status": "Error"}
+        elif len(warnings):
+            warnings = ",".join(warnings)
+            msg = f"Some columns are missing in the [Data] section: {warnings}"
+            return {"msg": msg, "status": "Warning"}
+        else:
+            return {"msg": "Columns of the data section looks good", "status": "Success"}
+
+    def _check_homogene_I7_length(self):
+        try:
+            diff = self.df["index"].apply(lambda x: len(x)).std()
+            if diff == 0:
+                return {"msg": "Indices length in I7 have same lengths", "status": "Success"}
+            else:
+                return {"msg": "Indices length in I7 have different lengths", "status": "Error"}
+        except Exception:
+            return {"msg": "Indices length in I7 have different lengths", "status": "Error"}
+
+    def _check_homogene_I5_length(self):
+        diff = self.df["index2"].apply(lambda x: len(x)).std()
+        if diff == 0:
+            return {"msg": "Indices length in I5 have same lengths", "status": "Success"}
+        else:
+            return {"msg": "Indices length in I5 have different lengths", "status": "Error"}
+
+    def _check_data_section_csv_format(self):
+
+        if len(self.sections["Data"]) in [0, 1]:
+            return {"name": "check_data_section_csv_format", "msg": "Data section CSV looks empty.", "status": "Error"}
+
+        N = len(set([x.count(",") for x in self.sections["Data"]]))
+
+        if N == 1:  # data has just a header
+            return {"msg": "Data section CSV format looks correct.", "status": "Success"}
+        elif N == 0:
+            return {"msg": "Data section CSV format looks empty.", "status": "Warning"}
+        else:
+            lengths = set([x.count(",") for x in self.sections["Data"]])
+            return {
+                "msg": f"Data section has lines with different number of entries {lengths}. Probably missing commas.",
+                "status": "Error",
+            }
+
+    def _check_semi_column_presence(self):
+        with open(self.filename, "r") as fp:
+            line_count = 1
+            for line in fp.readlines():
+                if line.rstrip().endswith(";"):
+                    return {
+                        "name": "check_semi_column_presence",
+                        "msg": f"suspicous ; at the end of line ({line_count})",
+                        "status": "Error",
+                    }
+                line_count += 1
+        return {"name": "check_semi_column_presence", "msg": "Data section looks correct.", "status": "Success"}
+
+    def _check_alpha_numerical(self):
+        for column in ["Sample_ID", "Sample_Name"]:
+            for i, x in enumerate(self.df[column].values):
+                status = str(x).replace("-", "").replace("_", "").isalnum()
+                if status is False:
+                    msg = f"type error: wrong {column} name in [Data] section (line {i+1}). Must be made of  alpha numerical characters, _, and - characters only."
+                    return {"msg": msg, "status": "Error"}
+        return {"msg": "sample names and ID looks correct (alpha numerical and - or _ characters)", "status": "Success"}
 
     def validate(self):
         """This method checks whether the sample sheet is correctly formatted
@@ -173,72 +362,16 @@ class IEM:
             * checks for combo of dual indices uniqueness
             * checks that sample names are unique
 
+        and raise a SystemExit error on the first found error.
 
         """
-        # could use logger, but simpler for now
-        # Note that this code is part of sequana_demultiplex
-        prefix = "ERROR  [sequana_pipelines.demultiplex.check_samplesheet]: "
-        try:
-            self._cnt_data = 0
-            self._cnt = 0
-            with open(self.filename, "r") as fp:
-                line = fp.readline()
-                self._cnt = 1
-                if line.rstrip().endswith(";") or line.rstrip().endswith(","):  # pragma: no cover
-                    sys.exit(
-                        prefix
-                        + "Unexpected ; or , found at the end of line {} (and possibly others). Please use IEM  to format your SampleSheet. Try sequana_fix_samplesheet for extra ; or , ".format(
-                            self._cnt
-                        )
-                    )
+        # aggregates all checks
+        checks = self.checker()
 
-                while line:
-                    line = fp.readline()
-                    self._cnt += 1
-                    if "[Data]" in line:
-                        line = fp.readline()
-                        self._cnt += 1
-                        self._cnt_total = self._cnt
-                        if len(line.split(",")) < 2 or "Sample" not in line:  # pragma:  no cover
-                            sys.exit(prefix + ": No header found after [DATA] section")
-                        self.nb_col = len(line.split(","))
-                        # now we read the first line below [Data]
-                        line = fp.readline()
-                        self._cnt += 1
-                        while line:
-                            self._validate_line(line)
-                            line = fp.readline()
-                            self._cnt += 1
-
-        except Exception as e:  # pragma: no cover
-            raise ValueError("type error: " + str(e))
-
-        # Check that the sample Name and ID are alphanumerical
-        for column in ["Sample_ID", "Sample", "Sample_Name"]:
-            for i, x in enumerate(self.df.Sample_ID.values):
-                status = str(x).replace("-", "").replace("_", "").isalnum()
-                if status is False:
-                    sys.exit(
-                        "type error: wrong sample name {} on line {}, which must be alpha numeric except for the _ and - characters".format(
-                            x, self._cnt_total + i
-                        )
-                    )
-
-        # check that IDs are unique and that sample Names are unique
-        if len(self.df.Sample_ID) != len(self.df.Sample_ID.unique()):
-            duplicated = self.df.Sample_ID[self.df.Sample_ID.duplicated()].values
-            duplicated = ",".join(duplicated)
-            sys.exit(f"Sample ID not unique. Duplicated entries: {duplicated}")
-
-        # check that indices are unique
-        if "index2" in self.df.columns:
-            indices = self.df["index"] + "," + self.df["index2"]
-        else:
-            indices = self.df["index"]
-
-        if indices.duplicated().sum() > 0:
-            duplicated = indices[indices.duplicated()].values
-            sys.exit(f"Looks like you have duplicated index I5 and/or I7 : {duplicated}")
+        # Stop after first error
+        for check in checks:
+            if check["status"] == "Error":
+                sys.exit("\u274C " + check["msg"] + self.filename)
 
     def _validate_line(self, line):
         # check number of columns
@@ -247,7 +380,7 @@ class IEM:
 
     def _get_settings(self):
         data = {}
-        for line in self.data["Settings"]:
+        for line in self.sections["Settings"]:
             key, value = line.split(",")
             data[key] = value
         return data
@@ -256,7 +389,7 @@ class IEM:
 
     def _get_header(self):
         data = {}
-        for line in self.data["Header"]:
+        for line in self.sections["Header"]:
             key, value = line.split(",", 1)
             data[key] = value
         return data
@@ -280,15 +413,15 @@ class IEM:
     index_adapters = property(_get_adapter_kit, doc="returns index adapters")
 
     def _get_name(self):
-        if len(self.data["Name"]) == 1:
-            return self.data["Name"][0]
+        if len(self.sections["Name"]) == 1:
+            return self.sections["Name"][0]
         else:
-            return self.data["Name"]
+            return self.sections["Name"]
 
     name = property(_get_name)
 
     def to_fasta(self, adapter_name=""):
-        """Extract adapters from [Adapter] section and save to Fasta"""
+        """Extract adapters from [Adapter] section and print them as a fasta file"""
         ar1 = self.settings["Adapter"]
         try:
             ar2 = self.settings["AdapterRead2"]
@@ -312,7 +445,7 @@ class IEM:
         """Fix sample sheet
 
         Tyical error is when users save the samplesheet as CSV file in excel.
-        This may add trailing ; characters at the end of section, whic raises error
+        This may add trailing ; characters at the end of section, which raises error
         in bcl2fastq.
 
         """
