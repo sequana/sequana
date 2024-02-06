@@ -8,7 +8,7 @@ Pipeline statistics
 # First, let us get the data
 from sequana_pipetools.snaketools import get_pipeline_statistics
 
-df = get_pipeline_statistics()
+stats = get_pipeline_statistics()
 
 #############################################
 # Plot number of rules per pipeline
@@ -16,7 +16,7 @@ df = get_pipeline_statistics()
 # Note that pacbio_qc is self-content
 from pylab import tight_layout, title
 
-df.sum().plot(kind="barh")
+stats[0].sum().plot(kind="barh")
 title("Number of rules per pipeline")
 tight_layout()
 
@@ -34,7 +34,7 @@ from collections import Counter
 # a third used more than once.
 from pylab import clf, pie
 
-count = Counter(df.sum(axis=1))
+count = Counter(stats[0].sum(axis=1))
 values = list(count.values())
 times = list(count.keys())
 clf()
