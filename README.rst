@@ -243,6 +243,7 @@ Changelog
 ========= ==========================================================================
 Version   Description
 ========= ==========================================================================
+0.16.7    * Stable release (fix doc), deprecated.
 0.16.6    * Refactor IEM to make it more robust with more tests.
 0.16.5    * refactor to use pyproject instead of setuptools
           * remove pkg_resources (future deprecation)
