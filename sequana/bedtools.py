@@ -1053,7 +1053,7 @@ class ChromosomeCov(object):
 
         # Here, we set the zscore value to at least the value of the threshold
 
-        self._df["zscore"].fillna(0, inplace=True)
+        self._df["zscore"] = self._df["zscore"].fillna(0)
 
         floor = self.df["cov"] == 0  # fastest than query, or ==
         newvalues = self.df.loc[floor, "zscore"].apply(lambda x: min(self.thresholds.low - 0.01, x))

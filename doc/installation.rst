@@ -96,19 +96,11 @@ Other solutions (overview)
         cd sequana
         pip install sequana .
 
-# Singularity/Apptainer
+Singularity/Apptainer
+======================
 
 We provide container with sequana shipped inside (no pipelines) within the damona project
-(https:://github.com/cokelaer/damo/Apptainer
-
-We provide container with sequana shipped inside (no pipelines) within the damona project
-(https:://github.com/cokelaer/damon/Apptainer
-
-We provide container with sequana shipped inside (no pipelines) within the damona project
-(https:://github.com/cokelaer/damon/Apptainer
-
-We provide container with sequana shipped inside (no pipelines) within the damona project
-(https:://github.com/cokelaer/damona))
+(https://github.com/cokelaer/damona)
 
 
 
