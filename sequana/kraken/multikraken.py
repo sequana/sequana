@@ -268,10 +268,10 @@ class MultiKrakenResults2:
         # we will store grey/unclassified first and then other DB with a max of
         # 10 DBs
         L = len(df.columns) - 1
-        from matplotlib import cm
+        from matplotlib import colormaps
 
         if colors is None:
-            colors = [cm.get_cmap(cmap)(x) for x in pylab.linspace(0.2, 1, L)]
+            colors = [colormaps.get_cmap(cmap)(x) for x in pylab.linspace(0.2, 1, L)]
         colors = ["grey"] + colors
         df.plot(
             kind="barh",

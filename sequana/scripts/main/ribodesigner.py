@@ -44,7 +44,7 @@ logger = colorlog.getLogger(__name__)
     default=0.01,
     show_default=True,
     type=click.FLOAT,
-    help="The number of threads to use for cd-hit-est.",
+    help="The identity parameters used by cd-hit-est.",
 )
 @click.option("--output-image", default=None)
 @click.option(

@@ -105,6 +105,7 @@ def download_genbank(ctx, param, value):
     "--database",
     "database",
     default="ENA",
+    show_default=True,
     type=click.Choice(["ENA", "EUtils"]),
     is_eager=True,
     # expose_value=False,
@@ -150,9 +151,8 @@ def download_genbank(ctx, param, value):
     "-o",
     "--circular",
     is_flag=True,
-    show_default=True,
-    # help="""If the DNA of the organism is circular (typically
-    #        viruses or bacteria), set to True"""
+    help="""If the DNA of the organism is circular (typically
+            viruses or bacteria), set to True""",
 )
 @click.option(
     "-c",
@@ -160,6 +160,7 @@ def download_genbank(ctx, param, value):
     "chromosome",
     type=click.STRING,
     default="",
+    show_default=True,
     help="By default all chromosomes are analysed. You may want to analyse only one" " by using this parameter",
 )
 @click.option(
@@ -169,11 +170,13 @@ def download_genbank(ctx, param, value):
     type=click.INT,
     help="Number of mixture models to use (default 2, although if sequencing depth is below 8, k is set to 1 automatically). To ignore that behaviour set k to the required value",
     default=2,
+    show_default=True,
 )
 @click.option(
     "--debug-level",
     "logging_level",
     default="INFO",
+    show_default=True,
     type=click.Choice(["DEBUG", "INFO", "WARNING", "CRITICAL", "ERROR"]),
     help="set to DEBUG, INFO, WARNING, CRITICAL, ERROR",
 )
@@ -181,6 +184,7 @@ def download_genbank(ctx, param, value):
     "--level",
     "logging_level",
     default="INFO",
+    show_default=True,
     type=click.Choice(["DEBUG", "INFO", "WARNING", "CRITICAL", "ERROR"]),
     help="set to DEBUG, INFO, WARNING, CRITICAL, ERROR",
 )
@@ -190,6 +194,7 @@ def download_genbank(ctx, param, value):
     "w_gc",
     type=click.INT,
     default=101,
+    show_default=True,
     help="Length of the running window to compute the GC content",
 )
 @click.option(
@@ -215,12 +220,14 @@ def download_genbank(ctx, param, value):
     type=click.IntRange(200),
     help="Length of the running median window (default 20,001, recommended for bacteria).  For short genome (below 100000 bases), we set this parameter to one fifth of the genome length. minimal value is 125 (one fourth of 500bp that should be minimal length of contigs)",
     default=20001,
+    show_default=True,
 )
 @click.option(
     "-L",
     "--low-threshold",
     "low_threshold",
     default=-4,
+    show_default=True,
     type=click.FLOAT,
     help=("lower threshold (zscore) of the confidence interval. " "Overwrite value given by --threshold/-T"),
 )
@@ -229,6 +236,7 @@ def download_genbank(ctx, param, value):
     "--high-threshold",
     "high_threshold",
     default=4,
+    show_default=True,
     type=click.FLOAT,
     help=("higher threshold (zscore) of the confidence interval. " "Overwrite value given by --threshold/-T"),
 )
@@ -238,6 +246,7 @@ def download_genbank(ctx, param, value):
     "threshold",
     default=4,
     type=click.FLOAT,
+    show_default=True,
     help="set lower and higher thresholds of the confidence interval. ",
 )
 @click.option(
@@ -245,6 +254,7 @@ def download_genbank(ctx, param, value):
     "--clustering-parameter",
     "double_threshold",
     default=0.5,
+    show_default=True,
     type=click.FLOAT,
     help="set lower and higher double threshold parameter (in [0,1]). Do not use value close to zero. Ideally, around 0.5. lower value will tend to cluster more than higher value",
 )
@@ -254,6 +264,7 @@ def download_genbank(ctx, param, value):
     "chunksize",
     type=click.IntRange(1000000),  # 1e6
     default=10000000,  # 1e7
+    show_default=True,
     help="Length of the chunk to be used for the analysis. ",
 )
 @click.option(
@@ -388,6 +399,7 @@ def main(**kwargs):
         chromosome_list=chrom_list,
         reference_file=options.reference,
         gc_window_size=options.w_gc,
+        # force=True
     )
 
     # some information fo end-users,
