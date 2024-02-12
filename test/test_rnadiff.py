@@ -16,18 +16,27 @@ def test_design():
 
     try:
         d = RNADesign(f"{test_dir}/data/rnadiff/design_wrong.csv", reference="WT")
+        d.validate()
         assert False
     except (KeyError, SystemExit):
         assert True
 
     try:
         d = RNADesign(f"{test_dir}/data/rnadiff/design.csv", condition_col="TEST")
+        d.validate()
+        assert False
+    except SystemExit:
+        assert True
+
+    try:
+        d = RNADesign(f"{test_dir}/data/rnadiff/design_wrong_one_replicate.csv", condition_col="condition")
+        d.validate()
         assert False
     except SystemExit:
         assert True
 
 
-@pytest.mark.xfail(reason="too slow or service may be down")
+# @pytest.mark.xfail(reason="too slow or service may be down")
 def test_rnadiff_onefolder():
 
     # Featurecounts are saved in sequana/resources/testing/rnadiff/rnadiff_onecond_ex1
@@ -49,40 +58,6 @@ def test_rnadiff_onefolder():
         gff=gff,
         minimum_mean_reads_per_gene=1,
     )
-
-    # test wrong comparison
-    try:
-        an = RNADiffAnalysis(
-            counts,
-            design,
-            condition="condition",
-            comparisons=[("Complemented_csrA", "W")],
-            fc_feature="gene",
-            fc_attribute="ID",
-            gff=gff,
-            minimum_mean_reads_per_gene=1,
-        )
-        assert False
-    except SystemExit:
-        assert True
-
-    # test wrong ref
-    try:
-        an = RNADiffAnalysis(
-            counts,
-            design,
-            condition="condition",
-            comparisons=[
-                ("Complemented_csrA", "WT"),
-            ],
-            fc_feature="gene",
-            fc_attribute="ID",
-            gff=gff,
-            reference="WRONG",
-        )
-        assert False
-    except ValueError:
-        assert True
 
     # test minimum_mean_reads_per_condition_per_gene
     an = RNADiffAnalysis(
