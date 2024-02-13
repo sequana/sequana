@@ -36,8 +36,8 @@ def test_design():
         assert True
 
 
-# @pytest.mark.xfail(reason="too slow or service may be down")
-def test_rnadiff_onefolder():
+# requires rtools container
+def _test_rnadiff_onefolder_min_reads_pergene():
 
     # Featurecounts are saved in sequana/resources/testing/rnadiff/rnadiff_onecond_ex1
     # generated from Featurecount of the file to be found in
@@ -58,6 +58,14 @@ def test_rnadiff_onefolder():
         gff=gff,
         minimum_mean_reads_per_gene=1,
     )
+    r = an.run()
+
+
+# requires rtools container
+def _test_rnadiff_onefolder_min_reads_per_condition_gene():
+    counts = f"{test_dir}/data/rnadiff/rnadiff_onecond_ex1/counts.csv"
+    design = f"{test_dir}/data/rnadiff/rnadiff_onecond_ex1/design.csv"
+    gff = f"{test_dir}/data/rnadiff/rnadiff_onecond_ex1/Lepto.gff"
 
     # test minimum_mean_reads_per_condition_per_gene
     an = RNADiffAnalysis(

@@ -243,6 +243,9 @@ Changelog
 ========= ==========================================================================
 Version   Description
 ========= ==========================================================================
+0.16.8    * update IEM for more testing
+          * better handling of error in RNADiff
+          * Add new methods for ribodesigner
 0.16.7    * Stable release (fix doc), deprecated.
 0.16.6    * Refactor IEM to make it more robust with more tests.
 0.16.5    * refactor to use pyproject instead of setuptools

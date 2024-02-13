@@ -134,6 +134,49 @@ class RiboDesigner(object):
 
         filtered_gff.to_csv(self.filtered_gff)
 
+    def _get_probe_and_step_len_greedy(self, seq):
+        """Modified version of _get_probe_and_step_len"""
+        seq_len = len(seq.sequence)
+
+        # sequences below 92 base fail when scanning the parameter space.
+        # in such case, one probe or two overlapping probes should do it.
+
+        if seq_len < 50:
+            return 50, 15
+        elif seq_len < 100:
+            return 40, 10
+
+        probe_lens = range(60, 40, -1)
+        inter_probe_space = range(20, 10, -1)
+
+        for probe_len, inter_probe_space in product(probe_lens, inter_probe_space):
+            if ((seq_len + inter_probe_space) / (probe_len + inter_probe_space)).is_integer():
+                return probe_len, inter_probe_space
+
+        # 4% of sequence length are not found in the parameter space [60-40] x [10-20]
+        # Using 70-40 x 30-10 gives 0 fails for sequences up to 200,000 bases
+        probe_lens = range(70, 40, -1)
+        inter_probe_space = range(30, 10, -1)
+
+        for probe_len, inter_probe_space in product(probe_lens, inter_probe_space):
+            X = (seq_len + inter_probe_space) / (probe_len + inter_probe_space)
+            if X.is_integer():
+                return probe_len, inter_probe_space
+
+        # 34 of sequence length are not found in the parameter space [60-40] x [10-20]
+        # Using 80-40 x 35-10 gives 0 fails for sequences up to 200,000 bases
+        probe_lens = range(80, 40, -1)
+        inter_probe_space = range(35, 10, -1)
+
+        for probe_len, inter_probe_space in product(probe_lens, inter_probe_space):
+            X = (seq_len + inter_probe_space) / (probe_len + inter_probe_space)
+            if X.is_integer():
+                return probe_len, inter_probe_space
+
+        raise ValueError(
+            f"No correct probe length/inter probe space combination was found for {seq.name}"
+        )  # pragma: no cover
+
     def _get_probe_and_step_len(self, seq):
         """Calculates the probe_len and inter_probe_space for a ribosomal sequence.
 
@@ -155,7 +198,54 @@ class RiboDesigner(object):
             f"No correct probe length/inter probe space combination was found for {seq.name}"
         )  # pragma: no cover
 
-    def _get_probes_df(self, seq, probe_len, step_len):
+    def _get_probe_and_step_len_simple(self, seq):
+        seq_len = len(seq.sequence)
+        if seq_len < 50:
+            return 50, 15
+        elif seq_len < 100:
+            return 40, 10
+
+        probe_len = 50
+        inter_probe_space = 15
+
+        # starts = arange(0, seq_len, probe_len+inter_probe_space)
+        return 50, 15
+
+    def _get_probe_and_step_len_spiral(self, seq):
+        # much slower than original and greedy but ensure that probes are closer to the
+        # expected value
+        seq_len = len(seq.sequence)
+        if seq_len < 50:
+            return 50, 15
+        elif seq_len < 100:
+            return 40, 10
+
+        def spiral(X, Y, x0, y0):
+            items = []
+            x = y = 0
+            dx = 0
+            dy = -1
+            for i in range(max(X, Y) ** 2):
+                if (-X / 2 - 1 < x <= X / 2) and (-Y / 2 - 1 < y <= Y / 2):
+                    items.append((x, y))
+                if x == y or (x < 0 and x == -y) or (x > 0 and x == 1 - y):
+                    dx, dy = -dy, dx
+                x, y = x + dx, y + dy
+            items = [(x + X / 2 + x0, y + Y / 2 + y0) for x, y in items]
+            return items
+
+        # set of points from 40 to 60 (40+21) and from 10 to 20 (10+11)
+        positions = spiral(40, 10, 40, 10)
+
+        for probe_len, inter_probe_space in positions:
+            if ((seq_len + inter_probe_space) / (probe_len + inter_probe_space)).is_integer():
+                return int(probe_len), int(inter_probe_space)
+
+        raise ValueError(
+            f"No correct probe length/inter probe space combination was found for {seq.name}"
+        )  # pragma: no cover
+
+    def _get_probes_df(self, seq, probe_len, step_len, mode="generic"):
         """Generate the Dataframe with probes information.
 
         Design probes to have end-to-end coverage on the + strand and fill the inter_probe_space present on the + strand with probes designed on the - strand.
@@ -188,6 +278,10 @@ class RiboDesigner(object):
         rev_starts = [int((starts[i + 1] + starts[i]) / 2) for i in range(0, len(starts) - 1)]
         rev_stops = [start + probe_len for start in rev_starts]
 
+        if mode == "simple":
+            rev_starts = [x for x in starts]
+            rev_stops = [start + probe_len for start in rev_starts]
+
         df_rev = pd.DataFrame(
             {
                 "name": seq.name,
@@ -207,15 +301,28 @@ class RiboDesigner(object):
 
         return pd.concat([df, df_rev])
 
-    def get_all_probes(self):
+    def get_all_probes(self, method="original"):
         """Run all probe design and concatenate results in a single DataFrame."""
 
         probes_dfs = []
 
         with pysam.FastxFile(self.ribo_sequences_fasta) as fas:
             for seq in fas:
-                probe_len, step_len = self._get_probe_and_step_len(seq)
-                probes_dfs.append(self._get_probes_df(seq, probe_len, step_len))
+
+                if method == "greedy":
+                    probe_len, step_len = self._get_probe_and_step_len_greedy(seq)
+                    df = self._get_probes_df(seq, probe_len, step_len)
+                elif method == "original":
+                    probe_len, step_len = self._get_probe_and_step_len(seq)
+                    df = self._get_probes_df(seq, probe_len, step_len)
+                elif method == "spiral":
+                    probe_len, step_len = self._get_probe_and_step_len_spiral(seq)
+                    df = self._get_probes_df(seq, probe_len, step_len)
+                elif method == "simple":
+                    probe_len, step_len = self._get_probe_and_step_len_simple(seq)
+                    df = self._get_probes_df(seq, probe_len, step_len, mode="simple")
+
+                probes_dfs.append(df)
 
         self.probes_df = pd.concat(probes_dfs)
         self.probes_df["kept_after_clustering"] = True
@@ -349,13 +456,13 @@ class RiboDesigner(object):
         with open(self.output_json, "w") as fout:
             json.dump(self.json, fout, indent=4, sort_keys=True)
 
-    def run(self):
+    def run(self, method="greedy"):
         if self.gff:
             self.get_rna_pos_from_gff()
         else:
             shutil.copy(self.fasta, self.ribo_sequences_fasta)
 
-        self.get_all_probes()
+        self.get_all_probes(method=method)
         self.export_to_fasta()
         self.export_to_csv_bed()
         self.export_to_json()
