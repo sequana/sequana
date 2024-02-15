@@ -196,6 +196,7 @@ class RNADiffAnalysis:
         sep_design=r"\s*,\s*",
         minimum_mean_reads_per_gene=0,
         minimum_mean_reads_per_condition_per_gene=0,
+        model=None,
     ):
         # if set, we can filter genes that have low counts (on average)
         self.minimum_mean_reads_per_gene = minimum_mean_reads_per_gene
@@ -258,6 +259,10 @@ class RNADiffAnalysis:
         # For DeSeq2
         self.batch = batch
         self.model = f"~{batch + '+' + condition if batch else condition}"
+
+        if model:
+            self.model = model
+
         logger.info(f"model: {self.model}")
         self.fit_type = fit_type
         self.beta_prior = "TRUE" if beta_prior else "FALSE"
