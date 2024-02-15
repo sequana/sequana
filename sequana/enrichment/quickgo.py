@@ -33,6 +33,9 @@ class QuickGOGraph:
             "MF": "GO:0003674",
             "CC": "GO:0005575",
             "BP": "GO:0008150",
+            "SLIM_MF": "GO:0003674",
+            "SLIM_CC": "GO:0005575",
+            "SLIM_BP": "GO:0008150",
         }
 
         self.quickgo = quickgo.QuickGO(cache=True)
