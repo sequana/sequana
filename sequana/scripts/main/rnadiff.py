@@ -192,6 +192,11 @@ replicates and conditions. Not recommended if you have lots of conditions. By de
     help="Keep genes that have at least one condition where the average number of reads is greater or equal to this value. By default all genes are kept",
 )
 @click.option(
+    "--model",
+    default=None,
+    help="By default, the model is ~batch + condition. For more complex cases, you may set the --model more specifically",
+)
+@click.option(
     "--shrinkage/--no-shrinkage",
     default=True,
     help="Shrinkage was added in the DESeq2 script analysis in Sequana 0.14.7. Although it has a marginal impact, number of DGEs may be different and volcano plots have usually a different shape. To ignore the shrinkage, you could set the option to --no-shrinkage",
@@ -392,6 +397,7 @@ def rnadiff(**kwargs):
         fit_type=kwargs.get("fit_type"),
         minimum_mean_reads_per_gene=kwargs.get("minimum_mean_reads_per_gene"),
         minimum_mean_reads_per_condition_per_gene=kwargs.get("minimum_mean_reads_per_condition_per_gene"),
+        model=model,
     )
 
     if not kwargs["report_only"]:
@@ -407,10 +413,6 @@ def rnadiff(**kwargs):
     logger.info("Reporting. Saving in summary.html")
     # this define the output directory where summary.html is saved
     config.output_dir = outdir
-    from sequana_pipelines.rnaseq import version as version_rnaseq
-
-    config.pipeline_version = version_rnaseq
-    config.pipeline_name = "rnaseq"
 
     import seaborn as sns
 

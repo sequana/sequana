@@ -13,9 +13,9 @@
 ##############################################################################
 """Module to write summary.html have all information about the pipeline and
 to visit other analysis"""
+import importlib.metadata
 import os
 
-import easydev
 from deprecated import deprecated
 
 from sequana.lazy import pandas as pd
@@ -61,20 +61,25 @@ class SummaryBase(SequanaBaseModule):
 
     def get_table_dependencies(self):
         """Return dependencies of Sequana."""
-        dep_list = easydev.get_dependencies("sequana")
-        # if installed with conda, this will be empty
-        if len(dep_list) == 0:
-            return ""
 
-        project_name = list()
-        version = list()
-        link = list()
+        project_names = list()
+        versions = list()
+        links = list()
         pypi = "https://pypi.python.org/pypi/{0}"
-        for dep in dep_list:
-            version.append(dep.version)
-            project_name.append(dep.project_name)
-            link.append(pypi.format(dep.project_name))
-        df = pd.DataFrame({"package": project_name, "version": version, "link": link})
+
+        for dep in importlib.metadata.requires("sequana"):
+
+            try:
+                project_name, version = dep.split()
+            except ValueError:
+                project_name = dep
+                version = "?"
+
+            versions.append(version)
+            project_names.append(project_name)
+            links.append(pypi.format(project_name))
+
+        df = pd.DataFrame({"package": project_names, "version": versions, "link": links})
         df["sort"] = df["package"].str.lower()
         df.sort_values(by="sort", axis=0, inplace=True)
         df.drop("sort", axis=1, inplace=True)

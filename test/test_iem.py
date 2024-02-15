@@ -37,6 +37,15 @@ def test_quick_fix(tmpdir):
     e.validate()
 
 
+def test_warning():
+    for filename in ["iem/wrong/test_iem_samplesheet_one_sample_pe.csv"]:
+        e = IEM(f"{test_dir}/data/{filename}")
+        e.validate()
+        checks = e.checker()
+        errors = [1 for check in checks if check["status"] == "Error"]
+        assert len(errors) == 0
+
+
 def test_wrong():
 
     for filename in [
@@ -50,6 +59,7 @@ def test_wrong():
         "iem/wrong/test_non_homogen_I7_length.csv",
         "iem/wrong/test_empty_data_section.csv",
         "iem/wrong/test_empty_data_section2.csv",
+        "iem/wrong/test_iem_samplesheet_one_sample_se.csv",
     ]:
         e = IEM(f"{test_dir}/data/{filename}")
         try:
@@ -69,6 +79,8 @@ def test_iem_samplesheets():
         "iem/good/test_iem_samplesheet_nextseq_single.csv",
         "iem/good/test_iem_samplesheet_iseq100.csv",
         "iem/good/test_iem_samplesheet_miniseq.csv",
+        "iem/good/test_iem_samplesheet_one_sample_se.csv",
+        "iem/good/test_iem_samplesheet_one_sample_pe.csv",
     ]:
         iem = IEM(f"{test_dir}/data/{filename}")
         iem.validate()

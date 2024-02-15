@@ -181,45 +181,42 @@ class IEM:
     version = property(_get_version, doc="return the version of the IEM file")
 
     def checker(self):
-        results = []
+
+        from sequana.utils.checker import Checker
+
+        checks = Checker()
 
         # Check presence of sections
         for section in ["Data"]:
             if section not in self.sections.keys():
-                results.append({"msg": f"The [{section}] section is missing.", "status": "Error"})
+                checks.results.append({"msg": f"The [{section}] section is missing.", "status": "Error"})
                 # if no data present, no need to keep going
-                return results
+                return checks.results
             else:
-                results.append({"msg": f"The [{section}] section is present as expected.", "status": "Success"})
+                checks.results.append({"msg": f"The [{section}] section is present as expected.", "status": "Success"})
 
         for section in ["Reads", "Header", "Settings"]:
             if section not in self.sections.keys():
-                results.append({"msg": f"The [{section}] section is missing", "status": "Warning"})
+                checks.results.append({"msg": f"The [{section}] section is missing", "status": "Warning"})
             else:
-                results.append({"msg": f"The [{section}] section is present as expected.", "status": "Success"})
-
-        def _tryme(meth):
-            try:
-                status = meth()
-                results.append(status)
-            except Exception as err:  # pragma: no cover
-                results.append({"msg": err, "status": "Error"})
+                checks.results.append({"msg": f"The [{section}] section is present as expected.", "status": "Success"})
 
         # Checks of the Data section
-        _tryme(self._check_unique_sample_name)
-        _tryme(self._check_unique_indices)
-        _tryme(self._check_data_column_names)
-        _tryme(self._check_alpha_numerical)
-        _tryme(self._check_semi_column_presence)
-        _tryme(self._check_data_section_csv_format)
+        checks.tryme(self._check_unique_sample_name)
+        checks.tryme(self._check_unique_indices)
+        checks.tryme(self._check_data_column_names)
+        checks.tryme(self._check_alpha_numerical)
+        checks.tryme(self._check_semi_column_presence)
+        checks.tryme(self._check_data_section_csv_format)
 
         if "index" in self.df.columns:
-            _tryme(self._check_homogene_I7_length)
+            checks.tryme(self._check_homogene_I7_length)
 
         if "index2" in self.df.columns:
-            _tryme(self._check_homogene_I5_length)
+            checks.tryme(self._check_homogene_I5_length)
+            checks.tryme(self._check_homogene_I5_and_I7_length)
 
-        return results
+        return checks.results
 
     def _check_unique_sample_name(self):
         # check that sample names are unique and that sample Names are unique too
@@ -292,20 +289,51 @@ class IEM:
 
     def _check_homogene_I7_length(self):
         try:
+
+            if len(self.df) == 1:
+                L = len(self.df["index"].values[0].strip())
+                if L:
+                    return {"msg": f"Only one sample. Index length is {L}", "status": "Success"}
+                else:
+                    return {"msg": f"Only one sample. Index length is {L}", "status": "Error"}
+
             diff = self.df["index"].apply(lambda x: len(x)).std()
             if diff == 0:
                 return {"msg": "Indices length in I7 have same lengths", "status": "Success"}
             else:
                 return {"msg": "Indices length in I7 have different lengths", "status": "Error"}
         except Exception:
-            return {"msg": "Indices length in I7 have different lengths", "status": "Error"}
+            return {"msg": "Indices length could not be read.", "status": "Error"}
 
     def _check_homogene_I5_length(self):
-        diff = self.df["index2"].apply(lambda x: len(x)).std()
-        if diff == 0:
-            return {"msg": "Indices length in I5 have same lengths", "status": "Success"}
+        try:
+
+            if len(self.df) == 1:
+                L = len(self.df["index2"].values[0].strip())
+                if L:
+                    return {"msg": f"Only one sample. Index length for I5 is {L}", "status": "Success"}
+                else:
+                    return {"msg": f"Only one sample. Index length for I5 is {L}", "status": "Error"}
+            diff = self.df["index2"].apply(lambda x: len(x)).std()
+            if diff == 0:
+                return {"msg": "Indices length in I5 have same lengths", "status": "Success"}
+            else:
+                return {"msg": "Indices length in I5 have different lengths", "status": "Error"}
+        except Exception:
+            return {"msg": "Indices length could not be read. ", "status": "Error"}
+
+    def _check_homogene_I5_and_I7_length(self):
+        # this is a warning only since you may have custom index
+        lengths = [len(x) for x in self.df["index"]] + [len(x) for x in self.df["index2"]]
+        lengths = list(set(lengths))
+        L = lengths[0]
+
+        if len(lengths) == 1:
+            return {"msg": f"I5 and I7 have coherent length of {L}", "status": "Succcess"}
         else:
-            return {"msg": "Indices length in I5 have different lengths", "status": "Error"}
+            return {"msg": "I5 and I7 have different lengths", "status": "Warning"}
+
+        return {"msg": "Indices length could not be read. ", "status": "Success"}
 
     def _check_data_section_csv_format(self):
 

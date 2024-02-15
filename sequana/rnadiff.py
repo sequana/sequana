@@ -44,23 +44,60 @@ class RNADesign:
         self.condition_col = condition_col
         # \s to strip the white spaces
         self.df = pd.read_csv(filename, sep=sep, engine="python", comment="#", dtype={"label": str})
-        if reference and reference not in self.conditions:
-            raise ValueError(
-                f"{reference} condition (for the reference) not found in the conditions of your design file"
-            )
         self.reference = reference
-        self.check_condition()
 
-    def check_condition(self):
-        # set condition of the statistical model
+    def checker(self):
+        from sequana.utils.checker import Checker
 
-        columns = ",".join(self.df.columns)
+        c = Checker()
+        c.tryme(self._check_condition)
+        c.tryme(self._check_condition_col_name)
+        c.tryme(self._check_label_col_name)
+        return c.results
 
-        # this is probably not required anymore since it is check in the Design class itself ?
-        if self.condition_col not in columns:  # pragma: no cover
-            msg = f"""Your condition named '{self.condition_col}' is expected to be in the header of your design file but was not found. Candidates are: {columns}"""
-            logger.error(msg)
-            sys.exit(msg)
+    def validate(self):
+        checks = self.checker()
+        # Stop after first error
+        for check in checks:
+            if check["status"] == "Error":
+                sys.exit("\u274C " + check["msg"] + self.filename)
+
+    def _check_condition(self):
+
+        if self.condition_col not in self.df.columns:
+            return {"msg": f"Cannot check the conditions. Header is missing {self.condition_col}", "status": "Error"}
+
+        conds = sorted(self.df[self.condition_col].unique())
+        C = len(conds)
+        if C == 0:
+            return {"msg": f"Found no conditions", "status": "Error"}
+        elif C == 1:
+            return {"msg": f"Found only one condition {conds}", "status": "Error"}
+        else:
+
+            # checks whether a conditon has only 1 replicate. Forbidden by DeSeq2
+            for cond in conds:
+                if sum(self.df[self.condition_col] == cond) == 1:
+                    return {
+                        "msg": f"Found condition {cond} with only one replicate. Forbidden by DeSeq2",
+                        "status": "Error",
+                    }
+            if len(self.df) % C == 0:
+                return {"msg": f"Found {C} conditions and {len(self.df)} samples", "status": "Success"}
+            else:
+                return {"msg": f"Found {C} conditions but {len(self.df)} samples (uneven?)", "status": "Warning"}
+
+    def _check_label_col_name(self):
+        if "label" not in self.df.columns:
+            return {"msg": "Incorrect header. Excepted 'label' but not found", "status": "Error"}
+        else:
+            return {"msg": "Found name 'label' in the Header", "status": "Success"}
+
+    def _check_condition_col_name(self):
+        if self.condition_col not in self.df.columns:
+            return {"msg": f"Incorrect header. Excepted {self.condition_col} but not found", "status": "Error"}
+        else:
+            return {"msg": f"Found name '{self.condition_col}' in the Header", "status": "Success"}
 
     def _get_conditions(self):
         try:
@@ -159,6 +196,7 @@ class RNADiffAnalysis:
         sep_design=r"\s*,\s*",
         minimum_mean_reads_per_gene=0,
         minimum_mean_reads_per_condition_per_gene=0,
+        model=None,
     ):
         # if set, we can filter genes that have low counts (on average)
         self.minimum_mean_reads_per_gene = minimum_mean_reads_per_gene
@@ -179,6 +217,14 @@ class RNADiffAnalysis:
 
         # Read and check the design file. Filtering if comparisons is provided
         self.design = RNADesign(design_file, sep=sep_design, condition_col=condition, reference=reference)
+        for check in self.design.checker():
+            if check["status"] == "Error":
+                logger.error(f"Found an error while parsing the design file {design_file}:")
+                logger.error(f"{check['msg']}")
+                sys.exit(1)
+            elif check["status"] == "Warning":
+                logger.warning(check["msg"])
+
         self.comparisons = comparisons if comparisons else self.design.comparisons
 
         _conditions = {x for comp in self.comparisons for x in comp}
@@ -213,6 +259,10 @@ class RNADiffAnalysis:
         # For DeSeq2
         self.batch = batch
         self.model = f"~{batch + '+' + condition if batch else condition}"
+
+        if model:
+            self.model = model
+
         logger.info(f"model: {self.model}")
         self.fit_type = fit_type
         self.beta_prior = "TRUE" if beta_prior else "FALSE"

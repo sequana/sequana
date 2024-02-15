@@ -1,8 +1,8 @@
 """Tests for `ribodesigner` package."""
-
 import filecmp
 from pathlib import Path
 
+import pytest
 from click.testing import CliRunner
 
 from sequana.ribodesigner import RiboDesigner
@@ -13,14 +13,20 @@ from . import test_dir
 resources_dir = Path(test_dir) / "data" / "ribodesigner"
 
 
-def test_ribodesigner(tmp_path):
+@pytest.mark.parametrize("method", ["simple", "greedy", "original", "spiral"])
+def test_ribodesigner(tmp_path, method):
+
+    # outdir = tmp_path / method
+    # outdir.mkdir()
+
     rd = RiboDesigner(
         fasta=resources_dir / "sample.fas", gff=resources_dir / "sample.gff", output_directory=tmp_path, force=True
     )
-    rd.run()
-    assert filecmp.cmp(tmp_path / "probes_sequences.fas", resources_dir / "probes_sequences.fas")
-    assert filecmp.cmp(tmp_path / "clustered_probes.fas", resources_dir / "clustered_probes.fas")
-    assert filecmp.cmp(tmp_path / "clustered_probes.csv", resources_dir / "clustered_probes.csv")
+    rd.run(method=method)
+    if method == "original":
+        assert filecmp.cmp(tmp_path / "probes_sequences.fas", resources_dir / "probes_sequences.fas")
+        assert filecmp.cmp(tmp_path / "clustered_probes.fas", resources_dir / "clustered_probes.fas")
+        assert filecmp.cmp(tmp_path / "clustered_probes.csv", resources_dir / "clustered_probes.csv")
 
 
 def test_ribodesigner_no_gff(tmp_path):
