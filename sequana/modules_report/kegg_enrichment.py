@@ -179,7 +179,10 @@ maximum of {self.nmax} pathways. </p>
 <p>Here below are the pathways with gene colored according to their fold change.
 Blue colors are for down-regulated genes and Orange are for up-regulated genes.
 (Note that absolute log2 fold change above 4 are clipped to 4; So a gene with a
-log2 fold change of 4 or 40 will have the same darkest color.). </p>
+log2 fold change of 4 or 40 will have the same darkest color.). These colors, when
+present, are superseding the original Green (core components) and White (associated,
+not necessarily essential components) colors. In case a FoldChange threshold has been
+applied for the enrichment analysis, genes not passing the threshold will not be colored.</p>
 {fotorama}
 
 """
