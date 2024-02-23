@@ -206,9 +206,10 @@ applied for the enrichment analysis, genes not passing the threshold will not be
     def get_table(self, category):
         # Results down (pathway info)
         # html_before_table = """<p>Enrichment pathways summary</p>"""
-        df = self.ke.dfs[category].query("significative == True").copy()
+        if not self.ke.dfs[category].empty:
+            df = self.ke.dfs[category].query("significative == True").copy()
 
-        if len(df):
+        if not df.empty:
             links = ["https://www.genome.jp/dbget-bin/www_bget?path:{}".format(x) for x in df["pathway_id"]]
             df["links"] = links
             df = df[
