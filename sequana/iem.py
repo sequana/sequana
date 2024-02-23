@@ -155,7 +155,7 @@ class IEM:
     def _get_df(self):
         if "Data" in self.sections:
             if self.sections["Data"]:
-                df = pd.read_csv(io.StringIO("\n".join(self.sections["Data"])))
+                df = pd.read_csv(io.StringIO("\n".join(self.sections["Data"])), index_col=False)
                 return df
             else:
                 return pd.DataFrame()
@@ -203,6 +203,7 @@ class IEM:
 
         # Checks of the Data section
         checks.tryme(self._check_unique_sample_name)
+        checks.tryme(self._check_unique_sample_ID)
         checks.tryme(self._check_unique_indices)
         checks.tryme(self._check_data_column_names)
         checks.tryme(self._check_alpha_numerical)
@@ -221,9 +222,33 @@ class IEM:
     def _check_unique_sample_name(self):
         # check that sample names are unique and that sample Names are unique too
 
-        if "Sample_ID" not in self.df.columns:
+        if "Sample_Name" not in self.df.columns:
             return {
                 "name": "check_unique_sample_name",
+                "msg": "Sample_Name column not found in the header of the [Data] section",
+                "status": "Error",
+            }
+
+        if self.df["Sample_Name"].isnull().sum() > 0:
+            return {"name": "check_unique_sample_name", "msg": "Some sample names are empty", "status": "Warning"}
+
+        elif len(self.df.Sample_Name) != len(self.df.Sample_Name.unique()):
+            duplicated = self.df.Sample_Name[self.df.Sample_Name.duplicated()].values
+            duplicated = ",".join([str(x) for x in duplicated])
+            return {
+                "name": "check_unique_sample_name",
+                "msg": f"Sample_Name not unique. Duplicated entries: {duplicated}",
+                "status": "Warning",
+            }
+        else:
+            return {"name": "check_unique_sample_name", "msg": "Sample name uniqueness", "status": "Success"}
+
+    def _check_unique_sample_ID(self):
+        # check that sample names are unique and that sample Names are unique too
+
+        if "Sample_ID" not in self.df.columns:
+            return {
+                "name": "check_unique_sample_ID",
                 "msg": "Sample ID not found in the header of the [Data] section",
                 "status": "Error",
             }
@@ -232,12 +257,12 @@ class IEM:
             duplicated = self.df.Sample_ID[self.df.Sample_ID.duplicated()].values
             duplicated = ",".join([str(x) for x in duplicated])
             return {
-                "name": "check_unique_sample_name",
+                "name": "check_unique_sample_ID",
                 "msg": f"Sample ID not unique. Duplicated entries: {duplicated}",
                 "status": "Error",
             }
         else:
-            return {"name": "check_unique_sample_name", "msg": "Sample ID uniqueness", "status": "Success"}
+            return {"name": "check_unique_sample_ID", "msg": "Sample ID uniqueness", "status": "Success"}
 
     def _check_unique_indices(self):
         if "index2" in self.df.columns:
@@ -398,8 +423,9 @@ class IEM:
 
         # Stop after first error
         for check in checks:
+            print(check)
             if check["status"] == "Error":
-                sys.exit("\u274C " + check["msg"] + self.filename)
+                sys.exit("\u274C " + check["msg"])
 
     def _validate_line(self, line):
         # check number of columns
