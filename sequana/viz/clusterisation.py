@@ -17,6 +17,7 @@
 
 import colorlog
 
+from sequana.lazy import numpy as np
 from sequana.lazy import pylab
 
 logger = colorlog.getLogger(__name__)
@@ -57,7 +58,7 @@ class Cluster:
 
         self.scaler = StandardScaler()
 
-    def scale_data(self, transform_method="log", max_features=500):
+    def scale_data(self, transform_method="log"):
         """
 
         - Replace zeros with 1 (avoid log issue)
@@ -65,32 +66,43 @@ class Cluster:
         - scale the data using the scaler attribute (standard scaler by default)
 
         """
-        assert transform_method in ["log", "anscombe"]
-        # normalise the data
+        assert transform_method in [
+            "log",
+            "vst",
+            "anscombe",
+            "none",
+            "standard",
+        ], f"Scaling {transform_method} not available. must be log, vst, none, standard, anscombe (same as vst)"
 
-        # First, we transform the data
+        # transform the data
         data = self.df.copy()
-        data = data.replace(0, 1)
+
+        # in rare cases, with sparse feature count matrix, NA may be included
+        data[np.isnan(data)] = 0
+
         self.data = data
         if transform_method == "log":
+            data = data.replace(0, 1)
             data = pylab.log10(data)
-        elif transform_method == "anscombe":
+        elif transform_method in ["anscombe", "vst"]:
             from sequana.vst import VST
 
             data = VST.anscombe(data)
+        elif transform_method == "standard":
+            data = self.scaler.fit_transform(data)
+        else:
+            pass
 
-        # then we keep only the first N most dispersed features
-        tokeep = data.std(axis=1).sort_values(ascending=False).index[0:max_features]
-        data = data.loc[tokeep]
-        data = self.scaler.fit_transform(data)
-        return data, tokeep
+        return data
 
     def _plot(self, Xr, pca=None, pc1=0, pc2=1, colors=None, show_labels=True, fontsize=10):
+
         if colors is None:
             colors = [self.colors[k] for k in self.labels]
             if len(colors) != len(Xr):
                 colors = ["r"] * len(Xr[:, 0])
         else:
+
             for k in self.labels:
                 if k not in colors.keys():
                     logger.warning("No key color for this sample: {}. Set to red".format(k))

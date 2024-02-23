@@ -89,13 +89,13 @@ class RNADesign:
 
     def _check_label_col_name(self):
         if "label" not in self.df.columns:
-            return {"msg": "Incorrect header. Excepted 'label' but not found", "status": "Error"}
+            return {"msg": "Incorrect header. Expected 'label' but not found", "status": "Error"}
         else:
             return {"msg": "Found name 'label' in the Header", "status": "Success"}
 
     def _check_condition_col_name(self):
         if self.condition_col not in self.df.columns:
-            return {"msg": f"Incorrect header. Excepted {self.condition_col} but not found", "status": "Error"}
+            return {"msg": f"Incorrect header. Expected {self.condition_col} but not found", "status": "Error"}
         else:
             return {"msg": f"Found name '{self.condition_col}' in the Header", "status": "Success"}
 
@@ -135,7 +135,7 @@ class RNADiffAnalysis:
         be specified (not tested yet). Each name in this function should refer to column
         names in groups_tsv.
     :param comparisons: A list of tuples indicating comparisons to be made e.g A vs B would be [("A", "B")]
-    :param batch: None for no batch effect or name of a column in groups_tsv to add a batch effec.
+    :param batch: None for no batch effect or name of a column in groups_tsv to add a batch effect.
     :param keep_all_conditions: if user set comparisons, it means will only want
         to include some comparisons and therefore their conditions. Yet,
         sometimes, you may still want to keep all conditions in the diffential
@@ -169,6 +169,7 @@ class RNADiffAnalysis:
     """
 
     _template_file = "rnadiff_light_template.R"
+    _template_file_batch_vst = "rnadiff_batch_vst.R"
     _template_env = Environment(loader=PackageLoader("sequana", "resources/scripts"))
     template = _template_env.get_template(_template_file)
 
@@ -206,10 +207,12 @@ class RNADiffAnalysis:
         self.outdir = Path(outdir)
         self.counts_dir = self.outdir / "counts"
         self.code_dir = self.outdir / "code"
+        self.images_dir = self.outdir / "images"
 
         self.outdir.mkdir(exist_ok=True)
         self.code_dir.mkdir(exist_ok=True)
         self.counts_dir.mkdir(exist_ok=True)
+        self.images_dir.mkdir(exist_ok=True)
 
         self.usr_counts = counts_file
 
@@ -260,6 +263,7 @@ class RNADiffAnalysis:
         self.batch = batch
         self.model = f"~{batch + '+' + condition if batch else condition}"
 
+        # if user provides a model, reset the default one
         if model:
             self.model = model
 
@@ -285,6 +289,7 @@ class RNADiffAnalysis:
             "independent_filtering",
             "cooks_cutoff",
             "code_dir",
+            "images_dir",
             "outdir",
             "counts_dir",
             "beta_prior",
@@ -733,6 +738,12 @@ class RNADiffResults:
         self.counts_vst = pd.read_csv(self.path / "counts" / "counts_vst_norm.csv", index_col=0, sep=",")
         self.counts_vst.sort_index(axis=1, inplace=True)
 
+        try:
+            self.counts_vst_batch = pd.read_csv(self.path / "counts" / "counts_vst_batch.csv", index_col=0, sep=",")
+            self.counts_vst_batch.sort_index(axis=1, inplace=True)
+        except:
+            self.counts_vst_batch = None
+
         self.dds_stats = pd.read_csv(self.path / "code" / "overall_dds.csv", index_col=0, sep=",")
         self.condition = condition
 
@@ -1103,6 +1114,8 @@ class RNADiffResults:
         genes_to_remove=[],
         fontsize=10,
         adjust=True,
+        transform_method="none",  # already done if count_mode == 'vst' or 'vst_batch'
+        count_mode="vst",
     ):
         """
 
@@ -1125,16 +1138,22 @@ class RNADiffResults:
         """
         from sequana.viz import PCA
 
-        # Get most variable genes (n=max_features)
-        top_features = self.counts_vst.var(axis=1).sort_values(ascending=False).index[:max_features]
+        if count_mode == "vst":
+            counts = self.counts_vst
+        elif count_mode == "vst_batch":
+            if self.counts_vst_batch is not None:
+                counts = self.counts_vst_batch
 
+        # let us use filter out genes to be ignored
+        top_features = counts.index
         if genes_to_remove:
             top_features = [x for x in top_features if x not in genes_to_remove]
+        counts_top_features = counts.loc[top_features, :]
 
-        counts_top_features = self.counts_vst.loc[top_features, :]
-
+        # We create the PCA instance here
         p = PCA(counts_top_features)
 
+        # and the plotting
         if plotly is True:
             assert n_components == 3
             variance = p.plot(
@@ -1142,6 +1161,7 @@ class RNADiffResults:
                 colors=colors,
                 show_plot=False,
                 max_features=max_features,
+                transform=transform_method,
             )
 
             from plotly import express as px
@@ -1174,12 +1194,12 @@ class RNADiffResults:
                 color="group_color",
                 color_discrete_sequence=colors,
                 labels={
-                    "PC1": "PC1 ({}%)".format(round(100 * variance[0], 2)),
-                    "PC2": "PC2 ({}%)".format(round(100 * variance[1], 2)),
-                    "PC3": "PC3 ({}%)".format(round(100 * variance[2], 2)),
+                    "PC1": "PC1 ({}%)".format(round(100 * variance[0], 1)),
+                    "PC2": "PC2 ({}%)".format(round(100 * variance[1], 1)),
+                    "PC3": "PC3 ({}%)".format(round(100 * variance[2], 1)),
                 },
                 height=800,
-                text="label",
+                hover_name="label",
             )
             return fig
         else:
@@ -1189,6 +1209,7 @@ class RNADiffResults:
                 max_features=max_features,
                 fontsize=fontsize,
                 adjust=adjust,
+                transform=transform_method,
             )
 
         return variance
@@ -1332,29 +1353,33 @@ class RNADiffResults:
 
         pylab.gcf().set_layout_engine("tight")
 
+    # for back compatibility, we stick to transform_method = log
+    # max_features = 5000, count_mode = count_norm.
     def plot_dendogram(
-        self,
-        max_features=5000,
-        transform_method="log",
-        method="ward",
-        metric="euclidean",
+        self, max_features=5000, transform_method="log", method="ward", metric="euclidean", count_mode="norm"
     ):
         # for info about metric and methods: https://tinyurl.com/yyhk9cl8
-
-        assert transform_method in ["log", "anscombe", None]
-        # first we take the normalised data
         from sequana.viz import clusterisation, dendogram
 
-        cluster = clusterisation.Cluster(self.counts_norm)
-        if transform_method is not None:
-            data = cluster.scale_data(transform_method=transform_method, max_features=max_features)
-            df = pd.DataFrame(data[0])
-            df.index = data[1]
-            df.columns = self.counts_norm.columns
+        if count_mode == "norm":
+            cluster = clusterisation.Cluster(self.counts_norm)
+        elif count_mode == "vst":
+            cluster = clusterisation.Cluster(self.counts_vst)
+        elif count_mode == "vst_batch":
+            cluster = clusterisation.Cluster(self.counts_vst_batch)
+        elif count_mode == "raw":
+            cluster = clusterisation.Cluster(self.counts_raw)
         else:
-            df = pd.DataFrame(self.counts_norm)
-            df.columns = self.counts_norm.columns
+            raise ValueError(f"counts_mode is incorrect {count_mode}")
 
+        # scaling
+        data = cluster.scale_data(transform_method=transform_method)
+
+        # slect the best features only
+        tokeep = data.std(axis=1).sort_values(ascending=False).index[0:max_features]
+        df = pd.DataFrame(data.loc[tokeep])
+
+        # actual computation
         d = dendogram.Dendogram(
             df.T,
             metric=metric,

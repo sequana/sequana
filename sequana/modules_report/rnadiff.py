@@ -12,6 +12,7 @@
 #
 ##############################################################################
 """Module to write differential regulation analysis report"""
+import os
 
 import colorlog
 
@@ -186,16 +187,16 @@ scale). Clicking on any of the link will lead you to the section of the comparis
         self._count_section += 1
 
     def add_cluster(self):
-        style = "width:65%"
+        style = "width:45%"
 
-        def dendogram(filename):
+        def dendogram(filename, count_mode="norm", transform="log"):
             with pylab.ioff():
                 pylab.clf()
                 import warnings
 
                 with warnings.catch_warnings():
                     warnings.simplefilter("ignore")
-                    self.rnadiff.plot_dendogram()
+                    self.rnadiff.plot_dendogram(count_mode=count_mode, transform_method=transform)
                     try:
                         # Here, tight layout is not comaptible with dendogram
                         # Yet, if we call it and plot again, we get the expected layout.
@@ -204,41 +205,71 @@ scale). Clicking on any of the link will lead you to the section of the comparis
                     except Exception:
                         # This does not work right now in v0.16.0 but should be used in future
                         pylab.gcf().set_layout_engine("tight")
-                    self.rnadiff.plot_dendogram()
+                    self.rnadiff.plot_dendogram(count_mode=count_mode, transform_method=transform)
+
                     pylab.savefig(filename)
                     pylab.close()
 
-        html_dendogram = """<p>The following image shows a hierarchical
+        # save image in case of
+        dendogram(f"{self.folder}/images/dendogram.png")
+        image1 = (self.create_embedded_png(dendogram, "filename", style=style),)
+
+        if os.path.exists(f"{self.folder}/counts/counts_vst_batch.csv"):
+
+            # save image in case of
+            dendogram(f"{self.folder}/images/dendogram_vst_batch.png", count_mode="vst_batch", transform="none")
+
+        # html report
+        html_dendogram = f"""<p>The following image shows a hierarchical
 clustering of the whole sample set. An euclidean distance is computed between
 samples. The dendogram itself is built using the <a
-href="https://en.wikipedia.org/wiki/Ward%27s_method"> Ward method </a>. The data was log-transformed first.
-</p>{}<hr>""".format(
-            self.create_embedded_png(dendogram, "filename", style=style)
-        )
-        dendogram(f"{self.folder}/images/dendogram.png")
+href="https://en.wikipedia.org/wiki/Ward%27s_method"> Ward method </a>. The normed data was log-transformed first and at
+max 5,000 most variable features were selected.</p>"""
 
-        def pca(filename):
+        try:
+            image2 = self.create_embedded_png(
+                dendogram, "filename", count_mode="vst_batch", transform="none", style=style
+            )
+            html_dendogram += f"""<p>A batch effect was included. Here is the corrected image</p>{image1}{image2}<hr>"""
+        except:
+            html_dendogram += f"""{image1}<hr>"""
+
+        # =========== PCA
+        def pca(filename, transform_method="none", count_mode="vst"):
             pylab.ioff()
             pylab.clf()
-            variance = self.rnadiff.plot_pca(2, fontsize=self.kwargs.get("pca_fontsize", 10))
+            variance = self.rnadiff.plot_pca(
+                2,
+                fontsize=self.kwargs.get("pca_fontsize", 10),
+                transform_method=transform_method,
+                count_mode=count_mode,
+            )
             pylab.savefig(filename)
             pylab.close()
 
-        html_pca = """<p>The experiment variability is also represented by a
+        image1 = self.create_embedded_png(pca, "filename", style=style)
+        html_pca = f"""<p>The experiment variability is also represented by a
 principal component analysis as shown here below. The two main components are
 represented. We expect the ﬁrst principal component (PC1) to
 separate samples from the diﬀerent biological conditions, meaning that the biological variability is
-the main source of variance in the data. Hereafter is also a 3D representation
-of the PCA where the first 3 components are shown.
-
-</p>{}<hr>""".format(
-            self.create_embedded_png(pca, "filename", style=style)
-        )
+the main source of variance in the data. The data used is the normalised count matrix transformed using a VST method
+variance stabilization); the first 500 most variable genes were selected. </p>"""
 
         from plotly import offline
 
-        fig = self.rnadiff.plot_pca(n_components=3, plotly=True)
-        html_pca_plotly = offline.plot(fig, output_type="div", include_plotlyjs=False)
+        html_pca_plotly = "<p>Here is a PCA showing the first 3 components in 3D.</p>"
+
+        try:
+            image2 = self.create_embedded_png(pca, "filename", count_mode="vst_batch", style=style)
+            html_pca += f"""<p>Note that a batch effect was included. </p>{image1}{image2}<hr>"""
+
+            fig = self.rnadiff.plot_pca(n_components=3, plotly=True, count_mode="vst_batch")
+            html_pca_plotly += offline.plot(fig, output_type="div", include_plotlyjs=False)
+        except Exception:
+            html_pca += f"""{image}<hr>"""
+            fig = self.rnadiff.plot_pca(n_components=3, plotly=True)
+            html_pca_plotly += offline.plot(fig, output_type="div", include_plotlyjs=False)
+            pass
 
         self.sections.append(
             {

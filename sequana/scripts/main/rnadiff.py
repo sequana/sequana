@@ -397,7 +397,7 @@ def rnadiff(**kwargs):
         fit_type=kwargs.get("fit_type"),
         minimum_mean_reads_per_gene=kwargs.get("minimum_mean_reads_per_gene"),
         minimum_mean_reads_per_condition_per_gene=kwargs.get("minimum_mean_reads_per_condition_per_gene"),
-        model=model,
+        model=kwargs["model"],
     )
 
     if not kwargs["report_only"]:
