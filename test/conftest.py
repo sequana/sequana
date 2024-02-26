@@ -16,4 +16,4 @@ def pytest_runtest_setup(item):
             "https://raw.githubusercontent.com/sequana/data/main/kraken_toydb/taxonomy/names.dmp",
             "https://raw.githubusercontent.com/sequana/data/main/kraken_toydb/taxonomy/nodes.dmp",
         )
-        n.create_taxonomy_file(sequana_config_path + os.sep + "taxonomy.dat")
+        n.create_taxonomy_file(sequana_config_path + os.sep + "taxonomy.csv.gz")

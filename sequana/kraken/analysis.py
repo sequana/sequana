@@ -17,7 +17,8 @@ from pathlib import Path, PosixPath
 
 import colorlog
 from colormap import Colormap
-from easydev import TempFile, execute, md5
+from easydev import TempFile, md5
+from snakemake import shell
 
 from sequana import sequana_config_path
 from sequana.lazy import numpy as np
@@ -646,9 +647,14 @@ class KrakenResults(object):
         return data
 
     def to_js(self, output="krona.html"):
+        if not shutil.which("ktImportText"):  # pragma: no cover
+            logger.error(
+                "ktImportText executable not found. Please install it with conda or the method of your choice. We also provide ktImportText within damona.readthedocs.io "
+            )
+            sys.exit(1)
         if self._data_created == False:
             status = self.kraken_to_krona()
-        execute("ktImportText %s -o %s" % (self.output_filename, output))
+        shell("ktImportText %s -o %s" % (self.output_filename, output))
 
     def boxplot_classified_vs_read_length(self):
         """Show distribution of the read length grouped by classified or not"""
@@ -759,6 +765,12 @@ class KrakenPipeline(object):
         .. todo:: reuse the KrakenResults code to simplify this method.
 
         """
+        if not shutil.which("ktImportText"):  # pragma: no cover
+            logger.error(
+                "ktImportText executable not found. Please install it with conda or the method of your choice. We also provide ktImportText within damona.readthedocs.io "
+            )
+            sys.exit(1)
+
         # Run Kraken (KrakenAnalysis)
         kraken_results = self.output_directory / "kraken.out"
 
@@ -800,7 +812,6 @@ class KrakenPipeline(object):
         self.kr.kraken_to_csv(prefix / "kraken.csv", self.dbname)
 
         # Transform to Krona HTML
-        from snakemake import shell
 
         kraken_html = self.output_directory / "kraken.html"
         status = self.kr.kraken_to_krona(output_filename=prefix / "kraken.out.summary")
@@ -909,6 +920,12 @@ class KrakenAnalysis(object):
         :param str output_filename_unclassified: not compressed
 
         """
+        if not shutil.which("kraken2"):  # pragma: no cover
+            logger.error(
+                "kraken2 executable not found. Please install it with conda or the method of your choice. We also provide kraken2 within damona.readthedocs.io "
+            )
+            sys.exit(1)
+
         if self.database.version != "kraken2":
             logger.error(f"input database is not valid kraken2 database")
             sys.exit(1)
@@ -993,7 +1010,6 @@ class KrakenAnalysis(object):
 
         command = command % params
         logger.debug(command)
-        from snakemake import shell
 
         shell(command)
 
