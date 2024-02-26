@@ -15,6 +15,7 @@
 import colorlog
 from adjustText import adjust_text
 
+from sequana.lazy import numpy as np
 from sequana.lazy import pylab
 from sequana.viz import clusterisation
 
@@ -42,12 +43,16 @@ class PCA(clusterisation.Cluster):
             "B1": 'b', "B2": 'b', 'B3': 'b'})
         p.plot(n_components=2)
 
+
+        From R, a PCA is selecting the first 500 features based on variance.
+
+
     """
 
     def __init__(self, data, colors={}):
         super(PCA, self).__init__(data, colors)
 
-    def plot_pca_vs_max_features(self, step=100, n_components=2, progress=True):
+    def plot_pca_vs_max_features(self, step=100, n_components=2, transform="log"):
         """
 
         .. plot::
@@ -72,15 +77,10 @@ class PCA(clusterisation.Cluster):
 
         # We start with at least 5 features
         X = range(10, N, step)
-        from easydev import Progress
-
-        pb = Progress(len(X))
         Y = []
         for i, x in enumerate(X):
-            res = self.plot(n_components=n_components, max_features=x, show_plot=False)
+            res = self.plot(n_components=n_components, max_features=x, show_plot=False, transform=transform)
             Y.append(res)
-            if progress:
-                pb.animate(i + 1)
 
         sub = n_components
         pylab.subplot(sub, 1, 1)
@@ -119,23 +119,27 @@ class PCA(clusterisation.Cluster):
         :param transform: can be 'log' or 'anscombe', log is just log10. count
             with zeros, are set to 1
         """
-        assert transform in ["log", "anscombe"]
-
-        import numpy as np
         from sklearn.decomposition import PCA
 
         pylab.clf()
 
         pca = PCA(n_components)
 
-        data, kept = self.scale_data(transform_method=transform, max_features=max_features)
+        # scale the data
+        data = self.scale_data(transform_method=transform)
 
-        # in rare cases, with sparse feature count matrix, NA may be included
-        data[np.isnan(data)] = 0
+        # keep only top variable features
+        tokeep = data.std(axis=1).sort_values(ascending=False).index[0:max_features]
+        data = data.loc[tokeep]
 
         pca.fit(data.T)
 
-        Xr = pca.transform(self.scaler.fit_transform(self.df.loc[kept].T))
+        if transform == "standard":
+            # If scale data used a scaler, then we need to use it for the transformation
+            Xr = pca.transform(self.scaler.fit_transform(self.df.loc[tokeep].T))
+        else:
+            # otherwise, noting to do
+            Xr = pca.transform(self.df.loc[tokeep].T)
         self.Xr = Xr
 
         if switch_x:

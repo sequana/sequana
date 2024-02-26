@@ -1,5 +1,6 @@
 library(DESeq2)
 library(BiocParallel)
+library(limma)
 
 ### DEFAULTS
 ## Normalized counts using counts function in DESEQ (could use rlog and vst as well)
@@ -75,9 +76,9 @@ export_results = function(res, prefix, orderCol){
     if (orderCol != ''){
         res = res[order(res[,orderCol]), ]
     }
-    
-    
-    write.table(res, file=paste(prefix, 'degs_DESeq2.csv', sep="_"), row.names=TRUE, sep=",")
+
+
+    write.csv(res, file=paste(prefix, 'degs_DESeq2.csv', sep="_"), row.names=TRUE)
     return(res)
 }
 
@@ -99,9 +100,37 @@ export_counts = function(dds, outdir){
     norm_counts = counts(dds, normalized=TRUE)
     vst_counts = getVarianceStabilizedData(dds)
 
-    write.table(counts, paste(outdir, 'counts_raw.csv', sep="/"), sep=",")
-    write.table(norm_counts, paste(outdir, 'counts_normed.csv', sep="/"), sep=",")
-    write.table(vst_counts, paste(outdir, 'counts_vst_norm.csv', sep="/"), sep=",")
+    write.csv(counts, paste(outdir, 'counts_raw.csv', sep="/"), row.names=TRUE)
+    write.csv(norm_counts, paste(outdir, 'counts_normed.csv', sep="/"), row.names=TRUE)
+    write.csv(vst_counts, paste(outdir, 'counts_vst_norm.csv', sep="/"), row.names=TRUE)
+
+
+    if (grepl("batch", "{{model}}" )) {
+
+        # vst is used here for simplicity, difference with getVarianceStabilizedData ?
+        vsd <- vst(dds)
+        assay(vsd) <- limma::removeBatchEffect(assay(vsd), vsd$batch)
+
+        # remove X first character
+        vsd_df <- as.data.frame(assay(vsd))
+        colnames(vsd_df) <- sub("^X", "", colnames(vsd_df))
+
+        write.table(vsd_df, paste(outdir, "counts_vst_batch.csv", sep="/"), sep=",", row.names = TRUE)
+
+        # also for simplicity, let us save the PDF/PNG of the corrected PCA for comparisons with sequana
+        #pdf(paste("{{images_dir}}", "pca_batch.pdf", sep="/"))
+        #plotPCA(vsd, intgroup=c("condition"))
+        #dev.off()
+        png(paste("{{images_dir}}",  "pca_batch.png", sep="/"))
+        plotPCA(vsd, intgroup=c("condition"))
+        #dev.off()
+    } else {
+        # if no batch included, let us delete the files. Indeed, if present, we 
+        # can include it in the HTML report
+        unlink(paste("{{images_dir}}", "pca_batch.pdf", sep="/"), force=TRUE)
+        unlink(paste("{{images_dir}}", "pca_batch.png", sep="/"), force=TRUE)
+        unlink(paste(outdir, "counts_vst_batch.csv", sep="/"), force=TRUE)
+    }
 }
 
 export_dds = function(dds, outdir){

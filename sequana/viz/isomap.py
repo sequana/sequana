@@ -74,7 +74,11 @@ class Isomap(clusterisation.Cluster):
 
         pylab.clf()
 
-        data, kept = self.scale_data(transform_method=transform, max_features=max_features)
+        data = self.scale_data(transform_method=transform)
+
+        # keep only top variable features
+        tokeep = data.std(axis=1).sort_values(ascending=False).index[0:max_features]
+        data = data.loc[tokeep]
 
         iso = Isomap(n_neighbors=n_neighbors, n_components=n_components)
         iso.fit(data.T)

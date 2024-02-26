@@ -357,7 +357,6 @@ class PacbioIsoSeqMappedIsoforms(object):
         else:
             query = "reference_length>0"
 
-        print(query)
         ts = self.df.query(query).groupby("reference_name").count().reference_length
         if len(ts) == 0:
             print("nothing to plot")

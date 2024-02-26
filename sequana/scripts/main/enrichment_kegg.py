@@ -217,4 +217,8 @@ def enrichment_kegg(**kwargs):
         command = " ".join(["sequana"] + sys.argv[1:])
         fout.write(command)
 
-    m.ke.save_pathways(f"{output_directory}/.sequana")
+    try:
+        m.ke.save_pathways(f"{output_directory}/.sequana")
+    except UnboundLocalError:
+        # If no comparisons was performed
+        pass
