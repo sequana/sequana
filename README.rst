@@ -247,6 +247,7 @@ Version   Description
           * count matrix and DESeq2 output files' headers fixed with missing index
             (no impact on analysis but only for those willing to use the CSV files
              in excel)
+          * Taxonomy revisited to save taxonomy.dat in gzipped CSV format.
 0.16.8    * update IEM for more testing
           * better handling of error in RNADiff
           * Add new methods for ribodesigner
