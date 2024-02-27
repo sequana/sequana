@@ -141,7 +141,7 @@ def check_databases(ctx, param, value):
     type=click.STRING,
     cls=OptionEatAll,
     callback=check_databases,
-    help="Path to a valid Kraken database(s). If you do not have any, use the --download option (only a toy database is available for now). You may use several databases , in which case, a sequential taxonomy is performed as explained in the online sequanadocumentation (see HierarchicalKraken)"
+    help="Path to a valid Kraken database(s). If you do not have any, use the --download option (only a toy database is available for now). You may use several databases , in which case, a sequential taxonomy is performed as explained in the online sequana documentation (see HierarchicalKraken)"
     "",
 )
 @click.option(
