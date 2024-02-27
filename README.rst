@@ -246,7 +246,7 @@ Version   Description
 0.16.9    * Major fix on PCA and add batch effect plots in RNAdiff analysis
           * count matrix and DESeq2 output files' headers fixed with missing index
             (no impact on analysis but only for those willing to use the CSV files
-             in excel)
+            in excel)
           * Taxonomy revisited to save taxonomy.dat in gzipped CSV format.
 0.16.8    * update IEM for more testing
           * better handling of error in RNADiff
