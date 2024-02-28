@@ -93,10 +93,9 @@ class PhixModule(SequanaBaseModule):  # pragma: no cover (used in sequana_qualit
         return data
 
     def _get_html_summary_section(self):
-        from easydev import precision
 
         data = self._get_summary()
-        html = "Percentage of reads found with Phix: %s %%<br>" % precision(data["contamination"], 3)
+        html = "Percentage of reads found with Phix: %s %%<br>" % round(data["contamination"], 3)
         # html += "Unpaired: %s <br>" % data['unpaired']
         # html += "duplicated: %s <br>" % data['duplicated']
         return html

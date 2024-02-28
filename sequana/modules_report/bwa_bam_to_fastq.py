@@ -55,12 +55,11 @@ class BWABAMtoFastQModule(SequanaBaseModule):
         self.add_stats()
 
     def _get_html_stats(self):
-        from easydev import precision
 
         from sequana.tools import StatsBAM2Mapped
 
         data = StatsBAM2Mapped(self.directory + "bwa_mem_stats.json").data
-        html = "Reads with Phix: %s %%<br>" % precision(data["contamination"], 3)
+        html = "Reads with Phix: %s %%<br>" % round(data["contamination"], 3)
 
         # add HTML table
         if "R2_mapped" in data.keys():

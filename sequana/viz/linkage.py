@@ -18,7 +18,6 @@
 """Heatmap and dendograms"""
 import warnings
 
-import easydev
 import scipy.cluster.hierarchy as hierarchy
 import scipy.spatial.distance as distance
 
@@ -63,7 +62,8 @@ class Linkage(object):
         pass
 
     def check_metric(self, value):
-        easydev.check_param_in_list(value, self.metrics)
+        if value not in self.metrics:
+            raise ValueError(f"value {value} must be in {self.metrics}")
 
     def check_method(self, value):
         # None is possible
@@ -71,7 +71,8 @@ class Linkage(object):
         # median and ward
         # there are  ward.D, wardD2 and mcquitty
         # default is complete
-        easydev.check_param_in_list(str(value), self.methods)
+        if value not in self.methods:
+            raise ValueError(f"value {value} must be in {self.methods}")
 
     def linkage(self, df, method, metric):
         self.check_metric(metric)
