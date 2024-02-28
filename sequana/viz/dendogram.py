@@ -16,12 +16,9 @@
 ##############################################################################
 """Heatmap and dendograms"""
 import colormap
-import easydev
-import scipy.cluster.hierarchy as hierarchy
-import scipy.spatial.distance as distance
 
 from sequana.lazy import numpy as np
-from sequana.lazy import pylab, scipy
+from sequana.lazy import pylab
 from sequana.viz.linkage import Linkage
 
 __all__ = ["Dendogram"]
@@ -94,7 +91,11 @@ class Dendogram(Linkage):
 
         # some default parameters
         self.cluster_criterion = "distance"
-        self.params = easydev.AttrDict()
+
+        class Params:
+            pass
+
+        self.params = Params()
         self.params.side_colors = ["r", "g", "b", "y", "w", "k", "m"]
         self.params.cmap = cmap
 
@@ -156,6 +157,7 @@ class Dendogram(Linkage):
 
         """
         import matplotlib
+        import scipy.cluster.hierarchy as hierarchy
 
         # save all parameters in a dict
         layout = {}
