@@ -4,11 +4,11 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "sequana"
-version = "0.16.9"
+version = "0.16.10"
 description = "A set of standalone application and pipelines dedicated to NGS analysis"
 authors = ["Thomas Cokelaer <thomas.cokelaer@pasteur.fr>"]
 license = "new BSD"
-readme = ["README.rst", "LICENSE"]
+readme = "README.rst"
 keywords = ["snakemake", "sequana", "NGS"]
 classifiers = [
         "Development Status :: 5 - Production/Stable",
@@ -136,8 +136,3 @@ sphinx = ">3"
 sphinx-rtd-theme = "^2.0.0"
 sphinx-gallery = "^0.15.0"
 sequana-sphinxext = "^1.0.0"
-#docutils = "^0.20.1"
-
-
-
-
