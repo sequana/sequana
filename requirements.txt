@@ -26,5 +26,4 @@ snakemake>=7.16,<8
 statsmodels
 tqdm
 UpSetPlot
-vcfpy
 xlrd
