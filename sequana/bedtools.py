@@ -1586,42 +1586,6 @@ class ChromosomeCov(object):
         gc.collect()
         return C
 
-    def get_max_gc_correlation(self, guess=100):
-        """Plot correlation between coverage and GC content by varying the GC window
-
-        The GC content uses a moving window of size W. This parameter affects
-        the correlation bewteen coverage and GC. This function find the
-        *optimal* window length.
-
-        """
-        from scipy.optimize import fmin
-
-        pylab.clf()
-        corrs = []
-        wss = []
-
-        def func(params):
-            ws = int(round(params[0]))
-            if ws < 10:
-                return 0
-
-            self._compute_gc_content(ws)
-            corr = self.get_gc_correlation()
-            corrs.append(corr)
-            wss.append(ws)
-            return corr
-
-        res = fmin(func, guess, xtol=1, disp=False)  # guess is 200
-        pylab.plot(wss, corrs, "o")
-        pylab.xlabel("GC window size")
-        pylab.ylabel("Correlation")
-        pylab.grid()
-
-        # reset to the default value
-        self._compute_gc_content()
-
-        return res[0]
-
     def _get_hist_data(self, bins=30):
         data = self.df["cov"].dropna()
         m = data.quantile(0.01)
