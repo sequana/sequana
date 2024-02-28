@@ -91,9 +91,7 @@ class FindMotif:
 
         data = FastA(filename)
         N = len(data)
-        from easydev import Progress
 
-        pb = Progress(N)
         df = {"query_name": [], "hit": [], "length": [], "start": [], "end": []}
         for i, item in enumerate(data):
             X1, S = self.find_motif_from_sequence(item.sequence, motif, window=window, local_threshold=local_threshold)
@@ -103,7 +101,6 @@ class FindMotif:
                 df["end"].append(len(item.sequence))
                 df["length"].append(len(item.sequence))
                 df["hit"].append(S)
-            pb.animate(i + 1)
         df = pd.DataFrame(df)
         return df
 
