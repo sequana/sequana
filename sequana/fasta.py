@@ -16,10 +16,9 @@ import textwrap
 
 import colorlog
 import tqdm
-from pysam import FastxFile
 
 from sequana.lazy import numpy as np
-from sequana.lazy import pylab
+from sequana.lazy import pylab, pysam
 from sequana.stats import L50, N50
 
 logger = colorlog.getLogger(__name__)
@@ -58,7 +57,7 @@ class FastA:
     """
 
     def __init__(self, filename, verbose=False):
-        self._fasta = FastxFile(filename)
+        self._fasta = pysam.FastxFile(filename)
         self.filename = filename
         self._N = None
 
@@ -77,38 +76,38 @@ class FastA:
             # This should allow developers to break a loop that takes too long
             # through the reads to run forever
             self._fasta.close()
-            self._fasta = FastxFile(self._fasta.filename)
+            self._fasta = pysam.FastxFile(self._fasta.filename)
         except:
             self._fasta.close()
-            self._fasta = FastxFile(self._fasta.filename)
+            self._fasta = pysam.FastxFile(self._fasta.filename)
             raise StopIteration
 
     def __len__(self):
         if self._N is None:
             logger.debug("Reading input fasta file...please wait")
-            self._N = sum(1 for x in FastxFile(self.filename))
+            self._N = sum(1 for x in pysam.FastxFile(self.filename))
         return self._N
 
     def _get_names(self):
-        _fasta = FastxFile(self.filename)
+        _fasta = pysam.FastxFile(self.filename)
         return [this.name for this in _fasta]
 
     names = property(_get_names)
 
     def _get_sequences(self):
-        _fasta = FastxFile(self.filename)
+        _fasta = pysam.FastxFile(self.filename)
         return [this.sequence for this in _fasta]
 
     sequences = property(_get_sequences)
 
     def _get_comment(self):
-        _fasta = FastxFile(self.filename)
+        _fasta = pysam.FastxFile(self.filename)
         return [this.comment for this in _fasta]
 
     comments = property(_get_comment)
 
     def _get_lengths(self):
-        _fasta = FastxFile(self.filename)
+        _fasta = pysam.FastxFile(self.filename)
         return [len(this.sequence) for this in _fasta]
 
     lengths = property(_get_lengths)
@@ -236,7 +235,7 @@ class FastA:
             cherries = N
         elif isinstance(N, list):
             cherries = set(N)
-        fasta = FastxFile(self.filename)
+        fasta = pysam.FastxFile(self.filename)
 
         with open(output_filename, "w") as fh:
             for i, read in enumerate(tqdm.tqdm(fasta)):

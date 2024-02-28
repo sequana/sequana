@@ -96,10 +96,6 @@ class Salmon:
         strands = dd["strand"].values
         seqids = dd["seqid"].values
 
-        from easydev import Progress
-
-        pb = Progress(len(counts_on_genes))
-
         S = 0
 
         logger.info("Grouping")
@@ -107,7 +103,7 @@ class Salmon:
         efflength_null = df.groupby("Gene").apply(lambda group: group["EffectiveLength"].mean())
 
         groups = df.groupby("Gene")
-        for i, name in enumerate(counts_on_genes.index):
+        for i, name in tqdm.tqdm(enumerate(counts_on_genes.index)):
             # Since we use ID, there should be only one hit. we select the first
             # one to convert to a Series
 
@@ -134,7 +130,6 @@ class Salmon:
                 results += f"\n{name}\t{seqid}\t{start}\t{stop}\t{strand}\t{length}\t{NumReads}"
             else:
                 pass
-            pb.animate(i)
         return results
         """
 
