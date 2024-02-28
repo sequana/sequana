@@ -15,7 +15,6 @@ import subprocess
 from collections import Counter, deque
 
 import colorlog
-from easydev import do_profile
 
 from sequana.fasta import FastA
 from sequana.lazy import numpy as np
@@ -262,7 +261,6 @@ class DNA(Sequence):
                 cumul[self._dict_nuc[nuc]][j] += 1
         self._cumul = cumul
 
-    # @do_profile()
     def _compute_skews(self):
         ### initialisation =  Calculating GC skew and AT skew for first window
         self._init_sliding_window()
