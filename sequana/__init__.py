@@ -79,3 +79,4 @@ from .running_median import RunningMedian
 from .sequence import DNA, RNA, Repeats, Sequence
 from .snpeff import SnpEff
 from .trf import TRF
+from .variants import VariantFile

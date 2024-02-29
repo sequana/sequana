@@ -2,7 +2,10 @@ import filecmp
 
 import pytest
 
-from sequana.freebayes import VCF_freebayes
+from sequana.freebayes_vcf_filter import VCF_freebayes
+
+# just to import this alias
+from sequana.variants import VariantFile
 
 from . import test_dir
 

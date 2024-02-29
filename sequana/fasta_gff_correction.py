@@ -15,10 +15,10 @@ import textwrap
 from collections import defaultdict
 
 import colorlog
-from pysam import FastxFile
 
-from sequana import GFF3, Codon, FastA, VCF_freebayes
+from sequana import GFF3, Codon, FastA, VariantFile
 from sequana.lazy import pandas as pd
+from sequana.lazy import pysam
 
 logger = colorlog.getLogger(__name__)
 
@@ -47,7 +47,7 @@ class FastaGFFCorrection:
     def __init__(self, fasta_file, vcf_file):
         self._fasta_file = fasta_file
 
-        self.vcf = VCF_freebayes(vcf_file)
+        self.vcf = VariantFile(vcf_file)
 
         self.shifts = None
         self.positions = None
@@ -66,13 +66,13 @@ class FastaGFFCorrection:
         """
 
         # initiate the fasta file
-        self._fasta = FastxFile(self._fasta_file)
+        self._fasta = pysam.FastxFile(self._fasta_file)
 
         # read the variants once for all
-        variants = self.vcf.get_variants()
+        variants = self.vcf.variants
 
         # and build a convenient dataframe
-        df_vcf = pd.DataFrame([v.resume for v in variants])
+        df_vcf = self.vcf.df
 
         # let us make sure the positions are integers
         df_vcf["position"] = [int(x) for x in df_vcf.position]
@@ -151,12 +151,12 @@ class FastaGFFCorrection:
 
         .. todo:: multiple contig is not yet implemented"""
         # initiate the original fasta file
-        fasta = FastxFile(self._fasta_file)
+        fasta = pysam.FastxFile(self._fasta_file)
         contig = next(fasta)
         L = len(contig.sequence)
 
         # reads the corrected fasta
-        corfasta = FastxFile(fasta_corrected)
+        corfasta = pysam.FastxFile(fasta_corrected)
         contig = next(corfasta)
         chrom_name = contig.name
         corseq = contig.sequence
