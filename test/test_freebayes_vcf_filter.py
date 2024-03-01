@@ -4,6 +4,9 @@ import pytest
 
 from sequana.freebayes_vcf_filter import VCF_freebayes
 
+# just to import this alias
+from sequana.variants import VariantFile
+
 from . import test_dir
 
 sharedir = f"{test_dir}/data/vcf/"
@@ -59,10 +62,10 @@ def test_to_csv(tmpdir):
 
 def test_variant():
     v = VCF_freebayes(f"{sharedir}/JB409847.vcf")
-    variants = v.get_variants()
+    variants = v.variants
     assert len(variants) == 64
     print(variants[0])
 
     v = VCF_freebayes(f"{sharedir}/test_vcf_snpeff.vcf")
-    variants = v.get_variants()
+    variants = v.variants
     assert len(variants) == 775

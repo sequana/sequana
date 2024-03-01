@@ -16,7 +16,7 @@ import glob
 import colorlog
 
 from sequana import BAM
-from sequana.freebayes_vcf_filter import Variant, VCF_freebayes
+from sequana.freebayes_vcf_filter import VCF_freebayes
 
 logger = colorlog.getLogger(__name__)
 
@@ -33,7 +33,7 @@ class Consensus:
 
         if freebayes is not None:
             v = VCF_freebayes(freebayes)
-            self.variants = [Variant(x) for x in v if x]
+            self.variants = v.variants
         else:
             self.variants = []
 

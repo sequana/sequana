@@ -141,7 +141,7 @@ class NCBITaxonomy:
                 fout.write(f"{taxid},{row.parent},{row['rank']},{sc}\n")
 
         # second, we gzip it. input must be read as binary
-        logger.info("Compressing CSV fike")
+        logger.info("Compressing CSV file")
         with filename.with_suffix("").open(mode="rb") as fin:
             bindata = fin.read()
             with gzip.open(filename, "wb") as f:
@@ -193,7 +193,7 @@ class Taxonomy(metaclass=Singleton):
 
     Since version 0.8.3 we use NCBI that is updated more often than the ebi
     ftp according to their README. ftp://ncbi.nlm.nih.gov/pub/taxonomy/
-    We use Ensemble to retrieve various information regarding taxons.
+    We use Ensembl to retrieve various information regarding taxons.
     """
 
     def __init__(self, filename=None, verbose=True, online=True, source="ncbi"):

@@ -16,7 +16,6 @@ import sys
 from pathlib import Path
 
 import colorlog
-from easydev import Progress
 from plotly import offline
 
 from sequana.enrichment.panther import PantherEnrichment

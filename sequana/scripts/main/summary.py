@@ -103,11 +103,12 @@ def summary(**kwargs):
             print("#Number of duplicated attribute (if any) per attribute:")
             ff.get_duplicated_attributes_per_genetic_type()
     elif module == "vcf":
-        from sequana.freebayes_vcf_filter import VCF_freebayes
+        from sequana.variants import VariantFile
 
         for filename in names:
             print(f"#filename: {filename}")
-            vcf = VCF_freebayes(filename)
+            vcf = VariantFile(filename, progress=True)
+            df = vcf.df
             columns = (
                 "chr",
                 "position",
@@ -118,7 +119,4 @@ def summary(**kwargs):
                 "strand_balance",
                 "frequency",
             )
-            print(",".join(columns))
-            for variant in vcf.get_variants():
-                resume = variant.resume
-                print(",".join([str(resume[col]) for col in columns]))
+            print(df)

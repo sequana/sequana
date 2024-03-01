@@ -172,8 +172,6 @@ def test_gc_content():
     with TempFile() as fh:
         ch.to_csv(fh.name)
 
-    ch.get_max_gc_correlation()
-
 
 def test_ChromosomeCovMultiChunk():
     filename = f"{test_dir}/data/bed/JB409847.bed"

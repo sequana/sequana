@@ -15,14 +15,12 @@ import io
 import json
 import os
 import re
+import shutil
 import string
 import subprocess
 from collections import Counter
 
 import colorlog
-from easydev import precision
-from easydev.misc import cmd_exists
-from pysam import FastxFile
 from tqdm import tqdm
 
 from sequana.bamtools import BAM
@@ -62,7 +60,7 @@ class StatsBAM2Mapped:
     def to_html(self):
         data = self.data
 
-        html = "Reads with Phix: %s %%<br>" % precision(data["contamination"], 3)
+        html = "Reads with Phix: %s %%<br>" % round(data["contamination"], 3)
 
         # add HTML table
         if "R2_mapped" in data.keys():
@@ -314,7 +312,7 @@ def fast_gc_content(chrom):
 
 def _base_content(filename, window_size, letters, circular=False):
     # DOC: see gc_content
-    fasta = FastxFile(filename)
+    fasta = pysam.FastxFile(filename)
     checker = set(letters)
     chrom_gc_content = dict()
     for chrom in fasta:
@@ -449,7 +447,7 @@ class GZLineCounter(object):
 
     def __init__(self, filename):
         self.filename = filename
-        if cmd_exists("zcat"):
+        if shutil.which("zcat"):
             self.use_zcat = True
         else:  # pragma: no cover
             self.use_zcat = False

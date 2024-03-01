@@ -15,15 +15,10 @@
 #
 ##############################################################################
 """Heatmap and dendograms"""
-import easydev
-
-# FIXME speed up this import
-import scipy.cluster.hierarchy as hierarchy
-import scipy.spatial.distance as distance
 
 from sequana.lazy import numpy as np
 from sequana.lazy import pandas as pd
-from sequana.lazy import pylab, scipy
+from sequana.lazy import pylab
 from sequana.viz.linkage import Linkage
 
 __all__ = ["Heatmap", "Clustermap"]
@@ -290,7 +285,11 @@ class Heatmap(Linkage):
 
         # some default parameters
         self.cluster_criterion = "distance"
-        self.params = easydev.AttrDict()
+
+        class Params:
+            pass
+
+        self.params = Params()
         self.params.col_side_colors = ["r", "g", "b", "y", "w", "k", "m"]
         self.params.row_side_colors = ["r", "g", "b", "y", "w", "k", "m"]
         self.params.cmap = cmap
@@ -390,6 +389,8 @@ class Heatmap(Linkage):
 
 
         """
+        import scipy.cluster.hierarchy as hierarchy
+
         # save all parameters in a dict
         layout = {}
 

@@ -16,7 +16,6 @@ import sys
 from pathlib import Path
 
 import colorlog
-from easydev import Progress
 
 from sequana.lazy import pandas as pd
 from sequana.lazy import pylab

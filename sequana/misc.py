@@ -58,7 +58,6 @@ def wget(link, output):
     :param str output: the output filename
 
     .. warning:: no sanity check of any kind for now
-    .. todo:: move to easydev
     """
     try:
         from urllib import urlretrieve

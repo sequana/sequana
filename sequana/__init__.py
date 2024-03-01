@@ -55,7 +55,6 @@ from .enrichment.panther import PantherEnrichment
 from .fasta import FastA
 from .fastq import FastQ, FastQC, Identifier
 from .featurecounts import FeatureCount
-from .freebayes_bcf_filter import BCF_freebayes
 from .freebayes_vcf_filter import VCF_freebayes
 from .gff3 import GFF3
 from .homer import Homer
@@ -80,3 +79,4 @@ from .running_median import RunningMedian
 from .sequence import DNA, RNA, Repeats, Sequence
 from .snpeff import SnpEff
 from .trf import TRF
+from .variants import VariantFile

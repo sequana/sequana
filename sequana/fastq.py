@@ -20,7 +20,6 @@ from functools import wraps
 from itertools import islice
 
 import pysam
-from easydev import Progress
 from tqdm import tqdm
 
 from sequana.lazy import numpy as np
@@ -945,15 +944,13 @@ class FastQC(object):
 
         total_length = 0
         C = defaultdict(int)
-        if self.verbose:
-            pb = Progress(self.N)
 
         sequences = []
         mean_qualities = []
         qualities = []
 
         ff = pysam.FastxFile(self.filename)
-        for i, record in enumerate(ff):
+        for i, record in tqdm(enumerate(ff), disable=not self.verbose):
             if i < self.skip_nrows:
                 continue
             if i > self.max_sample + self.skip_nrows:
@@ -986,9 +983,6 @@ class FastQC(object):
             stats["N"] += record.sequence.count("N")
 
             total_length += len(record.sequence)
-
-            if self.verbose:
-                pb.animate(i + 1)
 
         # other data
         self.qualities = qualities
