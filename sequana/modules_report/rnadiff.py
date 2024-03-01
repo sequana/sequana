@@ -266,7 +266,7 @@ variance stabilization); the first 500 most variable genes were selected. </p>""
             fig = self.rnadiff.plot_pca(n_components=3, plotly=True, count_mode="vst_batch")
             html_pca_plotly += offline.plot(fig, output_type="div", include_plotlyjs=False)
         except Exception:
-            html_pca += f"""{image}<hr>"""
+            html_pca += f"""{image1}<hr>"""
             fig = self.rnadiff.plot_pca(n_components=3, plotly=True)
             html_pca_plotly += offline.plot(fig, output_type="div", include_plotlyjs=False)
             pass
@@ -505,7 +505,7 @@ value as a function of the log2 ratio of diﬀerential expression. </p>"""
         try:
             df = pd.concat([df, self.rnadiff.annotation.loc[[str(x) for x in comp.df.index]]], axis=1)
         except Exception as err:
-            logger.critical(f"Could not add annotation. {err}")
+            logger.critical(f"Could not add annotation. {err}. annotation skipped")
 
         df = df.reset_index()
 

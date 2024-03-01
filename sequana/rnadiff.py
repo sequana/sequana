@@ -326,7 +326,11 @@ Design overview:\n\
                 low_memory=False,
             )
         except ValueError:  # pragma: no cover
-            counts = FeatureCount(self.usr_counts).df
+            try:
+                counts = FeatureCount(self.usr_counts).df
+            except:
+                # could read any CSV file (useful with simulated data)
+                counts = pd.read_csv(self.usr_counts)
 
         Ncounts = len(counts)
         logger.info(f"Found {Ncounts} counts. ")
@@ -425,7 +429,7 @@ or comparisons. possible values are {valid_conditions}"""
                 if msg[0] in data:
                     logger.critical(msg[0] + msg[1])
 
-        logger.info("DGE analysis done.")
+        logger.info("DGE analysis done. Processing the results")
         results = RNADiffResults(
             self.outdir,
             condition=self.condition,
@@ -759,8 +763,15 @@ class RNADiffResults:
                 logger.warning("Since you provided a GFF file you must provide the feature and attribute to be used.")
             self.annotation = self.read_annot(gff)
         else:
-            annots = pd.read_csv(self.path / "rnadiff.csv", index_col=0, header=[0, 1])
-            self.annotation = annots.loc[:, "annotation"]
+
+            try:
+                annots = pd.read_csv(self.path / "rnadiff.csv", index_col=0, header=[0, 1])
+                self.annotation = annots.loc[:, "annotation"]
+            except Exception as err:
+                logger.warning(
+                    "annotation from input GFF or existing rnadiff.csv not available. No annotaion will be used."
+                )
+                self.annotation = None
 
         # some filtering attributes
         self._alpha = alpha
@@ -824,8 +835,8 @@ class RNADiffResults:
         :param gff: a input GFF filename or an existing instance of GFF3
         """
 
-        # if gff is already instanciate, we can just make a copy otherwise
-        # we read it indeed.
+        # if gff is already instanciated, we can just make a copy. Otherwise
+        # we read it.
         if not hasattr(gff, "df"):
             gff = GFF3(gff)
 
@@ -906,7 +917,8 @@ class RNADiffResults:
             df = df.droplevel(0, axis=1)
 
             # Let us add the annotation columns
-            df = pd.concat([df, self.annotation.loc[df.index]], axis=1)
+            if self.annotation is not None:
+                df = pd.concat([df, self.annotation.loc[df.index]], axis=1)
 
             fc_filt = df["log2FoldChange"].abs() >= self._log2_fc
             fdr_filt = df["padj"] <= self._alpha
@@ -1143,6 +1155,8 @@ class RNADiffResults:
         elif count_mode == "vst_batch":
             if self.counts_vst_batch is not None:
                 counts = self.counts_vst_batch
+        else:
+            logger.error("count_mode must be vst or vst_batch")
 
         # let us use filter out genes to be ignored
         top_features = counts.index
@@ -1220,10 +1234,6 @@ class RNADiffResults:
         from sequana.viz.mds import MDS
 
         p = MDS(self.counts_vst)  # [self.sample_names])
-        # if colors is None:
-        #    colors = {}
-        #    for sample in self.sample_names:
-        #        colors[sample] = self.colors[self.get_cond_from_sample(sample)]
         p.plot(n_components=n_components, colors=self.design_df.group_color, clf=clf)
 
     def plot_isomap(self, n_components=2, colors=None):
@@ -1232,10 +1242,6 @@ class RNADiffResults:
         from sequana.viz.isomap import Isomap
 
         p = Isomap(self.counts_vst)
-        # if colors is None:
-        #    colors = {}
-        #    for sample in self.sample_names:
-        #        colors[sample] = self.colors[self.get_cond_from_sample(sample)]
         p.plot(n_components=n_components, colors=self.design_df.group_color)
 
     def plot_density(self):
@@ -1283,6 +1289,7 @@ class RNADiffResults:
         pylab.legend()
 
         self._format_plot(title="", xlabel="Most expressed genes", ylabel="Percentage (%)")
+
         pylab.xticks(range(0, len(subdf)), subdf.index, rotation=90)
         try:
             pylab.gcf().set_layout_engine("tight")
@@ -1524,7 +1531,7 @@ class RNADiffResults:
         logger.info(f"Using {len(data)} DGE genes")
 
         # replace the indices with the proper annotation if required.
-        if annotation_column:
+        if self.annotation and annotation_column:
             data = self._replace_index_with_annotation(data, annotation_column)
             counts.index = data.index
 
