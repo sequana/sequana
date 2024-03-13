@@ -19,6 +19,7 @@ import rich_click as click
 
 from sequana.modules_report import ModuleKEGGEnrichment
 from sequana.rnadiff import RNADiffResults
+from sequana.scripts.common import teardown
 from sequana.scripts.utils import CONTEXT_SETTINGS, common_logger
 from sequana.utils import config
 
@@ -121,6 +122,7 @@ def enrichment_kegg(**kwargs):
 
 
     """
+
     logger.setLevel(kwargs["logger"])
 
     keggname = kwargs["kegg_name"]
@@ -194,6 +196,7 @@ def enrichment_kegg(**kwargs):
 
         config.output_dir = f"{output_directory}/{compa}"
         os.makedirs(f"{output_directory}", exist_ok=True)
+        teardown(output_directory)
 
         # we define the data and its annotation that will be used by the KEGG
         # enrichment. No need to apply any filter, we pass the entire data set

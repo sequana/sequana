@@ -232,12 +232,23 @@ applied for the enrichment analysis, genes not passing the threshold will not be
 
             files = []
             logger.info(f"Saving {len(df)} pathways")
+
+            def _run(ID):
+                plot_file = self.plot_directory / f"{ID}.png"
+                df = self.ke.save_pathway(ID, self.data, filename=plot_file)
+
             for ID in tqdm(df["pathway_id"], desc=f"Processing category {category}"):
                 plot_file = self.plot_directory / f"{ID}.png"
-                df_pathways = self.ke.save_pathway(ID, self.data, filename=plot_file)
+                # df_pathways = self.ke.save_pathway(ID, self.data, filename=plot_file)
                 # Files path should be relative to the location of the enrichment.html file
                 # ie relative to self.output_dir (.parents[1] here)
                 files.append(plot_file.relative_to(plot_file.parents[1]))
+
+            from multiprocessing.pool import ThreadPool as Pool
+
+            with Pool(4) as p:
+                results = p.map(_run, list(df["pathway_id"]))
+
             fotorama = self.add_fotorama(files, width=800)
 
             datatable = DataTable(df, f"kegg_{category}")
