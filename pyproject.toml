@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "sequana"
-version = "0.16.10"
+version = "0.16.11"
 description = "A set of standalone application and pipelines dedicated to NGS analysis"
 authors = ["Thomas Cokelaer <thomas.cokelaer@pasteur.fr>"]
 license = "new BSD"
