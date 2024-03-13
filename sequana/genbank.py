@@ -14,7 +14,6 @@ import re
 
 import colorlog
 
-from sequana.annotation import Annotation
 from sequana.fasta import FastA
 
 logger = colorlog.getLogger(__name__)
@@ -23,7 +22,7 @@ logger = colorlog.getLogger(__name__)
 __all__ = ["GenBank"]
 
 
-class GenBank(Annotation):
+class GenBank:
     """This class reads a Genbank file
 
     This is kept for back compatibility but most code in Sequana
@@ -38,7 +37,10 @@ class GenBank(Annotation):
     """
 
     def __init__(self, filename, skip_types=["biological_region"]):
-        super().__init__(filename, skip_types=skip_types)
+        self.filename = filename
+        self._df = None
+        self._features = None
+        self.skip_types = skip_types
 
     # property from parent class
     def _get_features(self):
