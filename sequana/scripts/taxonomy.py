@@ -32,6 +32,7 @@ from sequana import sequana_config_path as cfg
 from sequana import sequana_config_path as scfg
 from sequana import version as sequana_version
 from sequana.modules_report.kraken import KrakenModule
+from sequana.scripts.common import teardown
 from sequana.taxonomy import Taxonomy
 from sequana.utils import config
 
@@ -293,6 +294,7 @@ def main(**kwargs):
 
     logger.info(f"Open ./{options.directory}/summary.html")
     logger.info(f"or ./{options.directory}/kraken/kraken.html")
+    teardown(options.directory)
 
 
 if __name__ == "__main__":
