@@ -423,7 +423,7 @@ class IEM:
 
         # Stop after first error
         for check in checks:
-            print(check)
+            # print(check)
             if check["status"] == "Error":
                 sys.exit("\u274C " + check["msg"])
 
