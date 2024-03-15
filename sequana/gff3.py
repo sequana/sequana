@@ -14,9 +14,7 @@ import os
 from collections import defaultdict
 
 import colorlog
-from deprecated import deprecated
 
-from sequana.annotation import Annotation
 from sequana.errors import BadFileFormat
 
 logger = colorlog.getLogger(__name__)
@@ -27,7 +25,7 @@ from sequana.lazy import pysam
 __all__ = ["GFF3"]
 
 
-class GFF3(Annotation):
+class GFF3:
     """Read a GFF file, version 3
 
 
@@ -52,7 +50,11 @@ class GFF3(Annotation):
     """
 
     def __init__(self, filename, skip_types=["biological_region"]):
-        super().__init__(filename, skip_types=skip_types)
+        self.filename = filename
+        self.skip_types = skip_types
+        self._df = None
+        self._features = None
+        self._attributes = None
 
     def _get_features(self):
         """Extract unique GFF feature types
@@ -368,89 +370,6 @@ class GFF3(Annotation):
             # replace " by nothing (GTF case)
             attributes[attr[:idx]] = value.replace('"', "").replace("%3B", ";").replace("%20", " ")
         return attributes
-
-    @deprecated(reason="Not used anymore.", version="0.16.0")
-    def create_files_for_rnadiff(
-        self,
-        outname,
-        genetic_type="gene",
-        ID="Name",
-        fields=["Name"],
-        merge_identical_id=True,
-    ):
-        """Creates two files required for the RNADiff analysis following
-        sequana_rnaseq pipeline
-
-        :param str outname: the output filename prefix
-        :param genetic_type: genetic type to be selected from the GFF file e.g.
-            gene (default), CDS, etc
-        :param ID: the identifier (key) to be selected from the list of
-            attributes found in the GFF for the given type. By default, 'Name'.
-            Used as first column in the two ouptut file.
-        :param fields: the fields to be save in the outname_info.tsv file
-        :param merge_identical_id: it may happen that the same gene **Name** has two
-            entries (e.g in e-coli with 2 unique IDs have the same name with an
-            annotation such as  partI and part II). If so, feature
-            counts is clever enough to deal with it. Here, we need to merge the
-            entries and sum the length together. Ideally, one should not use the
-            Name but ID or gene_id or locus_tag.
-        :return: nothing
-
-        This functions reads the GFF file and creates two files:
-
-        #. outname_gene_lengths.tsv contains column 1 with identifiers and
-           column 2 with length of the selected type (e.g. gene)
-        #. outname_info.tsv first column is the same identifier as in the first
-           file and following columns contain the fields of interest (Name by
-           default but could be any attributes to be found in the GFF such as
-           description
-
-        """
-        tokeep = []
-        for entry in self.read():
-            if genetic_type == entry["genetic_type"]:
-                tokeep.append(entry)
-
-        if len(tokeep) == 0:
-            raise ValueError("No genetic type {} was found".format(genetic_type))
-
-        df = pd.DataFrame(tokeep)
-
-        # FIXME surely this is now redundant since we have a loop above that
-        # performs the filtering already.
-        df = df.query("genetic_type==@genetic_type").copy()
-
-        # HERE we could check that ID exists
-        # This file is required by the RNAdiff pipeline
-
-        identifiers = df.attributes.apply(lambda x: x[ID])
-        df["Gene_id"] = identifiers
-        df["Length"] = df.stop - df.start + 1
-
-        if merge_identical_id:
-            duplicated = df[df.Gene_id.duplicated()].Gene_id.drop_duplicates()
-            if len(duplicated):
-                logger.warning("Dropping {} duplicated {}(s)".format(len(duplicated), ID))
-
-            for name in duplicated.values:
-                S = df.query("Gene_id == @name").Length.sum()
-                items = df.query("Gene_id == @name").index
-                df.loc[items, "Length"] = S
-            df = df.drop_duplicates(subset=["Gene_id"])
-
-        df.sort_values("Gene_id")[["Gene_id", "Length"]].to_csv(
-            "{}_gene_lengths.tsv".format(outname), sep="\t", index=None
-        )
-
-        # Second file (redundant) is also required by the rnadiff pipeline
-        for this in fields:
-            data = df.attributes.apply(lambda x: x.get(this, "NA"))
-            df[this] = data
-
-        data = df.sort_values("Gene_id")[["Gene_id"] + fields]
-        data.to_csv("{}_info.tsv".format(outname), sep="\t", index=None)
-
-        return df
 
     def to_gtf(self, output_filename="test.gtf", mapper={"ID": "{}_id"}):
         # experimental . used by rnaseq pipeline to convert input gff to gtf,

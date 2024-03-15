@@ -24,6 +24,7 @@ def test_vcf_filter(tmpdir):
         "forward_depth": 3,
         "reverse_depth": 3,
         "strand_ratio": 0.3,
+        "keep_polymorphic": True,
     }
     filter_v = v.filter_vcf(filter_dict)
     assert len(filter_v.variants) == 24
@@ -51,6 +52,7 @@ def test_to_csv(tmpdir):
         "forward_depth": 3,
         "reverse_depth": 3,
         "strand_ratio": 0.3,
+        "keep_polymorphic": True,
     }
     v = VCF_freebayes(f"{sharedir}/JB409847.expected.vcf")
     filter_v = v.filter_vcf(filter_dict)

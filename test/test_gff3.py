@@ -8,6 +8,7 @@ from . import test_dir
 def test_wrong_input():
     try:
         gff = GFF3(f"{test_dir}/data/missing")
+        gff.df
         assert False
     except IOError:
         assert True

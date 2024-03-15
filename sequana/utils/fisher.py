@@ -41,8 +41,6 @@ def _maxn():
     return n
 
 
-LN10 = log(10)
-NINF = float("-inf")
 MAXN = _maxn()
 
 

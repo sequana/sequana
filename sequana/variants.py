@@ -33,9 +33,39 @@ class VariantFile:
 
     Reads a BCF or VCF or GZIPPED VCF
 
+    ::
+
+        v = VariantFile()
+
+    You can access to a list of all variants (unchanged from pysam) using::
+
+        vlist = v.variants
+
+    you may transform a variant into a dictionary that contains a subset of most important information
+    including SNPeff annotation (if available) using::
+
+        v._variant_to_dict(vlist[0])
+
+    A dataframe of all variants processed with this _variant_to_dict function is provided as an attribute::
+
+        v.df
+
+    Samples and contigs/chromosomes are available also as attributes::
+
+        v.samples
+        v.contigs
+        v.chromosomes # a synomym of v.contigs
+
+    There is a set of parameter to filter variants. To apply it, use the filter_vcf function.
+
+
+        fvcf = v.filter_vcf()
+
+
+
     """
 
-    def __init__(self, filename, progress=False):
+    def __init__(self, filename, progress=False, keep_polymorphic=True):
 
         self.filename = filename
 
@@ -46,6 +76,7 @@ class VariantFile:
             "forward_depth": 0,
             "reverse_depth": 0,
             "strand_ratio": 0,
+            "keep_polymorphic": keep_polymorphic,
         }
 
         # just to get the dataframe
@@ -69,7 +100,7 @@ class VariantFile:
         # do we used snpeff ?
         variant = next(_vcf)
         variant_dict = self._variant_to_dict(variant)
-        if "Efect_type" in variant_dict:
+        if "effect_type" in variant_dict:
             self._snpeff = True
 
     def _is_joint(self):
@@ -155,6 +186,9 @@ class VariantFile:
 
         strand_bal = compute_strand_balance(variant)
         if strand_bal[0] < self.filters_params["strand_ratio"]:
+            return False
+
+        if self.filters_params["keep_polymorphic"] is False and len(variant.alts) > 1:
             return False
 
         return True
@@ -317,7 +351,12 @@ class VariantFile:
 
 
 class FilteredVariantFile:
-    """Variants filtered with VCF_freebayes."""
+    """Variants filtered with VCF_freebayes.
+
+
+    Class kept for back compatiblity in wrappers and variant_calling pipeline
+
+    """
 
     def __init__(self, variants, fb_vcf):
         """.. rubric:: constructor

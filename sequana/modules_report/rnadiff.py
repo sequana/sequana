@@ -212,7 +212,7 @@ scale). Clicking on any of the link will lead you to the section of the comparis
 
         # save image in case of
         dendogram(f"{self.folder}/images/dendogram.png")
-        image1 = (self.create_embedded_png(dendogram, "filename", style=style),)
+        image1 = self.create_embedded_png(dendogram, "filename", style=style)
 
         if os.path.exists(f"{self.folder}/counts/counts_vst_batch.csv"):
 
@@ -226,12 +226,12 @@ samples. The dendogram itself is built using the <a
 href="https://en.wikipedia.org/wiki/Ward%27s_method"> Ward method </a>. The normed data was log-transformed first and at
 max 5,000 most variable features were selected.</p>"""
 
-        try:
+        if os.path.exists(f"{self.folder}/counts/counts_vst_batch.csv"):
             image2 = self.create_embedded_png(
                 dendogram, "filename", count_mode="vst_batch", transform="none", style=style
             )
             html_dendogram += f"""<p>A batch effect was included. Here is the corrected image</p>{image1}{image2}<hr>"""
-        except:
+        else:
             html_dendogram += f"""{image1}<hr>"""
 
         # =========== PCA
@@ -259,17 +259,15 @@ variance stabilization); the first 500 most variable genes were selected. </p>""
 
         html_pca_plotly = "<p>Here is a PCA showing the first 3 components in 3D.</p>"
 
-        try:
+        if os.path.exists(f"{self.folder}/counts/counts_vst_batch.csv"):
             image2 = self.create_embedded_png(pca, "filename", count_mode="vst_batch", style=style)
             html_pca += f"""<p>Note that a batch effect was included. </p>{image1}{image2}<hr>"""
-
             fig = self.rnadiff.plot_pca(n_components=3, plotly=True, count_mode="vst_batch")
             html_pca_plotly += offline.plot(fig, output_type="div", include_plotlyjs=False)
-        except Exception:
+        else:
             html_pca += f"""{image1}<hr>"""
             fig = self.rnadiff.plot_pca(n_components=3, plotly=True)
             html_pca_plotly += offline.plot(fig, output_type="div", include_plotlyjs=False)
-            pass
 
         self.sections.append(
             {
