@@ -33,7 +33,6 @@ __all__ = [
     "KrakenResults",
     "KrakenPipeline",
     "KrakenAnalysis",
-    "KrakenDownload",
     "KrakenSequential",
     "KrakenDB",
 ]
@@ -712,7 +711,7 @@ class KrakenPipeline(object):
         either download a database from https://ccb.jhu.edu/software/kraken/
         or use this class to download a toy example that will
         be stored in e.g .config/sequana under Unix platforms.
-        See :class:`KrakenDownload`.
+        See :class:`~sequana.kraken.downloads.KrakenDownload`.
 
     .. seealso:: We provide a standalone application of this class, which is
         called sequana_taxonomy and can be used within a command shell.
@@ -1317,56 +1316,3 @@ class KrakenSequential(object):
         return summary
 
 
-class KrakenDownload(object):
-    """Utility to download Kraken DB and place them in a local directory
-
-    ::
-
-        from sequana import KrakenDownload
-        kd = KrakenDownload()
-        kd.download('toydb')
-
-    """
-
-    def __init__(self, output_dir=None):
-        if output_dir is None:
-            self.output_dir = Path(f"{sequana_config_path}") / "kraken2_dbs"
-        else:
-            self.output_dir = Path(output_dir)
-
-    def download(self, name, verbose=True):
-        if name == "toydb":
-            self._download_kraken2_toydb(verbose=verbose)
-        else:
-            raise ValueError("name must be 'toydb' for now")
-
-    def _download_kraken2_toydb(self, verbose=True):
-        """Download the kraken DB toy example from sequana_data into
-        .config/sequana directory
-
-        Checks the md5 checksums. About 32Mb of data
-        """
-        base = self.output_dir / "toydb"
-        base.mkdir(exist_ok=True, parents=True)
-
-        baseurl = "https://github.com/sequana/data/raw/main/"
-
-        # download only if required
-        logger.info("Downloading the database into %s" % base)
-
-        md5sums = [
-            "31f4b20f9e5c6beb9e1444805264a6e5",
-            "733f7587f9c0c7339666d5906ec6fcd3",
-            "7bb56a0f035b27839fb5c18590b79263",
-        ]
-
-        filenames = ["hash.k2d", "opts.k2d", "taxo.k2d"]
-
-        for filename, md5sum in zip(filenames, md5sums):
-            url = baseurl + f"kraken2_toydb/{filename}"
-            filename = base / filename
-            if os.path.exists(filename) and md5(filename) == md5sum:
-                logger.warning(f"{filename} already present with good md5sum")
-            else:
-                logger.info(f"Downloading {url}")
-                wget(url, filename)

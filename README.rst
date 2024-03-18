@@ -40,14 +40,11 @@ SEQUANA
     Cokelaer et al, (2017), 'Sequana': a Set of Snakemake NGS pipelines, Journal of
     Open Source Software, 2(16), 352, `JOSS DOI doi:10.21105/joss.00352 <https://joss.theoj.org/papers/10.21105/joss.00352>`_
 
-    For the **genome coverage** tool (sequana_coverage):  Dimitri Desvillechabrol, Christiane Bouchier,
-    Sean Kennedy, Thomas Cokelaer. Sequana coverage: detection and characterization of genomic
-    variations using running median and mixture models. GigaScience, 7(12), 2018.
-    https://doi.org/10.1093/gigascience/giy110
-    Also available on bioRxiv (DOI: http://biorxiv.org/content/early/2016/12/08/092478)
+    For the **genome coverage** tool (sequana_coverage):  Desvillechabrol et al, 2018:
+    detection and characterization of genomic variations using running median and
+    mixture models. GigaScience, 7(12), 2018. https://doi.org/10.1093/gigascience/giy110
 
-    For **Sequanix**: Dimitri Desvillechabrol, Rachel Legendre, Claire Rioualen,
-    Christiane Bouchier, Jacques van Helden, Sean Kennedy, Thomas Cokelaer.
+    For **Sequanix**: Desvillechabrol et al.
     Sequanix: A Dynamic Graphical Interface for Snakemake Workflows
     Bioinformatics, bty034, https://doi.org/10.1093/bioinformatics/bty034
     Also available on bioRxiv (DOI: https://doi.org/10.1101/162701)
@@ -251,6 +248,8 @@ Version   Description
             implementation. Remove useless VCF code.
           * Fixes rnadiff HTML report
           * speedup kegg enrichment using multiprocess
+          * Allow sequana_taxonomy to download toydb and viruses_masking DBs from 
+            zenodo
 0.16.9    * Major fix on PCA and add batch effect plots in RNAdiff analysis
           * count matrix and DESeq2 output files' headers fixed with missing index
             (no impact on analysis but only for those willing to use the CSV files
@@ -331,8 +330,7 @@ Version   Description
           * Move sequana_lane_merging into a subcommand (sequana lane_merging)
           * General cleanup of documentation, test and links to pipelines
           * add new ribodesigner subcommand
-0.12.7    * Fix memory leak in len() of FastA class
-0.12.6    * remove some rules now in https://github.com/sequana/sequana-wrappers
-0.12.5    * refactorisation of VCF tools/modules to use vcfpy instead of pyVCF
-0.12.4    * complete change log before 0.12.4 in the github /doc/Changelog.txt
+0.12.X    * remove some rules now in https://github.com/sequana/sequana-wrappers
+          * refactorisation of VCF tools/modules to use vcfpy instead of pyVCF
+          * complete change log before 0.12.4 in the github /doc/Changelog.txt
 ========= ==========================================================================
