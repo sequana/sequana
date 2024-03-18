@@ -60,10 +60,10 @@ from .gff3 import GFF3
 from .homer import Homer
 from .idr import IDR
 from .itol import ITOL
+from .kraken.downloads import KrakenDownload
 from .kraken.analysis import (
     KrakenAnalysis,
     KrakenDB,
-    KrakenDownload,
     KrakenPipeline,
     KrakenResults,
     KrakenSequential,

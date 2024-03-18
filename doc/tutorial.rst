@@ -18,7 +18,7 @@ The standalone Sequana
 New since version 0.9.0. We are a single entry point for a set of tools used in
 pipelines or as standalone applications. You can type::
 
-    sequana --help 
+    sequana --help
 
 
 to get the list of applications. Would you need completion, this is possible
@@ -39,7 +39,7 @@ and then source the file in ~/.bashrc.::
 The fastqc pipeline
 --------------------
 
-The following example will show how to run the fastqc pipeline 
+The following example will show how to run the fastqc pipeline
 (https://github.com/sequana/fastqc) on a pair of
 FastQ files. The data comes from a sequencing (using HiSeq technology) of a
 Measles virus. For testing purposes, you can download :download:`R1

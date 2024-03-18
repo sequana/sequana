@@ -28,7 +28,6 @@ import colorlog
 import rich_click as click
 
 from sequana import KrakenDownload, KrakenPipeline, KrakenSequential
-from sequana import sequana_config_path as cfg
 from sequana import sequana_config_path as scfg
 from sequana import version as sequana_version
 from sequana.modules_report.kraken import KrakenModule
@@ -44,13 +43,17 @@ logger = colorlog.getLogger(__name__)
 def update_taxonomy(ctx, param, value):  # pragma: no cover
     if value:
         tax = Taxonomy()
-        click.echo(f"Will overwrite the local database taxonomy.dat in {cfg}")
+        click.echo(f"Will overwrite the local database taxonomy.dat in {scfg}")
         tax.download_taxonomic_file(overwrite=True)
         sys.exit(0)
     return value
 
 
 def download_database(ctx, param, value):
+
+    from sequana import logger
+    logger.setLevel("INFO")
+
     if value:
         kd = KrakenDownload()
         kd.download(value)
@@ -164,7 +167,7 @@ def check_databases(ctx, param, value):
     "--download",
     "download",
     default=None,
-    type=click.Choice(["toydb"]),
+    type=click.Choice(["toydb", "viruses_masking:v21.1.1"]),
     callback=download_database,
     is_eager=True,
     help="A toydb example to be downloaded.",
@@ -229,7 +232,10 @@ def main(**kwargs):
 
     options = AttrDict(**kwargs)
 
+    from sequana import logger as loggers
+    loggers.setLevel(options.level)
     logger.setLevel(options.level)
+
 
     fastq = [options.file1]
     if options.file2:

@@ -131,7 +131,7 @@ class NCBITaxonomy:
         df_names = self.df_names.query("key == 'scientific name'").copy()
 
         # first we create the CSV file
-        logger.info("Creating CSV fike")
+        logger.info("Creating CSV file")
         with filename.with_suffix("").open(mode="w") as fout:
             fout.write("id,parent,rank,scientific_name\n")
 

@@ -44,7 +44,7 @@ class PCA(clusterisation.Cluster):
         p.plot(n_components=2)
 
 
-        From R, a PCA is selecting the first 500 features based on variance.
+    From R, a PCA is selecting the first 500 features based on variance.
 
 
     """

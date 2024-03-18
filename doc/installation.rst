@@ -7,7 +7,7 @@ Here below are the instructions to install Sequana. There are different ways (so
 
 If you want the latest version of Sequana, you should install it from source (see :ref:`github_method`). Otherwise, you can install a release of **Sequana** from the Pypi website (using **pip**). Note that for pipelines, which are now independent Python packages, we also use Pypi releases. However, third-party dependencies (not Python) should be installed manually. Most of them are provided through **Anaconda** channels.  See the :ref:`installation_conda` Section for details on how to set up Conda.
 
-For instance, if you want to use the sequana_fastqc pipelinem you must install **fastqc** yourself, which is not a
+For instance, if you want to use the sequana_fastqc pipeline you must install **fastqc** yourself, which is not a
 Python package.
 
 If you just want to test **Sequana** or **Sequanix** (see note here below) or one of the Sequana
@@ -29,6 +29,7 @@ standalone, we also provide **Singularity** containers as explained in the
     https://github.com/sequana/variant_calling. This way, you can install
     Sequana quite easily using pip.
 
+
 .. topic:: Sequanix
 
     Sequanix has now its own repository here: https://github.com/sequana/sequanix and should
@@ -38,7 +39,7 @@ standalone, we also provide **Singularity** containers as explained in the
 Latest recommended installation method
 ======================================
 
-Sequana is maintained under Python 3.8 and above  (Dev 2023).
+Sequana is maintained under Python 3.8 and above  (Dec 2023).
 
 We strongly recommend to use a virtual environment so that (i)
 you can install all requirements without root permissions and (ii) you do
@@ -218,7 +219,7 @@ instance).
 Singularity/Apptainer
 ======================
 
-We maintain a version of sequana within the Damona project.
+We maintain a version of sequana within the https://damona.readthedocs.io project.
 
 You can download e.g version 0.16.2 and use it as follows::
 
