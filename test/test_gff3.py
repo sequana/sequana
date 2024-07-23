@@ -64,7 +64,14 @@ def test_get_feature_dict():
 
 def test_attributes(tmpdir):
     g = GFF3(f"{test_dir}/data/gff/lenny.gff")
-    assert g.attributes
+    g.get_attributes("gene")
+
+
+def test_get_duplicated_attributes_per_genetic_type():
+
+    g = GFF3(f"{test_dir}/data/gff/lenny.gff")
+    g.get_duplicated_attributes_per_genetic_type()
+
 
 
 def test_to_bed(tmpdir):

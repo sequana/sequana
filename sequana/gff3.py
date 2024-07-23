@@ -85,11 +85,12 @@ class GFF3:
                     count += 1
                 # FIXME may be overwritten by get_df
                 self._features = features
+
         return sorted(features)
 
     features = property(_get_features)
 
-    def get_attributes(self, feature=None, sep="; "):
+    def get_attributes(self, feature=None):
         """Return list of possible attributes
 
         If feature is provided, must be valid and used as a filter
@@ -104,40 +105,19 @@ class GFF3:
 
         """
         # This is used by the rnaseq pipeline and should be kept fast
-        if self._attributes:
-            return self._attributes
+        if feature:
+            dd = self.df.query("genetic_type == @feature")
+            self._attributes = sorted(dd.loc[:, dd.notna().all()].columns[8:])
+        else:
+            self._attributes = sorted(self.df.columns[8:])
 
-        attributes = set()
-        with open(self.filename, "r") as reader:
-            for line in reader:
-                # stop once FASTA starts
-                if line.startswith("##FASTA"):
-                    break
-                # Skip metadata and comments and empty lines
-                if line.startswith("#") or not line.strip():  # pragma: no cover
-                    continue
-
-                split = line.rstrip().split("\t")
-                if feature and split[2] != feature:
-                    continue
-
-                for item in split[8].split(sep):
-                    item = item.strip()
-                    if len(item) == 0:  # empty final string #pragma: no cover
-                        continue
-
-                    # Here, some GFF use = some others use spaces... very
-                    # annoying.
-                    if "=" in item:
-                        item = item.split("=")[0].strip()
-                    else:
-                        item = item.split()[0].strip()
-                    attributes.add(item)
-
-        self._attributes = sorted(attributes)
         return self._attributes
 
-    attributes = property(get_attributes)
+    # remove attributes because it may lead to difficult bug since get_attributes
+    # may be used several times with diferent features, we do not want to store it
+    # as an attribute
+    #attributes = property(get_attributes)
+
 
     def read(self):
         """Read annotations one by one creating a generator"""
@@ -200,7 +180,7 @@ class GFF3:
         for typ in self.features:
             results[typ] = {}
             print("{}: {} entries".format(typ, len(self.df.query("genetic_type==@typ"))))
-            for attr in sorted(self.attributes):
+            for attr in sorted(self.get_attributes(feature=typ)):
                 L = len(self.df.query("genetic_type==@typ")[attr].dropna())
                 dups = self.df.query("genetic_type==@typ")[attr].dropna().duplicated().sum()
                 if dups > 0:
