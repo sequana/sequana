@@ -24,3 +24,15 @@ def test_wget():
 
     with TempFile() as fh:
         wget("https://github.com/sequana/sequana/raw/main/README.rst", fh.name)
+
+
+def test_multiple_downloads(tmpdir): 
+    file1 = tmpdir.join("file1.txt")
+    file2 = tmpdir.join("file2.txt")
+    data = [
+        ("https://raw.githubusercontent.com/sequana/sequana_pipetools/main/README.rst", file1, 0),
+        ("https://raw.githubusercontent.com/sequana/sequana_pipetools/main/requirements.txt", file2, 1),
+    ]
+    multiple_downloads(data)
+    download(data[0][0], data[0][1])
+
