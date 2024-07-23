@@ -80,17 +80,26 @@ class SequanaBaseModule(object):
         for filename in config.css_list:
             target = os.sep.join([self.output_dir, "css"])
             if os.path.isfile(target) is False:
-                shutil.copy(filename, target)
+                try:
+                    shutil.copy(filename, target)
+                except PermissionError:
+                    pass
 
         for filename in config.js_list:
             target = os.sep.join([self.output_dir, "js"])
             if os.path.isfile(target) is False:
-                shutil.copy(filename, target)
+                try:
+                    shutil.copy(filename, target)
+                except PermissionError:
+                    pass
 
         target = os.sep.join([self.output_dir, "images"])
         os.makedirs(target, exist_ok=True)
         if os.path.isfile(target) is False:
-            shutil.copy(config.logo, target)
+            try:
+               shutil.copy(config.logo, target)
+            except PermissionError:
+                pass
 
     def create_html(self, output_filename):
         """Create HTML file with Jinja2.
