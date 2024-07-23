@@ -439,7 +439,7 @@ def main(**kwargs):
         proc = subprocess.Popen(cmd.split(), cwd=options.output_directory)
         proc.wait()
 
-    teardown(options.output_directory)
+    teardown(options.output_directory, "sequana_coverage")
 
 
 def run_analysis(chrom, options):

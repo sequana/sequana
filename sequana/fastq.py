@@ -409,9 +409,9 @@ class FastQ(object):
         return count
 
     def _istozip(self, filename):
-        if filename.endswith(".gz"):
+        if str(filename).endswith(".gz"):
             tozip = True
-            filename = filename.split(".gz", 1)[0]
+            filename = str(filename).split(".gz", 1)[0]
         else:
             tozip = False
         return filename, tozip
@@ -589,7 +589,7 @@ class FastQ(object):
         self._check_multiple(N)
 
         assert type(N) == int
-        if N >= self.n_lines:
+        if N >= self.n_lines: #pragma: no cover
             print("Nothing to do. Choose a lower N value")
             return
 
@@ -723,6 +723,48 @@ class FastQ(object):
             for this in self:
                 fout.write("{}\n{}\n".format(this["identifier"].decode(), this["sequence"].decode()))
         return
+
+    def keep_reads(self, identifiers, progress=True, output_filename="kept.fastq"):
+        # make sure we are at the beginning
+        self.rewind()
+
+        output_filename, tozip = self._istozip(output_filename)
+
+        with open(output_filename, "w") as fout:
+            buf = ""
+            found = 0
+            
+            for count, lines in tqdm(
+                enumerate(grouper(self._fileobj)),
+                desc="sequana:reading reads",
+                disable=not progress,
+            ):
+                identifier = lines[0].split()[0].decode()[1:] # we ignore the first @ character
+                if identifier not in identifiers:
+                    pass
+                else:  # pragma: no cover
+                    found +=1
+                    buf += "{}{}+\n{}".format(
+                            lines[0].decode("utf-8"),
+                            lines[1].decode("utf-8"),
+                            lines[3].decode("utf-8"),
+                        )
+                    if count % 10000 == 0:
+                        fout.write(buf)
+                        buf = ""
+            fout.write(buf)
+            if found != len(identifiers):  # pragma: no cover
+                print("\nWARNING: not all identifiers were found in the fastq file.")
+
+        if tozip is True:  # pragma: no cover
+            logger.info("Compressing file")
+            self._gzip(output_filename)
+
+    def to_kmer_content(self, k=7):
+
+        if tozip is True:  # pragma: no cover
+            logger.info("Compressing file")
+            self._gzip(output_filename)
 
     def filter(
         self,

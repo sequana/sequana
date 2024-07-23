@@ -181,3 +181,16 @@ def test_fastqc():
     assert stats["T"][0] == 6400
     assert stats["C"][0] == 6129
     assert stats["G"][0] == 5768
+
+
+def test_keep_reads(tmpdir):
+    outfile = tmpdir.join("file1.fastq")
+
+    f = fastq.FastQ(data)
+    identifiers = ['@HISEQ:426:C5T65ACXX:5:2302:20743:5339']
+    f.keep_reads(identifiers, output_filename=outfile)
+
+
+
+
+
