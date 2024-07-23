@@ -1,0 +1,32 @@
+[Header]
+IEMFileVersion,4
+Investigator Name,
+Experiment Name,
+Date,8/23/2016
+Workflow,GenerateFASTQ
+Application,FASTQ Only
+Assay,NEXTFlex-PCRfree
+Description,
+Chemistry,Default
+
+[Reads]
+300
+300
+
+[Settings]
+Adapter,AGATCGGAAGAGCACACGTCTGAACTCCAGTCA
+AdapterRead2,AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT
+ReverseComplement,1
+TrimAdapter,ACGT
+FindAdaptersWithIndels,y
+Read1EndWithCycle,0
+Read2EndWithCycle,0
+Read1StartFromCycle,1
+Read2StartFromCycle,1
+ExcludeTiles,1101+1104+1110-1115
+
+[Data]
+Sample_ID,Sample_Name,I7_Index_ID,index,Sample_Project,Description
+A,undetermined,A01,TGACCA,Projet1,
+B,B,A02,ACAGTG,Projet2,
+

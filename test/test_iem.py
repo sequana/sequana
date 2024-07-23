@@ -1,9 +1,18 @@
-from sequana.iem import IEM
+from sequana.iem import SampleSheet as IEM
+import glob
 
 from . import test_dir
 
 
 def test_iem():
+
+
+    try:
+        iem = IEM('dummy')
+        assert False
+    except:
+        assert True
+
 
     for this in [
         "iem/wrong/test_expdesign_wrong.csv",
@@ -38,30 +47,23 @@ def test_quick_fix(tmpdir):
 
 
 def test_warning():
-    for filename in ["iem/wrong/test_iem_samplesheet_one_sample_pe.csv"]:
-        e = IEM(f"{test_dir}/data/{filename}")
+
+    for filename in glob.glob(f"{test_dir}/data/iem/warning/*csv"):
+        print(filename)
+        e = IEM(filename)
         e.validate()
         checks = e.checker()
         errors = [1 for check in checks if check["status"] == "Error"]
         assert len(errors) == 0
-
+        warnings = [1 for check in checks if check["status"] == "Warning"]
+        assert len(warnings) > 0
 
 def test_wrong():
 
-    for filename in [
-        "iem/wrong/test_iem_samplesheet_duplicate.csv",
-        "iem/wrong/test_iem_samplesheet_duplicated_index1.csv",
-        "iem/wrong/test_iem_samplesheet_duplicated_index2.csv",
-        "iem/wrong/test_no_data_section.csv",
-        "iem/wrong/test_wrong_data_header.csv",
-        "iem/wrong/test_wrong_data_header_index.csv",
-        "iem/wrong/test_expdesign_wrong.csv",
-        "iem/wrong/test_non_homogen_I7_length.csv",
-        "iem/wrong/test_empty_data_section.csv",
-        "iem/wrong/test_empty_data_section2.csv",
-        "iem/wrong/test_iem_samplesheet_one_sample_se.csv",
-    ]:
-        e = IEM(f"{test_dir}/data/{filename}")
+    for filename in glob.glob(f"{test_dir}/data/iem/wrong/*csv"):
+
+        e = IEM(f"{filename}")
+
         try:
             e.validate()
             assert False
@@ -72,22 +74,15 @@ def test_wrong():
                 assert False, filename
 
 
+
 def test_iem_samplesheets():
-    for filename in [
-        "iem/good/test_iem_samplesheet_hiseq_single.csv",
-        "iem/good/test_iem_samplesheet_miseq_double.csv",
-        "iem/good/test_iem_samplesheet_nextseq_single.csv",
-        "iem/good/test_iem_samplesheet_iseq100.csv",
-        "iem/good/test_iem_samplesheet_miniseq.csv",
-        "iem/good/test_iem_samplesheet_one_sample_se.csv",
-        "iem/good/test_iem_samplesheet_one_sample_pe.csv",
-    ]:
-        iem = IEM(f"{test_dir}/data/{filename}")
-        iem.validate()
-        iem.version
-        iem.instrument
-        iem.header
-        checks = iem.checker()
+    for filename in glob.glob(f"{test_dir}/data/iem/good/*csv"):
+        e = IEM(f"{filename}")
+        e.validate()
+        e.version
+        e.instrument
+        e.header
+        checks = e.checker()
         for check in checks:
             if check["status"] == "Error":
                 assert False
