@@ -775,7 +775,6 @@ class SAMBAMbase:
         read_length_dict = {}
         flag_dict = {}
         mean_qualities = []
-        count = 0
 
         for read in tqdm(self, leave=False):
             self._count_item(mapq_dict, read.mapq)
@@ -786,9 +785,6 @@ class SAMBAMbase:
                 mean_qualities.append(pylab.mean(read.query_qualities))
             except TypeError:
                 mean_qualities.append(-1)
-            count += 1
-            if count % 100000 == 0:
-                print(count)
         # FIXME do we need the try/except if so, add Exception
         try:
             mq = pylab.mean(mean_qualities)
