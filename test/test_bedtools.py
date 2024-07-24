@@ -1,5 +1,4 @@
 import pytest
-from easydev import TempFile
 
 from sequana import bedtools
 
@@ -36,7 +35,7 @@ def test_threshold():
         t = bedtools.DoubleThresholds(3, -4)
 
 
-def test_genomecov():
+def test_genomecov(tmpdir):
     filename = f"{test_dir}/data/bed/JB409847.bed"
 
     # wrong file
@@ -77,6 +76,7 @@ def test_genomecov():
     bed.window_size = 4001
 
     # This requires to call other method before
+    outfile = tmpdir.join("test.png")
     for chrom in bed:
         chrom.moving_average(n=501)
         chrom.running_median(n=501, circular=True)
@@ -84,20 +84,15 @@ def test_genomecov():
 
         chrom.compute_zscore()
         roi = chrom.get_rois()
-        with TempFile(suffix=".png") as fh:
-            chrom.plot_coverage(filename=fh.name)
-        with TempFile(suffix=".png") as fh:
-            chrom.plot_hist_zscore(filename=fh.name)
-        with TempFile(suffix=".png") as fh:
-            chrom.plot_hist_normalized_coverage(filename=fh.name)
+
+        chrom.plot_coverage(filename=outfile)
+        chrom.plot_hist_zscore(filename=outfile)
+        chrom.plot_hist_normalized_coverage(filename=outfile)
 
         len(chrom)
         print(chrom)
         chrom.DOC
         chrom.CV
-    # with TempFile(suffix=".csv") as fh:
-    #    bed.gc_window_size = 100
-    #    bed.to_csv(fh.name)
 
     # try wrong length:
 
@@ -109,8 +104,7 @@ def test_genomecov():
     bed[0].plot_hist_coverage()
     bed[0].plot_hist_coverage(logx=False, logy=True)
     bed[0].plot_hist_coverage(logx=True, logy=False)
-    with TempFile(suffix=".png") as fh:
-        bed[0].plot_hist_coverage(logx=False, logy=False, filename=fh.name)
+    bed[0].plot_hist_coverage(logx=False, logy=False, filename=outfile)
 
 
 def test_chromosome():
@@ -153,9 +147,12 @@ def test_chromosome():
     chrom.plot_rois(3000, 8000)
 
 
-def test_gc_content():
+def test_gc_content(tmpdir):
     bed = f"{test_dir}/data/bed/JB409847.bed"
     fasta = f"{test_dir}/data/fasta/JB409847.fasta"
+
+    import os
+    assert os.path.exists(bed)
     cov = bedtools.SequanaCoverage(bed, reference_file=fasta)
     cov.get_stats()
     ch = cov[0]
@@ -166,11 +163,11 @@ def test_gc_content():
     ch.evenness
     ch.CV
     assert ch.get_centralness() > 0.84 and ch.get_centralness() < 0.85
-    with TempFile(suffix=".png") as fh:
-        ch.plot_gc_vs_coverage(filename=fh.name)
 
-    with TempFile() as fh:
-        ch.to_csv(fh.name)
+    outfile = tmpdir.join('test.png')
+    ch.plot_gc_vs_coverage(filename=outfile)
+    outfile = tmpdir.join('test.csv')
+    ch.to_csv(outfile)
 
 
 def test_ChromosomeCovMultiChunk():

@@ -240,16 +240,20 @@ Changelog
 ========= ==========================================================================
 Version   Description
 ========= ==========================================================================
-0.17.0    * viz submodules: remove easydev and cleanup scipy imports
-          * remove the substractor utility (use sequana_depletion pipeline instead)
-          * remove get_max_gc_correlation function from bedtools. not used.
-          * Major change in VCF reader (freebayes). Got rid of freebayes_bcf_filter
-            redundant with freebayes_vcf_filter; replace scipy fisher test with own
-            implementation. Remove useless VCF code.
-          * Fixes rnadiff HTML report
-          * speedup kegg enrichment using multiprocess
-          * Allow sequana_taxonomy to download toydb and viruses_masking DBs from 
-            zenodo
+0.17.0    * CHANGE. remove the substractor utility (use sequana_depletion pipeline
+            instead)
+          * CHANGE. remove get_max_gc_correlation function from bedtools. not used.
+          * CHANGE. Got rid of freebayes_bcf_filter redundant with
+            freebayes_vcf_filter; replace scipy fisher test with own implementation.
+            Remove useless VCF code.
+          * FIXES. rnadiff HTML report
+          * IMPROV. speedup kegg enrichment using multiprocess
+          * IMPROV. sequana_taxonomy can now download toydb and viruses_masking DBs
+            from zenodo
+          * NEW function to retrieve the GO terms and genes from panther website
+          * NEW keep_reads function in fastq class
+          * Major update of the IEM module (renamed IEM class into SampleSheet)
+          * NEW addW find-integrated-genes standalone
 0.16.9    * Major fix on PCA and add batch effect plots in RNAdiff analysis
           * count matrix and DESeq2 output files' headers fixed with missing index
             (no impact on analysis but only for those willing to use the CSV files

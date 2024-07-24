@@ -66,8 +66,9 @@ from .kraken.analysis import (
     KrakenDB,
     KrakenPipeline,
     KrakenResults,
-    KrakenSequential,
 )
+from .kraken.consensus import KrakenConsensus
+from .kraken.sequential import KrakenSequential
 from .kraken.multikraken import MultiKrakenResults, MultiKrakenResults2
 from .krona import KronaMerger
 from .macs3 import MACS3Reader, PeakConsensus
