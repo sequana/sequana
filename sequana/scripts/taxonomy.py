@@ -17,7 +17,6 @@
 #
 ##############################################################################
 """Standalone dedicated to taxonomic content (kraken)"""
-import argparse
 import ast
 import json
 import os
@@ -27,7 +26,7 @@ from pathlib import Path
 import colorlog
 import rich_click as click
 
-from sequana import KrakenDownload, KrakenPipeline, KrakenSequential
+from sequana import KrakenDownload, KrakenPipeline, KrakenSequential, KrakenConsensus
 from sequana import sequana_config_path as scfg
 from sequana import version as sequana_version
 from sequana.modules_report.kraken import KrakenModule
@@ -38,6 +37,9 @@ from sequana.utils import config
 from .utils import CONTEXT_SETTINGS, OptionEatAll
 
 logger = colorlog.getLogger(__name__)
+
+
+click.rich_click.FOOTER_TEXT = "Authors: Thomas Cokelaer -- Documentation: http://sequana.readthedocs.io     -- Issues: http://github.com/sequana/sequana"
 
 
 def update_taxonomy(ctx, param, value):  # pragma: no cover
@@ -72,6 +74,7 @@ click.rich_click.OPTION_GROUPS = {
             "options": [
                 "--confidence",
                 "--thread",
+                "--mode"
             ],
         },
         {
@@ -149,6 +152,15 @@ def check_databases(ctx, param, value):
     "",
 )
 @click.option(
+    "--mode",
+    "mode",
+    type=click.Choice(["sequential", "consensus"]),
+    help="""'sequential' means analyse reads with the first database, and analyse the remaining 
+    unclassified reads with the next database (and so on). consensus means analyse all reads with 
+    every databases and compute the best hit across databases for each read""",
+    default="sequential",
+)
+@click.option(
     "--output-directory",
     "directory",
     type=click.STRING,
@@ -167,10 +179,18 @@ def check_databases(ctx, param, value):
     "--download",
     "download",
     default=None,
-    type=click.Choice(["toydb", "viruses_masking:v21.1.1"]),
+    type=click.Choice(["toydb",
+        "archaea_masking:v21.1.1",
+        "bacteria_masking:v24.1.31",
+        "bacteria_masking:v24.1.31",
+        "fungi_masking:v21.1.1",
+        "fungi_masking:v24.3.15",
+        "human_masking:v21.1.1",
+        "viruses_masking:v21.1.1",
+        "viruses_masking:v24.1.31"]),
     callback=download_database,
     is_eager=True,
-    help="A toydb example to be downloaded.",
+    help="Set of downloadable databases from Zenodo",
 )
 @click.option("--unclassified-out", default=None, type=click.Path(), help="save unclassified sequences to filename")
 @click.option("--classified-out", default=None, type=click.Path(), help="save classified sequences to filename")
@@ -216,7 +236,9 @@ def main(**kwargs):
 
         sequana_taxonomy --download toydb
 
-    After downloading, you can use the tool with a command similar to the following:
+    It is downloaded into .config/sequana/kraken2_dbs/ directory. After 
+    downloading, you can use the tool with a command similar to the 
+    following:
 
         sequana_taxonomy --file1 R1.fastq --file2 R2.fastq
            --databases /home/user/.config/sequana/kraken_toydb
@@ -274,9 +296,22 @@ def main(**kwargs):
             output_filename_classified=_pathto(options.classified_out),
             output_filename_unclassified=_pathto(options.unclassified_out),
         )
-    else:
-        logger.info("Using %s databases" % len(databases))
+    elif kwargs['mode'] == 'sequential':
+        logger.info(f"Using {databases} databases sequentially")
         k = KrakenSequential(
+            fastq,
+            options.databases,
+            threads=options.thread,
+            output_directory=output_directory,
+            force=True,
+            keep_temp_files=options.keep_temp_files,
+            output_filename_unclassified=_pathto(options.unclassified_out),
+            confidence=options.confidence,
+        )
+        summary = k.run(output_prefix="kraken")
+    elif kwargs['mode'] == 'consensus':
+        logger.info(f"Using {databases} databases sequentially")
+        k = KrakenConsensus(
             fastq,
             options.databases,
             threads=options.thread,
@@ -300,7 +335,7 @@ def main(**kwargs):
 
     logger.info(f"Open ./{options.directory}/summary.html")
     logger.info(f"or ./{options.directory}/kraken/kraken.html")
-    teardown(options.directory)
+    teardown(options.directory, "sequana_taxonomy")
 
 
 if __name__ == "__main__":

@@ -352,9 +352,9 @@ class Taxonomy(metaclass=Singleton):
 
         try:
             record = self.records.loc[taxon]
-        except:
+        except Exception as err:
+            print(err)
             return [("unknown_taxon:{}".format(taxon), "no rank")]
-
         parent = int(record["parent"])
 
         if taxon == 1:
