@@ -13,11 +13,9 @@
 import ftplib
 import gzip
 import os
-import re
 import shutil
 import tarfile
 import tempfile
-from collections import Counter
 from functools import wraps
 from pathlib import Path
 
@@ -248,7 +246,7 @@ class Taxonomy(metaclass=Singleton):
             self.ftp.cwd("taxonomy")
             logger.warning("Downloading and saving data in {self.database}")
             self.ftp.retrbinary("RETR taxonomy.dat", open(self.database, "wb").write)
-            ftp.close()
+            self.ftp.close()
         else:
             self.ftp.cwd("pub")
             self.ftp.cwd("taxonomy")
