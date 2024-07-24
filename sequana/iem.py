@@ -26,8 +26,6 @@ logger = colorlog.getLogger(__name__)
 __all__ = ["SampleSheet", "IEM"]
 
 
-
-
 class SampleSheet:
     """Reader and validator of Illumina samplesheets
 
@@ -124,16 +122,16 @@ class SampleSheet:
         # sympatomatic of further issues
         if line.startswith("["):
             # [Header], ,, ,\n becomes [Header]
-            line = line.strip(", ")  # note the space AND comma
+            line = line.strip(", ;")  # note the space AND comma
 
         return line
 
     def _scan_sections(self):
-        # looks for special section Header/Data/Reads/Settings
-        # Data/Header must be found. Others may be optional
+        # looks for special section Header/Data/Reads/Settings or
+        # any other matching section thst looks like [XXX]
 
         current_section = None
-        data = collections.defaultdict(list)
+        data = {}
         with open(self.filename, "r") as fin:
             for line_count, line in enumerate(fin.readlines()):
                 line = self._line_cleaner(line, line_count + 1)
@@ -142,16 +140,25 @@ class SampleSheet:
                 if line.startswith("[") and line.endswith("]"):
                     name = line.lstrip("[").rstrip("]")
                     current_section = name
+                    data[current_section] = []  # create empty list just to create the section
                 else:
-                    data[current_section] += [line]
-
+                    if current_section in data:
+                        data[current_section] += [line]
+                    else:
+                        data[current_section] = [line]
         self.sections = data
 
     def _get_df(self):
         if "Data" in self.sections:
             if self.sections["Data"]:
-                df = pd.read_csv(io.StringIO("\n".join(self.sections["Data"])), index_col=False)
-                return df
+
+                df1 = pd.read_csv(io.StringIO("\n".join(self.sections["Data"])), index_col=False, sep=",")
+                df2 = pd.read_csv(io.StringIO("\n".join(self.sections["Data"])), index_col=False, sep=";")
+
+                if len(df1.columns) > len(df2.columns):
+                    return df1
+                else:
+                    return df2
             else:
                 return pd.DataFrame()
         else:  # pragma: no cover
@@ -181,83 +188,113 @@ class SampleSheet:
 
         checks = Checker()
 
-        # even [Data] is actually optional although useless to not provide it...
-        for section in ["Reads", "Header", "Settings", "Data"]:
-            if section not in self.sections.keys():
-                checks.results.append({"msg": f"The optional [{section}] section is missing", "status": "Warning"})
-            else:
-                checks.results.append({"msg": f"The optional [{section}] section is present.", "status": "Success"})
-
-        # Checks of the Data section
-        checks.tryme(self._check_settings)
-        checks.tryme(self._check_data_section_csv_format)
-        checks.tryme(self._check_mandatory_data_columns)
-        checks.tryme(self._check_sample_ID)
-        checks.tryme(self._check_sample_names)
-        checks.tryme(self._check_sample_project)
-        checks.tryme(self._check_unique_sample_name)
-        checks.tryme(self._check_unique_sample_ID)
-        checks.tryme(self._check_unique_indices)
-        checks.tryme(self._check_nucleotide_indices)
-        checks.tryme(self._check_optional_data_column_names)
-        checks.tryme(self._check_alpha_numerical)
-        checks.tryme(self._check_semi_column_presence)
-        checks.tryme(self._check_sample_lane_number)
-
-        # if data section is incorrect, self.df is not accessible so the following validation
-        # will fail.
-        try:
-            if "index" in self.df.columns:
-                checks.tryme(self._check_homogene_I7_length)
-
-            if "index2" in self.df.columns:
-                checks.tryme(self._check_homogene_I5_length)
-                checks.tryme(self._check_homogene_I5_and_I7_length)
-        except pd.errors.ParserError: #pragma: no cover
+        if "Reads" in self.sections:
             pass
+        else:
+            checks.results.append({"msg": f"The optional [Reads] section is missing", "status": "Warning"})
+
+        if "Header" in self.sections:
+            pass
+        else:
+            checks.results.append({"msg": f"The optional [Header] section is missing", "status": "Warning"})
+
+        if "Data" in self.sections:
+            checks.tryme(self._check_data_section_csv_format)
+            checks.tryme(self._check_optional_data_column_names)
+            checks.tryme(self._check_mandatory_data_columns)
+            checks.tryme(self._check_sample_ID)
+            checks.tryme(self._check_sample_project)
+            checks.tryme(self._check_unique_sample_ID)
+            checks.tryme(self._check_unique_indices)
+            checks.tryme(self._check_nucleotide_indices)
+            checks.tryme(self._check_sample_lane_number)
+            checks.tryme(self._check_alpha_numerical)
+
+            if "Sample_Name" in self.df.columns:
+                checks.tryme(self._check_sample_names)
+                checks.tryme(self._check_unique_sample_name)
+            else:
+                checks.results.append(
+                    {
+                        "name": "check_sample_names",
+                        "msg": f"Column Sample_Name not found in the header of the [Data] section. Recommended.",
+                        "status": "Warning",
+                    }
+                )
+
+            # if data section is incorrect, self.df is not accessible so the following validation
+            # will fail.
+            try:
+                if "index" in self.df.columns:
+                    checks.tryme(self._check_homogene_I7_length)
+
+                if "index2" in self.df.columns:
+                    checks.tryme(self._check_homogene_I5_length)
+                    checks.tryme(self._check_homogene_I5_and_I7_length)
+            except pd.errors.ParserError:  # pragma: no cover
+                pass
+        else:
+            checks.results.append({"msg": f"The [Data] section is missing. ", "status": "Error"})
+
+        if "Settings" in self.sections:
+            checks.tryme(self._check_settings)
+        else:
+            checks.results.append({"msg": f"The optional [Settings] section is missing", "status": "Warning"})
+
+        checks.tryme(self._check_semi_column_presence)
 
         return checks.results
 
     def _check_settings(self):
 
-
         for k, v in self.settings.items():
 
             # checks ACGT content (no acgt allowed)
-            if k in [
-                "Adapter", "TrimAdapter",
-                "AdapterRead2", "TrimAdapterRead2",
-                "MaskAdapter", "MaskAdapterRead2"]:
-                allowed_chars = set('ACGT')
+            if k in ["Adapter", "TrimAdapter", "AdapterRead2", "TrimAdapterRead2", "MaskAdapter", "MaskAdapterRead2"]:
+                allowed_chars = set("ACGT")
+
                 def is_valid_string(s):
                     return set(s).issubset(allowed_chars)
+
                 if is_valid_string(v) is False:
                     return {
-                        "name":"check_settings",
-                        "msg":f"Invalid nucleotide sequence found for {k} (v)",
-                        "status":"Error"}
-            elif k in ['ReverseComplement', 'FindAdaptersWithIndels', 'TrimUMI', "CreateFastqForIndexReads"]:
-                if v not in ('true', 'false', 't', 'f', 'yes', 'no', 'y', 'n', '1', '0'):
+                        "name": "check_settings",
+                        "msg": f"Invalid nucleotide sequence found for {k} (v)",
+                        "status": "Error",
+                    }
+            elif k in ["ReverseComplement", "FindAdaptersWithIndels", "TrimUMI", "CreateFastqForIndexReads"]:
+                if v not in ("true", "false", "t", "f", "yes", "no", "y", "n", "1", "0"):
                     return {
-                        "name":"check_settings",
-                        "msg":f"Invalid valid for {k} ({v}). Must be set to one of : true, false, t, f, yes, no, y, n, 1, 0",
-                        "status":"Error"}
+                        "name": "check_settings",
+                        "msg": f"Invalid valid for {k} ({v}). Must be set to one of : true, false, t, f, yes, no, y, n, 1, 0",
+                        "status": "Error",
+                    }
 
-            elif k in ["Read1StartFromCycle", "Read2StartFromCycle",
-                        "Read1EndWithCycle", "Read2EndWithCycle", 
-                        "Read1UMILength", "Read2UMILength",
-                        "Read1UMIStartFromCycle", "Read2UMIStartFromCycle"]:
-                    allowed_chars = set('0123456789')
-                    def is_valid_int(s):
-                        return set(s).issubset(allowed_chars)
-                    if is_valid_int(v) is False or int(v)<0:
-                        return {
-                            "name":"check_settings",
-                            "msg":f"Invalid value for {k}. Must be positive. You provided: {v}",
-                            "status":"Error"}
+            elif k in [
+                "Read1StartFromCycle",
+                "Read2StartFromCycle",
+                "Read1EndWithCycle",
+                "Read2EndWithCycle",
+                "Read1UMILength",
+                "Read2UMILength",
+                "Read1UMIStartFromCycle",
+                "Read2UMIStartFromCycle",
+            ]:
+                allowed_chars = set("0123456789")
+
+                def is_valid_int(s):
+                    return set(s).issubset(allowed_chars)
+
+                if is_valid_int(v) is False or int(v) < 0:
+                    return {
+                        "name": "check_settings",
+                        "msg": f"Invalid value for {k}. Must be positive. You provided: {v}",
+                        "status": "Error",
+                    }
             elif k in ["ExcludeTiles", "ExcludeTilesLaneX"]:
 
-                allowed_chars = set('0123456789')
+                allowed_chars = set("0123456789")
+
                 def is_valid_int(s):
                     return set(s).issubset(allowed_chars)
 
@@ -266,19 +303,16 @@ class SampleSheet:
                     for x in item.split("-"):
                         if is_valid_int(x) is False:
                             return {
-                                "name":"check_settings",
-                                "msg":f"Invalid value for {k} (v). Must be made of integers, + and - signs. e.g. 1101+1105-1110 to exclude 1101 and values in [1105-1110].",
-                                "status":"Error"}
+                                "name": "check_settings",
+                                "msg": f"Invalid value for {k} (v). Must be made of integers, + and - signs. e.g. 1101+1105-1110 to exclude 1101 and values in [1105-1110].",
+                                "status": "Error",
+                            }
         else:
-                    return {
-                        "name":"check_settings",
-                        "msg":f"The [Settings] section looks good",
-                        "status":"Success"}
-
+            return {"name": "check_settings", "msg": f"The [Settings] section looks good", "status": "Success"}
 
     def _check_sample_ID(self):
 
-        if "Sample_ID" in self.df.columns: # optional
+        if "Sample_ID" in self.df.columns:  # optional
             # check that names are not in 'all' or 'undetermined'
             if (self.df["Sample_ID"] == "unknown").sum() or (self.df["Sample_ID"] == "all").sum():
                 return {
@@ -294,37 +328,30 @@ class SampleSheet:
                 }
         else:
             return {
-                    "name": "check_sample_ID",
-                    "msg": f"Column Sample_ID not found in the header of the [Data] section. All data will be stored in Undetermined.fastq.gz",
-                    "status": "Warning",
+                "name": "check_sample_ID",
+                "msg": f"Column Sample_ID not found in the header of the [Data] section. All data will be stored in Undetermined.fastq.gz",
+                "status": "Warning",
             }
 
     def _check_sample_names(self):
 
-        if "Sample_Name" in self.df.columns: # optional
-            # check that names are not in 'all' or 'undetermined'
-            if (self.df["Sample_Name"] == "unknown").sum() or (self.df["Sample_Name"] == "undetermined").sum():
-                return {
-                    "name": "check_sample_names",
-                    "msg": "Sample_Name column contains forbidden name ('all' or 'undetermined')",
-                    "status": "Error",
-                }
-            else:
-                return {
-                    "name": "check_sample_names",
-                    "msg": "Sample_Name column (no unknown/undetermined label). Looks correct",
-                    "status": "Success",
-                }
+        # check that names are not in 'all' or 'undetermined'
+        if (self.df["Sample_Name"] == "unknown").sum() or (self.df["Sample_Name"] == "undetermined").sum():
+            return {
+                "name": "check_sample_names",
+                "msg": "Sample_Name column contains forbidden name ('all' or 'undetermined')",
+                "status": "Error",
+            }
         else:
             return {
-                    "name": "check_sample_names",
-                    "msg": f"Column Sample_Name not found in the header of the [Data] section. Recommended.",
-                    "status": "Warning",
+                "name": "check_sample_names",
+                "msg": "Sample_Name column (no unknown/undetermined label). Looks correct",
+                "status": "Success",
             }
 
     def _check_sample_project(self):
 
-        if "Sample_Project" in self.df.columns: # optional
+        if "Sample_Project" in self.df.columns:  # optional
             # check that names are not in 'all' or 'undetermined'
             if (self.df["Sample_Project"] == "all").sum() or (self.df["Sample_Project"] == "default").sum():
                 return {
@@ -340,9 +367,9 @@ class SampleSheet:
                 }
         else:
             return {
-                    "name": "check_sample_project",
-                    "msg": f"Column Sample_Project not found in the header of the [Data] section. Recommended.",
-                    "status": "Warning",
+                "name": "check_sample_project",
+                "msg": f"Column Sample_Project not found in the header of the [Data] section. Recommended.",
+                "status": "Warning",
             }
 
     def _check_mandatory_data_columns(self):
@@ -357,41 +384,27 @@ class SampleSheet:
                     "status": "Error",
                 }
         return {
-                    "name": "check_mandatory_data_columns",
-                    "msg": f"Mandatory columns found in the header of the [Data] section",
-                    "status": "Success",
-                }
+            "name": "check_mandatory_data_columns",
+            "msg": f"Mandatory columns (index, Sample_ID) found in the header of the [Data] section",
+            "status": "Success",
+        }
 
     def _check_unique_sample_name(self):
         # check that sample names are unique and that sample Names are unique too
 
-        if "Sample_Name" not in self.df.columns:
-            return {
-                "name": "check_unique_sample_name",
-                "msg": "Sample_Name column not found in the header of the [Data] section",
-                "status": "Warning",
-            }
-
         if self.df["Sample_Name"].isnull().sum() > 0:
-
-            return {
-                "name": "check_unique_sample_name", 
-                "msg": "Some sample names are empty", 
-                "status": "Warning"}
+            return {"name": "check_unique_sample_name", "msg": "Some sample names are empty", "status": "Warning"}
 
         elif len(self.df.Sample_Name) != len(self.df.Sample_Name.unique()):
             duplicated = self.df.Sample_Name[self.df.Sample_Name.duplicated()].index
-            duplicated = ",".join([str(x+1) for x in duplicated])
+            duplicated = ",".join([str(x + 1) for x in duplicated])
             return {
                 "name": "check_unique_sample_name",
                 "msg": f"Sample_Name not unique. Duplicated entries on lines: {duplicated}",
                 "status": "Warning",
             }
         else:
-            return {
-                "name": "check_unique_sample_name", 
-                "msg": "Sample name uniqueness", 
-                "status": "Success"}
+            return {"name": "check_unique_sample_name", "msg": "Sample name uniqueness", "status": "Success"}
 
     def _check_unique_sample_ID(self):
         # check that sample names are unique and that sample Names are unique too
@@ -405,45 +418,42 @@ class SampleSheet:
 
         if len(self.df.Sample_ID) != len(self.df.Sample_ID.unique()):
             duplicated = self.df.Sample_ID[self.df.Sample_ID.duplicated()].index
-            duplicated = ",".join([str(x+1) for x in duplicated])
+            duplicated = ",".join([str(x + 1) for x in duplicated])
             return {
                 "name": "check_unique_sample_ID",
                 "msg": f"Sample ID not unique. Duplicated entries on lines: {duplicated}",
                 "status": "Error",
             }
         else:
-            return {
-                "name": "check_unique_sample_ID", 
-                "msg": "Sample ID uniqueness", 
-                "status": "Success"}
+            return {"name": "check_unique_sample_ID", "msg": "Sample ID uniqueness", "status": "Success"}
 
     def _check_sample_lane_number(self):
         if "Sample_Lane" in self.df.columns:
 
             # Define the allowed lanes
-            allowed_chars = set('12345678')
+            allowed_chars = set("12345678")
+
             def is_valid_lane(s):
                 return set(str(s)).issubset(allowed_chars)
 
             # Apply the function to the DataFrame
-            invalid_lanes = list(self.df[~self.df['Sample_Lane'].apply(is_valid_lane)].index)
+            invalid_lanes = list(self.df[~self.df["Sample_Lane"].apply(is_valid_lane)].index)
 
             if len(invalid_lanes):
-                invalid_lanes = [x+1 for x in invalid_lanes]
+                invalid_lanes = [x + 1 for x in invalid_lanes]
                 return {
                     "name": "check_sample_lane_number",
-                    "msg": f"Incorrect lane number in these rows: {invalid_lanes}. Must be in the range 1-8", 
-                    "status": "Error"}
+                    "msg": f"Incorrect lane number in these rows: {invalid_lanes}. Must be in the range 1-8",
+                    "status": "Error",
+                }
 
-        return {
-            "name": "check_sample_lane_number",
-            "msg": "Correct lane number range",
-            "status": "Success"}
+        return {"name": "check_sample_lane_number", "msg": "Correct lane number range", "status": "Success"}
 
     def _check_nucleotide_indices(self):
 
         # Define the allowed characters
-        allowed_chars = set('ACGTN')
+        allowed_chars = set("ACGTN")
+
         def is_valid_string(s):
             try:
                 return set(s).issubset(allowed_chars)
@@ -451,16 +461,17 @@ class SampleSheet:
                 return False
 
         # Apply the function to the DataFrame
-        invalid_rows = list(self.df[~self.df['index'].apply(is_valid_string)].index)
+        invalid_rows = list(self.df[~self.df["index"].apply(is_valid_string)].index)
 
         if "index2" in self.df.columns:
-            invalid_rows += list(self.df[~self.df['index2'].apply(is_valid_string)].index)
+            invalid_rows += list(self.df[~self.df["index2"].apply(is_valid_string)].index)
         if len(invalid_rows):
-            invalid_rows = [x+1 for x in invalid_rows]
-            return {        
+            invalid_rows = [x + 1 for x in invalid_rows]
+            return {
                 "name": "check_nucleotide_indices",
-                "msg": f"these rows have invalid index with wrong nucleotides {invalid_rows}", 
-                "status": "Error"}
+                "msg": f"these rows have invalid index with wrong nucleotides {invalid_rows}",
+                "status": "Error",
+            }
 
         return {"msg": "Indices are made of A, C, G, T, N.", "status": "Success"}
 
@@ -473,9 +484,10 @@ class SampleSheet:
             msg = "You have duplicated index I7."
         else:
             return {
-                "name":"check_unique_indices", 
-                "msg": f"column 'index' not found in the header of the [Data] section.", 
-                "status": "Error"}
+                "name": "check_unique_indices",
+                "msg": f"column 'index' not found in the header of the [Data] section.",
+                "status": "Error",
+            }
 
         if indices.duplicated().sum() > 0:
             duplicated = indices[indices.duplicated()].values
@@ -486,10 +498,7 @@ class SampleSheet:
             except Exception as err:  # pragma: no cover
                 IDs = ""
 
-            return {
-                "name":"check_unique_indices", 
-                "msg": f"{msg} {duplicated} {IDs}", 
-                "status": "Error"}
+            return {"name": "check_unique_indices", "msg": f"{msg} {duplicated} {IDs}", "status": "Error"}
         else:
             return {"name": "check_unique_indices", "msg": "Indices are unique.", "status": "Success"}
 
@@ -497,7 +506,16 @@ class SampleSheet:
         msg = ""
         warnings = []
         # check whether minimal columns are included
-        for x in ["I7_Index_ID","Sample_Project", "Description", "Sample_Plate", "Sample_Well", "Lane", "Index_Plate", "Index_Plate_Well"]:
+        for x in [
+            "I7_Index_ID",
+            "Sample_Project",
+            "Description",
+            "Sample_Plate",
+            "Sample_Well",
+            "Lane",
+            "Index_Plate",
+            "Index_Plate_Well",
+        ]:
             if x not in self.df.columns:
                 warnings.append(x)
 
@@ -505,12 +523,12 @@ class SampleSheet:
             warnings = ",".join(warnings)
             msg = f"Some columns are missing in the [Data] section: {warnings}"
             return {"msg": msg, "status": "Warning"}
-        else: #pragma: no cover
+        else:  # pragma: no cover
             return {"msg": "Columns of the data section looks good", "status": "Success"}
 
     def _get_data_length(self):
         N = len(set([x.count(",") for x in self.sections["Data"]]))
-        if len(self.sections['Data'])>=2 and N==1:
+        if len(self.sections["Data"]) >= 2 and N == 1:
             return True
         else:
             return False
@@ -567,26 +585,29 @@ class SampleSheet:
         N = len(set([x.count(",") for x in self.sections["Data"]]))
 
         if N == 1:  # looks correct
-            if len(self.sections['Data'])==1:
+            if len(self.sections["Data"]) == 1:
                 return {
-                    "name":"check_data_section_csv_format" ,
-                    "msg": "Data section CSV format looks empty. Remove if of fill it.", 
-                    "status": "Error"}
+                    "name": "check_data_section_csv_format",
+                    "msg": "The [Data] section CSV format looks empty. Remove if of fill it.",
+                    "status": "Error",
+                }
             else:
                 return {
-                    "name":"check_data_section_csv_format" ,
-                    "msg": "Data section CSV format looks correct.", 
-                    "status": "Success"}
+                    "name": "check_data_section_csv_format",
+                    "msg": "The [Data] section CSV format looks correct.",
+                    "status": "Success",
+                }
         elif N == 0:
             return {
-                "name":"check_data_section_csv_format" ,
-                "msg": "Data section CSV format looks empty. Remove it of fill it",
-                "status": "Error"}
+                "name": "check_data_section_csv_format",
+                "msg": "The [Data] section CSV format looks empty. Remove it of fill it",
+                "status": "Error",
+            }
         else:
             lengths = set([x.count(",") for x in self.sections["Data"]])
             return {
-                "name":"check_data_section_csv_format" ,
-                "msg": f"Data section has lines with different number of entries {lengths}. Probably missing or commas in the [Data] section.",
+                "name": "check_data_section_csv_format",
+                "msg": f"The [Data] section has lines with different number of entries {lengths}. Probably missing or commas in the [Data] section.",
                 "status": "Error",
             }
 
@@ -601,7 +622,7 @@ class SampleSheet:
                         "status": "Error",
                     }
                 line_count += 1
-        return {"name": "check_semi_column_presence", "msg": "Data section looks correct.", "status": "Success"}
+        return {"name": "check_semi_column_presence", "msg": "No extra semi column found.", "status": "Success"}
 
     def _check_alpha_numerical(self):
         # Sample_Ref is probably from an old version.
@@ -612,14 +633,12 @@ class SampleSheet:
                 status = str(x).replace("-", "").replace("_", "").isalnum()
                 if status is False:
                     msg = f"type error: wrong {column} name in [Data] section (line {i+1}). Must be made of  alpha numerical characters, _, and - characters only. Foud {x}"
-                    return {
-                        "msg": msg, 
-                        "name": "check_alpha_numerical",
-                        "status": "Error"}
+                    return {"msg": msg, "name": "check_alpha_numerical", "status": "Error"}
         return {
             "name": "check_alpha_numerical",
-            "msg": "sample names and ID looks correct in the Sample_ID, Sample_Name, Sample_Ref and Project column (alpha numerical and - or _ characters)", 
-            "status": "Success"}
+            "msg": "sample names and ID looks correct in the Sample_ID, Sample_Name, Sample_Ref and Project column (alpha numerical and - or _ characters)",
+            "status": "Success",
+        }
 
     def validate(self):
         """This method checks whether the sample sheet is correctly formatted
@@ -645,7 +664,7 @@ class SampleSheet:
         # Stop after first error
         for check in checks:
             if check["status"] == "Error":
-                sys.exit("\u274C " + str(check["msg"] ))
+                sys.exit("\u274C " + str(check["msg"]))
 
     def _get_settings(self):
         data = {}
@@ -680,14 +699,6 @@ class SampleSheet:
             return None
 
     index_adapters = property(_get_adapter_kit, doc="returns index adapters")
-
-    def _get_name(self):
-        if len(self.sections["Name"]) == 1:
-            return self.sections["Name"][0]
-        else:
-            return self.sections["Name"]
-
-    name = property(_get_name)
 
     def to_fasta(self, adapter_name=""):
         """Extract adapters from [Adapter] section and print them as a fasta file"""
@@ -734,32 +745,31 @@ class SampleSheet:
                     fout.write(line.strip("\n") + "\n")
 
 
-
 class BCLConvert:
     """BCLconvert is a replacement for the bcl2fastq software
 
     The format are quite similar but there are differences as explained in the
-    official Illumina document. 
+    official Illumina document.
 
     https://support.illumina.com/sequencing/sequencing_software/bcl-convert/compatibility.html
     https://knowledge.illumina.com/software/general/software-general-reference_material-list/000003710
-    
+
     Some differences with bcl2fastq
 
     - sample ID compulsary --> error if absent
     - sample Name ignored --> warning if present
     - fastq header. filter  is set to N and control bit to 0. missing instrument is not supported -->error
-    - V1 and V2 accepted. 
+    - V1 and V2 accepted.
     - Note: At least one Sample_ID is required in the Data section of the Sample Sheet. --> error
 
     for barcode-mismatch, this is now in the samplesheet with
 
     BarcodeMismatchIndex1, #
     BarcodeMismatchIndex2, #
-    
+
     for trmimming, masking:
 
-    Adapter  --> Changed to AdapterRead1  
+    Adapter  --> Changed to AdapterRead1
     AdapterRead2 unchanged
 
     Many options that were on command lines are now in the sample sheet
@@ -770,17 +780,16 @@ class BCLConvert:
     Supports only [BCLConvert_Settings]. Required.
 
     """
+
     def __init__(self):
         pass
 
     # obsolet names are
-    #Adapter,TrimAdapter,MaskAdapter,MaskAdapterRead2,TrimAdapter,Read1StartFromCycle,Read1EndWithCycle,
+    # Adapter,TrimAdapter,MaskAdapter,MaskAdapterRead2,TrimAdapter,Read1StartFromCycle,Read1EndWithCycle,
     # Read1UMIStartFromCycle,Read1UMILength,Read1StartFromCycle,,Read2UMIStartFromCycle,Read2UMILength,Read2StartFromCycle
-
 
 
 class IEM(SampleSheet):
     def __init__(self, filename):
         super().__init__(filename)
         logger.warning("IEM class is deprecated. Use SampleShee instead.")
-        

@@ -1,18 +1,17 @@
-from sequana.iem import SampleSheet as IEM
 import glob
+
+from sequana.iem import SampleSheet as IEM
 
 from . import test_dir
 
 
 def test_iem():
 
-
     try:
-        iem = IEM('dummy')
+        iem = IEM("dummy")
         assert False
     except:
         assert True
-
 
     for this in [
         "iem/wrong/test_expdesign_wrong.csv",
@@ -24,7 +23,7 @@ def test_iem():
 
         iem = IEM(filename)
         iem.settings
-        iem.name
+        # iem.name
         iem.samples
         iem.index_adapters
         iem.header
@@ -58,6 +57,7 @@ def test_warning():
         warnings = [1 for check in checks if check["status"] == "Warning"]
         assert len(warnings) > 0
 
+
 def test_wrong():
 
     for filename in glob.glob(f"{test_dir}/data/iem/wrong/*csv"):
@@ -66,7 +66,7 @@ def test_wrong():
 
         try:
             e.validate()
-            assert False
+            assert False, filename
         except SystemExit:
             checks = e.checker()
             errors = [1 for check in checks if check["status"] == "Error"]
@@ -74,9 +74,9 @@ def test_wrong():
                 assert False, filename
 
 
-
 def test_iem_samplesheets():
     for filename in glob.glob(f"{test_dir}/data/iem/good/*csv"):
+        print(filename)
         e = IEM(f"{filename}")
         e.validate()
         e.version
