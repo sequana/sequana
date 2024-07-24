@@ -48,7 +48,7 @@ pairwise_comparison = function(dds, comps, meta_col_name,
                                independentFiltering, cooksCutoff){
     ## Perform all comparison specified in comps (a list of size 2
     ## lists). Using the groups specified in metadata table column 'meta_col_name'
-    
+
     compa_res = list()
 
     for (comp in comps){
@@ -104,9 +104,18 @@ export_counts = function(dds, outdir){
     write.csv(norm_counts, paste(outdir, 'counts_normed.csv', sep="/"), row.names=TRUE)
     write.csv(vst_counts, paste(outdir, 'counts_vst_norm.csv', sep="/"), row.names=TRUE)
 
+    # INFO: vst_counts uses getVarianceStabilizedData that calculates a variance 
+    # stabilizing transformation (VST) from the fitted dispersion-mean relation(s) 
+    # and then transforms the count data (normalized by division by the size factor), 
+    # The batch effect has an impact on the fitted dispersion-mean relation and therefore 
+    # on the vst_counts;
+    # the counts_vst_batch is derived from limma that does not seem to use the batch effet.
+    # to verify that, you can use a batch effect where effect are encoded as numbers or
+    # as strings and see that the counts_vst_norm are different indeed. 
+
+
 
     if (grepl("batch", "{{model}}" )) {
-
         # vst is used here for simplicity, difference with getVarianceStabilizedData ?
         vsd <- vst(dds)
         assay(vsd) <- limma::removeBatchEffect(assay(vsd), vsd$batch)
@@ -142,6 +151,13 @@ versions_report = function(outdir){
     write.csv(as.data.frame(installed.packages()[,c(1,3)]), file=paste(outdir, "versions.csv", sep="/"), row.names=FALSE)
 }
 
+export_size_factors = function(dds, outdir){
+    size_factors = sizeFactors(dds)
+    size_factors_df = as.data.frame(size_factors)
+    write.csv(size_factors_df, file=paste(outdir, "size_factors.csv", sep="/"), row.names=TRUE)
+}
+
+
 ####################
 ## MAIN
 ####################
@@ -155,7 +171,15 @@ res = pairwise_comparison(dds, {{comparisons_str}}, "{{condition}}",
                           independentFiltering={{independent_filtering}},
                           cooksCutoff={{cooks_cutoff}})
 
+
 export_dds(dds, "{{code_dir}}")
 export_pairwise(res, "{{outdir}}")
 export_counts(dds, "{{counts_dir}}")
+export_size_factors(dds, "{{code_dir}}")
+
 versions_report("{{code_dir}}")
+
+
+
+
+
