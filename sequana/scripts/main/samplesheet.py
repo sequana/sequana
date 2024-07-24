@@ -12,7 +12,7 @@
 import colorlog
 import rich_click as click
 
-from sequana.iem import IEM
+from sequana.iem import SampleSheet
 from sequana.scripts.utils import CONTEXT_SETTINGS
 
 logger = colorlog.getLogger(__name__)
@@ -29,21 +29,25 @@ def samplesheet(**kwargs):
     """Utilities to manipulate sample sheet"""
     name = kwargs["name"]
     if kwargs["check"]:
-        iem = IEM(name)
+        iem = SampleSheet(name)
         iem.validate()
         logger.info("SampleSheet looks correct")
     elif kwargs["full_check"]:
-        iem = IEM(name)
+        iem = SampleSheet(name)
 
-        try:
-            iem.validate()
-        except SystemExit:
-            pass
+        # why do we valide first ?
+        #try:
+        #    iem.validate()
+        #except SystemExit:
+        #    pass
 
         checks = iem.checker()
         for check in checks:
             if check["status"] == "Error":
-                print(f"\u274C {check['status']}, {check['msg']}")
+                try:
+                    print(f"\u274C {check['status']}, {check['msg']} {check['caller']}")
+                except:
+                    print(f"\u274C {check['status']}, {check['msg']} ")
 
         for check in checks:
             if check["status"] == "Warning":
@@ -54,10 +58,10 @@ def samplesheet(**kwargs):
                 print(f"\u2714 {check['status']}, {check['msg']}")
 
     elif kwargs["extract_adapters"]:
-        iem = IEM(name)
+        iem = SampleSheet(name)
         iem.to_fasta()
     elif kwargs["quick_fix"]:
-        iem = IEM(name)
+        iem = SampleSheet(name)
         if kwargs["output"]:
             filename = kwargs["output"]
         else:  # pragma: no cover

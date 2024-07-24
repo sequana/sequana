@@ -53,6 +53,7 @@ class RNADesign:
         c.tryme(self._check_condition)
         c.tryme(self._check_condition_col_name)
         c.tryme(self._check_label_col_name)
+        c.tryme(self._check_label_uniqueness)
         return c.results
 
     def validate(self):
@@ -61,6 +62,13 @@ class RNADesign:
         for check in checks:
             if check["status"] == "Error":
                 sys.exit("\u274C " + check["msg"] + self.filename)
+
+    def _check_label_uniqueness(self):
+        if self.df['label'].duplicated().sum()>0:
+            duplicated = list(self.df['label'][self.df['label'].duplicated()].values)
+            return {"msg": f"Found duplicated labels {duplicated}", "status": "Error"}
+        else:
+            return {"msg": f"No duplicated labels", "status": "Success"}
 
     def _check_condition(self):
 
@@ -1587,11 +1595,17 @@ class RNADiffResults:
             min_subset_size = None
 
         # now let us do the plotting
-        upset.UpSet(
+        u = upset.UpSet(
             upset.from_contents(data),
             subset_size="count",
             sort_by="cardinality",
             totals_plot_elements=4,
+            element_size=44,
             intersection_plot_elements=len(data),
             min_subset_size=min_subset_size,
-        ).plot()
+        )
+
+        u._default_figsize = (16, 8)
+        u.plot()
+
+

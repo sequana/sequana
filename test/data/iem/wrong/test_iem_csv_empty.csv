@@ -1,0 +1,20 @@
+[Header]
+IEMFileVersion,4
+Investigator Name,
+Experiment Name,
+Date,8/23/2016
+Workflow,GenerateFASTQ
+Application,FASTQ Only
+Assay,NEXTFlex-PCRfree
+Description,
+Chemistry,Default
+
+[Reads]
+300
+300
+
+[Settings]
+Adapter,AGATCGGAAGAGCACACGTCTGAACTCCAGTCA
+AdapterRead2,AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT
+
+[Data]

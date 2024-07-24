@@ -16,10 +16,10 @@ from pathlib import Path
 from sequana import version
 
 
-def teardown(workdir):
+def teardown(workdir, mainpath=".sequana"):
     # common function to be used by subcommands to store called command
 
-    info_txt = Path(workdir) / ".sequana" / "info.txt"
+    info_txt = Path(workdir) / f"{mainpath}" / "info.txt"
     info_txt.parent.mkdir(exist_ok=True)
     with open(info_txt, "w") as fout:
         fout.write(f"# sequana version: {version}\n")

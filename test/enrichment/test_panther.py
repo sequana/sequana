@@ -27,6 +27,7 @@ def get_gene_lists():
     return {"up": up, "down": down, "all": up + down}
 
 
+@pytest.mark.xfail(reason="slow network")
 def test_panther1(mocker, tmpdir):
     mocker.patch("bioservices.panther.Panther.get_enrichment", side_effect=get_mock_data)
     gene_lists = get_gene_lists()
@@ -47,6 +48,7 @@ def test_panther1(mocker, tmpdir):
     pe.save_chart(df, outpng)
 
 
+@pytest.mark.xfail(reason="slow network")
 def test_panther_all(mocker):
     mocker.patch("bioservices.panther.Panther.get_enrichment", side_effect=get_mock_data)
 

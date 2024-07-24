@@ -25,7 +25,7 @@ logger = colorlog.getLogger(__name__)
 @click.option(
     "--module",
     required=False,
-    type=click.Choice(["bamqc", "bam", "fasta", "fastq", "gff", "vcf"]),
+    type=click.Choice(["bamqc", "bam", "fasta", "fastq", "gff", "vcf", "sam"]),
 )
 def summary(**kwargs):
     """Create a HTML report for various type of NGS formats.
@@ -53,12 +53,18 @@ def summary(**kwargs):
             module = "fastq"
         elif names[0].endswith(".bam"):
             module = "bam"
+        elif names[0].endswith(".sam"):
+            module = "bam"
         elif names[0].endswith(".gff") or names[0].endswith("gff3"):
             module = "gff"
         elif names[0].endswith("fasta.gz") or names[0].endswith(".fasta"):
             module = "fasta"
+        elif names[0].endswith("fa.gz") or names[0].endswith(".fa"):
+            module = "fasta"
+        elif names[0].endswith("vcf"):
+            module = "vcf"
         else:
-            logger.error("please use --module to tell us about the input fimes")
+            logger.error("Only extensions fastq, fasta, bam, sam, gff, gff3 and vcf are recognised. please use --module to tell us about the type of the input files")
             sys.exit(1)
 
     if module == "bamqc":
@@ -87,6 +93,16 @@ def summary(**kwargs):
 
         for filename in names:
             ff = BAM(filename)
+            stats = ff.get_stats()
+            df = pd.Series(stats).to_frame().T
+            print(df)
+    elif module == "sam":
+        import pandas as pd
+
+        from sequana import SAM
+
+        for filename in names:
+            ff = SAM(filename)
             stats = ff.get_stats()
             df = pd.Series(stats).to_frame().T
             print(df)

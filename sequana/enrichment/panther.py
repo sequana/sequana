@@ -342,13 +342,9 @@ class PantherEnrichment(Ontology, PlotGOTerms):
                 enrichment[ontology] = None
                 continue
 
-            ##if isinstance(results["result"], dict):  # pragma: no cover
-            #    results["result"] = [results["result"]]
-
-            # extract the ID and label of the go term and save
-            # as primary keys
 
             for i, k in enumerate(results["result"]):
+
                 if results["result"][i]["term"]["label"] == "UNCLASSIFIED":
                     unclassified[ontology] += 1
                     # results["result"][i]['label'] = None
@@ -490,3 +486,47 @@ class PantherEnrichment(Ontology, PlotGOTerms):
 
     def _get_graph(self, df, ontologies):
         return self.quick_go_graph._get_graph(df, ontologies=ontologies)
+
+
+def get_go_from_panther(name):#pragma: no cover
+    """
+    Retrieves GO terms and associated genes from PantherDB.
+
+    Parameters:
+
+    :param str name: The name of the PantherDB file to retrieve e.g leishmania, human
+
+    Returns:
+    gos (defaultdict): A dictionary where keys are GO terms and values are lists of associated genes.
+    data (list): A list of lines from the PantherDB file, each line containing a gene and its associated GO terms.
+
+    The function connects to the PantherDB FTP server, retrieves the specified file, and parses the data to extract
+    the GO terms and associated genes. It then prints the number of genes and GO terms found in the file.
+    """
+    import requests
+    from collections import defaultdict
+    url = "http://data.pantherdb.org/ftp/sequence_classifications/current_release/PANTHER_Sequence_Classification_files/"
+    url += f"PTHR19.0_{name}"
+    
+    req = requests.get(url)
+
+    data = req.content.strip()
+    data = data.decode().strip().split("\n")
+
+    gos = defaultdict(list)
+
+    N = len(data)
+    logger.info(f"Number of genes {N}")
+    # 7788 GO terms. About 121 genes per go term. 
+    for line in data:
+        items = line.strip().split("#")
+        name = items[0]
+        for item in items:
+            if item.startswith("GO:"):
+                go = item.split(";")[0]
+                gos[go].append(name)
+    logger.info(f"Number of GO terms {len(gos)}")
+
+    return gos, data
+
+

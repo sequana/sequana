@@ -159,7 +159,9 @@ it will be used. """,
     "--cooks-cutoff",
     type=click.Path(),
     default=None,
-    help="""if none, let DESeq2 choose the cutoff""",
+    help="""if none, let DESeq2 choose the cutoff. Note that the Cook’s distance 
+    is set to NA for genes with values above the threshold. At least 3 replicates 
+    are required for flagging).""",
 )
 @click.option(
     "--independent-filtering/--no-independent-filtering",
@@ -178,7 +180,9 @@ effect to be included in the statistical model as batch ~ condition""",
 @click.option(
     "--fit-type",
     default="parametric",
-    help="DESeq2 type of fit. Default is 'parametric'",
+    help="""DESeq2 type of fit. Default is 'parametric'. Uing the mean of gene-wise 
+    disperion estimates as the fitted value can be specified setting this argument 
+    to 'mean'. """,
 )
 @click.option(
     "--minimum-mean-reads-per-gene",
@@ -189,7 +193,8 @@ replicates and conditions. Not recommended if you have lots of conditions. By de
 @click.option(
     "--minimum-mean-reads-per-condition-per-gene",
     default=0,
-    help="Keep genes that have at least one condition where the average number of reads is greater or equal to this value. By default all genes are kept",
+    help="""Keep genes that have at least one condition where the average number of reads 
+    is greater or equal to this value. By default all genes are kept""",
 )
 @click.option(
     "--model",
@@ -199,7 +204,9 @@ replicates and conditions. Not recommended if you have lots of conditions. By de
 @click.option(
     "--shrinkage/--no-shrinkage",
     default=True,
-    help="Shrinkage was added in the DESeq2 script analysis in Sequana 0.14.7. Although it has a marginal impact, number of DGEs may be different and volcano plots have usually a different shape. To ignore the shrinkage, you could set the option to --no-shrinkage",
+    help="""Shrinkage was added in the DESeq2 script analysis in Sequana 0.14.7. Although it 
+    has a marginal impact, number of DGEs may be different and volcano plots have usually 
+    a different shape. To ignore the shrinkage, you could set the option to --no-shrinkage""",
 )
 @click.option(
     "--keep-all-conditions/--no-keep-all-conditions",
@@ -322,7 +329,8 @@ def rnadiff(**kwargs):
 
     if not cmd_exists("Rscript"):
         logger.critical(
-            """Rscript not found; You will need R with the DESeq2 and ashr packages installed. You may install it yourself or use damona using the rtools:1.2.0 image """
+            """Rscript not found; You will need R with the DESeq2 and ashr packages installed. 
+            You may install it yourself or use damona using the rtools:1.2.0 image """
         )
         sys.exit(1)
 
@@ -347,13 +355,14 @@ def rnadiff(**kwargs):
         gff = GFF3(gff_filename)
         for feat in feature.split(","):
             if feat not in gff.features:
-                logger.error(f"{feature} not found in the GFF. Most probably a wrong feature name")
+                logger.error(f"{feature} not found in the GFF. Most probably a wrong feature name. Correct features are e.g. {gff.features[0:10]}")
                 sys.exit(1)
             attributes = gff.get_attributes(feat)
             if attribute not in attributes:
+
                 logger.error(
                     f"{attribute} not found in the GFF for the provided feature ({feat}). Most probably a wrong feature name."
-                    " Please change --attribute-name option or do not provide any GFF"
+                    f" Please change --attribute-name option or do not provide any GFF. Correct attribute names are {attributes}"
                 )
                 sys.exit(1)
     else:
@@ -398,6 +407,7 @@ def rnadiff(**kwargs):
         minimum_mean_reads_per_gene=kwargs.get("minimum_mean_reads_per_gene"),
         minimum_mean_reads_per_condition_per_gene=kwargs.get("minimum_mean_reads_per_condition_per_gene"),
         model=kwargs["model"],
+        sep_counts=","
     )
 
     if not kwargs["report_only"]:

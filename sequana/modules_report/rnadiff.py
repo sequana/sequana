@@ -259,6 +259,11 @@ variance stabilization); the first 500 most variable genes were selected. </p>""
 
         html_pca_plotly = "<p>Here is a PCA showing the first 3 components in 3D.</p>"
 
+        import plotly.io as pio
+
+        pio.renderers.default = 'iframe'  # Ensure it's set to browser
+        pio.renderers['browser'].timeout = 60  # Increa
+
         if os.path.exists(f"{self.folder}/counts/counts_vst_batch.csv"):
             image2 = self.create_embedded_png(pca, "filename", count_mode="vst_batch", style=style)
             html_pca += f"""<p>Note that a batch effect was included. </p>{image1}{image2}<hr>"""

@@ -35,6 +35,8 @@ from .samplesheet import samplesheet
 from .summary import summary
 from .taxonomy import taxonomy
 from .variants_comparison import variants_comparison
+from .find_integrated_genes import find_integrated_genes
+
 
 click.rich_click.USE_MARKDOWN = True
 click.rich_click.SHOW_METAVARS_COLUMN = False
@@ -87,3 +89,4 @@ main.add_command(samplesheet)
 main.add_command(summary)
 main.add_command(taxonomy)
 main.add_command(variants_comparison)
+main.add_command(find_integrated_genes)

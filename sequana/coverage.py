@@ -23,6 +23,39 @@ logger = colorlog.getLogger(__name__)
 __all__ = ["Coverage"]
 
 
+
+def doc2boc(doc):
+    """Compute the breadth of coverage (BOC) given the coverage (DOC)
+
+
+    In the context of next-generation sequencing (NGS), the breadth of coverage (BOC)
+    is the fraction of the genome covered by at least one read; let us denote if $b$. The Depth of coverage (DOC)
+    is the average number of times a base in the genome is sequenced; let us denote it $d$. 
+ 
+    The relationship between DOC and BOC can be understood by considering the probability 
+    that a particular base in the genome is not covered by any read. If the reads are randomly 
+    distributed across the genome, the probability that a specific base is not covered by any 
+    read (assuming Poisson distribution) is
+
+    .. math::
+
+        P(not covered) = e^{-d}
+
+    Thus, the probability that a specific base is covered by at least one read is 
+
+    .. math:: 
+
+        P(covered)= 1 - e ^{-d}
+
+    and since the BOC is the fraction of the genome covered by at least one read, we also have
+
+    .. math::
+
+        BOC(d) = 1 - e ^{-d}
+    """
+    return 1 - math.exp(-doc)
+
+
 class Coverage(object):
     r"""Utilities related to Lander and Waterman theory
 
