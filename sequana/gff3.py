@@ -10,17 +10,15 @@
 #  documentation: http://sequana.readthedocs.io
 #
 ##############################################################################
-import os
 from collections import defaultdict
-
-import colorlog
+import sys
 
 from sequana.errors import BadFileFormat
-
-logger = colorlog.getLogger(__name__)
-
 from sequana.lazy import pandas as pd
 from sequana.lazy import pysam
+
+import colorlog
+logger = colorlog.getLogger(__name__)
 
 __all__ = ["GFF3"]
 
@@ -112,12 +110,6 @@ class GFF3:
             self._attributes = sorted(self.df.columns[8:])
 
         return self._attributes
-
-    # remove attributes because it may lead to difficult bug since get_attributes
-    # may be used several times with diferent features, we do not want to store it
-    # as an attribute
-    #attributes = property(get_attributes)
-
 
     def read(self):
         """Read annotations one by one creating a generator"""

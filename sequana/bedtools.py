@@ -387,6 +387,7 @@ class SequanaCoverage(object):
         #  - total_length: number of rows in the BED file
 
         N = 0
+
         logger.info("Scanning input file (chunk of {} rows)".format(self.chunksize))
         positions = {}
         self.chrom_names = []
@@ -954,11 +955,15 @@ class ChromosomeCov(object):
         indice = np.argmax(results_pis)
         return self.gaussians_params[indice]
 
-    def compute_zscore(self, k=2, use_em=True, clip=4, verbose=True):
+    def compute_zscore(self, k=2, use_em=True, clip=4, verbose=True, force_models=None):
         """Compute zscore of coverage and normalized coverage.
 
         :param int k: Number gaussian predicted in mixture (default = 2)
+        :param use_em: use Expectation-Maximization (EM) algorithm 
         :param float clip: ignore values above the clip threshold
+        :param bool force_models: if set, fitted models is ignored and replaced with 2 Gaussian models
+            where the main model has mean of 1 and represent 90% of the data. Useful to override
+            normal behavior
 
         Store the results in the :attr:`df` attribute (dataframe) with a
         column named *zscore*.
@@ -999,18 +1004,28 @@ class ChromosomeCov(object):
             indices = random.sample(range(len(data)), 100000)
             data = [data.iloc[i] for i in indices]
 
-        if use_em:
-            self.mixture_fitting = mixture.EM(data)
-            self.mixture_fitting.estimate(k=k)
-        else:
-            self.mixture_fitting = mixture.GaussianMixtureFitting(data, k=k)
-            self.mixture_fitting.estimate()
 
-        # keep gaussians informations
-        self.gaussians = self.mixture_fitting.results
-        params_key = ("mus", "sigmas", "pis")
-        self.gaussians_params = [{key[:-1]: self.gaussians[key][i] for key in params_key} for i in range(k)]
-        self.best_gaussian = self._get_best_gaussian()
+        if force_models:
+            self.gaussians_params = [
+                {'mu':1, 'sigma':0.2, 'pi':0.9},
+                {'mu':2, 'sigma':0.2, 'pi':0.1}
+            ]
+            self.best_gaussian = self._get_best_gaussian()
+            # dummy value not equal to zero
+            self.gaussians = {"sigmas": [0.2,0.2], 'mus':[1,2], 'pis':[0.9,0.1]}
+        else:
+            if use_em:
+                self.mixture_fitting = mixture.EM(data)
+                self.mixture_fitting.estimate(k=k)
+            else:
+                self.mixture_fitting = mixture.GaussianMixtureFitting(data, k=k)
+                self.mixture_fitting.estimate()
+
+            # keep gaussians informations
+            self.gaussians = self.mixture_fitting.results
+            params_key = ("mus", "sigmas", "pis")
+            self.gaussians_params = [{key[:-1]: self.gaussians[key][i] for key in params_key} for i in range(k)]
+            self.best_gaussian = self._get_best_gaussian()
 
         # warning when sigma is equal to 0
         if self.best_gaussian["sigma"] == 0:
@@ -1259,7 +1274,10 @@ class ChromosomeCov(object):
             pylab.clf()
         ax = pylab.gca()
         ax.set_facecolor("#eeeeee")
-        pylab.xlim(df["pos"].iloc[0], df["pos"].iloc[-1])
+        try:
+            pylab.xlim(df["pos"].iloc[0], df["pos"].iloc[-1])
+        except IndexError:
+            pass
         axes = []
         labels = []
 
