@@ -49,41 +49,6 @@ class G4Hunter:
         # return np.array(cython_base_score(line))
         return self.base_score_python(line)
 
-    """def base_score_numpy(self, line):
-        #Elegant but twice as slow as pure python...
-        scores = []
-        counterG = 0
-        counterC = 0
-
-        scores = np.zeros(len(line), dtype=int)
-
-        for i, item in enumerate(line):
-            if item in "Gg":
-                if counterC:
-                    scores[i - counterC : i] = -np.minimum(counterC, 4)
-                counterG += 1
-                counterC = 0
-            elif item in "Cc":
-                if counterG:
-                    scores[i - counterG : i] = np.minimum(counterG, 4)
-                counterG = 0
-                counterC += 1
-            else:
-                if counterG:
-                    scores[i - counterG : i] = np.minimum(counterG, 4)
-                if counterC:
-                    scores[i - counterC : i] = -np.minimum(counterC, 4)
-                scores[i] = 0
-                counterC = 0
-                counterG = 0
-        if counterG:
-            scores[i - counterG + 1 :] = np.minimum(counterG, 4)
-        if counterC:
-            scores[i - counterC + 1 :] = -np.minimum(counterC, 4)
-
-        return scores
-    """
-
     def base_score_python(self, line):
         scores = []
         counterG = 0

@@ -17,9 +17,11 @@ class BinaryPercentage:
     Expects a dataframe with 2 columns. Their names are used for the labels.
     Indices of the dataframe is the sample name.
 
-        from sequana.viz.plotly import HorizontalBar_BinaryPercentage
-        hb = HorizontalBar_BinaryPercentage()
-        hb.df = df
+    ::
+
+        from sequana.viz.plotly import BinaryPercentage
+        hb = BinaryPercentage()
+        hb.df = pd.DataFrame({"A": [1,50,100], 'B': [1,50,100]})
         hb.plot()
     """
 

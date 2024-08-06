@@ -14,7 +14,7 @@
 # SHOULD BE MERGED INTO freebayes_vcf_filter
 
 
-class VCF_mpileup_4dot1(VCFBase):
+class VCF_mpileup_4dot1(VCFBase):  # pragma: no cover
     """VCF filter dedicated to version 4.1 and mpileup
 
     This filter can be used to filter VCF created with mpileup.
