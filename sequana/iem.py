@@ -30,28 +30,22 @@ class SampleSheet:
     """Reader and validator of Illumina samplesheets
 
     The Illumina samplesheet reader and validator verifies the correctness of the sections
-    in the samplesheet, which are case-sensitive and are enclosed within square brackets.
+    in the samplesheet, which are not case-sensitive and are enclosed within square brackets.
+
     Following the closing bracket, no additional characters are permitted, except
-    for commas and the end-of-line marker.
+    for commas and the end-of-line marker. For instance [Data]a prevents the [Data] section
+    from being correctly processed.
 
-    The samplesheet must start with the [Header] section and end with
-    the [Data] section, with other sections arranged arbitrarily.
-
-    The [Header] section must appear on the first line and consist of
-    key-value pairs represented as records, with each line consisting
+    The sections then consist of key-value pairs represented as records, with each line consisting
     of precisely two fields.
 
     An optional [Settings] section can contain key-value pairs, and
     the [Reads] section specifies the number of cycles per read, which
     is exclusively required for MiSeq.
 
-    For samplesheet with adapters, the following fields must be
-    present: [Version], [Name], [Settings], [I7], [I5], [IndexPlateLayout].
-
     The [Data] section, which is a table similar to CSV format, is optional.
     However, without [Data] section all reads are sent to a single 'undetermined'
-    outout file. If rovided, Each sample a unique string
-    identifier in the Sample_ID column.
+    output file. Sample_ID is highly recommended.
 
     Example of typical Data section to be used with bcl2fastq::
 
@@ -64,6 +58,9 @@ class SampleSheet:
         A10003,Sample_C,D703,CGCTCATT,D501,TATAGCCT
         A10004,Sample_D,D704,GAGATTCC,D501,TATAGCCT
 
+    Important: altough we have upper case names as specified in the Illumina specs, the
+    bcl2fastq does not care about the upper case. This is not intuitive since IEM produces
+    keys with upper and lower case names similarly to the specs.
 
     **Sequana Standalone**
 
@@ -130,6 +127,8 @@ class SampleSheet:
         # looks for special section Header/Data/Reads/Settings or
         # any other matching section thst looks like [XXX]
 
+        # sections can be of any types of cases (lower, upper, mixed)
+
         current_section = None
         data = {}
         with open(self.filename, "r") as fin:
@@ -148,16 +147,32 @@ class SampleSheet:
                         data[current_section] = [line]
         self.sections = data
 
+        # if the sample sheet starts with an incorrect name
+        # e.g section not closed by square brackets or empty lines
+        # the a None key is present and should be ignored or cast
+        # into a string:
+        if None in self.sections:
+            self.sections["None"] = self.sections[None]
+            del self.sections[None]
+
+        # Some cleanup. Since the sections are case insensitive within
+        # bcl2fastq, we need to convert everything back to titles
+        self.sections = {k.title(): v for k, v in self.sections.items()}
+
     def _get_df(self):
         if "Data" in self.sections:
             if self.sections["Data"]:
-
+                # cope with the case of comma or semicolon separators.
                 df1 = pd.read_csv(io.StringIO("\n".join(self.sections["Data"])), index_col=False, sep=",")
                 df2 = pd.read_csv(io.StringIO("\n".join(self.sections["Data"])), index_col=False, sep=";")
 
                 if len(df1.columns) > len(df2.columns):
+
+                    # rename all columns to lower case
+                    df1.columns = [x.lower() for x in df1.columns]
                     return df1
                 else:
+                    df2.columns = [x.lower() for x in df2.columns]
                     return df2
             else:
                 return pd.DataFrame()
@@ -168,7 +183,7 @@ class SampleSheet:
 
     def _get_samples(self):
         try:
-            return self.df["Sample_ID"].values
+            return self.df["sample_id"].values
         except AttributeError:  # pragma: no cover
             return "No Sample_ID found in the Data header section"
 
@@ -210,7 +225,7 @@ class SampleSheet:
             checks.tryme(self._check_sample_lane_number)
             checks.tryme(self._check_alpha_numerical)
 
-            if "Sample_Name" in self.df.columns:
+            if "sample_name" in self.df.columns:
                 checks.tryme(self._check_sample_names)
                 checks.tryme(self._check_unique_sample_name)
             else:
@@ -250,7 +265,17 @@ class SampleSheet:
         for k, v in self.settings.items():
 
             # checks ACGT content (no acgt allowed)
-            if k in ["Adapter", "TrimAdapter", "AdapterRead2", "TrimAdapterRead2", "MaskAdapter", "MaskAdapterRead2"]:
+            if k.lower() in [
+                x.lower()
+                for x in [
+                    "Adapter",
+                    "TrimAdapter",
+                    "AdapterRead2",
+                    "TrimAdapterRead2",
+                    "MaskAdapter",
+                    "MaskAdapterRead2",
+                ]
+            ]:
                 allowed_chars = set("ACGT")
 
                 def is_valid_string(s):
@@ -262,7 +287,10 @@ class SampleSheet:
                         "msg": f"Invalid nucleotide sequence found for {k} (v)",
                         "status": "Error",
                     }
-            elif k in ["ReverseComplement", "FindAdaptersWithIndels", "TrimUMI", "CreateFastqForIndexReads"]:
+            elif k.lower() in [
+                x.lower()
+                for x in ["ReverseComplement", "FindAdaptersWithIndels", "TrimUMI", "CreateFastqForIndexReads"]
+            ]:
                 if v not in ("true", "false", "t", "f", "yes", "no", "y", "n", "1", "0"):
                     return {
                         "name": "check_settings",
@@ -270,15 +298,18 @@ class SampleSheet:
                         "status": "Error",
                     }
 
-            elif k in [
-                "Read1StartFromCycle",
-                "Read2StartFromCycle",
-                "Read1EndWithCycle",
-                "Read2EndWithCycle",
-                "Read1UMILength",
-                "Read2UMILength",
-                "Read1UMIStartFromCycle",
-                "Read2UMIStartFromCycle",
+            elif k.lower() in [
+                x.lower()
+                for x in [
+                    "Read1StartFromCycle",
+                    "Read2StartFromCycle",
+                    "Read1EndWithCycle",
+                    "Read2EndWithCycle",
+                    "Read1UMILength",
+                    "Read2UMILength",
+                    "Read1UMIStartFromCycle",
+                    "Read2UMIStartFromCycle",
+                ]
             ]:
                 allowed_chars = set("0123456789")
 
@@ -291,7 +322,7 @@ class SampleSheet:
                         "msg": f"Invalid value for {k}. Must be positive. You provided: {v}",
                         "status": "Error",
                     }
-            elif k in ["ExcludeTiles", "ExcludeTilesLaneX"]:
+            elif k.lower() in [x.lower() for x in ["ExcludeTiles", "ExcludeTilesLaneX"]]:
 
                 allowed_chars = set("0123456789")
 
@@ -312,9 +343,9 @@ class SampleSheet:
 
     def _check_sample_ID(self):
 
-        if "Sample_ID" in self.df.columns:  # optional
+        if "sample_id" in self.df.columns:  # optional
             # check that names are not in 'all' or 'undetermined'
-            if (self.df["Sample_ID"] == "unknown").sum() or (self.df["Sample_ID"] == "all").sum():
+            if (self.df["sample_id"] == "unknown").sum() or (self.df["sample_id"] == "all").sum():
                 return {
                     "name": "check_sample_ID",
                     "msg": "Sample_ID column contains forbidden name ('all' or 'unknown')",
@@ -326,6 +357,7 @@ class SampleSheet:
                     "msg": "Sample_ID column (no unknown/undetermined label). Looks correct",
                     "status": "Success",
                 }
+
         else:
             return {
                 "name": "check_sample_ID",
@@ -336,7 +368,7 @@ class SampleSheet:
     def _check_sample_names(self):
 
         # check that names are not in 'all' or 'undetermined'
-        if (self.df["Sample_Name"] == "unknown").sum() or (self.df["Sample_Name"] == "undetermined").sum():
+        if (self.df["sample_name"] == "unknown").sum() or (self.df["sample_name"] == "undetermined").sum():
             return {
                 "name": "check_sample_names",
                 "msg": "Sample_Name column contains forbidden name ('all' or 'undetermined')",
@@ -351,9 +383,9 @@ class SampleSheet:
 
     def _check_sample_project(self):
 
-        if "Sample_Project" in self.df.columns:  # optional
+        if "sample_project" in self.df.columns:  # optional
             # check that names are not in 'all' or 'undetermined'
-            if (self.df["Sample_Project"] == "all").sum() or (self.df["Sample_Project"] == "default").sum():
+            if (self.df["sample_project"] == "all").sum() or (self.df["sample_project"] == "default").sum():
                 return {
                     "name": "check_sample_project",
                     "msg": "Sample_Project column contains forbidden name ('all' or 'default')",
@@ -376,7 +408,7 @@ class SampleSheet:
         # In fact, all columns are optional except index and Sample_Name is optional
         # Sample_Project is optional. If provided, fastq are saved in that sub directory.
 
-        for column in ["Sample_ID", "index"]:
+        for column in ["sample_id", "index"]:
             if column not in self.df.columns:
                 return {
                     "name": "check_mandatory_data_columns",
@@ -392,11 +424,11 @@ class SampleSheet:
     def _check_unique_sample_name(self):
         # check that sample names are unique and that sample Names are unique too
 
-        if self.df["Sample_Name"].isnull().sum() > 0:
+        if self.df["sample_name"].isnull().sum() > 0:
             return {"name": "check_unique_sample_name", "msg": "Some sample names are empty", "status": "Warning"}
 
-        elif len(self.df.Sample_Name) != len(self.df.Sample_Name.unique()):
-            duplicated = self.df.Sample_Name[self.df.Sample_Name.duplicated()].index
+        elif len(self.df.sample_name) != len(self.df.sample_name.unique()):
+            duplicated = self.df.sample_name[self.df.sample_name.duplicated()].index
             duplicated = ",".join([str(x + 1) for x in duplicated])
             return {
                 "name": "check_unique_sample_name",
@@ -409,15 +441,15 @@ class SampleSheet:
     def _check_unique_sample_ID(self):
         # check that sample names are unique and that sample Names are unique too
 
-        if "Sample_ID" not in self.df.columns:
+        if "sample_id" not in self.df.columns:
             return {
                 "name": "check_unique_sample_ID",
                 "msg": "Sample ID not found in the header of the [Data] section",
                 "status": "Warning",
             }
 
-        if len(self.df.Sample_ID) != len(self.df.Sample_ID.unique()):
-            duplicated = self.df.Sample_ID[self.df.Sample_ID.duplicated()].index
+        if len(self.df["sample_id"]) != len(self.df["sample_id"].unique()):
+            duplicated = self.df.sample_id[self.df.sample_id.duplicated()].index
             duplicated = ",".join([str(x + 1) for x in duplicated])
             return {
                 "name": "check_unique_sample_ID",
@@ -428,7 +460,7 @@ class SampleSheet:
             return {"name": "check_unique_sample_ID", "msg": "Sample ID uniqueness", "status": "Success"}
 
     def _check_sample_lane_number(self):
-        if "Sample_Lane" in self.df.columns:
+        if "sample_lane" in self.df.columns:
 
             # Define the allowed lanes
             allowed_chars = set("12345678")
@@ -437,7 +469,7 @@ class SampleSheet:
                 return set(str(s)).issubset(allowed_chars)
 
             # Apply the function to the DataFrame
-            invalid_lanes = list(self.df[~self.df["Sample_Lane"].apply(is_valid_lane)].index)
+            invalid_lanes = list(self.df[~self.df["sample_lane"].apply(is_valid_lane)].index)
 
             if len(invalid_lanes):
                 invalid_lanes = [x + 1 for x in invalid_lanes]
@@ -492,7 +524,7 @@ class SampleSheet:
         if indices.duplicated().sum() > 0:
             duplicated = indices[indices.duplicated()].values
             try:
-                IDs = self.df[indices.duplicated()].Sample_ID.values
+                IDs = self.df[indices.duplicated()].sample_id.values
                 IDs = ", ".join([str(x) for x in IDs])
                 IDs = f"related to sample IDs: {IDs}"
             except Exception as err:  # pragma: no cover
@@ -507,14 +539,14 @@ class SampleSheet:
         warnings = []
         # check whether minimal columns are included
         for x in [
-            "I7_Index_ID",
-            "Sample_Project",
-            "Description",
-            "Sample_Plate",
-            "Sample_Well",
-            "Lane",
-            "Index_Plate",
-            "Index_Plate_Well",
+            "i7_index_id",
+            "sample_project",
+            "description",
+            "sample_plate",
+            "sample_well",
+            "lane",
+            "index_plate",
+            "index_plate_well",
         ]:
             if x not in self.df.columns:
                 warnings.append(x)
@@ -625,18 +657,17 @@ class SampleSheet:
         return {"name": "check_semi_column_presence", "msg": "No extra semi column found.", "status": "Success"}
 
     def _check_alpha_numerical(self):
-        # Sample_Ref is probably from an old version.
-        for column in ["Sample_ID", "Sample_Name", "Sample_Ref", "Sample_Project"]:
+        for column in ["sample_id", "sample_name", "sample_project"]:
             if column not in self.df.columns:
                 continue
             for i, x in enumerate(self.df[column].values):
                 status = str(x).replace("-", "").replace("_", "").isalnum()
                 if status is False:
-                    msg = f"type error: wrong {column} name in [Data] section (line {i+1}). Must be made of  alpha numerical characters, _, and - characters only. Foud {x}"
+                    msg = f"type error: wrong {column} name in [Data] section (line {i+1}). Must be made of  alpha numerical characters, _, and - characters only. Found {x}"
                     return {"msg": msg, "name": "check_alpha_numerical", "status": "Error"}
         return {
             "name": "check_alpha_numerical",
-            "msg": "sample names and ID looks correct in the Sample_ID, Sample_Name, Sample_Ref and Project column (alpha numerical and - or _ characters)",
+            "msg": "sample names and ID looks correct in the Sample_ID, Sample_Name, and Project column (alpha numerical and - or _ characters)",
             "status": "Success",
         }
 
@@ -708,14 +739,14 @@ class SampleSheet:
         except KeyError:
             ar2 = ""
 
-        for name, index in zip(self.df["I7_Index_ID"], self.df["index"]):
+        for name, index in zip(self.df["i7_index_id"], self.df["index"]):
             read = f"{ar1}{index}{ar2}"
             frmt = {"adapter": adapter_name, "name": name, "index": index}
             print(">{adapter}_index_{name}|name:{name}|seq:{index}".format(**frmt))
             print(read)
 
         if "index2" in self.df.columns:
-            for name, index in zip(self.df["I5_Index_ID"], self.df["index2"]):
+            for name, index in zip(self.df["i5_index_id"], self.df["index2"]):
                 read = f"{ar1}{index}{ar2}"
                 frmt = {"adapter": adapter_name, "name": name, "index": index}
                 print(">{adapter}_index_{name}|name:{name}|seq:{index}".format(**frmt))
