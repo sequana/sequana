@@ -240,6 +240,8 @@ Changelog
 ========= ==========================================================================
 Version   Description
 ========= ==========================================================================
+0.17.1    * NEW: tsne plot
+          * CHANGES: update iem module with additional specs
 0.17.0    * CHANGE. remove the substractor utility (use sequana_depletion pipeline
             instead)
           * CHANGE. remove get_max_gc_correlation function from bedtools. not used.
