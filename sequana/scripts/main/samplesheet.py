@@ -20,13 +20,17 @@ logger = colorlog.getLogger(__name__)
 
 @click.command(context_settings=CONTEXT_SETTINGS)
 @click.argument("name", type=click.STRING)
-@click.option("--check", is_flag=True, help="")
-@click.option("--full-check", is_flag=True)
-@click.option("--extract-adapters", is_flag=True)
+@click.option("--check", is_flag=True, help="report validity of the input file")
+@click.option("--full-check", is_flag=True, help="report complete report of all checks")
+@click.option(
+    "--extract-adapters",
+    is_flag=True,
+    help="extract adapters from the settings section and save them into a fasta file",
+)
 @click.option("--quick-fix", is_flag=True)
 @click.option("--output", default=None)
 def samplesheet(**kwargs):
-    """Utilities to manipulate sample sheet"""
+    """Standalone application to validate/check Illumina sample sheet"""
     name = kwargs["name"]
     if kwargs["check"]:
         iem = SampleSheet(name)
@@ -34,12 +38,6 @@ def samplesheet(**kwargs):
         logger.info("SampleSheet looks correct")
     elif kwargs["full_check"]:
         iem = SampleSheet(name)
-
-        # why do we valide first ?
-        #try:
-        #    iem.validate()
-        #except SystemExit:
-        #    pass
 
         checks = iem.checker()
         for check in checks:
