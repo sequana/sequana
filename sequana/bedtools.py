@@ -165,7 +165,6 @@ class SequanaCoverage(object):
             chrom.running_median(n=3001, circular=True)
             chrom.compute_zscore()
             chrom.plot_coverage()
-        gencov[0].plot_coverage()
 
     Results are stored in a list of :class:`ChromosomeCov` named
     :attr:`chr_list`. For Prokaryotes and small genomes, this API
@@ -959,7 +958,7 @@ class ChromosomeCov(object):
         """Compute zscore of coverage and normalized coverage.
 
         :param int k: Number gaussian predicted in mixture (default = 2)
-        :param use_em: use Expectation-Maximization (EM) algorithm 
+        :param use_em: use Expectation-Maximization (EM) algorithm
         :param float clip: ignore values above the clip threshold
         :param bool force_models: if set, fitted models is ignored and replaced with 2 Gaussian models
             where the main model has mean of 1 and represent 90% of the data. Useful to override
@@ -1004,15 +1003,11 @@ class ChromosomeCov(object):
             indices = random.sample(range(len(data)), 100000)
             data = [data.iloc[i] for i in indices]
 
-
         if force_models:
-            self.gaussians_params = [
-                {'mu':1, 'sigma':0.2, 'pi':0.9},
-                {'mu':2, 'sigma':0.2, 'pi':0.1}
-            ]
+            self.gaussians_params = [{"mu": 1, "sigma": 0.2, "pi": 0.9}, {"mu": 2, "sigma": 0.2, "pi": 0.1}]
             self.best_gaussian = self._get_best_gaussian()
             # dummy value not equal to zero
-            self.gaussians = {"sigmas": [0.2,0.2], 'mus':[1,2], 'pis':[0.9,0.1]}
+            self.gaussians = {"sigmas": [0.2, 0.2], "mus": [1, 2], "pis": [0.9, 0.1]}
         else:
             if use_em:
                 self.mixture_fitting = mixture.EM(data)

@@ -4,3 +4,4 @@ sequana_sphinxext
 pillow<=9.5.0
 sphinx_gallery
 sphinx_copybutton
+sphinxcontrib_googleanalytics

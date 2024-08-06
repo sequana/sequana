@@ -24,18 +24,13 @@ import matplotlib
 import matplotlib.sphinxext
 import sphinx_gallery
 
-# If extensions (or modules to document with autodoc) are in another directory,
-# add these directories to sys.path here. If the directory is relative to the
-# documentation root, use os.path.abspath to make it absolute, like shown here.
-
-
 matplotlib.use("Agg")
 
+googleanalytics_id = "G-XL8HD9J5LE"
+
+
 pkg_name = "sequana"
-
 version = pkg_resources.require(pkg_name)[0].version
-
-
 release = version
 author = "Thomas Cokelaer"
 title = "Sequana"
@@ -53,11 +48,7 @@ project = "Sequana"
 
 extensions = [
     "sphinx.ext.autodoc",
-    (
-        "sphinx.ext.imgmath"  # only available for sphinx >= 1.4
-        if sphinx.version_info[:2] >= (1, 4)
-        else "sphinx.ext.pngmath"
-    ),
+    "sphinx.ext.imgmath",
     "sphinx.ext.coverage",
     "sphinx.ext.doctest",
     "sphinx.ext.intersphinx",
@@ -69,6 +60,7 @@ extensions = [
     "sphinx.ext.autosummary",
     "sphinx_gallery.gen_gallery",
     "sphinx_copybutton",
+    "sphinxcontrib.googleanalytics",
     "sequana_sphinxext.snakemakerule",
     "sequana_sphinxext.pipeline",
     "sequana_sphinxext.wrapper",
