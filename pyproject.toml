@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "sequana"
-version = "0.17.1"
+version = "0.17.2"
 description = "A set of standalone application and pipelines dedicated to NGS analysis"
 authors = ["Thomas Cokelaer <thomas.cokelaer@pasteur.fr>"]
 license = "new BSD"
@@ -21,6 +21,7 @@ classifiers = [
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
         "Topic :: Software Development :: Libraries :: Python Modules",
         "Topic :: Scientific/Engineering :: Bio-Informatics",
         "Topic :: Scientific/Engineering :: Information Analysis",
@@ -99,6 +100,7 @@ multiqc = "<1.18"
 plotly = "^5.18.0"
 #psutil = "^5.9.7"
 #pykwalify = "^1.8.0"
+pulp = "<2.8.0"
 pysam = "^0.22.0"
 scikit-learn = "^1.3.2"
 scipy = "<1.11.4"
