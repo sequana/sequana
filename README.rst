@@ -240,6 +240,7 @@ Changelog
 ========= ==========================================================================
 Version   Description
 ========= ==========================================================================
+0.17.2    * Pin down pulp<2.8 and snakemake to <8.0 (too many changes in snakemake)
 0.17.1    * NEW: tsne plot
           * CHANGES: update iem module with additional specs
 0.17.0    * CHANGE. remove the substractor utility (use sequana_depletion pipeline

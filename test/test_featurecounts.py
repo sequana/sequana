@@ -48,3 +48,13 @@ def test_feature_counts():
     # we sort index to avoid error in python 3.6 travis
     assert all(fc1.df[fc1.df.columns] == fc2.df[fc1.df.columns])
     assert all(fc1.rnadiff_df[fc1.rnadiff_df.columns] == fc2.rnadiff_df[fc1.rnadiff_df.columns])
+
+    fc1._get_design_df()
+
+
+def test_featurecountmerger(tmpdir):
+    from sequana.featurecounts import FeatureCountMerger
+
+    outfile = tmpdir.join("all_features.out")
+    fc = FeatureCountMerger(pattern=f"{test_dir}/featurecounts/featurecounts_ex1/WT__*out")
+    fc.to_tsv(output_filename=outfile)

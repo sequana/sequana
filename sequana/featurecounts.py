@@ -394,7 +394,7 @@ class FeatureCount:
         try:
             labels = df["label"]
             conditions = self._guess_conditions(labels)
-        except Exception as err:
+        except Exception as err:  # pragma: no cover
             logger.info("no conditions could be guess. You will need to edit the design file {}".format(err))
             conditions = None
         finally:
@@ -440,7 +440,7 @@ class FeatureCount:
                     break
         if len(indconds):
             return indconds
-        else:
+        else:  # pragma: no cover
             return None
 
     def _read_data(self):
