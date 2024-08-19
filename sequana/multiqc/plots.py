@@ -10,8 +10,6 @@
 #  Documentation: http://sequana.readthedocs.io
 #  Contributors:  https://github.com/sequana/sequana/graphs/contributors
 ##############################################################################
-
-
 import pandas as pd
 
 
@@ -52,7 +50,7 @@ class Bowtie1Reader(Reader):
 
         if html_code:
             return fig
-        else:
+        else:  # pragma: no cover
             fig.show()
 
 
@@ -66,46 +64,60 @@ class Bowtie2(Reader):
         fig = go.Figure()
 
         # get percentage instead of counts
-        if "SE mapped uniquely" in self.df:
+        if "unpaired_aligned_multi" in self.df:
+            # version <=0.17.2 we used the mqc_bowtie output
+            # in version >0.17.2  we use multiqc_bowtie2.txt
+            # self.df[["SE mapped uniquely", "SE multimapped", "SE not aligned"]].sum(axis=1).values
+            # then printed in this order: SE mapped uniquely, SE multimapped, SE not aligned
 
-            S = self.df[["SE mapped uniquely", "SE multimapped", "SE not aligned"]].sum(axis=1).values
-            df = self.df[["SE mapped uniquely", "SE multimapped", "SE not aligned"]].divide(S, axis=0) * 100
+            columns = [
+                "unpaired_aligned_one",
+                "unpaired_aligned_multi",
+                "unpaired_aligned_none",
+            ]
+            names = ["Mapped", "Multi mapped", "Unmapped"]
+
+            colors = ["#17478f", "#e2780d", "#9f1416"]
+
+            S = self.df[columns].sum(axis=1).values
+            df = self.df[columns].divide(S, axis=0) * 100
             df["Sample"] = self.df["Sample"]
 
             fig = go.Figure(
                 data=[
                     go.Bar(
-                        name="SE mapped uniquely",
+                        name=name,
                         y=df.Sample,
                         orientation="h",
-                        x=df["SE mapped uniquely"],
-                        marker_color="#17478f",
-                    ),
-                    go.Bar(
-                        name="SE multimapped",
-                        y=df.Sample,
-                        orientation="h",
-                        x=df["SE multimapped"],
-                        marker_color="#e2780d",
-                    ),
-                    go.Bar(
-                        name="SE not alinged",
-                        y=df.Sample,
-                        orientation="h",
-                        x=df["SE not aligned"],
-                        marker_color="#9f1416",
-                    ),
+                        x=df[column],
+                        marker_color=color,
+                    )
+                    for name, column, color in zip(names, columns, colors)
                 ]
             )
         else:
+
+            # in multiqc_bowtie2, column paired_aligned_mate_one is multiplied by 2 as compared to
+            # column PE one mate mapped uniquely. to be compatible with previous version,
+            # we multiply by 2.
             columns = [
-                "PE mapped uniquely",
-                "PE mapped discordantly uniquely",
-                "PE one mate mapped uniquely",
-                "PE multimapped",
-                "PE one mate multimapped",
-                "PE neither mate aligned",
+                "paired_aligned_one",  # mapped uniquely",
+                "paired_aligned_discord_one",  # mapped discordantly uniquely
+                "paired_aligned_mate_one",  # one mate mapped uniquely",
+                "paired_aligned_multi",  # multimapped",
+                "paired_aligned_mate_multi_halved",  # one mate multimapped
+                "paired_aligned_mate_none_halved",  # neither mate aligned
             ]
+            names = [
+                "Mapped uniquely",
+                "discordand unique mapping",
+                "One mate multi mapped",
+                "Multi mapped paired",
+                "One mate multi-mapped",
+                "Unaligned",
+            ]
+            self.df["paired_aligned_mate_one"] /= 2
+
             colors = ["#20568f", "#5c94ca", "#95ceff", "#f7a35c", "#ffeb75", "#981919"]
 
             S = self.df[columns].sum(axis=1).values
@@ -115,13 +127,13 @@ class Bowtie2(Reader):
             fig = go.Figure(
                 data=[
                     go.Bar(
-                        name=column,
+                        name=name,
                         y=df.Sample,
                         orientation="h",
                         x=df[column],
                         marker_color=color,
                     )
-                    for column, color in zip(columns, colors)
+                    for name, column, color in zip(names, columns, colors)
                 ],
                 layout_xaxis_range=[0, 100],
             )
@@ -130,7 +142,7 @@ class Bowtie2(Reader):
 
         if html_code:
             return fig
-        else:
+        else:  # pragma: no cover
             fig.show()
 
 
@@ -150,7 +162,7 @@ class STAR(Reader):
         fig = go.Figure(
             data=[
                 go.Bar(
-                    name="uniquely mapped",
+                    name="Uniquely mapped",
                     y=df.Sample,
                     orientation="h",
                     x=df["uniquely_mapped_percent"],
@@ -198,7 +210,7 @@ class STAR(Reader):
 
         if html_code:
             return fig
-        else:
+        else:  # pragma: no cover
             fig.show()
 
 
@@ -211,41 +223,48 @@ class FeatureCounts(Reader):
 
         fig = go.Figure()
 
-        columns = ["Assigned", "Unassigned: Unmapped", "Unassigned: No Features", "Unassigned: Ambiguity"]
+        # feature counts create a set of key/values. sometimes there are no multimapped
+        # and all are unmapped. e.g. B18355 and sometimes, unmapped is zero but lots
+        # of multimapped e.g. B16162. The multiqc data set will store only a subset
+        # and that may differ but coherent (the empty column is not there. So we end
+        # up with two possiblities:
+
+        # looks like with bowtie2, multi-mapped is zero, while with stars, unmapped is zero.
+        # multiqc reports one or the other. In version <=0.17.2 with used mqc_feature_counts files
+        # where one or the other is stored. in version >0.17.2 ze use multiqc_featurecounts.txt
+        # where both are provided...so no way to distingiush them. We wil plot the two entries.
+
+        columns = [
+            "Assigned",
+            "Unassigned_Unmapped",
+            "Unassigned_MultiMapping",
+            "Unassigned_NoFeatures",
+            "Unassigned_Ambiguity",
+        ]
         S = self.df[columns].sum(axis=1).values
+
         df = self.df[columns].divide(S, axis=0) * 100
         df["Sample"] = self.df["Sample"]
+
+        colors = {
+            "Assigned": "#7cb5ec",
+            "Unassigned_Unmapped": "#434348",
+            "Unassigned_MultiMapping": "#434348",
+            "Unassigned_NoFeatures": "#90ed7d",
+            "Unassigned_Ambiguity": "#f7a35c",
+        }
 
         fig = go.Figure(
             data=[
                 go.Bar(
-                    name="Assigned",
+                    name=name,
                     y=df.Sample,
                     orientation="h",
-                    x=df["Assigned"],
-                    marker_color="#7cb5ec",
-                ),
-                go.Bar(
-                    name="Unassigned: Unmapped",
-                    y=df.Sample,
-                    orientation="h",
-                    x=df["Unassigned: Unmapped"],
-                    marker_color="#434348",
-                ),
-                go.Bar(
-                    name="Unassigned: No Features",
-                    y=df.Sample,
-                    orientation="h",
-                    x=df["Unassigned: No Features"],
-                    marker_color="#90ed7d",
-                ),
-                go.Bar(
-                    name="Unassigned: Ambiguity",
-                    y=df.Sample,
-                    orientation="h",
-                    x=df["Unassigned: Ambiguity"],
-                    marker_color="#f7a35c",
-                ),
+                    x=df[name],
+                    marker_color=colors[name],
+                )
+                for name in columns
+                if name in df.columns
             ]
         )
 
@@ -255,5 +274,5 @@ class FeatureCounts(Reader):
 
         if html_code:
             return fig
-        else:
+        else:  # pragma: no cover
             fig.show()
