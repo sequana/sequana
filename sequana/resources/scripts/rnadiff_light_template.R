@@ -115,10 +115,10 @@ export_counts = function(dds, outdir){
 
 
 
-    if (grepl("batch", "{{model}}" )) {
+    if ( "{{batch}}" != "None" ) {
         # vst is used here for simplicity, difference with getVarianceStabilizedData ?
         vsd <- vst(dds)
-        assay(vsd) <- limma::removeBatchEffect(assay(vsd), vsd$batch)
+        assay(vsd) <- limma::removeBatchEffect(assay(vsd), vsd${{batch}})
 
         # remove X first character
         vsd_df <- as.data.frame(assay(vsd))

@@ -22,13 +22,11 @@ from easydev import AttrDict
 from jinja2 import Environment, PackageLoader
 from upsetplot.plotting import _process_data
 
-from sequana.enrichment import KEGGPathwayEnrichment, PantherEnrichment
 from sequana.featurecounts import FeatureCount
 from sequana.gff3 import GFF3
 from sequana.lazy import numpy as np
 from sequana.lazy import pandas as pd
 from sequana.lazy import pylab
-from sequana.viz import Volcano
 
 logger = colorlog.getLogger(__name__)
 
@@ -43,7 +41,7 @@ class RNADesign:
         self.filename = filename
         self.condition_col = condition_col
         # \s to strip the white spaces
-        self.df = pd.read_csv(filename, sep=sep, engine="python", comment="#", dtype={"label": str})
+        self.df = pd.read_csv(filename, sep=sep, engine="python", comment="#", dtype=str)
         self.reference = reference
 
     def checker(self):
@@ -64,8 +62,8 @@ class RNADesign:
                 sys.exit("\u274C " + check["msg"] + self.filename)
 
     def _check_label_uniqueness(self):
-        if self.df['label'].duplicated().sum()>0:
-            duplicated = list(self.df['label'][self.df['label'].duplicated()].values)
+        if self.df["label"].duplicated().sum() > 0:
+            duplicated = list(self.df["label"][self.df["label"].duplicated()].values)
             return {"msg": f"Found duplicated labels {duplicated}", "status": "Error"}
         else:
             return {"msg": f"No duplicated labels", "status": "Success"}
@@ -269,13 +267,15 @@ class RNADiffAnalysis:
 
         # For DeSeq2
         self.batch = batch
-        self.model = f"~{batch + '+' + condition if batch else condition}"
 
         # if user provides a model, reset the default one
         if model:
             self.model = model
+            logger.info(f"model: {self.model} (user's model)")
+        else:
+            self.model = f"~{batch} + {condition}" if batch else f"~{condition}"
+            logger.info(f"model: {self.model}")
 
-        logger.info(f"model: {self.model}")
         self.fit_type = fit_type
         self.beta_prior = "TRUE" if beta_prior else "FALSE"
         self.independent_filtering = "TRUE" if independent_filtering else "FALSE"
@@ -1607,5 +1607,3 @@ class RNADiffResults:
 
         u._default_figsize = (16, 8)
         u.plot()
-
-

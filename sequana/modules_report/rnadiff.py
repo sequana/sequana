@@ -261,8 +261,8 @@ variance stabilization); the first 500 most variable genes were selected. </p>""
 
         import plotly.io as pio
 
-        pio.renderers.default = 'iframe'  # Ensure it's set to browser
-        pio.renderers['browser'].timeout = 60  # Increa
+        pio.renderers.default = "iframe"  # Ensure it's set to browser
+        pio.renderers["browser"].timeout = 60  # Increa
 
         if os.path.exists(f"{self.folder}/counts/counts_vst_batch.csv"):
             image2 = self.create_embedded_png(pca, "filename", count_mode="vst_batch", style=style)
@@ -400,11 +400,25 @@ normalised counts.
         img1 = self.create_embedded_png(rawcount, "filename", style=style)
         img2 = self.create_embedded_png(normedcount, "filename", style=style)
 
+        html_size_factor = "<p>The size factor is a crucial component used to normalize the raw counts of RNA-seqr data to account for differences in sequencing depth and RNA composition across samples. Each sample is assigned a size factor, which represents the relative amount of sequencing depth (or library size) needed to compare expression levels between samples fairly. This factor adjusts the raw counts by scaling them, so that differences in gene expression are due to biological variation rather than technical artifacts. The size factor is computed by taking the median ratio of each gene's count in a sample to its geometric mean across all samples. Significant departures from 1.0 suggest notable differences in sequencing depth across samples. However, extreme values (either much larger or much smaller than 1.0) might indicate potential issues such as technical variability or inconsistencies in sample preparation. </p>"
+        options = {
+            "scrollX": "false",
+            "pageLength": 1,
+            "scrollCollapse": "true",
+            "dom": "",
+            "buttons": [],
+        }
+        df = pd.read_csv(f"{self.folder}/code/size_factors.csv", index_col=0)
+        datatable = DataTable(df.T, "table_size_factor")
+        datatable.datatable.datatable_options = options
+        js_all = datatable.create_javascript_function()
+        table1 = datatable.create_datatable(float_format="%.3e")
+
         self.sections.append(
             {
                 "name": f"{self._count_section}. Normalisation",
                 "anchor": "table",
-                "content": html_boxplot + img1 + img2 + "</hr>",
+                "content": html_boxplot + img1 + img2 + html_size_factor + js_all + table1 + "</hr>",
             }
         )
         self._count_section += 1
