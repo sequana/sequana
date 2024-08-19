@@ -1,0 +1,5 @@
+Sample	reads_aligned	not_aligned_percentage	reads_processed	not_aligned	reads_aligned_percentage
+RNAseq_1_11_bowtie1	33.0	99.87	25000.0	24967.0	0.13
+RNAseq_4_16_bowtie1	5.0	99.98	25000.0	24995.0	0.02
+RNAseq_4_8_bowtie1	9.0	99.96	25000.0	24991.0	0.04
+RNAseq_4_9_bowtie1	10.0	99.96	25000.0	24990.0	0.04

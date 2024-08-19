@@ -240,6 +240,13 @@ Changelog
 ========= ==========================================================================
 Version   Description
 ========= ==========================================================================
+0.17.3    * CHANGES: fix https://github.com/sequana/rnaseq/issues/45 to better
+            handle multiqc files especially, feature counts plugin. Fix #855 to
+            be able to name batch effect column arbitrary to any name. Fix batch
+            effect column (and all others) to be strings rather than integer. If
+            integer, factor are sorted based on the integer values, not the factor
+            itself.
+          * NEWS: add size factor comments and table.
 0.17.2    * Pin down pulp<2.8 and snakemake to <8.0 (too many changes in snakemake)
 0.17.1    * NEW: tsne plot
           * CHANGES: update iem module with additional specs
