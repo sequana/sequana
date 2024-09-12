@@ -10,14 +10,15 @@
 #  documentation: http://sequana.readthedocs.io
 #
 ##############################################################################
-from collections import defaultdict
 import sys
+from collections import defaultdict
+
+import colorlog
 
 from sequana.errors import BadFileFormat
 from sequana.lazy import pandas as pd
 from sequana.lazy import pysam
 
-import colorlog
 logger = colorlog.getLogger(__name__)
 
 __all__ = ["GFF3"]
@@ -304,8 +305,10 @@ class GFF3:
         # a non-compatible GFF file.
 
         # we first figure out whether this is a = or space convention
+
         sep = None
         text = text.strip()
+        # find the first = or  space indicating the key=value operator (e.g. =)
         for x in text:
             if x in ["=", " "]:
                 sep = x
@@ -315,33 +318,44 @@ class GFF3:
             logger.error(f"Your GFF/GTF does not seem to be correct ({text}). Expected a = or space as separator")
             sys.exit(1)
 
-        # ugly but fast replacement.
+        # ugly but fast replacement of special characters.
         text = text.replace("%09", "\t").replace("%0A", "\n").replace("%0D", "\r")
         text = text.replace("%25", "%").replace("%3D", "=").replace("%26", "&").replace("%2C", ",")
         text = text.replace("%28", "(").replace("%29", ")")  # brackets
         # we do not convert the special %3B into ;  or %20 into spaces for now
 
-        # split into mutliple attributes
-        # GTF ends in ; so we need to strip it
-        split = text.rstrip(";")
+        import re
 
-        # some GFF uses ; and a space as separator but usually, it is just ; with no surrounding spaces.
-        if "; " in split:
-            split = text.split("; ")
-        else:
-            split = text.split(";")
+        def parse_gff_attributes(attributes, sep="="):
+            """parse attributes so handle
 
-        for attr in split:
-            # make sure there is no trailing spaces
-            attr = attr.strip()
+            Quoted values (e.g., key="value")
+            Unquoted values (e.g., key=value)
+            Empty values (e.g., key="")
+            Values with semicolons (e.g., MF="GO:0005524;GO:0004004")
+            """
+            # Regular expression to match key=value pairs with or without quotes
 
-            # find the separator. Sometimes it is spaces, sometimes a = sign
-            idx = attr.find(sep)
-            value = attr[idx + 1 :]
+            pattern = re.compile(r'(\S+?)[= ](".*?"|[^;]*)(?:;|$)')
 
-            # replace " by nothing (GTF case)
-            attributes[attr[:idx]] = value.replace('"', "").replace("%3B", ";").replace("%20", " ")
-        return attributes
+            # Dictionary to store parsed attributes
+            parsed_attributes = {}
+
+            # Find all matches for key=value pairs
+            matches = pattern.findall(attributes)
+
+            # Populate dictionary with matches
+            for key, value in matches:
+                # Remove quotes around the value if present
+                value = value.strip('"')
+                parsed_attributes[key] = value
+
+            return parsed_attributes
+
+        return parse_gff_attributes(text)
+
+        # replace " by nothing (GTF case)
+        # attributes[attr[:idx]] = value.replace('"', "").replace("%3B", ";").replace("%20", " ")
 
     def to_gtf(self, output_filename="test.gtf", mapper={"ID": "{}_id"}):
         # experimental . used by rnaseq pipeline to convert input gff to gtf,
@@ -535,3 +549,6 @@ class GFF3:
         # rename column to fit for sequana_coverage
         df = df.set_index("seqid").rename(columns={"start": "gene_start", "stop": "gene_end", "genetic_type": "type"})
         return {chr: df.loc[chr].to_dict("records") for chr in df.index.unique()}
+
+    def get_seqid2size(self):
+        return dict([(row.seqid, row.stop) for _, row in self.df.query("genetic_type=='region'").iterrows()])
