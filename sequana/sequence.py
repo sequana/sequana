@@ -701,7 +701,7 @@ class RNA(Sequence):
         super(RNA, self).__init__(sequence, complement_in=b"ACGU", complement_out=b"UGCA", letters="ACGUN")
 
 
-class Repeats(object):
+class Repeats:
     """Class for finding repeats in DNA or RNA linear sequences.
 
     Computation is performed each time the :attr:`threshold` is set
@@ -765,15 +765,6 @@ class Repeats(object):
             self.header = self._fasta.names[0]
 
     def _get_header(self):
-        """get first line of fasta (needed in input shustring)
-        and replace spaces by underscores
-        """
-        """if self._header is None:
-            # -n is to specify the DNA nature of the sequence
-            first_line = subprocess.check_output(["head", "-n", "1", self._filename_fasta])
-            first_line = first_line.decode('utf8')
-            first_line = first_line.replace("\n","").replace(" ","_")
-            self._header = first_line"""
         return self._header
 
     def _set_header(self, name):
@@ -799,18 +790,12 @@ class Repeats(object):
             # read fasta
             task_read = subprocess.Popen(["cat", self._filename_fasta], stdout=subprocess.PIPE)
 
-            # replace spaces of fasta
-            task_replace_spaces = subprocess.Popen(["sed", "s/ /_/g"], stdin=task_read.stdout, stdout=subprocess.PIPE)
-
             # shustring command
             # the -l option uses a regular expression
-            # if 2 identifier such as >1 and >11 then using regular expression
-            # >1 means both match. Therefore, we use a $ in the next comand line
-            # In Repeats, we set the chrom name therefore, we should add this $
-            # character
             task_shus = subprocess.Popen(
-                ["shustring", "-r", "-q", "-l", ">{}$".format(self.header)],
-                stdin=task_replace_spaces.stdout,
+                # ["shustring", "-r", "-q", "-l", ">{}[\s,\n]*?".format(self.header)],
+                ["shustring", "-r", "-q", "-l", ">{}($|\s+)".format(self.header)],
+                stdin=task_read.stdout,
                 stdout=subprocess.PIPE,
             )
 
@@ -987,15 +972,11 @@ class Repeats(object):
         if logy:
             pylab.semilogy()
 
-    def plot(self, clf=True):
+    def plot(self, clf=True, fontsize=12):
         if clf:
             pylab.clf()
-        M = self.df_shustring.shustring_length.max()
-        print(M)
-        M = int(M / 1000) + 1
-        for i in range(M):
-            pylab.axhline(i * 1000, ls="--", color="grey")
+        pylab.grid(True)
         pylab.plot(self.df_shustring.shustring_length)
-        pylab.xlabel("position (bp)")
-        pylab.ylabel("Length of repeats")
+        pylab.xlabel("Position (bp)", fontsize=fontsize)
+        pylab.ylabel("Repeat lengths (bp)", fontsize=fontsize)
         pylab.ylim(bottom=0)
