@@ -69,3 +69,9 @@ Volcano plots
 .. automodule:: sequana.viz.volcano
     :members:
     :undoc-members:
+
+Generic plots (plotly)
+~~~~~~~~~~~~~~~~~~~~~~~
+.. automodule:: sequana.viz.plotly
+    :members:
+    :undoc-members:

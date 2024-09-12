@@ -73,7 +73,6 @@ def test_get_duplicated_attributes_per_genetic_type():
     g.get_duplicated_attributes_per_genetic_type()
 
 
-
 def test_to_bed(tmpdir):
     outname = tmpdir.join("test.bed")
     gff = GFF3(f"{test_dir}/data/ecoli_truncated.gff")
@@ -96,3 +95,8 @@ def test_save_gff_filtered():
     gff = GFF3(f"{test_dir}/data/saccer3_truncated.gff")
     with TempFile() as fout:
         df = gff.save_gff_filtered(filename=fout.name)
+
+
+def test_save_gff_filtered():
+    gff = GFF3(f"{test_dir}/data/ecoli_truncated.gff")
+    gff.get_seqid2size()

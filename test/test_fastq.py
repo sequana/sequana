@@ -15,7 +15,18 @@ data = f"{test_dir}/data/fastq/test.fastq"
 def test_basic():
     assert is_fastq(data) == True
     f = fastq.FastQ(data)
-    assert f.stats() == {"N": 250, "mean_read_length": 101.0, "sum_read_length": 25250}
+    assert f.stats() == {
+        "N": 250,
+        "mean_length": 101.0,
+        "total_length": 25250,
+        "N50": 101,
+        "L50": 125,
+        "min_length": 101,
+        "max_length": 101,
+        "mean_read_length": 101.0,
+        "sum_read_length": 25250,
+    }
+
     f.get_lengths()
 
     ft = TempFile()
@@ -187,10 +198,5 @@ def test_keep_reads(tmpdir):
     outfile = tmpdir.join("file1.fastq")
 
     f = fastq.FastQ(data)
-    identifiers = ['@HISEQ:426:C5T65ACXX:5:2302:20743:5339']
+    identifiers = ["@HISEQ:426:C5T65ACXX:5:2302:20743:5339"]
     f.keep_reads(identifiers, output_filename=outfile)
-
-
-
-
-

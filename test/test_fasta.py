@@ -18,7 +18,7 @@ def test_format_contigs_denovo():
     contigs.lengths
     contigs.comments
     contigs.GC_content()
-    contigs.GC_content_sequence(contigs.sequences[0])
+    contigs.GC_content_sequence(contigs._fasta[contigs.names[0]])
     contigs.summary()
 
 

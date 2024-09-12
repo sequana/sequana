@@ -60,6 +60,7 @@ def test_rna():
 
 
 def test_repeats():
+    datafile = f"{test_dir}/data/fasta/measles.fa"
     rep = Repeats(datafile)
     rep.threshold = 11
     assert len(rep.begin_end_repeat_position) == 158
@@ -78,6 +79,15 @@ def test_repeats():
     assert rep.length == 15894
     rep.names
     rep.header
+
+    # test several sequence identifiers, with comments, with same starting name
+    # >tig001
+    # >tig001 comment # with tabs
+    # >tig001    comment # with spaces
+    # >tig001ABC
+    datafile = f"{test_dir}/data/fasta/test_shustring.fa"
+    rep = Repeats(datafile)
+    rep.threshold = 10
 
 
 def test_gc_skew():

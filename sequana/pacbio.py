@@ -17,11 +17,11 @@ import os
 import random
 
 import colorlog
-import pysam
+from tqdm import tqdm
 
 from sequana.lazy import numpy as np
 from sequana.lazy import pandas as pd
-from sequana.lazy import pylab
+from sequana.lazy import pylab, pysam
 
 logger = colorlog.getLogger(__name__)
 
@@ -68,7 +68,7 @@ class HistCumSum(object):
         pylab.title(self.title)
         try:
             pylab.gcf().set_layout_engine("tight")
-        except:
+        except:  # pragma: no cover
             pass
 
 
@@ -193,7 +193,7 @@ class PacbioBAMBase(object):
         pylab.xlim([0, 100])
         try:
             pylab.gcf().set_layout_engine("tight")
-        except:
+        except:  # pragma: no cover
             pass
 
     def plot_GC_read_len(
@@ -225,26 +225,25 @@ class PacbioBAMBase(object):
             b.plot_GC_read_len(bins=[10, 10])
 
         """
-        from sequana.viz import Hist2D
-
-        mean_len = np.mean(self.df.loc[:, "read_length"])
-        mean_GC = np.mean(self.df.loc[:, "GC_content"])
-
-        if hold is False:
-            pylab.clf()
+        from sequana.viz.vizir import hist2D
 
         data = self.df.loc[:, ["read_length", "GC_content"]].dropna()
-        h = Hist2D(data)
-        res = h.plot(bins=bins, contour=False, norm="log", Nlevels=6, cmap=cmap)
-        pylab.xlabel("Read length", fontsize=fontsize)
-        pylab.ylabel("GC %", fontsize=fontsize)
-        pylab.title(
-            "GC %% vs length \n Mean length : %.2f , Mean GC : %.2f" % (mean_len, mean_GC),
-            fontsize=fontsize,
+        mean_len = np.mean(data.loc[:, "read_length"])
+        mean_GC = np.mean(data.loc[:, "GC_content"])
+        title = "GC %% vs length \n Mean length : %s , Mean GC : %.2f" % (int(mean_len), mean_GC)
+
+        h = hist2D(
+            "read_length",
+            "GC_content",
+            data,
+            hold=hold,
+            grid=grid,
+            ylabel="GC (%)",
+            xlabel="Read length (bp)",
+            title=title,
+            hist2d_dict={"bins": bins, "contour": False, "norm": "log", "Nlevels": 6, "cmap": cmap},
         )
         pylab.ylim([0, 100])
-        if grid is True:
-            pylab.grid(True)
 
     def hist_read_length(
         self,
@@ -301,7 +300,7 @@ class PacbioBAMBase(object):
             edgecolor=ec,
             label="%s, mean : %.0f, N : %d" % (label, mean_len, len(self)),
             log=logy,
-            **hist_kwargs
+            **hist_kwargs,
         )
         pylab.gca().set_ylim(bottom=0)
         pylab.gca().set_xlim(left=0)
@@ -396,19 +395,14 @@ class PacbioSubreads(PacbioBAMBase):
 
         # See http://pacbiofileformats.readthedocs.io/en/3.0/BAM.html
         if self._df is None:
-            logger.info("Scanning input file. Please wait")
             self.reset()
             N = 0
 
             all_results = []
             # This takes 60%  of the time...could use cython ?
-            for i, read in enumerate(self.data):
+            for i, read in tqdm(enumerate(self.data)):
                 tags = dict(read.tags)
                 res = []
-                # count reads
-                N += 1
-                if (N % 10000) == 0:
-                    logger.info("Read %d sequences" % N)
 
                 # res[0] = read length
                 res.append(read.query_length)  # also stored in tags["qe"] - tags["qs"]
@@ -419,13 +413,13 @@ class PacbioSubreads(PacbioBAMBase):
                     res.append(
                         100.0 / read.query_length * sum([read.query_sequence.count(letter) for letter in "CGcgSs"])
                     )
-                else:
+                else:  # pragma: no cover
                     res.append(None)
 
                 # res[1:4] contains SNR  stored in tags['sn'] in the order A, C, G, T
                 try:
                     snr = list(tags["sn"])
-                except KeyError:
+                except KeyError:  # pragma: no cover
                     snr = [None] * 4
 
                 res = res + snr
@@ -438,17 +432,11 @@ class PacbioSubreads(PacbioBAMBase):
                     res.append(i)
 
                 # store the final maen quality
-                try:
-                    rq = tags["rq"]
-                except KeyError:  # undefined/not found
-                    rq = -1
+                rq = tags.get("rq", -1)
                 res += [rq]
 
                 # store the number of passes
-                try:
-                    np = tags["np"]
-                except KeyError:  # undefined/not found
-                    np = -1
+                np = tags.get("np", 0)
                 res += [np]
 
                 # aggregate results
@@ -472,8 +460,6 @@ class PacbioSubreads(PacbioBAMBase):
                     "nb_passes",
                 ],
             )
-
-            self._df["nb_passes"] -= 1  # nb passes starts at 0
 
             self.reset()
         return self._df
@@ -622,7 +608,7 @@ class PacbioSubreads(PacbioBAMBase):
             self._get_df()
 
         # old pacbio format has no SNR stored
-        if len(self._df["snr_A"].dropna()) == 0:
+        if len(self._df["snr_A"].dropna()) == 0:  # pragma: no cover
             # nothing to plot
             from sequana import sequana_data
 
@@ -645,30 +631,14 @@ class PacbioSubreads(PacbioBAMBase):
 
         bins = pylab.linspace(0, maxSNR, bins)
 
-        pylab.hist(
-            self._df.loc[:, "snr_A"].clip(upper=maxSNR),
-            alpha=alpha,
-            label="A",
-            bins=bins,
-        )
-        pylab.hist(
-            self._df.loc[:, "snr_C"].clip(upper=maxSNR),
-            alpha=alpha,
-            label="C",
-            bins=bins,
-        )
-        pylab.hist(
-            self._df.loc[:, "snr_G"].clip(upper=maxSNR),
-            alpha=alpha,
-            label="G",
-            bins=bins,
-        )
-        pylab.hist(
-            self._df.loc[:, "snr_T"].clip(upper=maxSNR),
-            alpha=alpha,
-            label="T",
-            bins=bins,
-        )
+        for nucl in "ACGT":
+            pylab.hist(
+                self._df.loc[:, f"snr_{nucl}"].clip(upper=maxSNR),
+                alpha=alpha,
+                label=nucl,
+                bins=bins,
+            )
+
         pylab.legend()
         pylab.xlabel(xlabel, fontsize=fontsize)
         pylab.ylabel(ylabel, fontsize=fontsize)
@@ -723,7 +693,12 @@ class PacbioSubreads(PacbioBAMBase):
         if grid is True:
             pylab.grid(True)
 
-    def get_number_of_ccs(self, min_length=50, max_length=15000):
+    def get_number_of_ccs(self, min_length=50, max_length=1500000):
+        """Return number of CCS reads within a given range
+
+        This is useful for subreads where no CCS are computed but ZMW can
+        give an estimation of number of unique possible CCS
+        """
         query = "read_length>=@min_length and read_length <=@max_length"
         dd = self.df.query(query)
         return len(dd.ZMW.unique())
@@ -995,7 +970,6 @@ class PBSim(object):
         clf();
         ss.run(bins=100, step=50)
 
-
     For example, to simulate data set, use::
 
         pbsim --data-type CLR --accuracy-min 0.85 --depth 20  \
@@ -1009,7 +983,6 @@ class PBSim(object):
     the reference sequence ("reference.fasta") and differences (errors) of the
     sampled reads are introduced.
 
-    The Fastq can be converted to
 
     """
 
@@ -1112,7 +1085,7 @@ class Barcoding:
         pylab.ylim(ymin=0)
         try:
             pylab.gcf().set_layout_engine("tight")
-        except:
+        except:  # pragma: no cover
             pass
 
     def hist_polymerase_per_barcode(self, bins=10, fontsize=12):
@@ -1128,7 +1101,7 @@ class Barcoding:
         pylab.ylabel("Number of Barcoded Samples", fontsize=fontsize)
         try:
             pylab.gcf().set_layout_engine("tight")
-        except:
+        except:  # pragma: no cover
             pass
 
     def hist_mean_polymerase_read_length(self, bins=10, fontsize=12):
@@ -1137,7 +1110,7 @@ class Barcoding:
         pylab.ylabel("Number of Barcoded Samples", fontsize=fontsize)
         try:
             pylab.gcf().set_layout_engine("tight")
-        except:
+        except:  # pragma: no cover
             pass
 
     def plot_subreads_histogram(self, bins=10, fontsize=12):
@@ -1146,7 +1119,7 @@ class Barcoding:
         pylab.ylabel("Number of Barcoded Samples", fontsize=fontsize)
         try:
             pylab.gcf().set_layout_engine("tight")
-        except:
+        except:  # pragma: no cover
             pass
 
     def hist_quality_per_barcode(self, bins=10, fontsize=12):
@@ -1155,7 +1128,7 @@ class Barcoding:
         pylab.ylabel("Number of Barcoded Samples", fontsize=fontsize)
         try:
             pylab.gcf().set_layout_engine("tight")
-        except:
+        except:  # pragma: no cover
             pass
 
     def __str__(self):
