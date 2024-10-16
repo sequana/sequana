@@ -14,6 +14,7 @@
 import argparse
 import gc as garbage
 import glob
+import json
 import os
 import subprocess
 import sys
@@ -25,6 +26,7 @@ from easydev import AttrDict, shellcmd
 from sequana import sequana_data
 from sequana import version as sequana_version
 from sequana.bedtools import ChromosomeCov, SequanaCoverage
+from sequana.lazy import pandas as pd
 from sequana.modules_report.coverage import ChromosomeCoverageModule, CoverageModule
 from sequana.scripts.common import teardown
 from sequana.utils import config
@@ -68,6 +70,10 @@ click.rich_click.OPTION_GROUPS = {
         {
             "name": "Output files",
             "options": ["--no-multiqc", "--output-directory"],
+        },
+        {
+            "name": "Input files",
+            "options": ["--bam2cov-method", "--mapq", "--second-mapq"],
         },
         {
             "name": "Behaviour",
@@ -228,7 +234,7 @@ def download_genbank(ctx, param, value):
     "low_threshold",
     default=-4,
     show_default=True,
-    type=click.FLOAT,
+    type=click.FloatRange(max=0),
     help=("lower threshold (zscore) of the confidence interval. " "Overwrite value given by --threshold/-T"),
 )
 @click.option(
@@ -236,8 +242,8 @@ def download_genbank(ctx, param, value):
     "--high-threshold",
     "high_threshold",
     default=4,
+    type=click.FloatRange(min=0),
     show_default=True,
-    type=click.FLOAT,
     help=("higher threshold (zscore) of the confidence interval. " "Overwrite value given by --threshold/-T"),
 )
 @click.option(
@@ -281,51 +287,94 @@ def download_genbank(ctx, param, value):
     default=-1,
     type=click.INT,
     help="Two consecutive ROIs are merged when their distance in bases is below this parameter. If set to -1, not used. ",
+    show_default=True,
+)
+@click.option(
+    "--bam2cov-method",
+    type=click.Choice(["samtools", "mosdepth"]),
+    default="mosdepth",
+    help="method used internally to convert BAM into BED file",
+    show_default=True,
+)
+@click.option(
+    "--mapq",
+    default=0,
+    help="mapping quality threshold. reads with a quality less than this value are ignored",
+    show_default=True,
+)
+@click.option(
+    "--second-mapq",
+    default=0,
+    help="mapping quality threshold of the second optional coverage track. reads with a quality less than this value are ignored. ",
+    show_default=True,
 )
 def main(**kwargs):
     """Welcome to SEQUANA -- Coverage standalone
 
         ----
 
-       Extract and plot coverage of one or more chromosomes/contigs from a BED or BAM
-       file. In addition, the running median used in conjunction with double thresholds
-       extract regions of interests (ROI) for low or high coverage. A reference may be
+       Sequana coverage compute running median on a coverage series extracted from one or
+       several chromsomes and then identifies regions of interest (deleted regions or CNV
+       regions).
+
+       HTML report is created with coverage plot. A reference may be
        provided to plot the coverage versus GC content. An annotation file may be provided
        to annotate the found ROIs.
 
+       Input files
+       --------------
+
        The input file should be one of the following:
 
-       - a BED file that is a tabulated file at least 3 columns.
-         The first column being the reference, the second is the position
-         and the third column contains the coverage itself.
-       - or a BAM file that is converted automatically
-         into a BED file using the following command:
+       - a tabulated file made of at least 3 columns.
+         The first column being the chromosome name, the second is the position
+         and the third column contains the coverage itself. An optional fourth column
+         can be provided as an additional track shown in dedicated plots.
+       - a BAM file that is converted automatically into a 3-column file as above.
+         This file can be obtained before hand using various tools
 
-            bedtools genomecov -d -ibam FILE.bam
+             samtools depth -aa input.bam > output.bed
 
-       Note that this is different from another command that could perform the conversion:
+         or
+              mosdepth -b1 TEMP input.bam; gunzip -c TEMP.regions.bed.gz | cut -f 1,3,4 > output.bed
 
-           samtools depth -aa input.bam > output.bed
+       you can also use bedtools as follow:
+
+              bedtools genomecov -d -ibam FILE.bam > output.bed
+
+       mosdepth and samtools software give the same results; mosdepth being slighly faster.
+       genomecov is slower and overestimated repeated or low quality mapping regions.
+       Note also that by default, with samtools depths are clipped at 8000 by default.
+       mosdepth method is therefore the default method since v0.18
+
+       Reference
+       ----------
 
        If the reference is provided, an additional plot showing the coverage versus
        GC content is also shown.
-
-       Here are some examples
 
            sequana_coverage --input-file file.bed --window-median 1001
            sequana_coverage --input-file file.bam --window-median 1001 -r <REFERENCE.fa>
 
        An other interesting option is to provide a BED file with 4 columns. The
-       fourth column being another coverage data created with a filter. One can
-       create such a file only from the BAM file using samtools as follows given
-       the original unfiltered BAM file named input.bam:
+       fourth column being another coverage data created with e.g. a quality filter.
+
+       You can convert the BAM twice and combining the results. You can convert
+       the BAM to a coverag plot as explained above. Then, create a second file
+       using a quality filter
 
            samtools view -q 35  -o data.filtered.bam input.bam
-           samtools depth input.bam data.filtered.bam  -aa > test.bed
+           samtools depth data.filtered.bam input.bam -aa > test.bed
            sequana_coverage --input test.bed --show-html
 
-       Note that the first file is the filtered one, and the second file is the
-       unfiltered one.
+       Since versi0n v0.18, you can also do it on the fly as follows:
+
+           sequana_coverage --input-file input-bam --second-mapq 35
+
+       Note that only the first file (column 3) will be used for statistical analysis.
+
+       Annotation
+       ------------
 
        Note for multi chromosome and genbank features: for now, you will need to call
        sequana_coverage for each chromosome individually since we accept only one
@@ -364,13 +413,48 @@ def main(**kwargs):
 
     # Convert BAM to BED
     if options.input.endswith(".bam"):
+        logger.info("Converting BAM into BED file with mosdepth")
         bedfile = options.input.replace(".bam", ".bed")
-        logger.info("Converting BAM into BED file")
-        shellcmd(f"bedtools genomecov -d -ibam {options.input} > {bedfile}")
+
+    if not options.input.endswith("bam") and (options.mapq or options.second_mapq):
+        logger.error("--mapq and --second-map not used if input is not in BAM format")
+        return sys.exit(1)
+
+    if options.input.endswith(".bam") and options.bam2cov_method == "samtools":
+        chrom = "" if not options.chromosome else f"-r {options.chromosome}"
+
+        if options.second_mapq:
+            shellcmd(f"samtools depth -aa -Q {options.mapq} {chrom} {options.input} > {bedfile}.1")
+            shellcmd(f"samtools depth -aa -Q {options.second_mapq} {chrom} {options.input} > {bedfile}.2")
+            shellcmd(f"paste <(cut -f 1,2,3 {options.input}.1 ) <( cut -f 3 {options.input}.2) > {bedfile}")
+            shellcmd(f"rm -f {options.input}.[12]")
+
+        else:
+            shellcmd(f"{main_command} depth -aa {options.input} > {bedfile}")
+    elif options.input.endswith(".bam") and options.bam2cov_method == "mosdepth":
+        main_command = "mosdepth" if not options.chromosome else f"mosdepth -c {options.chromosome}"
+        # -b1 for all bases
+        if options.second_mapq:
+            # decommposed because too complex for subprocess
+            shellcmd(f"{main_command} -Q {options.mapq} -b1 lenny1 {options.input}")
+            shellcmd(f"{main_command} -Q {options.second_mapq} -b1 lenny2 {options.input}")
+            shellcmd(
+                f"paste <(gunzip -c lenny1.regions.bed.gz | cut -f 1,3,4 ) <(gunzip -c lenny2.regions.bed.gz | cut -f 4 ) > {bedfile}"
+            )
+            shellcmd(f"rm -f lenny?.mosdepth*")
+            shellcmd(f"rm -f lenny?.per-base*")
+            shellcmd(f"rm -f lenny?.regions*")
+        else:
+            # here somehow the commands works out of the box on one line
+            shellcmd(
+                f"{main_command} -Q {options.mapq} -b1 lenny {options.input} && gunzip -c lenny.regions.bed.gz | cut -f 1,3,4 > {bedfile} && rm -f lenny.mosdepth*"
+            )
+
     elif options.input.endswith(".bed"):
         bedfile = options.input
     else:
-        raise ValueError("Input file must be a BAM or BED file")
+        logger.error("Input file must be a BAM or BED file")
+        system.exit(1)
 
     # Set the thresholds
     if options.low_threshold is None:
@@ -428,6 +512,23 @@ def main(**kwargs):
 
         # logging level seems to be reset to warning somewhere
         logger.setLevel(options.logging_level)
+
+    # create a summary file for the HTML report.
+    filenames = glob.glob(f"{options.output_directory}/*/sequana_summary_coverage.*json")
+    BOCs = []
+    DOCs = []
+    names = []
+    lengths = []
+    for filename in filenames:
+        data = json.loads(open(filename).read())["data"]
+        BOCs.append(data["BOC"])
+        lengths.append(data["length"])
+        DOCs.append(data["DOC"])
+        names.append(data["chrom_name"])
+    df = pd.DataFrame({"DOC": DOCs, "BOC": BOCs, "name": names, "length": lengths})
+    df = df.sort_values(by="name")
+    df = df[["name", "length", "DOC", "BOC"]]
+    df.to_csv(f"{options.output_directory}/summary.json", index=False)
 
     CoverageModule(gc)
 

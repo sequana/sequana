@@ -80,7 +80,10 @@ class CoverageModule(SequanaBaseModule):
 
         self.create_chromosome_table(html_list)
 
-        self.create_summary_barplot()
+        try:
+            self.create_summary_barplot()
+        except FileNotFoundError:
+            pass
 
         # and create final HTML
         self.create_html("sequana_coverage.html")

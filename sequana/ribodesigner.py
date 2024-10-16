@@ -18,7 +18,7 @@ import sys
 from itertools import product
 from pathlib import Path
 
-from sequana import logger
+from sequana import logger, version
 from sequana.fasta import FastA
 from sequana.lazy import numpy as np
 from sequana.lazy import pandas as pd
@@ -41,25 +41,28 @@ class RiboDesigner(object):
     In the CSV, the oligo names are in column 1 and the oligo sequences in column 2.
 
     :param fasta: The FASTA file with complete genome assembly to extract ribosome sequences from.
-    :param gff: GFF annotation file of the genome assembly.
-    :param output_directory: The path to the output directory.
+    :param gff: GFF annotation file of the genome assembly. If none provided, assuming the input FastA is
+        already made of rRNA.
+    :param output_directory: The path to the output directory defaults to ribodesigner.
     :param seq_type: string describing sequence annotation type (column 3 in GFF) to select rRNA from.
     :param max_n_probes: Max number of probes to design
     :param force:  If the `output_directory` already exists, overwrite it.
     :param threads: Number of threads to use in cd-hit clustering.
     :param float identity_step: step to scan the sequence identity (between 0 and 1) defaults to 0.01.
+    :param force_clustering:
     """
 
     def __init__(
         self,
         fasta,
-        gff,
-        output_directory,
+        gff=None,
+        output_directory="ribodesigner",
         seq_type="rRNA",
         max_n_probes=384,
         force=False,
         threads=4,
         identity_step=0.01,
+        force_clustering=False,
         **kwargs,
     ):
         # Input
@@ -70,6 +73,7 @@ class RiboDesigner(object):
         self.threads = threads
         self.outdir = Path(output_directory)
         self.identity_step = identity_step
+        self.force_clustering = force_clustering
 
         if force:
             self.outdir.mkdir(exist_ok=True)
@@ -80,10 +84,11 @@ class RiboDesigner(object):
                 logger.error(f"Output directory {output_directory} exists. Use --force or set force=True")
                 sys.exit(1)
 
-        # Output
+        # Outputs
         self.filtered_gff = self.outdir / "ribosome_filtered.gff"
         self.ribo_sequences_fasta = self.outdir / "ribosome_sequences.fas"
         self.probes_fasta = self.outdir / "probes_sequences.fas"
+
         self.clustered_probes_fasta = self.outdir / "clustered_probes.fas"
         self.clustered_probes_csv = self.outdir / "clustered_probes.csv"
         self.clustered_probes_bed = self.outdir / "clustered_probes.bed"
@@ -99,6 +104,7 @@ class RiboDesigner(object):
         """Convert a GFF file into a pandas DataFrame filtered according to the
         self.seq_type.
         """
+        total_length = 0
 
         gff = pd.read_csv(
             self.gff,
@@ -125,11 +131,17 @@ class RiboDesigner(object):
                     region = f"{row.seqid}:{row.start}-{row.end}"
                     seq_record = f">{region}\n{fas.fetch(region=region)}\n"
                     fas_out.write(seq_record)
+                    total_length += len(fas.fetch(region=region))
+        self.json["input_total_length"] = total_length
+        self.json["input_number_sequences"] = filtered_gff.shape[0]
 
         seq_types = gff.seq_type.unique().tolist()
 
+        self.json["seq_types"] = ",".join(seq_types)
         logger.info(f"Genetic types found in gff: {','.join(seq_types)}")
-        logger.info(f"Found {filtered_gff.shape[0]} '{self.seq_type}' entries in the annotation file.")
+        logger.info(
+            f"Found {filtered_gff.shape[0]} '{self.seq_type}' entries in the annotation file ({total_length}bp long)."
+        )
         logger.debug(f"\t" + filtered_gff.to_string().replace("\n", "\n\t"))
 
         filtered_gff.to_csv(self.filtered_gff)
@@ -304,6 +316,7 @@ class RiboDesigner(object):
     def get_all_probes(self, method="original"):
         """Run all probe design and concatenate results in a single DataFrame."""
 
+        self.json["method"] = method
         probes_dfs = []
 
         with pysam.FastxFile(self.ribo_sequences_fasta) as fas:
@@ -328,7 +341,7 @@ class RiboDesigner(object):
         self.probes_df["kept_after_clustering"] = True
         self.probes_df["bed_color"] = self.probes_df.kept_after_clustering.map({True: "21,128,0", False: "128,64,0"})
 
-    def export_to_fasta(self):
+    def export_all_probes_to_fasta(self):
         """From the self.probes_df, export to FASTA and CSV files."""
 
         with open(self.probes_fasta, "w") as fas:
@@ -352,7 +365,7 @@ class RiboDesigner(object):
 
     def cluster_probes(self):
         """Use cd-hit-est to cluster highly similar probes."""
-
+        logger.info("Clustering probes")
         outdir = (
             Path(self.clustered_probes_fasta).parent
             / f"cd-hit-est-{datetime.datetime.today().isoformat(timespec='seconds', sep='_')}"
@@ -463,6 +476,6 @@ class RiboDesigner(object):
             shutil.copy(self.fasta, self.ribo_sequences_fasta)
 
         self.get_all_probes(method=method)
-        self.export_to_fasta()
+        self.export_all_probes_to_fasta()
         self.export_to_csv_bed()
         self.export_to_json()
