@@ -406,7 +406,7 @@ class GFF3:
 
         fout.close()
 
-    def to_fasta(self, ref_fasta, fasta_out):
+    def to_fasta(self, ref_fasta, fasta_out, features=["gene"], identifier="ID"):
         """From a genomic FASTA file ref_fasta, extract regions stored in the
         gff. Export the corresponding regions to a FASTA file fasta_out.
 
@@ -418,15 +418,22 @@ class GFF3:
 
         with pysam.Fastafile(ref_fasta) as fas:
             with open(fasta_out, "w") as fas_out:
-                for region in self.df.to_dict("records"):
-                    name = f"{region['seqid']}:{region['start']}-{region['stop']}"
-                    seq_record = f">{name}\n{fas.fetch(region=name)}\n"
-                    fas_out.write(seq_record)
-                    count += 1
+                for record in self.df.to_dict("records"):
+                    if record["genetic_type"] in features:
+                        region = f"{record['seqid']}:{record['start']}-{record['stop']}"
+                        ID = record[identifier]
+                        seq_record = f">{ID}\n{fas.fetch(region=region)}\n"
+                        fas_out.write(seq_record)
+                        count += 1
 
         logger.info(f"{count} regions were extracted from '{ref_fasta}' to '{fasta_out}'")
 
-    def to_bed(self, output_filename, attribute_name):
+    def to_pep(self, ref_fasta, fasta_out):
+        """Extract CDS, convert to proteines and save in file"""
+        raise NotImplementedError
+        df = self.df.query("genetic_type=='CDS'")
+
+    def to_bed(self, output_filename, attribute_name, features=["gene"]):
         """Experimental export to BED format to be used with rseqc scripts
 
         :param str attribute_name: the attribute_name name to be found in the
@@ -482,7 +489,7 @@ class GFF3:
 
                 # for now only the feature 'gene' is implemented. We can
                 # generalize this later on.
-                if feature == "gene":
+                if feature in features:
                     gene_name = None
                     for item in attributes.split(";"):
                         if item.split("=")[0].strip() == attribute_name:
@@ -552,3 +559,12 @@ class GFF3:
 
     def get_seqid2size(self):
         return dict([(row.seqid, row.stop) for _, row in self.df.query("genetic_type=='region'").iterrows()])
+
+    def search(self, pattern):
+        from numpy import logical_or, zeros
+
+        pattern = str(pattern)
+        hits = zeros(len(self.df))
+        for col in self.df.columns:
+            hits = logical_or(self.df[col].apply(lambda x: pattern in str(x)), hits)
+        return self.df.loc[hits].copy()
