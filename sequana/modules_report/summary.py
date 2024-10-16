@@ -463,9 +463,12 @@ class SequanaReport(SummaryBase):
                 tools.append(tool)
 
         df = pd.DataFrame({"tool": tools, "version": versions})
-        df["sort"] = df["tool"].str.lower()
-        df.sort_values(by="sort", axis=0, inplace=True)
-        df.drop("sort", axis=1, inplace=True)
+        try:
+            df["sort"] = df["tool"].str.lower()
+            df.sort_values(by="sort", axis=0, inplace=True)
+            df.drop("sort", axis=1, inplace=True)
+        except (KeyError, AttributeError):  # could be empty
+            pass
         datatable = DataTable(df, "dep_and_version")
         datatable.datatable.datatable_options = {
             "paging": "false",

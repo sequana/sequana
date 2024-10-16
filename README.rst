@@ -240,6 +240,7 @@ Changelog
 ========= ==========================================================================
 Version   Description
 ========= ==========================================================================
+0.17.4    *
 0.17.3    * CHANGES: fix https://github.com/sequana/rnaseq/issues/45 to better
             handle multiqc files especially, feature counts plugin. Fix #855 to
             be able to name batch effect column arbitrary to any name. Fix batch

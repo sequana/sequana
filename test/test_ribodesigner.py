@@ -16,13 +16,11 @@ resources_dir = Path(test_dir) / "data" / "ribodesigner"
 @pytest.mark.parametrize("method", ["simple", "greedy", "original", "spiral"])
 def test_ribodesigner(tmp_path, method):
 
-    # outdir = tmp_path / method
-    # outdir.mkdir()
-
     rd = RiboDesigner(
         fasta=resources_dir / "sample.fas", gff=resources_dir / "sample.gff", output_directory=tmp_path, force=True
     )
     rd.run(method=method)
+    rd.plot()
     if method == "original":
         assert filecmp.cmp(tmp_path / "probes_sequences.fas", resources_dir / "probes_sequences.fas")
         assert filecmp.cmp(tmp_path / "clustered_probes.fas", resources_dir / "clustered_probes.fas")

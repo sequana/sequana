@@ -8,6 +8,7 @@ datafile = f"{test_dir}/data/fasta/measles.fa"
 def test_dna():
     seq = "ACGTTTT"
     dna = DNA(seq)
+    dna.threshold
     assert dna.sequence == seq
     assert dna.get_complement() == "TGCAAAA"
     assert dna.get_reverse() == "TTTTGCA"
@@ -47,6 +48,8 @@ def test_dna():
     dna.threshold = 0
     assert dna.ORF_pos.shape == (1525, 6)
     dna.hist_ORF_CDS_linearscale()
+    dna.hist_ORF_CDS_logscale()
+
     dna.barplot_count_ORF_CDS_by_frame()
 
     # test occurences
@@ -54,15 +57,29 @@ def test_dna():
     assert dna.get_occurences("GGG", False) == [4]
     assert dna.get_occurences("GGG", True) == [4, 5, 6]
 
+    # property
+    dna.type_filter
+    dna.type_filter = "CDS"
+    try:
+        dna.type_filter = "dummy"
+        assert False
+    except ValueError:
+        assert True
+
+    assert dna.entropy("AAAAAAAAA") == 0
+
 
 def test_rna():
     rna = RNA("ACUG")
 
 
-def test_repeats():
+def test_repeats(tmpdir):
     datafile = f"{test_dir}/data/fasta/measles.fa"
     rep = Repeats(datafile)
     rep.threshold = 11
+    # export to wig
+    tmpfile = tmpdir.join("test.wig")
+    rep.to_wig(tmpfile, step=100)
     assert len(rep.begin_end_repeat_position) == 158
     rep.do_merge = True
     assert len(rep.begin_end_repeat_position) == 156
@@ -93,6 +110,12 @@ def test_repeats():
 def test_gc_skew():
 
     dna = DNA(datafile)
+    try:
+        dna.window = -1
+        assert False
+    except ValueError:
+        assert True
+
     dna.window = 100
     dna.plot_all_skews()
     for x in dna:  # test the iterator
