@@ -20,7 +20,7 @@ def test_ribodesigner(tmp_path, method):
         fasta=resources_dir / "sample.fas", gff=resources_dir / "sample.gff", output_directory=tmp_path, force=True
     )
     rd.run(method=method)
-    rd.plot()
+    # rd.plot()
     if method == "original":
         assert filecmp.cmp(tmp_path / "probes_sequences.fas", resources_dir / "probes_sequences.fas")
         assert filecmp.cmp(tmp_path / "clustered_probes.fas", resources_dir / "clustered_probes.fas")

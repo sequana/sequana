@@ -246,9 +246,9 @@ class DNA(Sequence):
     def _init_list_results(self):
         # init IJ content and IJ skew
         IJ_content_res = np.empty((1, self.__len__()))
-        IJ_content_res[:] = np.NAN
+        IJ_content_res[:] = np.nan
         IJ_skew_res = np.empty((1, self.__len__()))
-        IJ_skew_res[:] = np.NAN
+        IJ_skew_res[:] = np.nan
         return IJ_content_res, IJ_skew_res
 
     def _init_cumul_nuc(self):
@@ -796,7 +796,7 @@ class Repeats:
             # the -l option uses a regular expression
             task_shus = subprocess.Popen(
                 # ["shustring", "-r", "-q", "-l", ">{}[\s,\n]*?".format(self.header)],
-                ["shustring", "-r", "-q", "-l", ">{}($|\s+)".format(self.header)],
+                ["shustring", "-r", "-q", "-l", r">{}($|\s+)".format(self.header)],
                 stdin=task_read.stdout,
                 stdout=subprocess.PIPE,
             )

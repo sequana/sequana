@@ -40,6 +40,15 @@ logger = colorlog.getLogger(__name__)
     "--max-n-probes", default=384, show_default=True, type=click.INT, help="The maximum number of probes to design."
 )
 @click.option(
+    "--force-clustering",
+    default=False,
+    is_flag=True,
+    type=click.BOOL,
+    show_default=True,
+    required=False,
+    help="By default, if number of probes is above 384 (see --max-n-probes) a clustering is performed using an identity threshold (with --identity-step). If not, no clustering is done. You may force the clustering using this option.",
+)
+@click.option(
     "--threads", default=4, show_default=True, type=click.INT, help="The number of threads to use for cd-hit-est."
 )
 @click.option(
@@ -64,12 +73,12 @@ def ribodesigner(**kwargs):
     This uses a reference genome (FASTA file) and the corresponding annotation
     (GFF file). CD-HIT-EST should be installed and in your $PATH.
     """
-
     if not shutil.which("cd-hit-est"):
-        logger.error("cd-hit-est not found in PATH.")
+        logger.error("cd-hit-est not found in PATH. Try to install it with conda, or damona (damona.readthedocs.io)")
         sys.exit(1)
 
     RiboDesigner(**kwargs).run(method=kwargs["method"])
+
     if kwargs["output_image"]:
         from pylab import savefig
 

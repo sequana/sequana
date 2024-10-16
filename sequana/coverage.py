@@ -23,27 +23,26 @@ logger = colorlog.getLogger(__name__)
 __all__ = ["Coverage"]
 
 
-
 def doc2boc(doc):
     """Compute the breadth of coverage (BOC) given the coverage (DOC)
 
 
     In the context of next-generation sequencing (NGS), the breadth of coverage (BOC)
     is the fraction of the genome covered by at least one read; let us denote if $b$. The Depth of coverage (DOC)
-    is the average number of times a base in the genome is sequenced; let us denote it $d$. 
- 
-    The relationship between DOC and BOC can be understood by considering the probability 
-    that a particular base in the genome is not covered by any read. If the reads are randomly 
-    distributed across the genome, the probability that a specific base is not covered by any 
+    is the average number of times a base in the genome is sequenced; let us denote it $d$.
+
+    The relationship between DOC and BOC can be understood by considering the probability
+    that a particular base in the genome is not covered by any read. If the reads are randomly
+    distributed across the genome, the probability that a specific base is not covered by any
     read (assuming Poisson distribution) is
 
     .. math::
 
         P(not covered) = e^{-d}
 
-    Thus, the probability that a specific base is covered by at least one read is 
+    Thus, the probability that a specific base is covered by at least one read is
 
-    .. math:: 
+    .. math::
 
         P(covered)= 1 - e ^{-d}
 
@@ -191,7 +190,7 @@ class Coverage(object):
     G = property(_get_G, _set_G, doc="genome length")
 
     def get_required_coverage(self, M=0.01):
-        """Return the required coverage to ensure the genome is covered
+        r"""Return the required coverage to ensure the genome is covered
 
         A general question is what should be the coverage to make sure
         that e.g. E=99% of the genome is covered by at least a read.
@@ -232,7 +231,7 @@ class Coverage(object):
             pylab.xlabel("Uncovered genome", fontsize=16)
             pylab.grid()
 
-        # The inverse equation is required fold coverage = [log(-1/(E - 1))]
+        The inverse equation is required fold coverage = [log(-1/(E - 1))]
         """
         # What should be the fold coverage to have 99% of the genome sequenced ?
         # It is the same question as equating 1-e^{-(NL/G}) == 0.99, we need NL/G = 4.6
@@ -275,7 +274,7 @@ class Coverage(object):
         return math.exp(self.a)
 
     def get_percent_genome_sequenced(self):
-        """Return percent of the genome covered
+        r"""Return percent of the genome covered
 
         .. math:: 100 (1-\exp{-a})
         """
