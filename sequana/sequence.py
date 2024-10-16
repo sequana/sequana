@@ -651,7 +651,7 @@ class DNA(Sequence):
         pylab.yscale("log")
 
     def barplot_count_ORF_CDS_by_frame(self, alpha=0.5, bins=40, xlabel="Frame", ylabel="#", bar_width=0.35):
-        if self._ORF_pos is None:
+        if self._ORF_pos is None:  # pragma: no cover
             self._find_ORF_CDS()
         # number of ORF and CDS found by frame
         frames = [-3, -2, -1, 1, 2, 3]
@@ -682,6 +682,8 @@ class DNA(Sequence):
 
     def entropy(self, sequence):
         # https://www.sciencedirect.com/science/article/pii/S0022519397904938?via%3Dihub
+        from pylab import log
+
         pi = [sequence.count(l) / float(len(sequence)) for l in "ACGT"]
         pi = [x for x in pi if x != 0]
         return -sum(pi * log(pi))
@@ -980,3 +982,23 @@ class Repeats:
         pylab.xlabel("Position (bp)", fontsize=fontsize)
         pylab.ylabel("Repeat lengths (bp)", fontsize=fontsize)
         pylab.ylim(bottom=0)
+
+    def to_wig(self, filename, step=1000):
+        """export repeats into WIG format to import in IGV"""
+        assert self.threshold and self.df_shustring is not None
+
+        from numpy import arange
+
+        N = len(self.df_shustring)
+        with open(filename, "w") as fout:
+            fout.write(
+                'track type=wiggle_0 name="Repeat Density" visibility=full fixedStep chrom=1 start=0 step=100 span=100'
+            )
+            for i in arange(step / 2, N, step):
+                start = int(i - step / 2)
+                stop = int(i + step / 2)
+
+                M = self.df_shustring.query("position>=@start and position<=@stop").shustring_length.max()
+                if start == 0:
+                    start = 1
+                fout.write(f"{self.header}\t{start}\t{stop}\t{M}\n")
