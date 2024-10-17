@@ -19,10 +19,15 @@ class BinaryPercentage:
 
     ::
 
+        import pandas as pd
         from sequana.viz.plotly import BinaryPercentage
         hb = BinaryPercentage()
         hb.df = pd.DataFrame({"A": [1,50,100], 'B': [1,50,100]})
-        hb.plot()
+        fig = hb.plot_horizontal_bar(html_code=True)
+        fig.show()
+
+    .. image:: _static/plotly/binary_percentage.png
+
     """
 
     def __init__(self):

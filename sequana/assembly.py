@@ -208,13 +208,13 @@ class BUSCO:
         with open(output_fasta_file, "w") as fout:
             for record in subdf.to_dict("records"):
                 type_ = record["Status"]
+                ID = record["ID"]
                 if type_ == "Missing":
                     data = "N" * 100
-                    fout.write(f">{ID}\t{type_}:{seqname}:{start}:{end}:{end-start}\n{data}\n")
+                    fout.write(f">{ID}\t{type_}:{seqname}:0:100:100\n{data}\n")
                 else:
                     # get gene/contig information
                     start = int(record["Gene Start"])
-                    ID = record["ID"]
                     end = int(record["Gene End"])
                     seqname = record["Sequence"]
 

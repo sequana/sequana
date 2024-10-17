@@ -517,7 +517,7 @@ class RNADiffTable:
         outliers = self.df["padj"].isna()
 
         filt_df = self.df.copy()
-        filt_df[fc_filt.values | fdr_filt.values | outliers] = np.NaN
+        filt_df[fc_filt.values | fdr_filt.values | outliers] = np.nan
         return filt_df
 
     def set_gene_lists(self):

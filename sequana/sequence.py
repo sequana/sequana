@@ -246,9 +246,9 @@ class DNA(Sequence):
     def _init_list_results(self):
         # init IJ content and IJ skew
         IJ_content_res = np.empty((1, self.__len__()))
-        IJ_content_res[:] = np.NAN
+        IJ_content_res[:] = np.nan
         IJ_skew_res = np.empty((1, self.__len__()))
-        IJ_skew_res[:] = np.NAN
+        IJ_skew_res[:] = np.nan
         return IJ_content_res, IJ_skew_res
 
     def _init_cumul_nuc(self):
@@ -651,7 +651,7 @@ class DNA(Sequence):
         pylab.yscale("log")
 
     def barplot_count_ORF_CDS_by_frame(self, alpha=0.5, bins=40, xlabel="Frame", ylabel="#", bar_width=0.35):
-        if self._ORF_pos is None:
+        if self._ORF_pos is None:  # pragma: no cover
             self._find_ORF_CDS()
         # number of ORF and CDS found by frame
         frames = [-3, -2, -1, 1, 2, 3]
@@ -682,6 +682,8 @@ class DNA(Sequence):
 
     def entropy(self, sequence):
         # https://www.sciencedirect.com/science/article/pii/S0022519397904938?via%3Dihub
+        from pylab import log
+
         pi = [sequence.count(l) / float(len(sequence)) for l in "ACGT"]
         pi = [x for x in pi if x != 0]
         return -sum(pi * log(pi))
@@ -701,7 +703,7 @@ class RNA(Sequence):
         super(RNA, self).__init__(sequence, complement_in=b"ACGU", complement_out=b"UGCA", letters="ACGUN")
 
 
-class Repeats(object):
+class Repeats:
     """Class for finding repeats in DNA or RNA linear sequences.
 
     Computation is performed each time the :attr:`threshold` is set
@@ -765,15 +767,6 @@ class Repeats(object):
             self.header = self._fasta.names[0]
 
     def _get_header(self):
-        """get first line of fasta (needed in input shustring)
-        and replace spaces by underscores
-        """
-        """if self._header is None:
-            # -n is to specify the DNA nature of the sequence
-            first_line = subprocess.check_output(["head", "-n", "1", self._filename_fasta])
-            first_line = first_line.decode('utf8')
-            first_line = first_line.replace("\n","").replace(" ","_")
-            self._header = first_line"""
         return self._header
 
     def _set_header(self, name):
@@ -799,18 +792,12 @@ class Repeats(object):
             # read fasta
             task_read = subprocess.Popen(["cat", self._filename_fasta], stdout=subprocess.PIPE)
 
-            # replace spaces of fasta
-            task_replace_spaces = subprocess.Popen(["sed", "s/ /_/g"], stdin=task_read.stdout, stdout=subprocess.PIPE)
-
             # shustring command
             # the -l option uses a regular expression
-            # if 2 identifier such as >1 and >11 then using regular expression
-            # >1 means both match. Therefore, we use a $ in the next comand line
-            # In Repeats, we set the chrom name therefore, we should add this $
-            # character
             task_shus = subprocess.Popen(
-                ["shustring", "-r", "-q", "-l", ">{}$".format(self.header)],
-                stdin=task_replace_spaces.stdout,
+                # ["shustring", "-r", "-q", "-l", ">{}[\s,\n]*?".format(self.header)],
+                ["shustring", "-r", "-q", "-l", r">{}($|\s+)".format(self.header)],
+                stdin=task_read.stdout,
                 stdout=subprocess.PIPE,
             )
 
@@ -987,15 +974,31 @@ class Repeats(object):
         if logy:
             pylab.semilogy()
 
-    def plot(self, clf=True):
+    def plot(self, clf=True, fontsize=12):
         if clf:
             pylab.clf()
-        M = self.df_shustring.shustring_length.max()
-        print(M)
-        M = int(M / 1000) + 1
-        for i in range(M):
-            pylab.axhline(i * 1000, ls="--", color="grey")
+        pylab.grid(True)
         pylab.plot(self.df_shustring.shustring_length)
-        pylab.xlabel("position (bp)")
-        pylab.ylabel("Length of repeats")
+        pylab.xlabel("Position (bp)", fontsize=fontsize)
+        pylab.ylabel("Repeat lengths (bp)", fontsize=fontsize)
         pylab.ylim(bottom=0)
+
+    def to_wig(self, filename, step=1000):
+        """export repeats into WIG format to import in IGV"""
+        assert self.threshold and self.df_shustring is not None
+
+        from numpy import arange
+
+        N = len(self.df_shustring)
+        with open(filename, "w") as fout:
+            fout.write(
+                'track type=wiggle_0 name="Repeat Density" visibility=full fixedStep chrom=1 start=0 step=100 span=100'
+            )
+            for i in arange(step / 2, N, step):
+                start = int(i - step / 2)
+                stop = int(i + step / 2)
+
+                M = self.df_shustring.query("position>=@start and position<=@stop").shustring_length.max()
+                if start == 0:
+                    start = 1
+                fout.write(f"{self.header}\t{start}\t{stop}\t{M}\n")

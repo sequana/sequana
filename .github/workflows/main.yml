@@ -17,7 +17,7 @@ jobs:
     strategy:
       max-parallel: 5
       matrix:
-        python: [3.8, 3.9, '3.10', '3.11']
+        python: [3.9, '3.10', '3.11', '3.12']
       fail-fast: false
 
 
@@ -26,22 +26,28 @@ jobs:
       uses: actions/checkout@v2
 
     - name: conda/mamba
-      uses: mamba-org/provision-with-micromamba@main
+      uses: mamba-org/setup-micromamba@v1
       with:
           cache-downloads: true
-          environment-file: false
+          #environment-file: false
           environment-name: installation
           channels:
             conda-forge,bioconda,defaults
-          extra-specs: |
+          create-args: >-
             python=${{ matrix.python }}
             kraken2
             shustring
             samtools
+            mosdepth
             snpeff
             bwa
             shustring
             cd-hit
+          condarc: |
+            channels:
+              - conda-forge
+              - bioconda
+            channel_priority: strict
 
     - name: install package itself
       shell: bash -l {0}

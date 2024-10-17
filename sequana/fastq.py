@@ -25,6 +25,7 @@ from tqdm import tqdm
 from sequana.lazy import numpy as np
 from sequana.lazy import pandas as pd
 from sequana.lazy import pylab
+from sequana.stats import L50, N50
 from sequana.tools import GZLineCounter
 
 try:
@@ -569,10 +570,6 @@ class FastQ(object):
             outputs = [x + ".gz" for x in outputs]
         return outputs
 
-    # def _split_chunks(self, N=10):
-    #    # split per chunks of size N
-    #    pass
-
     def _check_multiple(self, N, multiple=4):
         if divmod(N, multiple)[1] != 0:
             msg = "split_lines method expects a multiple of %s." % multiple
@@ -589,7 +586,7 @@ class FastQ(object):
         self._check_multiple(N)
 
         assert type(N) == int
-        if N >= self.n_lines: #pragma: no cover
+        if N >= self.n_lines:  # pragma: no cover
             print("Nothing to do. Choose a lower N value")
             return
 
@@ -627,22 +624,6 @@ class FastQ(object):
         assert N <= 100, "you cannot split a file into more than 100 chunks"
         # split per chunks of size N
         cmd = "split --number %s %s -d"
-
-    """def random(self, N=10000, output_filename="test.fastq",
-               bp=50, quality=40):
-        # a completely random fastq
-        from .phred import quality
-        with open(output_filename, "wb") as fh:
-            count = 1
-            template = "@Insilico\n"
-            template += "%(sequence)\n"
-            template += "+\n"
-            template += "%s(quality)\n"
-            fh.writelines(template % {
-                'sequence': "".join(["ACGT"[random.randint(0,3)] for this in range(bp)]),
-                'quality': "".join()})
-        # quality could be q function for a distribution
-    """
 
     def joining(self, pattern, output_filename):  # pragma: no cover
         """not implemented
@@ -733,22 +714,22 @@ class FastQ(object):
         with open(output_filename, "w") as fout:
             buf = ""
             found = 0
-            
+
             for count, lines in tqdm(
                 enumerate(grouper(self._fileobj)),
                 desc="sequana:reading reads",
                 disable=not progress,
             ):
-                identifier = lines[0].split()[0].decode()[1:] # we ignore the first @ character
+                identifier = lines[0].split()[0].decode()[1:]  # we ignore the first @ character
                 if identifier not in identifiers:
                     pass
                 else:  # pragma: no cover
-                    found +=1
+                    found += 1
                     buf += "{}{}+\n{}".format(
-                            lines[0].decode("utf-8"),
-                            lines[1].decode("utf-8"),
-                            lines[3].decode("utf-8"),
-                        )
+                        lines[0].decode("utf-8"),
+                        lines[1].decode("utf-8"),
+                        lines[3].decode("utf-8"),
+                    )
                     if count % 10000 == 0:
                         fout.write(buf)
                         buf = ""
@@ -760,11 +741,11 @@ class FastQ(object):
             logger.info("Compressing file")
             self._gzip(output_filename)
 
-    def to_kmer_content(self, k=7):
-
-        if tozip is True:  # pragma: no cover
-            logger.info("Compressing file")
-            self._gzip(output_filename)
+    # def to_kmer_content(self, k=7):
+    #
+    #    if tozip is True:  # pragma: no cover
+    #        logger.info("Compressing file")
+    #        self._gzip(output_filename)
 
     def filter(
         self,
@@ -876,12 +857,62 @@ class FastQ(object):
                 letters = "\t".join([x for x in index])
                 fout.write("%s\t" % count + letters + "\n")
 
+    def _get_GC_read_lengths(self, maxreads=10000):
+        self.rewind()
+        GCs, lengths = [], []
+        for i, read in enumerate(self):
+            seq = read["sequence"].decode()
+            L = len(seq)
+            GC = sum([1 for x in seq if x in "CGcgSs"]) / float(L) * 100
+            GCs.append(GC)
+            lengths.append(L)
+            if i > maxreads:
+                break
+        df = pd.DataFrame({"GC_content": GCs, "read_length": lengths})
+        return df
+
+    def plot_GC_read_len(self, hold=False, fontsize=12, bins=[200, 60], grid=True, cmap="BrBG", maxreads=10000):
+
+        from sequana.viz.vizir import hist2D
+
+        data = self._get_GC_read_lengths(maxreads=maxreads)
+        data = data.loc[:, ["read_length", "GC_content"]]
+
+        mean_len = np.mean(data.loc[:, "read_length"])
+        mean_GC = np.mean(data.loc[:, "GC_content"])
+        title = "GC %% vs read length \n Mean length : %s , Mean GC : %.2f" % (int(mean_len), mean_GC)
+
+        h = hist2D(
+            "read_length",
+            "GC_content",
+            data,
+            hold=hold,
+            grid=grid,
+            ylabel="GC (%)",
+            xlabel="Read length (bp)",
+            title=title,
+            hist2d_dict={"bins": bins, "contour": False, "norm": "log", "Nlevels": 3, "cmap": cmap},
+        )
+        pylab.ylim([0, 100])
+
     def stats(self):
         self.rewind()
-        data = [len(read["sequence"]) for read in self]
-        S = sum(data)
-        N = float(len(data))
-        return {"mean_read_length": S / N, "N": int(N), "sum_read_length": S}
+        lengths = [len(read["sequence"]) for read in self]
+
+        stats = {}
+        stats["N"] = len(lengths)
+        stats["mean_length"] = pylab.mean(lengths)
+        stats["total_length"] = sum(lengths)
+        stats["N50"] = N50(lengths)
+        stats["L50"] = L50(lengths)
+        stats["min_length"] = min(lengths)
+        stats["max_length"] = max(lengths)
+
+        # for back compatibility:
+        stats["mean_read_length"] = stats["mean_length"]
+        stats["sum_read_length"] = stats["total_length"]
+
+        return stats
 
     def __eq__(self, other):
         if id(other) == id(self):

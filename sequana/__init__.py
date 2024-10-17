@@ -60,16 +60,11 @@ from .gff3 import GFF3
 from .homer import Homer
 from .idr import IDR
 from .itol import ITOL
-from .kraken.downloads import KrakenDownload
-from .kraken.analysis import (
-    KrakenAnalysis,
-    KrakenDB,
-    KrakenPipeline,
-    KrakenResults,
-)
+from .kraken.analysis import KrakenAnalysis, KrakenDB, KrakenPipeline, KrakenResults
 from .kraken.consensus import KrakenConsensus
-from .kraken.sequential import KrakenSequential
+from .kraken.downloads import KrakenDownload
 from .kraken.multikraken import MultiKrakenResults, MultiKrakenResults2
+from .kraken.sequential import KrakenSequential
 from .krona import KronaMerger
 from .macs3 import MACS3Reader, PeakConsensus
 from .modules_report.summary import SequanaReport
@@ -79,5 +74,6 @@ from .rnadiff import RNADiffResults
 from .running_median import RunningMedian
 from .sequence import DNA, RNA, Repeats, Sequence
 from .snpeff import SnpEff
+from .tools import reverse_complement
 from .trf import TRF
 from .variants import VariantFile

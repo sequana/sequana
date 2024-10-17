@@ -35,6 +35,8 @@ def test_pacbio():
     b.hist_read_length()
     b.hist_nb_passes()
     b.get_mean_nb_passes()
+    b.get_number_of_ccs()
+    b.boxplot_read_length_vs_passes()
 
     # test from scratch
     b._df = None

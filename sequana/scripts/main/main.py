@@ -21,6 +21,7 @@ from .enrichment_uniprot import enrichment_uniprot
 from .fasta import fasta
 from .fastq import fastq
 from .feature_count import feature_counts
+from .find_integrated_genes import find_integrated_genes
 from .g4hunter import g4hunter
 from .gff_to_gtf import gff_to_gtf
 from .gff_to_light_gff import gff_to_light_gff
@@ -32,11 +33,10 @@ from .rnadiff import rnadiff
 from .rnaseq_compare import rnaseq_compare
 from .salmon import salmon_cli
 from .samplesheet import samplesheet
+from .somy_score import somy_score
 from .summary import summary
 from .taxonomy import taxonomy
 from .variants_comparison import variants_comparison
-from .find_integrated_genes import find_integrated_genes
-
 
 click.rich_click.USE_MARKDOWN = True
 click.rich_click.SHOW_METAVARS_COLUMN = False
@@ -90,3 +90,4 @@ main.add_command(summary)
 main.add_command(taxonomy)
 main.add_command(variants_comparison)
 main.add_command(find_integrated_genes)
+main.add_command(somy_score)

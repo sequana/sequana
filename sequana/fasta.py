@@ -57,7 +57,8 @@ class FastA:
     """
 
     def __init__(self, filename, verbose=False):
-        self._fasta = pysam.FastxFile(filename)
+        self._fasta = pysam.FastaFile(filename)
+        self._fastx = pysam.FastxFile(filename)
         self.filename = filename
         self._N = None
 
@@ -68,47 +69,43 @@ class FastA:
         return self.next()
 
     def next(self):  # python 2
-        # reads 4 lines
         try:
-            d = next(self._fasta)
+            d = next(self._fastx)
             return d
         except KeyboardInterrupt:  # pragma: no cover
             # This should allow developers to break a loop that takes too long
             # through the reads to run forever
-            self._fasta.close()
-            self._fasta = pysam.FastxFile(self._fasta.filename)
+            self._fastx.close()
+            self._fastx = pysam.FastxFile(self.filename)
         except:
-            self._fasta.close()
-            self._fasta = pysam.FastxFile(self._fasta.filename)
+            self._fastx.close()
+            self._fastx = pysam.FastxFile(self.filename)
             raise StopIteration
 
+    def __getitem__(self, name):
+        return self._fasta[name]
+
     def __len__(self):
-        if self._N is None:
-            logger.debug("Reading input fasta file...please wait")
-            self._N = sum(1 for x in pysam.FastxFile(self.filename))
-        return self._N
+        return len(self._fasta)
 
     def _get_names(self):
-        _fasta = pysam.FastxFile(self.filename)
-        return [this.name for this in _fasta]
+        return self._fasta.references
 
     names = property(_get_names)
 
     def _get_sequences(self):
-        _fasta = pysam.FastxFile(self.filename)
-        return [this.sequence for this in _fasta]
+        return [self._fasta.fetch(name) for name in self.names]
 
     sequences = property(_get_sequences)
 
     def _get_comment(self):
-        _fasta = pysam.FastxFile(self.filename)
-        return [this.comment for this in _fasta]
+        self._fastx = pysam.FastxFile(self.filename)
+        return [this.comment for this in self._fastx]
 
     comments = property(_get_comment)
 
     def _get_lengths(self):
-        _fasta = pysam.FastxFile(self.filename)
-        return [len(this.sequence) for this in _fasta]
+        return self._fasta.lengths
 
     lengths = property(_get_lengths)
 
@@ -235,14 +232,14 @@ class FastA:
             cherries = N
         elif isinstance(N, list):
             cherries = set(N)
-        fasta = pysam.FastxFile(self.filename)
 
+        comments = self.comments
         with open(output_filename, "w") as fh:
-            for i, read in enumerate(tqdm.tqdm(fasta)):
-                if i in cherries:
-                    fh.write(read.__str__() + "\n")
-                else:
-                    pass
+            for i in cherries:
+                name = self.names[i]
+                seq = self._fasta.fetch(self.names[i])
+                comment = comments[i]
+                fh.write(f">{name}\t{comment}\n{seq}\n")
         return cherries
 
     def get_stats(self):
@@ -320,7 +317,8 @@ class FastA:
         """Return GC content in percentage of all sequences found in the FastA file"""
         lengths = sum(self.lengths)
         GC = 0
-        for seq in self.sequences:
+        for name in self.names:
+            seq = self._fasta.fetch(name)
             GC += seq.count("G") + seq.count("g")
             GC += seq.count("C") + seq.count("c")
         return GC / lengths * 100
@@ -333,12 +331,11 @@ class FastA:
 
     def save_ctg_to_fasta(self, ctgname, outname, max_length=-1):
         """Select a contig and save in a file"""
-        index = self.names.index(ctgname)
         with open("{}.fa".format(outname), "w") as fout:
             if max_length == -1:
-                fout.write(">{}\n{}".format(outname, self.sequences[index]))
+                fout.write(">{}\n{}".format(outname, self._fasta.fetch(ctgname)))
             else:
-                fout.write(">{}\n{}".format(outname, self.sequences[index][0:max_length]))
+                fout.write(">{}\n{}".format(outname, self._fasta.fetch(ctgname)[0:max_length]))
 
     def to_fasta(self, outfile, width=80):
         """Save the input FastA file into a new file
@@ -348,8 +345,11 @@ class FastA:
 
         """
         with open(outfile, "w") as fout:
-            for name, comment, seq in zip(self.names, self.comments, self.sequences):
+            for name, comment in zip(self.names, self.comments):
+                # fetch sequence and wrap it
+                seq = self._fasta.fetch(name)
                 seq = "\n".join(textwrap.wrap(seq, width))
+
                 if comment is None:
                     fout.write(f">{name}\n{seq}\n")
                 else:

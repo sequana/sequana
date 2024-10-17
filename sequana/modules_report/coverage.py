@@ -16,10 +16,13 @@
 #
 ##############################################################################
 """Module to write coverage report"""
+import glob
+import json
 import os
 
 import colorlog
 import pandas as pd
+from plotly import offline
 
 from sequana import bedtools
 from sequana.modules_report.base_module import SequanaBaseModule
@@ -77,8 +80,32 @@ class CoverageModule(SequanaBaseModule):
 
         self.create_chromosome_table(html_list)
 
+        try:
+            self.create_summary_barplot()
+        except FileNotFoundError:
+            pass
+
         # and create final HTML
         self.create_html("sequana_coverage.html")
+
+    def create_summary_barplot(self):
+        import pandas as pd
+        import plotly.express as px
+
+        df = pd.read_csv(f"{self.output_dir}/summary.json")
+        fig = px.bar(df, x="name", y="DOC", hover_data=["BOC", "length"], color="BOC", height=400)
+
+        html_plotly = offline.plot(fig, output_type="div", include_plotlyjs=False)
+
+        self.sections.append(
+            {
+                "name": "Coverage",
+                "anchor": "coverage_bar_plot",
+                "content": "<p>Link to coverage analysis report for each chromosome. "
+                "Size, mean coverage and coefficient of variation are reported"
+                " in the table below.</p>" + html_plotly,
+            }
+        )
 
     def create_chromosome_table(self, html_list):
         """Create table with links to chromosome reports"""

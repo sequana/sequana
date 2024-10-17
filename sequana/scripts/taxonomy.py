@@ -26,7 +26,7 @@ from pathlib import Path
 import colorlog
 import rich_click as click
 
-from sequana import KrakenDownload, KrakenPipeline, KrakenSequential, KrakenConsensus
+from sequana import KrakenConsensus, KrakenDownload, KrakenPipeline, KrakenSequential
 from sequana import sequana_config_path as scfg
 from sequana import version as sequana_version
 from sequana.modules_report.kraken import KrakenModule
@@ -54,6 +54,7 @@ def update_taxonomy(ctx, param, value):  # pragma: no cover
 def download_database(ctx, param, value):
 
     from sequana import logger
+
     logger.setLevel("INFO")
 
     if value:
@@ -71,11 +72,7 @@ click.rich_click.OPTION_GROUPS = {
         },
         {
             "name": "Detection Algorithm Options",
-            "options": [
-                "--confidence",
-                "--thread",
-                "--mode"
-            ],
+            "options": ["--confidence", "--thread", "--mode"],
         },
         {
             "name": "Download utilities",
@@ -155,8 +152,8 @@ def check_databases(ctx, param, value):
     "--mode",
     "mode",
     type=click.Choice(["sequential", "consensus"]),
-    help="""'sequential' means analyse reads with the first database, and analyse the remaining 
-    unclassified reads with the next database (and so on). consensus means analyse all reads with 
+    help="""'sequential' means analyse reads with the first database, and analyse the remaining
+    unclassified reads with the next database (and so on). consensus means analyse all reads with
     every databases and compute the best hit across databases for each read""",
     default="sequential",
 )
@@ -179,15 +176,22 @@ def check_databases(ctx, param, value):
     "--download",
     "download",
     default=None,
-    type=click.Choice(["toydb",
-        "archaea_masking:v21.1.1",
-        "bacteria_masking:v24.1.31",
-        "bacteria_masking:v24.1.31",
-        "fungi_masking:v21.1.1",
-        "fungi_masking:v24.3.15",
-        "human_masking:v21.1.1",
-        "viruses_masking:v21.1.1",
-        "viruses_masking:v24.1.31"]),
+    type=click.Choice(
+        [
+            "toydb",
+            "archaea_masking:v21.1.1",
+            "bacteria_masking:v21.1.1",
+            "bacteria_masking:v24.4.4",
+            "fungi_masking:v21.1.1",
+            "fungi_masking:v24.3.15",
+            "human_masking:v21.1.1",
+            "plasmid_masking:v24.8.20",
+            "plastid_masking:v24.8.20",
+            "protozoa_masking:v24.8.1",
+            "viruses_masking:v21.1.1",
+            "viruses_masking:v24.1.31",
+        ]
+    ),
     callback=download_database,
     is_eager=True,
     help="Set of downloadable databases from Zenodo",
@@ -236,8 +240,8 @@ def main(**kwargs):
 
         sequana_taxonomy --download toydb
 
-    It is downloaded into .config/sequana/kraken2_dbs/ directory. After 
-    downloading, you can use the tool with a command similar to the 
+    It is downloaded into .config/sequana/kraken2_dbs/ directory. After
+    downloading, you can use the tool with a command similar to the
     following:
 
         sequana_taxonomy --file1 R1.fastq --file2 R2.fastq
@@ -255,9 +259,9 @@ def main(**kwargs):
     options = AttrDict(**kwargs)
 
     from sequana import logger as loggers
+
     loggers.setLevel(options.level)
     logger.setLevel(options.level)
-
 
     fastq = [options.file1]
     if options.file2:
@@ -296,7 +300,7 @@ def main(**kwargs):
             output_filename_classified=_pathto(options.classified_out),
             output_filename_unclassified=_pathto(options.unclassified_out),
         )
-    elif kwargs['mode'] == 'sequential':
+    elif kwargs["mode"] == "sequential":
         logger.info(f"Using {databases} databases sequentially")
         k = KrakenSequential(
             fastq,
@@ -309,7 +313,7 @@ def main(**kwargs):
             confidence=options.confidence,
         )
         summary = k.run(output_prefix="kraken")
-    elif kwargs['mode'] == 'consensus':
+    elif kwargs["mode"] == "consensus":
         logger.info(f"Using {databases} databases sequentially")
         k = KrakenConsensus(
             fastq,

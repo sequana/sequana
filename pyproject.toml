@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "sequana"
-version = "0.17.3"
+version = "0.18.0"
 description = "A set of standalone application and pipelines dedicated to NGS analysis"
 authors = ["Thomas Cokelaer <thomas.cokelaer@pasteur.fr>"]
 license = "new BSD"
@@ -18,10 +18,10 @@ classifiers = [
         "Intended Audience :: Science/Research",
         "License :: OSI Approved :: BSD License",
         "Operating System :: POSIX :: Linux",
-        "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
         "Topic :: Software Development :: Libraries :: Python Modules",
         "Topic :: Scientific/Engineering :: Bio-Informatics",
         "Topic :: Scientific/Engineering :: Information Analysis",
@@ -80,7 +80,7 @@ Documentation =  "https://sequana.readthedocs.io"
 
 
 [tool.poetry.dependencies]
-python = ">=3.8,<4.0"
+python = ">=3.9,<4.0"
 adjusttext = "^0.8"
 aiohttp = "^3.10.1"
 bioservices = "^1.11.2"
@@ -88,7 +88,7 @@ brokenaxes = ">=0.5.0"
 bx-python = "^0.10.0"
 click = "^8.1.7"
 colorlog = "^6.8.0"
-colormap = "^1.0.6"
+colormap = "^1.2.0"
 cython = "^3.0.7"
 deprecated = "^1.2.14"
 easydev = "^0.12.1"
@@ -98,12 +98,10 @@ itolapi = "^4.1.2"
 matplotlib-venn = "^0.11.9"
 multiqc = "<1.18"
 plotly = "^5.18.0"
-#psutil = "^5.9.7"
-#pykwalify = "^1.8.0"
 pulp = "<2.8.0"
 pysam = "^0.22.0"
 scikit-learn = "^1.3.2"
-scipy = "<1.11.4"
+scipy = "^1"
 matplotlib = "<4.0"
 seaborn = "^0.13.1"
 selenium = "^4.16.0"
@@ -117,8 +115,8 @@ rich-click = "^1.7.2"
 
 
 [tool.poetry.group.dev.dependencies]
-pytest = "^7.4.4"
-pytest-cov = "^4.1.0"
+pytest = "^8.3.3"
+pytest-cov = "^5.0.0"
 pytest-xdist = "^3.5.0"
 pytest-mock = "^3.12.0"
 pytest-timeout = "^2.2.0"

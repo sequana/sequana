@@ -175,9 +175,15 @@ def enrichment_panther(**kwargs):
     gene_lists = rnadiff.get_gene_lists(annot_col=annot_col, Nmax=kwargs.get("max_genes", None), dropna=True)
 
     output_directory = kwargs["output_directory"]
+    os.makedirs(f"{output_directory}", exist_ok=True)
+
     for compa, gene_dict in gene_lists.items():
         config.output_dir = f"{output_directory}/{compa}"
-        os.makedirs(f"{output_directory}", exist_ok=True)
+
+        # When rerunning analysis, the enrichment is made only for the missing comparison
+        if (Path(output_directory) / compa / "enrichment.html").exists():
+            logger.info(f"Enrichment already done for {compa} in {output_directory}. Keeping folder as is.")
+            continue
 
         # for now, let us keep the 'all' category
         # del gene_dict["all"]
