@@ -43,6 +43,7 @@ click.rich_click.OPTION_GROUPS = {
     "--window-size",
     type=click.INT,
     default=1000,
+    show_default=True,
     help="""The reference to test DGE against. If provided, conditions not
             involving the reference are ignored. Otherwise all combinations are
             tested""",
@@ -56,13 +57,14 @@ click.rich_click.OPTION_GROUPS = {
     "--method",
     type=click.Choice(["em", "median", "mean"]),
     default="median",
-    help="""Method to estimate the main somy (in principle diploid)""",
+    show_default=True,
+    help="""Method to estimate the main somy (in principle diploid). Median and mean methods simply compute those statistics from the chunks (windows). The EM is more complex, and compute distribution, estimate mixture model and therefore the mean of the diploid distribution based on those estimates""",
 )
 @click.option(
     "--estimated-diploy-coverage",
     default=None,
     required=False,
-    help="""If not provided, data is normalisation based on --method. If provided, this is the estimated coverage""",
+    help="""If not provided, data normalisation is based on --method. If provided, this is the estimated coverage""",
 )
 @click.option(
     "--chromosomes",
@@ -73,18 +75,21 @@ click.rich_click.OPTION_GROUPS = {
     "--mapq",
     type=click.INT,
     default=0,
+    show_default=True,
     help="""list of chromosomes to restrict to """,
 )
 @click.option(
     "--telomeric-span",
     type=click.INT,
     default=10,
+    show_default=True,
     help="""region to ignore in kb. This suppose that contigs are circularised correctly. If not, set to 0""",
 )
 @click.option(
     "-k",
     type=click.INT,
     default=4,
+    show_default=True,
     help="""Model for gaussin mixture (k=4 is suppose to capture di + tri + tetraploidy)""",
 )
 @click.option(
@@ -94,7 +99,8 @@ click.rich_click.OPTION_GROUPS = {
     "--flag",
     type=click.INT,
     default=3844,
-    help="""3844 meeans that it removes unmapped reads, but also secondary and supplementary reads.""",
+    show_default=True,
+    help="""3844 means that it removes unmapped reads, but also secondary and supplementary reads.""",
 )
 @click.option("--threads", type=click.INT, default=4, help="""use 4 threads .""")
 @click.option("--exclude-chromosomes", type=click.STRING, default="", help="""list of chromosomes to exclude""")
