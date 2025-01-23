@@ -439,7 +439,7 @@ def main(**kwargs):
             shellcmd(f"{main_command} -Q {options.mapq} -b1 lenny1 {options.input}")
             shellcmd(f"{main_command} -Q {options.second_mapq} -b1 lenny2 {options.input}")
             shellcmd(
-                f"paste <(gunzip -c lenny1.regions.bed.gz | cut -f 1,3,4 ) <(gunzip -c lenny2.regions.bed.gz | cut -f 4 ) > {bedfile}"
+                f"bash -c 'paste <(gunzip -c lenny1.regions.bed.gz | cut -f 1,3,4 ) <(gunzip -c lenny2.regions.bed.gz | cut -f 4 ) > {bedfile}'"
             )
             shellcmd(f"rm -f lenny?.mosdepth*")
             shellcmd(f"rm -f lenny?.per-base*")
@@ -544,7 +544,6 @@ def main(**kwargs):
 
 
 def run_analysis(chrom, options):
-    logger.info("Computing some metrics")
 
     if options.w_median > len(chrom) / 4:
         NW = int(len(chrom) / 4)
