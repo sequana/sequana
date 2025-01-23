@@ -306,7 +306,7 @@ class SomyScore:
         # remove outliers
         import pandas as pd
 
-        df = self.df.groupby("chr").apply(remove_outliers, include_groups=False)
+        df = self.df.groupby("chr").apply(remove_outliers, include_groups=True)
         self._df = df.reset_index(drop=True)
 
     def remove_flanks(self, remove_flanking_regions_kb=10):
@@ -390,6 +390,7 @@ class SomyScore:
         measured_somies = []
         chromosomes = []
         tags = []
+
         for datum in data.groupby(["chr", "tag"])["depth"]:
             tag = datum[0][1]
             x = datum[1].median()
@@ -461,3 +462,43 @@ class SomyScore:
             xlim([-0.5, Nchrom - 0.5])
 
         pylab.savefig(outfile)
+
+
+def plot_sliding_window_boxplot(data, window_size, step=1000, overlap_percentage=50, facecolor="lightblue"):
+    """
+    Plot a boxplot with sliding windows from a specified column in a DataFrame.
+
+    Parameters:
+        data (pd.DataFrame): The input DataFrame.
+        column (str): The column of interest.
+        window_size (int): The size of each sliding window.
+        overlap_percentage (float): The percentage overlap between windows (default 50).
+
+
+    Example::
+
+        ss = SomyScore(input_bam)
+        ss.compute_coverage()
+        chrom_name = 1
+        data = ss.df.query("chr==@chrom_name")['depth']
+        overlap = 50 #percentage
+        Nwin = 20  # number of windows of size (Step) to use per boxplot
+        step=ss.window_size # value used in the SomyScore
+        plot_sliding_window_boxplot(data, Nwin, step, overlap)
+
+    """
+    step_size = int(window_size * (1 - overlap_percentage / 100))  # Calculate step size
+    print(f"step is {step_size*step}; step_size={step_size}")
+    # Create sliding windows
+    windows = [data[i : i + window_size].values for i in range(0, len(data) - window_size + 1, step_size)]
+    print(len(data) - window_size + 1, step_size)
+    print(f"Number of windows = {len(windows)}")
+    if not windows:
+        raise ValueError("Window size too large for the given data.")
+
+    # Plot boxplot
+    # pylab.clf()
+    pylab.boxplot(windows, patch_artist=True, boxprops=dict(facecolor=facecolor))
+    pylab.xlabel("Sliding Window")
+    pylab.ylabel("Values")
+    return windows
