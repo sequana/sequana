@@ -52,10 +52,26 @@
     </header>
 
 
-    {% block content %}{% endblock %}
+    <div class="main-content">
+     <!-- Sidebar area -->
+    <aside class="sidebar">
+        <h3>Sidebar</h3>
+        {%- for section in module.sections %}
+          {%- if section["name"] %}
+            <a href="#{{ section["anchor"] }}">{{ section["name"] }}</a><br>
+         {%- endif %}
+        {%- endfor %}
+    </aside>
+    </div>
+    <div class="content">
+      {% block content %}{% endblock %}
+    </div>
+
     <br>
     <br>
     </div>
+
+
 
   <footer class="footer">
     <div class="container">

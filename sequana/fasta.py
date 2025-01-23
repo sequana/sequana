@@ -371,3 +371,25 @@ class FastA:
                 fout.write(f">{ctgname}\n{seq}\n")
             else:
                 fout.write(f">{ctgname}\t{comment}\n{seq}\n")
+
+    def find_gaps(self):
+
+        from collections import defaultdict
+
+        results = defaultdict(list)
+        for i, seq in enumerate(self.sequences):
+            count = 0
+            positions = [0]
+            for pos, x in enumerate(seq):
+                if x == "N":
+                    count += 1
+                    positions.append(pos)
+            if count:
+                name = self.names[i]
+                results[name].append(count)
+                for i, pos in enumerate(positions[1:]):
+                    if positions[i] - pos == -1:
+                        pass
+                    else:
+                        results[name].append(pos)
+        return results
