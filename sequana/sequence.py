@@ -132,6 +132,20 @@ class Sequence(object):
 
         return Counter(self.sequence)
 
+    def get_statistics(self):
+        from collections import Counter
+
+        counter = Counter(self.sequence.upper())
+        N = sum(list(counter.values()))
+        counter["GC"] = counter["G"] + counter["C"]
+        names = ["A", "C", "G", "T", "GC", "N"]
+        basic_stats = [counter.get(x, 0) for x in ["A", "C", "G", "T", "GC", "N"]] + [N]
+        basic_stats_pct = [float(x) / N * 100 for x in basic_stats]
+        basic_stats = pd.DataFrame(
+            {"count": basic_stats, "percentage": basic_stats_pct}, index=["A", "C", "G", "T", "GC", "N", "all"]
+        )
+        return {"single": basic_stats}
+
     def get_occurences(self, pattern, overlap=False):
         """Return position of the input pattern in the sequence
 
@@ -266,6 +280,8 @@ class DNA(Sequence):
         self._init_sliding_window()
         GC_content_slide, GC_skew_slide = self._init_list_results()
         AT_content_slide, AT_skew_slide = self._init_list_results()
+        karlin_content_slide, karlin_skew_slide = self._init_list_results()
+
         self._init_cumul_nuc()
 
         c = Counter(self._slide_window)
@@ -282,6 +298,11 @@ class DNA(Sequence):
         AT_content_slide[0][i] = sumAT
         if sumAT > 0:
             AT_skew_slide[0][i] = (dict_counts["A"] - dict_counts["T"]) / sumAT
+
+        # karlin difference measures excess of purines over pyrimidines as G - C + A - T
+        sumAG = float(dict_counts["A"] + dict_counts["G"])
+        sumCT = float(dict_counts["C"] + dict_counts["T"])
+        karlin_content_slide[0][i] = sumAG - sumCT
 
         ### Compute for all genome
         while self._seq_right:
@@ -302,6 +323,8 @@ class DNA(Sequence):
                     dict_counts[in_nuc] += 1
                 sumGC = float(dict_counts["G"] + dict_counts["C"])
                 sumAT = float(dict_counts["A"] + dict_counts["T"])
+                sumAG = float(dict_counts["A"] + dict_counts["G"])
+                sumCT = float(dict_counts["C"] + dict_counts["T"])
 
             # fill results
             # GC
@@ -316,8 +339,11 @@ class DNA(Sequence):
             if in_nuc in self._dict_nuc:
                 self._cumul[self._dict_nuc[in_nuc]][i + self._window - 1] += 1
 
+            karlin_content_slide[0][i] = sumAG - sumCT
+
         self._GC_content_slide = GC_content_slide / float(self._window)
         self._AT_content_slide = AT_content_slide / float(self._window)
+        self._karlin_content_slide = karlin_content_slide / float(self._window)
         self._cumul = np.delete(self._cumul, range(self.__len__(), self._cumul.shape[1]), 1)
         self._cumul = np.cumsum(self._cumul, axis=1)
 
@@ -687,6 +713,230 @@ class DNA(Sequence):
         pi = [sequence.count(l) / float(len(sequence)) for l in "ACGT"]
         pi = [x for x in pi if x != 0]
         return -sum(pi * log(pi))
+
+    def get_dna_flexibility(self, window=100, step=1, threshold=13.7):
+
+        # flexibility angle
+        # Source: Drew and Travers (1984), based on DNase I digestion experiments.
+
+        # if N is present, a minimum value is used ( 7.2 with GC, 7.6 with AT)
+        flex_angles = {
+            "AA": 7.6,
+            "CA": 10.9,
+            "AC": 14.6,
+            "CC": 7.2,
+            "AG": 8.2,
+            "CG": 8.9,
+            "AT": 25,
+            "CT": 8.2,
+            "GA": 8.8,
+            "TA": 12.5,
+            "GC": 11.1,
+            "TC": 8.8,
+            "GG": 7.2,
+            "TG": 10.9,
+            "GT": 14.6,
+            "TT": 7.6,
+            "CN": 7.2,
+            "NC": 7.2,
+            "GN": 7.2,
+            "NG": 7.2,
+            "NN": 7.2,
+            "AN": 7.6,
+            "NA": 7.6,
+            "TN": 7.6,
+            "NT": 7.6,
+        }
+
+        N = len(self.sequence)
+        wby2 = int(window / 2)
+        flex = np.zeros(N)
+
+        from collections import deque
+
+        slide = deque()
+
+        # init first chunk
+        for i in range(0, window):
+            slide.append(flex_angles[self.sequence[i : i + 2]])
+        flex[wby2] = sum(slide)
+
+        for i in range(wby2, N - wby2):
+            slide.append(flex_angles[self.sequence[i : i + 2]])
+            slide.popleft()
+            flex[i] = sum(slide)
+
+        # handles the sides
+        for i in range(0, wby2):
+            flex[i] = flex[wby2]
+            flex[N - i - 1] = flex[N - wby2 - 1]
+
+        return flex / (window - 1)
+
+    def get_entropy(self, window):
+        step = 1
+        N = len(self.sequence)
+        wby2 = int(window / 2)
+        entropy = np.zeros(N)
+
+        import math
+        from collections import Counter
+
+        def calculate_entropy(counter, size):
+            entropy = 0
+            for count in counter.values():
+                if count > 0:
+                    p = count / size
+                    entropy -= p * math.log2(p)
+            return entropy
+
+        # init first chunk
+        counter = Counter(self.sequence[0:window])
+        entropy[wby2] = calculate_entropy(counter, window)
+
+        for i in range(wby2, N - wby2):
+            outgoing = self.sequence[i - wby2]
+            ingoing = self.sequence[i + wby2]
+            counter[ingoing] += 1
+            counter[outgoing] -= 1
+            entropy[i] = calculate_entropy(counter, window)
+
+        # handles the sides
+        for i in range(0, wby2):
+            entropy[i] = entropy[wby2]
+            entropy[N - i - 1] = entropy[N - wby2 - 1]
+
+        return entropy
+
+    def get_informational_entropy(self, window=500, poly=3):
+        # Informational Entropy calculated overlapping DNA triplet frequencies within a window.
+        # overlapping triplets smooths the frame effect. IE = -p*log10(p)/log10(2)
+        # rational of log10(2) ? reference ? based on UGENE
+
+        N = len(self.sequence)
+        wby2 = int(window / 2)
+        entropy = np.zeros(N)
+
+        import math
+        from collections import defaultdict
+
+        # Based on
+        def calculate_entropy(counter, size):
+            entropy = 0
+            log10_2 = 0.301029995  # could use math.log10(2). slower
+            for count in counter.values():
+                if count > 0:
+                    p = count / size
+                    entropy -= p * math.log10(p) / log10_2
+            return entropy
+
+        # init first chunk
+        counter = defaultdict(int)
+        for i in range(window):
+            counter[self.sequence[i : i + 3]] += 1
+
+        entropy[wby2] = calculate_entropy(counter, window)
+
+        for i in range(wby2, N - wby2):
+            outgoing = self.sequence[i - wby2 : i - wby2 + 3]
+            ingoing = self.sequence[i + wby2 : i + wby2 + 3]
+
+            counter[ingoing] += 1
+            counter[outgoing] -= 1
+            entropy[i] = calculate_entropy(counter, window)
+
+        # handles the sides
+        for i in range(0, wby2):
+            entropy[i] = entropy[wby2]
+            entropy[N - i - 1] = entropy[N - wby2 - 1]
+
+        return entropy
+
+    def get_karlin_signature_difference(self, window=500):
+        # Karlin Signature Difference is dinucleotide absolute relative abundance difference
+        # between the whole sequence and a sliding window.
+        # f(XY) = frequency of the dinucleotide XY
+        # f(X)  = frequency of the nucleotide X
+        # p(XY) = f(XY) / (f(X) * f(Y))
+        # p_seq(XY) = p(XY) for the whole sequence
+        # p_win(XY) = p(XY) for a window
+        # final metric is  sum(p_seq(XY) - p_win(XY)) / 16
+
+        import math
+        from collections import defaultdict
+
+        N = len(self.sequence)
+        wby2 = int(window / 2)
+        karling_window = np.zeros(N)
+
+        def calculate_karlin_difference(counter, global_counter, window):
+            pXY = defaultdict(int)
+            deltaXY = 0
+            for x in "ACGT":
+                for y in "ACGT":
+                    xy = f"{x}{y}"
+                    pXY[xy] = (
+                        counter[xy]
+                        / (2 * (window - 1))
+                        / max([0.000000001, counter[x] / (2 * window) * counter[y] / (2 * window)])
+                    )
+
+                    deltaXY += abs(pXY[xy] - global_counter[xy])
+            return deltaXY / 16.0
+
+        counter_window = defaultdict(int)
+        counter_seq = defaultdict(int)
+
+        # init first chunk both local and global
+        for i in range(window):
+            # nucleotide
+            counter_window[self.sequence[i]] += 1
+            counter_seq[self.sequence[i]] += 1
+            # dinucleotide
+            counter_window[self.sequence[i : i + 2]] += 1
+            counter_seq[self.sequence[i : i + 2]] += 1
+
+        # need to compute the global pXY first (on the entire sequence)
+        for i in range(wby2, N - 2):
+            # nucleotide
+            counter_seq[self.sequence[i]] += 1
+
+            # dinucleotide update is more complicated so we start from stract
+            counter_seq[self.sequence[i : i + 2]] += 1
+
+        # compute final pXY
+        for x in "ACGT":
+            for y in "ACGT":
+                xy = f"{x}{y}"
+                N = len(self.sequence)
+                counter_seq[xy] = (
+                    counter_seq[xy]
+                    / (2 * (N - 1))
+                    / max([0.000000001, counter_seq[x] / (2 * N) * counter_seq[y] / (2 * N)])
+                )
+
+        karling_window[wby2] = calculate_karlin_difference(counter_window, counter_seq, window)
+
+        for i in range(wby2, N - wby2):
+            outgoing = self.sequence[i - wby2]
+            ingoing = self.sequence[i + wby2]
+
+            # nucleotide update
+            counter_window[ingoing] += 1
+            counter_window[outgoing] -= 1
+
+            # dinucleotide update is more complicated so we start from stract
+            counter_window[self.sequence[i + wby2 - 1 : i + wby2 + 1]] += 1
+            counter_window[self.sequence[i - wby2 : i - wby2 + 2]] -= 1
+
+            karling_window[i] = calculate_karlin_difference(counter_window, counter_seq, window)
+
+        # handles the sides
+        for i in range(0, wby2):
+            karling_window[i] = karling_window[wby2]
+            karling_window[N - i - 1] = karling_window[N - wby2 - 1]
+
+        return karling_window
 
 
 class RNA(Sequence):

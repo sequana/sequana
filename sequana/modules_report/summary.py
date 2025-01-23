@@ -492,7 +492,7 @@ class SequanaReport(SummaryBase):
         req = self.create_link("requirements", ".sequana/env.yml")
 
         content = (
-            "<p>Third party tools can be found within containers (see config file) if you use --use-apptainers options. Otherwise, here is a list of required dependencies and their versions.</p>"
+            "<p>Third party tools can be found within containers (see config file abobe) if you use --use-apptainers option. Otherwise, here is a list of required dependencies and their versions.</p>"
             "<p>{3}</p>"
             "<p>A conda environment was found and installed package are here: <b>{2}</b></p>"
             "<p>Python dependencies (<b>{0}</b>){1}</p>".format(pypi, html_table_deps, req, html_table_versions)

@@ -347,7 +347,7 @@ condition</p> {}<hr>""".format(
         self.sections.append(
             {
                 "name": f"{self._count_section}. Diagnostic plots",
-                "anchor": "table",
+                "anchor": "table_count",
                 "content": html1 + html_null + html_density + html_feature,
             }
         )
