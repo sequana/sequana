@@ -627,7 +627,7 @@ class KEGGPathwayEnrichment:
         webdriver_path = f"{home}/.config/sequana/chromedriver"
         if os.path.exists(webdriver_path) is False:
             logger.critical(
-                "To annotate KEGG image, you currently need chrome and a valid/compatible selenium driver for chroe. Please see https://pypi.org/project/selenium"
+                "To annotate KEGG image, you currently need chrome and a valid/compatible selenium driver for chrome. Please see https://pypi.org/project/selenium"
             )
 
         # Set up the WebDriver with options

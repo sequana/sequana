@@ -236,3 +236,29 @@ dl.class > dt, dl.function > dt, dl.method > dt, dl.attribute > dt {
 .descname {
     font-weight: bold;
 }
+
+
+
+.main-content {
+  display: flex;
+  margin: -11px 0 0 -14px;
+  float: left;
+}
+
+.content {
+  flex: 1;
+  padding-right: 20px;
+  padding-left: 16%;
+}
+
+.sidebar {
+  width: 15%;
+  padding: 10px;
+  background-color: #b3d1ff;
+  border: 2px solid #000;
+  float: left;
+  padding-left: 20px;
+  position: fixed;
+  overflow-y: auto;
+}
+*/
