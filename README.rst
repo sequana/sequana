@@ -24,7 +24,7 @@ SEQUANA
 
 .. image:: https://img.shields.io/badge/python-3.8%20%7C%203.9%20%7C3.10-blue.svg
     :target: https://pypi.python.org/pypi/sequana
-    :alt: Python 3.9 | 3.10 | 3.11
+    :alt: Python 3.9 | 3.10 | 3.11 | 3.12
 
 .. image:: https://img.shields.io/github/issues/sequana/sequana.svg
     :target: https://github.com/sequana/sequana/issues
@@ -240,6 +240,11 @@ Changelog
 ========= ==========================================================================
 Version   Description
 ========= ==========================================================================
+0.19.0    * UPDATE pyproject layout to be poetry2.0 compatible. drop support py3.8
+          * NEW: kozak module, somy score, telomere, biomol, rnafold, restriction
+            enzyme
+          * UPDATES: sequence module has more metrics (e.g. karlin signature),
+            fastq has a histogram for long reads,
 0.18.0    * NEW: somy scores (module and standalone)
           * CHANGES: coverage now uses mosdepth for the bam2cov. can also handle
             creation of the 4-column coverage file from BAM on the fly.

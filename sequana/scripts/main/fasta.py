@@ -28,9 +28,12 @@ logger = colorlog.getLogger(__name__)
 @click.option(
     "-o",
     "--output",
-    help="filename where to save results. to be used with --head, --tail",
+    help="filename where to save results. to be used with --merge;, --save-contig-name",
 )
-@click.option("--count-sequences", is_flag=True)
+@click.option("--count-sequences", is_flag=True, help="prints number of sequences")
+@click.option(
+    "--to-chrom-size", is_flag=True, help="extract name and size and print on stdout, or save in a file (--output)"
+)
 @click.option("--merge", is_flag=True, help="merge all compressed input fasta files into a single file")
 @click.option("--save-contig-name", help="save sequence corresponding to this contig name")
 @click.option("--explode", is_flag=True, help="Create a fasta file for each sequence found in the original files")
@@ -50,6 +53,17 @@ def fasta(**kwargs):
             f = FastA(filename)
             Nreads = len(f)
             print(f"Number of reads in {filename}: {Nreads}")
+    elif kwargs["to_chrom_size"]:
+        output_filename = kwargs["output"]
+        f = FastA(filename)
+        if output_filename is None:
+            for name, seq in zip(f.names, f.sequences):
+                print(name, len(seq))
+        else:
+            with open(output_filename, "w") as fout:
+                for name, seq in zip(f.names, f.sequences):
+                    fout.write(f"{name}\t{len(seq)}\n")
+
     elif kwargs["merge"]:
         # merge all input files (assuming gz extension)
         extensions = [filename.split(".")[-1] for filename in filenames]

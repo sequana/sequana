@@ -16,11 +16,8 @@ from itertools import combinations
 from pathlib import Path
 
 import colorlog
-import seaborn as sns
-import upsetplot as upset
 from easydev import AttrDict
 from jinja2 import Environment, PackageLoader
-from upsetplot.plotting import _process_data
 
 from sequana.featurecounts import FeatureCount
 from sequana.gff3 import GFF3
@@ -723,7 +720,7 @@ class RNADiffResults:
         pattern="*vs*_degs_DESeq2.csv",
         alpha=0.05,
         log2_fc=0,
-        palette=sns.color_palette(desat=0.6),
+        palette=None,
         condition="condition",
         annot_cols=None,
         **kwargs,
@@ -738,6 +735,11 @@ class RNADiffResults:
 
 
         """
+        import seaborn as sns
+
+        if palette is None:
+            palette = (sns.color_palette(desat=0.6),)
+
         self.path = Path(rnadiff_folder)
         self.files = [x for x in self.path.glob(pattern)]
 
@@ -984,6 +986,8 @@ class RNADiffResults:
         """Import design from a table file and add color groups following the
         groups defined in the column 'condition' of the table file.
         """
+        import seaborn as sns
+
         design = RNADesign(design_file, condition_col=condition)
         df = design.df.set_index("label")
 
@@ -1156,6 +1160,8 @@ class RNADiffResults:
                 'surexp3':'b'}
             r.plot_pca(colors=colors)
         """
+        import seaborn as sns
+
         from sequana.viz import PCA
 
         if count_mode == "vst":
@@ -1559,6 +1565,8 @@ class RNADiffResults:
         with many comparisons, plots may be quite large. We can reduce the width
         by ignoring the small subsets. We fix the max number of subsets to 20 for now.
         """
+        import upsetplot as upset
+        from upsetplot.plotting import _process_data
 
         if len(self.comparisons) > 6 and not force:
             logger.warning("Upset plots are not computed for more than 6 comparisons.")

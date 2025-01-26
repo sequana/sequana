@@ -238,7 +238,9 @@ class FastQ(object):
             self.data_format = "unknown"
 
     def get_lengths(self):
-        return [len(x["sequence"]) for x in self]
+        ff = pysam.FastqFile(self.filename)
+        L = [len(s.sequence) for s in ff]
+        return L
 
     def _get_count_reads(self):
         if self._count_reads is None:
@@ -923,6 +925,15 @@ class FastQ(object):
             if this != other.next():
                 return False
         return True
+
+    def hist_long_read(self, xticks=[2, 3, 4, 5]):
+
+        L = self.get_lengths()
+        pylab.grid(zorder=-10)
+        pylab.hist(pylab.log10(L), bins=100, zorder=10, density=True)
+        pylab.xticks(xticks, [10**x for x in xticks])
+        pylab.xlabel("read length (bp)", fontsize=16)
+        pylab.ylabel("density", fontsize=16)
 
 
 # a simple decorator to check whether the data was computed or not.

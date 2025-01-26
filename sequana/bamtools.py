@@ -226,6 +226,7 @@ class SAMBAMbase:
         refnames = []
         querynames = []
         querylengths = []
+        query_aln_lengths = []
         cigar = []
         for i, a in tqdm(enumerate(self._data), leave=False, disable=not progress):
             flags.append(a.flag)
@@ -239,6 +240,7 @@ class SAMBAMbase:
                 refnames.append(-1)
             querynames.append(a.query_name)
             querylengths.append(a.query_length)
+            query_aln_lengths.append(a.query_alignment_length)
             if max_align != -1 and i > max_align:
                 break
         df = pd.DataFrame(
@@ -250,6 +252,7 @@ class SAMBAMbase:
                 "rname": refnames,
                 "qname": querynames,
                 "qlen": querylengths,
+                "qalen": query_aln_lengths,
             }
         )
         return df

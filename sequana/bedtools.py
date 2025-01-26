@@ -1527,6 +1527,7 @@ class ChromosomeCov(object):
         **kwargs,
     ):
         """Plot histogram 2D of the GC content versus coverage"""
+
         if Nlevels is None or Nlevels == 0:
             contour = False
 
@@ -1541,7 +1542,7 @@ class ChromosomeCov(object):
                     max(5, self.bed.gc_window_size - 10),
                 ),
             ]
-            bins[0] = max(10, min(bins[0], self.df["cov"].max()))
+            bins[0] = max(10, int(min(bins[0], self.df["cov"].max())))
 
         # FIXME jan 2018 there is currently an annoying warning in Hist2D
         import warnings

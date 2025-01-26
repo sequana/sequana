@@ -235,52 +235,50 @@ class G4HunterReader:
 
     def load_merged_data(self, filename):
         data = []
+        current_id = None
+
         with open(filename, "r") as fin:
-            for line in fin.readlines():
+            for line in fin:
+                line = line.strip()
                 if line.startswith(">"):
-                    # split the comment, get only the identifier and ignore the first > character
-                    if len(data):
-                        self.data_merged[ID] = pd.DataFrame(
-                            data,
-                            columns=[
-                                "Start",
-                                "End",
-                                "Sequence",
-                                "Length",
-                                "Score",
-                                "NBR",
-                            ],
-                        )
+                    # Save the previous section's data to DataFrame if any
+                    if current_id and data:
+                        self.data_merged[current_id] = pd.DataFrame(data)
+
+                    # Start a new section
+                    current_id = line.split()[0][1:]
                     data = []
-                    ID = line.strip().split()[0][1:]
+
                 elif line.startswith("Start"):
-                    pass
+                    continue
 
                 else:
-                    items = line.strip().split("\t")
+                    items = line.split("\t")
                     items = [x.strip() for x in items]
+
+                    # Parse the line into a dictionary
                     if len(items) == 5:
-                        datum = [
-                            int(items[0]),
-                            int(items[1]),
-                            items[2],
-                            int(items[3]),
-                            float(items[4]),
-                            None,
-                        ]
-                        data.append(datum)
+                        datum = {
+                            "Start": int(items[0]),
+                            "End": int(items[1]),
+                            "Sequence": items[2],
+                            "Length": int(items[3]),
+                            "Score": float(items[4]),
+                            "NBR": None,
+                        }
                     elif len(items) == 6:
-                        datum = [
-                            int(items[0]),
-                            int(items[1]),
-                            items[2],
-                            int(items[3]),
-                            float(items[4]),
-                            int(items[5]),
-                        ]
-                        data.append(datum)
-                if len(data):
-                    self.data_merged[ID] = pd.DataFrame(
-                        data,
-                        columns=["Start", "End", "Sequence", "Length", "Score", "NBR"],
-                    )
+                        datum = {
+                            "Start": int(items[0]),
+                            "End": int(items[1]),
+                            "Sequence": items[2],
+                            "Length": int(items[3]),
+                            "Score": float(items[4]),
+                            "NBR": int(items[5]),
+                        }
+                    else:
+                        continue
+                    data.append(datum)
+
+            # Save the last section if any
+            if current_id and data:
+                self.data_merged[current_id] = pd.DataFrame(data)

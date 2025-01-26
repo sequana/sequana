@@ -16,7 +16,6 @@ import re
 from pathlib import Path
 
 import colorlog
-from matplotlib_venn import venn2_unweighted, venn3_unweighted
 
 from sequana.lazy import numpy as np
 from sequana.lazy import pandas as pd
