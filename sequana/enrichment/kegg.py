@@ -482,7 +482,6 @@ class KEGGPathwayEnrichment:
         df_up["Name"] = df_up["Name"].str.lower()
 
         for name, kegg_id in mapper.items():
-
             summary_names.append(name)
             summary_keggids.append(kegg_id)
 
@@ -583,7 +582,8 @@ class KEGGPathwayEnrichment:
             self._download_kegg_image(urlsel, pathway_ID)
             # in theory one should have an image called PATHWAYID_date_ID.png
             # we need to renae it
-            filenames = glob.glob(f"{pathway_ID}@2x_*png")
+            home = expanduser("~")
+            filenames = glob.glob(f"{home}/Downloads/{pathway_ID}@2x_*png")
             if len(filenames) > 1:
                 logger.warning(
                     f"expected one PNG file. found several KEGG PNG files: {filenames}. please remove them. Moving the first one found"
@@ -655,7 +655,7 @@ class KEGGPathwayEnrichment:
         actions = ActionChains(driver)
         actions.move_to_element(download_menu).perform()
 
-        logger.info("Downloading image\n")
+        logger.info("Downloading image")
         image_link = WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.LINK_TEXT, "Image (png) file 2x")))
         actions.move_to_element(image_link).click().perform()
 
