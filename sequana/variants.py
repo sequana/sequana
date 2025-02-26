@@ -67,6 +67,7 @@ class VariantFile:
 
     def __init__(self, filename, progress=False, keep_polymorphic=True):
 
+        self._iterator_index = 0
         self.filename = filename
 
         self.filters_params = {
@@ -120,6 +121,20 @@ class VariantFile:
         return self._variants
 
     variants = property(_get_variants)
+
+    def __len__(self):
+        return len(self.variants)
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if self._iterator_index >= len(self.variants):
+            self._iterator_index = 0
+            raise StopIteration  # Stop when the list is exhausted
+        value = self.variants[self._iterator_index]
+        self._iterator_index += 1
+        return value
 
     def _get_samples(self):
         if self._samples is None:
@@ -276,7 +291,7 @@ class VariantFile:
             "reference": variant.ref,
             "alternative": ";".join(str(x) for x in variant.alts),
             "type": ";".join(x for x in variant.info["TYPE"]),
-            "freebayes_scores": variant.qual,
+            "freebayes_score": variant.qual,
             "strand_balance": ";".join("{0:.3f}".format(x) for x in strand_bal),
             "fisher_pvalue": "; ".join(f"{x}" for x in fisher),
         }
