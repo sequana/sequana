@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [project]
 name = "sequana"
-version = "0.19.0"
+version = "0.19.1"
 description = "A set of standalone application and pipelines dedicated to NGS analysis"
 authors = [{name="Thomas Cokelaer", email="<thomas.cokelaer@pasteur.fr>"}]
 license = { file = "LICENSE" }
@@ -90,6 +90,7 @@ sequana_isoseq_qc = "sequana.multiqc.isoseq_qc:MultiqcModule"
 sequana_bamtools_stats = "sequana.multiqc.bamtools_stats:MultiqcModule"
 sequana_laa = "sequana.multiqc.laa:MultiqcModule"
 sequana_kraken = "sequana.multiqc.kraken:MultiqcModule"
+pairtools = "sequana.multiqc.pairtools:MultiqcModule"
 
 
 [project.entry-points."multiqc.hooks.v1"]
