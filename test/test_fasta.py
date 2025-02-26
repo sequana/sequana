@@ -73,6 +73,10 @@ def test_others():
         ff.save_collapsed_fasta(fh.name, "main")
         ff.save_collapsed_fasta(fh.name, "main", comment="null")
 
+    ff.get_cumulative_sum("mixed")
+    ff.get_cumulative_sum("alphanum")
+    ff.find_gaps()
+
 
 def test_explode(tmpdir):
     path = tmpdir.mkdir("temp")
