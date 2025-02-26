@@ -78,6 +78,7 @@ dependencies = [
     "multiqc (<1.18)",
     "pulp (<2.8.0)",
     "kaleido (<0.1)",
+    "natsort (>=8.4.0,<9.0.0)",
 ]
 
 
