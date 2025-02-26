@@ -14,6 +14,7 @@ import sys
 from collections import defaultdict
 
 import colorlog
+import natsort
 
 from sequana.errors import BadFileFormat
 from sequana.lazy import pandas as pd
@@ -46,6 +47,17 @@ class GFF3:
     To speed up the eukaryotes case, we skip the processing biological_regions
     (50% of the data in mouse).
 
+
+    You can do a lot with this class because your GFF is stored as a dataframe and
+    and therefore be easily processed.
+
+    Sometimes, CDS are missing::
+
+        g = GFF3()
+        g.add_CDS()
+        g.save_as_gff("test.gff")
+
+
     """
 
     def __init__(self, filename, skip_types=["biological_region"]):
@@ -54,6 +66,8 @@ class GFF3:
         self._df = None
         self._features = None
         self._attributes = None
+        self._added_intergenic = False
+        self._added_CDS = False
 
     def _get_features(self):
         """Extract unique GFF feature types
@@ -229,6 +243,95 @@ class GFF3:
                     pass
         logger.info(f"Found {count} entries and saved into {outfile}")
 
+    def get_intergenic_regions(self):
+        start = 0
+
+        def get_attributes(data):
+            return ";".join([f'{a}="{b}"' for a, b in data.items()])
+
+        data = []
+        for chrom in self.df["seqid"].unique():
+            start = 1
+            for _, row in (
+                self.df.query("genetic_type=='gene' and seqid==@chrom")[["start", "stop", "strand", "attributes"]]
+                .sort_values("start")
+                .iterrows()
+            ):
+                if row["start"] > start:
+                    data.append([chrom, start, row["start"] - 1, row["strand"]])
+                    start = row["stop"]
+
+        df = pd.DataFrame(data)
+        df.columns = ["seqid", "start", "stop", "strand"]
+        df["attributes"] = [{"ID": f"ncregion_{i}"} for i in range(1, len(df) + 1)]
+        df["source"] = "sequana"
+        df["genetic_type"] = "ncregion"
+        df["score"] = 1
+        df["phase"] = "."
+        return df
+
+    # modifier
+    def add_CDS(self):
+        """sometimes, only gene is present. CDS are required by some tools e.g. snpeff"""
+        if self._added_CDS:
+            pass
+        else:
+            df = self.df.query("genetic_type=='gene'").copy()
+            df["genetic_type"] = "CDS"
+            self._df = pd.concat([self.df, df], ignore_index=True)
+            self._added_CDS = True
+
+    def add_intergenic_regions(self):
+        if self._added_intergenic:
+            pass
+        else:
+            df = self.get_intergenic_regions()
+            self._df = pd.concat([self.df, df], ignore_index=True)
+            self._added_intergenic = True
+
+    def save_as_gff(self, filename, sortby=["seqid", "start", "stop", "genetic_type"]):
+        def get_attributes(data):
+            return ";".join([f'{a}="{b}"' for a, b in data.items()])
+
+        from sequana import version
+
+        with open(filename, "w") as fout:
+
+            with open(self.filename, "r") as fin:
+                for line in fin:
+                    if not line.startswith("#"):
+                        break
+                    fout.write(line)
+
+            fout.write(f"# Sequana {version}\n")
+            fout.write("# - sorting seqid, start, stop, genetic type. \n")
+            if self._added_intergenic:
+                fout.write("# - added intergenic region\n")
+            if self._added_CDS:
+                fout.write("# - added CDSs\n")
+            count = 0
+
+            for _, y in self.df.sort_values(by=sortby, key=natsort.natsort_keygen()).iterrows():
+                fout.write(
+                    "\t".join(
+                        [
+                            str(x)
+                            for x in [
+                                y["seqid"],
+                                y["source"],
+                                y["genetic_type"],
+                                y["start"],
+                                y["stop"],
+                                y["score"],
+                                y["strand"],
+                                y["phase"],
+                                get_attributes(y["attributes"]),
+                            ]
+                        ]
+                    )
+                    + "\n"
+                )
+
     def save_gff_filtered(self, filename="filtered.gff", features=["gene"], replace_seqid=None):
         """
 
@@ -269,8 +372,8 @@ class GFF3:
         annotation["seqid"] = fields[0]
 
         # Optional source
-        if fields[1] != ".":
-            annotation["source"] = fields[1]
+        # if fields[1] != ".":
+        annotation["source"] = fields[1]
 
         # Annotation type
         annotation["genetic_type"] = fields[2]
@@ -280,8 +383,11 @@ class GFF3:
         annotation["stop"] = int(fields[4])
 
         # Optional score field
-        if fields[5] != ".":
+        # if fields[5] != ".":
+        try:
             annotation["score"] = float(fields[5])
+        except ValueError:
+            annotation["score"] = fields[5]
 
         # Strand
         if fields[6] == "+" or fields[6] == "-" or fields[6] == "?" or fields[6] == ".":
