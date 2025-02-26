@@ -62,6 +62,7 @@ class VariantCallingModule(SequanaBaseModule):
 
         if self.filter_dict:
             self.filters_information()
+        self.add_overview()
         self.variant_calling()
 
     def filters_information(self):
@@ -88,6 +89,35 @@ class VariantCallingModule(SequanaBaseModule):
                 "</ul>".format(**self.filter_dict),
             }
         )
+
+    def add_overview(self):
+        def create_pieplot(filename):
+            import pylab
+
+            with pylab.ioff():
+                import warnings
+
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore")
+
+                # should create the pieplot within the wrapper meanwhile
+                from collections import defaultdict
+
+                variants = defaultdict(int)
+                for typ in self.df["type"].unique():
+                    variants[typ] = sum(self.df["type"] == typ)
+                pylab.clf()
+                labels = sorted(variants.keys())
+                data = [variants[x] for x in labels]
+
+                labels = [f"{x.upper()} ({variants[x]})" for x in labels]
+                pylab.pie(data, labels=labels)
+                pylab.savefig(filename)
+                pylab.close()
+
+        style = "width:45%"
+        image = self.create_embedded_png(create_pieplot, "filename", style="width:45%")
+        self.sections.append({"name": "Overview", "anchor": "overview", "content": f"{image}"})
 
     def variant_calling(self):
         """Variants detected section."""
