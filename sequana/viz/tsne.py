@@ -85,7 +85,7 @@ class TSNE(clusterisation.Cluster):
         data = data.loc[tokeep]
 
         tsne = TSNE(
-            perplexity=perplexity, n_components=n_components, n_iter=n_iter, random_state=random_state, init=init
+            perplexity=perplexity, n_components=n_components, max_iter=n_iter, random_state=random_state, init=init
         )
         Xr = tsne.fit_transform(data.T)
         self.Xr = Xr
