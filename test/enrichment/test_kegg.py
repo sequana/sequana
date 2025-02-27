@@ -9,6 +9,7 @@ from sequana.enrichment.kegg import KEGGPathwayEnrichment
 from . import test_dir
 
 
+@pytest.mark.xfail(reason="connection issue")
 def test_ke(tmpdir):
     up = pd.read_csv(f"{test_dir}/data/ecoli_up_gene.csv")
     down = pd.read_csv(f"{test_dir}/data/ecoli_down_gene.csv")

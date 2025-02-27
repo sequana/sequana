@@ -1,4 +1,4 @@
-from multiqc.utils import config
+from multiqc import config
 
 
 def load_config():
@@ -11,5 +11,6 @@ def load_config():
         "sequana_kraken": {"fn": "sequana_kraken_summary.json"},
         "sequana_pacbio_amplicon": {"fn": "sequana_pacbio_amplicon_*.json"},
         "sequana_bamtools_stats": {"fn": "sequana_bamtools_stats_*.txt"},
+        "pairtools": {"fn": "*pairtools*.txt"},
     }
     config.update_dict(config.sp, my_search_patterns)

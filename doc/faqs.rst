@@ -7,7 +7,7 @@ Conda related
 Create a conda environment on IP cluster::
 
     module load conda
-    conda create --name py37 python=3.7 
+    conda create --name py37 python=3.7
     conda activate py37
 
 add channel from where to download packages::
@@ -42,7 +42,7 @@ Installation issues
 
 As explained in the previous section, most of the dependencies can be installed
 via Conda. If not, pip is recommended. Yet there are still a few dependencies
-that needs manual installation. 
+that needs manual installation.
 
 quast
 ~~~~~~~~~
@@ -73,7 +73,7 @@ and get this error message::
 This may be solved by re-installation graphviz using the main anaconda channel
 (instead of bioconda)::
 
-    conda install --override-channels -c anaconda graphviz=2.38.0 
+    conda install --override-channels -c anaconda graphviz=2.38.0
 
 :Update April 2017: replace anaconda with conda-forge
 
@@ -182,7 +182,7 @@ If you get this error (using **conda install sequana**)::
 
     ImportError: libselinux.so.1: cannot open shared object file: No such file or directory
 
-it looks like you need to install libselinux on your environment as reported 
+it looks like you need to install libselinux on your environment as reported
 `here <https://github.com/sequana/sequana/issues/438>`_.
 
 
@@ -286,7 +286,7 @@ If you have sudo access, add the missing path as follows::
 
 If you do not have sudo permissions, copy the image on a computer where you have
 such permission, use the same code as above and copy back the new image on the
-computer where you had the issue. 
+computer where you had the issue.
 
 Finally, try to use the container again using this code::
 
@@ -314,6 +314,33 @@ content::
 
 where you can replace tkagg with e.g. qt5agg
 
+Snakemake 8.X
+-----------------
+
+There are several issues with snakemake 8.X. and below 8.28
+
+First, datrie cannot be installed easily. I found a fix as follows but this is not a good solution for end-users.
+
+One fix is::
+
+    export CFLAGS="-Wno-error=incompatible-pointer-types"
+    export CXXFLAGS="-Wno-error=incompatible-pointer-types"
+    pip install datrie
+
+or use "conda install datrie". This is a known issue currently with snakemake https://github.com/pytries/datrie/issues/101
+
+hopefully should be fixed soon
+
+Second issue, far more important is that the wrapper script in Snakemake has changed leading to this error::
+
+    AttributeError: Can't get attribute 'AttributeGuard' on <module 'snakemake.io'
+
+what is going on here is that if we combine singularity and wrapper, we must have python in the container. This is known and has been taken care of in Damona and Sequana projects. However, in snakemake 8.X, the wrapper script requires a specific code available only in 8.X making all containers broken. Not acceptable. So we will stick to snakemake < 8.
+
+
+
+
+
 Installation issue on Mac
 --------------------------
 
@@ -338,7 +365,7 @@ Got this error when using pbindex on a bam file::
     >|> 20230411 07:50:40.460 -|- FATAL -|- Run -|- 0x7f6a473e5b48|| -|- pbindex ERROR: [pbbam] BAM header ERROR: read group ID not found: a1e75744/3--3
 
 
-The bam file is missing the read group entry. This happenned when subsampling the original file. 
+The bam file is missing the read group entry. This happenned when subsampling the original file.
 
 Add the RG tag with the correct ID.
 
@@ -346,4 +373,3 @@ You can do::
 
     samtools view -H ORIGINAL.bam | egrp '@RG' > new_header.txt
     samtools reheader new_header.txt sample.bam > corrected_sample.bam
-

@@ -13,6 +13,7 @@
 """Utilities to manipulate FastA files"""
 import os
 import textwrap
+from collections import defaultdict
 
 import colorlog
 import tqdm
@@ -103,6 +104,55 @@ class FastA:
         return [this.comment for this in self._fastx]
 
     comments = property(_get_comment)
+
+    def get_cumulative_sum(self, mode="mixed", exclude=[]):
+        """Compute the cumulative sum of values from a dictionary, sorted by name.
+
+        This method returns two lists:
+        - A list of names sorted according to the specified mode.
+        - A list of cumulative sums corresponding to the lengths of the sorted names.
+
+        Sorting behavior:
+        - If `mode="mixed"` (default), names containing numbers are sorted naturally,
+          meaning numerical values are sorted as integers while preserving non-numeric strings.
+        - If `mode="alphanum"`, all names are treated as strings and sorted lexicographically.
+
+        Parameters:
+        - mode (str): Sorting mode, either `"mixed"` (natural sorting) or `"alphanum"` (lexicographic).
+        - exclude (list): List of names to exclude from processing.
+
+        Returns:
+            - tuple: (sorted_names, cumulative_sums)
+                - sorted_names (list): Names sorted based on the selected mode.
+                - cumulative_sums (list): Cumulative sum of corresponding values.
+
+        Example:
+
+        If input is `['1', 'maxi', '10', '2']`, mixed mode returns `['1', '2', '10', 'maxi']`,
+        ensuring `['1', 10, 2, 'maxi']` is correctly ordered as `[1, 2, '10', 'maxi']`.
+        """
+
+        assert mode in ["mixed", "alphanum"]
+
+        if mode == "mixed":
+            sorted_names = self.sorted_mixed_names
+        else:
+            sorted_names = self.sorted_names
+
+        from itertools import accumulate
+
+        lengths = self.get_lengths_as_dict()
+        return sorted_names, list(accumulate([lengths[name] for name in sorted_names]))
+
+    def _get_sorted_mixed_names(self):
+        return sorted(self.names, key=lambda x: (isinstance(x, str) and not x.isdigit(), int(x) if x.isdigit() else x))
+
+    sorted_mixed_names = property(_get_sorted_mixed_names)
+
+    def _get_sorted_names(self):
+        return sorted(self.names, key=lambda x: (isinstance(x, str) and not x.isdigit(), int(x) if x.isdigit() else x))
+
+    sorted_names = property(_get_sorted_names)
 
     def _get_lengths(self):
         return self._fasta.lengths
@@ -337,15 +387,24 @@ class FastA:
             else:
                 fout.write(">{}\n{}".format(outname, self._fasta.fetch(ctgname)[0:max_length]))
 
-    def to_fasta(self, outfile, width=80):
+    def to_fasta(self, outfile, width=80, sorting="natsort"):
         """Save the input FastA file into a new file
 
         The interest of this method is to wrap the sequence into 80 characters.
         This is useful if the input file is not formatted correctly.
 
         """
+
+        if sorting == "natsort":
+            import natsort
+
+            names = natsort.natsorted(self.names)
+        else:
+            names = self.names
+
         with open(outfile, "w") as fout:
-            for name, comment in zip(self.names, self.comments):
+            for name in names:
+                comment = self.comments[self.names.index(name)]
                 # fetch sequence and wrap it
                 seq = self._fasta.fetch(name)
                 seq = "\n".join(textwrap.wrap(seq, width))
@@ -373,9 +432,7 @@ class FastA:
                 fout.write(f">{ctgname}\t{comment}\n{seq}\n")
 
     def find_gaps(self):
-
-        from collections import defaultdict
-
+        """Identify NNNNs in data"""
         results = defaultdict(list)
         for i, seq in enumerate(self.sequences):
             count = 0
@@ -393,3 +450,9 @@ class FastA:
                     else:
                         results[name].append(pos)
         return results
+
+    def print_sequence_region_for_gff(self):
+        for name in sorted(self.names):
+            L = len(self.sequences[self.names.index(name)])
+            # the 2 # are important e.g. for snpeff
+            print(f"##sequence-region\t{name}\t{1}\t{L}")

@@ -246,11 +246,13 @@ class SnpEff(object):
         if len(fasta_record) != len(ids_list):  # pragma: no cover
             print(
                 "fasta and annotation files don't have the same number of "
-                "contigs. Found {} and {}".format(len(fasta_record), len(ids_list))
+                "contigs. Found {} in fasta and {} in GFF; do you have ##sequence-region defined in the header ?".format(
+                    len(fasta_record), len(ids_list)
+                )
             )
             sys.exit(1)
 
-        # check if directory exist
+        # check if directory exists
         output_dir = os.path.dirname(output_file)
         os.makedirs(output_dir, exist_ok=True)
 
@@ -263,7 +265,7 @@ class SnpEff(object):
         else:
             logger.info(
                 "fasta and GFF seem to have different IDs. Creating a"
-                "new coherent fasta file assuming the chromsome names appear "
+                "new coherent fasta file assuming the chromosome names appear "
                 "in the same order in the fasta and gff"
             )
 

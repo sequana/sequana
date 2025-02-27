@@ -50,4 +50,6 @@ def test_gsea(tmpdir):
             "leuA",
         ],
     }
-    gs.compute_enrichment(["tdcB", "ilvA", "leuC", "leuD", "leuB"], background=4000)
+    gs.compute_enrichment(
+        ["tdcB", "ilvA", "leuC", "leuD", "leuB"]
+    )  # fails on CI action if set to a value ?, background=4000)

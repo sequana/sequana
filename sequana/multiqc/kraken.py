@@ -10,8 +10,7 @@ import re
 from collections import OrderedDict
 
 logging.captureWarnings(True)
-from multiqc import config
-from multiqc.modules.base_module import BaseMultiqcModule
+from multiqc import BaseMultiqcModule, config
 from multiqc.plots import bargraph, heatmap, linegraph, table
 
 logging.captureWarnings(False)
@@ -62,12 +61,15 @@ class MultiqcModule(BaseMultiqcModule):
         for myfile in self.find_log_files("sequana_kraken"):
             name = myfile["s_name"]
             d = json.loads(myfile["f"])
-
             for k, v in d.items():
-                S = sum(list(v.values()))
                 U = v["Unclassified"]
-                v["Classified"] = S - U
+                v["Classified"] = 100 - U
                 self.sequana_data[k] = v
+            # self.sequana_data[k]["Count"] = int(d["Count"])
+        for k, v in self.sequana_data.items():
+            self.sequana_data[k]["Count"] = int(v["Count"])
+
+        print(self.sequana_data)
 
         if len(self.sequana_data) == 0:
             log.debug("No samples found: sequana_kraken")
@@ -97,11 +99,12 @@ class MultiqcModule(BaseMultiqcModule):
             data[sample_name] = {"unclassified": U, "classified": C}
 
         pconfig = {
+            "id": "classification_vs_unclassified",
             "title": "classification",
             "cpswitch": False,
-            "min": 0,
-            "max": 100,
-            "format": "{0:.2f}",
+            "xmin": 0,
+            "xmax": 100,
+            "xlab_format": "{0:.2f}",
             "logswitch": False,
         }
 
@@ -112,7 +115,7 @@ class MultiqcModule(BaseMultiqcModule):
         self.add_section(
             name="Classification ratio",
             anchor="classification_ratio",
-            description="The following barplots shows proportion of classified and unclassified reads in percentage",
+            description="The following barplot shows proportion of classified and unclassified reads in percentage",
             helptext="",
             plot=bargraph.plot(data, keys, pconfig),
         )
@@ -128,11 +131,12 @@ class MultiqcModule(BaseMultiqcModule):
         data = {}
 
         # First, we figure out all possible names
-        kingdoms = set([x for k in self.sequana_data.keys() for x in self.sequana_data[k].keys()])
+        kingdoms = set([x for k in self.sequana_data.keys() for x in self.sequana_data[k].keys() if x != "Count"])
 
         colors = ["Archaea", "Bacteria", "Eukaryota", "Viruses", "Metazoa", "Fungi", "Unclassified", "Classified"]
 
         for sample_name in self.sequana_data.keys():
+
             for kingdom in sorted(kingdoms):
                 if kingdom not in self.sequana_data[sample_name]:
                     self.sequana_data[sample_name][kingdom] = 0
@@ -148,12 +152,13 @@ class MultiqcModule(BaseMultiqcModule):
             data[sample_name]["unclassified"] = self._set_nan_to_zero(self.sequana_data[sample_name]["Unclassified"])
 
         pconfig = {
+            "id": "kraken",
             "title": "Taxonomy by kingdom",
             # "percentages": True,
             "cpswitch": False,
-            "min": 0,
-            "max": 100,
-            "format": "{0:.2f}",
+            "xmin": 0,
+            "xmax": 100,
+            "xlab_format": "{0:.2f}",
             "logswitch": False,
         }
 
@@ -186,8 +191,8 @@ class MultiqcModule(BaseMultiqcModule):
 
         if any(["Classified" in self.sequana_data[s] for s in self.sequana_data]):
             headers["Classified"] = {
-                "title": "Classified reads (%)",
-                "description": "classified reads (%)",
+                "title": "Classified reads",
+                "description": "classified reads",
                 "min": 0,
                 "max": 100,
                 "scale": "RdYlGn",
@@ -206,6 +211,17 @@ class MultiqcModule(BaseMultiqcModule):
                     "format": "{0:.2f}",
                     "shared_key": "count",
                 }
+        if any(["Count" in self.sequana_data[s] for s in self.sequana_data]):
+            headers["count"] = {
+                "title": "Total reads",
+                "description": "total reads",
+                "min": 0,
+                # "max": 100,
+                "scale": "RdYlGn",
+                "format": "{0:d}",
+                # "shared_key": "count",
+            }
+        print(headers)
 
         if len(headers.keys()):
             self.general_stats_addcols(self.sequana_data, headers)

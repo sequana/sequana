@@ -1717,7 +1717,7 @@ class ChromosomeCov(object):
         mid = int(gc_window_size / 2.0)
 
         for chrom in fasta:
-            if chrom.name == self.chrom_name:
+            if chrom.name == self.chrom_name or chrom.name.split(".")[0] == self.chrom_name:
                 # Create gc_content array
                 gc_content = np.empty(len(chrom.sequence))
                 gc_content[:] = np.nan
@@ -1742,7 +1742,13 @@ class ChromosomeCov(object):
                     gc_content[i + mid] = gc_count
                 chrom_gc_content[chrom.name] = gc_content / gc_window_size
 
-        self._gc_content = chrom_gc_content[self.chrom_name]
+        # if accession processed by snpeff, the trailing version may be missing
+        try:
+            self._gc_content = chrom_gc_content[chrom.name]
+        except:
+            logger.warning(
+                "chromosome name {chrom.name} from the reference does not match the chromosome names in the BAM/BED"
+            )
 
 
 class FilteredGenomeCov(object):
