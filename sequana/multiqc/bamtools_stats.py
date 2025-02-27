@@ -8,8 +8,7 @@ import re
 from collections import OrderedDict
 
 logging.captureWarnings(True)
-from multiqc import config
-from multiqc.modules.base_module import BaseMultiqcModule
+from multiqc import BaseMultiqcModule, config
 from multiqc.plots import bargraph, heatmap, linegraph, table
 
 logging.captureWarnings(False)
@@ -32,13 +31,8 @@ class MultiqcModule(BaseMultiqcModule):
         self.sequana_data = {}
         for myfile in self.find_log_files("sequana_bamtools_stats"):
             logging.info("Parsing {}".format(myfile))
-            # print( myfile['f'] )       # File contents
-            # print( myfile['s_name'] )  # Sample name (from cleaned filename)
-            # print( myfile['fn'] )      # Filename
-            # print( myfile['root'] )    # Directory file was in
             name = myfile["s_name"]
             if name.startswith("sequana_bamtools_stats_"):
-                # name = "bamtools.stats." + name.replace("sequana_bamtools_stats_", "")
                 name = name.replace("sequana_bamtools_stats_", "")
             self.sequana_data[name] = self.parse_logs(myfile["f"])
 
@@ -127,10 +121,10 @@ class MultiqcModule(BaseMultiqcModule):
             data[name] = {"failed_qc_pct": self.sequana_data[name]["failed_qc_pct"]}
 
         pconfig = {
+            "id": "failed_qc",
             "title": "Failed QC (%)",
-            "percentages": True,
-            "min": 0,
-            "max": 100,
+            "xmin": 0,
+            "xmax": 100,
             "logswitch": False,
         }
 
@@ -156,10 +150,10 @@ class MultiqcModule(BaseMultiqcModule):
             data[name] = {"fwd": forward, "rev": reverse}
 
         pconfig = {
+            "id": "forward_reverse_fraction",
             "title": "Forward/reverse",
-            "percentages": True,
-            "min": 0,
-            "max": 100,
+            "xmin": 0,
+            "xmax": 100,
             "logswitch": False,
         }
 
@@ -181,9 +175,9 @@ class MultiqcModule(BaseMultiqcModule):
             data[name] = {"total_read": self.sequana_data[name]["total_reads"]}
 
         pconfig = {
+            "id": "total_read_section",
             "title": "Total reads",
-            "percentages": False,
-            "min": 0,
+            "xmin": 0,
             "logswitch": True,
         }
 
@@ -201,10 +195,10 @@ class MultiqcModule(BaseMultiqcModule):
             mapped_reads = self.sequana_data[name]["mapped_reads_pct"]
             data[name] = {"mapped_reads_pct": mapped_reads}
         pconfig = {
+            "id": "mapped_reads_section",
             "title": "Mapped reads (%)",
-            "percentages": False,
-            "min": 0,
-            "max": 100,
+            "xmin": 0,
+            "xmax": 100,
             "logswitch": True,
         }
 
@@ -226,8 +220,8 @@ class MultiqcModule(BaseMultiqcModule):
             "title": "% Duplicates (%)",
             "description": "% Duplicated Reads",
             "suffix": "%",
-            "min": 0,
-            "max": 100,
+            "xmin": 0,
+            "xmax": 100,
             "scale": "OrRd",
             "logswitch": False,
         }
@@ -251,10 +245,10 @@ class MultiqcModule(BaseMultiqcModule):
             data[name] = {"reads_mapped": 100 * mapped / total, "reads_unmapped": 100 * unmapped / total}
 
         pconfig = {
+            "id": "mapped_vs_unmapped_chart",
             "title": "Mapped vs unmapped reads (%)",
-            "percentages": True,
-            "min": 0,
-            "max": 100,
+            "xmin": 0,
+            "xmax": 100,
             "logswitch": False,
         }
 

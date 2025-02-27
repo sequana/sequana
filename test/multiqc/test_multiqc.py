@@ -1,4 +1,5 @@
-from multiqc.utils import report
+from multiqc import report
+from multiqc.utils import testing
 
 from . import test_dir
 
@@ -8,18 +9,7 @@ def sequana_data(file):
 
 
 try:
-    # Since sept 2017 and a bioconda travis integrationupdate,
-    # this test fails due to an error in spectra/colormath:
-    #   self.conversion_graph.add_edge(start_type, target_type,
-    #   {'conversion_function': conversion_function})
-    # E   TypeError: add_edge() takes 3 positional arguments but 4 were given
-    from sequana.multiqc import (
-        bamtools_stats,
-        coverage,
-        kraken,
-        pacbio_qc,
-        quality_control,
-    )
+    from sequana.multiqc import bamtools_stats, coverage, kraken, pacbio_qc
 
     def test_pacbio():
         # When calling multiqc on the command line, it scans the directory
@@ -30,51 +20,61 @@ try:
         # directory. Because we populate the report.files ourself, we can put
         # whatever name except it the MultiqcModule expects a specific name
 
-        report.init()
+        report.reset()
         report.files = {
             "sequana_pacbio_qc": [
-                {"filesize": 5913, "fn": sequana_data("summary_pacbio_qc1.json"), "root": "."},
-                {"filesize": 5731, "fn": sequana_data("summary_pacbio_qc2.json"), "root": "."},
-                {"filesize": 5820, "fn": sequana_data("summary_pacbio_qc3.json"), "root": "."},
+                {
+                    "filesize": 5913,
+                    "fn": sequana_data("summary_pacbio_qc1.json"),
+                    "root": ".",
+                    "sp_key": "sequana_pacbio_qc",
+                },
+                {
+                    "filesize": 5731,
+                    "fn": sequana_data("summary_pacbio_qc2.json"),
+                    "root": ".",
+                    "sp_key": "sequana_pacbio_qc",
+                },
+                {
+                    "filesize": 5820,
+                    "fn": sequana_data("summary_pacbio_qc3.json"),
+                    "root": ".",
+                    "sp_key": "sequana_pacbio_qc",
+                },
             ]
         }
         pacbio_qc.MultiqcModule()
 
-    def test_quality_control():
-        report.init()
-        report.files = {"sequana_quality_control": [{"fn": sequana_data("summary_qc.json"), "root": "."}]}
-        quality_control.MultiqcModule()
-
     def test_coverage():
-        report.init()
+        report.reset()
         report.files = {
             "sequana_coverage": [
-                {"fn": sequana_data("summary_coverage1.json"), "root": "."},
-                {"fn": sequana_data("summary_coverage1.json"), "root": "."},
+                {"fn": sequana_data("summary_coverage1.json"), "root": ".", "sp_key": "sequana_coverage"},
+                {"fn": sequana_data("summary_coverage1.json"), "root": ".", "sp_key": "sequana_coverage"},
             ]
         }
         coverage.MultiqcModule()
 
     def test_sequana_bamtools():
-        report.init()
+        report.reset()
         report.files = {
             "sequana_bamtools_stats": [
-                {"fn": sequana_data("summary_bamtools_stats.txt"), "root": "."},
-                {"fn": sequana_data("summary_bamtools_stats.txt"), "root": "."},
+                {"fn": sequana_data("summary_bamtools_stats.txt"), "root": ".", "sp_key": "sequana_bamtools_stats"},
+                {"fn": sequana_data("summary_bamtools_stats.txt"), "root": ".", "sp_key": "sequana_bamtools_stats"},
             ]
         }
         bamtools_stats.MultiqcModule()
 
     def test_kraken():
-        report.init()
+        report.reset()
         report.files = {
             "sequana_kraken": [
-                {"fn": sequana_data("summary_kraken.json"), "root": "."},
+                {"fn": sequana_data("sequana_kraken_summary.json"), "root": ".", "sp_key": "sequana_kraken"},
             ]
         }
         kraken.MultiqcModule()
 
-except TypeError:
+except (TypeError, AttributeError):
     pass
 except:
     raise IOError

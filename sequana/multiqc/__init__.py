@@ -1,4 +1,4 @@
-from multiqc.utils import config
+from multiqc import config
 
 
 # Add search patterns and config options for the things that are used in

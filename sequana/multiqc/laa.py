@@ -10,8 +10,7 @@ import re
 from collections import OrderedDict
 
 logging.captureWarnings(True)
-from multiqc import config
-from multiqc.modules.base_module import BaseMultiqcModule
+from multiqc import BaseMultiqcModule, config
 from multiqc.plots import bargraph, heatmap, linegraph, table
 
 logging.captureWarnings(False)

@@ -240,6 +240,12 @@ Changelog
 ========= ==========================================================================
 Version   Description
 ========= ==========================================================================
+0.19.1    * update pyproject with matploblib, scipy, and all dependencie except
+            snakemake (keep <8.X and its pulp dependency <2.8) because 8.X breaks
+            the containers and therefore all pipelines. no workaround. we will need
+            a snakemake 'frozen library'. This is unfortunate.
+          * CHANGES: remove multiqc plugin quality_control (obsolet) and updated
+            many plugin due to increased version ofmultiqc.
 0.19.0    * UPDATE pyproject layout to be poetry2.0 compatible. drop support py3.8
           * NEW: kozak module, somy score, telomere, biomol, rnafold, restriction
             enzyme

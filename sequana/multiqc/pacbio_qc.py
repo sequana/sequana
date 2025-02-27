@@ -7,8 +7,7 @@ import os
 import re
 
 logging.captureWarnings(True)
-from multiqc import config
-from multiqc.modules.base_module import BaseMultiqcModule
+from multiqc import BaseMultiqcModule, config
 from multiqc.plots import bargraph, heatmap, linegraph, table
 
 logging.captureWarnings(False)
@@ -71,9 +70,10 @@ class MultiqcModule(BaseMultiqcModule):
 
         pconfig = {
             "title": "Mean read length",
-            "percentages": False,
-            "min": 100,
+            # "percentages": False,
+            "xmin": 100,
             "logswitch": True,
+            "id": "pacbio_read_length_section",
         }
 
         self.add_section(
@@ -91,9 +91,10 @@ class MultiqcModule(BaseMultiqcModule):
 
         pconfig = {
             "title": "Number of reads per sample",
-            "plot_tt_percentages": False,
-            "min": 100,
+            # "plot_tt_percentages": False,
+            # "xmin": 100,
             "logswitch": True,
+            "id": "pacbio_count_section",
         }
 
         self.add_section(
@@ -109,6 +110,7 @@ class MultiqcModule(BaseMultiqcModule):
         data = dict()
         data_norm = dict()
         for s_name in self.sequana_data:
+            print(s_name)
             try:
                 X = self.sequana_data[s_name]["hist_gc"]["X"]
                 Y = self.sequana_data[s_name]["hist_gc"]["Y"]
@@ -116,11 +118,6 @@ class MultiqcModule(BaseMultiqcModule):
                 data[s_name] = {x: 10 * y for x, y in zip(X[1:], Y)}
             except KeyError:
                 pass
-            # else:
-            #    data_norm[s_name] = dict()
-            #    total = sum( [ c for c in data[s_name].values() ] )
-            #    for gc, count in data[s_name].items():
-            #        data_norm[s_name][gc] = (count / total) * 100
 
         if len(data) == 0:
             logger.debug("no data for the GC content plots")
@@ -135,17 +132,18 @@ class MultiqcModule(BaseMultiqcModule):
             #'ymax': 0.2,
             "xmax": 100,
             "xmin": 0,
-            "yDecimals": False,
+            "y_decimals": False,
             "tt_label": "<b>{point.x}% GC</b>: {point.y}",
             #'colors': self.get_status_cols('per_sequence_gc_content'),
-            "data_labels": [{"name": "Percentages", "ylab": "Percentage"}, {"name": "Counts", "ylab": "PDF"}],
+            # "data_labels": [
+            #    {"name": "Percentages", "ylab": "Percentage"},
+            #    {"name": "Counts", "ylab": "PDF"}],
         }
 
         self.add_section(
             name="Per Sequence GC Content",
             anchor="fastqc_per_sequence_gc_content",
             description="GC content (normalised)",
-            # plot = linegraph.plot([data_norm, data], pconfig))
             plot=linegraph.plot(data, pconfig),
         )
 
@@ -180,11 +178,6 @@ class MultiqcModule(BaseMultiqcModule):
             "xmin": 0,
             "yDecimals": False,
             "tt_label": "<b>{point.x}Length</b>: {point.y}",
-            #'colors': self.get_status_cols('per_sequence_gc_content'),
-            #'data_labels': [
-            #    {'name': 'Percentages', 'ylab': 'Percentage'},
-            #    {'name': 'length', 'ylab': '#'}
-            # ]
         }
 
         self.add_section(
@@ -212,7 +205,7 @@ class MultiqcModule(BaseMultiqcModule):
             headers["count"] = {
                 "title": "Read count",
                 "description": "read count",
-                "min": 0,
+                "ymin": 0,
                 "scale": "RdYlGn",
                 "format": "{:,0d}",
                 "shared_key": "count",

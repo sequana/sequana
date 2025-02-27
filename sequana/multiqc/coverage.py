@@ -9,8 +9,7 @@ from math import log10
 from pathlib import Path
 
 logging.captureWarnings(True)
-from multiqc import config
-from multiqc.modules.base_module import BaseMultiqcModule
+from multiqc import BaseMultiqcModule, config
 from multiqc.plots import bargraph, heatmap, linegraph, table
 
 logging.captureWarnings(False)
@@ -130,10 +129,10 @@ class MultiqcModule(BaseMultiqcModule):
             data[name] = {"BOC": self.sequana_data[name]["BOC"]}
 
         pconfig = {
+            "id": "BOC",
             "title": self.sequana_desc[name]["BOC"],
-            "percentages": False,
-            "min": 0,
-            "max": 0,
+            "xmin": 0,
+            "xmax": 0,
             "logswitch": False,
         }
         self.add_section(
@@ -149,7 +148,8 @@ class MultiqcModule(BaseMultiqcModule):
         for name in self.sequana_data.keys():
             data[name] = {"DOC": self.sequana_data[name]["DOC"]}
 
-        pconfig = {"title": self.sequana_desc[name]["DOC"], "percentages": False, "min": 100, "logswitch": True}
+        pconfig = {"id": "DOC", "title": self.sequana_desc[name]["DOC"], "logswitch": True}
+
         self.add_section(
             name="Depth of coverage",
             anchor="doc",
@@ -163,7 +163,7 @@ class MultiqcModule(BaseMultiqcModule):
         for name in self.sequana_data.keys():
             data[name] = {"CV": self.sequana_data[name]["CV"]}
 
-        pconfig = {"title": self.sequana_desc[name]["CV"], "percentages": False, "min": 100, "logswitch": False}
+        pconfig = {"id": "CV", "title": self.sequana_desc[name]["CV"], "xmin": 0, "logswitch": False}
 
         self.add_section(
             name="Coefficient of Variation",
@@ -178,7 +178,7 @@ class MultiqcModule(BaseMultiqcModule):
         for name in self.sequana_data.keys():
             data[name] = {"ROI": self.sequana_data[name]["ROI"]}
 
-        pconfig = {"title": self.sequana_desc[name]["ROI"], "percentages": False, "min": 100, "logswitch": False}
+        pconfig = {"id": "ROI", "title": self.sequana_desc[name]["ROI"], "xmin": 100, "logswitch": False}
 
         self.add_section(
             name="ROI",
@@ -193,7 +193,7 @@ class MultiqcModule(BaseMultiqcModule):
         for name in self.sequana_data.keys():
             data[name] = {"C3": self.sequana_data[name]["C3"]}
 
-        pconfig = {"title": self.sequana_desc[name]["C3"], "percentages": False, "min": 0, "max": 0, "logswitch": False}
+        pconfig = {"id": "C3", "title": self.sequana_desc[name]["C3"], "xmin": 0, "xmax": 0, "logswitch": False}
 
         self.add_section(
             name="C3",
@@ -208,7 +208,7 @@ class MultiqcModule(BaseMultiqcModule):
         for name in self.sequana_data.keys():
             data[name] = {"length": self.sequana_data[name]["length"]}
 
-        pconfig = {"title": self.sequana_desc[name]["length"], "percentages": False, "min": 0, "logswitch": False}
+        pconfig = {"id": "length", "title": self.sequana_desc[name]["length"], "xmin": 0, "logswitch": False}
         self.add_section(
             name="Contig length",
             anchor="length",
@@ -239,16 +239,8 @@ class MultiqcModule(BaseMultiqcModule):
             "ylab": "#",
             "xlab": "DOC",
             "ymin": 0,
-            #'ymax': 0.2,
-            #'xmax': 100,
             "xmin": 0,
-            "yDecimals": True,
-            "tt_label": "<b>{point.x:.2f} DOC</b>: {point.y:.4f}",
-            #'colors': self.get_status_cols('per_sequence_gc_content'),
-            "data_labels": [
-                # {'name': 'Percentages', 'ylab': 'Percentage'},
-                {"name": "Counts", "ylab": "PDF"}
-            ],
+            "y_decimals": True,
         }
 
         self.add_section(
@@ -260,7 +252,6 @@ class MultiqcModule(BaseMultiqcModule):
                 "avoid outliers. For detailled histograms, please see "
                 " the links above "
             ),
-            # plot = linegraph.plot([data_norm, data], pconfig))
             plot=linegraph.plot(data, pconfig),
         )
 

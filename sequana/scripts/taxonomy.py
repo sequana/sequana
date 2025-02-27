@@ -82,7 +82,6 @@ click.rich_click.OPTION_GROUPS = {
             "name": "Output files",
             "options": [
                 "--show-html",
-                "--no-multiqc",
                 "--output-directory",
                 "--keep-temp-files",
                 "--unclassified-out",
@@ -113,20 +112,6 @@ def check_databases(ctx, param, value):
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
-@click.option(
-    "-1",
-    "--file1",
-    "file1",
-    type=click.Path(file_okay=True, dir_okay=False),
-    help="""Deprecated. Please use --input-file1 """,
-)
-@click.option(
-    "-2",
-    "--file2",
-    "file2",
-    type=click.Path(file_okay=True, dir_okay=False),
-    help="""Deprecated. Please use --input-file2 """,
-)
 @click.option(
     "-1",
     "--input-file1",
@@ -244,7 +229,7 @@ def main(**kwargs):
     downloading, you can use the tool with a command similar to the
     following:
 
-        sequana_taxonomy --file1 R1.fastq --file2 R2.fastq
+        sequana_taxonomy --input-file1 R1.fastq --input-file2 R2.fastq
            --databases /home/user/.config/sequana/kraken_toydb
            --thread 4
 
@@ -260,6 +245,7 @@ def main(**kwargs):
 
     from sequana import logger as loggers
 
+    print(options)
     loggers.setLevel(options.level)
     logger.setLevel(options.level)
 

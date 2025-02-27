@@ -13,7 +13,7 @@ from operator import add, itemgetter
 from typing import Dict
 
 import yaml
-from multiqc.modules.base_module import BaseMultiqcModule, ModuleNoSamplesFound
+from multiqc import BaseMultiqcModule, ModuleNoSamplesFound
 from multiqc.plots import bargraph, linegraph
 
 log = logging.getLogger(__name__)

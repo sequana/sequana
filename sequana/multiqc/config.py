@@ -1,4 +1,4 @@
-from multiqc.utils import config
+from multiqc import config
 
 
 def load_config():
