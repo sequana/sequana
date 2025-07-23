@@ -68,6 +68,7 @@ class GFF3:
         self._attributes = None
         self._added_intergenic = False
         self._added_CDS = False
+        self._directons = None  # a place holder to store directons
 
     def _get_features(self):
         """Extract unique GFF feature types
@@ -265,7 +266,7 @@ class GFF3:
         df.columns = ["seqid", "start", "stop", "strand"]
         df["attributes"] = [{"ID": f"ncregion_{i}"} for i in range(1, len(df) + 1)]
         df["source"] = "sequana"
-        df["genetic_type"] = "ncregion"
+        df["genetic_type"] = "region"
         df["score"] = 1
         df["phase"] = "."
         return df
@@ -289,6 +290,46 @@ class GFF3:
             self._df = pd.concat([self.df, df], ignore_index=True)
             self._added_intergenic = True
 
+    def add_regions_and_save_gff(self, filename):
+        """add missing region from the sequence-region found in the header."""
+        regions = {}
+        current_region = None
+        with open(filename, "w") as fout:
+            with open(self.filename, "r") as fin:
+                for line in fin:
+                    if line.startswith("##sequence-region"):
+                        items = line.split()
+                        name, start, stop = items[1:4]
+                        regions[name] = (
+                            "\t".join(
+                                [
+                                    name,
+                                    "header",
+                                    "region",
+                                    start,
+                                    stop,
+                                    ".",
+                                    "+",
+                                    ".",
+                                    f"ID={name}:{start}..{stop};Name={name};chromosome={name}",
+                                ]
+                            )
+                            + "\n"
+                        )
+                    if current_region is None:  # first region
+                        region = line.split("\t")[0]
+                        if region in regions.keys():
+                            fout.write(regions[region])
+                            current_region = region
+                    else:  # next regions
+
+                        region = line.split("\t")[0]
+                        if region in regions.keys() and region != current_region:
+                            fout.write(regions[region])
+                            current_region = region
+
+                    fout.write(line)
+
     def save_as_gff(self, filename, sortby=["seqid", "start", "stop", "genetic_type"]):
         def get_attributes(data):
             return ";".join([f'{a}="{b}"' for a, b in data.items()])
@@ -296,7 +337,6 @@ class GFF3:
         from sequana import version
 
         with open(filename, "w") as fout:
-
             with open(self.filename, "r") as fin:
                 for line in fin:
                     if not line.startswith("#"):
@@ -674,3 +714,159 @@ class GFF3:
         for col in self.df.columns:
             hits = logical_or(self.df[col].apply(lambda x: pattern in str(x)), hits)
         return self.df.loc[hits].copy()
+
+    def is_tRNA_or_ribosomal(self, x):
+        try:
+            for hit in ["tRNA-", "28S", "5.8S", "18S", "5S"]:
+                if x.startswith(hit):
+                    return False
+            for hit in ["tRNA"]:
+                if x == hit:
+                    return False
+        except AttributeError:
+            pass
+        return True
+
+    def _remove_tRNA_or_ribosomal(self):
+        try:
+            # specific to leishmania donovani
+            self._df = self.df[[self.is_tRNA_or_ribosomal(x) for x in self.df.combinedAnnotation]]
+        except:
+            # for L infantum, tRNA and rRNA are separated with their own genetic_type (but duplicated as
+            # CDS/gene/tRNA/exon)
+            # so we first need to remove exon, then gene with gene_biotype in tRNA and rRNA and finally the genetic_type
+            # tRNA and rRNA or even simpler, keep only genes (removing exon and tRNA and rRNA) and amnogst the genes,
+            # filter out the gene_biotype tRNA and rRNA
+            self._df = self.df.query("genetic_type in ['region', 'gene'] and gene_biotype not in ['tRNA', 'rRNA']")
+
+    def get_PTU(self):
+
+        self._remove_tRNA_or_ribosomal()
+        # make sure it is correct (df changed)
+        self._directons = None
+        directons = self.directons
+        data = []
+
+        for seqid in sorted(self.df.seqid.unique()):
+            subdf = directons.query("seqid==@seqid")
+            chrom = str(seqid)
+            for _, row in subdf.iterrows():
+                start, stop = row["start"], row["stop"]
+                N = len(self.df.query("seqid==@chrom and start>=@start and stop<=@stop"))
+                strand = row["strand"]
+                data.append([seqid, start, stop, strand, N])
+
+        df = pd.DataFrame(data)
+        df.columns = ["chromosome", "start", "stop", "strand", "length"]
+        return df
+
+    def _get_ssr(self):
+
+        # make sure it is correct (if df changed)
+        self.directons = None
+        directons = self.directons.copy()
+        data = []
+        for seqid in sorted(self.df.seqid.unique()):
+            subdf = directons.query("seqid==@seqid")
+
+            for i in range(0, len(subdf) - 1):
+                x = subdf.iloc[i]
+                y = subdf.iloc[i + 1]
+
+                s1 = x.strand
+                s2 = y.strand
+                if s1 == "-" and s2 == "+":
+                    data.append(["dSSR", seqid, x.stop, y.start])
+                elif s1 == "+" and s2 == "-":
+                    data.append(["cSSR", seqid, x.stop, y.start])
+                else:
+                    data.append(["other", seqid, x.stop, y.start])
+
+        df = pd.DataFrame(data)
+        df.columns = ["type", "chromosome", "start", "stop"]
+        return df
+
+    def _get_directons(self):
+
+        if self._directons is not None:
+            return self._directons
+
+        def assign_directon_groups(group):
+            # group is per-chromosome
+            group["strand_shift"] = group["strand"] != group["strand"].shift()
+            group["directon_id"] = group["strand_shift"].cumsum()
+            return group
+
+        df = self.df.groupby("seqid", group_keys=False).apply(assign_directon_groups, include_groups=True)
+
+        # Aggregate each directon into a single BED line
+        directons = (
+            df.groupby(["seqid", "strand", "directon_id"])
+            .agg(
+                {
+                    "start": "min",
+                    "stop": "max",
+                    "source": len,  # let us use the 'source' column to count entries/genes per group
+                }
+            )
+            .reset_index()
+        )
+
+        # rename source into meaningful name
+        directons.rename({"source": "directon_length"}, inplace=True, axis=1)
+
+        # Let us define a convention to get a directon ID as :
+        #
+        # CHROM<DIRECTION>_<ID>_START_END
+        #
+        # where DIRECTION is p or m for the plus or minus strand
+        # ID is a unique identifier on a given chromosme. related to position of appearance
+        names = []
+        for _, row in directons.iterrows():
+            seqid = row["seqid"]
+            start = row["start"]
+            stop = row["stop"]
+            ID = row["directon_id"]
+            strand = "p" if row["strand"] == "+" else "m"
+            names.append(f"{seqid}_{strand}{ID}_{start}_{stop}")
+        directons["directon_name"] = names
+
+        # we sort the directons by seq and start position and reassign unique identifiers
+        # since the first ones were used within chromosomes. not it is across the entire genome.
+        directons.sort_values(by=["seqid", "start"], inplace=True)
+        directons["directon_id"] = list(range(1, len(directons) + 1))
+
+        self._directons = directons
+        return self._directons
+
+    directons = property(_get_directons)
+
+    def directon_to_bed(self, output="directons.bed", colors={"+": "255,0,0", "-": "0,0,255"}):
+
+        df = self.df
+
+        directons = self.directons
+
+        # Add other BED fields
+        strand_colors = {"+": "255,0,0", "-": "0,0,255"}
+        directons["name"] = "."
+        directons["score"] = 1
+        directons["thickStart"] = directons["start"]
+        directons["thickEnd"] = directons["stop"]
+        directons["itemRgb"] = directons["strand"].map(strand_colors)
+
+        # Reorder columns to BED format
+        bed_df = directons[
+            ["seqid", "start", "stop", "directon_name", "score", "strand", "thickStart", "thickEnd", "itemRgb"]
+        ]
+
+        # Write to BED file
+        bed_df.to_csv(output, sep="\t", header=False, index=False)
+
+    def add_directon_index(self):
+        # For each gene, set its position on the directon it belongs to
+        # assuming GFF is sorted by chromosome and start
+        pass
+
+    def cluster_names_to_bed(self):
+        """Identify cluster and output results in BED file"""
