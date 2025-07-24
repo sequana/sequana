@@ -610,13 +610,20 @@ class ChromosomeCov(object):
         chunk = chunk.set_index("pos", drop=False)
         self._df = chunk
         self._reset_metrics()
+
         # set GC if available
         if self.bed.reference_file:
             if self._gc_content is None:
                 self._compute_gc_content()
             i1 = self._df.index[0] - 1
             i2 = self._df.index[-1]
-            self._df["gc"] = self._gc_content[i1:i2]
+
+            try:
+                self._df["gc"] = self._gc_content[i1:i2]
+            except TYpeError:
+                logger.warning(
+                    "Could not access to GC content of {self.chrom_name}. Check your reference is the one used to build the BAM/BED file"
+                )
 
     def next(self):
         try:
@@ -1744,10 +1751,10 @@ class ChromosomeCov(object):
 
         # if accession processed by snpeff, the trailing version may be missing
         try:
-            self._gc_content = chrom_gc_content[chrom.name]
+            self._gc_content = chrom_gc_content[self.chrom_name]
         except:
             logger.warning(
-                "chromosome name {chrom.name} from the reference does not match the chromosome names in the BAM/BED"
+                f"chromosome name {chrom.name} from the reference does not match the chromosome names in the BAM/BED"
             )
 
 
