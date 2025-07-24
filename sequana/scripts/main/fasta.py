@@ -37,6 +37,7 @@ logger = colorlog.getLogger(__name__)
 @click.option("--merge", is_flag=True, help="merge all compressed input fasta files into a single file")
 @click.option("--save-contig-name", help="save sequence corresponding to this contig name")
 @click.option("--explode", is_flag=True, help="Create a fasta file for each sequence found in the original files")
+@click.option("--reverse-complement", is_flag=True, help="Create a fasta file with reversed complement sequence")
 def fasta(**kwargs):
     """Set of useful utilities for FastA manipulation."""
     filenames = kwargs["filename"]
@@ -86,3 +87,12 @@ def fasta(**kwargs):
         f = FastA(filename)
         outname = kwargs["output"]
         f.save_ctg_to_fasta(kwargs["save_contig_name"], outname)
+    elif kwargs["reverse_complement"]:
+        f = FastA(filename)
+        from sequana import reverse_complement
+
+        outname = kwargs["output"]
+        with open(outname, "w") as fout:
+            for name, seq in zip(f.names, f.sequences):
+                seq = reverse_complement(seq)
+                fout.write(f">{name}\n{seq}\n")
