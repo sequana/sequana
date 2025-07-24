@@ -1,6 +1,7 @@
 numpydoc
 sphinx
 sphinx_rtd_theme
+pydata-sphinx-theme
 sequana_sphinxext
 pillow
 sphinx_gallery
