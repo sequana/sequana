@@ -50,9 +50,12 @@ SEQUANA
     Also available on bioRxiv (DOI: https://doi.org/10.1101/162701)
 
 
-**Sequana** includes a set of pipelines related to NGS (new generation sequencing) including quality control, variant calling, coverage, taxonomy, transcriptomics. We also ship **Sequanix**, a graphical user interface for Snakemake pipelines.
+## 🔧 Overview and Installation
+
+**Sequana** is a Python library dedicated to bioinformatics. It is also a project that includes a set of pipelines related to NGS (new generation sequencing) including quality control, variant calling, coverage, taxonomy, transcriptomics. We also ship **Sequanix**, a graphical user interface for Snakemake pipelines.
 
 
+## Pipelines and related projects
 
 .. list-table:: Pipelines and tools available in the Sequana project
     :widths: 15 35 20 15 15
@@ -234,12 +237,15 @@ Each contribution has been an encouragement to pursue this project. Thanks to al
 
 
 
-Changelog
-~~~~~~~~~
+Changelog :memo:
+~~~~~~~~~~~~~~~~~
 
 ========= ==========================================================================
 Version   Description
 ========= ==========================================================================
+0.19.2    * NEW new modules related to genomic metrics (zdna, imotif, cruciform,etc)
+          * NEW new visualisation tools
+          * NEW parser for hmmtools
 0.19.1    * update pyproject with matploblib, scipy, and all dependencie except
             snakemake (keep <8.X and its pulp dependency <2.8) because 8.X breaks
             the containers and therefore all pipelines. no workaround. we will need
@@ -363,3 +369,5 @@ Version   Description
           * refactorisation of VCF tools/modules to use vcfpy instead of pyVCF
           * complete change log before 0.12.4 in the github /doc/Changelog.txt
 ========= ==========================================================================
+
+:question: Feel free to [open an issue](https://github.com/sequana/sequana/issues)
