@@ -3,6 +3,17 @@
 Installation
 ##########################################
 
+Quick installation
+===================
+
+pip install sequana
+
+should work out of the box in the recommended version.
+
+Everything you wanted to know
+=============================
+
+
 Here below are the instructions to install Sequana. There are different ways (source, bioconda, singularity, conda environment, pip). Let us summarize the different methods for you.
 
 If you want the latest version of Sequana, you should install it from source (see :ref:`github_method`). Otherwise, you can install a release of **Sequana** from the Pypi website (using **pip**). Note that for pipelines, which are now independent Python packages, we also use Pypi releases. However, third-party dependencies (not Python) should be installed manually. Most of them are provided through **Anaconda** channels.  See the :ref:`installation_conda` Section for details on how to set up Conda.
