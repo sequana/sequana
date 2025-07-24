@@ -163,6 +163,11 @@ def somy_score(**kwargs):
 
     rcParams["figure.figsize"] = (12, 8)
 
-    ss.boxplot(k=kwargs["k"], method=kwargs["method"], hybrid=True, muhat=kwargs["estimated_diploy_coverage"])
+    if kwargs["estimated_diploy_coverage"]:
+        ss.boxplot(
+            k=kwargs["k"], method=kwargs["method"], hybrid=True, muhat=float(kwargs["estimated_diploy_coverage"])
+        )
+    else:
+        ss.boxplot(k=kwargs["k"], method=kwargs["method"], hybrid=True)
 
     print(ss.info)
