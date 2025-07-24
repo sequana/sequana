@@ -432,7 +432,11 @@ class FastA:
                 fout.write(f">{ctgname}\t{comment}\n{seq}\n")
 
     def find_gaps(self):
-        """Identify NNNNs in data"""
+        """Identify NNNNs in data
+
+        returns a dictionary. keys are the chromosomes' names
+        values is a list. the first item is the number of Ns. the next items are the gaps' positions
+        """
         results = defaultdict(list)
         for i, seq in enumerate(self.sequences):
             count = 0
