@@ -308,6 +308,13 @@ def download_genbank(ctx, param, value):
     help="mapping quality threshold of the second optional coverage track. reads with a quality less than this value are ignored. ",
     show_default=True,
 )
+@click.option(
+    "-F",
+    "--flag",
+    default=1796,
+    help="exclude reads with any of the bits in FLAG set. to ignore, supp, use -F 3844",
+    show_default=True,
+)
 def main(**kwargs):
     """Welcome to SEQUANA -- Coverage standalone
 
@@ -433,6 +440,8 @@ def main(**kwargs):
             shellcmd(f"{main_command} depth -aa {options.input} > {bedfile}")
     elif options.input.endswith(".bam") and options.bam2cov_method == "mosdepth":
         main_command = "mosdepth" if not options.chromosome else f"mosdepth -c {options.chromosome}"
+        main_command += f" -F {options.flag}"
+
         # -b1 for all bases
         if options.second_mapq:
             # decommposed because too complex for subprocess
