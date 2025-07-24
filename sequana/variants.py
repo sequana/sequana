@@ -118,6 +118,8 @@ class VariantFile:
         if self._variants is None:
             vcf_reader = pysam.VariantFile(self.filename)
             self._variants = [v for v in vcf_reader]
+            for i, v in enumerate(self._variants):
+                v.id = str(i + 1)
         return self._variants
 
     variants = property(_get_variants)
@@ -211,8 +213,11 @@ class VariantFile:
     def get_variant_type(self):
         variants = defaultdict(int)
         for variant in self.variants:
-            for typ in variant.info["TYPE"]:
-                variants[typ] += 1
+            if "TYPE" in variant.info:
+                for typ in variant.info["TYPE"]:
+                    variants[typ] += 1
+            elif "SVTYPE" in variant.info:
+                variants[variant.info["SVTYPE"]] += 1
         return variants
 
     def barplot(self):
@@ -235,14 +240,24 @@ class VariantFile:
         labels = [f"{x.upper()} ({variants[x]})" for x in labels]
         pylab.pie(data, labels=labels)
 
-    def manhattan_plot(self, chrom_name=None, bins=200, types=["ins", "del", "mnp", "snp", "complex"]):
+    def manhattan_plot(self, chrom_name=None, bins=200, types=["ins", "del", "mnp", "snp", "complex", "INS", "DEL"]):
 
         positions = defaultdict(list)
 
         for variant in pysam.VariantFile(self.filename):
 
             # keeps only the requested type of variants
-            for vkind in variant.info["TYPE"]:
+            if "TYPE" in variant.info:
+                for vkind in variant.info["TYPE"]:
+                    if vkind in types:
+                        # keep track of the chrom name
+                        chrom = variant.chrom
+                        if chrom_name and chrom == chrom_name:
+                            positions[chrom].append(variant.pos)
+                        elif chrom_name is None:
+                            positions[chrom].append(variant.pos)
+            elif "SVTYPE" in variant.info:
+                vkind = variant.info["SVTYPE"]
                 if vkind in types:
                     # keep track of the chrom name
                     chrom = variant.chrom
@@ -264,7 +279,7 @@ class VariantFile:
                 chroms.append(chrom)
 
         pylab.clf()
-        pylab.hist(concatenated_pos, bins=200, log=True)
+        pylab.hist(concatenated_pos, bins=bins, log=True)
         for x in Ss:
             pylab.axvline(x, color="k")
         pylab.xticks(Ss, chroms, rotation=45)
@@ -287,14 +302,19 @@ class VariantFile:
         variant_dict = {
             "chr": variant.chrom,
             "position": variant.pos,
-            "depth": variant.info["DP"],
+            "depth": variant.info["DP"] if "DP" in variant.info else variant.info["COVERAGE"][2],
             "reference": variant.ref,
             "alternative": ";".join(str(x) for x in variant.alts),
-            "type": ";".join(x for x in variant.info["TYPE"]),
             "freebayes_score": variant.qual,
             "strand_balance": ";".join("{0:.3f}".format(x) for x in strand_bal),
             "fisher_pvalue": "; ".join(f"{x}" for x in fisher),
+            "ID": variant.id,
         }
+
+        if "TYPE" in variant.info:
+            variant_dict["type"] = ";".join(x for x in variant.info["TYPE"])
+        elif "SVTYPE" in variant.info:
+            variant_dict["type"] = ";".join([variant.info["SVTYPE"]])
 
         if len(self.samples) == 1:
             variant_dict["frequency"] = "; ".join("{0:.3f}".format(x) for x in alt_freq)
@@ -364,6 +384,18 @@ class VariantFile:
 
     df = property(_get_df)
 
+    def to_vcf(self, output_filename):
+        """Write VCF file in VCF format.
+
+        :params str output_filename: output VCF filename.
+        """
+        vcf_writer = pysam.VariantFile(output_filename, mode="w", header=self._header)
+        IDs = set(self.df.ID)
+        for i, variant in enumerate(self.variants):
+            if str(i + 1) in IDs:
+                vcf_writer.write(variant)
+        vcf_writer.close()
+
 
 class FilteredVariantFile:
     """Variants filtered with VCF_freebayes.
@@ -428,3 +460,49 @@ class FilteredVariantFile:
         for variant in self.variants:
             vcf_writer.write(variant)
         vcf_writer.close()
+
+
+def apply_variants(fasta_path, vcf_path, output_fasta):
+    logger.info("TO BE CHECKED /  TESTED")
+    # Load reference sequence
+    fasta = pysam.FastaFile(fasta_path)
+
+    # Read VCF
+    try:
+        vcf = pysam.VariantFile(vcf_path)
+    except AttributeError:
+        vcf = vcf_path
+
+    # Store modifications
+    sequences = {seq: list(fasta.fetch(seq)) for seq in fasta.references}
+    print(sequences.keys())
+
+    # Apply variants
+    for record in tqdm(vcf):
+        chrom = record.chrom
+        pos = record.pos - 1  # VCF is 1-based, Python lists are 0-based
+        ref = record.ref
+        alts = record.alts  # Tuple of alternative alleles
+
+        if chrom not in sequences:
+            continue
+
+        seq = sequences[chrom]
+        seq1 = sequences[chrom][:]
+
+        # Assume first ALT is the desired one (modify if needed)
+        alt = alts[0] if alts else ref
+
+        if len(ref) == len(alt):  # SNP
+            print(pos, ref, alt, len(ref))
+            seq[pos : pos + len(ref)] = list(alt)
+        elif len(ref) > len(alt):  # Deletion
+            seq[pos : pos + len(ref)] = list(alt)  # alt is usually empty
+        elif len(ref) < len(alt):  # Insertion
+            seq[pos : pos + 1] = list(alt)  # Insert extra bases
+
+    # Write corrected FASTA
+    with open(output_fasta, "w") as out_fasta:
+        for chrom, seq in sequences.items():
+            out_fasta.write(f">{chrom}\n")
+            out_fasta.write("".join(seq) + "\n")
