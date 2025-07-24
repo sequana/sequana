@@ -113,7 +113,7 @@ class Aragorn:
                             "end": end,
                             "length": end - start,
                             "score": score,
-                            "strand": "+" if "c[" in line else "-",
+                            "strand": "-" if "c[" in line else "+",
                         }
                     )
 

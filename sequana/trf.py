@@ -212,3 +212,33 @@ class TRF:  # pragma: no cover
         # How many repetitions per sequence
         pylab.hist([len(x) for x in self.df.groupby("sequence_name").groups.values()])
         pylab.xlabel("# repetitions per sequence")
+
+    def to_bed(self, outfile, cmap="autumn"):
+        import matplotlib.colors as colors
+        from matplotlib.cm import get_cmap
+
+        cmap = get_cmap(cmap)
+        norm = colors.Normalize(vmin=0, vmax=self.df.length.median() * 2)
+
+        with open(outfile, "w") as fout:
+            for _, row in self.df.iterrows():
+
+                length = row["length"]
+                rgba = cmap(norm(length))
+                CNV = row["CNV"]
+                R, G, B = int(rgba[0] * 255), int(rgba[1] * 255), int(rgba[2] * 255)
+
+                data = "\t".join(
+                    [
+                        row["sequence_name"],
+                        str(row["start"]),
+                        str(row["end"]),
+                        f"CNV={CNV}_length={length}",
+                        str(row["score"]),
+                        "+",
+                        str(row["start"]),
+                        str(row["end"]),
+                        f"{R},{G},{B}",
+                    ]
+                )
+                fout.write(data + "\n")

@@ -52,7 +52,15 @@ def compute_frequency(record):
     except:
         info = record.INFO
 
-    return [float(count) / info["DP"] for count in info["AO"]]
+    # For freebayes:
+    try:
+        return [float(count) / info["DP"] for count in info["AO"]]
+    except:
+        # sniffles
+        if "VAF" in info:
+            return [float(info["VAF"])]
+        else:
+            return []
 
 
 def compute_fisher_strand_filter(record):
@@ -81,7 +89,12 @@ def compute_fisher_strand_filter(record):
     except:
         info = record.INFO
 
-    return [fisher_exact([[x, y], [info["SRF"], info["SRR"]]], "two-sided") for x, y in zip(info["SAF"], info["SAR"])]
+    try:
+        return [
+            fisher_exact([[x, y], [info["SRF"], info["SRR"]]], "two-sided") for x, y in zip(info["SAF"], info["SAR"])
+        ]
+    except KeyError:
+        return [1]
 
 
 def compute_strand_balance(record):
@@ -103,4 +116,7 @@ def compute_strand_balance(record):
     except:
         info = record.INFO
 
-    return [strand_ratio(x, y) for x, y in zip(info["SAF"], info["SAR"])]
+    try:
+        return [strand_ratio(x, y) for x, y in zip(info["SAF"], info["SAR"])]
+    except KeyError:
+        return [0.5]

@@ -429,10 +429,22 @@ class FastQ(object):
         if output_filename is None:  # pragma: no cover
             output_filename = os.path.basename(self.filename) + ".select"
 
+        if output_filename.split(".")[-1] in ["fastq", "fq"]:
+            frmt = "fastq"
+        elif output_filename.split(".")[-1] in ["fasta", "fa"]:
+            frmt = "fasta"
+        else:
+            raise NotImplementedError
+
         with open(output_filename, "w") as fh:
             for read in tqdm(fastq, disable=not progress, desc="sequana:fastq select specific reads"):
+
                 if read.name in read_identifiers:
-                    fh.write(read.__str__() + "\n")
+                    if frmt == "fastq":
+                        fh.write(read.__str__() + "\n")
+                    elif frmt == "fasta":
+                        fh.write(f">{read.name}\n{read.sequence}\n")
+
                 else:
                     pass
 

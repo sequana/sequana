@@ -113,7 +113,7 @@ th {
  * └──────────────────────────────────────────────────────────────────────────┘
  */
 img {
-    
+
     max-width: 66%;
     border: 3px solid gray;
     max-height: 66%;
@@ -125,9 +125,33 @@ img {
     float: right;
 }
 
-.aling-left {
+.align-left {
     float: left;
 }
+
+.image-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 10px;
+   align-content: space-between;
+   justify-content: space-around;
+}
+
+.image-grid figure {
+   width: 45% !important;
+   box-sizing: border-box;
+   text-align: center;
+   margin: 0 !important;
+}
+
+.image-grid img {
+  width: 100%;
+  height: auto;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+}
+
 
 
 
@@ -141,6 +165,14 @@ img {
     margin-top:    1em;
     margin-bottom: 1em;
 }
+
+
+figcaption {
+      margin-top: 6px;
+      font-style: italic;
+      color: #555;
+}
+
 
 /*
  * ┌──────────────────────────────────────────────────────────────────────────┐

@@ -218,7 +218,7 @@ class SAMBAMbase:
         return pylab.mean([abs(x) for x in data])
 
     @_reset
-    def get_df(self, max_align=-1, progress=True):
+    def get_df(self, max_align=-1, progress=True, include_cigar=False):
         flags = []
         starts = []
         ends = []
@@ -243,18 +243,35 @@ class SAMBAMbase:
             query_aln_lengths.append(a.query_alignment_length)
             if max_align != -1 and i > max_align:
                 break
-        df = pd.DataFrame(
-            {
-                "flag": flags,
-                "rstart": starts,
-                "rend": ends,
-                "mapqs": mapqs,
-                "rname": refnames,
-                "qname": querynames,
-                "qlen": querylengths,
-                "qalen": query_aln_lengths,
-            }
-        )
+
+        if include_cigar:
+            df = pd.DataFrame(
+                {
+                    "flag": flags,
+                    "rstart": starts,
+                    "rend": ends,
+                    "mapqs": mapqs,
+                    "rname": refnames,
+                    "qname": querynames,
+                    "qlen": querylengths,
+                    "qalen": query_aln_lengths,
+                    "cigar": cigar,
+                }
+            )
+
+        else:
+            df = pd.DataFrame(
+                {
+                    "flag": flags,
+                    "rstart": starts,
+                    "rend": ends,
+                    "mapqs": mapqs,
+                    "rname": refnames,
+                    "qname": querynames,
+                    "qlen": querylengths,
+                    "qalen": query_aln_lengths,
+                }
+            )
         return df
 
     @_reset

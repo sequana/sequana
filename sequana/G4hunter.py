@@ -202,8 +202,8 @@ class G4Hunter:
             # 0.7%
             # moving average from sequana faster than using rolling average with pandas
             # due to short window size
-            scores = moving_average(liste, self.window)
 
+            scores = moving_average(liste, self.window)
             # 2.5%
             G4Seq = self.get_G4(rec.sequence, file1, scores, rec.name)
             if len(G4Seq) > 0:
@@ -214,8 +214,7 @@ class G4Hunter:
         file1.close()
         file2.close()
 
-        print(f"\n Results files and Score Figure are created in: {fin-startTime} secondes")
-        print(f"\033[1m' {outdir} \n \033[0;0m")
+        print(f"\nResults files and Score Figure created in: {fin-startTime} seconds in \033[1m{outdir} \n \033[0;0m")
 
 
 class G4HunterReader:
@@ -282,3 +281,22 @@ class G4HunterReader:
             # Save the last section if any
             if current_id and data:
                 self.data_merged[current_id] = pd.DataFrame(data)
+
+    def to_bed(self, bedfile, cmap="seismic"):
+        import matplotlib.colors as colors
+        from matplotlib.cm import get_cmap
+
+        cmap = get_cmap(cmap)
+        norm = colors.Normalize(vmin=-2, vmax=2)
+
+        with open(bedfile, "w") as fout:
+
+            for seqid in self.data_merged.keys():
+                for _, row in self.data_merged[seqid].iterrows():
+                    start = row["Start"]
+                    stop = row["End"]
+                    score = row["Score"]
+                    rgba = cmap(norm(score))
+                    R, G, B = int(rgba[0] * 255), int(rgba[1] * 255), int(rgba[2] * 255)
+                    msg = f"{seqid}\t{start}\t{stop}\tG4\t{score}\t+\t{start}\t{stop}\t{R},{G},{B}\n"
+                    fout.write(msg)

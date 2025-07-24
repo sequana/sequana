@@ -135,8 +135,9 @@ class DataTableFunction(object):
         try:
             for b in buttons:
                 b.update({"exportOptions": {"columns": ":visible"}})
+                b.update({"filename": "data"})
         except AttributeError:
-            buttons = [{"extend": b, "exportOptions": {"columns": ":visible"}} for b in buttons]
+            buttons = [{"extend": b, "filename": "data", "exportOptions": {"columns": ":visible"}} for b in buttons]
         return buttons
 
     @datatable_options.deleter

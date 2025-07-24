@@ -27,6 +27,34 @@ logger = colorlog.getLogger(__name__)
 __all__ = ["DNA", "RNA", "Repeats", "Sequence"]
 
 
+from sequana.iuapc import codons  # your existing dictionary
+
+
+def translate(dna: str, to_stop=True) -> str:
+    """Translate a DNA sequence to a protein using sequana.iupac.codons.
+
+    Args:
+        dna (str): DNA sequence (A/T/C/G)
+        to_stop (bool): If True, stop translation at the first stop codon
+
+    Returns:
+        str: Translated protein sequence
+    """
+    dna = dna.upper().replace(" ", "").replace("\n", "")
+    rna = dna.replace("T", "U")
+    protein = []
+
+    for i in range(0, len(rna) - 2, 3):
+        codon = rna[i : i + 3]
+        if len(codon) < 3:
+            break
+        aa = codons.get(codon, "X")  # 'X' for unknown codons
+        if aa == "*" and to_stop:
+            break
+        protein.append(aa)
+    return "".join(protein)
+
+
 class Sequence(object):
     """Abstract base classe for other specialised sequences such as DNA.
 
@@ -852,7 +880,21 @@ class DNA(Sequence):
 
         return entropy
 
-    def get_karlin_signature_difference(self, window=500):
+    def get_dinucleotide_count(self, window=100):
+        res = [
+            sum([self.sequence[i : i + window].count(x) for x in ["AA", "CC", "GG", "TT"]])
+            for i in range(0, len(self.sequence))
+        ]
+        return res
+
+    def get_trinucleotide_count(self, window=100):
+        res = [
+            sum([self.sequence[i : i + window].count(x) for x in ["AAA", "CCC", "GGG", "TTT"]])
+            for i in range(0, len(self.sequence))
+        ]
+        return res
+
+    def get_karlin_signature_difference(self, window=500, dinucleotide_only=False):
         # Karlin Signature Difference is dinucleotide absolute relative abundance difference
         # between the whole sequence and a sliding window.
         # f(XY) = frequency of the dinucleotide XY
@@ -874,6 +916,8 @@ class DNA(Sequence):
             deltaXY = 0
             for x in "ACGT":
                 for y in "ACGT":
+                    if dinucleotide_only and x != y:
+                        continue
                     xy = f"{x}{y}"
                     pXY[xy] = (
                         counter[xy]
@@ -1061,7 +1105,7 @@ class Repeats:
             # convert to dataframe
             df = pd.DataFrame(list_df[2 : len(list_df)])
             self._df_shustring = df.astype(int)
-            self._df_shustring.columns = ["position", "shustring_length"]
+            self._df_shustring.columns = ["position", "repeat_length"]
 
             # get input sequence length and longest shustring in the first line
             self._length = int(list_df[0][1])
@@ -1104,7 +1148,7 @@ class Repeats:
             e = 0
 
             # use list because faster
-            list_len_shus = list(self.df_shustring.loc[:, "shustring_length"])
+            list_len_shus = list(self.df_shustring.loc[:, "repeat_length"])
 
             while i < nb_row:
                 # begining of repeat
@@ -1228,7 +1272,7 @@ class Repeats:
         if clf:
             pylab.clf()
         pylab.grid(True)
-        pylab.plot(self.df_shustring.shustring_length)
+        pylab.plot(self.df_shustring.repeat_length)
         pylab.xlabel("Position (bp)", fontsize=fontsize)
         pylab.ylabel("Repeat lengths (bp)", fontsize=fontsize)
         pylab.ylim(bottom=0)
@@ -1242,13 +1286,37 @@ class Repeats:
         N = len(self.df_shustring)
         with open(filename, "w") as fout:
             fout.write(
-                'track type=wiggle_0 name="Repeat Density" visibility=full fixedStep chrom=1 start=0 step=100 span=100'
+                f'track type=wiggle_0 name="Repeat Density" visibility=full fixedStep chrom=1 start=0 step={step} span={step}\n'
             )
-            for i in arange(step / 2, N, step):
-                start = int(i - step / 2)
-                stop = int(i + step / 2)
+            # min_period = 1 to prevent NAN at first position
+            rolling_max = self.df_shustring.rolling(step, step=step).max()
+            for _, row in rolling_max.iterrows():
+                if row.name == 0:
+                    continue
+                M = row.repeat_length
+                start = row.name - step
+                stop = row.name
+                fout.write(f"{self.header}\t{start}\t{stop}\t{row.repeat_length}\n")
 
-                M = self.df_shustring.query("position>=@start and position<=@stop").shustring_length.max()
-                if start == 0:
-                    start = 1
-                fout.write(f"{self.header}\t{start}\t{stop}\t{M}\n")
+    def get_peak_position_and_length(self, THRESHOLD=3000):
+
+        df = self.df_shustring.copy()
+        # Filter for repeats above threshold
+        df = df[df["repeat_length"] > THRESHOLD].copy()
+
+        # Sort by genomic position
+        df = df.sort_values(by="position").reset_index(drop=True)
+
+        # Identify local maxima: where the value is greater than the left and right neighbors
+        df["prev"] = df["repeat_length"].shift(1, fill_value=0)
+        df["next"] = df["repeat_length"].shift(-1, fill_value=0)
+
+        # Keep only local maxima
+        peaks = df[(df["repeat_length"] > df["prev"]) & (df["repeat_length"] > df["next"])]
+
+        # Select only relevant columns
+        final_df = peaks[["position", "repeat_length"]]
+
+        # Print results
+        print(f"Final number of peaks after filtering: {len(final_df)}")
+        return final_df
