@@ -282,7 +282,7 @@ class G4HunterReader:
             if current_id and data:
                 self.data_merged[current_id] = pd.DataFrame(data)
 
-    def to_bed(self, bedfile, cmap="seismic"):
+    def to_bed(self, bedfile, cmap="seismic", threshold=0):
         import matplotlib.colors as colors
         from matplotlib.cm import get_cmap
 
@@ -292,7 +292,7 @@ class G4HunterReader:
         with open(bedfile, "w") as fout:
 
             for seqid in self.data_merged.keys():
-                for _, row in self.data_merged[seqid].iterrows():
+                for _, row in self.data_merged[seqid].query("Score>=@threshold or Score<-@threshold").iterrows():
                     start = row["Start"]
                     stop = row["End"]
                     score = row["Score"]

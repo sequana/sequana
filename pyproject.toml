@@ -100,17 +100,10 @@ pairtools = "sequana.multiqc.pairtools:MultiqcModule"
 before_config = "sequana.multiqc.config:load_config"
 
 
-#[project.entry-points."sequana.module"]
-#sequana_coverage = "sequana.modules_report.coverage:CoverageModule"
-#sequana_variant_calling = "sequana.modules_report.variant_calling:VariantCallingModule"
-#sequana_summary = "sequana.modules_report.summary:SummaryModule"
-
-
 [project.scripts]
 sequana = "sequana.scripts.main.main:main"
 sequana_taxonomy = "sequana.scripts.taxonomy:main"
 sequana_coverage = "sequana.scripts.coverage:main"
-sequana_substractor = "sequana.scripts.substractor:main"
 
 
 [project.urls]
