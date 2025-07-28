@@ -33,10 +33,10 @@ def test_basic():
     f.to_fasta(ft.name)
 
 
-def test_select_reads():
+def test_select_reads(tmpdir):
     f = fastq.FastQ(data)
-    ft = TempFile()
-    f.select_reads(["HISEQ:426:C5T65ACXX:5:2302:4953:2090"], output_filename=ft.name)
+    outfile = tmpdir.join("file1.fastq")
+    f.select_reads(["HISEQ:426:C5T65ACXX:5:2302:4953:2090"], output_filename=str(outfile))
 
 
 def test_fastq_unzipped():

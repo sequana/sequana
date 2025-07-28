@@ -1,0 +1,165 @@
+>1
+0 genes found
+>2
+1 gene found
+1   tRNA-Val               [255252,255343]	106.0	30  	(gac)
+>3
+1 gene found
+1   tRNA-Lys               [270200,270272]	124.6	34  	(ctt)
+>4
+0 genes found
+>5
+1 gene found
+1   tRNA-Arg               [392123,392194]	120.3	33  	(acg)
+>6
+1 gene found
+1   tRNA-SeC                c[73876,73963]	108.3	36  	(tca)
+>7
+2 genes found
+1   tRNA-Phe                c[66222,66317]	104.4	38  	(gaa)
+2   tRNA-Arg              c[396964,397035]	120.3	33  	(acg)
+>8
+0 genes found
+>9
+9 genes found
+1   tRNA-Met               [296504,296575]	115.4	33  	(cat)
+2   tRNA-Leu               [296634,296717]	117.1	35  	(cag)
+3   tRNA-Val               [431671,431747]	112.1	35  	(cac)
+4   tRNA-His               [431986,432056]	116.1	33  	(gtg)
+5   tRNA-Phe              c[432235,432307]	121.2	34  	(gaa)
+6   tRNA-Glu              c[444416,444487]	118.0	34  	(ttc)
+7   tRNA-Val              c[444723,444799]	112.1	35  	(cac)
+8   tRNA-Arg               [444873,444945]	118.6	33  	(ccg)
+9   tRNA-His               [445011,445081]	116.1	33  	(gtg)
+>10
+3 genes found
+1   tRNA-Lys               [615452,615525]	124.6	34  	(ctt)
+2   tRNA-Gly              c[615593,615663]	122.6	33  	(gcc)
+3   tRNA-Asn              c[615722,615794]	118.7	34  	(gtt)
+>11
+7 genes found
+1   tRNA-Leu              c[180787,180868]	116.4	35  	(aag)
+2   tRNA-Ala               [180942,181014]	119.0	33  	(cgc)
+3   tRNA-Gly              c[186461,186531]	122.0	33  	(ccc)
+4   tRNA-Ala              c[186589,186661]	119.0	33  	(cgc)
+5   tRNA-Leu               [186735,186816]	116.4	35  	(aag)
+6   tRNA-Met              c[407047,407119]	113.6	34  	(cat)
+7   tRNA-Arg               [407194,407267]	120.3	34  	(acg)
+>12
+0 genes found
+>13
+1 gene found
+1   tRNA-???               [434875,434952]	101.0	37  	(gt) 
+>14
+0 genes found
+>15
+2 genes found
+1   tRNA-Asp               [372570,372642]	124.0	34  	(gtc)
+2   tRNA-Glu              c[372681,372754]	118.1	35  	(ctc)
+>16
+1 gene found
+1   tRNA-Gln              c[446994,447068]	119.8	35  	(ctg)
+>17
+3 genes found
+1   tRNA-Asp              c[359293,359365]	124.0	34  	(gtc)
+2   tRNA-Ser               [359443,359524]	121.7	34  	(gct)
+3   tRNA-Ala               [359583,359658]	108.3	35  	(agc)
+>18
+1 gene found
+1   tRNA-Arg               [371194,371290]	100.5	35  	(tct)
+>19
+0 genes found
+>20
+0 genes found
+>21
+4 genes found
+1   tRNA-Lys              c[344573,344645]	124.6	34  	(ctt)
+2   tRNA-Val              c[344708,344782]	118.0	35  	(aac)
+3   tRNA-Pro              c[344898,344969]	123.6	33  	(agg)
+4   tRNA-Ser               [631020,631100]	123.0	34  	(gct)
+>22
+0 genes found
+>23
+11 genes found
+1   tRNA-Ile               [246369,246443]	118.5	35  	(tat)
+2   tRNA-Val              c[246487,246559]	111.3	34  	(tac)
+3   tRNA-Gln              c[246627,246699]	124.9	34  	(ttg)
+4   tRNA-Arg              c[246941,247014]	120.3	34  	(acg)
+5   tRNA-Leu              c[247235,247319]	117.1	36  	(cag)
+6   tRNA-Thr              c[247375,247448]	120.1	34  	(tgt)
+7   tRNA-Arg               [247520,247591]	121.1	33  	(tcg)
+8   tRNA-Lys               [247904,247978]	120.7	35  	(ttt)
+9   tRNA-Gly              c[248027,248099]	116.4	34  	(tcc)
+10  tRNA-Trp               [248175,248246]	115.5	33  	(cca)
+11  tRNA-Asn              c[452137,452207]	100.2	32  	(att)
+>24
+6 genes found
+1   tRNA-Pro               [239217,239288]	124.4	33  	(cgg)
+2   tRNA-Gln               [669571,669643]	119.8	34  	(ctg)
+3   tRNA-Leu              c[669853,669934]	111.7	36  	(taa)
+4   tRNA-Ile               [670021,670095]	119.6	35  	(aat)
+5   tRNA-Ile               [672033,672107]	119.6	35  	(aat)
+6   tRNA-Asp              c[728557,728628]	124.0	34  	(gtc)
+>25
+0 genes found
+>26
+0 genes found
+>27
+0 genes found
+>28
+0 genes found
+>29
+3 genes found
+1   tRNA-Ala              c[623231,623315]	100.7	31  	(ggc)
+2   tRNA-Leu              c[887258,887340]	117.8	35  	(caa)
+3   tRNA-Ser              c[887400,887480]	119.2	34  	(cga)
+>30
+1 gene found
+1   tRNA-Thr              c[815292,815363]	121.6	33  	(cgt)
+>31
+5 genes found
+1   tRNA-Ala               [250224,250296]	108.3	34  	(agc)
+2   tRNA-Gly               [541439,541511]	122.6	33  	(gcc)
+3   tRNA-Glu              c[541557,541630]	118.1	35  	(ctc)
+4   tRNA-Phe             [1400196,1400268]	121.2	34  	(gaa)
+5   tRNA-Ser            c[1400302,1400383]	119.6	34  	(aga)
+>32
+0 genes found
+>33
+4 genes found
+1   tRNA-Arg              c[142953,143026]	118.9	34  	(cct)
+2   tRNA-Arg              c[143085,143158]	125.8	34  	(tct)
+3   tRNA-Ala               [143234,143307]	117.5	34  	(tgc)
+4   tRNA-Lys              c[593232,593305]	120.7	34  	(ctt)
+>34
+10 genes found
+1   tRNA-Val              c[558899,558973]	118.0	35  	(aac)
+2   tRNA-Ile               [559198,559272]	119.6	35  	(aat)
+3   tRNA-Met               [559328,559400]	113.6	34  	(cat)
+4   tRNA-Leu              c[559432,559513]	119.8	35  	(tag)
+5   tRNA-Ser               [559588,559668]	116.9	34  	(tga)
+6   tRNA-Asn            c[1650660,1650733]	118.7	34  	(gtt)
+7   tRNA-Pro            c[1650796,1650867]	124.4	33  	(cgg)
+8   tRNA-Thr             [1650948,1651019]	121.6	33  	(cgt)
+9   tRNA-Leu             [1651083,1651166]	104.9	35  	(tag)
+10  tRNA-Asn             [1651228,1651301]	118.7	34  	(gtt)
+>35
+0 genes found
+>36
+13 genes found
+1   tRNA-Leu              c[522231,522315]	104.3	35  	(tag)
+2   tRNA-Thr              c[522397,522468]	117.1	33  	(agt)
+3   tRNA-Thr               [523348,523419]	117.1	33  	(agt)
+4   tRNA-Leu               [523501,523585]	104.3	35  	(tag)
+5   tRNA-Gly             [1085277,1085348]	122.6	33  	(gcc)
+6   tRNA-Thr            c[1085902,1085973]	117.1	33  	(agt)
+7   tRNA-Gly            c[1086040,1086110]	122.6	33  	(gcc)
+8   tRNA-Pro             [1086184,1086255]	123.6	33  	(agg)
+9   tRNA-Gln            c[1705809,1705882]	119.8	35  	(ctg)
+10  tRNA-Cys             [2582883,2582954]	122.6	33  	(gca)
+11  tRNA-Leu            c[2583745,2583826]	116.4	35  	(aag)
+12  tRNA-Met            c[2583888,2583959]	115.4	33  	(cat)
+13  tRNA-Pro             [2584033,2584105]	122.1	33  	(tgg)
+>maxi
+0 genes found
+>end 	37 sequences 90 tRNA genes 0 tmRNA genes, nothing found in 15 sequences, (59.46% sensitivity)
