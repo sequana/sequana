@@ -103,7 +103,7 @@ class Ideogram:
 
         # Aesthetics
         ax.set_xlim(-0.5, self.spacing * N)
-        ax.set_ylim(0, max(L) + 10)
+        ax.set_ylim(0, max(L) + 20000)
         ax.set_xticks([i * self.spacing + self.chrom_width / 2 for i in range(N)])
         ax.set_xticklabels([str(i + 1) for i in range(N)], rotation="vertical", fontsize=16)
         ax.set_ylabel("Position (bp)", fontsize=16)
