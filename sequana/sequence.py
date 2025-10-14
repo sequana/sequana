@@ -894,6 +894,13 @@ class DNA(Sequence):
         ]
         return res
 
+    def get_homopolymers(self, N, window=100):
+        res = [
+            sum([self.sequence[i : i + window].count(x) for x in ["A" * N, "C" * N, "G" * N, "T" * N]])
+            for i in range(0, len(self.sequence))
+        ]
+        return res
+
     def get_karlin_signature_difference(self, window=500, dinucleotide_only=False):
         # Karlin Signature Difference is dinucleotide absolute relative abundance difference
         # between the whole sequence and a sliding window.

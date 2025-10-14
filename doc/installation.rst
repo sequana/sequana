@@ -6,7 +6,9 @@ Installation
 Quick installation
 ===================
 
-pip install sequana
+::
+
+    pip install sequana
 
 should work out of the box in the recommended version.
 
@@ -19,11 +21,7 @@ Here below are the instructions to install Sequana. There are different ways (so
 If you want the latest version of Sequana, you should install it from source (see :ref:`github_method`). Otherwise, you can install a release of **Sequana** from the Pypi website (using **pip**). Note that for pipelines, which are now independent Python packages, we also use Pypi releases. However, third-party dependencies (not Python) should be installed manually. Most of them are provided through **Anaconda** channels.  See the :ref:`installation_conda` Section for details on how to set up Conda.
 
 For instance, if you want to use the sequana_fastqc pipeline you must install **fastqc** yourself, which is not a
-Python package.
-
-If you just want to test **Sequana** or **Sequanix** (see note here below) or one of the Sequana
-standalone, we also provide **Singularity** containers as explained in the
-:ref:`singularity_details` section.
+Python package. We cannot provide instructions to install all third-party libraries so there will be some work for you if you want to use the pipelines. However, if you just want to use one of the **Sequana** standalone or pipeline, we also provide **Singularity** containers as explained in the :ref:`singularity_details` section.
 
 
 .. topic:: Design choice
@@ -57,9 +55,9 @@ you can install all requirements without root permissions and (ii) you do
 not interfer with your system.
 
 We will use `conda <https://docs.conda.io/en/latest>`_ for that. Before starting
-you should install and set the channels as explained in the  :ref:`installation_conda` section. Then, create an environment. Here we set Python to 3.8 but could be 3.9 or 3.10::
+you should install and set the channels as explained in the  :ref:`installation_conda` section. Then, create an environment. Here we set Python to 3.10 but could be 3.11 or 3.12:
 
-    conda create --name sequana_env python=3.8
+    conda create --name sequana_env python=3.10
     source activate sequana_env
 
 pip installation
@@ -111,12 +109,9 @@ Other solutions (overview)
 Singularity/Apptainer
 ======================
 
-We provide container with sequana shipped inside (no pipelines) within the damona project
-(https://github.com/cokelaer/damona)
-
-
-
-These three methods are detailled hereafter.
+All containers used with Sequana pipelines are provided within the damona project
+(https://github.com/cokelaer/damona). You do not need to install/download them manually. This will
+be done for you. However, you can cite them since they are all available on Zenodo.
 
 .. _installation_conda:
 
@@ -211,7 +206,7 @@ From GitHub Source code
 Finally, if you are a developer and wish to use the latest code, you
 can install **sequana** in develop mode as follows::
 
-    conda create --name sequana 'python=3.8'
+    conda create --name sequana 'python=3.10'
     source activate sequana
     git clone git@https://github.com:sequana/sequana.git
     cd sequana

@@ -37,6 +37,7 @@ logger = colorlog.getLogger(__name__)
 @click.option("--merge", is_flag=True, help="merge all compressed input fasta files into a single file")
 @click.option("--save-contig-name", help="save sequence corresponding to this contig name")
 @click.option("--explode", is_flag=True, help="Create a fasta file for each sequence found in the original files")
+@click.option("--extract", type=click.STRING, help="Extra one sequence from a fasta and save in new file")
 @click.option("--reverse-complement", is_flag=True, help="Create a fasta file with reversed complement sequence")
 def fasta(**kwargs):
     """Set of useful utilities for FastA manipulation."""
@@ -83,6 +84,11 @@ def fasta(**kwargs):
         for filename in filenames:
             f = FastA(filename)
             f.explode()
+    elif kwargs["extract"]:
+        for filename in filenames:
+            f = FastA(filename)
+            name = kwargs["extract"]
+            f.filter(output_filename=kwargs["output"], names_to_keep=[name])
     elif kwargs["save_contig_name"]:
         f = FastA(filename)
         outname = kwargs["output"]
