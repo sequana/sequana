@@ -11,6 +11,7 @@
 #
 ##############################################################################
 import re
+from collections import defaultdict
 
 """
 Note: could use pysam most probably to improve the speed.
@@ -20,8 +21,8 @@ import colorlog
 logger = colorlog.getLogger(__name__)
 
 
-class Cigar(object):
-    """
+class Cigar:
+    """A class to handle CIGAR strings from BAM files.
 
     .. doctest::
 
@@ -38,16 +39,16 @@ class Cigar(object):
 
     Possible CIGAR types are:
 
-    - "M" for alignment MATCH  (0)
-    - "I" for Insertion to the reference (1)
-    - "D" for deletion from the reference 2
-    - "N" for skipped region from the reference 3
-    - "S" for soft clipping (clipped sequence present in seq) 4
-    - "H" for hard clipping (clipped sequence NOT present in seq) 5
-    - "P" for padding (silent deletion from padded reference)
-    - "=" for equal
-    - "X" for diff (sequence mismatched)
-    - "B" for back     !!!! could be also NM ???
+    - "M" : alignment match
+    - "I" : insertion to the reference
+    - "D" : deletion from the reference
+    - "N" : skipped region from the reference
+    - "S" : soft clipping (clipped sequence present in seq)
+    - "H" : hard clipping (sequence NOT present)
+    - "P" : padding (silent deletion from padded reference)
+    - "=" : sequence match
+    - "X" : sequence mismatched
+    - "B" : back (rare) (could be also NM ?)
 
     !!! BWA MEM get_cigar_stats returns list with 11 items
     Last item is
@@ -62,13 +63,11 @@ class Cigar(object):
     :reference: https://github.com/samtools/htslib/blob/develop/htslib/sam.h
     """
 
-    __slots__ = ["cigarstring"]
-    pattern = r"(\d+)([A-Za-z])?"
-    # could use a dictionary. would be faster
-    #: valid CIGAR types
+    __slots__ = ("_cigarstring",)
+    pattern = re.compile(r"(\d+)([A-Za-z])?")
     types = "MIDNSHP=XB"
 
-    def __init__(self, cigarstring):
+    def __init__(self, cigarstring: str):
         """.. rubric:: Constructor
 
         :param str cigarstring: the CIGAR string.
@@ -78,24 +77,31 @@ class Cigar(object):
             For instance, the length of 1S100Y is 1 since Y is not correct.
 
         """
+        if not isinstance(cigarstring, str):
+            raise TypeError("Cigar string must be a string.")
         #: the CIGAR string attribute
-        self.cigarstring = cigarstring
+        self._cigarstring = cigarstring
+
+    @property
+    def cigarstring(self):
+        return self._cigarstring
 
     def __str__(self):
-        return self.cigarstring
+        return self._cigarstring
 
     def __repr__(self):
-        return "Cigar( {} )".format(self.cigarstring)
+        return "Cigar( {} )".format(self._cigarstring)
 
     def __len__(self):
         return sum([y for x, y in self._decompose() if x in "MIS=X"])
 
     def _decompose(self):
-        # x is the type, y the number. Note the inversion in the tuple
-        return ((y, int(x)) for x, y in re.findall(self.pattern, self.cigarstring))
+        for num, op in self.pattern.findall(self._cigarstring):
+            if op and op in self.types:
+                yield op, int(num)
 
     def as_sequence(self):
-        return "".join((y * x for x, y in self._decompose()))
+        return "".join(op * count for op, count in self._decompose())
 
     def as_dict(self):
         """Return cigar types and their count
@@ -110,11 +116,10 @@ class Cigar(object):
 
         """
         # !! here, we have to make sure that  duplicated letters are summed up
-        from collections import defaultdict
 
         d = defaultdict(int)
-        for letter, num in self._decompose():
-            d[letter] += num
+        for op, count in self._decompose():
+            d[op] += count
         return d
 
     def as_tuple(self):
@@ -130,22 +135,22 @@ class Cigar(object):
             (('S', 1), ('M', 2), ('S', 1))
 
         """
-        return tuple((x, y) for (x, y) in self._decompose())
+        return tuple(self._decompose())
 
     def compress(self):
         """1S1S should become 2S. inplace modification"""
-        if len(set((x[0] for x, y in self._decompose()))) == len(self.as_tuple()):
+        data = list(self._decompose())
+        if not data:
             return
 
-        data = self.as_tuple()
-        newdata = [data[0]]
-        for i, x in enumerate(data[1:]):
-            N = len(newdata) - 1
-            if newdata[N][0] == x[0]:
-                newdata[N] = (x[0], newdata[N][1] + x[1])
+        compressed = [data[0]]
+        for op, count in data[1:]:
+            last_op, last_count = compressed[-1]
+            if op == last_op:
+                compressed[-1] = (op, last_count + count)
             else:
-                newdata.append(x)
-        self.cigarstring = "".join(["{}{}".format(y, x) for x, y in newdata])
+                compressed.append((op, count))
+        self._cigarstring = "".join(f"{count}{op}" for op, count in compressed)
 
     def stats(self):
         """Returns number of occurence for each type found in :attr:`types`
@@ -157,11 +162,21 @@ class Cigar(object):
             [2, 0, 0, 0, 2, 0, 0, 0, 0, 0]
 
         """
-        data = [0] * len(self.types)
-        dd = self.as_dict()
-        for k, v in self.as_dict().items():
-            data[self.types.index(k)] = v
-        return data
+        counts = [0] * len(self.types)
+        d = self.as_dict()
+        for op, val in d.items():
+            idx = self.types.find(op)
+            if idx != -1:
+                counts[idx] = val
+        return counts
+
+    def get_query_length(self) -> int:
+        """Return length consumed by the query (read)."""
+        return sum(count for op, count in self._decompose() if op in "MIS=X")
+
+    def get_reference_length(self) -> int:
+        """Return length consumed by the reference."""
+        return sum(count for op, count in self._decompose() if op in "MDN=X")
 
 
 def fetch_exon(chrom, start, cigar):
