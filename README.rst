@@ -259,6 +259,7 @@ Changelog :memo:
 ========= ==========================================================================
 Version   Description
 ========= ==========================================================================
+0.19.3    * Fixes plotly issue in RNAdiff plot (#872)
 0.19.2    * NEW new modules related to genomic metrics (zdna, imotif, cruciform,etc)
           * NEW new visualisation tools
           * NEW parser for hmmtools
