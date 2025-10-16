@@ -41,11 +41,6 @@ SEQUANA
    :target: https://pepy.tech/project/sequana
    :alt: downloads
 
-
-
-https://doi.org/10.5281/zenodo.16531324
-
-
 :How to cite: Citations are important for us to carry on developments.
     For Sequana library (including the pipelines), please use
 
