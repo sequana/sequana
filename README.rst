@@ -22,9 +22,9 @@ SEQUANA
    :target: http://joss.theoj.org/papers/10.21105/joss.00352
    :alt: JOSS (journal of open source software) DOI
 
-.. image:: https://img.shields.io/badge/python-3.8%20%7C%203.9%20%7C3.10-blue.svg
+.. image:: https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C3.12-blue.svg
     :target: https://pypi.python.org/pypi/sequana
-    :alt: Python 3.9 | 3.10 | 3.11 | 3.12
+    :alt: Python 3.10 | 3.11 | 3.12
 
 .. image:: https://img.shields.io/github/issues/sequana/sequana.svg
     :target: https://github.com/sequana/sequana/issues
@@ -32,6 +32,18 @@ SEQUANA
 
 .. image:: https://img.shields.io/badge/code%20style-black-000000.svg
     :target: https://github.com/psf/black
+
+.. image:: https://zenodo.org/badge/DOI/10.5281/zenodo.16531324.svg
+   :target: https://doi.org/10.5281/zenodo.16531324
+   :alt: DOI
+
+.. image:: https://static.pepy.tech/badge/sequana
+   :target: https://pepy.tech/project/sequana
+   :alt: downloads
+
+
+
+https://doi.org/10.5281/zenodo.16531324
 
 
 :How to cite: Citations are important for us to carry on developments.
@@ -59,7 +71,7 @@ SEQUANA
 Pipelines and related projects
 ==============================
 
-Here is a non exahustive list of tools and pipelines from the project. with users and developers audience.
+Here is a non exhiaustive list of tools and pipelines from the project. with users and developers audience.
 
 
 .. list-table::
