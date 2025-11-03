@@ -15,11 +15,13 @@ from sequana import version
 from sequana.scripts.utils import CONTEXT_SETTINGS
 
 from .biomart import biomart
+from .blast_to_gff import blast_to_gff
 from .enrichment_kegg import enrichment_kegg
 from .enrichment_panther import enrichment_panther
 from .enrichment_uniprot import enrichment_uniprot
 from .fasta import fasta
 from .fastq import fastq
+from .fastq_split import fastq_split
 from .feature_count import feature_counts
 from .find_integrated_genes import find_integrated_genes
 from .g4hunter import g4hunter
@@ -80,11 +82,13 @@ def main(**kwargs):
 
 
 main.add_command(biomart)
+main.add_command(blast_to_gff)
 main.add_command(enrichment_kegg)
 main.add_command(enrichment_panther)
 main.add_command(enrichment_uniprot)
 main.add_command(fastq)
 main.add_command(fasta)
+main.add_command(fastq_split)
 main.add_command(feature_counts)
 main.add_command(g4hunter)
 main.add_command(gff_to_gtf)
