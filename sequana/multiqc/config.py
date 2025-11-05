@@ -1,7 +1,6 @@
-from multiqc import config
-
-
 def load_config():
+    from multiqc import config
+
     my_search_patterns = {
         "sequana_coverage": {"fn": "sequana_summary_coverage.json"},
         "sequana_pacbio_qc": {"fn": "sequana_summary*.json"},

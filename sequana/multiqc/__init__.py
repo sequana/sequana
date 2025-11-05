@@ -1,10 +1,9 @@
-from multiqc import config
-
-
 # Add search patterns and config options for the things that are used in
 # MultiQC_sequana
 def multiqc_sequana_config():
     """Set up MultiQC config defaults for this package"""
+    from multiqc import config
+
     sequana_search_patterns = {
         "sequana/pacbio_qc": {"fn": "summary_*.json"},
         "sequana/quality_control": {"fn": "summary.json"},
@@ -43,5 +42,3 @@ def multiqc_sequana_config():
     # in sequana_coverage, large html files are created.
     # they can be ignored
     config.fn_ignore_files = ["*html"]
-
-    # config.update_dict(config.log_filesize_limit, 500000)
