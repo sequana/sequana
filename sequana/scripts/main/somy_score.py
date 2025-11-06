@@ -23,18 +23,16 @@ from sequana.utils import config
 
 logger = colorlog.getLogger(__name__)
 
-
-click.rich_click.OPTION_GROUPS = {
-    "somy score": [
-        {
-            "name": "mosdepth",
-            "options": [
-                "--window-size",
-                "--fast",
-            ],
-        },
-    ],
-}
+groups = [
+    {
+        "name": "mosdepth",
+        "options": [
+            "--window-size",
+            "--fast",
+        ],
+    },
+]
+click.rich_click.OPTION_GROUPS["somy-score"] = groups.copy()
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
@@ -111,7 +109,6 @@ def somy_score(**kwargs):
     from easydev import cmd_exists
 
     from sequana import logger
-    from sequana.modules_report.rnadiff import RNAdiffModule
 
     logger.setLevel(kwargs["logger"])
 
@@ -171,3 +168,8 @@ def somy_score(**kwargs):
         ss.boxplot(k=kwargs["k"], method=kwargs["method"], hybrid=True)
 
     print(ss.info)
+
+
+# Make the script runnable
+if __name__ == "__main__":
+    somy_score()

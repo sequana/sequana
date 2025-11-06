@@ -28,6 +28,7 @@ from .g4hunter import g4hunter
 from .gff_to_gtf import gff_to_gtf
 from .gff_to_light_gff import gff_to_light_gff
 from .gtf_fixer import gtf_fixer
+from .html_report import html_report
 from .lane_merging import lane_merging
 from .mapping import mapping
 from .ribodesigner import ribodesigner
@@ -57,6 +58,21 @@ click.rich_click.FOOTER_TEXT = """
 Cardon, M. (2017). Sequana: a Set of Snakemake NGS pipelines. The Journal of Open Source Software, 2(16), 352.
 https://doi.org/10.21105/joss.00352
 """
+
+
+click.rich_click.OPTION_GROUPS = {}
+
+from .html_report import groups
+
+click.rich_click.OPTION_GROUPS["sequana html-report"] = groups.copy()
+
+from .somy_score import groups
+
+click.rich_click.OPTION_GROUPS["sequana somy-score"] = groups.copy()
+
+from .rnadiff import groups
+
+click.rich_click.OPTION_GROUPS["sequana rnadiff"] = groups.copy()
 
 
 @click.group(context_settings=CONTEXT_SETTINGS)
@@ -94,6 +110,7 @@ main.add_command(g4hunter)
 main.add_command(gff_to_gtf)
 main.add_command(gff_to_light_gff)
 main.add_command(gtf_fixer)
+main.add_command(html_report)
 main.add_command(lane_merging)
 main.add_command(mapping)
 main.add_command(ribodesigner)

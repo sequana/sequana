@@ -48,35 +48,33 @@ def rnadiff_auto_batch_column(ctx, args, incomplete):
         return [c for c in batch if incomplete in c[0]]
 
 
-click.rich_click.OPTION_GROUPS = {
-    "sequana rnadiff": [
-        {
-            "name": "Required",
-            "options": ["--design", "--features", "--annotation-file", "--feature-name", "--attribute-name"],
-        },
-        {
-            "name": "DeSEQ2 statistical analysis / design",
-            "options": [
-                "--beta-prior",
-                "--condition",
-                "--batch",
-                "--comparisons",
-                "--cooks-cutoff",
-                "--independent-filtering",
-                "--fit-type",
-                "--keep-all-conditions",
-                "--minimum-mean-reads-per-gene",
-                "--minimum-mean-reads-per-condition-per-gene",
-                "--shrinkage",
-                "--reference",
-            ],
-        },
-        {
-            "name": "Informative options",
-            "options": ["--help"],
-        },
-    ],
-}
+groups = [
+    {
+        "name": "Required",
+        "options": ["--design", "--features", "--annotation-file", "--feature-name", "--attribute-name"],
+    },
+    {
+        "name": "DeSEQ2 statistical analysis / design",
+        "options": [
+            "--beta-prior",
+            "--condition",
+            "--batch",
+            "--comparisons",
+            "--cooks-cutoff",
+            "--independent-filtering",
+            "--fit-type",
+            "--keep-all-conditions",
+            "--minimum-mean-reads-per-gene",
+            "--minimum-mean-reads-per-condition-per-gene",
+            "--shrinkage",
+            "--reference",
+        ],
+    },
+    {
+        "name": "Informative options",
+        "options": ["--help"],
+    },
+]
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
@@ -159,8 +157,8 @@ it will be used. """,
     "--cooks-cutoff",
     type=click.Path(),
     default=None,
-    help="""if none, let DESeq2 choose the cutoff. Note that the Cook’s distance 
-    is set to NA for genes with values above the threshold. At least 3 replicates 
+    help="""if none, let DESeq2 choose the cutoff. Note that the Cook’s distance
+    is set to NA for genes with values above the threshold. At least 3 replicates
     are required for flagging).""",
 )
 @click.option(
@@ -180,8 +178,8 @@ effect to be included in the statistical model as batch ~ condition""",
 @click.option(
     "--fit-type",
     default="parametric",
-    help="""DESeq2 type of fit. Default is 'parametric'. Uing the mean of gene-wise 
-    disperion estimates as the fitted value can be specified setting this argument 
+    help="""DESeq2 type of fit. Default is 'parametric'. Uing the mean of gene-wise
+    disperion estimates as the fitted value can be specified setting this argument
     to 'mean'. """,
 )
 @click.option(
@@ -193,7 +191,7 @@ replicates and conditions. Not recommended if you have lots of conditions. By de
 @click.option(
     "--minimum-mean-reads-per-condition-per-gene",
     default=0,
-    help="""Keep genes that have at least one condition where the average number of reads 
+    help="""Keep genes that have at least one condition where the average number of reads
     is greater or equal to this value. By default all genes are kept""",
 )
 @click.option(
@@ -204,8 +202,8 @@ replicates and conditions. Not recommended if you have lots of conditions. By de
 @click.option(
     "--shrinkage/--no-shrinkage",
     default=True,
-    help="""Shrinkage was added in the DESeq2 script analysis in Sequana 0.14.7. Although it 
-    has a marginal impact, number of DGEs may be different and volcano plots have usually 
+    help="""Shrinkage was added in the DESeq2 script analysis in Sequana 0.14.7. Although it
+    has a marginal impact, number of DGEs may be different and volcano plots have usually
     a different shape. To ignore the shrinkage, you could set the option to --no-shrinkage""",
 )
 @click.option(
@@ -329,7 +327,7 @@ def rnadiff(**kwargs):
 
     if not cmd_exists("Rscript"):
         logger.critical(
-            """Rscript not found; You will need R with the DESeq2 and ashr packages installed. 
+            """Rscript not found; You will need R with the DESeq2 and ashr packages installed.
             You may install it yourself or use damona using the rtools:1.2.0 image """
         )
         sys.exit(1)
@@ -355,7 +353,9 @@ def rnadiff(**kwargs):
         gff = GFF3(gff_filename)
         for feat in feature.split(","):
             if feat not in gff.features:
-                logger.error(f"{feature} not found in the GFF. Most probably a wrong feature name. Correct features are e.g. {gff.features[0:10]}")
+                logger.error(
+                    f"{feature} not found in the GFF. Most probably a wrong feature name. Correct features are e.g. {gff.features[0:10]}"
+                )
                 sys.exit(1)
             attributes = gff.get_attributes(feat)
             if attribute not in attributes:
@@ -407,7 +407,7 @@ def rnadiff(**kwargs):
         minimum_mean_reads_per_gene=kwargs.get("minimum_mean_reads_per_gene"),
         minimum_mean_reads_per_condition_per_gene=kwargs.get("minimum_mean_reads_per_condition_per_gene"),
         model=kwargs["model"],
-        sep_counts=","
+        sep_counts=",",
     )
 
     if not kwargs["report_only"]:
