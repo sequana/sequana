@@ -217,8 +217,6 @@ class VariantCallingModule(SequanaBaseModule):
         df = df.query("type in ['snp', 'del', 'ins']").copy()
         df["freq"] = [float(x) for x in df["frequency"]]
 
-        print(df["type"].value_counts())
-
         # --- BUILD FIGURE TRACES ---
         traces = []
         variant_types = ["snp", "del", "ins"]
