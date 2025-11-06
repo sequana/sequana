@@ -60,10 +60,38 @@ class VariantCallingModule(SequanaBaseModule):
     def create_report_content(self):
         self.sections = list()
 
+        try:
+            self.add_intro_download()
+        except:
+            pass
+
         if self.filter_dict:
             self.filters_information()
-        self.add_overview()
-        self.variant_calling()
+        try:
+            self.add_overview()
+        except:
+            pass
+        try:
+            self.create_histogram_frequencies()
+        except:
+            pass
+        try:
+            self.create_histogram_frequencies2()
+        except:
+            pass
+        try:
+            self.variant_calling()
+        except:
+            pass
+
+    def add_intro_download(self):
+        self.sections.append(
+            {
+                "name": "Data",
+                "anchor": "intro_download",
+                "content": f'You can download the <a href="./freebayes_vcf_filter/temp.filter.vcf">VCF here</a>. This is the filtered VCF (see parameters used in the section below). Raw VCF file can be found in the sequana structure directory (freebayes/YOUR_SAMPLE.raw.vcf)',
+            }
+        )
 
     def filters_information(self):
         """Add information of filter."""
@@ -91,33 +119,153 @@ class VariantCallingModule(SequanaBaseModule):
         )
 
     def add_overview(self):
-        def create_pieplot(filename):
-            import pylab
 
-            with pylab.ioff():
-                import warnings
+        import os
+        import tempfile
+        import warnings
+        from collections import defaultdict
 
-                with warnings.catch_warnings():
-                    warnings.simplefilter("ignore")
+        import plotly.express as px
 
-                # should create the pieplot within the wrapper meanwhile
-                from collections import defaultdict
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
 
-                variants = defaultdict(int)
-                for typ in self.df["type"].unique():
-                    variants[typ] = sum(self.df["type"] == typ)
-                pylab.clf()
-                labels = sorted(variants.keys())
-                data = [variants[x] for x in labels]
+            # Count variant types
+            variants = defaultdict(int)
+            for typ in self.df["type"].unique():
+                variants[typ] = sum(self.df["type"] == typ)
 
-                labels = [f"{x.upper()} ({variants[x]})" for x in labels]
-                pylab.pie(data, labels=labels)
-                pylab.savefig(filename)
-                pylab.close()
+            # Prepare data
+            labels = sorted(variants.keys())
+            counts = [variants[x] for x in labels]
+            labels_display = [f"{x.upper()} ({variants[x]})" for x in labels]
 
-        style = "width:45%"
-        image = self.create_embedded_png(create_pieplot, "filename", style="width:45%")
-        self.sections.append({"name": "Overview", "anchor": "overview", "content": f"{image}"})
+            # Create interactive pie chart
+            fig = px.pie(
+                names=labels_display,
+                values=counts,
+                title="Variant Type Distribution",
+                color_discrete_sequence=px.colors.qualitative.Set3,
+            )
+
+            # Reduce margins, adjust layout
+            fig.update_layout(
+                title_x=0.5,
+                margin=dict(t=50, b=10, l=10, r=10),
+                width=700,
+                height=700,
+            )
+
+            tmpfile = tempfile.NamedTemporaryFile(suffix=".html", delete=False)
+            fig.write_html(tmpfile.name, include_plotlyjs="cdn", full_html=False)
+
+            # Read the HTML fragment and return it as a string
+            with open(tmpfile.name, "r") as f:
+                html_fragment = f.read()
+            os.unlink(tmpfile.name)
+
+            # Integration in your HTML report
+            self.sections.append(
+                {
+                    "name": "Overview",
+                    "anchor": "overview",
+                    "content": "Here below is a pie plot showing the distribution of various variants found in the sample. "
+                    + html_fragment,
+                }
+            )
+
+    def create_histogram_frequencies(self):
+
+        import plotly.express as px
+        import plotly.io as pio
+
+        df = self.df.copy()
+        df = df.query("type=='snp'").copy()
+        df["freq"] = [float(x) for x in df["frequency"]]
+        fig = px.histogram(
+            df,
+            x="freq",
+            color="chr",
+            facet_col="chr",
+            facet_col_wrap=6,
+            nbins=40,
+            title="SNP Frequency Distribution per Chromosome",
+            labels={"AF": "Allele frequency"},
+        )
+        # fig.update_xaxes(range=[0, 1])
+        fig.update_layout(height=1000, width=1000)
+        fig.for_each_annotation(lambda a: a.update(text=a.text.split("=")[-1]))
+
+        fig_html = pio.to_html(fig, full_html=False, include_plotlyjs="cdn")
+        self.sections.append(
+            {
+                "name": "Histogram (frequency) per contig",
+                "anchor": "histo",
+                "content": "Here is the frequency distribution of SNPs for each contig. Contigs with no SNPs are not shown."
+                + f"{fig_html}",
+            }
+        )
+
+    def create_histogram_frequencies2(self):
+
+        import pandas as pd
+        import plotly.graph_objects as go
+        import plotly.io as pio
+
+        # --- PARSE VCF ---
+        df = self.df.copy()
+        df = df.query("type in ['snp', 'del', 'ins']").copy()
+        df["freq"] = [float(x) for x in df["frequency"]]
+
+        print(df["type"].value_counts())
+
+        # --- BUILD FIGURE TRACES ---
+        traces = []
+        variant_types = ["snp", "del", "ins"]
+        for vtype in variant_types:
+            sub = df[df["type"] == vtype]
+            if sub.empty:
+                continue
+            trace = go.Histogram(
+                x=sub["freq"], nbinsx=50, name=vtype, opacity=0.75, visible=True if vtype in ["snp"] else False
+            )
+            traces.append(trace)
+
+        # --- CREATE DROPDOWN MENU ---
+        buttons = []
+        for i, vtype in enumerate(variant_types):
+            visible = [False] * len(traces)
+            if i < len(traces):
+                visible[i] = True
+            buttons.append(
+                dict(
+                    label=vtype,
+                    method="update",
+                    args=[{"visible": visible}, {"title": f"Allele Frequency Distribution — {vtype}"}],
+                )
+            )
+
+        # --- FIGURE LAYOUT ---
+        fig = go.Figure(data=traces)
+        fig.update_layout(
+            title="Allele Frequency Distribution — SNP",
+            xaxis_title="Allele Frequency",
+            yaxis_title="Count",
+            updatemenus=[dict(buttons=buttons, direction="down", x=0.45, y=1.15, showactive=True)],
+            bargap=0.1,
+            template="plotly_white",
+        )
+
+        # --- EXPORT TO HTML ---
+        html_code = pio.to_html(fig, full_html=True, include_plotlyjs="cdn")
+        self.sections.append(
+            {
+                "name": "histogram (all contigs)",
+                "anchor": "histo2",
+                "content": "Here are the distribution across all contigs of some non-complex variants. variants that are combination such as SNP,SNP are not shown. "
+                + f"{html_code}",
+            }
+        )
 
     def variant_calling(self):
         """Variants detected section."""

@@ -254,6 +254,10 @@ Changelog :memo:
 ========= ==========================================================================
 Version   Description
 ========= ==========================================================================
+0.19.4    * improved TRF module.
+          * NEW: added fastq_split and html_report commands. The latter should be
+            used in the future for sequana pipeline HTML reports. Right now,
+            handles VCF file only.
 0.19.3    * Fixes plotly issue in RNAdiff plot (#872)
 0.19.2    * NEW new modules related to genomic metrics (zdna, imotif, cruciform,etc)
           * NEW new visualisation tools

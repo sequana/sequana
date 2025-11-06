@@ -11,7 +11,6 @@
 ##############################################################################
 import sys
 
-import click
 import colorlog
 import rich_click as click
 
@@ -27,6 +26,7 @@ logger = colorlog.getLogger(__name__)
     required=False,
     type=click.Choice(["bamqc", "bam", "fasta", "fastq", "gff", "vcf", "sam"]),
 )
+@click.option("--output-file", required=False, type=click.Path())
 def summary(**kwargs):
     """Create a HTML report for various type of NGS formats.
 
@@ -64,7 +64,9 @@ def summary(**kwargs):
         elif names[0].endswith("vcf"):
             module = "vcf"
         else:
-            logger.error("Only extensions fastq, fasta, bam, sam, gff, gff3 and vcf are recognised. please use --module to tell us about the type of the input files")
+            logger.error(
+                "Only extensions fastq, fasta, bam, sam, gff, gff3 and vcf are recognised. please use --module to tell us about the type of the input files"
+            )
             sys.exit(1)
 
     if module == "bamqc":
@@ -135,4 +137,6 @@ def summary(**kwargs):
                 "strand_balance",
                 "frequency",
             )
-            print(df)
+            print(df.groupby("type").count())
+            if kwargs["output_file"]:
+                df.to_csv(kwargs["output_file"], index=False)

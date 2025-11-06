@@ -24,7 +24,7 @@ logger = colorlog.getLogger(__name__)
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
-@click.argument("filename", type=click.STRING, nargs=-1)
+@click.argument("filename", type=click.STRING, nargs=-1, required=True)
 @click.option(
     "-o",
     "--output",

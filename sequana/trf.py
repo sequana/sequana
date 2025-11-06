@@ -10,6 +10,10 @@
 #  documentation: http://sequana.readthedocs.io
 #
 ##############################################################################
+import csv
+from pathlib import Path
+from typing import List, Optional, Union
+
 import colorlog
 import pandas as pd
 
@@ -52,22 +56,24 @@ class TRF:  # pragma: no cover
 
     """
 
-    def __init__(self, filename, verbose=False, frmt=None):
+    def __init__(self, filename: Union[str, Path], verbose: bool = False, frmt: Optional[str] = None):
+        filename = Path(filename)
+        self.filename = filename
+
         if frmt is None:
-            if filename.endswith(".csv"):
+            if filename.suffix == ".csv":
                 frmt = "csv"
-            elif filename.endswith(".dat"):
+            elif filename.suffix == ".dat":
                 frmt = "trf"
             else:
-                raise ValueError("Please set frmt to 'trf' or 'csv'")
-        self.filename = filename
+                raise ValueError(f"Unknown file type for {filename}. Use frmt='trf' or 'csv'.")
         if frmt == "trf":
             # input can be the output of TRF or our trf dataframe
-            self.df = self.scandata(verbose=verbose)
+            self.df = self._parse_trf(verbose=verbose)
         else:
             self.df = pd.read_csv(filename)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         N = len(self.df.seq1.unique())
         msg = "Number of unique pattern found: {}\n".format(N)
         msg += "Number of entries: {}".format(len(self.df))
@@ -76,7 +82,7 @@ class TRF:  # pragma: no cover
     def __len__(self):
         return len(self.df)
 
-    def scandata(self, verbose=True, max_seq_length=20):
+    def _parse_trf(self, verbose: bool = True, max_seq_length: int = 20) -> pd.DataFrame:
         """scan output of trf and returns a dataframe
 
         The format of the output file looks like::
@@ -102,36 +108,37 @@ class TRF:  # pragma: no cover
         instance, from the example above you will obtain 3 rows, two for the
         first sequence, and one for the second sequence.
         """
-        fin = open(self.filename, "r")
-
         data = []
-
         sequence_name = None
-        # skip lines until we reach "Sequence"
-        while sequence_name is None:
-            line = fin.readline()
-            if line.startswith("Sequence:"):
-                sequence_name = line.split()[1].strip()
 
-        # now we read the rest of the file
-        count = 0
-        # If we concatenate several files, we also want to ignore the header
-        for line in fin.readlines():
-            if line.startswith("Sequence:"):
-                sequence_name = line.split()[1].strip()
-                count += 1
-                if count % 100000 == 0:
-                    logger.info("scanned {} sequences".format(count))
-                # logger.info("scanned {} sequences".format(count))
-            else:
-                this_data = line.split()
-                if len(this_data) == 15:
-                    this_data[14] = this_data[14][0:max_seq_length]
-                    data.append([sequence_name] + this_data)
-        fin.close()
+        with open(self.filename, "r") as fin:
 
-        df = pd.DataFrame(data)
-        df.columns = [
+            # skip lines until we reach "Sequence"
+            while sequence_name is None:
+                line = fin.readline()
+                if line.startswith("Sequence:"):
+                    sequence_name = line.split()[1].strip()
+
+            # now we read the rest of the file
+            count = 0
+            # If we concatenate several files, we also want to ignore the header
+            for line in fin.readlines():
+                if line.startswith("Sequence:"):
+                    sequence_name = line.split()[1].strip()
+                    count += 1
+                    if count % 100000 == 0:
+                        logger.info("scanned {} sequences".format(count))
+                    # logger.info("scanned {} sequences".format(count))
+                else:
+                    this_data = line.split()
+                    if len(this_data) == 15:
+                        this_data[14] = this_data[14][0:max_seq_length]
+                        data.append([sequence_name] + this_data)
+
+        if not data:
+            raise ValueError(f"No valid TRF data found in {self.filename}")
+
+        columns = [
             "sequence_name",
             "start",
             "end",
@@ -149,38 +156,36 @@ class TRF:  # pragma: no cover
             "seq1",
             "seq2",
         ]
+        df = pd.DataFrame(data, columns=columns)
 
-        df = df.astype({"start": "int64", "end": "int64", "period_size": "int64"})
-        df = df.astype(
-            {
-                "A": "float",
-                "C": "float",
-                "G": "float",
-                "T": "float",
-                "percent_matches": float,
-                "percent_indels": float,
-                "size_consensus": float,
-                "score": "float",
-                "CNV": "float",
-                "entropy": "float",
-                "period_size": "float",
-            }
-        )
+        numeric_cols = [
+            "start",
+            "end",
+            "period_size",
+            "CNV",
+            "size_consensus",
+            "percent_matches",
+            "percent_indels",
+            "score",
+            "A",
+            "C",
+            "G",
+            "T",
+            "entropy",
+        ]
+        df[numeric_cols] = df[numeric_cols].apply(pd.to_numeric, errors="coerce")
+
         df["length"] = df["end"] - df["start"] + 1
-
         return df
 
-    def hist_cnvs(self, bins=50, CNVmin=10, motif=["CAG", "AGC", "GCA"], color="r", log=True):
-        """
-
-        histogram of the motif found in the list provided by users.
-        As an example, this is triplet CAG. Note that we also add the shifted
-        version AGC and GCA.
-
-        """
-        self.df.query("CNV>@CNVmin and seq1 in @motif").CNV.hist(bins=bins, log=log, color=color)
+    def hist_cnvs(self, bins=50, CNVmin=10, motif=None, color="r", log=True):
+        """Plot histogram of CNV counts for a given motif list."""
+        motif = motif or ["CAG", "AGC", "GCA"]
+        subset = self.df.query("CNV > @CNVmin and seq1 in @motif")
+        subset["CNV"].hist(bins=bins, log=log, color=color)
         pylab.xlabel("CNV length (bp)")
-        pylab.ylabel("#")
+        pylab.ylabel("Count")
+        pylab.title("Histogram of CNV values")
 
     def hist_length_repetition(self, bins=50, CNVmin=3, motif=["CAG", "AGC", "GCA"], color="r", log=True):
         """
@@ -208,10 +213,13 @@ class TRF:  # pragma: no cover
         pylab.xlabel("Entropy")
         pylab.ylabel("#")
 
-    def hist_repet_by_sequence(self):
+    def hist_repetitions_per_sequence(self):
         # How many repetitions per sequence
-        pylab.hist([len(x) for x in self.df.groupby("sequence_name").groups.values()])
+        counts = self.df.groupby("sequence_name").size()
+        counts.hist()
         pylab.xlabel("# repetitions per sequence")
+        pylab.ylabel("Count")
+        pylab.title("Histogram of repeats per sequence")
 
     def to_bed(self, outfile, cmap="autumn"):
         import matplotlib.colors as colors
@@ -242,3 +250,109 @@ class TRF:  # pragma: no cover
                     ]
                 )
                 fout.write(data + "\n")
+
+    def summary(self):
+        """Return a descriptive summary of TRF results."""
+        summary = {
+            "n_entries": len(self.df),
+            "n_sequences": self.df["sequence_name"].nunique(),
+            "median_period": self.df["period_size"].median(),
+            "median_length": self.df["length"].median(),
+            "max_CNV": self.df["CNV"].max(),
+            "motif_counts": self.df["seq1"].value_counts().head(10).to_dict(),
+        }
+        return summary
+
+    def top_motifs(self, n=10):
+        """Return the most common repeat motifs."""
+        return self.df["seq1"].value_counts().head(n)
+
+    def _get_counts_and_length(self):
+        counts = self.df.groupby("sequence_name").size()
+        lengths = self.df.groupby("sequence_name")["end"].max()
+        return counts, lengths
+
+    def plot_repeat_density(self, normalize_by_length=True):
+        """Plot repeat density per sequence."""
+        counts, lengths = self._get_counts_and_length()
+        if normalize_by_length and "end" in self.df:
+            counts = counts / (lengths / 1e3)
+            ylabel = "Repeats per kb"
+        else:
+            ylabel = "Repeats per sequence"
+        counts.sort_values(ascending=False).plot(kind="bar", figsize=(10, 4))
+        pylab.ylabel(ylabel)
+        pylab.xlabel("Sequence")
+        pylab.title("Repeat density per sequence")
+        pylab.tight_layout()
+        return counts, lengths
+
+    def plot_period_vs_CNV(self, log=True):
+        """Scatter plot: period size vs copy number."""
+        ax = self.df.plot.scatter("period_size", "CNV", alpha=0.4)
+        if log:
+            ax.set_xscale("log")
+            ax.set_yscale("log")
+        pylab.title("Period size vs CNV")
+        pylab.tight_layout()
+
+    def entropy_distribution_by_period(self):
+        """Boxplot of entropy per period size."""
+        self.df.boxplot(column="entropy", by="period_size", figsize=(8, 4))
+        pylab.suptitle("")
+        pylab.title("Entropy distribution per period size")
+        pylab.ylabel("Entropy")
+        pylab.tight_layout()
+
+    def to_bedgraph(self, outfile):
+        """Export TRF data as a bedGraph of repeat density."""
+        bg = self.df[["sequence_name", "start", "end", "CNV"]].copy()
+        bg.columns = ["chrom", "start", "end", "score"]
+        bg.to_csv(outfile, sep="\t", index=False, header=False)
+        logger.info(f"Saved bedGraph to {outfile}")
+
+    def get_repeats_in_region(self, seq_name, start, end):
+        """Return repeats overlapping a genomic region."""
+        mask = (self.df["sequence_name"] == seq_name) & (self.df["end"] >= start) & (self.df["start"] <= end)
+        return self.df.loc[mask]
+
+    def plot_motif_logo(self, motif, n=50):
+        import logomaker
+
+        """Create sequence logo for a specific motif."""
+        seqs = self.df.query("seq1 == @motif")["seq2"].head(n)
+        if seqs.empty:
+            print("No such motif found.")
+            return
+        df_logo = logomaker.alignment_to_matrix(seqs.tolist())
+        logomaker.Logo(df_logo)
+        pylab.title(f"Motif logo for {motif}")
+
+    def plot_count_versus_length(self):
+        counts, lengths = self._get_counts_and_length()
+        import numpy as np
+
+        X = np.array(counts / lengths * 1000)
+        Y = np.array(lengths.values)
+        mask = (X > 0) & (Y > 0)
+        X, Y = X[mask], Y[mask]
+
+        # Compute regression in log space
+        logX = np.log10(X)
+        logY = np.log10(Y)
+        slope, intercept = np.polyfit(logX, logY, 1)
+
+        # Predicted line in original scale
+        Y_pred = 10 ** (intercept + slope * logX)
+
+        # Plot
+        pylab.clf()
+        pylab.scatter(X, Y, alpha=0.6, label="Data")
+        pylab.plot(X, Y_pred, color="red")  # , label=f'Regression: y = {10**intercept:.2f} x^{slope:.2f}')
+        pylab.xscale("log")
+        pylab.yscale("log")
+        pylab.xlabel("Repeats per kb")
+        pylab.ylabel("Chromosome size")
+        pylab.grid(True, which="both", ls="--", alpha=0.5)
+        # from scipy import pearsonr
+        #  pearsonr(counts, lengths)

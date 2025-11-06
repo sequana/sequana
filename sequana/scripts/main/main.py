@@ -15,17 +15,20 @@ from sequana import version
 from sequana.scripts.utils import CONTEXT_SETTINGS
 
 from .biomart import biomart
+from .blast_to_gff import blast_to_gff
 from .enrichment_kegg import enrichment_kegg
 from .enrichment_panther import enrichment_panther
 from .enrichment_uniprot import enrichment_uniprot
 from .fasta import fasta
 from .fastq import fastq
+from .fastq_split import fastq_split
 from .feature_count import feature_counts
 from .find_integrated_genes import find_integrated_genes
 from .g4hunter import g4hunter
 from .gff_to_gtf import gff_to_gtf
 from .gff_to_light_gff import gff_to_light_gff
 from .gtf_fixer import gtf_fixer
+from .html_report import html_report
 from .lane_merging import lane_merging
 from .mapping import mapping
 from .ribodesigner import ribodesigner
@@ -57,6 +60,21 @@ https://doi.org/10.21105/joss.00352
 """
 
 
+click.rich_click.OPTION_GROUPS = {}
+
+from .html_report import groups
+
+click.rich_click.OPTION_GROUPS["sequana html-report"] = groups.copy()
+
+from .somy_score import groups
+
+click.rich_click.OPTION_GROUPS["sequana somy-score"] = groups.copy()
+
+from .rnadiff import groups
+
+click.rich_click.OPTION_GROUPS["sequana rnadiff"] = groups.copy()
+
+
 @click.group(context_settings=CONTEXT_SETTINGS)
 @click.version_option(version=version)
 def main(**kwargs):
@@ -80,16 +98,19 @@ def main(**kwargs):
 
 
 main.add_command(biomart)
+main.add_command(blast_to_gff)
 main.add_command(enrichment_kegg)
 main.add_command(enrichment_panther)
 main.add_command(enrichment_uniprot)
 main.add_command(fastq)
 main.add_command(fasta)
+main.add_command(fastq_split)
 main.add_command(feature_counts)
 main.add_command(g4hunter)
 main.add_command(gff_to_gtf)
 main.add_command(gff_to_light_gff)
 main.add_command(gtf_fixer)
+main.add_command(html_report)
 main.add_command(lane_merging)
 main.add_command(mapping)
 main.add_command(ribodesigner)

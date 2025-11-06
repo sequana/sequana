@@ -9,7 +9,6 @@
 #  documentation: http://sequana.readthedocs.io
 #
 ##############################################################################
-import click
 import colorlog
 import rich_click as click
 

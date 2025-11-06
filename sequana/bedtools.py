@@ -622,7 +622,7 @@ class ChromosomeCov(object):
                 self._df["gc"] = self._gc_content[i1:i2]
             except TYpeError:
                 logger.warning(
-                    "Could not access to GC content of {self.chrom_name}. Check your reference is the one used to build the BAM/BED file"
+                    f"Could not access to GC content of {self.chrom_name}. Check that your reference is the one used to build the BAM/BED file"
                 )
 
     def next(self):

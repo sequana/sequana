@@ -24,20 +24,6 @@ from sequana.utils import config
 logger = colorlog.getLogger(__name__)
 
 
-"""click.rich_click.OPTION_GROUPS = {
-    "telomark": [
-        {
-            "name": "mosdepth",
-            "options": [
-                "--window-size",
-                "--fast",
-            ],
-        },
-    ],
-}
-"""
-
-
 @click.command(context_settings=CONTEXT_SETTINGS)
 @click.argument("fasta-file", type=click.STRING)
 @click.option(
