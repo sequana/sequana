@@ -95,6 +95,18 @@ click.rich_click.OPTION_GROUPS = {
     ],
 }
 
+click.rich_click.FOOTER_TEXT = """
+\U00002139\U0000FE0F Authors: Thomas Cokelaer
+
+\U0001F4DA Documentation: http://sequana.readthedocs.io --
+
+\u2753 Any issues, visit http://github.com/sequana/sequana
+
+\U0001F4DA  Cokelaer, T., Desvillechabrol, D., Legendre, R., &
+Cardon, M. (2017). Sequana: a Set of Snakemake NGS pipelines. The Journal of Open Source Software, 2(16), 352.
+https://doi.org/10.21105/joss.00352
+"""
+
 
 # callback for --databases multiple arguments
 def check_databases(ctx, param, value):
@@ -235,9 +247,6 @@ def main(**kwargs):
 
     ----
 
-    AUTHORS: Thomas Cokelaer
-    Documentation: http://sequana.readthedocs.io
-    Issues: http://github.com/sequana/sequana
     """
     from easydev import AttrDict
 
@@ -245,7 +254,6 @@ def main(**kwargs):
 
     from sequana import logger as loggers
 
-    print(options)
     loggers.setLevel(options.level)
     logger.setLevel(options.level)
 

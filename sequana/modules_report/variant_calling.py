@@ -132,7 +132,7 @@ class VariantCallingModule(SequanaBaseModule):
 
             # Count variant types
             variants = defaultdict(int)
-            for typ in self.df["type"].unique():
+            for typ in sorted(self.df["type"].unique()):
                 variants[typ] = sum(self.df["type"] == typ)
 
             # Prepare data
@@ -216,8 +216,6 @@ class VariantCallingModule(SequanaBaseModule):
         df = self.df.copy()
         df = df.query("type in ['snp', 'del', 'ins']").copy()
         df["freq"] = [float(x) for x in df["frequency"]]
-
-        print(df["type"].value_counts())
 
         # --- BUILD FIGURE TRACES ---
         traces = []

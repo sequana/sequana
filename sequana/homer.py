@@ -36,6 +36,7 @@ class Homer:
 
         if len(self.df):
             self.df.columns = ["ID"] + header
+            self.df = self.df.astype("string")
             self.df.fillna("NA", inplace=True)
 
     def pie_annotation(self, wedgeprops={"ec": "k"}, **kwargs):

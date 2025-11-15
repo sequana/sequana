@@ -279,6 +279,18 @@ class GFF3:
         else:
             df = self.df.query("genetic_type=='gene'").copy()
             df["genetic_type"] = "CDS"
+            # df["Parent"] = [x for x in df['ID']]
+            # df["ID"] = [x.replace("gene-", "cds-").replace("GENE", "gene").replace("gene_", "cds_") for x in df['ID']]
+            # df["Name"] = df['ID']
+            new_attributes = []
+            for _, row in df.iterrows():
+                x = row["attributes"]
+                x["Parent"] = x["ID"]  # to keep gene as the parent
+                x["ID"] = x["ID"].replace("gene-", "cds-").replace("GENE", "gene").replace("gene_", "cds_")
+                x["Name"] = x["ID"]
+                new_attributes.append(x)
+            df["attributes"] = new_attributes
+
             self._df = pd.concat([self.df, df], ignore_index=True)
             self._added_CDS = True
 
@@ -348,7 +360,7 @@ class GFF3:
             if self._added_intergenic:
                 fout.write("# - added intergenic region\n")
             if self._added_CDS:
-                fout.write("# - added CDSs\n")
+                fout.write("# - added CDS with sequana.GFF3.add_CDS()\n")
             count = 0
 
             for _, y in self.df.sort_values(by=sortby, key=natsort.natsort_keygen()).iterrows():

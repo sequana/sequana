@@ -128,6 +128,7 @@ class KrakenResults:
 
         if on_rtd is False:
             from sequana.taxonomy import Taxonomy
+
             if mode == "silva":
                 self.tax = Taxonomy("~/.config/sequana/silva_ssu_v138.csv.gz", verbose=verbose)
             else:
@@ -709,7 +710,7 @@ class KrakenPipeline(object):
         kt.show()
 
     Sequana project provides pre-compiled Kraken databases on zenodo.
-    Please, use the sequana_taxonomy standalone to download them. 
+    Please, use the sequana_taxonomy standalone to download them.
     Under Linux, they are stored in ~/.config/sequana/kraken2_dbs
 
     """
@@ -755,9 +756,7 @@ class KrakenPipeline(object):
         output_filename_unclassified=None,
         only_classified_output=False,
     ):
-        """Run the analysis using Kraken and create the Krona output
-
-        """
+        """Run the analysis using Kraken and create the Krona output"""
         if not shutil.which("ktImportText"):  # pragma: no cover
             logger.error(
                 "ktImportText executable not found. Please install it with conda or the method of your choice. We also provide ktImportText within damona.readthedocs.io "
@@ -937,13 +936,13 @@ class KrakenAnalysis(object):
         # make sure the required output directories exist:
         # and that the output filenames ends in .fastq
         if output_filename_classified:
-            assert output_filename_classified.name.endswith(".fastq")
+            assert output_filename_classified.endswith(".fastq")
             dirname = os.path.dirname(output_filename_classified)
             if os.path.exists(dirname) is False:
                 os.makedirs(dirname)
 
         if output_filename_unclassified:
-            assert output_filename_unclassified.name.endswith(".fastq")
+            assert output_filename_unclassified.endswith(".fastq")
             dirname = os.path.dirname(output_filename_unclassified)
             if os.path.exists(dirname) is False:
                 os.makedirs(dirname)
@@ -1033,6 +1032,3 @@ class KrakenAnalysis(object):
         def grouper(iterable):
             args = [iter(iterable)] * 8
             return izip_longest(*args)
-
-
-
