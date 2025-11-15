@@ -254,6 +254,7 @@ Changelog :memo:
 ========= ==========================================================================
 Version   Description
 ========= ==========================================================================
+0.19.5    * add embl2fasta, fix CDS parents in GFF file
 0.19.4    * improved TRF module.
           * NEW: added fastq_split and html_report commands. The latter should be
             used in the future for sequana pipeline HTML reports. Right now,

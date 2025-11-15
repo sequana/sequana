@@ -405,7 +405,7 @@ class CutadaptModule(SequanaBaseModule):
 
                             scanning_histogram = False
 
-                            dfs[name] = dfs[name].reset_index().groupby("length").aggregate(sum)
+                            dfs[name] = dfs[name].reset_index().groupby("length").aggregate("sum")
                         else:
                             dfs[name] = df.set_index("length")
                             scanning_histogram = True

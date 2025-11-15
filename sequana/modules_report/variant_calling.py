@@ -132,7 +132,7 @@ class VariantCallingModule(SequanaBaseModule):
 
             # Count variant types
             variants = defaultdict(int)
-            for typ in self.df["type"].unique():
+            for typ in sorted(self.df["type"].unique()):
                 variants[typ] = sum(self.df["type"] == typ)
 
             # Prepare data

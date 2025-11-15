@@ -216,7 +216,7 @@ class CMSearchParser:
 
     def _parse(self):
 
-        self.df = pd.read_csv(self.filename, sep="\s+", comment="#", header=None, low_memory=False)
+        self.df = pd.read_csv(self.filename, sep=r"\s+", comment="#", header=None, low_memory=False)
         # merge col 18+
 
         # columns 17-infinit are names...
