@@ -16,6 +16,7 @@ from sequana.scripts.utils import CONTEXT_SETTINGS
 
 from .biomart import biomart
 from .blast_to_gff import blast_to_gff
+from .embl_to_fasta import embl_to_fasta
 from .enrichment_kegg import enrichment_kegg
 from .enrichment_panther import enrichment_panther
 from .enrichment_uniprot import enrichment_uniprot
@@ -99,6 +100,7 @@ def main(**kwargs):
 
 main.add_command(biomart)
 main.add_command(blast_to_gff)
+main.add_command(embl_to_fasta)
 main.add_command(enrichment_kegg)
 main.add_command(enrichment_panther)
 main.add_command(enrichment_uniprot)
