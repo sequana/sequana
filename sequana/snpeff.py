@@ -250,11 +250,14 @@ class SnpEff(object):
                     len(fasta_record), len(ids_list)
                 )
             )
+            print(f"fasta: {fasta_record}")
+            print(f"gff: {ids_list}")
             sys.exit(1)
 
         # check if directory exists
         output_dir = os.path.dirname(output_file)
-        os.makedirs(output_dir, exist_ok=True)
+        if len(output_dir):
+            os.makedirs(output_dir, exist_ok=True)
 
         if sorted(fasta_record.names) == sorted(ids_list):
             logger.info("Files have same sequence id.")
