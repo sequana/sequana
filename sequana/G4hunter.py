@@ -11,9 +11,6 @@ from sequana.lazy import pandas as pd
 from sequana.lazy import pylab as plt
 from sequana.stats import moving_average
 
-# Compute running average (excluding the last k bases)
-# from sequana.cython.g4hunter import cython_base_score
-
 
 class G4Hunter:
     """
@@ -34,9 +31,12 @@ class G4Hunter:
 
     To speedup things, we would need a better algorithm using e.g. convolution.
     Tentative with numpy does not seem promising.
+    cython nethier
 
     19.3 seconds on Ld1S
     1.4 seconds on Lepto
+
+    numba gives a decrease of 50% not bad.
 
     """
 
@@ -46,52 +46,51 @@ class G4Hunter:
         self.score = score
 
     def base_score(self, line):
-        # return np.array(cython_base_score(line))
-        return self.base_score_python(line)
+        return self.base_score(line)
 
-    def base_score_python(self, line):
-        scores = []
+    def base_score(self, line):
+        n = len(line)
+        scores = np.zeros(n, dtype=np.int8)
+
         counterG = 0
         counterC = 0
+        start = 0
 
-        for item in line:
-            if item in "Gg":
+        for i, b in enumerate(line):
+            if b in "Gg":
                 if counterC:
-                    C = min(counterC, 4)
-                    for i in range(counterC):
-                        scores.append(-1 * C)
+                    for j in range(start, i):
+                        scores[j] = -counterC if counterC < 4 else -4
+                    # for loop is slightly faster than numpy array becase vectors are short
+                    # scores[start:i] = -counterC if counterC < 4 else -4
+                    counterC = 0
+                if counterG == 0:
+                    start = i
                 counterG += 1
-                counterC = 0
-            elif item in "Cc":
+
+            elif b in "Cc":
                 if counterG:
-                    G = min(counterG, 4)
-                    for i in range(counterG):
-                        scores.append(G)
-                counterG = 0
+                    for j in range(start, i):
+                        scores[j] = counterG if counterG < 4 else 4
+                    # scores[start:i] = counterG if counterG < 4 else 4
+                    counterG = 0
+                if counterC == 0:
+                    start = i
                 counterC += 1
             else:
                 if counterG:
-                    G = min(counterG, 4)
-                    for i in range(counterG):
-                        scores.append(G)
+                    scores[start:i] = counterG if counterG < 4 else 4
+                    counterG = 0
                 if counterC:
-                    C = min(counterC, 4)
-                    for i in range(counterC):
-                        scores.append(-1 * C)
+                    scores[start:i] = -counterC if counterC < 4 else -4
+                    counterC = 0
 
-                scores.append(0)
-                counterC = 0
-                counterG = 0
-        G = min(counterG, 4)
-        for i in range(counterG):
-            scores.append(G)
-        C = min(counterC, 4)
-        for i in range(counterC):
-            scores.append(-1 * C)
+        if counterG:
+            scores[start:] = counterG if counterG < 4 else 4
+        elif counterC:
+            scores[start:] = -counterC if counterC < 4 else -4
 
-        # little bit faster to cast in array so
-        # moreover, we can then use mean/round from numpy
-        return np.array(scores)
+        return scores
 
     def get_G4(self, line, fileout, scores, header):
         fileout.write(">" + header + "\n Start \t End \t Sequence\t Length \t Score\n")
@@ -165,14 +164,15 @@ class G4Hunter:
             fileout.write(LINE)
             mean_scores.append(abs(liste2.mean().round(2)))
             fileout.write(f"\t{I}\n")
-        # dans le cas ou il ya une seul sequence donc pas de chevauchement
+        # dans le cas ou il y a une seul sequence donc pas de chevauchement
         else:
             I = I + 1
-            seq = line[a : a + F]
-            # self.Write(fileout, a, 0 ,F,0, seq ,len(seq) , liste[a])
+            seq = line[a : a + self.window]
             score = liste[a]
             _long = len(seq)
-            LINE = str(a) + " \t " + str(i + F) + " \t " + str(seq) + " \t " + str(_long) + " \t " + str(score)
+            LINE = (
+                str(a) + " \t " + str(i + self.window) + " \t " + str(seq) + " \t " + str(_long) + " \t " + str(score)
+            )
             fileout.write(LINE)
             mean_scores.append(abs(liste[a]))
             fileout.write(f"\t{I}\n")
@@ -204,6 +204,7 @@ class G4Hunter:
             # due to short window size
 
             scores = moving_average(liste, self.window)
+
             # 2.5%
             G4Seq = self.get_G4(rec.sequence, file1, scores, rec.name)
             if len(G4Seq) > 0:
