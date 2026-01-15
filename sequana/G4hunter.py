@@ -13,30 +13,9 @@ from sequana.stats import moving_average
 
 
 class G4Hunter:
-    """
-    On Ld1S.fa, original code takes
-    On lepto, original code takes 25seconds
+    """This is an implementation of G4hunter that is 1-2 fold faster
 
-    On the current implementation (copy/paste) 12s probably due to the read_file
-
-    Then replaced compute_score with a proper moving average from Sequana ->3.5
-
-    replace len(line) with recomputed value
-
-    replace item == "G" or item == "g" by item in "GC" et refactorisation fonction de base_score ->2s
-
-    remove read_file and GFinder
-
-    Cleanup of write_sequences function --> 1.2s    Gain of 25/1.2s = 20. Not bad.
-
-    To speedup things, we would need a better algorithm using e.g. convolution.
-    Tentative with numpy does not seem promising.
-    cython nethier
-
-    19.3 seconds on Ld1S
-    1.4 seconds on Lepto
-
-    numba gives a decrease of 50% not bad.
+    Idea to speed up 50% is to use numba.
 
     """
 
@@ -46,9 +25,9 @@ class G4Hunter:
         self.score = score
 
     def base_score(self, line):
-        return self.base_score(line)
+        return self._base_score(line)
 
-    def base_score(self, line):
+    def _base_score(self, line):
         n = len(line)
         scores = np.zeros(n, dtype=np.int8)
 
@@ -61,7 +40,7 @@ class G4Hunter:
                 if counterC:
                     for j in range(start, i):
                         scores[j] = -counterC if counterC < 4 else -4
-                    # for loop is slightly faster than numpy array becase vectors are short
+                    # for loop is slightly faster than numpy array because vectors are short
                     # scores[start:i] = -counterC if counterC < 4 else -4
                     counterC = 0
                 if counterG == 0:

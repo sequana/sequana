@@ -309,7 +309,7 @@ class SummaryModule2(SummaryBase):
             for line in fin.readlines():
                 try:
                     tool, version = line.split()
-                except:
+                except Exception:
                     version = "container?"
                 versions.append(version)
                 tools.append(tool)
@@ -460,7 +460,7 @@ class SequanaReport(SummaryBase):
                 # e.g., warning in container that appear before expected output
                 try:
                     tool, version = line.split()
-                except:
+                except Exception:
                     tool = line.split()[0]
                     version = "?"
                 versions.append(version)

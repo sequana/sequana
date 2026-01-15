@@ -55,7 +55,7 @@ class GFF3:
     Sometimes, CDS are missing::
 
         g = GFF3()
-        g.add_CDS_and_mRNA(test.gff")
+        g.add_CDS_and_mRNA("test.gff")
 
 
     """
