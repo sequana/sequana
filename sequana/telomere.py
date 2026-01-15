@@ -106,8 +106,8 @@ class Telomere:
         from signal. For a more robust analysis, one can compute the mean
 
         """
-        # candidates should be clsutered by rotation. e.g if you have ATT, then you should als
-        # see TTA, and TAT
+        # candidates should be clustered by rotation. e.g if you have ATT, then
+        # you should also see TTA, and TAT
         import scipy.stats
 
         from sequana.kmer import get_kmer
@@ -143,8 +143,6 @@ class Telomere:
         Y = scipy.stats.beta.pdf(X, *params)
         pylab.plot(X, Y, ls="--", color="k")
 
-        # pylab.axvline(mu, color="r", label="mean")
-        # pylab.axvline(mu+n_sigma*sigma, color="r", ls="--", label=f"{threshold}")
         pylab.axvline(mu, color="r", label="mean")
         pylab.axvline(pocc, color="r", ls="--", label="probability threshold")
         pylab.semilogy()
@@ -199,8 +197,8 @@ class Telomere:
 
     def is_telomeric(self, seq, W=100):
         slide_5to3 = self.get_sliding_kmer_count_five_to_three_prime(seq, W=W)
-        slide_3to5 = self.get_sliding_kmer_count_five_to_three_prime(seq, W=W)
-        return sum(slide_5to3) / len(seq)
+        slide_3to5 = self.get_sliding_kmer_count_three_to_five_prime(seq, W=W)
+        return max(sum(slide_3to5), sum(slide_5to3)) / len(seq)
 
     def get_sliding_kmer_count_three_to_five_prime(self, seq, W=100):
         from sequana.tools import reverse_complement

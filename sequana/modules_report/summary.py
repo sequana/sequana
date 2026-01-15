@@ -307,7 +307,10 @@ class SummaryModule2(SummaryBase):
         tools = []
         with open(".sequana/versions.txt", "r") as fin:
             for line in fin.readlines():
-                tool, version = line.split()
+                try:
+                    tool, version = line.split()
+                except:
+                    version = "container?"
                 versions.append(version)
                 tools.append(tool)
 
@@ -453,7 +456,13 @@ class SequanaReport(SummaryBase):
         tools = []
         with open(".sequana/versions.txt", "r") as fin:
             for line in fin.readlines():
-                tool, version = line.split()
+                # sometimes, if parsing if wrong, you may have more than 2 items...
+                # e.g., warning in container that appear before expected output
+                try:
+                    tool, version = line.split()
+                except:
+                    tool = line.split()[0]
+                    version = "?"
                 versions.append(version)
                 tools.append(tool)
 
