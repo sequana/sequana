@@ -10,6 +10,7 @@
 #  documentation: http://sequana.readthedocs.io
 #
 ##############################################################################
+import os
 import sys
 from collections import defaultdict
 
@@ -54,14 +55,15 @@ class GFF3:
     Sometimes, CDS are missing::
 
         g = GFF3()
-        g.add_CDS()
-        g.save_as_gff("test.gff")
+        g.add_CDS_and_mRNA(test.gff")
 
 
     """
 
     def __init__(self, filename, skip_types=["biological_region"]):
         self.filename = filename
+        if os.path.exists(filename) is False:
+            raise IOError(f"{filename} does not exist")
         self.skip_types = skip_types
         self._df = None
         self._features = None
@@ -271,28 +273,67 @@ class GFF3:
         df["phase"] = "."
         return df
 
-    # modifier
-    def add_CDS(self):
-        """sometimes, only gene is present. CDS are required by some tools e.g. snpeff"""
-        if self._added_CDS:
-            pass
-        else:
-            df = self.df.query("genetic_type=='gene'").copy()
-            df["genetic_type"] = "CDS"
-            # df["Parent"] = [x for x in df['ID']]
-            # df["ID"] = [x.replace("gene-", "cds-").replace("GENE", "gene").replace("gene_", "cds_") for x in df['ID']]
-            # df["Name"] = df['ID']
-            new_attributes = []
-            for _, row in df.iterrows():
-                x = row["attributes"]
-                x["Parent"] = x["ID"]  # to keep gene as the parent
-                x["ID"] = x["ID"].replace("gene-", "cds-").replace("GENE", "gene").replace("gene_", "cds_")
-                x["Name"] = x["ID"]
-                new_attributes.append(x)
-            df["attributes"] = new_attributes
+    def add_CDS_and_mRNA(self, output, gene_ID="gene_id"):
 
-            self._df = pd.concat([self.df, df], ignore_index=True)
-            self._added_CDS = True
+        header = "start"
+        with open(self.filename, "r") as fin, open(output, "w") as fout:
+            for line in fin.readlines():
+                if line.startswith("#") or not line.strip():
+                    fout.write(line)
+                    continue
+
+                if header == "start":
+                    from sequana import version
+
+                    fout.write(f"# sequana gff --add-CDS-and-mRNA --gene-id {gene_ID} #v{version}\n")
+                    header = "done"
+                chrom, source, feature, start, end, score, strand, phase, attrs = line.strip().split("\t")
+
+                if feature == "gene":
+                    fout.write(line)
+
+                    # Extract gene ID
+                    gene_id = None
+                    for attr in attrs.split(";"):
+                        if attr.startswith("gene_id="):
+                            gene_id = attr.split("=")[1].strip('"')
+                            break
+
+                    # Synthetic mRNA
+                    fout.write(
+                        "\t".join(
+                            [
+                                chrom,
+                                source,
+                                "mRNA",
+                                start,
+                                end,
+                                score,
+                                strand,
+                                ".",
+                                f'ID="{gene_id}.mRNA"; Parent="{gene_id}"\n',
+                            ]
+                        )
+                    )
+
+                    # Synthetic CDS
+                    fout.write(
+                        "\t".join(
+                            [
+                                chrom,
+                                source,
+                                "CDS",
+                                start,
+                                end,
+                                score,
+                                strand,
+                                "0",
+                                f'ID="{gene_id}.CDS"; Parent="{gene_id}.mRNA"\n',
+                            ]
+                        )
+                    )
+                else:
+                    fout.write(line)
 
     def add_intergenic_regions(self):
         if self._added_intergenic:
@@ -359,8 +400,6 @@ class GFF3:
             fout.write("# - sorting seqid, start, stop, genetic type. \n")
             if self._added_intergenic:
                 fout.write("# - added intergenic region\n")
-            if self._added_CDS:
-                fout.write("# - added CDS with sequana.GFF3.add_CDS()\n")
             count = 0
 
             for _, y in self.df.sort_values(by=sortby, key=natsort.natsort_keygen()).iterrows():
