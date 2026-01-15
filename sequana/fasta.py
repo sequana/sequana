@@ -59,7 +59,7 @@ class FastA:
 
     def __init__(self, filename, verbose=False):
 
-        fai = filename + ".fai"
+        fai = str(filename) + ".fai"
         if os.path.exists(fai) and (os.path.getmtime(fai) < os.path.getmtime(filename)):
             logger.warning(f"Your .fai file looks old compared to fasta. Please delete the .fai {fai} or update it.")
 

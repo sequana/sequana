@@ -26,6 +26,7 @@ from .fastq_split import fastq_split
 from .feature_count import feature_counts
 from .find_integrated_genes import find_integrated_genes
 from .g4hunter import g4hunter
+from .gff import gff
 from .gff_to_gtf import gff_to_gtf
 from .gff_to_light_gff import gff_to_light_gff
 from .gtf_fixer import gtf_fixer
@@ -109,6 +110,7 @@ main.add_command(fasta)
 main.add_command(fastq_split)
 main.add_command(feature_counts)
 main.add_command(g4hunter)
+main.add_command(gff)
 main.add_command(gff_to_gtf)
 main.add_command(gff_to_light_gff)
 main.add_command(gtf_fixer)

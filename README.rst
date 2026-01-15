@@ -254,6 +254,10 @@ Changelog :memo:
 ========= ==========================================================================
 Version   Description
 ========= ==========================================================================
+0.19.6    * NEW add gff command
+          * rename and improve the add_CDS function in GFF class
+          * BUG fix typo in the is_telomeric function
+          * BUG Fix regression in kraken analysis
 0.19.5    * add embl2fasta, fix CDS parents in GFF file
 0.19.4    * improved TRF module.
           * NEW: added fastq_split and html_report commands. The latter should be

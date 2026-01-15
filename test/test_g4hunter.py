@@ -26,10 +26,10 @@ def test_g4hunter_ecoli(tmpdir):
 def test_base_score():
     filename = f"{test_dir}/data/fasta/ecoli_MG1655.fa"
     ff = G4Hunter(filename, 20, 1)
-    assert mean(ff.base_score_python("CCC")) == -3.0
-    assert mean(ff.base_score_python("GGGGGG")) == 4.0
-    assert mean(ff.base_score_python("ATCCCAAGGGAA")) == 0.0
-    assert mean(ff.base_score_python("ATGGATGGATGATGAT")) == 0.625
+    assert mean(ff.base_score("CCC")) == -3.0
+    assert mean(ff.base_score("GGGGGG")) == 4.0
+    assert mean(ff.base_score("ATCCCAAGGGAA")) == 0.0
+    assert mean(ff.base_score("ATGGATGGATGATGAT")) == 0.625
 
 
 # for later maybe
