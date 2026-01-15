@@ -936,16 +936,12 @@ class KrakenAnalysis(object):
         # make sure the required output directories exist:
         # and that the output filenames ends in .fastq
         if output_filename_classified:
-            assert output_filename_classified.endswith(".fastq")
-            dirname = os.path.dirname(output_filename_classified)
-            if os.path.exists(dirname) is False:
-                os.makedirs(dirname)
+            assert str(output_filename_classified).endswith(".fastq")
+            output_filename_classified.mkdir(parents=True, exist_ok=True)
 
         if output_filename_unclassified:
-            assert output_filename_unclassified.endswith(".fastq")
-            dirname = os.path.dirname(output_filename_unclassified)
-            if os.path.exists(dirname) is False:
-                os.makedirs(dirname)
+            assert str(output_filename_unclassified).endswith(".fastq")
+            output_filename_unclassified.mkdir(parents=True, exist_ok=True)
 
         params = {
             "database": self.database.path,
