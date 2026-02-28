@@ -25,6 +25,17 @@ logger = colorlog.getLogger(__name__)
 
 __all__ = ["GFF3"]
 
+TEMPLATE = {
+    "seqid": None,
+    "source": None,
+    "genetic_type": None,
+    "start": None,
+    "stop": None,
+    "score": None,
+    "strand": None,
+    "phase": None,
+}
+
 
 class GFF3:
     """Read a GFF file, version 3
@@ -60,17 +71,19 @@ class GFF3:
 
     """
 
-    def __init__(self, filename, skip_types=["biological_region"]):
+    def __init__(self, filename, skip_types=["biological_region"], light=False):
         self.filename = filename
         if os.path.exists(filename) is False:
             raise IOError(f"{filename} does not exist")
         self.skip_types = skip_types
         self._df = None
         self._features = None
-        self._attributes = None
+        self._contig_names = None
+        self._attributes = {}
         self._added_intergenic = False
         self._added_CDS = False
         self._directons = None  # a place holder to store directons
+        self._light = light
 
     def _get_features(self):
         """Extract unique GFF feature types
@@ -106,28 +119,29 @@ class GFF3:
 
     features = property(_get_features)
 
+    def _get_contig_names(self):
+        if self._contig_names is None:
+            contigs = set()
+            for record in self.read():
+                contigs.add(record["seqid"])
+            self._contig_names = sorted(list(contigs))
+        return self._contig_names
+
+    contig_names = property(_get_contig_names)
+
     def get_attributes(self, feature=None):
-        """Return list of possible attributes
+        if feature in self._attributes.keys():
+            return self._attributes[feature]
 
-        If feature is provided, must be valid and used as a filter
-        to keep only entries for that feature.
+        attributes = set()
 
-        ~10 seconds on mouse genome GFF file.
-
-        sep must be "; " with extra space to cope with special cases
-        where an attribute has several entries separated by ; e.g.:
-
-            BP="GO:0006412"; MF="GO:0005524;GO:0004004;"
-
-        """
-        # This is used by the rnaseq pipeline and should be kept fast
-        if feature:
-            dd = self.df.query("genetic_type == @feature")
-            self._attributes = sorted(dd.loc[:, dd.notna().all()].columns[8:])
-        else:
-            self._attributes = sorted(self.df.columns[8:])
-
-        return self._attributes
+        for record in self.read():
+            if feature and record["genetic_type"] != feature:
+                continue
+            attributes.update(record["attributes"].keys())
+        attributes = sorted(attributes)
+        self._attributes[feature] = attributes
+        return self._attributes[feature]
 
     def read(self):
         """Read annotations one by one creating a generator"""
@@ -168,7 +182,9 @@ class GFF3:
 
                 # all attributes as key/values added to all annotations.
                 annotation["attributes"] = self._process_attributes(split[8])
-                annotation.update(annotation["attributes"])
+
+                # changes 0.20
+                # annotation.update(annotation["attributes"])
 
                 yield annotation
 
@@ -180,12 +196,50 @@ class GFF3:
         # ~ 30 seconds on mouse
         df = pd.DataFrame(self.read())
 
+        # now, let us populated some common attributes
+        # gene, gene_id, ID, Name
+        if not self._light:
+            try:
+                attrs_df = pd.json_normalize(df["attributes"])
+            except KeyError:
+                raise BadFileFormat
+            df = pd.concat([df, attrs_df], axis=1)
+        else:
+            common = ["gene_id", "ID", "Name"]
+            try:
+                attrs_df = pd.json_normalize(df["attributes"])
+                attrs_df = attrs_df[[c for c in common if c in attrs_df.columns]]
+                df = pd.concat([df, attrs_df], axis=1)
+            except KeyError:
+                raise BadFileFormat
+
         self._df = df
         return self._df
 
     df = property(_get_df)
 
     def get_duplicated_attributes_per_genetic_type(self):
+        df = self.df
+        results = {}
+
+        for typ, group in df.groupby("genetic_type"):
+            results[typ] = {}
+            print(f"{typ}: {len(group)} entries")
+
+            for attr in group.columns[8:]:
+                series = group[attr].dropna()
+                dups = series.duplicated().sum()
+
+                if dups > 0:
+                    print(f"  - {attr}:{dups} duplicates ({len(series)} total)")
+                else:
+                    print(f"  - {attr}:No duplicates ({len(series)} total)")
+
+                results[typ][attr] = dups
+
+        return pd.DataFrame(results)
+
+    def get_duplicated_attributes_per_genetic_type2(self):
         results = {}
         for typ in self.features:
             results[typ] = {}
@@ -253,7 +307,7 @@ class GFF3:
             return ";".join([f'{a}="{b}"' for a, b in data.items()])
 
         data = []
-        for chrom in self.df["seqid"].unique():
+        for chrom in self.contig_names:
             start = 1
             for _, row in (
                 self.df.query("genetic_type=='gene' and seqid==@chrom")[["start", "stop", "strand", "attributes"]]
@@ -285,7 +339,9 @@ class GFF3:
                 if header == "start":
                     from sequana import version
 
-                    fout.write(f"# sequana gff --add-CDS-and-mRNA --gene-id {gene_ID} #v{version}\n")
+                    fout.write(
+                        f"# sequana gff --add-CDS-and-mRNA --gene-id {gene_ID} -o {output} {self.filename} #v{version}\n"
+                    )
                     header = "done"
                 chrom, source, feature, start, end, score, strand, phase, attrs = line.strip().split("\t")
 
@@ -457,38 +513,28 @@ class GFF3:
                 logger.info("# {}: {} entries".format(feature, counter[feature]))
 
     def _process_main_fields(self, fields):
-        annotation = {}
 
-        # Unique id of the sequence
+        annotation = TEMPLATE.copy()  # cheap shallow copy
         annotation["seqid"] = fields[0]
-
-        # Optional source
-        # if fields[1] != ".":
         annotation["source"] = fields[1]
-
-        # Annotation type
         annotation["genetic_type"] = fields[2]
-
-        # Start and stop
         annotation["start"] = int(fields[3])
         annotation["stop"] = int(fields[4])
 
-        # Optional score field
-        # if fields[5] != ".":
-        try:
-            annotation["score"] = float(fields[5])
-        except ValueError:
-            annotation["score"] = fields[5]
+        f = fields[5]
+        if f == "." or f == "?":
+            annotation["score"] = f
+        else:
+            annotation["score"] = float(f)
 
         # Strand
-        if fields[6] == "+" or fields[6] == "-" or fields[6] == "?" or fields[6] == ".":
-            annotation["strand"] = fields[6]
+        s = fields[6]
+        annotation["strand"] = s if s in {"+", "-", ".", "?"} else None
 
         # Phase
-        if fields[7] != ".":
-            annotation["phase"] = int(fields[7]) % 3
-        else:
-            annotation["phase"] = fields[7]
+        p = fields[7]
+        annotation["phase"] = int(p) % 3 if p != "." else p
+
         return annotation
 
     def _process_attributes(self, text):
@@ -798,7 +844,7 @@ class GFF3:
         directons = self.directons
         data = []
 
-        for seqid in sorted(self.df.seqid.unique()):
+        for seqid in sorted(self.df.contig_names):
             subdf = directons.query("seqid==@seqid")
             chrom = str(seqid)
             for _, row in subdf.iterrows():
@@ -817,7 +863,7 @@ class GFF3:
         self.directons = None
         directons = self.directons.copy()
         data = []
-        for seqid in sorted(self.df.seqid.unique()):
+        for seqid in sorted(self.df.contig_names):
             subdf = directons.query("seqid==@seqid")
 
             for i in range(0, len(subdf) - 1):
@@ -921,3 +967,4 @@ class GFF3:
 
     def cluster_names_to_bed(self):
         """Identify cluster and output results in BED file"""
+        pass
