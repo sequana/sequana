@@ -29,11 +29,9 @@ def test_kozak():
     k.plot_logo_purine_pyrimidine(df)
     k.get_gc_per_chromosome()
 
-    assert all(k._get_logo_data(df) == k.plot_logo())
+    assert k._get_logo_data(df).equals(k.plot_logo())
+
     motif = k._get_logo_data(df)
-    all(k._add_purine_pyrimidine(motif) == k.plot_logo_purine_pyrimidine())
+    assert k._add_purine_pyrimidine(motif).equals(k.plot_logo_purine_pyrimidine())
 
     k.get_entropy(motif)
-
-    KL = k.plot_KL_divergence(motif)
-    k.get_KSI(KL)

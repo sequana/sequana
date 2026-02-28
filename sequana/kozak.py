@@ -470,7 +470,7 @@ class Kozak:
             seq = atg["kozak_left"].str.cat(atg["kozak_right"])
             GC = seq.str.count("[GC]").sum() / seq.str.len().sum()
         elif GC_mode == "genome":
-            GC = self.metrics.getattr("GC", self.fasta.GC_content())
+            GC = self.metrics.get("GC", self.fasta.GC_content())
         elif GC_mode == "uniform":
             GC = 0.5
         else:
@@ -578,7 +578,7 @@ class Kozak:
                     continue
 
             # 3 context checks
-            if (chrom, local_pos + 1) in annotated:
+            if local_pos + 1 in annotated.get(chrom, set()):
                 continue
 
             left = seq[local_pos - self.left_kozak : local_pos]

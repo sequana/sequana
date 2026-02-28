@@ -40,7 +40,7 @@ class BLAST:
         df["taxids"] = df["taxids"].astype(str)
 
         Ntotal = len(df)
-        len_diff = (Ntotal - len(df["qseqid"].unique())) / 10
+        len_diff = (Ntotal - len(df["qseqid"].unique())) / 100
 
         # Percentage of unclassified reads not in blast
         print(f"percentage of input reads not classified by Blast: {len_diff}% ")
