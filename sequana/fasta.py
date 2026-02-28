@@ -16,7 +16,6 @@ import textwrap
 from collections import defaultdict
 
 import colorlog
-import tqdm
 
 from sequana.lazy import numpy as np
 from sequana.lazy import pylab, pysam
@@ -28,6 +27,37 @@ logger = colorlog.getLogger(__name__)
 __all__ = ["FastA"]
 
 
+class _LazySequences:
+    """List-like lazy access to sequences without loading entire FASTA in memory."""
+
+    def __init__(self, fasta):
+        self._fasta_obj = fasta
+        self._cache = {}
+
+    def __len__(self):
+        return len(self._fasta_obj.names)
+
+    def __getitem__(self, idx):
+        if isinstance(idx, slice):
+            return [self[i] for i in range(*idx.indices(len(self)))]
+
+        name = self._fasta_obj.names[idx]
+
+        # cache optional but speeds repeated access
+        if name not in self._cache:
+            self._cache[name] = self._fasta_obj._fasta.fetch(name)
+
+        return self._cache[name]
+
+    def __iter__(self):
+        for i in range(len(self)):
+            yield self[i]
+
+    def clear_cache(self):
+        """Free cached sequences if memory becomes tight."""
+        self._cache.clear()
+
+
 def is_fasta(filename):
     with open(filename, "r") as fin:
         try:
@@ -35,7 +65,7 @@ def is_fasta(filename):
             assert line.startswith(">")
             line = fin.readline()
             return True
-        except:  # pragma: no cover
+        except StopIteration:  # pragma: no cover
             return False
 
 
@@ -63,6 +93,7 @@ class FastA:
         if os.path.exists(fai) and (os.path.getmtime(fai) < os.path.getmtime(filename)):
             logger.warning(f"Your .fai file looks old compared to fasta. Please delete the .fai {fai} or update it.")
 
+        self._lazy_sequences = _LazySequences(self)
         self._fasta = pysam.FastaFile(filename)
         self._fastx = pysam.FastxFile(filename)
         self.filename = filename
@@ -83,7 +114,7 @@ class FastA:
             # through the reads to run forever
             self._fastx.close()
             self._fastx = pysam.FastxFile(self.filename)
-        except:
+        except StopIteration:
             self._fastx.close()
             self._fastx = pysam.FastxFile(self.filename)
             raise StopIteration
@@ -99,16 +130,20 @@ class FastA:
 
     names = property(_get_names)
 
-    def _get_sequences(self):
-        return [self._fasta.fetch(name) for name in self.names]
-
-    sequences = property(_get_sequences)
+    @property
+    def sequences(self):
+        return self._lazy_sequences
 
     def _get_comment(self):
-        self._fastx = pysam.FastxFile(self.filename)
-        return [this.comment for this in self._fastx]
+        if not hasattr(self, "_comments"):
+            self._fastx = pysam.FastxFile(self.filename)
+            self._comments = [this.comment for this in self._fastx]
+        return self._comments
 
     comments = property(_get_comment)
+
+    def clear_sequence_cache(self):
+        self._lazy_sequences.clear_cache()
 
     def get_cumulative_sum(self, mode="mixed", exclude=[]):
         """Compute the cumulative sum of values from a dictionary, sorted by name.
@@ -149,6 +184,7 @@ class FastA:
         lengths = self.get_lengths_as_dict()
         return sorted_names, list(accumulate([lengths[name] for name in sorted_names]))
 
+    # FIXME: same get_sorted_mixed_names and get_sorted_names functions ?
     def _get_sorted_mixed_names(self):
         return sorted(self.names, key=lambda x: (isinstance(x, str) and not x.isdigit(), int(x) if x.isdigit() else x))
 
@@ -171,7 +207,7 @@ class FastA:
     def explode(self, outdir="."):
         """extract sequences from one fasta file and save them into individual files"""
         with open(self.filename, "r") as fin:
-            for line in fin.readlines():
+            for line in fin:
                 if line.startswith(">"):
                     # ignore the comment and > character and use it as the
                     # filename
@@ -217,7 +253,7 @@ class FastA:
         with open(output_file, "w") as fp:
             for contigs in self:
                 if len(contigs.sequence) < len_min:
-                    break
+                    continue
                 name = ">{}_{} {}\n".format(project, n, contigs.name)
                 sequence = (
                     "\n".join(
@@ -288,7 +324,7 @@ class FastA:
         elif isinstance(N, list):
             cherries = set(N)
 
-        comments = self.comments
+        comments = self.comments[:]
         with open(output_filename, "w") as fh:
             for i in cherries:
                 name = self.names[i]
@@ -304,7 +340,7 @@ class FastA:
         contig lengths and total length.
         """
         stats = {}
-        stats["N"] = len(self.sequences)
+        stats["N"] = len(self)
         stats["mean_length"] = pylab.mean(self.lengths)
         stats["total_length"] = sum(self.lengths)
         stats["N50"] = N50(self.lengths)
@@ -322,7 +358,7 @@ class FastA:
         """
 
         # used by sequana summary fasta
-        summary = {"number_of_contigs": len(self.sequences)}
+        summary = {"number_of_contigs": len(self)}
         summary["total_contigs_length"] = sum(self.lengths)
         summary["mean_contig_length"] = pylab.mean(self.lengths)
         summary["max_contig_length"] = max(self.lengths)
@@ -348,8 +384,8 @@ class FastA:
             index = pylab.argmax(lengths)
             length = lengths.pop(index)
             position = positions.pop(index)
-            sequence = self.sequences[position]
             name = self.names[position]
+            sequence = self._fasta.fetch(name)
             print(
                 "{},{},{},{},{},{},{}".format(
                     name,
@@ -364,8 +400,10 @@ class FastA:
 
     def GC_content_sequence(self, sequence):
         """Return GC content in percentage of a sequence"""
-        GC = sequence.count("G") + sequence.count("g")
-        GC += sequence.count("C") + sequence.count("c")
+        from collections import Counter
+
+        c = Counter(sequence.upper())
+        GC = c["G"] + c["C"]
         return GC / len(sequence) * 100
 
     def GC_content(self):
@@ -429,12 +467,13 @@ class FastA:
     def save_collapsed_fasta(self, outfile, ctgname, width=80, comment=None):
         """Concatenate all contigs and save results"""
         with open(outfile, "w") as fout:
-            data = "".join(self.sequences)
-            seq = "\n".join(textwrap.wrap(data, width))
-            if comment is None:
-                fout.write(f">{ctgname}\n{seq}\n")
-            else:
-                fout.write(f">{ctgname}\t{comment}\n{seq}\n")
+            fout.write(f">{ctgname}\n")
+            for seq in self.sequences:
+                seq = "\n".join(textwrap.wrap(seq, width))
+                if comment is None:
+                    fout.write(f">{ctgname}\n{seq}\n")
+                else:
+                    fout.write(f">{ctgname}\t{comment}\n{seq}\n")
 
     def find_gaps(self):
         """Identify NNNNs in data
