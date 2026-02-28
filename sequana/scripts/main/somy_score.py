@@ -166,6 +166,8 @@ def somy_score(**kwargs):
         )
     else:
         ss.boxplot(k=kwargs["k"], method=kwargs["method"], hybrid=True)
+    ss.somies.to_csv("somies.csv")
+    savefig("sequana_somy.png", dpi=200)
 
     print(ss.info)
 
