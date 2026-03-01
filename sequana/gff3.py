@@ -61,6 +61,14 @@ class GFF3:
     """
 
     def __init__(self, filename, skip_types=["biological_region"]):
+        """Initialise a GFF3 reader.
+
+        :param str filename: path to the GFF3 file to read.
+        :param list skip_types: list of feature types to skip while reading.
+            Defaults to ``["biological_region"]`` which speeds up parsing of
+            large mammalian GFF files.
+        :raises IOError: if *filename* does not exist.
+        """
         self.filename = filename
         if os.path.exists(filename) is False:
             raise IOError(f"{filename} does not exist")
@@ -173,6 +181,15 @@ class GFF3:
                 yield annotation
 
     def _get_df(self):
+        """Build and cache a :class:`pandas.DataFrame` from the GFF3 file.
+
+        The dataframe contains one row per GFF3 record.  Column names match the
+        nine standard GFF3 fields (``seqid``, ``source``, ``genetic_type``,
+        ``start``, ``stop``, ``score``, ``strand``, ``phase``, ``attributes``)
+        plus one column per attribute key found in the file.
+
+        The result is cached so subsequent accesses are instantaneous.
+        """
         if self._df is not None:
             return self._df
 
@@ -186,6 +203,18 @@ class GFF3:
     df = property(_get_df)
 
     def get_duplicated_attributes_per_genetic_type(self):
+        """Report duplicated attribute values for each feature type.
+
+        Iterates over all feature types found in the GFF file and, for each
+        attribute column, counts how many values appear more than once.  The
+        counts are printed to *stdout* and returned as a
+        :class:`pandas.DataFrame` whose columns are feature types and whose
+        rows are attribute names.
+
+        :return: DataFrame with feature types as columns and attribute names as
+            rows; each cell contains the number of duplicated values.
+        :rtype: pandas.DataFrame
+        """
         results = {}
         for typ in self.features:
             results[typ] = {}
@@ -227,9 +256,24 @@ class GFF3:
         return results, results2
 
     def save_annotation_to_csv(self, filename="annotations.csv"):
+        """Save the GFF annotation dataframe to a CSV file.
+
+        :param str filename: path to the output CSV file.  Defaults to
+            ``"annotations.csv"``.
+        """
         self.df.to_csv(filename, index=False)
 
     def read_and_save_selected_features(self, outfile, features=["gene"]):
+        """Stream the GFF file and write only the requested feature types.
+
+        Unlike :meth:`save_gff_filtered`, this method does *not* load the whole
+        file into memory; it reads and filters line by line, making it suitable
+        for very large GFF files.
+
+        :param str outfile: path of the output GFF file.
+        :param list features: feature types to keep.  Defaults to
+            ``["gene"]``.
+        """
         count = 0
         with open(self.filename, "r") as fin, open(outfile, "w") as fout:
             for line in fin:
@@ -247,9 +291,21 @@ class GFF3:
         logger.info(f"Found {count} entries and saved into {outfile}")
 
     def get_intergenic_regions(self):
+        """Compute intergenic regions between consecutive genes on each chromosome.
+
+        For every chromosome present in the GFF, gaps between consecutive
+        ``gene`` features (sorted by start position) are returned as a
+        :class:`pandas.DataFrame`.  Each row represents one intergenic region
+        and contains the columns ``seqid``, ``start``, ``stop``, ``strand``,
+        ``attributes``, ``source``, ``genetic_type``, ``score``, and ``phase``.
+
+        :return: DataFrame of intergenic regions.
+        :rtype: pandas.DataFrame
+        """
         start = 0
 
         def get_attributes(data):
+            """Serialise an attributes dict to a GFF3 attributes string."""
             return ";".join([f'{a}="{b}"' for a, b in data.items()])
 
         data = []
@@ -274,6 +330,19 @@ class GFF3:
         return df
 
     def add_CDS_and_mRNA(self, output, gene_ID="gene_id"):
+        """Rewrite the GFF file adding synthetic mRNA and CDS entries for every gene.
+
+        Some annotation files (e.g. for bacteria or simple eukaryotes) contain
+        only ``gene`` features without the corresponding ``mRNA``/``CDS``
+        children required by certain downstream tools.  This method reads the
+        source GFF line by line and, for every ``gene`` feature, emits the
+        original gene line followed by a synthetic ``mRNA`` line and a
+        synthetic ``CDS`` line sharing the same coordinates.
+
+        :param str output: path to the output GFF file.
+        :param str gene_ID: attribute key used to retrieve the gene identifier.
+            Defaults to ``"gene_id"``.
+        """
 
         header = "start"
         with open(self.filename, "r") as fin, open(output, "w") as fout:
@@ -336,6 +405,12 @@ class GFF3:
                     fout.write(line)
 
     def add_intergenic_regions(self):
+        """Append intergenic regions to the internal dataframe.
+
+        Calls :meth:`get_intergenic_regions` and concatenates the result with
+        the existing annotation dataframe.  Subsequent calls are no-ops (the
+        operation is only performed once).
+        """
         if self._added_intergenic:
             pass
         else:
@@ -384,7 +459,18 @@ class GFF3:
                     fout.write(line)
 
     def save_as_gff(self, filename, sortby=["seqid", "start", "stop", "genetic_type"]):
+        """Write the (possibly modified) annotation back to a GFF3 file.
+
+        The header comment lines from the original file are preserved.
+        Records are sorted according to *sortby* using natural sort order so
+        that chromosome identifiers like ``chr2`` sort before ``chr10``.
+
+        :param str filename: path to the output GFF file.
+        :param list sortby: list of column names used for sorting.  Defaults to
+            ``["seqid", "start", "stop", "genetic_type"]``.
+        """
         def get_attributes(data):
+            """Serialise an attributes dict to a GFF3 attributes string."""
             return ";".join([f'{a}="{b}"' for a, b in data.items()])
 
         from sequana import version
@@ -457,6 +543,14 @@ class GFF3:
                 logger.info("# {}: {} entries".format(feature, counter[feature]))
 
     def _process_main_fields(self, fields):
+        """Parse the first eight tab-separated columns of a GFF3 record.
+
+        :param list fields: the first eight fields of a GFF3 line (before the
+            attributes column).
+        :return: dict with keys ``seqid``, ``source``, ``genetic_type``,
+            ``start``, ``stop``, ``score``, ``strand``, and ``phase``.
+        :rtype: dict
+        """
         annotation = {}
 
         # Unique id of the sequence
@@ -492,6 +586,18 @@ class GFF3:
         return annotation
 
     def _process_attributes(self, text):
+        """Parse the ninth (attributes) column of a GFF3 or GTF record.
+
+        Handles both the standard ``key=value`` (GFF3) and ``key value``
+        (GTF) conventions.  Quoted values (e.g. ``key="value"``) and values
+        containing semicolons (e.g. ``MF="GO:0005524;GO:0004004"``) are dealt
+        with correctly.  URL-encoded characters (``%09``, ``%0A``, etc.) are
+        decoded before parsing.
+
+        :param str text: raw attributes string from column 9 of a GFF3 line.
+        :return: dict mapping attribute names to their (unquoted) values.
+        :rtype: dict
+        """
         attributes = {}
 
         # some GFF/GTF use different conventions:
@@ -555,6 +661,23 @@ class GFF3:
         # attributes[attr[:idx]] = value.replace('"', "").replace("%3B", ";").replace("%20", " ")
 
     def to_gtf(self, output_filename="test.gtf", mapper={"ID": "{}_id"}):
+        """Convert the GFF3 file to GTF format (experimental).
+
+        Reads the source GFF3 file line by line and rewrites each record in
+        GTF format.  Attribute keys are renamed according to *mapper* which
+        maps GFF3 attribute names to GTF attribute name templates; the
+        ``{}`` placeholder in the template is replaced with the feature type.
+
+        :param str output_filename: path for the output GTF file.  Defaults to
+            ``"test.gtf"``.
+        :param dict mapper: mapping from GFF3 attribute keys to GTF attribute
+            name templates.  Defaults to ``{"ID": "{}_id"}`` which converts
+            the GFF3 ``ID`` attribute to e.g. ``gene_id`` or ``exon_id``.
+
+        .. note::
+            This method is experimental and is used by the Sequana RNA-seq
+            pipeline to convert input GFF files to GTF format for RNA-seqc.
+        """
         # experimental . used by rnaseq pipeline to convert input gff to gtf,
         # used by RNA-seqc tools
 
@@ -755,9 +878,27 @@ class GFF3:
         return {chr: df.loc[chr].to_dict("records") for chr in df.index.unique()}
 
     def get_seqid2size(self):
+        """Return a mapping from sequence identifiers to their sizes.
+
+        Sizes are read from ``region`` features in the GFF file (the ``stop``
+        coordinate of a ``region`` record is used as the chromosome/contig
+        size).
+
+        :return: dict mapping sequence id strings to integer sizes.
+        :rtype: dict
+        """
         return dict([(row.seqid, row.stop) for _, row in self.df.query("genetic_type=='region'").iterrows()])
 
     def search(self, pattern):
+        """Search all columns of the annotation dataframe for a pattern.
+
+        Converts every cell to a string and returns all rows where at least
+        one column contains *pattern* as a substring.
+
+        :param pattern: search term (converted to ``str`` internally).
+        :return: filtered copy of the annotation dataframe.
+        :rtype: pandas.DataFrame
+        """
         from numpy import logical_or, zeros
 
         pattern = str(pattern)
@@ -767,6 +908,22 @@ class GFF3:
         return self.df.loc[hits].copy()
 
     def is_tRNA_or_ribosomal(self, x):
+        """Return *True* if *x* is **not** a tRNA or ribosomal RNA name.
+
+        Despite the function name, this method is intended as a boolean *keep*
+        predicate: it returns ``True`` for genes that should be **retained**
+        (i.e. non-tRNA, non-rRNA genes) and ``False`` for genes that should be
+        **removed** (tRNA or rRNA).
+
+        Used internally to filter out tRNA and rRNA genes when computing
+        Polycistronic Transcription Units (PTUs).
+
+        :param x: gene name or annotation string to test.
+        :return: ``False`` if *x* matches a tRNA or rRNA pattern
+            (``"tRNA-"``, ``"28S"``, ``"5.8S"``, ``"18S"``, ``"5S"`` prefix,
+            or exact ``"tRNA"``), ``True`` otherwise.
+        :rtype: bool
+        """
         try:
             for hit in ["tRNA-", "28S", "5.8S", "18S", "5S"]:
                 if x.startswith(hit):
@@ -779,6 +936,12 @@ class GFF3:
         return True
 
     def _remove_tRNA_or_ribosomal(self):
+        """Filter the internal dataframe to remove tRNA and ribosomal RNA entries.
+
+        The exact filtering strategy depends on whether a ``combinedAnnotation``
+        column is present (Leishmania donovani style) or not (L. infantum style
+        where tRNA/rRNA have dedicated ``genetic_type`` values).
+        """
         try:
             # specific to leishmania donovani
             self._df = self.df[[self.is_tRNA_or_ribosomal(x) for x in self.df.combinedAnnotation]]
@@ -791,6 +954,16 @@ class GFF3:
             self._df = self.df.query("genetic_type in ['region', 'gene'] and gene_biotype not in ['tRNA', 'rRNA']")
 
     def get_PTU(self):
+        """Compute Polycistronic Transcription Units (PTUs).
+
+        PTUs are contiguous groups of genes transcribed from the same strand.
+        tRNA and rRNA genes are excluded before computing directons (groups of
+        genes with the same strand orientation).
+
+        :return: DataFrame with columns ``chromosome``, ``start``, ``stop``,
+            ``strand``, and ``length`` (number of genes in the PTU).
+        :rtype: pandas.DataFrame
+        """
 
         self._remove_tRNA_or_ribosomal()
         # make sure it is correct (df changed)
@@ -812,6 +985,19 @@ class GFF3:
         return df
 
     def _get_ssr(self):
+        """Compute Strand-Switch Regions (SSRs) between consecutive directons.
+
+        Iterates over pairs of adjacent directons on each chromosome and
+        classifies the gap between them:
+
+        * ``dSSR`` – divergent SSR (minus strand followed by plus strand)
+        * ``cSSR`` – convergent SSR (plus strand followed by minus strand)
+        * ``other`` – same strand (tandem arrangement)
+
+        :return: DataFrame with columns ``type``, ``chromosome``, ``start``,
+            and ``stop``.
+        :rtype: pandas.DataFrame
+        """
 
         # make sure it is correct (if df changed)
         self.directons = None
@@ -838,11 +1024,26 @@ class GFF3:
         return df
 
     def _get_directons(self):
+        """Compute directons: groups of consecutive genes sharing the same strand.
+
+        A *directon* is a maximal set of adjacent genes transcribed from the
+        same strand.  The method groups the annotation dataframe by chromosome,
+        detects strand changes to assign each gene to a directon, then
+        aggregates per-directon statistics (start, stop, number of genes).
+
+        The result is cached; subsequent calls return the cached value.
+
+        :return: DataFrame with columns ``seqid``, ``strand``,
+            ``directon_id``, ``start``, ``stop``, ``directon_length``,
+            and ``directon_name``.
+        :rtype: pandas.DataFrame
+        """
 
         if self._directons is not None:
             return self._directons
 
         def assign_directon_groups(group):
+            """Label each gene in *group* with the directon it belongs to."""
             # group is per-chromosome
             group["strand_shift"] = group["strand"] != group["strand"].shift()
             group["directon_id"] = group["strand_shift"].cumsum()
@@ -893,6 +1094,16 @@ class GFF3:
     directons = property(_get_directons)
 
     def directon_to_bed(self, output="directons.bed", colors={"+": "255,0,0", "-": "0,0,255"}):
+        """Write directon information to a BED9 file.
+
+        Each directon is written as one line in the output BED file with
+        colour-coding by strand (red for ``+``, blue for ``-`` by default).
+
+        :param str output: path for the output BED file.  Defaults to
+            ``"directons.bed"``.
+        :param dict colors: mapping from strand symbol to RGB colour string.
+            Defaults to ``{"+": "255,0,0", "-": "0,0,255"}``.
+        """
 
         df = self.df
 
@@ -915,6 +1126,15 @@ class GFF3:
         bed_df.to_csv(output, sep="\t", header=False, index=False)
 
     def add_directon_index(self):
+        """Assign each gene its positional index within its directon.
+
+        For each gene, sets its ordinal position inside the directon it belongs
+        to (assuming the GFF is sorted by chromosome and start coordinate).
+
+        .. note::
+            Not yet implemented; this method is a stub reserved for a future
+            feature.
+        """
         # For each gene, set its position on the directon it belongs to
         # assuming GFF is sorted by chromosome and start
         pass
