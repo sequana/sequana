@@ -333,7 +333,6 @@ class SomyScore:
         hlines=[1, 1.5, 2, 2.5],
         normalise=True,
         k=None,
-        outfile="sequana_somy.png",
         muhat=None,
         hybrid=False,
         method="em",
@@ -416,7 +415,7 @@ class SomyScore:
                 "measured_somies": measured_somies,
             }
         )
-        somies.to_csv("somies.csv", index=None)
+        # somies.to_csv(f"{outdir}/somies.csv", index=None)
         # plot somies
         import seaborn as sns
 
@@ -428,7 +427,7 @@ class SomyScore:
 
         m, M = somies["estimated_somies"].min(), somies["estimated_somies"].max()
         pylab.plot([m, M], [m, M], color="r", ls="--", lw=1)
-        pylab.savefig("sequana_somies_meas_vs_estim.png")
+        # pylab.savefig(f"{outdir}/sequana_somies_means_vs_estim.png")
         self.somies = somies
         error = ((somies["estimated_somies"] - somies["measured_somies"]) ** 2).sum() / len(somies)
         print(f"Error: {error}")
@@ -460,8 +459,6 @@ class SomyScore:
                 fill_betweenx([0, Ymax], -0.5 + x * 2, 0.5 + x * 2, color="grey", alpha=0.5)
             ylim([0, Ymax])
             xlim([-0.5, Nchrom - 0.5])
-
-        pylab.savefig(outfile)
 
 
 def plot_sliding_window_boxplot(data, window_size, step=1000, overlap_percentage=50, facecolor="lightblue"):

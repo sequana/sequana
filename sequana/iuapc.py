@@ -75,6 +75,24 @@ dna_ambiguities = {
     "V": "[ACG]",
 }
 
+dna_ambiguities_r = {
+    "A": "A",
+    "C": "C",
+    "G": "G",
+    "T": "T",
+    "AG": "R",
+    "CT": "Y",
+    "GC": "S",
+    "AT": "W",
+    "GT": "K",
+    "AC": "M",
+    "ACG": "V",
+    "ACT": "H",
+    "AGT": "D",
+    "CGT": "B",
+    "ACGT": "N",
+}
+
 # IUPAC degeneracies. Complementary bases
 dna_complement = {
     "A": "T",
