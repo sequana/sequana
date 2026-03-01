@@ -47,34 +47,12 @@ class PlotGOTerms:
             pe.get_data("up", "MF")
 
         """
-        if isinstance(ontologies, str):
-            ontologies = [ontologies]
-        else:
-            assert isinstance(ontologies, list)
+        df = self._get_data(category, ontologies)
 
-        if category not in self.enrichment:
-            logger.warning(f"Category {category} not found. Have you called compute_enrichment ?")
-            return
-
-        # First, we select the required ontologies and build a common data set
-        all_data = []
-        for ontology in ontologies:
-            if ontology not in self.enrichment[category]:
-                logger.warning(f"Ontology {ontology} not found. Have you called compute_enrichment ?")
-                return
-
-            data = self.enrichment[category][ontology]["result"]
-            data["ontology"] = ontology
-            all_data.append(data)
-
-        df = pd.concat(all_data, axis=0)
-
+        if df is None:
+            return df
         if len(df) == 0:
             return df
-        else:
-            logger.info("Found {} GO terms".format(len(df)))
-
-        logger.info("Found {} GO terms with at least 1 gene in reference".format(len(df)))
 
         df.rename({"P-value": "pValue"}, axis=1, inplace=True)
         df.rename({"Odds Ratio": "fold_enrichment"}, axis=1, inplace=True)
@@ -102,16 +80,31 @@ class PlotGOTerms:
         df["total_genes"] = len(self.df_genes)
 
         logger.warning("fold enrichment currently set to log10(adjusted pvalue)")
-        df["fold_enrichment"] = -pylab.log10(df["pValue"])
-
-        df["log2_fold_enrichment"] = pylab.log2(df["fold_enrichment"])
-        df["abs_log2_fold_enrichment"] = abs(pylab.log2(df["fold_enrichment"]))
+        try:
+            df["fold_enrichment"] = -pylab.log10(df["pValue"])
+            df["log2_fold_enrichment"] = pylab.log2(df["fold_enrichment"])
+            df["abs_log2_fold_enrichment"] = abs(pylab.log2(df["fold_enrichment"]))
+            df = df.query("fdr<=@fdr").copy()
+        except KeyError:
+            pass
 
         # filter out FDR>0.05
-        df = df.query("fdr<=@fdr").copy()
         logger.info("Found {} GO terms after keeping only FDR<{}".format(len(df), fdr))
 
         return df
+
+    def plot_piechart(self, df):
+        # Here we show the GO terms that have number in list > 0
+        # Note, that this is dangerous to look only at this picture without
+        # the reference plot, which data is not available through the pathner API
+        labels = []
+        for this in df.query("number_in_list!=0").label.values:
+            if len(this) > 50:
+                labels.append(this[0:50] + "...")
+            else:
+                labels.append(this)
+        pylab.pie(df.query("number_in_list!=0").number_in_list, labels=labels)
+        pylab.gcf().set_layout_engine("tight")
 
     def _get_plot_go_terms_data(
         self,
