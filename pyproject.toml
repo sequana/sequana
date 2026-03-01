@@ -60,6 +60,7 @@ dependencies = [
     "easydev >=0.12.1",
     "gseapy (>=1.1.4)",
     "itolapi (>=4.1.5)",
+    "logomaker (>=0.8.0)",
     "matplotlib (>3)",
     "numpy (>=2.2.3)",
     "pandas (>=2.2.3)",
