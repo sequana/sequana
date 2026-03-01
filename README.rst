@@ -33,8 +33,10 @@ SEQUANA
 .. image:: https://img.shields.io/badge/code%20style-black-000000.svg
     :target: https://github.com/psf/black
 
-.. image:: https://zenodo.org/badge/DOI/10.5281/zenodo.16531324.svg
-   :target: https://doi.org/10.5281/zenodo.16531324
+10.5281/zenodo.853159
+
+.. image:: https://zenodo.org/badge/DOI/10.5281/zenodo.853159.svg
+   :target: https://doi.org/10.5281/zenodo.853159
    :alt: DOI
 
 .. image:: https://static.pepy.tech/badge/sequana
