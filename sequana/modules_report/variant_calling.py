@@ -157,7 +157,7 @@ class VariantCallingModule(SequanaBaseModule):
             )
 
             tmpfile = tempfile.NamedTemporaryFile(suffix=".html", delete=False)
-            fig.write_html(tmpfile.name, include_plotlyjs="cdn", full_html=False)
+            fig.write_html(tmpfile.name, include_plotlyjs=False, full_html=False)
 
             # Read the HTML fragment and return it as a string
             with open(tmpfile.name, "r") as f:
@@ -196,7 +196,7 @@ class VariantCallingModule(SequanaBaseModule):
         fig.update_layout(height=1000, width=1000)
         fig.for_each_annotation(lambda a: a.update(text=a.text.split("=")[-1]))
 
-        fig_html = pio.to_html(fig, full_html=False, include_plotlyjs="cdn")
+        fig_html = pio.to_html(fig, full_html=False, include_plotlyjs=False)
         self.sections.append(
             {
                 "name": "Histogram (frequency) per contig",
@@ -255,7 +255,7 @@ class VariantCallingModule(SequanaBaseModule):
         )
 
         # --- EXPORT TO HTML ---
-        html_code = pio.to_html(fig, full_html=True, include_plotlyjs="cdn")
+        html_code = pio.to_html(fig, full_html=False, include_plotlyjs=False)
         self.sections.append(
             {
                 "name": "histogram (all contigs)",
