@@ -68,7 +68,7 @@ SEQUANA
 Pipelines and related projects
 ==============================
 
-Here is a non exhiaustive list of tools and pipelines from the project. with users and developers audience.
+Here is a non-exhaustive list of tools and pipelines from the project, with users and developers audience.
 
 
 .. list-table::
@@ -256,144 +256,28 @@ Changelog :memo:
 ========= ==========================================================================
 Version   Description
 ========= ==========================================================================
-0.20.0    * Refactoring FASTA and GFF3 modules/classes (less memory). can now handle
-            large eukaryotes as well.
-          * Update Kozak module
-0.19.6    * NEW add gff command
-          * rename and improve the add_CDS function in GFF class
-          * BUG fix typo in the is_telomeric function
-          * BUG Fix regression in kraken analysis
-0.19.5    * add embl2fasta, fix CDS parents in GFF file
-0.19.4    * improved TRF module.
-          * NEW: added fastq_split and html_report commands. The latter should be
-            used in the future for sequana pipeline HTML reports. Right now,
-            handles VCF file only.
-0.19.3    * Fixes plotly issue in RNAdiff plot (#872)
-0.19.2    * NEW new modules related to genomic metrics (zdna, imotif, cruciform,etc)
-          * NEW new visualisation tools
-          * NEW parser for hmmtools
-0.19.1    * update pyproject with matploblib, scipy, and all dependencie except
-            snakemake (keep <8.X and its pulp dependency <2.8) because 8.X breaks
-            the containers and therefore all pipelines. no workaround. we will need
-            a snakemake 'frozen library'. This is unfortunate.
-          * CHANGES: remove multiqc plugin quality_control (obsolet) and updated
-            many plugin due to increased version ofmultiqc.
-0.19.0    * UPDATE pyproject layout to be poetry2.0 compatible. drop support py3.8
-          * NEW: kozak module, somy score, telomere, biomol, rnafold, restriction
-            enzyme
-          * UPDATES: sequence module has more metrics (e.g. karlin signature),
-            fastq has a histogram for long reads,
-0.18.0    * NEW: somy scores (module and standalone)
-          * CHANGES: coverage now uses mosdepth for the bam2cov. can also handle
-            creation of the 4-column coverage file from BAM on the fly.
-          * Drop python 3.8 support (more and more dependencies issues)
-0.17.3    * CHANGES: fix https://github.com/sequana/rnaseq/issues/45 to better
-            handle multiqc files especially, feature counts plugin. Fix #855 to
-            be able to name batch effect column arbitrary to any name. Fix batch
-            effect column (and all others) to be strings rather than integer. If
-            integer, factor are sorted based on the integer values, not the factor
-            itself.
-          * NEWS: add size factor comments and table.
-0.17.2    * Pin down pulp<2.8 and snakemake to <8.0 (too many changes in snakemake)
-0.17.1    * NEW: tsne plot
-          * CHANGES: update iem module with additional specs
-0.17.0    * CHANGE. remove the substractor utility (use sequana_depletion pipeline
-            instead)
-          * CHANGE. remove get_max_gc_correlation function from bedtools. not used.
-          * CHANGE. Got rid of freebayes_bcf_filter redundant with
-            freebayes_vcf_filter; replace scipy fisher test with own implementation.
-            Remove useless VCF code.
-          * FIXES. rnadiff HTML report
-          * IMPROV. speedup kegg enrichment using multiprocess
-          * IMPROV. sequana_taxonomy can now download toydb and viruses_masking DBs
-            from zenodo
-          * NEW function to retrieve the GO terms and genes from panther website
-          * NEW keep_reads function in fastq class
-          * Major update of the IEM module (renamed IEM class into SampleSheet)
-          * NEW addW find-integrated-genes standalone
-0.16.9    * Major fix on PCA and add batch effect plots in RNAdiff analysis
-          * count matrix and DESeq2 output files' headers fixed with missing index
-            (no impact on analysis but only for those willing to use the CSV files
-            in excel)
-          * Taxonomy revisited to save taxonomy.dat in gzipped CSV format.
-0.16.8    * update IEM for more testing
-          * better handling of error in RNADiff
-          * Add new methods for ribodesigner
-0.16.7    * Stable release (fix doc), deprecated.
-0.16.6    * Refactor IEM to make it more robust with more tests.
-0.16.5    * refactor to use pyproject instead of setuptools
-          * remove pkg_resources (future deprecation)
-          * remove unused requirements (cookiecutter, adjusttext, docutuils, mock,
-            psutil, pykwalify)
-          * cleanup resources (e.g. moving canvas/bar.py into viz)
-0.16.4    * hot fixes on RNAdiff reports and enrichments
-0.16.3    * Remove all rules (see https://github.com/sequana/sequana-wrappers)
-            instead
-          * add precommit for developers and applied to all modules and doc
-          * Fix wrong import for sequana standalone (regression)
-0.16.2    * save coverage PNG image (regression)
-          * Update taxonomy/coverage standalone (regression) and more tests
-0.16.1    * hotfix missing module
-0.16.0    * add mpileup module
-          * homogenization enrichment + fixup rnadiff
-          * Complete refactoring of sequana coverage module.
-            Allow sequana_coverage to handle small eukaryotes in a more memory
-            efficient way.
-          * use click for the sequana_taxonomy and sequana_coverage and
-            sequana rnadiff command
-          * Small fixup on homer, idr and phantom modules (for chipseq pipeline)
-0.15.4    * add plot for rnaseq/rnadiff
-0.15.3    * add sequana.viz.plotly module. use tqdm in bamtools module
-          * KEGG API changed. We update sequana to use headless server and keep
-            the feature of annotated and colored pathway.
-          * Various improvements on KEGG enrichment including saving pathways,
-            addition --comparison option in sequana sub-command, plotly plots, etc
-0.15.2    * ribodesigner can now accept an input fasta with no GFF assuming the
-            fasta already contains the rRNA sequences
-          * Fix IEM module when dealing with double indexing
-          * Fix anchors in HTML reports (rnadiff module)
-          * refactorise compare module to take several rnadiff results as input
-          * enrichment improvements (export KEGG and GO as csv files
-0.15.1    * Fix creation of images directory in modules report
-          * add missing test related to gff
-          * Fix #804
-0.15.0    * add logo in reports
-          * RNADiff reports can now use shrinkage or not (optional)
-          * remove useless rules now in sequana-wrappers
-          * update main README to add LORA in list of pipelines
-          * Log2FC values are now **shrinked log2FC** values in volcano plot
-            and report table. "NotShrinked" columns for Log2FC and Log2FCSE
-            prior shrinkage are displayed in report table.
-0.14.6    * add fasta_and_gff_annotation module to correct fasta and gff given a
-            vcf file.
-          * add macs3 module to read output of macs3 peak detector.
-          * add idr module to read results of idr analysis
-          * add phantom module to compute phantom peaks
-          * add homer module to read annotation files from annotatePeaks
-0.14.5    * move start_pipeline standalone in
-            https://github.com/sequana/sequana_pipetools
-          * update snpeff module to allows build command to have options
-0.14.4    * hotfix bug on kegg colorised pathways
-          * Fix the hover_name in rnadiff volcano plot to include the
-            index/attribute.
-          * pin snakemake to be >=7.16
-0.14.3    * new fisher metric in variant calling
-          * ability to use several feature in rnaseq/rnadiff
-          * pin several libaries due to regression during installs
-0.14.2    * Update ribodesigner
-0.14.1    * Kegg enrichment: add gene list 'all' and fix incomplete annotation case
-          * New uniprot module for GO term enrichment and enrichment
-            refactorisation (transparent for users)
-0.14.0    * pinned click>=8.1.0 due to API change (autocomplete)
-          * moved tests around to decrease packaging from 16 to 4Mb
-          * ribodesigner: new plots, clustering and notebook
-0.13.X    * Remove useless standalones or moved to main **sequana** command
-          * Move sequana_lane_merging into a subcommand (sequana lane_merging)
-          * General cleanup of documentation, test and links to pipelines
-          * add new ribodesigner subcommand
-0.12.X    * remove some rules now in https://github.com/sequana/sequana-wrappers
-          * refactorisation of VCF tools/modules to use vcfpy instead of pyVCF
-          * complete change log before 0.12.4 in the github /doc/Changelog.txt
+0.20.0    * Refactoring FASTA and GFF3 modules/classes (less memory, handles large
+            eukaryotes). Update Kozak module.
+0.19.X    * New GFF command; improved GFF/EMBL tools; new genomic-metrics modules
+            (zdna, imotif, cruciform, etc.); new visualisation tools; HMMtools
+            parser; fastq_split and html_report commands; pyproject updated for
+            Poetry 2.0; new modules: kozak, somy score, telomere, biomol, rnafold,
+            restriction enzyme.
+0.18.0    * New somy scores module and standalone. Coverage uses mosdepth for
+            bam2cov. Drop Python 3.8 support.
+0.17.X    * RNAdiff/multiqc fixes; tsne plot; IEM module updates; remove substractor
+            utility; KEGG enrichment speedup; IEM class renamed to SampleSheet;
+            find-integrated-genes standalone.
+0.16.X    * Complete refactoring of sequana coverage module (handles small
+            eukaryotes); mpileup module; IEM refactoring; precommit for developers;
+            refactor to use pyproject; coverage/taxonomy/rnadiff CLI improvements.
+0.15.X    * KEGG enrichment improvements (headless server, plotly, CSV export);
+            ribodesigner, rnadiff, and IEM improvements; shrinkage in RNADiff.
+0.14.X    * ribodesigner; uniprot GO enrichment; fasta_and_gff_annotation module;
+            macs3, idr, phantom and homer modules.
+0.13.X    * Cleanup standalones; new ribodesigner subcommand.
+0.12.X    * Rules moved to sequana-wrappers; VCF tools refactored to use vcfpy.
+          * Complete changelog before 0.12.4 available in ``doc/Changelog.txt``.
 ========= ==========================================================================
 
 Any :question: Feel free to [open an issue](https://github.com/sequana/sequana/issues)
