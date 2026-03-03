@@ -258,26 +258,49 @@ Version   Description
 ========= ==========================================================================
 0.20.0    * Refactoring FASTA and GFF3 modules/classes (less memory, handles large
             eukaryotes). Update Kozak module.
-0.19.X    * New GFF command; improved GFF/EMBL tools; new genomic-metrics modules
-            (zdna, imotif, cruciform, etc.); new visualisation tools; HMMtools
-            parser; fastq_split and html_report commands; pyproject updated for
-            Poetry 2.0; new modules: kozak, somy score, telomere, biomol, rnafold,
-            restriction enzyme.
-0.18.0    * New somy scores module and standalone. Coverage uses mosdepth for
-            bam2cov. Drop Python 3.8 support.
-0.17.X    * RNAdiff/multiqc fixes; tsne plot; IEM module updates; remove substractor
-            utility; KEGG enrichment speedup; IEM class renamed to SampleSheet;
-            find-integrated-genes standalone.
-0.16.X    * Complete refactoring of sequana coverage module (handles small
-            eukaryotes); mpileup module; IEM refactoring; precommit for developers;
-            refactor to use pyproject; coverage/taxonomy/rnadiff CLI improvements.
-0.15.X    * KEGG enrichment improvements (headless server, plotly, CSV export);
-            ribodesigner, rnadiff, and IEM improvements; shrinkage in RNADiff.
-0.14.X    * ribodesigner; uniprot GO enrichment; fasta_and_gff_annotation module;
-            macs3, idr, phantom and homer modules.
-0.13.X    * Cleanup standalones; new ribodesigner subcommand.
-0.12.X    * Rules moved to sequana-wrappers; VCF tools refactored to use vcfpy.
-          * Complete changelog before 0.12.4 available in ``doc/Changelog.txt``.
+0.19.6    * add gff command; rename and improve the add_CDS function in GFF class;
+            fix regression in kraken analysis
+0.19.5    * add embl2fasta, fix CDS parents in GFF file
+0.19.4    * improved TRF module; add fastq_split and html_report commands
+0.19.3    * fix plotly issue in RNAdiff plot (#872)
+0.19.2    * new modules for genomic metrics (zdna, imotif, cruciform, etc.);
+            new visualisation tools; parser for hmmtools
+0.19.1    * update pyproject dependencies; fix multiqc plugins
+0.19.0    * pyproject updated for Poetry 2.0; drop Python 3.8 support;
+            new modules: kozak, somy score, telomere, biomol, rnafold,
+            restriction enzyme; more sequence metrics
+0.18.0    * new somy scores module and standalone; coverage now uses mosdepth
+            for bam2cov; drop Python 3.8 support
+0.17.3    * fix multiqc/feature counts handling in RNAdiff; add size factor table
+0.17.2    * pin pulp<2.8 and snakemake<8.0
+0.17.1    * new tsne plot; update IEM module with additional specs
+0.17.0    * remove substractor utility; speedup KEGG enrichment; IEM class
+            renamed to SampleSheet; new find-integrated-genes standalone;
+            fixes in rnadiff HTML report and VCF code cleanup
+0.16.9    * fix PCA and add batch effect plots in RNAdiff; taxonomy saves
+            taxonomy.dat as gzipped CSV
+0.16.8    * update IEM; better error handling in RNAdiff; new ribodesigner methods
+0.16.6    * refactor IEM to be more robust with more tests
+0.16.5    * refactor to use pyproject; remove pkg_resources; cleanup resources
+0.16.3    * remove all rules (moved to sequana-wrappers); add precommit
+0.16.0    * add mpileup module; complete refactoring of sequana coverage module
+            (small eukaryotes, memory efficient); use click for CLI tools
+0.15.3    * add sequana.viz.plotly module; update KEGG to use headless server;
+            improvements on KEGG enrichment (pathways, plotly, CSV export)
+0.15.2    * ribodesigner accepts fasta with no GFF; fix IEM double indexing;
+            refactorisation of compare module; enrichment improvements
+0.15.0    * add logo in reports; RNAdiff shrinkage support; shrunken log2FC
+            values in volcano plot and report table
+0.14.6    * add fasta_and_gff_annotation, macs3, idr, phantom and homer modules
+0.14.4    * fix kegg colorised pathways; pin snakemake>=7.16
+0.14.3    * new fisher metric in variant calling; support several features in
+            rnaseq/rnadiff
+0.14.1    * KEGG enrichment improvements; new uniprot module for GO term enrichment
+0.14.0    * pin click>=8.1.0; ribodesigner new plots, clustering and notebook
+0.13.X    * cleanup standalones; new ribodesigner subcommand; lane_merging moved
+            to sequana sub-command
+0.12.X    * rules moved to sequana-wrappers; VCF tools refactored to use vcfpy;
+            complete changelog before 0.12.4 in the github /doc/Changelog.txt
 ========= ==========================================================================
 
 Any :question: Feel free to [open an issue](https://github.com/sequana/sequana/issues)
