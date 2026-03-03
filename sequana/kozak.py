@@ -238,7 +238,6 @@ class Kozak:
         )
         self.metrics["ATG_ratio"] = sum(df["start_codon"] == "ATG") / len(df)
         self._cached_df = df
-
         return df
 
     def get_data(self):
@@ -300,7 +299,10 @@ class Kozak:
         pylab.ylim(ylim)
         pylab.ylabel("GC (%)")
 
-    def _get_logo_data(self, df=None):
+    def _get_logo_data(
+        self,
+        df=None,
+    ):
 
         if df is None:
             df = self.get_data()
@@ -337,6 +339,9 @@ class Kozak:
         logo_data = pd.DataFrame(pos).fillna(0)
         if "N" in logo_data.columns:
             del logo_data["N"]
+
+        # ignore all non ACGT bases
+        logo_data = logo_data[["A", "C", "G", "T"]]
 
         logo_data = logo_data.divide(logo_data.sum(axis=1), axis=0)
 
@@ -596,7 +601,7 @@ class Kozak:
     def export_meme(self, filename, name="Kozak"):
         """PWM compatible with standard motif scanners"""
         df = self.get_data()
-        pwm = self._get_logo_data(df)[["A", "C", "G", "T"]]
+        pwm = self._get_logo_data(df)
         with open(filename, "w") as f:
             f.write("MEME version 4\n\n")
             f.write("ALPHABET= ACGT\n\n")
@@ -681,17 +686,6 @@ class Kozak:
 
         return mean, low, high
 
-    def get_KSI(self, KL):
-        return sum(KL.query("position<0 and position>=-6")["KL_divergence"]) / 6
-
-        # just 20 boostrap is enough to get an idea
-        # KL = self._get_KL_data(left=100, right=6, n_boot=20)
-        # and 50bp away by 50bp should give us the noise.
-        # bg = KL.iloc[0:50]["KL_divergence"]
-        # mu, sigma = mean(bg), std(bg)
-        # the signal
-        # KL = k._get_KL_data()
-
 
 class KLAnalysis:
     def __init__(self, df):
@@ -718,7 +712,11 @@ class KLAnalysis:
 
     def get_peak_position(self):
         """max peak position"""
-        return self.KL["KL_divergence"].argmax()
+        index = self.KL["KL_divergence"].argmax()
+        if "position" in self.KL.columns:
+            return self.KL["position"].iloc[index]
+        else:
+            return self.KL.index[index]
 
     def get_signal_concentration(self):
         # peak concentration measures how concentrated is the signal. sharp pike == high C (eukar), broader = lower C (proka)
