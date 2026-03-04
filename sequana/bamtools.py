@@ -67,8 +67,10 @@ from functools import wraps
 
 
 def _reset(f):
+    """Decorator that rewinds the BAM/SAM file to the beginning before calling *f*."""
     @wraps(f)
     def wrapper(*args, **kargs):
+        """Wrapped function that resets the alignment file pointer before delegating."""
         args[0].reset()
         return f(*args, **kargs)
 
@@ -140,6 +142,14 @@ class SAMBAMbase:
     # The mode rb means read-only (r) and that (b) for binary the format
     # So BAM or SAM can be read in theory.
     def __init__(self, filename, mode="r", *args):
+        """Initialise a SAM/BAM/CRAM reader.
+
+        :param str filename: path to the SAM, BAM, or CRAM file.
+        :param str mode: pysam open mode.  Use ``"r"`` for SAM/CRAM and
+            ``"rb"`` for BAM (the default for :class:`BAM`).
+        :param args: additional positional arguments forwarded to
+            :class:`pysam.AlignmentFile`.
+        """
         self._filename = filename
         self._mode = mode
         self._args = args
@@ -157,6 +167,12 @@ class SAMBAMbase:
         self.lengths = {r: l for r, l in zip(hd.references, hd.lengths)}
 
     def reset(self):
+        """Close and reopen the underlying alignment file.
+
+        This rewinds the read pointer to the very first alignment, which is
+        required before any new iteration over the file.  Any previously opened
+        :class:`pysam.AlignmentFile` is closed before reopening.
+        """
         try:
             self._data.close()
         except:
@@ -171,6 +187,7 @@ class SAMBAMbase:
 
     @_reset
     def __len__(self):
+        """Return the total number of reads/alignments in the file."""
         if self._N is None:
             self._N = sum([1 for _ in tqdm(self._data, leave=False)])
             self.reset()
@@ -178,6 +195,13 @@ class SAMBAMbase:
 
     @_reset
     def _get_insert_size_data(self, max_entries=100000):
+        """Collect raw insert-size (template length) values from paired reads.
+
+        :param int max_entries: maximum number of alignments to scan.
+            Defaults to ``100000``.
+        :return: list of template length values (positive and negative).
+        :rtype: list
+        """
         count = 0
         data = []
         for a in self:
@@ -219,6 +243,22 @@ class SAMBAMbase:
 
     @_reset
     def get_df(self, max_align=-1, progress=True, include_cigar=False):
+        """Build a :class:`pandas.DataFrame` with one row per alignment.
+
+        Columns include ``flags``, ``mapq``, ``start``, ``end``, ``rname``
+        (reference name), ``qname`` (query/read name), ``query_length``,
+        ``query_aln_length``, and CIGAR-derived counts ``I`` (insertions),
+        ``D`` (deletions), and ``M`` (matches), plus the number of mismatches
+        (``NM`` tag) and ``mismatch`` (NM normalised by alignment length).
+
+        :param int max_align: maximum number of alignments to include.  ``-1``
+            means no limit.
+        :param bool progress: show a tqdm progress bar.  Defaults to ``True``.
+        :param bool include_cigar: include the raw CIGAR string in the
+            returned dataframe.  Defaults to ``False``.
+        :return: DataFrame with one row per alignment.
+        :rtype: pandas.DataFrame
+        """
         flags = []
         starts = []
         ends = []
@@ -369,9 +409,11 @@ class SAMBAMbase:
         return df
 
     def __iter__(self):
+        """Return the iterator object (``self``)."""
         return self
 
     def __next__(self):
+        """Return the next alignment from the file."""
         return next(self._data)
 
     @_reset
@@ -712,12 +754,14 @@ class SAMBAMbase:
     # properties
     @_reset
     def _get_paired(self):
+        """Return ``True`` if the first read in the file is paired-end."""
         return next(self).is_paired
 
     is_paired = property(_get_paired)
 
     @_reset
     def _get_is_sorted(self):
+        """Return ``True`` if the alignments appear in ascending position order."""
         if self._sorted:
             return self._sorted
         pos = next(self._data).pos
@@ -778,6 +822,14 @@ class SAMBAMbase:
         return df
 
     def _count_item(self, d, item, n=1):
+        """Increment a counter in dictionary *d* for key *item* by *n*.
+
+        If the key does not yet exist it is initialised to *n*.
+
+        :param dict d: counter dictionary to update in place.
+        :param item: dictionary key to increment.
+        :param int n: increment amount.  Defaults to ``1``.
+        """
         if item in d.keys():
             d[item] += n
         else:
@@ -821,6 +873,12 @@ class SAMBAMbase:
     summary = property(_get_summary)
 
     def _get_read_length(self):
+        """Return sorted read lengths and their counts.
+
+        :return: tuple ``(X, Y)`` where *X* is a sorted list of read lengths
+            and *Y* is the corresponding list of occurrence counts.
+        :rtype: tuple
+        """
         X = sorted(self.summary["read_length"].keys())
         Y = [self.summary["read_length"][k] for k in X]
         return X, Y
@@ -941,6 +999,26 @@ class SAMBAMbase:
 
     @_reset
     def get_stats_full(self, mapq=30, max_entries=-1):
+        """Compute detailed alignment statistics in a single pass over the BAM file.
+
+        This is a pure-Python implementation that does not rely on ``samtools``
+        directly, although it uses ``pysam`` for reading the file.  It is
+        slower than ``samtools flagstat`` but produces a richer set of metrics.
+
+        :param int mapq: minimum mapping quality to consider a read as
+            uniquely mapped.  Defaults to ``30``.
+        :param int max_entries: stop after this many alignments.  ``-1`` means
+            process the entire file.  Defaults to ``-1``.
+        :return: dict with keys such as ``average_quality``, ``average_length``,
+            ``forward``, ``reverse``, ``unmapped``, ``reads_paired``,
+            ``mismatches``, ``splice``, ``non_splice``, ``proper_pair``,
+            ``secondary``, ``reads_duplicated``, etc.
+        :rtype: dict
+
+        .. note::
+            On a typical BAM file this takes around 7 minutes.  For a faster
+            (but less detailed) summary use :meth:`get_stats`.
+        """
         # On a bam, this takes about 7minutes
         # while calling samtools directly takes a little bit more than 1 minute.
         # but then we can re-use this independently of samtools (not pysam though)
@@ -1371,6 +1449,13 @@ SN	pairs on different chromosomes:	0
         pylab.xlabel("GC content", fontsize=16)
 
     def _get_qualities(self, max_sample=500000):
+        """Collect per-read quality arrays from the BAM file.
+
+        :param int max_sample: maximum number of reads to sample.  Defaults to
+            ``500000``.
+        :return: list of quality arrays (one per read).
+        :rtype: list
+        """
         qualities = []
         for i, record in enumerate(self):
             if i < max_sample:
@@ -1393,11 +1478,19 @@ SN	pairs on different chromosomes:	0
 
     # FIXME: why not a property ? Same comments for coverage attribute
     def _set_alignments(self):
+        """Cache all alignments as a list in :attr:`alignments`."""
         # this scans the alignments once for all
         self.alignments = [this for this in self]
 
     @_reset
     def _set_coverage(self):
+        """Compute per-reference coverage vectors and store in :attr:`coverage`.
+
+        Requires that alignments have been cached via :meth:`_set_alignments`.
+        Each key of :attr:`coverage` is a reference ID (integer) and the value
+        is a NumPy array of length equal to the longest alignment end position
+        seen for that reference.
+        """
         try:
             self.alignments
         except AttributeError:
@@ -1424,6 +1517,12 @@ SN	pairs on different chromosomes:	0
 
     @_reset
     def _set_indels(self):
+        """Collect insertion and deletion lengths and store them in :attr:`insertions` and :attr:`deletions`.
+
+        Requires that alignments have been cached via :meth:`_set_alignments`.
+        Insertion lengths are stored in :attr:`insertions` (list of ``int``)
+        and deletion lengths in :attr:`deletions` (list of ``int``).
+        """
         try:
             self.alignments
         except:
@@ -1581,6 +1680,17 @@ SN	pairs on different chromosomes:	0
         return read.infer_read_length()
 
     def to_paf(self):
+        """Convert the first alignments that start before position 10 to PAF format.
+
+        PAF (Pairwise mApping Format) is a tab-separated text format used by
+        minimap2 and related tools.  This method is experimental and currently
+        only exports alignments whose ``reference_start`` is less than 10.
+
+        :return: DataFrame with PAF columns ``r_name``, ``r_start``, ``r_end``,
+            ``strand``, ``flag``, ``mapq``, ``cigar``, ``q_name``, ``q_len``,
+            ``q_start``, and ``q_end``.
+        :rtype: pandas.DataFrame
+        """
         with pysam.AlignmentFile(self.filename) as bam_in:
             info = [
                 (
@@ -1620,6 +1730,11 @@ class SAM(SAMBAMbase):
     """SAM Reader. See :class:`~samtools.bamtools.SAMBAMbase` for details"""
 
     def __init__(self, filename, *args):
+        """Initialise a SAM reader.
+
+        :param str filename: path to the SAM file.
+        :param args: additional arguments forwarded to :class:`SAMBAMbase`.
+        """
         super(SAM, self).__init__(filename, mode="r", *args)
 
 
@@ -1627,6 +1742,11 @@ class CRAM(SAMBAMbase):
     """CRAM Reader. See :class:`~sequana.bamtools.SAMBAMbase` for details"""
 
     def __init__(self, filename, *args):
+        """Initialise a CRAM reader.
+
+        :param str filename: path to the CRAM file.
+        :param args: additional arguments forwarded to :class:`SAMBAMbase`.
+        """
         super(CRAM, self).__init__(filename, mode="r", *args)
 
 
@@ -1634,6 +1754,11 @@ class BAM(SAMBAMbase):
     """BAM reader. See :class:`~sequana.bamtools.SAMBAMbase` for details"""
 
     def __init__(self, filename, *args):
+        """Initialise a BAM reader.
+
+        :param str filename: path to the BAM file.
+        :param args: additional arguments forwarded to :class:`SAMBAMbase`.
+        """
         super(BAM, self).__init__(filename, mode="rb", *args)
 
 
@@ -1649,6 +1774,7 @@ class MultiBAM:
     """
 
     def __init__(self):
+        """Initialise an empty :class:`MultiBAM` container."""
         self.bams = []
         self.tags = []
         self.groups = defaultdict(list)
@@ -1656,6 +1782,16 @@ class MultiBAM:
         self.lengths = {}
 
     def add_bam(self, filename, tag=None, group=None):
+        """Add a BAM file to the collection.
+
+        :param str filename: path to the BAM file to add.
+        :param str tag: label to identify this sample.  Defaults to the file
+            stem (filename without extension).
+        :param str group: optional group name.  If groups are used, every
+            sample added to this :class:`MultiBAM` must have a group assigned.
+        :raises ValueError: if groups were previously used and *group* is not
+            provided for the new BAM.
+        """
         from pathlib import Path
 
         if tag is None:
@@ -1683,6 +1819,10 @@ class MultiBAM:
             self.lengths[k] = v
 
     def _get_df(self):
+        """Build and cache the alignment-count dataframe.
+
+        Calls :meth:`run` on first access and caches the result.
+        """
         if self._df is None:
             df = self.run()
             self._df = df
@@ -1691,6 +1831,15 @@ class MultiBAM:
     df = property(_get_df)
 
     def run(self, exclude_secondary=True):
+        """Count alignments per reference sequence for every BAM file.
+
+        :param bool exclude_secondary: if ``True`` (default), secondary
+            alignments (flag ≥ 256) and unmapped reads (flag 4) are excluded
+            from the counts.
+        :return: DataFrame with samples as rows and reference names as columns.
+            Each cell contains the number of alignments.
+        :rtype: pandas.DataFrame
+        """
         from collections import Counter
 
         if exclude_secondary:
@@ -1708,6 +1857,11 @@ class MultiBAM:
         return df
 
     def plot_alignments_per_sample(self):
+        """Bar chart of the total number of mapped reads per sample.
+
+        When groups are defined, samples within the same group are drawn as
+        adjacent bars of the same colour.
+        """
         pylab.grid(True, zorder=-1)
         if self.groups:
             N = 0
@@ -1724,6 +1878,17 @@ class MultiBAM:
         pylab.gcf().set_layout_engine("tight")
 
     def plot_alignments_per_chromosome(self):
+        """Bar chart of the fraction of alignments per reference/chromosome.
+
+        The observed proportion (mean across samples) is shown as a bar chart
+        overlaid with the expected proportion derived from chromosome lengths
+        (shown in red).
+
+        :return: tuple ``(mean_per_chrom, expected)`` where *mean_per_chrom* is
+            a :class:`pandas.Series` of observed proportions and *expected* is
+            a list of proportions derived from reference lengths.
+        :rtype: tuple
+        """
         # on a given sample, let us keep total number of alignments (for
         # normalisation)
         S = self.df.sum(axis=1)
@@ -1796,6 +1961,13 @@ class Alignment(object):
             setattr(self, key, d[key])
 
     def as_dict(self):
+        """Return alignment fields as an ordered dictionary.
+
+        :return: dict with keys ``QNAME``, ``FLAG``, ``RNAME``, ``POS``,
+            ``MAPQ``, ``CIGAR``, ``PNEXT``, ``RNEXT``, ``TLEN``, ``SEQ``,
+            and ``QUAL``.
+        :rtype: dict
+        """
         d = {}
         s = self._data
         d["QNAME"] = s.qname
@@ -1849,6 +2021,11 @@ class SAMFlags(object):
     """
 
     def __init__(self, value=4095):
+        """Initialise a SAMFlags helper.
+
+        :param int value: integer SAM flag value.  Defaults to ``4095`` (all
+            bits set).
+        """
         self.value = value
         self._flags = {
             0: "segment mapped",
@@ -1879,6 +2056,7 @@ class SAMFlags(object):
         return flags
 
     def __str__(self):
+        """Return a human-readable description of the active flag bits."""
         txt = ""
         for this in sorted(self._flags.keys()):
             if self.value & this:
@@ -1900,12 +2078,23 @@ class CS(dict):
     """
 
     def __init__(self, tag):
+        """Parse a CS tag string and store CIGAR-like counts.
+
+        :param str tag: CS tag string as produced by minimap2
+            (e.g. ``"-a:6-g:14+g:2+c:9*ac:10"``).
+        """
         self.tag = tag
         d = self._scan()
         for k, v in d.items():
             self[k] = v
 
     def _scan(self):
+        """Scan the CS tag string and return a dict of operation counts.
+
+        :return: dict with keys ``M`` (matches), ``I`` (insertions),
+            ``D`` (deletions), and ``S`` (substitutions).
+        :rtype: dict
+        """
         d = {"M": 0, "I": 0, "D": 0, "S": 0}
         current = ":"  # this is just to start the loop with a key (set to 0)
         number = "0"
