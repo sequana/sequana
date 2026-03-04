@@ -100,19 +100,24 @@ class FastaGFFCorrection:
                 cursor = 0
 
                 diff = 0
-                for pos, ref, alt in df_vcf.query("chr == @chrname")[["position", "reference", "alternative"]].values:
-                    # accumulate bases before the variant and add the alternate
-                    new_sequence += sequence[cursor : pos - 1] + alt
+                sub = df_vcf.query("chr == @chrname")
+                if sub.empty:
+                    new_sequence = sequence
+                else:
+                    for row in sub[["position", "reference", "alternative"]].itertuples(index=False):
+                        pos, ref, alt = row.position, row.reference, row.alternative
+                        # accumulate bases before the variant and add the alternate
+                        new_sequence += sequence[cursor : pos - 1] + alt
 
-                    # we update the cursor to scan the original sequence
-                    cursor = pos - 1 + len(ref)
+                        # we update the cursor to scan the original sequence
+                        cursor = pos - 1 + len(ref)
 
-                    assert sequence[pos - 1 : pos - 1 + len(ref)] == ref
+                        assert sequence[pos - 1 : pos - 1 + len(ref)] == ref
 
-                    if len(ref) != len(alt):
-                        diff += len(alt) - len(ref)
-                        shifts[chrname].append(diff)
-                        positions[chrname].append(pos)
+                        if len(ref) != len(alt):
+                            diff += len(alt) - len(ref)
+                            shifts[chrname].append(diff)
+                            positions[chrname].append(pos)
 
                 # do not forget the final slice after last variant
                 new_sequence += sequence[cursor:]

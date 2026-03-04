@@ -50,16 +50,15 @@ class NCBITaxonomy:
 
         # First, the nodes
         if os.path.exists(nodes):
-            self.df_nodes = pd.read_csv(nodes, sep="|", header=None)
+            self.df_nodes = pd.read_csv(nodes, sep=r"\t|\t", header=None, engine="python")
+            self.df_nodes = self.df_nodes.iloc[:, ::2]
         else:
             with tempfile.TemporaryFile() as fout_nodes:
                 logger.info("Loading nodes.dmp from an URL {}".format(nodes))
                 wget(nodes, fout_nodes.name)
-                self.df_nodes = pd.read_csv(fout_nodes.name, sep="|", header=None)
+                self.df_nodes = pd.read_csv(fout_nodes.name, sep=r"\t|\t", header=None, engine="python")
+                self.df_nodes = self.df_nodes.iloc[:, ::2]
 
-        for i, _type in enumerate(self.df_nodes.dtypes):
-            if _type == "O":
-                self.df_nodes[i] = self.df_nodes[i].str.strip("\t")
         """
         tax_id                  -- node id in GenBank taxonomy database
         parent tax_id               -- parent node id in GenBank taxonomy database
@@ -91,9 +90,7 @@ class NCBITaxonomy:
                 10,
                 11,
                 12,
-                13,
             ]
-            del self.df_nodes[13]
         except Exception:  # pragma: no cover
             self.df_nodes.columns = ["taxid", "parent", "rank", 4, 5]
             del self.df_nodes[5]
@@ -104,17 +101,15 @@ class NCBITaxonomy:
 
         # now we read the names
         if os.path.exists(names):
-            self.df_names = pd.read_csv(names, sep="|", header=None)
+            self.df_names = pd.read_csv(names, sep=r"\t|\t", header=None, engine="python")
+            self.df_names = self.df_names.iloc[:, ::2]
         else:
             with tempfile.TemporaryFile() as fout_names:
                 logger.info(f"Loading names.dmp from an URL {names}")
                 wget(names, fout_names.name)
-                self.df_names = pd.read_csv(fout_names.name, sep="|", header=None)
+                self.df_names = pd.read_csv(fout_names.name, sep=r"\t|\t", header=None, engine="python")
+                self.df_names = self.df_names.iloc[:, ::2]
 
-        for i, _type in enumerate(self.df_names.dtypes):
-            if _type == "O":
-                self.df_names[i] = self.df_names[i].str.strip("\t")
-        del self.df_names[4]
         self.df_names.columns = ["taxid", "name", "unique_name", "key"]
         self.df_names.set_index("taxid", inplace=True)
 

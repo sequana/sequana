@@ -256,6 +256,9 @@ Changelog :memo:
 ========= ==========================================================================
 Version   Description
 ========= ==========================================================================
+0.20.0    * Refactoring FASTA and GFF3 modules/classes (less memory). can now handle
+            large eukaryotes as well.
+          * Update Kozak module
 0.19.6    * NEW add gff command
           * rename and improve the add_CDS function in GFF class
           * BUG fix typo in the is_telomeric function

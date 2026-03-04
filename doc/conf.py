@@ -14,7 +14,8 @@
 import os
 import sys
 
-import pkg_resources
+import importlib.metadata
+
 import sphinx
 
 sys.path.insert(0, os.path.abspath("sphinxext"))
@@ -30,7 +31,7 @@ googleanalytics_id = "G-XL8HD9J5LE"
 
 
 pkg_name = "sequana"
-version = pkg_resources.require(pkg_name)[0].version
+version = importlib.metadata.version(pkg_name)
 release = version
 author = "Thomas Cokelaer"
 title = "Sequana"
