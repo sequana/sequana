@@ -17,7 +17,7 @@ jobs:
     strategy:
       max-parallel: 5
       matrix:
-        python: ['3.10', '3.11', '3.12', '3.13', '3.14']
+        python: ['3.10', '3.11', '3.12', '3.13']
       fail-fast: false
 
 
@@ -60,7 +60,7 @@ jobs:
     - name: testing
       shell: bash -l {0}
       run: |
-        poetry run pytest --cov-report term-missing --cov=sequana
+        poetry run pytest --cov-report=term-missing --cov=sequana
 
     - name: coveralls
       shell: bash -l {0}

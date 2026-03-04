@@ -24,7 +24,7 @@ SEQUANA
 
 .. image:: https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C3.12-blue.svg
     :target: https://pypi.python.org/pypi/sequana
-    :alt: Python 3.10 | 3.11 | 3.12
+    :alt: Python 3.10 | 3.11 | 3.12 | 3.13
 
 .. image:: https://img.shields.io/github/issues/sequana/sequana.svg
     :target: https://github.com/sequana/sequana/issues
@@ -68,7 +68,7 @@ SEQUANA
 Pipelines and related projects
 ==============================
 
-Here is a non exhiaustive list of tools and pipelines from the project. with users and developers audience.
+Here is a non-exhaustive list of tools and pipelines from the project, with users and developers audience.
 
 
 .. list-table::
@@ -377,16 +377,12 @@ Version   Description
           * Fix the hover_name in rnadiff volcano plot to include the
             index/attribute.
           * pin snakemake to be >=7.16
-0.14.3    * new fisher metric in variant calling
-          * ability to use several feature in rnaseq/rnadiff
+0.14.3    * new fisher metric in variant calling; support several features
+            in rnaseq/rnadiff
           * pin several libaries due to regression during installs
 0.14.2    * Update ribodesigner
-0.14.1    * Kegg enrichment: add gene list 'all' and fix incomplete annotation case
-          * New uniprot module for GO term enrichment and enrichment
-            refactorisation (transparent for users)
-0.14.0    * pinned click>=8.1.0 due to API change (autocomplete)
-          * moved tests around to decrease packaging from 16 to 4Mb
-          * ribodesigner: new plots, clustering and notebook
+0.14.1    * Kegg enrichment improvements; new uniprot module for GO term enrichment
+0.14.0    * pinned click>=8.1.0; ribodesigner new plots, clustering and notebook
 0.13.X    * Remove useless standalones or moved to main **sequana** command
           * Move sequana_lane_merging into a subcommand (sequana lane_merging)
           * General cleanup of documentation, test and links to pipelines
