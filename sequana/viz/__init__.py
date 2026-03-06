@@ -1,6 +1,7 @@
 __all__ = [
     "ANOVA",
     "Boxplot",
+    "Clustermap",
     "Corrplot",
     "Heatmap",
     "hinton",
