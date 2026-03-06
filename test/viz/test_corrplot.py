@@ -93,3 +93,11 @@ def test_wrong_method(myinstance):
         assert False
     except ValueError:
         assert True
+
+
+def test_grid_lower(myinstance):
+    myinstance.plot(lower="circle", grid=True)
+
+
+def test_grid_upper(myinstance):
+    myinstance.plot(upper="circle", grid=True)

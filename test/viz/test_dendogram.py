@@ -1,4 +1,6 @@
 def test_dendogram():
+    import pytest
+
     from sequana.viz import dendogram, heatmap
 
     df = heatmap.get_heatmap_df()

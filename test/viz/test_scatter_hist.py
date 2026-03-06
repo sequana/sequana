@@ -8,3 +8,5 @@ def test1():
     s.plot(scatter_position="top right")
     s.plot(scatter_position="top left")
     s.plot(scatter_position="bottom right")
+    s.plot(show_labels=False, grid=False)
+    s.plot(facecolor="white")
