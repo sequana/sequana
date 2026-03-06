@@ -348,20 +348,55 @@ class Kozak:
 
         return logo_data
 
+    _DNA_COLOR_SCHEMES = {
+        "colorblind": {"A": "#0072B2", "C": "#E69F00", "G": "#009E73", "T": "#D55E00"},
+        "classic": {"A": "green", "C": "blue", "T": "red", "G": "orange"},
+    }
+
+    # Maximum information content per position for a 4-letter (DNA) alphabet (log2(4) = 2 bits)
+    _MAX_BITS = 2
+
+    def _get_color_scheme(self, color_scheme):
+        assert color_scheme in self._DNA_COLOR_SCHEMES, "color_scheme must be colorblind or classic"
+        return self._DNA_COLOR_SCHEMES[color_scheme]
+
     def plot_logo(self, df=None, ax=None, color_scheme="colorblind"):
-        assert color_scheme in ["colorblind", "classic"], "color_scheme must be colorblind or classic"
-        if color_scheme == "colorblind":
-            color_scheme = {
-                "A": "#0072B2",
-                "C": "#E69F00",
-                "G": "#009E73",
-                "T": "#D55E00",
-            }
-        elif color_scheme == "classic":
-            color_scheme = {"A": "green", "C": "blue", "T": "red", "G": "orange"}
+        logo_data = self._get_logo_data(df)
+        self._plot_logo(logo_data, ax=ax, color_scheme=self._get_color_scheme(color_scheme))
+
+        return logo_data
+
+    def plot_logo_bits(self, df=None, ax=None, color_scheme="colorblind"):
+        """Plot sequence logo with letter heights scaled by information content (bits).
+
+        Unlike :meth:`plot_logo` which shows relative nucleotide frequencies with
+        uniform column heights, this method scales each column by its information
+        content (IC = 2 - Shannon entropy), so highly conserved positions appear
+        tall (up to 2 bits) and variable positions appear short.
+
+        :param df: output of :meth:`get_data`. If None, :meth:`get_data` is called.
+        :param ax: matplotlib axes object. If None, the current axes is used.
+        :param color_scheme: ``"colorblind"`` (default) or ``"classic"``.
+        :return: the probability logo_data DataFrame (same as :meth:`plot_logo`).
+        """
+        import logomaker
 
         logo_data = self._get_logo_data(df)
-        self._plot_logo(logo_data, ax=ax, color_scheme=color_scheme)
+
+        data = logo_data.copy()
+        indices = data.index
+        data.reset_index(inplace=True, drop=True)
+
+        # Convert from probability matrix to information-content (bits) matrix
+        info_data = logomaker.transform_matrix(data, from_type="probability", to_type="information")
+
+        logo = logomaker.Logo(info_data, ax=ax, color_scheme=self._get_color_scheme(color_scheme), stack_order="fixed")
+        pylab.axvline(self._left_kozak - 0.5, color="k", lw=2)
+        if self.include_start_codon:
+            pylab.axvline(self._left_kozak + 2.5, color="k", lw=2)
+        pylab.xticks(range(len(data)), indices)
+        pylab.ylabel("Bits")
+        pylab.ylim([0, self._MAX_BITS])
 
         return logo_data
 
