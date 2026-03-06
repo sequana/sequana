@@ -26,6 +26,7 @@ def test_kozak():
     assert list(df["start_codon"].unique()) != ["ATG"]
 
     dd = k.plot_logo(df)
+    k.plot_logo_bits(df)
     k.plot_logo_purine_pyrimidine(df)
     k.get_gc_per_chromosome()
 
