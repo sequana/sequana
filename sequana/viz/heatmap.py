@@ -24,12 +24,6 @@ from sequana.viz.linkage import Linkage
 __all__ = ["Heatmap", "Clustermap"]
 
 
-try:
-    import seaborn as sns
-except ImportError:
-    print("You should install seaborn to use sequana.viz.heatmap")
-
-
 def get_heatmap_df():
     """a simple example to play with and perform test"""
     import pandas as pd
@@ -100,10 +94,10 @@ class Clustermap:
         data_df,
         sample_groups_df=None,
         sample_groups_sel=[],
-        sample_groups_palette=sns.color_palette(desat=0.6),
+        sample_groups_palette=None,
         gene_groups_df=None,
         gene_groups_sel=[],
-        gene_groups_palette=sns.color_palette(desat=0.6),
+        gene_groups_palette=None,
         yticklabels="auto",
         **kwargs
     ):  # annot):
@@ -116,17 +110,25 @@ class Clustermap:
         :param sample_group_sel: a list of the columns to select from the
             sample_groups_df.
         :param sample_groups_palette: the palette to use for sample color groups.
+            Defaults to seaborn color_palette(desat=0.6).
         :param gene_groups_df: a dataframe with gene id as index (same as in
             data_df columns) and a group definition per column. Use to produce
             the y axis color groups.
         :param gene_group_sel: a list of the columns to select from the gene_groups_df.
         :param gene_groups_palette: the palette to use for gene color groups.
+            Defaults to seaborn color_palette(desat=0.6).
         :param ytickslabels: "auto" for classical heatmap behaviour, [] for no
             ticks or a pandas Series giving the mapping between the index (gene
             names in data_df) and the gene names to be used for the heatmap
         :param kwargs: All other kwargs are passed to seaborn.Clustermap.
 
         """
+        import seaborn as sns
+
+        if sample_groups_palette is None:
+            sample_groups_palette = sns.color_palette(desat=0.6)
+        if gene_groups_palette is None:
+            gene_groups_palette = sns.color_palette(desat=0.6)
         self.data_df = data_df
         self.sample_groups_df = sample_groups_df
         self.sample_groups_sel = sample_groups_sel
@@ -183,6 +185,8 @@ class Clustermap:
             figure.add_artist(legend)
 
     def plot(self, cmap=None):
+        import seaborn as sns
+
         if cmap is None:
             cmap = sns.diverging_palette(220, 10, as_cmap=True)
         cmap.set_bad("grey", 1.0)

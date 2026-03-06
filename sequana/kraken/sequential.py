@@ -16,7 +16,6 @@ import sys
 from pathlib import Path, PosixPath
 
 import colorlog
-from colormap import Colormap
 from easydev import TempFile, md5
 from snakemake import shell
 

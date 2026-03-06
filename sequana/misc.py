@@ -13,10 +13,8 @@
 """.. rubric:: misc utilities"""
 import asyncio
 
-import aiohttp
-from tqdm.asyncio import tqdm
-
 import colorlog
+from tqdm.asyncio import tqdm
 
 from sequana.lazy import numpy as np
 
@@ -125,6 +123,8 @@ def multiple_downloads(files_to_download, timeout=3600):
         """data_to_download is a list of tuples
         each tuple contain the url to download, its output name, and a unique
         position for the progress bar."""
+        import aiohttp
+
         async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(limit=10)) as session:
             await asyncio.gather(*(download(session, *data) for data in files_to_download))
 
