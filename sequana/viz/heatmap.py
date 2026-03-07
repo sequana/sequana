@@ -126,7 +126,7 @@ class Clustermap:
         if sample_groups_palette is None:
             sample_groups_palette = sns.color_palette(desat=0.6)
         if gene_groups_palette is None:
-            gene_groups_palette = sns.color_palette(Desat=0.6)
+            gene_groups_palette = sns.color_palette(desat=0.6)
 
         self.data_df = data_df
         self.sample_groups_df = sample_groups_df
