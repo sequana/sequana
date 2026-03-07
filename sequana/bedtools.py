@@ -19,7 +19,7 @@ import sys
 from collections import Counter
 
 import colorlog
-from easydev import Progress, TempFile
+from easydev import Progress
 from tqdm import tqdm
 
 from sequana.errors import BadFileFormat
@@ -384,6 +384,7 @@ class SequanaCoverage(object):
         #               positions. Starting is zero in general, but not
         #               compulsary
         #  - total_length: number of rows in the BED file
+        #  - _avg_bytes_per_row: estimated average bytes per row (for byte-seek optimisation)
 
         N = 0
 
@@ -391,50 +392,75 @@ class SequanaCoverage(object):
         positions = {}
         self.chrom_names = []
 
-        # rough estimate of the number of rows for the progress bar
+        # Estimate bytes per row by sampling the first 64 KB of the file.
+        # This replaces the previous TempFile approach which read chunksize rows
+        # and wrote them to disk — much faster for large files.
         logger.info("Estimating number of chunks to read")
         fullsize = os.path.getsize(self.input_filename)
-        data = pd.read_table(self.input_filename, header=None, sep="\t", nrows=self.chunksize)
-        with TempFile() as fh:
-            data.to_csv(fh.name, index=None, sep="\t")
-            smallsize = os.path.getsize(fh.name)
-        del data
+        with open(self.input_filename, "rb") as _f:
+            sample = _f.read(min(65536, fullsize))
+        n_sample_lines = sample.count(b"\n")
+        if n_sample_lines > 0:
+            self._avg_bytes_per_row = float(len(sample)) / n_sample_lines
+        else:
+            self._avg_bytes_per_row = 20.0
+        estimated_rows = int(fullsize / max(1.0, self._avg_bytes_per_row))
+        Nchunk = max(1, (estimated_rows + self.chunksize - 1) // self.chunksize)
 
-        Nchunk = int(fullsize / smallsize)
-        i = 0
-        for chunk in tqdm(
-            pd.read_table(
-                self.input_filename,
-                header=None,
-                sep="\t",
-                usecols=[0],
-                chunksize=self.chunksize,
-                dtype="string",
-            ),
-            total=Nchunk,
-            disable=self.quiet_progress,
-        ):
-            # accumulate length
-            N += len(chunk)
+        # Track byte position at the start of each chunk so that we can later
+        # seek directly to a chromosome rather than skipping rows one by one.
+        # Passing a file handle to pandas lets us call tell() after each chunk.
+        chunk_start_bytes = [0]
 
-            # keep unique names (ordered)
-            contigs = chunk[0].unique()
-            for contig in contigs:
-                if contig not in self.chrom_names:
-                    self.chrom_names.append(contig)
+        with open(self.input_filename, "rb") as scan_f:
+            for chunk in tqdm(
+                pd.read_table(
+                    scan_f,
+                    header=None,
+                    sep="\t",
+                    usecols=[0],
+                    chunksize=self.chunksize,
+                    dtype="string",
+                ),
+                total=Nchunk,
+                disable=self.quiet_progress,
+            ):
+                # accumulate length
+                N += len(chunk)
+                chunk_start_row = N - len(chunk)
 
-            # group by names (unordered)
-            chunk = chunk.groupby(0)
-            for contig in contigs:
-                if contig not in positions:
-                    positions[contig] = {
-                        "start": chunk.groups[contig].min(),
-                        "end": chunk.groups[contig].max(),
-                    }
-                else:
-                    positions[contig]["end"] = chunk.groups[contig].max()
-            i += 1
-            i = min(i, Nchunk)
+                # keep unique names (ordered)
+                contigs = chunk[0].unique()
+                for contig in contigs:
+                    if contig not in self.chrom_names:
+                        self.chrom_names.append(contig)
+
+                # group by names (unordered)
+                chunk_grouped = chunk.groupby(0)
+                for contig in contigs:
+                    group_indices = chunk_grouped.groups[contig]
+                    abs_first = group_indices.min()
+                    abs_last = group_indices.max()
+                    within_first = abs_first - chunk_start_row
+
+                    if contig not in positions:
+                        positions[contig] = {
+                            "start": abs_first,
+                            "end": abs_last,
+                        }
+                        # Byte offset = chunk boundary byte + within-chunk row
+                        # offset scaled by the average bytes per row.  The
+                        # error is bounded by chunksize * row-size variance and
+                        # is corrected by the forward scan in ChromosomeCov.init().
+                        positions[contig]["start_byte"] = chunk_start_bytes[-1] + int(
+                            within_first * self._avg_bytes_per_row
+                        )
+                    else:
+                        positions[contig]["end"] = abs_last
+
+                # Record file position after this chunk for the next iteration.
+                chunk_start_bytes.append(scan_f.tell())
+
         del chunk
         self.total_length = N
 
@@ -532,24 +558,102 @@ class ChromosomeCov(object):
 
         self.thresholds = thresholds.copy()
 
+        # file handle used for byte-seek based chromosome reading
+        self._file_handle = None
+
         # open the file as an iterator (may be huge), set _df to None and
         # all attributes to None.
         self.init()
 
     def init(self):
-        # jump to the file position corresponding to the chrom name.
+        # Close any previously opened file handle before creating a new iterator.
+        if self._file_handle is not None:
+            try:
+                self._file_handle.close()
+            except Exception:
+                pass
+            self._file_handle = None
+
         N = self.bed.positions[self.chrom_name]["N"]
         toskip = self.bed.positions[self.chrom_name]["start"]
 
-        self.iterator = pd.read_table(
-            self.bed.input_filename,
-            skiprows=toskip,
-            nrows=N,
-            header=None,
-            sep="\t",
-            chunksize=self.chunksize,
-            dtype={0: "string"},
-        )
+        start_byte = self.bed.positions[self.chrom_name].get("start_byte")
+        if start_byte is not None:
+            # Seek directly to (approximately) the chromosome start instead of
+            # reading and discarding `toskip` rows.  This is a significant
+            # speedup for large files (e.g. human genome) where late chromosomes
+            # would otherwise require skipping hundreds of millions of rows.
+            avg_bpr = getattr(self.bed, "_avg_bytes_per_row", 20.0)
+            # Safety margin: scan back enough bytes to absorb estimation error.
+            # The error is bounded by chunksize * row-size variance, so using
+            # 10 % of one chunk's worth of bytes is conservative.
+            safety_bytes = max(65536, int(avg_bpr * self.chunksize * 0.10))
+            seek_pos = max(0, start_byte - safety_bytes)
+
+            target_chrom = self.chrom_name.encode()
+            f = open(self.bed.input_filename, "rb")
+            try:
+                f.seek(seek_pos)
+                if seek_pos > 0:
+                    f.readline()  # discard the partial line at the seek position
+
+                # Scan forward until the first line of the target chromosome.
+                max_scan = safety_bytes * 4
+                bytes_scanned = 0
+                found = False
+                while bytes_scanned < max_scan:
+                    line_start = f.tell()
+                    line = f.readline()
+                    if not line:
+                        break
+                    bytes_scanned += len(line)
+                    tab_pos = line.find(b"\t")
+                    if tab_pos >= 0 and line[:tab_pos] == target_chrom:
+                        f.seek(line_start)
+                        found = True
+                        break
+
+                if found:
+                    self._file_handle = f
+                    self.iterator = pd.read_table(
+                        self._file_handle,
+                        nrows=N,
+                        header=None,
+                        sep="\t",
+                        chunksize=self.chunksize,
+                        dtype={0: "string"},
+                    )
+                else:
+                    # Byte-seek failed (estimate was too far off); fall back to the
+                    # row-skip approach.  This is always correct but slower.
+                    f.close()
+                    logger.warning(
+                        "Byte-seek for chromosome %s failed; falling back to row-based "
+                        "seeking (may be slow for large files).",
+                        self.chrom_name,
+                    )
+                    self.iterator = pd.read_table(
+                        self.bed.input_filename,
+                        skiprows=toskip,
+                        nrows=N,
+                        header=None,
+                        sep="\t",
+                        chunksize=self.chunksize,
+                        dtype={0: "string"},
+                    )
+            except Exception:
+                f.close()
+                raise
+        else:
+            self.iterator = pd.read_table(
+                self.bed.input_filename,
+                skiprows=toskip,
+                nrows=N,
+                header=None,
+                sep="\t",
+                chunksize=self.chunksize,
+                dtype={0: "string"},
+            )
 
         if N <= self.chunksize:
             # we can load all data into memory:
