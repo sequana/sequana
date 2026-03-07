@@ -21,15 +21,14 @@ from os.path import expanduser
 from pathlib import Path
 
 import colorlog
-import colormap
-import plotly.express as px
 import requests
-from bioservices import KEGG
 from tqdm import tqdm
 
 from sequana.enrichment.gsea import GSEA
+from sequana.lazy import bioservices, colormap
 from sequana.lazy import numpy as np
 from sequana.lazy import pandas as pd
+from sequana.lazy import plotly_express as px
 from sequana.lazy import pylab
 from sequana.summary import Summary
 
@@ -142,7 +141,7 @@ class KEGGPathwayEnrichment:
         self.convert_input_gene_to_upper_case = convert_input_gene_to_upper_case
         self.color_node_with_annotation = color_node_with_annotation
 
-        self.kegg = KEGG(cache=True)
+        self.kegg = bioservices.KEGG(cache=True)
         self.kegg.organism = organism
         self.summary = Summary("KEGGPathwayEnrichment")
         self.gene_lists = gene_lists

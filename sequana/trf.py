@@ -10,13 +10,15 @@
 #  documentation: http://sequana.readthedocs.io
 #
 ##############################################################################
+from __future__ import annotations
+
 import csv
 from pathlib import Path
 from typing import List, Optional, Union
 
 import colorlog
-import pandas as pd
 
+from sequana.lazy import pandas as pd
 from sequana.lazy import pylab
 
 logger = colorlog.getLogger(__name__)

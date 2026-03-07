@@ -19,10 +19,10 @@
 import tempfile
 
 import colorlog
-import gseapy
 
 logger = colorlog.getLogger(__name__)
 
+from sequana.lazy import gseapy
 from sequana.lazy import pandas as pd
 
 __all__ = ["GSEA"]

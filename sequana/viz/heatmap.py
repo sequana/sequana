@@ -24,12 +24,6 @@ from sequana.viz.linkage import Linkage
 __all__ = ["Heatmap", "Clustermap"]
 
 
-try:
-    import seaborn as sns
-except ImportError:
-    print("You should install seaborn to use sequana.viz.heatmap")
-
-
 def get_heatmap_df():
     """a simple example to play with and perform test"""
     import pandas as pd
@@ -100,10 +94,10 @@ class Clustermap:
         data_df,
         sample_groups_df=None,
         sample_groups_sel=[],
-        sample_groups_palette=sns.color_palette(desat=0.6),
+        sample_groups_palette=None,
         gene_groups_df=None,
         gene_groups_sel=[],
-        gene_groups_palette=sns.color_palette(desat=0.6),
+        gene_groups_palette=None,
         yticklabels="auto",
         **kwargs
     ):  # annot):
@@ -127,6 +121,13 @@ class Clustermap:
         :param kwargs: All other kwargs are passed to seaborn.Clustermap.
 
         """
+        import seaborn as sns
+
+        if sample_groups_palette is None:
+            sample_groups_palette = sns.color_palette(desat=0.6)
+        if gene_groups_palette is None:
+            gene_groups_palette = sns.color_palette(Desat=0.6)
+
         self.data_df = data_df
         self.sample_groups_df = sample_groups_df
         self.sample_groups_sel = sample_groups_sel
@@ -183,6 +184,8 @@ class Clustermap:
             figure.add_artist(legend)
 
     def plot(self, cmap=None):
+        import seaborn as sns
+
         if cmap is None:
             cmap = sns.diverging_palette(220, 10, as_cmap=True)
         cmap.set_bad("grey", 1.0)

@@ -20,6 +20,10 @@ pylab = LazyImport("pylab")
 numpy = LazyImport("numpy")
 pandas = LazyImport("pandas")
 pysam = LazyImport("pysam")
+gseapy = LazyImport("gseapy")
+plotly_express = LazyImport("plotly.express")
+colormap = LazyImport("colormap")
+bioservices = LazyImport("bioservices")
 
 
 def enabled():

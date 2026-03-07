@@ -13,10 +13,8 @@
 """.. rubric:: misc utilities"""
 import asyncio
 
-import aiohttp
-from tqdm.asyncio import tqdm
-
 import colorlog
+from tqdm.asyncio import tqdm
 
 from sequana.lazy import numpy as np
 
@@ -91,11 +89,10 @@ def download(url, output):
     In such cases, it logs a message, removes partially downloaded files, and logs a critical message.
     """
 
-
     files_to_download = [(url, output, 0)]
     try:  # try an asynchrone downloads
         multiple_downloads(files_to_download)
-    except (KeyboardInterrupt, asyncio.TimeoutError): # pragma: no cover
+    except (KeyboardInterrupt, asyncio.TimeoutError):  # pragma: no cover
         logger.info("The download was interrupted or network was too slow. Removing partially downloaded files")
         for values in files_to_download:
             filename = values[1]
@@ -103,7 +100,6 @@ def download(url, output):
         logger.critical(
             "Keep going but your pipeline will probably not be fully executable since images could not be downloaded"
         )
-
 
 
 # copied from sequana_pipetools
@@ -125,6 +121,8 @@ def multiple_downloads(files_to_download, timeout=3600):
         """data_to_download is a list of tuples
         each tuple contain the url to download, its output name, and a unique
         position for the progress bar."""
+        import aiohttp
+
         async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(limit=10)) as session:
             await asyncio.gather(*(download(session, *data) for data in files_to_download))
 

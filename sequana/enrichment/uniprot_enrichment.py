@@ -14,12 +14,12 @@ import io
 from collections import Counter, defaultdict
 
 import colorlog
-from bioservices import UniProt
 
 from sequana.enrichment.gsea import GSEA
 from sequana.enrichment.ontology import Ontology
 from sequana.enrichment.plot_go_terms import PlotGOTerms
 from sequana.enrichment.quickgo import QuickGOGraph
+from sequana.lazy import bioservices
 from sequana.lazy import pandas as pd
 from sequana.lazy import pylab
 
@@ -199,7 +199,7 @@ class UniprotEnrichment(Ontology, PlotGOTerms):
                 "go_id",
             ]
         )
-        uniprot = UniProt(cache=True, verbose=True)
+        uniprot = bioservices.UniProt(cache=True, verbose=True)
         df = uniprot.search(f"organism_name:{self.taxon}", frmt="tsv", columns=columns)
 
         try:
