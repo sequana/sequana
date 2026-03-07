@@ -16,24 +16,22 @@ import sys
 from pathlib import Path, PosixPath
 
 import colorlog
-from colormap import Colormap
 from easydev import TempFile, md5
 from snakemake import shell
 
 from sequana import sequana_config_path
+from sequana.kraken.analysis import KrakenAnalysis, KrakenDB, KrakenResults
 from sequana.lazy import numpy as np
 from sequana.lazy import pandas as pd
 from sequana.lazy import pylab
 from sequana.misc import wget
-from sequana.kraken.analysis import KrakenDB, KrakenAnalysis, KrakenResults
+
 logger = colorlog.getLogger(__name__)
 
 
 __all__ = [
     "KrakenSequential",
 ]
-
-
 
 
 class KrakenSequential(object):
@@ -312,5 +310,3 @@ class KrakenSequential(object):
                         except FileNotFoundError:
                             pass
         return summary
-
-

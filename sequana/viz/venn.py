@@ -21,11 +21,7 @@ __all__ = ["plot_venn"]
 
 
 import math
-
-# coding: utf-8
 from itertools import chain
-
-from matplotlib import colors
 
 from sequana.lazy import pylab
 

@@ -14,9 +14,9 @@ import shutil
 
 import colorlog
 import networkx as nx
-from bioservices import quickgo
 
 from sequana.datatools import sequana_data
+from sequana.lazy import bioservices
 from sequana.lazy import pandas as pd
 
 logger = colorlog.getLogger(__name__)
@@ -38,7 +38,7 @@ class QuickGOGraph:
             "SLIM_BP": "GO:0008150",
         }
 
-        self.quickgo = quickgo.QuickGO(cache=True)
+        self.quickgo = bioservices.quickgo.QuickGO(cache=True)
         self.quickgo.requests_per_sec = 10
         self.quickgo.services.settings.TIMEOUT = 120
 
