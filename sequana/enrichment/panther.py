@@ -460,33 +460,6 @@ class PantherEnrichment(Ontology, PlotGOTerms):
         name = res["Gene names  (primary )"][0]
         return name
 
-    def plot_piechart(self, df):
-        # Here we show the GO terms that have number in list > 0
-        # Note, that this is dangerous to look only at this picture without
-        # the reference plot, which data is not available thourg the pathner API
-        labels = []
-        for this in df.query("number_in_list!=0").label.values:
-            if len(this) > 50:
-                labels.append(this)
-            else:
-                labels.append(this[0:50] + "...")
-        pylab.pie(df.query("number_in_list!=0").number_in_list, labels=labels)
-        pylab.gcf().set_layout_engine("tight")
-
-    def save_chart(self, df, filename="chart.png"):
-        """
-
-        pe = PantherEnrichment("B4052-V1.T1vsT0.complete.xls", fc_threshold=5,
-            padj_threshold=0.05)
-        df = pe.plot_go_terms("down", log=True, compute_levels=False)
-        pe.save_chart(df, "chart.png")
-
-        """
-        self.quick_go_graph.save_chart(df, filename)
-
-    def _get_graph(self, df, ontologies):
-        return self.quick_go_graph._get_graph(df, ontologies=ontologies)
-
 
 def get_go_from_panther(name):#pragma: no cover
     """
