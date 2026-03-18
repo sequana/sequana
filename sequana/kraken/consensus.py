@@ -16,16 +16,16 @@ import sys
 from pathlib import Path, PosixPath
 
 import colorlog
-from colormap import Colormap
 from easydev import TempFile, md5
 from snakemake import shell
 
 from sequana import sequana_config_path
+from sequana.kraken.analysis import KrakenAnalysis, KrakenDB, KrakenResults
 from sequana.lazy import numpy as np
 from sequana.lazy import pandas as pd
 from sequana.lazy import pylab
 from sequana.misc import wget
-from sequana.kraken.analysis import KrakenDB, KrakenAnalysis, KrakenResults
+
 logger = colorlog.getLogger(__name__)
 
 
@@ -147,7 +147,7 @@ class KrakenConsensus(object):
 
         analysis.run(
             output_filename=file_kraken_out,
-            #output_filename_unclassified=output_filename_unclassified,
+            # output_filename_unclassified=output_filename_unclassified,
             only_classified_output=False,
         )
 
@@ -180,10 +180,9 @@ class KrakenConsensus(object):
             status = self._run_one_analysis(iteration)
 
         # build consensus from the different output files
-        build_consensus(self._list_kraken_output, self.output_directory/ "kraken.out")
+        build_consensus(self._list_kraken_output, self.output_directory / "kraken.out")
 
         file_output_final = self.output_directory / "kraken.out"
-
 
         logger.info("Analysing final results")
         result = KrakenResults(file_output_final, verbose=False)
@@ -252,16 +251,19 @@ class KrakenConsensus(object):
         return summary
 
 
-from easydev import do_profile
 from functools import lru_cache
-#@lru_cache(maxsize=32)
+
+from easydev import do_profile
+
+
+# @lru_cache(maxsize=32)
 def searchLCA(taxids, taxonomy_file, buffer={}):
 
     if taxids in buffer:
         return buffer[taxids]
 
     obsolets = {1513193: 2748961, 35306: 3052441}
-    #taxonomy_file.update(obsolets)
+    # taxonomy_file.update(obsolets)
     IDs = taxids
 
     taxids = [int(x) for x in taxids]
@@ -290,7 +292,7 @@ def searchLCA(taxids, taxonomy_file, buffer={}):
                 parents = taxonomy_file.loc[parents].parent.values
 
         if taxid == 1:
-            #print("no LCA found for these taxids:", taxids)
+            # print("no LCA found for these taxids:", taxids)
             buffer[IDs] = 1
             return 1
         else:
@@ -300,9 +302,9 @@ def searchLCA(taxids, taxonomy_file, buffer={}):
 
 def build_consensus(inputs, output):
 
-
     import glob
     from collections import defaultdict
+
     from sequana.taxonomy import Taxonomy
 
     tax = Taxonomy(verbose=True)
@@ -315,7 +317,7 @@ def build_consensus(inputs, output):
 
         for key, value in kmer_totals.items():
             # 'if key' means that key==0 are ignored.
-            if key not in ['0', 0] and value > best_hit_value:
+            if key not in ["0", 0] and value > best_hit_value:
                 best_hit_key = key
                 best_hit_value = value
 
@@ -342,8 +344,8 @@ def build_consensus(inputs, output):
         count = 0
         while True:
             try:
-                count+=1
-                if count % 10000 ==0:
+                count += 1
+                if count % 10000 == 0:
                     print(count)
                 lines = [stream.readline() for stream in streams]
 
@@ -354,18 +356,18 @@ def build_consensus(inputs, output):
                 kmers = []
 
                 for line in lines:
-                    parts = line.split('\t')
+                    parts = line.split("\t")
                     # Parse the k-mer info and update totals
                     # 50% here
-                    #kmer_dict = parse_kmer_info(parts[4].strip())
-                    #for key, value in kmer_dict.items():
+                    # kmer_dict = parse_kmer_info(parts[4].strip())
+                    # for key, value in kmer_dict.items():
                     #        print("=", key, value)
                     #         kmer_totals[key] += value
 
-                    #if parts[1] == "HISEQ:426:C5T65ACXX:5:2302:18333:2293":
+                    # if parts[1] == "HISEQ:426:C5T65ACXX:5:2302:18333:2293":
                     #    print(line)
                     #    print(kmer_totals)
-                    if parts[0] == 'C':
+                    if parts[0] == "C":
                         taxids.append(parts[2])
                         classifications.extend(parts[4])
 
@@ -374,40 +376,38 @@ def build_consensus(inputs, output):
                 taxids = list(set(taxids))
 
                 if len(taxids) == 0:
-                    classified = 'U'
+                    classified = "U"
                     best_taxid = "0"
                 elif len(taxids) == 1:
-                    classified = 'C'
+                    classified = "C"
                     best_taxid = taxids[0]
                 else:
                     best_taxid = searchLCA(tuple(taxids), tax.records, buffer)
-                    classified = 'C'
+                    classified = "C"
 
                 # TODO
                 # save the kmers for saving later
-                #buffer_kmers = kmer_totals.copy()
+                # buffer_kmers = kmer_totals.copy()
 
                 # let us just ignore the 'A' and taxid 0
-                #kmer_totals['A'] = -1
-                #kmer_totals['0'] = -1
+                # kmer_totals['A'] = -1
+                # kmer_totals['0'] = -1
 
                 # 6% here
-                #best_taxid = find_best_hit(kmer_totals)
+                # best_taxid = find_best_hit(kmer_totals)
 
-                #print(kmer_totals, best_taxid)
-                #count+=1
-                #if count>10:
+                # print(kmer_totals, best_taxid)
+                # count+=1
+                # if count>10:
                 #    break
 
-
-                #kmers = " ".join([f"{k}:{v}" for k,v in kmer_totals.items()])
-                kmer_left = " ".join([ x.split("|:|")[0] for x in kmers])
+                # kmers = " ".join([f"{k}:{v}" for k,v in kmer_totals.items()])
+                kmer_left = " ".join([x.split("|:|")[0] for x in kmers])
                 try:
-                    kmer_right = " ".join([ x.split("|:|")[1] for x in kmers])
+                    kmer_right = " ".join([x.split("|:|")[1] for x in kmers])
                     kmers = kmer_left + " |:| " + kmer_right
                 except:
                     kmers = kmer_left
-
 
                 fout.write("\t".join([classified, parts[1], str(best_taxid), parts[3], kmers]))
             except Exception as err:
@@ -421,10 +421,3 @@ def build_consensus(inputs, output):
 
     # Get the aggregated k-mer information
     kmer_totals = scanner(inputs, output)
-
-
-
-
-
-
-

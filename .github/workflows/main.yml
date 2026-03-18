@@ -60,7 +60,7 @@ jobs:
     - name: testing
       shell: bash -l {0}
       run: |
-        poetry run pytest --cov-report term-missing --cov=sequana
+        poetry run pytest --cov-report=term-missing --cov=sequana
 
     - name: coveralls
       shell: bash -l {0}

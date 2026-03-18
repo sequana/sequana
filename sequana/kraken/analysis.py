@@ -16,11 +16,11 @@ import sys
 from pathlib import PosixPath
 
 import colorlog
-from colormap import Colormap
 from easydev import TempFile, md5
 from snakemake import shell
 
 from sequana import sequana_config_path
+from sequana.lazy import colormap as _colormap
 from sequana.lazy import numpy as np
 from sequana.lazy import pandas as pd
 from sequana.lazy import pylab
@@ -477,9 +477,9 @@ class KrakenResults:
             elif kingdom == "Viruses":
                 this_cmap = plt.cm.Greens
             elif kingdom == "Archaea":
-                this_cmap = Colormap().cmap_linear("yellow", "yellow", "orange")
+                this_cmap = _colormap.Colormap().cmap_linear("yellow", "yellow", "orange")
             else:
-                this_cmap = Colormap().cmap_linear("light gray", "gray(w3c)", "dark gray")
+                this_cmap = _colormap.Colormap().cmap_linear("light gray", "gray(w3c)", "dark gray")
 
             kingdom_colors.append(this_cmap(0.8))
             inner_colors.extend(this_cmap(np.linspace(0.6, 0.2, len(y))))

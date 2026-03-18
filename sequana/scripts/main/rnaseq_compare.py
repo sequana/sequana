@@ -11,7 +11,6 @@
 ##############################################################################
 import colorlog
 import rich_click as click
-from pylab import savefig
 
 from sequana.compare import RNADiffCompare
 from sequana.scripts.utils import CONTEXT_SETTINGS, common_logger
@@ -37,6 +36,8 @@ logger = colorlog.getLogger(__name__)
 @common_logger
 def rnaseq_compare(**kwargs):
     """Compare 2 tables created by the 'sequana rnadiff' command"""
+    from pylab import savefig
+
     c = RNADiffCompare(kwargs["file1"], kwargs["file2"])
     print(c.r1.summary())
     print(c.r2.summary())
