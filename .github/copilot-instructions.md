@@ -89,7 +89,7 @@ poetry run pytest test/test_<module>.py
 
 - Each module `sequana/<name>.py` typically has a corresponding `test/test_<name>.py`.
 - Test data is stored in `test/data/`.
-- Use `pytest.mark.skipif` or the `skiptravis` fixture from `test/conftest.py` for environment-specific skips.
+- Use `pytest.mark.skipif` for environment-specific skips.
 
 ---
 
@@ -106,4 +106,4 @@ poetry run pytest test/test_<module>.py
 
 - Heavy dependencies (e.g., `pysam`, `bioservices`) must be imported lazily via `sequana.lazy` to avoid slow startup times.
 - The package supports Python ≥ 3.10. Avoid using syntax or APIs unavailable in 3.10.
-- Snakemake version must be `< 8` (see `pyproject.toml`).
+- Snakemake support is currently `< 8` but v8 and v9 support is planned (see `pyproject.toml`).
