@@ -11,13 +11,9 @@
 #
 ##############################################################################
 
-import glob
 import json
-import os
-import shutil
-import time
-import urllib
-from os.path import expanduser
+import xml.etree.ElementTree as ET
+from io import BytesIO
 from pathlib import Path
 
 import colorlog
@@ -561,109 +557,107 @@ class KEGGPathwayEnrichment:
             f"pathway {pathway_ID} total genes: {len(summary)}. Found {count_down} down-regulated and {count_up} up-regulated"
         )
 
-        url = "https://www.kegg.jp/kegg-bin/show_pathway"
-
-        params = {
-            "map": pathway_ID,
-            "multi_query": "\r\n".join([f"{k} {v}" for k, v in colors.items()]),
-        }
-
         if filename is None:
             filename = f"{pathway_ID}.png"
 
         try:
-            # let us try the selenium solution. If it works, we overwrite the previous image
-            urlsel = url + f"?map={pathway_ID}&multi_query="
-            # print(urlsel)
-            # print("\\r\\n".join([f"{k} {v}" for k, v in colors.items()]))
-            urlsel += urllib.parse.quote("\r\n".join([f"{k} {v}" for k, v in colors.items()]))
-            if len(urlsel) >= 2048:
-                logger.warning(f"EXCESS. consider increasing l2fc: {len(urlsel)}, {len(colors)}")
-            self._download_kegg_image(urlsel, pathway_ID)
-            # in theory one should have an image called PATHWAYID_date_ID.png
-            # we need to renae it
-            home = expanduser("~")
-            filenames = glob.glob(f"{home}/Downloads/{pathway_ID}@2x_*png")
-            if len(filenames) > 1:
-                logger.warning(
-                    f"expected one PNG file. found several KEGG PNG files: {filenames}. please remove them. Moving the first one found"
-                )
-            if len(filenames) == 0:
-                logger.warning("no files were saved using headless call. roll back to requests ")
-            # filename is defined above by the user or as pathway_ID.png
-            shutil.move(filenames[0], filename)
+            self._annotate_pathway_image(pathway_ID, colors, filename)
         except Exception as err:  # pragma: no cover
-            print(err)
-
-            # color do not work anymore since Aug 2023 but this allows us to get the image
-            # in case the new implementation (above) fails
-            self.params = params
-            html_page = requests.post(url, data=params)
-            self.tmp = html_page
-            html_page = html_page.content.decode()
-
-            try:
-                links_to_png = [x for x in html_page.split() if "png" in x and x.startswith("src")]
-                link_to_png = links_to_png[0].replace("src=", "").replace('"', "")
-                r = requests.get(f"https://www.kegg.jp/{link_to_png}")
-                with open(filename, "wb") as fout:
-                    fout.write(r.content)
-            except IndexError:
-                logger.warning(f"could not create image for {pathway_ID}")
+            logger.warning(f"Could not create annotated image for {pathway_ID}: {err}. Saving unannotated image.")
+            self._save_unannotated_pathway_image(pathway_ID, filename)
 
         return summary
 
-    def _download_kegg_image(self, url, pathwayID):
-        from selenium import webdriver
-        from selenium.webdriver.chrome.service import Service as ChromeService
-        from selenium.webdriver.common.action_chains import ActionChains
-        from selenium.webdriver.common.by import By
-        from selenium.webdriver.support import expected_conditions as EC
-        from selenium.webdriver.support.ui import WebDriverWait
+    def _annotate_pathway_image(self, pathway_ID, colors, filename):
+        """Download KEGG pathway image and annotate gene boxes using KGML.
 
-        # Define the path to the Chrome WebDriver executable
-        # Drivers can be found here : https://pypi.org/project/selenium/
-        home = expanduser("~")
-        webdriver_path = f"{home}/.config/sequana/chromedriver"
-        if os.path.exists(webdriver_path) is False:
-            logger.critical(
-                "To annotate KEGG image, you currently need chrome and a valid/compatible selenium driver for chrome. Please see https://pypi.org/project/selenium"
-            )
+        This method fetches the base pathway image and the KGML structure
+        from the KEGG REST API, then uses Pillow to draw colored boxes on
+        the gene nodes according to their differential expression status.
 
-        # Set up the WebDriver with options
-        chrome_options = webdriver.ChromeOptions()
-        chrome_options.binary_location = "/usr/bin/google-chrome"  # Path to your Chrome executable
-        chrome_options.add_argument("--headless")  # Optional: run Chrome in headless mode (no GUI)
+        :param pathway_ID: KEGG pathway identifier (e.g. 'eco04122')
+        :param colors: dict mapping KEGG gene IDs to color strings, as
+            returned by :meth:`_get_colors`. Each value is either
+            ``'#rrggbb'`` (background only) or ``'#rrggbb,white'``
+            (background with white foreground text).
+        :param filename: output PNG file path
+        """
+        from PIL import Image, ImageDraw, ImageFont
 
-        # Create a ChromeService object with the WebDriver path
-        chrome_service = ChromeService(executable_path=webdriver_path)
+        rest_base = "https://rest.kegg.jp/get"
 
-        logger.info(f"Creating driver to access KEGG website for {pathwayID}")
-        # Create a WebDriver instance
-        driver = webdriver.Chrome(service=chrome_service, options=chrome_options)
+        # Download base pathway image
+        img_response = requests.get(f"{rest_base}/{pathway_ID}/image")
+        img_response.raise_for_status()
+        img = Image.open(BytesIO(img_response.content)).convert("RGB")
 
-        # Navigate to the web page. Wait 10s for the page to be updated with the requests
-        # somehow the WebDriverWait is not enough. Requests larger than 2048 characters will fail
-        # here, FIXME with a javascript of post requests but not easy.
-        driver.get(url)
-        time.sleep(10)
+        # Download KGML to get gene node positions
+        kgml_response = requests.get(f"{rest_base}/{pathway_ID}/kgml")
+        kgml_response.raise_for_status()
+        root = ET.fromstring(kgml_response.text)
 
-        # Find and click the menu tab 'download-menu'
-        download_menu = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "downloadMenu")))
+        # Build mapping: gene_id (without organism prefix) → bounding box
+        # KGML graphics coordinates are center-based; convert to (x0, y0, x1, y1)
+        gene_boxes = {}
+        gene_labels = {}
+        for entry in root.findall("entry"):
+            if entry.get("type") != "gene":
+                continue
+            graphics = entry.find("graphics")
+            if graphics is None:
+                continue
+            try:
+                cx = int(graphics.get("x", 0))
+                cy = int(graphics.get("y", 0))
+                w = int(graphics.get("width", 46))
+                h = int(graphics.get("height", 17))
+            except ValueError:
+                continue
+            box = (cx - w // 2, cy - h // 2, cx + w // 2, cy + h // 2)
+            # KGML 'name' attribute for gene entries may be truncated by KEGG
+            # with '...' when multiple genes share a node (e.g. "geneA...").
+            # We take only the first gene name for the label.
+            label = graphics.get("name", "").split("...")[0].strip()
+            for name in entry.get("name", "").split():
+                gene_id = name.split(":")[-1]
+                gene_boxes[gene_id] = box
+                gene_labels[gene_id] = label
 
-        # Use ActionChains to hover over the "Download" menu item
-        actions = ActionChains(driver)
-        actions.move_to_element(download_menu).perform()
+        draw = ImageDraw.Draw(img)
+        try:
+            font = ImageFont.load_default()
+        except (OSError, IOError):  # pragma: no cover
+            font = None
 
-        logger.info("Downloading image")
-        image_link = WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.LINK_TEXT, "Image (png) file 2x")))
-        actions.move_to_element(image_link).click().perform()
+        for gene_id, color_str in colors.items():
+            if gene_id not in gene_boxes:
+                continue
+            x0, y0, x1, y1 = gene_boxes[gene_id]
+            parts = color_str.split(",")
+            bg_color = parts[0]
+            fg_color = parts[1] if len(parts) > 1 else "#000000"
+            draw.rectangle([x0, y0, x1, y1], fill=bg_color)
+            label = gene_labels.get(gene_id, gene_id)
+            if label and font is not None:
+                # getbbox returns (left, top, right, bottom) for the text bounding box
+                bbox = font.getbbox(label)
+                text_w = bbox[2] - bbox[0]
+                text_h = bbox[3] - bbox[1]
+                text_x = x0 + max(0, (x1 - x0 - text_w) // 2)
+                text_y = y0 + max(0, (y1 - y0 - text_h) // 2)
+                draw.text((text_x, text_y), label, fill=fg_color)
 
-        # Wait for the download to complete (you can use a more robust approach to wait for the file to be ready)
-        time.sleep(5)
+        img.save(filename)
+        logger.info(f"Saved annotated pathway image to {filename}")
 
-        # Close the WebDriver
-        driver.quit()
+    def _save_unannotated_pathway_image(self, pathway_ID, filename):  # pragma: no cover
+        """Download the plain (unannotated) KEGG pathway image as a fallback."""
+        rest_base = "https://rest.kegg.jp/get"
+        response = requests.get(f"{rest_base}/{pathway_ID}/image")
+        response.raise_for_status()
+        with open(filename, "wb") as fout:
+            fout.write(response.content)
+        logger.info(f"Saved unannotated pathway image to {filename}")
 
     def save_significant_pathways(self, category, nmax=20, tag="", outdir="."):  # pragma: no cover
         """category should be up, down or all"""
