@@ -87,7 +87,8 @@ Here is a non-exhaustive list of tools and pipelines from the project, with user
       -  Not required
     * - `sequana-wrappers <https://github.com/sequana/sequana-wrappers>`_
       - Set of wrappers to build pipelines
-      - Not on pypi
+      - .. image:: https://badge.fury.io/py/sequana-wrappers.svg
+            :target: https://pypi.python.org/pypi/sequana-wrappers
       - .. image:: https://github.com/sequana/sequana-wrappers/actions/workflows/main.yml/badge.svg
             :target: https://github.com/sequana/sequana-wrappers/actions/workflows/main.yml
       - Not required
