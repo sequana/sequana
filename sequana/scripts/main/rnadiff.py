@@ -371,7 +371,7 @@ def rnadiff(**kwargs):
     comparisons = kwargs["comparisons"]
     if comparisons:
         # use \s*,\s* to strip spaces
-        compa_df = pd.read_csv(comparisons, sep="\s*,\s*", engine="python")
+        compa_df = pd.read_csv(comparisons, sep=r"\s*,\s*", engine="python")
         comparisons = list(zip(compa_df["alternative"], compa_df["reference"]))
 
     logger.info(f"Differential analysis to be saved into ./{outdir}")

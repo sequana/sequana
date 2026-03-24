@@ -55,52 +55,70 @@ logger = colorlog.getLogger(__name__)
     default=50,
     help=""" chunk at beginning and end to look at """,
 )
+@click.option(
+    "--plot-style",
+    type=click.Choice(["annotated", "legacy"], case_sensitive=False),
+    default="annotated",
+    show_default=True,
+    help="""Per-contig plot style. 'annotated' overlays both strand signals with """
+    """color-coded telomeric regions and a status badge; 'legacy' shows two """
+    """separate raw subplots (original behaviour).""",
+)
 # @click.option("--exclude-chromosomes", type=click.STRING, default="", help="""list of chromosomes to exclude separated by commas""")
 @common_logger
 def telomark(**kwargs):
-    """ """
+    """Scan a FASTA file for telomeric repeats and report their positions."""
     from sequana.telomere import Telomere
 
     telo = Telomere(kwargs["fasta_file"], peak_height=kwargs["peak_height"], peak_width=kwargs["peak_width"])
 
     tag = kwargs["tag"]
+    plot_style = kwargs["plot_style"]
 
     if kwargs["chromosomes"]:
         chromosomes = kwargs["chromosomes"].split(",")
-        results = telo.run(names=chromosomes, tag=tag, Nmax=kwargs["chunk_size"] * 2)
+        results = telo.run(names=chromosomes, tag=tag, Nmax=kwargs["chunk_size"] * 2, plot_style=plot_style)
     else:
-        results = telo.run(tag=tag, Nmax=kwargs["chunk_size"] * 2)
+        results = telo.run(tag=tag, Nmax=kwargs["chunk_size"] * 2, plot_style=plot_style)
 
     results.to_csv(f"sequana.telomark.{tag}.csv", index=False)
 
     import pandas as pd
-    from pylab import clf, colorbar, imshow, savefig, xlabel, xticks, ylabel, yticks
 
-    clf()
     df = pd.read_csv(f"sequana.telomark.{tag}.csv")
-    imshow(
-        df[["5to3_LHS_position", "5to3_RHS_position", "3to5_LHS_position", "3to5_RHS_position"]] > 0,
-        aspect="auto",
-        cmap="YlGn",
-    )
-    ylabel("chromosome", fontsize=16)
 
-    yticks(range(0, len(df)), df["name"].values, fontsize=8)
-    xlabel("telomere", fontsize=16)
-    xticks([0, 1, 2, 3], ["LHS", "reversed RHS", "reversed LHS", "RHS"])
-    savefig(f"sequana.telomark.summary_binary.{tag}.png", dpi=200)
+    if plot_style == "annotated":
+        fig = telo.plot_summary(df)
+        fig.savefig(f"sequana.telomark.summary.{tag}.png", dpi=200, bbox_inches="tight")
+        import pylab
 
-    clf()
-    imshow(
-        df[["5to3_LHS_length", "5to3_RHS_length", "3to5_LHS_length", "3to5_RHS_length"]],
-        aspect="auto",
-        vmin=0,
-        vmax=5000,
-        cmap="YlGn",
-    )
-    colorbar()
-    yticks(range(0, len(df)), df["name"].values, fontsize=8)
-    xlabel("telomere", fontsize=16)
-    ylabel("chromosome", fontsize=16)
-    xticks([0, 1, 2, 3], ["LHS", "reversed RHS", "reversed LHS", "RHS"])
-    savefig(f"sequana.telomark.summary.{tag}.png", dpi=200)
+        pylab.close(fig)
+    else:
+        from pylab import clf, colorbar, imshow, savefig, xlabel, xticks, ylabel, yticks
+
+        clf()
+        imshow(
+            df[["5to3_LHS_position", "5to3_RHS_position", "3to5_LHS_position", "3to5_RHS_position"]] > 0,
+            aspect="auto",
+            cmap="YlGn",
+        )
+        ylabel("chromosome", fontsize=16)
+        yticks(range(0, len(df)), df["name"].values, fontsize=8)
+        xlabel("telomere", fontsize=16)
+        xticks([0, 1, 2, 3], ["LHS", "reversed RHS", "reversed LHS", "RHS"])
+        savefig(f"sequana.telomark.summary_binary.{tag}.png", dpi=200)
+
+        clf()
+        imshow(
+            df[["5to3_LHS_length", "5to3_RHS_length", "3to5_LHS_length", "3to5_RHS_length"]],
+            aspect="auto",
+            vmin=0,
+            vmax=5000,
+            cmap="YlGn",
+        )
+        colorbar()
+        yticks(range(0, len(df)), df["name"].values, fontsize=8)
+        xlabel("telomere", fontsize=16)
+        ylabel("chromosome", fontsize=16)
+        xticks([0, 1, 2, 3], ["LHS", "reversed RHS", "reversed LHS", "RHS"])
+        savefig(f"sequana.telomark.summary.{tag}.png", dpi=200)
