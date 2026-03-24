@@ -114,6 +114,7 @@ class Kozak:
 
         # place holder for various metrics
         self.metrics = {}
+        self._background_method = "genome"  # default
 
     @property
     def genetic_type(self):
@@ -125,14 +126,27 @@ class Kozak:
             raise ValueError(f"Invalid genetic_type '{value}'. " f"Must be one of {sorted(self._valid_genetic_types)}")
         self._genetic_type = value
 
-    def set_context(self, left_kozak=6, right_kozak=6, keep_ATG_only=True, include_start_codon=False):
+    def set_context(
+        self,
+        left_kozak=6,
+        right_kozak=6,
+        keep_ATG_only=True,
+        include_start_codon=False,
+        background_method="genome",
+    ):
         assert left_kozak > 0
         assert right_kozak > 0
         self._left_kozak = left_kozak
         self._right_kozak = right_kozak
         self._keep_ATG_only = keep_ATG_only
         self._include_start_codon = include_start_codon
-        self.get_random_atg_contexts.cache_clear()
+        self._background_method = background_method
+
+        _valid_methods = ["context", "genome", "shuffled", "uniform"]
+        if background_method not in _valid_methods:
+            raise ValueError(f"background_method must be one of {_valid_methods}")
+        self._get_full_background.cache_clear()
+        self._get_annotated_starts_by_chrom.cache_clear()
         try:
             del self._cached_df
         except AttributeError:
@@ -439,10 +453,10 @@ class Kozak:
     def _get_KL_data(self, df=None, n_boot=500, ci=95, left=None, right=None):
 
         if left or right:
-            self.get_random_atg_contexts.cache_clear()
+            self._get_full_background.cache_clear()
             with self.temporary_lr(left=left, right=right):
                 logo_data = self._get_logo_data(df=df)
-                background = self.get_random_atg_contexts()
+                background = self.get_random_contexts()
                 mu, low, high = self.bootstrap(
                     logo_data,
                     background,
@@ -451,7 +465,7 @@ class Kozak:
                 )
         else:
             logo_data = self._get_logo_data(df=df)
-            background = self.get_random_atg_contexts()
+            background = self.get_random_contexts()
             mu, low, high = self.bootstrap(
                 logo_data,
                 background,
@@ -491,31 +505,38 @@ class Kozak:
         pylab.xticks(range(len(data)), indices)
         _ = pylab.yticks([])
 
-    def plot_kozak_chi2(self, motif=None, GC_mode="context", fontsize=10, noplot=False):
+    def plot_kozak_chi2(self, motif=None, GC_mode=None, fontsize=10, noplot=False):
         """
-        for GC computation, 3 options:
-            1. genomic ATG background excluding annotated starts.go)od for GC bias, codon bias, local sequence structure.
+        for GC computation, 2 options:
+            1. genomic ATG background excluding annotated starts. Good for GC bias, codon bias, local sequence structure.
             2. genome wide base composition. simple and fast but inflates signal in GC biases genomes. does not control for ATG specific context. This is a simple a genome-wide background is estimated assuming strand symmetry:
                 G = C = GC / 2
                 A = T = AT / 2
-            3. uniform background. comparable across species, no computation but biologically naive and misleading for GC genomes
-
         """
         if motif is None:
             motif = self._get_logo_data()
         df = motif  # just an alias
 
+        if GC_mode is None:
+            if self._background_method == "context":
+                GC_mode = "context"
+            else:
+                # genome and shuffled
+                GC_mode = "genome"
+
         if GC_mode == "context":
-            atg = self.get_random_atg_contexts()
+            atg = self.get_random_contexts()
             seq = atg["kozak_left"].str.cat(atg["kozak_right"])
             GC = seq.str.count("[GC]").sum() / seq.str.len().sum()
-        elif GC_mode == "genome":
-            GC = self.metrics.get("GC", self.fasta.GC_content())
-        elif GC_mode == "uniform":
-            GC = 0.5
+        elif GC_mode in ["shuffled", "genome", "uniform"]:
+            if "GC" in self.metrics:
+                GC = self.metrics["GC"]
+            else:
+                GC = self.metrics.get("GC", self.fasta.GC_content()) / 100
+                self.metrics["GC"] = GC
         else:
-            raise ValueError("GC_mode must be context, genome, uniform")
-
+            raise ValueError("GC_mode must be context or genome")
+        assert GC <= 1 and GC >= 0
         # computes chi2
         from scipy.stats import chisquare
 
@@ -578,11 +599,113 @@ class Kozak:
     def _is_annotated_start(self, chromosome, position):
         return position in self._get_annotated_starts_by_chrom().get(chromosome, set())
 
-    @functools.lru_cache(maxsize=None)  # None means no limit on cache size
-    def get_random_atg_contexts(self, Nmax=10000, quiet=True):
-        # user defined values assuming users know what they are doing
+    def get_random_contexts(self, Nmax=None, quiet=True):
+        """
+        Return a background distribution of Kozak contexts.
+        """
+        # We need Nmax at the end, but the core generation can be cached for a large number
+        # unless Nmax is very small.
+        # However, it's safer to just cache the full background and then sample if needed.
+        bg = self._get_full_background(quiet=quiet)
 
-        #
+        df = self.get_data()
+        if Nmax is None:
+            Nmax = len(df)
+
+        if len(bg) == Nmax:
+            return bg.copy()
+        elif len(bg) > Nmax:
+            return bg.iloc[:Nmax].copy()
+        else:
+            return bg.sample(n=Nmax, replace=True).copy()
+
+    @functools.lru_cache(maxsize=None)
+    def _get_full_background(self, quiet=True):
+        df = self.get_data()
+        Nmax = len(df)
+
+        if self._background_method == "shuffled":
+            return self._get_shuffled_background(df, Nmax)
+        elif self._background_method == "uniform":
+            return self._get_uniform_background(df, Nmax)
+        else:
+            # genomic method can generate more if needed, but let's stick to len(df) as default
+            return self._get_genomic_background(df, Nmax, quiet)
+
+    def _get_uniform_background(self, df, Nmax):
+        """
+        Generate background by independently sampling nucleotides at each position
+        based on overall genomic GC content.
+        """
+        if "GC" in self.metrics:
+            GC = self.metrics["GC"]
+        else:
+            GC = self.fasta.GC_content() / 100
+            self.metrics["GC"] = GC
+
+        # Probabilities: [A, C, G, T]
+        p = [(1 - GC) / 2, GC / 2, GC / 2, (1 - GC) / 2]
+        bases = ["A", "C", "G", "T"]
+
+        L = self.left_kozak
+        R = self.right_kozak
+
+        # Sample proportions for start codons from observed data
+        codon_counts = df["start_codon"].value_counts(normalize=True)
+        target_codons = codon_counts.index.tolist()
+        proportions = codon_counts.values
+
+        lefts = []
+        rights = []
+        starts = []
+
+        for _ in range(Nmax):
+            left = "".join(np.random.choice(bases, size=L, p=p))
+            right = "".join(np.random.choice(bases, size=R, p=p))
+            start = np.random.choice(target_codons, p=proportions)
+            lefts.append(left)
+            rights.append(right)
+            starts.append(start)
+
+        return pd.DataFrame({"kozak_left": lefts, "start_codon": starts, "kozak_right": rights})
+
+    def _get_shuffled_background(self, df, Nmax):
+        """
+        Generate background by shuffling observed Kozak sequences.
+        """
+        # We sample with replacement if Nmax > len(df)
+        if Nmax > len(df):
+            df_sampled = df.sample(n=Nmax, replace=True)
+        else:
+            df_sampled = df.sample(n=Nmax)
+
+        lefts = df_sampled["kozak_left"].tolist()
+        rights = df_sampled["kozak_right"].tolist()
+        starts = df_sampled["start_codon"].tolist()
+
+        # Shuffle each sequence independently
+        new_lefts = []
+        new_rights = []
+        for l, r in zip(lefts, rights):
+            l_list = list(l)
+            r_list = list(r)
+            random.shuffle(l_list)
+            random.shuffle(r_list)
+            new_lefts.append("".join(l_list))
+            new_rights.append("".join(r_list))
+        lefts, rights = new_lefts, new_rights
+
+        return pd.DataFrame({"kozak_left": lefts, "start_codon": starts, "kozak_right": rights})
+
+    def _get_genomic_background(self, df, Nmax, quiet=True):
+        """
+        Generate background by sampling random genomic locations with matching start codons.
+        """
+        # Calculate start codon proportions from observed data
+        codon_counts = df["start_codon"].value_counts(normalize=True)
+        target_codons = codon_counts.index.tolist()
+        proportions = codon_counts.values
+
         chrom_lengths = [l for l in self.fasta.lengths]
         cum_lengths = np.cumsum(chrom_lengths)
         total_length = cum_lengths[-1]
@@ -591,33 +714,32 @@ class Kozak:
         rights = []
         starts = []
 
-        logger.info("Get annotated start position")
-        annotated = self._get_annotated_starts_by_chrom()  # must be precomputed set
+        annotated = self._get_annotated_starts_by_chrom()
 
-        logger.info("Scanning reference")
         while len(lefts) < Nmax:
+            # Random global position
+            gpos = random.randint(0, total_length - 4)
 
-            # random global position
-            gpos = random.randint(0, total_length - 3)
-
-            # map global position to chromosome
+            # Map global position to chromosome
             chrom_idx = np.searchsorted(cum_lengths, gpos, side="right")
-            if chrom_idx == 0:
-                local_pos = gpos
-            else:
-                local_pos = gpos - cum_lengths[chrom_idx - 1]
+            local_pos = gpos if chrom_idx == 0 else gpos - cum_lengths[chrom_idx - 1]
 
-            seq = self.fasta.sequences[chrom_idx]
+            try:
+                seq = self.fasta.sequences[chrom_idx].upper()
+            except IndexError:
+                continue
+
             chrom = self.fasta.names[chrom_idx]
 
-            # 2 jumps to next ATG
-            local_pos = seq.find("ATG", local_pos)
-            if local_pos == -1:
-                local_pos = seq.find("atg", local_pos)
-                if local_pos == -1:
-                    continue
+            # Sample a target start codon based on observed proportions
+            target = np.random.choice(target_codons, p=proportions)
 
-            # 3 context checks
+            # Find next occurrence of this target codon
+            local_pos = seq.find(target, local_pos)
+            if local_pos == -1:
+                continue
+
+            # Context check (not an annotated start)
             if local_pos + 1 in annotated.get(chrom, set()):
                 continue
 
@@ -627,9 +749,9 @@ class Kozak:
             if len(left) != self.left_kozak or len(right) != self.right_kozak:
                 continue
 
-            lefts.append(left.upper())
-            rights.append(right.upper())
-            starts.append("ATG")
+            lefts.append(left)
+            rights.append(right)
+            starts.append(target)
 
         return pd.DataFrame({"kozak_left": lefts, "start_codon": starts, "kozak_right": rights})
 
@@ -677,43 +799,71 @@ class Kozak:
             DataFrame with columns ['A', 'C', 'G', 'T'] containing
             nucleotide frequencies per position.
 
-        background : background distribution.
+        random_df : pandas.DataFrame
+            Background distribution.
 
         Returns
         -------
         numpy.ndarray
             KL divergence (bits) for each motif position.
         """
-        from scipy.stats import entropy
+        p = motif_df[["A", "C", "G", "T"]].values.astype(float) + 1e-12
+        q = random_df[["A", "C", "G", "T"]].values.astype(float) + 1e-12
 
-        kl = []
-        for (_, p_row), (_, q_row) in zip(
-            motif_df[["A", "C", "G", "T"]].iterrows(), random_df[["A", "C", "G", "T"]].iterrows()
-        ):
-            p = p_row.values.astype(float) + 1e-12
-            q = q_row.values.astype(float) + 1e-12
-            kl.append(entropy(p, q, base=2))
-
-        return np.asarray(kl)
+        # KL divergence: sum(p * log2(p/q))
+        return np.sum(p * np.log2(p / q), axis=1)
 
     def bootstrap(self, df, contexts, n_boot=500, ci=95, sample_size=200):
-
-        # order ACGT
+        """
+        Perform bootstrapping to compute confidence intervals for KL divergence.
+        """
         n = len(contexts)
         if self.include_start_codon:
-            seq = contexts["kozak_left"].str.cat(contexts["start_codon"]).str.cat(contexts["kozak_right"])
+            seqs = contexts["kozak_left"].str.cat(contexts["start_codon"]).str.cat(contexts["kozak_right"]).values
             L = self.left_kozak + 3 + self.right_kozak
         else:
-            seq = contexts["kozak_left"].str.cat(contexts["kozak_right"])
+            seqs = contexts["kozak_left"].str.cat(contexts["kozak_right"]).values
             L = self.left_kozak + self.right_kozak
 
+        # Fast one-hot encoding of all sequences
+        # Mapping: A=0, C=1, G=2, T=3
+        mapping = {"A": 0, "C": 1, "G": 2, "T": 3}
+
+        # Convert all sequences to a numeric (N, L) array
+        # This is much faster than strings in a loop
+        numeric_seqs = np.zeros((n, L), dtype=int)
+        for i, s in enumerate(seqs):
+            # Skip non-ACGT characters if any (default to 0/A or we could handle Ns)
+            numeric_seqs[i] = [mapping.get(c, 0) for c in s]
+
+        # Pre-allocate boot array
         boot = np.zeros((n_boot, L))
 
+        # Pre-compute P values for KL divergence calculation
+        # p is (L, 4)
+        p = df[["A", "C", "G", "T"]].values.astype(float) + 1e-12
+
+        sample_size = min(n, sample_size)
+
         for b in tqdm(range(n_boot)):
-            idx = np.random.randint(0, n, min(n, sample_size))
-            sample = contexts.iloc[idx]
-            bg = self._get_logo_data(sample)
-            boot[b] = self.kl_vs_random_atg(df, bg)
+            # Randomly sample indices
+            idx = np.random.randint(0, n, sample_size)
+            sample_numeric = numeric_seqs[idx]
+
+            # Compute counts efficiently using numpy
+            # For each position, count occurrences of 0, 1, 2, 3
+            # Resulting array: (L, 4)
+            counts = np.zeros((L, 4))
+            for i in range(4):
+                counts[:, i] = np.sum(sample_numeric == i, axis=0)
+
+            # Convert counts to background probabilities q
+            q = counts / sample_size + 1e-12
+
+            # Compute KL divergence: sum(p * log2(p/q)) along nucleotides (axis 1)
+            # kl shape: (L,)
+            kl = np.sum(p * np.log2(p / q), axis=1)
+            boot[b] = kl
 
         mean = boot.mean(axis=0)
         low = np.percentile(boot, (100 - ci) / 2, axis=0)

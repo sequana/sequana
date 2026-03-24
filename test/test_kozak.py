@@ -36,3 +36,22 @@ def test_kozak():
     assert k._add_purine_pyrimidine(motif).equals(k.plot_logo_purine_pyrimidine())
 
     k.get_entropy(motif)
+
+
+def test_kozak_uniform():
+    fastafile = f"{test_dir}/data/fasta/ecoli_MG1655.fa"
+    gff = f"{test_dir}/data/gff/ecoli_MG1655.gff"
+
+    k = Kozak(fastafile, gff, "gene", "ID")
+    k.set_context(background_method="uniform")
+
+    # Trigger background generation
+    bg = k.get_random_contexts()
+    assert len(bg) == len(k.get_data())
+    assert "kozak_left" in bg.columns
+    assert "start_codon" in bg.columns
+    assert "kozak_right" in bg.columns
+
+    # Check KL divergence with uniform background
+    kl = k._get_KL_data()
+    assert len(kl) == k.left_kozak + k.right_kozak
