@@ -1,4 +1,4 @@
-from sequana.sequence import DNA, RNA, Repeats
+from sequana.sequence import DNA, RNA, Repeats, Sequence
 
 from . import test_dir
 
@@ -120,3 +120,84 @@ def test_gc_skew():
     dna.plot_all_skews()
     for x in dna:  # test the iterator
         pass
+
+
+def test_sequence_get_statistics():
+    s = Sequence("AACGGTT")
+    stats = s.get_statistics()
+    assert "single" in stats
+    df = stats["single"]
+    assert df.loc["A", "count"] == 2
+    assert df.loc["G", "count"] == 2
+    assert df.loc["C", "count"] == 1
+    assert df.loc["T", "count"] == 2
+    assert df.loc["GC", "count"] == 3
+    assert abs(df.loc["A", "percentage"] - 2 / 7 * 100) < 1e-6
+
+
+def test_sequence_iter():
+    # test_shustring.fa has 3 sequences; __init__ consumes the first,
+    # so the iterator should yield the remaining 2
+    multi_fa = f"{test_dir}/data/fasta/test_shustring.fa"
+    dna = DNA(multi_fa)
+    chunks = list(dna)
+    assert len(chunks) == 2
+    assert all(isinstance(c, str) for c in chunks)
+
+
+def test_dna_get_dna_flexibility():
+    # Use a short known sequence; result should be a numpy array of same length
+    seq = "ACGTACGTACGT"
+    dna = DNA(seq)
+    flex = dna.get_dna_flexibility(window=4)
+    assert len(flex) == len(seq)
+    assert all(f > 0 for f in flex)
+
+
+def test_dna_get_entropy():
+    # Uniform sequence -> low entropy; mixed -> higher
+    dna_uniform = DNA("AAAAAAAAAA")
+    dna_mixed = DNA("ACGTACGTAC")
+    e_uniform = dna_uniform.get_entropy(window=4)
+    e_mixed = dna_mixed.get_entropy(window=4)
+    assert len(e_uniform) == 10
+    assert e_uniform.mean() < e_mixed.mean()
+
+
+def test_dna_get_informational_entropy():
+    seq = "ACGTACGTACGTACGT"
+    dna = DNA(seq)
+    ie = dna.get_informational_entropy(window=8)
+    assert len(ie) == len(seq)
+    assert all(v >= 0 for v in ie)
+
+
+def test_dna_get_dinucleotide_count():
+    seq = "AACCGGTT"
+    dna = DNA(seq)
+    result = dna.get_dinucleotide_count(window=4)
+    assert len(result) == len(seq)
+    assert all(isinstance(v, int) for v in result)
+
+
+def test_dna_get_trinucleotide_count():
+    seq = "AAACCCGGGTTT"
+    dna = DNA(seq)
+    result = dna.get_trinucleotide_count(window=6)
+    assert len(result) == len(seq)
+
+
+def test_dna_get_homopolymers():
+    seq = "AAAACCCGGGTTTT"
+    dna = DNA(seq)
+    result = dna.get_homopolymers(N=3, window=6)
+    assert len(result) == len(seq)
+    assert any(v > 0 for v in result)
+
+
+def test_dna_get_karlin_signature_difference():
+    seq = "ACGTACGTACGTACGTACGTACGT"
+    dna = DNA(seq)
+    result = dna.get_karlin_signature_difference(window=10)
+    assert len(result) == len(seq)
+    assert all(v >= 0 for v in result)

@@ -11,13 +11,9 @@
 #
 ##############################################################################
 
-import glob
 import json
-import os
-import shutil
-import time
-import urllib
-from os.path import expanduser
+import xml.etree.ElementTree as ET
+from io import BytesIO
 from pathlib import Path
 
 import colorlog
@@ -560,109 +556,228 @@ class KEGGPathwayEnrichment:
             f"pathway {pathway_ID} total genes: {len(summary)}. Found {count_down} down-regulated and {count_up} up-regulated"
         )
 
-        url = "https://www.kegg.jp/kegg-bin/show_pathway"
-
-        params = {
-            "map": pathway_ID,
-            "multi_query": "\r\n".join([f"{k} {v}" for k, v in colors.items()]),
-        }
-
         if filename is None:
             filename = f"{pathway_ID}.png"
 
         try:
-            # let us try the selenium solution. If it works, we overwrite the previous image
-            urlsel = url + f"?map={pathway_ID}&multi_query="
-            # print(urlsel)
-            # print("\\r\\n".join([f"{k} {v}" for k, v in colors.items()]))
-            urlsel += urllib.parse.quote("\r\n".join([f"{k} {v}" for k, v in colors.items()]))
-            if len(urlsel) >= 2048:
-                logger.warning(f"EXCESS. consider increasing l2fc: {len(urlsel)}, {len(colors)}")
-            self._download_kegg_image(urlsel, pathway_ID)
-            # in theory one should have an image called PATHWAYID_date_ID.png
-            # we need to renae it
-            home = expanduser("~")
-            filenames = glob.glob(f"{home}/Downloads/{pathway_ID}@2x_*png")
-            if len(filenames) > 1:
-                logger.warning(
-                    f"expected one PNG file. found several KEGG PNG files: {filenames}. please remove them. Moving the first one found"
-                )
-            if len(filenames) == 0:
-                logger.warning("no files were saved using headless call. roll back to requests ")
-            # filename is defined above by the user or as pathway_ID.png
-            shutil.move(filenames[0], filename)
-        except Exception as err:  # pragma: no cover
-            print(err)
-
-            # color do not work anymore since Aug 2023 but this allows us to get the image
-            # in case the new implementation (above) fails
-            self.params = params
-            html_page = requests.post(url, data=params)
-            self.tmp = html_page
-            html_page = html_page.content.decode()
-
-            try:
-                links_to_png = [x for x in html_page.split() if "png" in x and x.startswith("src")]
-                link_to_png = links_to_png[0].replace("src=", "").replace('"', "")
-                r = requests.get(f"https://www.kegg.jp/{link_to_png}")
-                with open(filename, "wb") as fout:
-                    fout.write(r.content)
-            except IndexError:
-                logger.warning(f"could not create image for {pathway_ID}")
+            self._render_pathway_image(pathway_ID, colors, filename)
+        except Exception as err:
+            logger.warning(f"Could not create image for {pathway_ID}: {err}")
 
         return summary
 
-    def _download_kegg_image(self, url, pathwayID):
-        from selenium import webdriver
-        from selenium.webdriver.chrome.service import Service as ChromeService
-        from selenium.webdriver.common.action_chains import ActionChains
-        from selenium.webdriver.common.by import By
-        from selenium.webdriver.support import expected_conditions as EC
-        from selenium.webdriver.support.ui import WebDriverWait
+    def _render_pathway_image(self, pathway_id, colors, filename):
+        """Download KEGG pathway static image and overlay gene colors using KGML coordinates.
 
-        # Define the path to the Chrome WebDriver executable
-        # Drivers can be found here : https://pypi.org/project/selenium/
-        home = expanduser("~")
-        webdriver_path = f"{home}/.config/sequana/chromedriver"
-        if os.path.exists(webdriver_path) is False:
-            logger.critical(
-                "To annotate KEGG image, you currently need chrome and a valid/compatible selenium driver for chrome. Please see https://pypi.org/project/selenium"
+        Uses the KEGG REST API:
+        - ``https://rest.kegg.jp/get/{pathway_id}/image`` for the background PNG
+        - ``https://rest.kegg.jp/get/{pathway_id}/kgml`` for node bounding boxes
+
+        :param pathway_id: KEGG pathway ID (e.g. ``eco00010``)
+        :param colors: dict mapping KEGG gene entry IDs to hex color strings
+            (optionally ``"#rrggbb,white"`` for contrasting text, only the hex part is used)
+        :param filename: output PNG file path
+        """
+        from matplotlib import colormaps
+        from PIL import Image, ImageDraw, ImageFont
+
+        try:
+            cmap = colormaps["PuOr_r"]
+        except Exception:
+            from matplotlib.cm import get_cmap
+
+            cmap = get_cmap("PuOr_r")
+
+        img_resp = requests.get(f"https://rest.kegg.jp/get/{pathway_id}/image")
+        img_resp.raise_for_status()
+        img = Image.open(BytesIO(img_resp.content)).convert("RGBA")
+
+        kgml_resp = requests.get(f"https://rest.kegg.jp/get/{pathway_id}/kgml")
+        kgml_resp.raise_for_status()
+        root = ET.fromstring(kgml_resp.text)
+
+        overlay = Image.new("RGBA", img.size, (0, 0, 0, 0))
+        draw = ImageDraw.Draw(overlay)
+
+        try:
+            font = ImageFont.load_default(size=9)
+        except TypeError:
+            font = ImageFont.load_default()
+
+        logger.info(f"colors dict: {len(colors)} entries, sample keys: {list(colors.keys())[:5]}")
+
+        gene_entries = root.findall("entry[@type='gene']")
+        logger.info(f"KGML gene entries: {len(gene_entries)}")
+
+        _RED_BORDER = (200, 0, 0, 255)  # red outline for map/pathway-link boxes
+        _PURPLE_BORDER = (128, 0, 128, 255)  # purple outline for compound/metabolite circles
+
+        def _draw_node(gx, gy, gw, gh, bg, text_col, label, shape="rectangle", outline=(0, 0, 0, 255), outline_width=1):
+            box = (gx - gw // 2, gy - gh // 2, gx + gw // 2, gy + gh // 2)
+            if shape == "circle":
+                draw.ellipse(box, fill=bg, outline=outline, width=outline_width)
+            elif shape == "roundrectangle":
+                draw.rounded_rectangle(box, radius=4, fill=bg, outline=outline, width=outline_width)
+            else:
+                draw.rectangle(box, fill=bg, outline=outline, width=outline_width)
+            if label:
+                lbbox = draw.textbbox((0, 0), label, font=font)
+                lw, lh = lbbox[2] - lbbox[0], lbbox[3] - lbbox[1]
+                draw.text((gx - lw // 2, gy - lh // 2), label, fill=text_col, font=font)
+
+        # Pass 1a: paint all gene nodes white so DE colors stand out
+        for entry in gene_entries:
+            gr = entry.find("graphics")
+            if gr is None:
+                continue
+            _draw_node(
+                int(gr.get("x", 0)),
+                int(gr.get("y", 0)),
+                int(gr.get("width", 46)),
+                int(gr.get("height", 17)),
+                bg=(255, 255, 255, 255),
+                text_col=(0, 0, 0, 255),
+                label=gr.get("name", "").split(",")[0].strip(),
             )
 
-        # Set up the WebDriver with options
-        chrome_options = webdriver.ChromeOptions()
-        chrome_options.binary_location = "/usr/bin/google-chrome"  # Path to your Chrome executable
-        chrome_options.add_argument("--headless")  # Optional: run Chrome in headless mode (no GUI)
+        # Pass 1b: paint ortholog boxes and compound circles green to restore visual variety
+        for etype in ("ortholog", "compound"):
+            for entry in root.findall(f"entry[@type='{etype}']"):
+                gr = entry.find("graphics")
+                if gr is None:
+                    continue
+                shape = gr.get("type", "rectangle")
+                label = ""  # original text already in the KEGG image; avoid overwriting
+                _draw_node(
+                    int(gr.get("x", 0)),
+                    int(gr.get("y", 0)),
+                    int(gr.get("width", 8)),
+                    int(gr.get("height", 8)),
+                    bg=(0, 0, 0, 0),  # transparent fill
+                    text_col=(0, 0, 0, 255),
+                    label=label,
+                    shape=shape,
+                    outline=_PURPLE_BORDER,
+                    outline_width=2,
+                )
 
-        # Create a ChromeService object with the WebDriver path
-        chrome_service = ChromeService(executable_path=webdriver_path)
+        # Pass 1c: map (pathway link) boxes — red border only, no fill so original text shows through
+        for entry in root.findall("entry[@type='map']"):
+            gr = entry.find("graphics")
+            if gr is None:
+                continue
+            _draw_node(
+                int(gr.get("x", 0)),
+                int(gr.get("y", 0)),
+                int(gr.get("width", 100)),
+                int(gr.get("height", 25)),
+                bg=(0, 0, 0, 0),  # transparent fill
+                text_col=(0, 0, 0, 255),
+                label="",
+                shape=gr.get("type", "roundrectangle"),
+                outline=_RED_BORDER,
+                outline_width=3,
+            )
 
-        logger.info(f"Creating driver to access KEGG website for {pathwayID}")
-        # Create a WebDriver instance
-        driver = webdriver.Chrome(service=chrome_service, options=chrome_options)
+        # Pass 2: color DE genes
+        colored = 0
+        for entry in gene_entries:
+            gene_ids = [gid.split(":")[-1] for gid in entry.get("name", "").split()]
+            gr = entry.find("graphics")
+            if gr is None:
+                continue
+            for gid in gene_ids:
+                if gid in colors:
+                    color_str = colors[gid]
+                    parts = color_str.split(",")
+                    hex_color = parts[0]
+                    text_col = (255, 255, 255, 255) if len(parts) > 1 else (0, 0, 0, 255)
+                    cr, cg, cb = int(hex_color[1:3], 16), int(hex_color[3:5], 16), int(hex_color[5:7], 16)
+                    _draw_node(
+                        int(gr.get("x", 0)),
+                        int(gr.get("y", 0)),
+                        int(gr.get("width", 46)),
+                        int(gr.get("height", 17)),
+                        bg=(cr, cg, cb, 255),
+                        text_col=text_col,
+                        label=gr.get("name", "").split(",")[0].strip(),
+                    )
+                    colored += 1
+                    break
 
-        # Navigate to the web page. Wait 10s for the page to be updated with the requests
-        # somehow the WebDriverWait is not enough. Requests larger than 2048 characters will fail
-        # here, FIXME with a javascript of post requests but not easy.
-        driver.get(url)
-        time.sleep(10)
+        # Pass 3: draw legend
+        self._draw_log2fc_legend(draw, img.size, font, cmap)
 
-        # Find and click the menu tab 'download-menu'
-        download_menu = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "downloadMenu")))
+        logger.info(f"Colored {colored}/{len(gene_entries)} gene nodes in {pathway_id}")
+        Image.alpha_composite(img, overlay).convert("RGB").save(filename)
 
-        # Use ActionChains to hover over the "Download" menu item
-        actions = ActionChains(driver)
-        actions.move_to_element(download_menu).perform()
+    def _draw_log2fc_legend(self, draw, img_size, font, cmap):
+        """Draw a log2FC color gradient legend in the bottom-right corner of the overlay."""
+        from PIL import ImageFont
 
-        logger.info("Downloading image")
-        image_link = WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.LINK_TEXT, "Image (png) file 2x")))
-        actions.move_to_element(image_link).click().perform()
+        # Try to load a TrueType font for crisp rendering; fall back to default bitmap font
+        _FONT_PATHS = [
+            "/usr/share/fonts/dejavu-sans-fonts/DejaVuSans.ttf",
+            "/usr/share/fonts/dejavu/DejaVuSans.ttf",
+            "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+            "/usr/share/fonts/liberation-sans/LiberationSans-Regular.ttf",
+            "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
+            "/usr/share/fonts/google-noto/NotoSans-Regular.ttf",
+        ]
+        legend_font = None
+        for fp in _FONT_PATHS:
+            try:
+                legend_font = ImageFont.truetype(fp, 11)
+                break
+            except (IOError, OSError):
+                continue
+        if legend_font is None:
+            legend_font = font  # bitmap fallback
 
-        # Wait for the download to complete (you can use a more robust approach to wait for the file to be ready)
-        time.sleep(5)
+        bar_w, bar_h = 200, 16
+        pad = 10
 
-        # Close the WebDriver
-        driver.quit()
+        sample_bbox = draw.textbbox((0, 0), "0", font=legend_font)
+        th = sample_bbox[3] - sample_bbox[1]  # text height
+
+        # Layout: title / gap / bar / gap / tick labels
+        content_h = th + 4 + bar_h + 4 + th
+        img_w, img_h = img_size
+        lx = img_w - bar_w - pad - 10  # left edge of bar
+        ly = pad + 8  # top of title — top-right corner
+
+        # Semi-transparent white background box
+        draw.rectangle(
+            (lx - 8, ly - 5, lx + bar_w + 8, ly + content_h + 5),
+            fill=(255, 255, 255, 220),
+            outline=(100, 100, 100, 255),
+        )
+
+        # Title — use plain "log2FC" to avoid Unicode rendering issues with bitmap fonts
+        title = "log2FC"
+        tbbox = draw.textbbox((0, 0), title, font=legend_font)
+        tw = tbbox[2] - tbbox[0]
+        draw.text((lx + bar_w // 2 - tw // 2, ly), title, fill=(40, 40, 40, 255), font=legend_font)
+
+        # Gradient bar
+        bar_y = ly + th + 4
+        for i in range(bar_w):
+            rgba = cmap(i / (bar_w - 1))
+            draw.line(
+                [(lx + i, bar_y), (lx + i, bar_y + bar_h - 1)],
+                fill=(int(rgba[0] * 255), int(rgba[1] * 255), int(rgba[2] * 255), 255),
+            )
+        draw.rectangle([lx, bar_y, lx + bar_w, bar_y + bar_h], outline=(80, 80, 80, 255))
+
+        # Tick marks and labels below bar
+        tick_y = bar_y + bar_h + 4
+        for l2fc_val, tick_label in [(-4, "-4"), (-1, "-1"), (0, "0"), (1, "+1"), (4, "+4")]:
+            pos = int((l2fc_val + 4) / 8 * (bar_w - 1))
+            tx = lx + pos
+            draw.line([(tx, bar_y + bar_h), (tx, bar_y + bar_h + 3)], fill=(80, 80, 80, 255))
+            lbbox = draw.textbbox((0, 0), tick_label, font=legend_font)
+            lw = lbbox[2] - lbbox[0]
+            draw.text((tx - lw // 2, tick_y), tick_label, fill=(40, 40, 40, 255), font=legend_font)
 
     def save_significant_pathways(self, category, nmax=20, tag="", outdir="."):  # pragma: no cover
         """category should be up, down or all"""

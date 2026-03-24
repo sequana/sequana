@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [project]
 name = "sequana"
-version = "0.20.0"
+version = "0.21.0"
 description = "A set of standalone application and pipelines dedicated to NGS analysis"
 authors = [{name="Thomas Cokelaer", email="<thomas.cokelaer@pasteur.fr>"}]
 license = { file = "LICENSE" }
@@ -71,15 +71,14 @@ dependencies = [
     "scikit-learn (>=1.6.1)",
     "scipy (>=1.14)",
     "seaborn (>=0.13.2)",
-    "selenium (>=4.28.0,<5.0.0)",
-    "snakemake (<8)",
+    "Pillow (>=10.0)",
+    "snakemake (>=7)",
     "statsmodels (>=0.14)",
     "tqdm >=4.66.1",
     "upsetplot (>=0.9.0)",
     "xlrd (>=2.0)",
     "vcfpy (>=0.13.8)",
     "multiqc (>=1.18,<=1.27)",
-    "pulp (<2.8.0)",
     "kaleido (>=0.1)",
     "natsort (>=8.4.0)",
 ]

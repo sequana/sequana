@@ -1370,8 +1370,9 @@ class ChromosomeCov(object):
     def plot_hist_zscore(self, fontsize=16, filename=None, max_z=6, binwidth=0.5, **hist_kargs):
         """Barplot of the zscore values"""
         pylab.clf()
-        bins = self._set_bins(self.df["zscore"][self.range[0] : self.range[1]], binwidth)
-        self.df["zscore"][self.range[0] : self.range[1]].hist(grid=True, bins=bins, **hist_kargs)
+        zscores = self.df["zscore"][self.range[0] : self.range[1]].clip(-max_z, max_z)
+        bins = self._set_bins(zscores, binwidth)
+        zscores.hist(grid=True, bins=bins, **hist_kargs)
         pylab.xlabel("Z-score", fontsize=fontsize)
         try:
             pylab.gcf().set_layout_engine("tight")

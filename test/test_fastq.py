@@ -198,5 +198,11 @@ def test_keep_reads(tmpdir):
     outfile = tmpdir.join("file1.fastq")
 
     f = fastq.FastQ(data)
-    identifiers = ["@HISEQ:426:C5T65ACXX:5:2302:20743:5339"]
-    f.keep_reads(identifiers, output_filename=outfile)
+    # Use valid identifier from the file (without @)
+    identifiers = ["HISEQ:426:C5T65ACXX:5:2302:1943:2127"]
+    f.keep_reads(identifiers, output_filename=str(outfile))
+
+    # Verify the file is not empty and contains the read
+    assert os.path.exists(str(outfile))
+    f_check = fastq.FastQ(str(outfile))
+    assert len(f_check) == 1

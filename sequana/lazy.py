@@ -19,6 +19,7 @@ from sequana.lazyimports import LazyImport
 pylab = LazyImport("pylab")
 numpy = LazyImport("numpy")
 pandas = LazyImport("pandas")
+scipy = LazyImport("scipy")
 pysam = LazyImport("pysam")
 gseapy = LazyImport("gseapy")
 plotly_express = LazyImport("plotly.express")

@@ -49,17 +49,13 @@ click.rich_click.SHOW_METAVARS_COLUMN = False
 click.rich_click.APPEND_METAVARS_HELP = True
 click.rich_click.STYLE_ERRORS_SUGGESTION = "magenta italic"
 click.rich_click.SHOW_ARGUMENTS = True
-click.rich_click.FOOTER_TEXT = """
-\U00002139\U0000FE0F Authors: Thomas Cokelaer, Dimitri Desvillechabrol, Etienne Kornobis
-
-\U0001F4DA Documentation: http://sequana.readthedocs.io --
-
-\u2753 Any issues, visit http://github.com/sequana/sequana
-
-\U0001F4DA  Cokelaer, T., Desvillechabrol, D., Legendre, R., &
-Cardon, M. (2017). Sequana: a Set of Snakemake NGS pipelines. The Journal of Open Source Software, 2(16), 352.
-https://doi.org/10.21105/joss.00352
-"""
+click.rich_click.FOOTER_TEXT = (
+    "\U00002139\U0000FE0F Authors: Thomas Cokelaer, Dimitri Desvillechabrol, Etienne Kornobis  \n"
+    "\U0001F4DA Documentation: http://sequana.readthedocs.io --  \n"
+    "\u2753 Any issues, visit http://github.com/sequana/sequana  \n"
+    "\U0001F4DA  Cokelaer, T., Desvillechabrol, D., Legendre, R., & Cardon, M. (2017). Sequana: a Set of Snakemake NGS pipelines. "
+    "The Journal of Open Source Software, 2(16), 352. https://doi.org/10.21105/joss.00352"
+)
 
 
 click.rich_click.OPTION_GROUPS = {}

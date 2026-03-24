@@ -1,3 +1,4 @@
+import fnmatch
 from pathlib import Path
 
 
@@ -41,10 +42,8 @@ class HTMLDirectory:
             realpath = path.path
             name = path.displayable()
             if self.pattern:
-                if self.pattern in name:
+                if fnmatch.fnmatch(path.path.name, self.pattern):
                     html += '<a href="{}">{}</a><br>'.format(realpath, name) + "\n"
-                else:  # pragma: no cover
-                    pass
             else:
                 S = [item in name for item in self.skip_pattern]
                 if sum(S) == 0:

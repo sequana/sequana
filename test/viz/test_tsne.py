@@ -14,4 +14,4 @@ def test_tsne():
     df = df.set_index("Id")
     p = TSNE(df, colors={"A1": "r", "A2": "r", "A3": "r", "B1": "b", "B2": "b", "B3": "b"})
 
-    p.plot(perplexity=2)
+    p.plot(perplexity=2, n_iter=250, show_plot=False)

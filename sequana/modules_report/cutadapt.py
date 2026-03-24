@@ -401,7 +401,9 @@ class CutadaptModule(SequanaBaseModule):
                         # therefore the second here.
                         if name in dfs:
                             if len(df):
-                                dfs[name] = pd.concat([dfs[name], df.set_index("length")])
+                                existing = dfs[name].dropna(axis=1, how="all")
+                                new_part = df.set_index("length").dropna(axis=1, how="all")
+                                dfs[name] = pd.concat([existing, new_part])
 
                             scanning_histogram = False
 
@@ -415,7 +417,8 @@ class CutadaptModule(SequanaBaseModule):
 
     def parse_atropos(self, filename):
         """Parse the atropos report (JSON  format)"""
-        data = json.load(open(filename, "r"))
+        with open(filename, "r") as fh:
+            data = json.load(fh)
 
         # Is it paired or single-ended ?
         if data["input"]["input_names"][1] is None:
