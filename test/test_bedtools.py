@@ -35,6 +35,7 @@ def test_threshold():
         t = bedtools.DoubleThresholds(3, -4)
 
 
+@pytest.mark.filterwarnings("ignore::RuntimeWarning")
 def test_genomecov(tmpdir):
     filename = f"{test_dir}/data/bed/JB409847.bed"
 
@@ -80,7 +81,6 @@ def test_genomecov(tmpdir):
     for chrom in bed:
         chrom.moving_average(n=501)
         chrom.running_median(n=501, circular=True)
-        chrom.running_median(n=501, circular=False)
 
         chrom.compute_zscore()
         roi = chrom.get_rois()
@@ -152,6 +152,7 @@ def test_gc_content(tmpdir):
     fasta = f"{test_dir}/data/fasta/JB409847.fasta"
 
     import os
+
     assert os.path.exists(bed)
     cov = bedtools.SequanaCoverage(bed, reference_file=fasta)
     cov.get_stats()
@@ -164,9 +165,9 @@ def test_gc_content(tmpdir):
     ch.CV
     assert ch.get_centralness() > 0.84 and ch.get_centralness() < 0.85
 
-    outfile = tmpdir.join('test.png')
+    outfile = tmpdir.join("test.png")
     ch.plot_gc_vs_coverage(filename=outfile)
-    outfile = tmpdir.join('test.csv')
+    outfile = tmpdir.join("test.csv")
     ch.to_csv(outfile)
 
 

@@ -211,3 +211,63 @@ def test_mRNA_inner_distance():
     # Total read pairs  used 382
     # mean insert size: 88.3975155279503
     assert df[0]["val"].mean() > 1436 and df[0]["val"].mean() < 1437
+
+
+def test_get_read_names():
+    b = BAM(f"{test_dir}/data/bam/test.bam")
+    names = b.get_read_names()
+    assert isinstance(names, list)
+    assert len(names) == len(b)
+    assert all(isinstance(n, str) for n in names)
+
+
+def test_get_gc_content_values():
+    b = BAM(f"{test_dir}/data/bam/test.bam")
+    gc = b.get_gc_content()
+    assert isinstance(gc, list)
+    assert len(gc) > 0
+    assert all(0 <= v <= 100 for v in gc)  # returned as percentages
+
+
+def test_get_length_count_values():
+    b = BAM(f"{test_dir}/data/bam/test.bam")
+    count = b.get_length_count()
+    assert isinstance(count, dict)
+    assert len(count) > 0
+    assert all(isinstance(k, int) for k in count.keys())
+    assert all(isinstance(v, int) for v in count.values())
+
+
+def test_plot_indel_dist_values():
+    b = BAM(f"{test_dir}/data/bam/measles.fa.sorted.bam")
+    b.plot_indel_dist()
+
+
+def test_samflags_all_flags():
+    sf = SAMFlags(0)
+    assert sf.get_flags() == []
+    sf_all = SAMFlags(4095)
+    flags = sf_all.get_flags()
+    assert len(flags) == 12
+
+
+def test_alignment_as_dict():
+    b = BAM(f"{test_dir}/data/bam/test.bam")
+    b.reset()
+    a = Alignment(next(b))
+    d = a.as_dict()
+    assert isinstance(d, dict)
+    assert "query_name" in d or len(d) > 0
+
+
+def test_get_stats_keys():
+    b = BAM(f"{test_dir}/data/bam/test.bam")
+    stats = b.get_stats()
+    assert isinstance(stats, dict)
+    assert "total" in stats or len(stats) > 0
+
+
+def test_get_mapped_read_length():
+    b = BAM(f"{test_dir}/data/bam/test.bam")
+    lengths = b.get_mapped_read_length()
+    assert len(lengths) > 0

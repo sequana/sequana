@@ -254,6 +254,12 @@ Changelog :memo:
 ========= ==========================================================================
 Version   Description
 ========= ==========================================================================
+0.20.1    * Kozak: add ``plot_logo_bits`` method (information content / bits scaling)
+          * Telomere: refactored sliding window, new annotated plot, cleaner API;
+            telomark CLI gains ``--plot-style`` option
+          * KEGG enrichment: replace selenium with REST API + PIL rendering
+          * FastQ: optimised ``select_reads_in_list`` (avoid decode overhead)
+          * modules_report: remove deprecated SummaryModule classes
 0.20.0    * Refactoring FASTA and GFF3 modules/classes (less memory). can now handle
             large eukaryotes as well.
           * Update Kozak module

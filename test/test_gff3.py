@@ -100,3 +100,48 @@ def test_save_gff_filtered():
 def test_save_gff_filtered():
     gff = GFF3(f"{test_dir}/data/ecoli_truncated.gff")
     gff.get_seqid2size()
+
+
+def test_contig_names():
+    gff = GFF3(f"{test_dir}/data/ecoli_truncated.gff")
+    names = gff.contig_names
+    assert isinstance(names, list)
+    assert len(names) > 0
+
+
+def test_search():
+    gff = GFF3(f"{test_dir}/data/ecoli_truncated.gff")
+    result = gff.search("gene")
+    assert len(result) > 0
+    result_empty = gff.search("ZZZNOMATCH999")
+    assert len(result_empty) == 0
+
+
+def test_get_simplify_dataframe():
+    gff = GFF3(f"{test_dir}/data/ecoli_truncated.gff")
+    df = gff.get_simplify_dataframe()
+    assert "genetic_type" in df.columns
+    assert "seqid" in df.columns
+    assert len(df) > 0
+
+
+def test_add_CDS_and_mRNA(tmpdir):
+    # Build a minimal GFF with gene features that add_CDS_and_mRNA can process
+    gff_content = (
+        "##gff-version 3\n"
+        "chr1\ttest\tgene\t100\t200\t.\t+\t.\tgene_id=gene1;Name=gene1\n"
+        "chr1\ttest\tgene\t300\t400\t.\t-\t.\tgene_id=gene2;Name=gene2\n"
+    )
+    infile = tmpdir.join("input.gff")
+    infile.write(gff_content)
+    outfile = tmpdir.join("output.gff")
+
+    gff = GFF3(str(infile))
+    gff.add_CDS_and_mRNA(str(outfile))
+
+    content = outfile.read()
+    assert "mRNA" in content
+    assert "CDS" in content
+    # Original gene lines preserved
+    assert "gene1" in content
+    assert "gene2" in content
