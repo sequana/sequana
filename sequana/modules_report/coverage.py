@@ -26,7 +26,6 @@ from plotly import offline
 
 from sequana import bedtools
 from sequana.modules_report.base_module import SequanaBaseModule
-from sequana.modules_report.summary import SummaryModule
 from sequana.plots.canvasjs_linegraph import CanvasJSLineGraph
 from sequana.utils import config
 from sequana.utils.datatables_js import DataTable, DataTableFunction
