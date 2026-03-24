@@ -306,7 +306,7 @@ class SomyScore:
         # remove outliers
         import pandas as pd
 
-        df = self.df.groupby("chr").apply(remove_outliers, include_groups=True)
+        df = self.df.groupby("chr").apply(remove_outliers, include_groups=False)
         self._df = df.reset_index(drop=True)
 
     def remove_flanks(self, remove_flanking_regions_kb=10):

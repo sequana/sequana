@@ -525,6 +525,7 @@ class GFF3:
         :param list sortby: list of column names used for sorting.  Defaults to
             ``["seqid", "start", "stop", "genetic_type"]``.
         """
+
         def get_attributes(data):
             """Serialise an attributes dict to a GFF3 attributes string."""
             return ";".join([f'{a}="{b}"' for a, b in data.items()])
@@ -1096,7 +1097,7 @@ class GFF3:
             group["directon_id"] = group["strand_shift"].cumsum()
             return group
 
-        df = self.df.groupby("seqid", group_keys=False).apply(assign_directon_groups, include_groups=True)
+        df = self.df.groupby("seqid", group_keys=False).apply(assign_directon_groups, include_groups=False)
 
         # Aggregate each directon into a single BED line
         directons = (
