@@ -725,8 +725,9 @@ class FastQ(object):
 
         output_filename, tozip = self._istozip(output_filename)
 
-        with open(output_filename, "w") as fout:
-            buf = ""
+        id_set_bytes = {id_.encode() for id_ in identifiers}
+
+        with open(output_filename, "wb") as fout:
             found = 0
 
             for count, lines in tqdm(
@@ -734,32 +735,26 @@ class FastQ(object):
                 desc="sequana:reading reads",
                 disable=not progress,
             ):
-                identifier = lines[0].split()[0].decode()[1:]  # we ignore the first @ character
-                if identifier not in identifiers:
+
+                if not lines[0]:  # pragma: no cover
+                    break
+                # Extract identifier without decoding
+                identifier = lines[0].split()[0][1:]
+                if identifier not in id_set_bytes:
                     pass
                 else:  # pragma: no cover
                     found += 1
-                    buf += "{}{}+\n{}".format(
-                        lines[0].decode("utf-8"),
-                        lines[1].decode("utf-8"),
-                        lines[3].decode("utf-8"),
-                    )
-                    if count % 10000 == 0:
-                        fout.write(buf)
-                        buf = ""
-            fout.write(buf)
+                    fout.write(lines[0])
+                    fout.write(lines[1])
+                    fout.write(b"+\n")
+                    fout.write(lines[3])
+
             if found != len(identifiers):  # pragma: no cover
                 print("\nWARNING: not all identifiers were found in the fastq file.")
 
         if tozip is True:  # pragma: no cover
             logger.info("Compressing file")
             self._gzip(output_filename)
-
-    # def to_kmer_content(self, k=7):
-    #
-    #    if tozip is True:  # pragma: no cover
-    #        logger.info("Compressing file")
-    #        self._gzip(output_filename)
 
     def filter(
         self,
