@@ -1098,6 +1098,7 @@ class GFF3:
             return group
 
         df = self.df.groupby("seqid", group_keys=False).apply(assign_directon_groups, include_groups=False)
+        df["seqid"] = self.df["seqid"]
 
         # Aggregate each directon into a single BED line
         directons = (
