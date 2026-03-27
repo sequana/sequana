@@ -90,7 +90,6 @@ def test_bam(tmpdir):
         assert True
 
 
-@pytest.mark.xfail(reason="matplotlib fill_between fails  under py38/39 dev 2022")
 def test_boxqualities():
     datatest = f"{test_dir}/data/bam/test.bam"
     s = BAM(datatest)
@@ -98,7 +97,6 @@ def test_boxqualities():
     s.boxplot_qualities(max_sample=50)
 
 
-@pytest.mark.xfail(reason="cram flaky")
 def test_cram():
     datatest = f"{test_dir}/data/cram/test_measles.cram"
     s = CRAM(datatest)

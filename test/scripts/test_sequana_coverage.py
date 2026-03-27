@@ -25,6 +25,7 @@ def test_run():
     assert results.exit_code == 0
 
 
+@pytest.mark.slow
 def test_main(tmpdir):
     directory_run = tmpdir.mkdir("report")
     runner = CliRunner()
@@ -68,6 +69,7 @@ def __test_main_downloads():
         assert os.path.exists("JB409847.gbk")
 
 
+@pytest.mark.slow
 def test_multiqc_report_and_annotation(tmpdir):
     directory_run = tmpdir.mkdir("report")
     runner = CliRunner()

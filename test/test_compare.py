@@ -1,8 +1,11 @@
+import pytest
+
 from sequana.compare import RNADiffCompare
 
 from . import test_dir
 
 
+@pytest.mark.slow
 def test_rnadiff_volcano():
 
     PATH1 = f"{test_dir}/data/rnadiff/rnadiff_bowtie.csv"

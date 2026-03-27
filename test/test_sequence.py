@@ -1,3 +1,7 @@
+import shutil
+
+import pytest
+
 from sequana.sequence import DNA, RNA, Repeats, Sequence
 
 from . import test_dir
@@ -73,6 +77,8 @@ def test_rna():
     rna = RNA("ACUG")
 
 
+@pytest.mark.external_tool
+@pytest.mark.skipif(shutil.which("shustring") is None, reason="shustring not installed")
 def test_repeats(tmpdir):
     datafile = f"{test_dir}/data/fasta/measles.fa"
     rep = Repeats(datafile)

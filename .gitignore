@@ -74,3 +74,4 @@ sequana/resources/data/measles.fa.pac
 sequana/resources/data/measles.fa.sa
 output.dmp
 test/data/bam/*fastq
+CLAUDE.md

@@ -113,6 +113,22 @@ Issues = "https://github.com/sequana/sequana/issues"
 Documentation =  "https://sequana.readthedocs.io"
 
 
+[tool.pytest.ini_options]
+addopts = "--cov-report=term-missing"
+testpaths = ["test"]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "network: marks tests that require network access",
+    "external_tool: marks tests that require an external binary (e.g. snpEff, shustring)",
+]
+filterwarnings = [
+    "ignore::DeprecationWarning:rich_click",
+    "ignore::PendingDeprecationWarning:rich_click",
+    "ignore::FutureWarning:pandas",
+    "ignore::FutureWarning:sklearn",
+]
+
+
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.3"
 pytest-cov = "^5.0.0"
