@@ -98,10 +98,10 @@ def test_boxqualities():
     s.boxplot_qualities(max_sample=50)
 
 
-@pytest.mark.xfail(reason="cram flaky")
 def test_cram():
     datatest = f"{test_dir}/data/cram/test_measles.cram"
-    s = CRAM(datatest)
+    ref = f"{test_dir}/data/fasta/measles.fa"
+    s = CRAM(datatest, reference_filename=ref)
     assert s.summary == {
         "flags": {77: 6, 83: 14, 99: 10, 141: 6, 147: 10, 163: 14},
         "mapq": {0: 12, 60: 48},
