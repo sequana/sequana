@@ -12,15 +12,13 @@ from . import test_dir
 
 def network_available():
     try:
-        res = requests.request("GET", "https://github.com", timeout=5)
+        requests.request("GET", "https://github.com", timeout=5)
         return True
-    except requests.ConnectTimeout:
+    except Exception:
         return False
-    except err:
-        raise err
 
 
-@pytest.mark.xfail(reason="too slow", method="thread")
+@pytest.mark.network
 @pytest.mark.timeout(10)
 def test_eutils():
     if network_available():
@@ -79,7 +77,7 @@ def test_NCBIDownload(tmpdir):
     n.download_assembly_report("fungi", output=path)
 
 
-@pytest.mark.xfail(reason="too slow", method="thread")
+@pytest.mark.network
 @pytest.mark.timeout(10)
 def test_ENADownload(tmpdir):
     path = tmpdir.mkdir("temp")

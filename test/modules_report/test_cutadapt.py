@@ -1,3 +1,5 @@
+import pytest
+
 from sequana import bedtools
 from sequana.modules_report.cutadapt import CutadaptModule
 from sequana.utils import config
@@ -5,6 +7,7 @@ from sequana.utils import config
 from . import test_dir
 
 
+@pytest.mark.slow
 def test_cutadapt_module(tmpdir):
     directory = tmpdir.mkdir("test_module")
     config.output_dir = str(directory)
@@ -12,7 +15,10 @@ def test_cutadapt_module(tmpdir):
     c = CutadaptModule(f"{test_dir}/data/test_cutadapt_paired.txt", "TEST", "test.html")
 
 
-def test_output():
+def test_output(mocker):
+    # Mock HTML rendering — this test only checks parsed jinja values, not HTML output.
+    mocker.patch.object(CutadaptModule, "create_report_content", lambda self: None)
+
     # Used the PCRFree adapters
     filename = f"{test_dir}/data/test_cutadapt_paired.txt"
     mod = CutadaptModule(filename, "sample_name")
@@ -36,7 +42,11 @@ def test_output():
     assert mod.jinja["command"].startswith("atropos")
 
 
-def test_atropos_paired(tmpdir):
+def test_atropos_paired(tmpdir, mocker):
+    # Mock HTML rendering — this test only checks parsed jinja values, not HTML output.
+    mocker.patch.object(CutadaptModule, "create_report_content", lambda self: None)
+    mocker.patch.object(CutadaptModule, "create_html", lambda self, f: None)
+
     # This is for the new version of cutadapt with version 1.1
     directory = tmpdir.mkdir("test_module")
     config.output_dir = str(directory)

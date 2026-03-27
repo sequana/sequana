@@ -1,6 +1,9 @@
+import pytest
+
 from sequana.kegg import KEGGHelper
 
 
+@pytest.mark.network
 def test_kegg():
     k = KEGGHelper()
     results = k.search("lepto")

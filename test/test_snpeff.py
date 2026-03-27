@@ -1,8 +1,11 @@
 import os
+import shutil
 
 import pytest
 
 from sequana import snpeff
+
+snpeff_installed = pytest.mark.skipif(shutil.which("snpEff") is None, reason="snpEff not installed")
 
 from . import test_dir
 
@@ -40,6 +43,7 @@ def _test_snpeff_gff_with_fasta(tmpdir):
     )
 
 
+@snpeff_installed
 def test_snpeff_gbk(tmpdir):
     outdir = tmpdir.mkdir("snpeff")
     log = outdir.join("snpeff.log")
@@ -50,6 +54,7 @@ def test_snpeff_gbk(tmpdir):
     mydata.launch_snpeff(f"{sharedir}/JB409847.vcf", output, html_output=html)
 
 
+@snpeff_installed
 def test_snpeff_gbk_no_log(tmpdir):
     outdir = tmpdir.mkdir("snpeff")
     log = outdir.join("snpeff.log")
@@ -68,6 +73,7 @@ def test_snpeff_gbk_no_log(tmpdir):
         snpeff.SnpEff("test_snpeff.py")
 
 
+@pytest.mark.network
 def test_snpeff_download(tmpdir):
 
     outdir = tmpdir.mkdir("snpeff")
@@ -78,6 +84,7 @@ def test_snpeff_download(tmpdir):
         snpeff.download_fasta_and_genbank("dummyK01711", tag="test", outdir=outdir)
 
 
+@snpeff_installed
 def test_add_locus_no_modification(tmpdir):
     outdir = tmpdir.mkdir("snpeff")
     mydata = snpeff.SnpEff(annotation=f"{sharedir}/JB409847.gbk", snpeff_datadir=outdir)
@@ -86,6 +93,7 @@ def test_add_locus_no_modification(tmpdir):
     mydata.add_locus_in_fasta(fastafile, outdir + "/test.fasta")
 
 
+@snpeff_installed
 def test_add_locus_with_modification(tmpdir):
 
     outdir = tmpdir.mkdir("snpeff")
