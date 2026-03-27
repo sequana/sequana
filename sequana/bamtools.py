@@ -141,7 +141,7 @@ class SAMBAMbase:
 
     # The mode rb means read-only (r) and that (b) for binary the format
     # So BAM or SAM can be read in theory.
-    def __init__(self, filename, mode="r", *args):
+    def __init__(self, filename, mode="r", *args, **kwargs):
         """Initialise a SAM/BAM/CRAM reader.
 
         :param str filename: path to the SAM, BAM, or CRAM file.
@@ -149,10 +149,14 @@ class SAMBAMbase:
             ``"rb"`` for BAM (the default for :class:`BAM`).
         :param args: additional positional arguments forwarded to
             :class:`pysam.AlignmentFile`.
+        :param kwargs: additional keyword arguments forwarded to
+            :class:`pysam.AlignmentFile` (e.g. ``reference_filename`` for
+            CRAM files).
         """
         self._filename = filename
         self._mode = mode
         self._args = args
+        self._kwargs = kwargs
         self._summary = None
         self._sorted = None
 
@@ -162,7 +166,7 @@ class SAMBAMbase:
         self.reset()
 
         # we can accumulate the length of each contig/chromosome as an alias
-        bam = pysam.AlignmentFile(self._filename, mode=self._mode, *self._args)
+        bam = pysam.AlignmentFile(self._filename, mode=self._mode, *self._args, **self._kwargs)
         hd = bam.header
         self.lengths = {r: l for r, l in zip(hd.references, hd.lengths)}
 
@@ -177,7 +181,7 @@ class SAMBAMbase:
             self._data.close()
         except:
             pass
-        self._data = pysam.AlignmentFile(self._filename, mode=self._mode, *self._args)
+        self._data = pysam.AlignmentFile(self._filename, mode=self._mode, *self._args, **self._kwargs)
 
     @_reset
     def get_read_names(self):
@@ -1741,13 +1745,20 @@ class SAM(SAMBAMbase):
 class CRAM(SAMBAMbase):
     """CRAM Reader. See :class:`~sequana.bamtools.SAMBAMbase` for details"""
 
-    def __init__(self, filename, *args):
+    def __init__(self, filename, *args, reference_filename=None):
         """Initialise a CRAM reader.
 
         :param str filename: path to the CRAM file.
+        :param str reference_filename: optional path to the reference FASTA
+            file.  Required when the path stored inside the CRAM header is not
+            accessible (e.g. when running on a different machine than the one
+            that created the file).
         :param args: additional arguments forwarded to :class:`SAMBAMbase`.
         """
-        super(CRAM, self).__init__(filename, mode="r", *args)
+        kwargs = {}
+        if reference_filename is not None:
+            kwargs["reference_filename"] = reference_filename
+        super(CRAM, self).__init__(filename, mode="r", *args, **kwargs)
 
 
 class BAM(SAMBAMbase):
