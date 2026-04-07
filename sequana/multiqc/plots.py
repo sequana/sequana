@@ -97,28 +97,47 @@ class Bowtie2(Reader):
             )
         else:
 
-            # in multiqc_bowtie2, column paired_aligned_mate_one is multiplied by 2 as compared to
-            # column PE one mate mapped uniquely. to be compatible with previous version,
-            # we multiply by 2.
-            columns = [
-                "paired_aligned_one",  # mapped uniquely",
-                "paired_aligned_discord_one",  # mapped discordantly uniquely
-                "paired_aligned_mate_one",  # one mate mapped uniquely",
-                "paired_aligned_multi",  # multimapped",
-                "paired_aligned_mate_multi_halved",  # one mate multimapped
-                "paired_aligned_mate_none_halved",  # neither mate aligned
+            # Multiqc PE plot data uses _halved columns (paired_aligned_mate_one_halved),
+            # while multiqc_bowtie2.txt general data has the raw counts (paired_aligned_mate_one).
+            # Handle both formats for backward compatibility.
+            if "paired_aligned_mate_one_halved" in self.df.columns:
+                # New format: mqc_bowtie2_pe_plot_1.txt or multiqc_bowtie2.txt with _halved columns
+                mate_one_col = "paired_aligned_mate_one_halved"
+            elif "paired_aligned_mate_one" in self.df.columns:
+                # Old format: raw counts, need to halve manually
+                self.df["paired_aligned_mate_one"] /= 2
+                mate_one_col = "paired_aligned_mate_one"
+            else:
+                mate_one_col = None
+
+            mate_multi_col = "paired_aligned_mate_multi_halved" if "paired_aligned_mate_multi_halved" in self.df.columns else "paired_aligned_mate_multi"
+            mate_none_col = "paired_aligned_mate_none_halved" if "paired_aligned_mate_none_halved" in self.df.columns else "paired_aligned_mate_none"
+
+            all_columns = [
+                "paired_aligned_one",
+                "paired_aligned_discord_one",
+                mate_one_col,
+                "paired_aligned_multi",
+                mate_multi_col,
+                mate_none_col,
             ]
-            names = [
+            all_names = [
                 "Mapped uniquely",
-                "discordand unique mapping",
-                "One mate multi mapped",
+                "Discordant unique mapping",
+                "One mate mapped uniquely",
                 "Multi mapped paired",
                 "One mate multi-mapped",
                 "Unaligned",
             ]
-            self.df["paired_aligned_mate_one"] /= 2
+            all_colors = ["#20568f", "#5c94ca", "#95ceff", "#f7a35c", "#ffeb75", "#981919"]
 
-            colors = ["#20568f", "#5c94ca", "#95ceff", "#f7a35c", "#ffeb75", "#981919"]
+            # Filter to only columns that exist in the dataframe
+            columns, names, colors = [], [], []
+            for col, name, color in zip(all_columns, all_names, all_colors):
+                if col is not None and col in self.df.columns:
+                    columns.append(col)
+                    names.append(name)
+                    colors.append(color)
 
             S = self.df[columns].sum(axis=1).values
             df = self.df[columns].divide(S, axis=0) * 100
