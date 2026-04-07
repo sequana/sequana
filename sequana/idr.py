@@ -120,7 +120,7 @@ class IDR:
 
     def _get_N_significant_peaks(self):
         if len(self.df) == 0:  # pragma: no cover
-            return
+            return 0
         else:
             return len(self.df.query("idr<@self.threshold"))
 

@@ -30,9 +30,9 @@ __all__ = ["Homer"]
 class Homer:
     def __init__(self, filename):
         self.filename = filename
-        header = open(filename).readline().strip().split("\t")[1:]
+        header = open(filename, encoding="latin-1").readline().strip().split("\t")[1:]
 
-        self.df = PandasReader(filename, sep="\t", skiprows=1, header=None).df
+        self.df = PandasReader(filename, sep="\t", skiprows=1, header=None, encoding="latin-1").df
 
         if len(self.df):
             self.df.columns = ["ID"] + header
