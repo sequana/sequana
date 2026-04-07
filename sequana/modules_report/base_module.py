@@ -97,7 +97,7 @@ class SequanaBaseModule(object):
         os.makedirs(target, exist_ok=True)
         if os.path.isfile(target) is False:
             try:
-               shutil.copy(config.logo, target)
+                shutil.copy(config.logo, target)
             except PermissionError:
                 pass
 
@@ -195,7 +195,12 @@ class SequanaBaseModule(object):
 
     def include_svg_image(self, filename, alt="undefined"):
         """Include SVG image in the html."""
-        html = '<object data="{0}" type="image/svg+xml">\n' '<img src="{0}" alt={1}></object>'
+        html = (
+            '<div style="max-width:100%; overflow-x:auto;">'
+            '<object data="{0}" type="image/svg+xml" style="max-width:100%; height:auto;">\n'
+            '<img src="{0}" alt={1} style="max-width:100%; height:auto;"></object>'
+            "</div>"
+        )
         return html.format(filename, alt)
 
     def png_to_embedded_png(self, png, style=None, alt="", title=""):
