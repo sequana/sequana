@@ -255,7 +255,8 @@ Changelog :memo:
 ========= ==========================================================================
 Version   Description
 ========= ==========================================================================
-0.20.1    * Kozak: add ``plot_logo_bits`` method (information content / bits scaling)
+0.21.1    * Fix bowti2 plot( multiqc parsing)
+0.21.0    * Kozak: add ``plot_logo_bits`` method (information content / bits scaling)
           * Telomere: refactored sliding window, new annotated plot, cleaner API;
             telomark CLI gains ``--plot-style`` option
           * KEGG enrichment: replace selenium with REST API + PIL rendering

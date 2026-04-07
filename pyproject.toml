@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [project]
 name = "sequana"
-version = "0.21.0"
+version = "0.21.1"
 description = "A set of standalone application and pipelines dedicated to NGS analysis"
 authors = [{name="Thomas Cokelaer", email="<thomas.cokelaer@pasteur.fr>"}]
 license = { file = "LICENSE" }
@@ -21,7 +21,6 @@ classifiers = [
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
-        "Programming Language :: Python :: 3.13",
         "Topic :: Software Development :: Libraries :: Python Modules",
         "Topic :: Scientific/Engineering :: Bio-Informatics",
         "Topic :: Scientific/Engineering :: Information Analysis",
