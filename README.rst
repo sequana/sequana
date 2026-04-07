@@ -24,7 +24,7 @@ SEQUANA
 
 .. image:: https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C3.12-blue.svg
     :target: https://pypi.python.org/pypi/sequana
-    :alt: Python 3.10 | 3.11 | 3.12 | 3.13
+    :alt: Python 3.10 | 3.11 | 3.12 
 
 .. image:: https://img.shields.io/github/issues/sequana/sequana.svg
     :target: https://github.com/sequana/sequana/issues
