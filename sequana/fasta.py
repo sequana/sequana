@@ -94,10 +94,18 @@ class FastA:
             logger.warning(f"Your .fai file looks old compared to fasta. Please delete the .fai {fai} or update it.")
 
         self._lazy_sequences = _LazySequences(self)
-        self._fasta = pysam.FastaFile(filename)
+        # pysam.FastaFile requires bgzip (not plain gzip) and builds a .fai index.
+        # Open it lazily so iteration-only workflows (common with gzipped fastq/fasta) still work.
+        self._fasta_obj = None
         self._fastx = pysam.FastxFile(filename)
         self.filename = filename
         self._N = None
+
+    @property
+    def _fasta(self):
+        if self._fasta_obj is None:
+            self._fasta_obj = pysam.FastaFile(self.filename)
+        return self._fasta_obj
 
     def __iter__(self):
         return self

@@ -16,7 +16,7 @@ import glob
 import colorlog
 
 from sequana import BAM
-from sequana.freebayes_vcf_filter import Variant, VCF_freebayes
+from sequana.variants import VariantFile
 
 logger = colorlog.getLogger(__name__)
 
@@ -32,8 +32,8 @@ class Consensus:
         self.min_score = 1
 
         if freebayes is not None:
-            v = VCF_freebayes(freebayes)
-            self.variants = [Variant(x) for x in v if x]
+            v = VariantFile(freebayes)
+            self.variants = [v._variant_to_dict(x) for x in v.variants]
         else:
             self.variants = []
 
@@ -62,11 +62,11 @@ class Consensus:
     def identify_deletions(self):
         deletions = []
         for variant in self.variants:
-            alt = variant.resume["alternative"]
-            ref = variant.resume["reference"]
-            pos = variant.resume["position"]
-            dp = variant.resume["depth"]
-            score = variant.resume["freebayes_score"]
+            alt = variant["alternative"]
+            ref = variant["reference"]
+            pos = variant["position"]
+            dp = variant["depth"]
+            score = variant["freebayes_score"]
 
             # filter out bad scores and bad depth
             if score < self.min_score:
@@ -114,8 +114,8 @@ class Consensus:
 
         # check that deletions are consistent with the data
         for d in deletions:
-            pos = int(d.resume["position"])
-            ref = d.resume["reference"]
+            pos = int(d["position"])
+            ref = d["reference"]
             # compare the reference of the deletions with the consensus
             if "".join(dd.loc[pos : pos + len(ref) - 1]) != ref:
                 logger.warning("reference string {} not found in consensus at position {}".format(ref, pos))
@@ -124,9 +124,9 @@ class Consensus:
         # the alternate
         # We aware that some deletions may overlap
         for d in deletions:
-            pos = int(d.resume["position"])
-            ref = d.resume["reference"]
-            alt = d.resume["alternative"]
+            pos = int(d["position"])
+            ref = d["reference"]
+            alt = d["alternative"]
 
             # the data up to the position of the reference/alternate SNP
             # indices may not start at zero so we use loc instead of iloc
