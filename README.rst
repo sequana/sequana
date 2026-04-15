@@ -62,6 +62,9 @@ SEQUANA
 
 **Sequana** is a Python library dedicated to bioinformatics. It is also a project that includes a set of pipelines related to NGS (new generation sequencing) including quality control, variant calling, coverage, taxonomy, transcriptomics. We also ship **Sequanix**, a graphical user interface for Snakemake pipelines.
 
+::
+
+    pip install sequana --upgrade
 
 Pipelines and related projects
 ==============================
