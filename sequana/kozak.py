@@ -32,7 +32,10 @@ logger = colorlog.getLogger(__name__)
 
 class Motif:
     def __init__(self, motif):
-        self.df = motif
+        if isinstance(motif, str):
+            self.df = pd.read_csv(motif, index_col=0)
+        else:
+            self.df = motif
 
     def _get_entropy(self):
         from scipy.stats import entropy
@@ -234,15 +237,19 @@ class Kozak:
                     kozak_right = reverse_complement(koz)
                     data.append([chrom, ID, strand, start, end, codon, kozak_left, kozak_right])
 
-        df = pd.DataFrame(data)
-        try:
-            df.columns = ["chrom", "ID", "strand", "start", "end", "start_codon", "kozak_left", "kozak_right"]
-        except ValueError:  # empty dataframe
-            pass
+        _cols = ["chrom", "ID", "strand", "start", "end", "start_codon", "kozak_left", "kozak_right"]
+        df = pd.DataFrame(data, columns=_cols) if data else pd.DataFrame(columns=_cols)
 
         # Cleanup region where selected left and right sub sequence do not
-        # have the corret length. This could be a gene right at the border of contig.
+        # have the correct length. This could be a gene right at the border of contig.
         N0 = len(df)
+        if N0 == 0:
+            logger.warning("No data found after parsing the GFF/FASTA files.")
+            self.metrics["feature"] = self.genetic_type
+            self.metrics["ATG_ratio"] = 0.0
+            self._cached_df = df
+            return df
+
         df = df[[len(x) == LEFT for x in df["kozak_left"].values]]
         df = df[[len(x) == RIGHT for x in df["kozak_right"].values]]
         ratio = len(df) / N0
@@ -250,7 +257,7 @@ class Kozak:
         logger.info(
             f"Filtered to keep only rows with correct left and right Kozak lengths: {len(df)} / {N0} ({ratio:.1%})"
         )
-        self.metrics["ATG_ratio"] = sum(df["start_codon"] == "ATG") / len(df)
+        self.metrics["ATG_ratio"] = sum(df["start_codon"] == "ATG") / len(df) if len(df) > 0 else 0.0
         self._cached_df = df
         return df
 
@@ -259,6 +266,10 @@ class Kozak:
         df = self._compute().copy()
 
         N = len(df)
+        if N == 0:
+            self.atg_contribution = 0.0
+            return df
+
         if self.keep_ATG_only:
             df = df[df["start_codon"] == "ATG"]
             logger.info(f"Filtered to keep only ATG start codons: {len(df)} / {N} ({len(df)/N:.1%})")

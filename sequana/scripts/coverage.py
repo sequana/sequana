@@ -463,7 +463,7 @@ def main(**kwargs):
         bedfile = options.input
     else:
         logger.error("Input file must be a BAM or BED file")
-        system.exit(1)
+        sys.exit(1)
 
     # Set the thresholds
     if options.low_threshold is None:
