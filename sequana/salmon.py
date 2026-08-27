@@ -15,6 +15,7 @@ import colorlog
 import pandas as pd
 
 from sequana.gff3 import GFF3
+from sequana.lazy import numpy as np
 
 logger = colorlog.getLogger(__name__)
 
@@ -60,18 +61,16 @@ class Salmon:
         if attribute is None:
             attribute = "ID"
 
-        # just to not loose the original
+        # just to not lose the original
         df = self.df.copy()
 
         # Name contains the salmon entries read from gffread that uses
         # transcript_id. From this transcript id, we get the gene (parent)
-        df["Gene"] = [self.trs2genes[x] for x in self.df.Name]
+        df["Gene"] = df["Name"].map(self.trs2genes)
 
-        # groups = df.groupby('Gene').groups
-        counts_on_genes = df.groupby("Gene").NumReads.sum()
+        counts_on_genes = df.groupby("Gene")["NumReads"].sum()
 
         ff = self.filename.split("/")[-1]
-        results = f"\nGeneid\tChr\tStart\tEnd\tStrand\tLength\t{ff}"
 
         # mouse 25814 gene (feature)
         #       53715 gene_id (attribute)
@@ -83,54 +82,43 @@ class Salmon:
         # otherwise, extract geneID or gene_id
         logger.info("Recreating the feature counts")
 
-        genes = {}
-
         dd = self.gff.df.query("ID in @counts_on_genes.index")
         dd = dd.set_index("ID")
         dd = dd.loc[counts_on_genes.index]
         self.dd = dd
 
-        types = dd["type"].values
-        starts = dd["start"].values
-        stops = dd["stop"].values
-        strands = dd["strand"].values
-        seqids = dd["seqid"].values
+        logger.info("Computing effective lengths vectorized")
+        # Compute TPM-weighted effective length per gene in a vectorized way.
+        # For genes with zero total TPM, fall back to the mean EffectiveLength.
+        tpm_sum = df.groupby("Gene")["TPM"].sum()
 
-        S = 0
+        # weighted sum of EffectiveLength by TPM per gene
+        df["TPM_x_EffLen"] = df["TPM"] * df["EffectiveLength"]
+        tpm_x_efflen_sum = df.groupby("Gene")["TPM_x_EffLen"].sum()
 
-        logger.info("Grouping")
-        TPMgroup = df.groupby("Gene").apply(lambda group: group["TPM"].sum())
-        efflength_null = df.groupby("Gene").apply(lambda group: group["EffectiveLength"].mean())
+        # TPM-weighted mean effective length; for zero-TPM genes use simple mean
+        efflen_mean = df.groupby("Gene")["EffectiveLength"].mean()
+        # avoid divide-by-zero
+        lengths = tpm_x_efflen_sum.div(tpm_sum.replace(0, np.nan)).fillna(efflen_mean)
 
-        groups = df.groupby("Gene")
-        for i, name in tqdm.tqdm(enumerate(counts_on_genes.index)):
-            # Since we use ID, there should be only one hit. we select the first
-            # one to convert to a Series
-
-            tpm_sum = TPMgroup.loc[name]
-            if tpm_sum == 0:
-                length = efflength_null.loc[name]
-            else:
-                abundances = groups.get_group(name).TPM
-                efflength = groups.get_group(name).EffectiveLength
-                length = sum([x * y for x, y in zip(abundances, efflength)]) / abundances.sum()
-                S += abundances.sum()
-
+        logger.info("Building results")
+        results = [f"Geneid\tChr\tStart\tEnd\tStrand\tLength\t{ff}"]
+        for name in counts_on_genes.index:
+            if name not in dd.index:
+                continue
+            row = dd.loc[name]
             # FIXME we keep only types 'gene' to agree with output of
-            # start/bowtie when working on the gene feature. What would happen
-            # to compare salmon wit other type of features ?
-            if types[i] == "gene":
-                start = starts[i]
-                stop = stops[i]
-                seqid = seqids[i]
-                strand = strands[i]
-                NumReads = counts_on_genes.loc[name]
-                length = length
-                name = name.replace("gene:", "")
-                results += f"\n{name}\t{seqid}\t{start}\t{stop}\t{strand}\t{length}\t{NumReads}"
-            else:
-                pass
-        return results
+            # featureCounts when working on the gene feature.
+            if row["type"] != "gene":
+                continue
+            gene_name = name.replace("gene:", "")
+            num_reads = counts_on_genes.loc[name]
+            length = lengths.loc[name]
+            results.append(
+                f"{gene_name}\t{row['seqid']}\t{row['start']}\t{row['stop']}"
+                f"\t{row['strand']}\t{length}\t{num_reads}"
+            )
+        return "\n".join(results)
         """
 
 In [179]: genes2trs['gene:ENSMUSG00000000028']
