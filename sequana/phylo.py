@@ -510,7 +510,7 @@ class Tree:
 
     def _mrca(self, leaf_names: Set[str]) -> Optional[TreeNode]:
         """Find MRCA of a set of leaves."""
-        nodes = [self.find_node(name) for name in leaf_names if self.find_node(name)]
+        nodes = [node for name in leaf_names if (node := self.find_node(name)) is not None]
         if not nodes:
             return None
         if len(nodes) == 1:
