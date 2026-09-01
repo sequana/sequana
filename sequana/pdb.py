@@ -186,7 +186,7 @@ class Chain:
         rotated, R, rmsd_val = superpose(coords2, coords1)
 
         # Translation is applied after rotation
-        translation = np.mean(coords1 - (coords2 @ R.T), axis=0)
+        translation = np.mean(coords2 - (coords1 @ R.T), axis=0)
 
         return Alignment(rmsd_val, R, translation, rotated)
 
