@@ -54,3 +54,9 @@ def test_dynamic_venn_max_sets():
     # only 6 sets can be drawn, so only 6 comparisons are selected by default
     assert data["selected"] == list(range(6))
     assert sorted(data["layouts"]) == ["2", "3", "4", "5", "6"]
+
+    # layouts for 4-6 sets must have non-empty shapes and names
+    for n in range(2, 7):
+        layout = data["layouts"][str(n)]
+        assert len(layout["shapes"]) == n, f"Layout for {n} sets should have {n} shapes"
+        assert len(layout["names"]) == n, f"Layout for {n} sets should have {n} name positions"

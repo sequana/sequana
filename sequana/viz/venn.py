@@ -39,7 +39,7 @@ def get_layout(num_sets):
     """Get Venn diagram layout for n sets.
 
     Returns a dict with shapes and text positions for the given number of sets.
-    Currently supports 2 and 3 sets.
+    Supports 2 to 6 sets.
     """
     if num_sets == 2:
         return {
@@ -79,8 +79,56 @@ def get_layout(num_sets):
                 {"x": 0.50, "y": 0.05},
             ],
         }
+    elif num_sets == 4:
+        # Four rotated ellipses arranged symmetrically
+        return {
+            "shapes": [
+                ("ellipse", {"xy": (0.37, 0.58), "width": 0.45, "height": 0.80, "angle": -30}),
+                ("ellipse", {"xy": (0.63, 0.58), "width": 0.45, "height": 0.80, "angle": 30}),
+                ("ellipse", {"xy": (0.37, 0.42), "width": 0.45, "height": 0.80, "angle": 30}),
+                ("ellipse", {"xy": (0.63, 0.42), "width": 0.45, "height": 0.80, "angle": -30}),
+            ],
+            "texts": [],
+            "names": [
+                {"x": 0.10, "y": 0.85, "ha": "left", "va": "top"},
+                {"x": 0.90, "y": 0.85, "ha": "right", "va": "top"},
+                {"x": 0.10, "y": 0.15, "ha": "left", "va": "bottom"},
+                {"x": 0.90, "y": 0.15, "ha": "right", "va": "bottom"},
+            ],
+        }
+    elif num_sets == 5:
+        # Five ellipses at 72-degree intervals around the centre
+        import math
+
+        shapes = []
+        names = []
+        for i in range(5):
+            angle_deg = 90 - i * 72
+            angle_rad = math.radians(angle_deg)
+            cx = 0.5 + 0.17 * math.cos(angle_rad)
+            cy = 0.5 + 0.17 * math.sin(angle_rad)
+            shapes.append(("ellipse", {"xy": (round(cx, 3), round(cy, 3)), "width": 0.45, "height": 0.75, "angle": angle_deg - 90}))
+            nx = 0.5 + 0.52 * math.cos(angle_rad)
+            ny = 0.5 + 0.52 * math.sin(angle_rad)
+            names.append({"x": round(nx, 3), "y": round(ny, 3), "ha": "center", "va": "center"})
+        return {"shapes": shapes, "texts": [], "names": names}
+    elif num_sets == 6:
+        # Six ellipses at 60-degree intervals around the centre
+        import math
+
+        shapes = []
+        names = []
+        for i in range(6):
+            angle_deg = 90 - i * 60
+            angle_rad = math.radians(angle_deg)
+            cx = 0.5 + 0.15 * math.cos(angle_rad)
+            cy = 0.5 + 0.15 * math.sin(angle_rad)
+            shapes.append(("ellipse", {"xy": (round(cx, 3), round(cy, 3)), "width": 0.40, "height": 0.75, "angle": angle_deg - 90}))
+            nx = 0.5 + 0.50 * math.cos(angle_rad)
+            ny = 0.5 + 0.50 * math.sin(angle_rad)
+            names.append({"x": round(nx, 3), "y": round(ny, 3), "ha": "center", "va": "center"})
+        return {"shapes": shapes, "texts": [], "names": names}
     else:
-        # Return empty layout for unsupported set sizes
         return {"shapes": [], "texts": [], "names": []}
 
 
