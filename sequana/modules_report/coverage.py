@@ -22,7 +22,6 @@ import os
 
 import colorlog
 import pandas as pd
-import sequana_report.config as report_config
 from plotly import offline
 
 from sequana import bedtools
@@ -230,7 +229,6 @@ class ChromosomeCoverageModule(SequanaBaseModule):
             return
 
         self.html_page = "{0}{1}{2}.cov.html".format(directory, os.sep, self.chromosome.chrom_name)
-        report_config.output_dir = config.output_dir
         self.create_html(self.html_page)
 
         # inform the main coverage instance that HTML is ready
@@ -597,7 +595,6 @@ class SubCoverageModule(SequanaBaseModule):
         # Ensure subplot directory exists before creating HTML
         subplot_dir = os.path.join(directory, "subplots")
         os.makedirs(subplot_dir, exist_ok=True)
-        report_config.output_dir = config.output_dir
         self.create_html(
             "{0}{4}subplots{4}{1}_{2}_{3}.html".format(directory, self.chromosome.chrom_name, start, stop, os.sep)
         )

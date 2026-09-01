@@ -22,7 +22,6 @@ scikit-learn
 scipy
 seaborn
 selenium
-sequana_report>=0.1.0
 snakemake>=7.16,<8
 statsmodels
 tqdm
