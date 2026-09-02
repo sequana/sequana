@@ -80,9 +80,34 @@ class Tree:
         2.0
     """
 
-    def __init__(self, root: TreeNode):
-        """Initialize tree from root node."""
-        self.root = root
+    def __init__(self, root):
+        """Initialize tree from root node, filename, or Newick string.
+
+        Args:
+            root: TreeNode object, filename (str), or Newick format string (str)
+        """
+        import pathlib
+
+        if isinstance(root, TreeNode):
+            self.root = root
+        elif isinstance(root, str):
+            # Try to load as file first
+            if pathlib.Path(root).exists():
+                with open(root) as f:
+                    newick_str = f.read().strip()
+                parsed_root, _ = self._parse_newick(newick_str.rstrip(";"), 0)
+                if parsed_root is None:
+                    raise ValueError(f"Invalid Newick format in file: {root}")
+                self.root = parsed_root
+            else:
+                # Try to parse as Newick string
+                parsed_root, _ = self._parse_newick(root.rstrip(";"), 0)
+                if parsed_root is None:
+                    raise ValueError(f"Invalid input: not a file or valid Newick format: {root}")
+                self.root = parsed_root
+        else:
+            raise TypeError(f"root must be TreeNode, filename, or Newick string, got {type(root)}")
+
         self._leaf_cache = None
         self._node_cache = None
 
