@@ -1014,7 +1014,7 @@ class ChromosomeCov(object):
 
         if data.empty:  # pragma: no cover
             self._df["scale"] = np.ones(len(self.df), dtype=int)
-            self._df["zscore"] = np.zeros(len(self.df), dtype=int)
+            self._df["zscore"] = np.zeros(len(self.df), dtype=float)
             # define arbitrary values
             self.gaussians_params = [
                 {"mu": 0.5, "pi": 0.15, "sigma": 0.1},
@@ -1051,7 +1051,7 @@ class ChromosomeCov(object):
         # warning when sigma is equal to 0
         if self.best_gaussian["sigma"] == 0:
             logger.warning("A problem related to gaussian prediction is " "detected. Be careful, Sigma is equal to 0.")
-            self._df["zscore"] = np.zeros(len(self.df), dtype=int)
+            self._df["zscore"] = np.zeros(len(self.df), dtype=float)
         else:
             self._df["zscore"] = (self.df["scale"] - self.best_gaussian["mu"]) / self.best_gaussian["sigma"]
 
