@@ -2226,6 +2226,10 @@ class ChromosomeCovMultiChunk(object):
                 ]
             )
             empty_rois.rawdf = empty_rois.df.copy()
+            empty_rois.thresholds = None
+            empty_rois.feature_list = None
+            empty_rois.step = 1
+            empty_rois.apply_threshold_after_merging = True
             return empty_rois
 
         # let us copy the first one

@@ -1,10 +1,5 @@
 """Comprehensive tests for pdb.py module."""
-import os
-import tempfile
-
-import pytest
-
-from sequana.pdb import Atom, Chain, Model, Residue, Structure, parse_pdb
+from sequana.pdb import Atom, Chain, Model, Residue, Structure
 
 
 class TestAtom:

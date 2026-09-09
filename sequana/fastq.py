@@ -808,7 +808,7 @@ class FastQ(object):
                         buf.append(lines[1])
                         buf.append(b"+\n")
                         buf.append(lines[3])
-                        buf_size += len(ident_bytes) + len(lines[1]) + len(lines[3]) + 1
+                        buf_size += len(ident_bytes) + len(lines[1]) + len(lines[3]) + len(b"+\n")
                         saved += 1
                     else:
                         filtered += 1

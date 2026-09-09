@@ -226,9 +226,6 @@ def test_annotate_with_gff3():
 
 @pytest.mark.filterwarnings("ignore::RuntimeWarning")
 def test_small_contig(tmpdir):
-    import os
-    import tempfile
-
     # Create a test BED file with a small contig and a normal contig
     tmpfile = tmpdir.join("test_small.bed")
     with open(str(tmpfile), "w") as f:
