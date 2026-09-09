@@ -5,5 +5,3 @@ Pacbio QC
 
 
 .. sequana_pipeline:: pacbio_qc
-
-

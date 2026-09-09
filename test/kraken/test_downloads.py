@@ -1,7 +1,7 @@
-
 import pytest
 
-from sequana import KrakenDownload 
+from sequana import KrakenDownload
+
 from . import test_dir
 
 
@@ -13,4 +13,3 @@ def test_download(tmpdir):
 
     # redownload on purpose
     kd.download("toydb")
-

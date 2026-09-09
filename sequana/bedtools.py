@@ -639,7 +639,7 @@ class ChromosomeCov(object):
             logger.error(msg)
             raise Exception(msg)
 
-    def run(self, W, k=2, circular=False, binning=None, cnv_delta=None):
+    def run(self, W, k=2, circular=False, binning=None, cnv_delta=None, force_models=False):
 
         self.init()
 
@@ -700,7 +700,7 @@ class ChromosomeCov(object):
                 logger.debug("running median computation")
                 self.running_median(W, circular=circular)
                 logger.debug("zscore computation")
-                self.compute_zscore(k=k, verbose=False)  # avoid repetitive warning
+                self.compute_zscore(k=k, verbose=False, force_models=force_models)  # avoid repetitive warning
 
                 rois = self.get_rois()
                 if cnv_delta is not None and cnv_delta > 1:
@@ -772,7 +772,7 @@ class ChromosomeCov(object):
             self.binning = binning
 
             self.running_median(int(W / binning), circular=circular)
-            self.compute_zscore(k=k, verbose=False)  # avoid repetitive warning
+            self.compute_zscore(k=k, verbose=False, force_models=force_models)  # avoid repetitive warning
             # Only one ROIs, but we use the same logic as in the chunk case,
             # and store the rois/summary in the ChromosomeCovMultiChunk
             # structure

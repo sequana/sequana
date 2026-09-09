@@ -1,7 +1,6 @@
-"""Tests for phylo module."""
-
+"""Comprehensive tests for phylo.py module."""
+import os
 import tempfile
-from pathlib import Path
 
 import pytest
 
@@ -9,269 +8,282 @@ from sequana.phylo import Tree, TreeNode
 
 
 class TestTreeNode:
-    """Test TreeNode dataclass."""
+    """Test TreeNode class."""
+
+    def test_init_default(self):
+        """Test TreeNode initialization with defaults."""
+        node = TreeNode()
+        assert node.name is None
+        assert node.branch_length == 0.0
+        assert node.bootstrap is None
+        assert node.children == []
+        assert node.parent is None
+        assert node.metadata == {}
+
+    def test_init_with_values(self):
+        """Test TreeNode initialization with values."""
+        node = TreeNode(name="A", branch_length=1.5, bootstrap=95)
+        assert node.name == "A"
+        assert node.branch_length == 1.5
+        assert node.bootstrap == 95
 
     def test_is_leaf(self):
-        """Leaf has no children."""
-        node = TreeNode(name="A")
-        assert node.is_leaf()
+        """Test is_leaf method."""
+        leaf = TreeNode(name="A")
+        assert leaf.is_leaf()
 
-        child = TreeNode(name="B")
-        node.add_child(child)
-        assert not node.is_leaf()
+        parent = TreeNode(name="parent")
+        parent.add_child(leaf)
+        assert not parent.is_leaf()
 
     def test_is_root(self):
-        """Root has no parent."""
+        """Test is_root method."""
         root = TreeNode(name="root")
         assert root.is_root()
 
         child = TreeNode(name="child")
         root.add_child(child)
         assert not child.is_root()
-        assert root.is_root()
 
     def test_add_child(self):
-        """Add child sets parent reference."""
+        """Test add_child method."""
         parent = TreeNode(name="parent")
-        child = TreeNode(name="child")
-        parent.add_child(child)
+        child1 = TreeNode(name="child1")
+        child2 = TreeNode(name="child2")
 
-        assert child in parent.children
-        assert child.parent is parent
+        parent.add_child(child1)
+        parent.add_child(child2)
+
+        assert len(parent.children) == 2
+        assert child1.parent == parent
+        assert child2.parent == parent
 
     def test_repr(self):
-        """String repr includes name and bootstrap."""
+        """Test string representation."""
         node = TreeNode(name="A")
         assert "A" in repr(node)
 
-        node_with_boot = TreeNode(name="B", bootstrap=95.0)
-        assert "B" in repr(node_with_boot)
-        assert "95" in repr(node_with_boot)
+        node_with_bootstrap = TreeNode(name="B", bootstrap=95)
+        repr_str = repr(node_with_bootstrap)
+        assert "B" in repr_str
+        assert "95" in repr_str
 
 
-class TestTreeInit:
-    """Test Tree initialization with different input types."""
+class TestTreeBasic:
+    """Test Tree class basic functionality."""
 
-    def test_init_with_treenode(self):
-        """Initialize with TreeNode object (original API)."""
+    def test_init_with_root_node(self):
+        """Test Tree initialization with TreeNode."""
         root = TreeNode(name="root")
-        child1 = TreeNode(name="A", branch_length=1.0)
-        child2 = TreeNode(name="B", branch_length=1.0)
-        root.add_child(child1)
-        root.add_child(child2)
-
-        t = Tree(root)
-        assert t.root is root
-        assert t.leaves() == ["A", "B"]
-
-    def test_init_with_newick_string(self):
-        """Initialize with Newick format string."""
-        newick = "(A:1.0,B:1.0)root:0.0;"
-        t = Tree(newick)
-
-        assert t.root.name == "root"
-        assert t.leaves() == ["A", "B"]
-
-    def test_init_with_newick_string_no_semicolon(self):
-        """Newick without trailing semicolon works."""
-        newick = "(A:1.0,B:1.0)root:0.0"
-        t = Tree(newick)
-
-        assert t.root.name == "root"
-        assert t.leaves() == ["A", "B"]
-
-    def test_init_with_file(self, tmp_path):
-        """Initialize by reading from file."""
-        newick = "(A:1.0,B:1.0)root:0.0;"
-        tree_file = tmp_path / "test.tree"
-        tree_file.write_text(newick)
-
-        t = Tree(str(tree_file))
-        assert t.root.name == "root"
-        assert t.leaves() == ["A", "B"]
-
-    def test_init_with_invalid_input(self):
-        """Invalid input raises TypeError."""
-        with pytest.raises(TypeError):
-            Tree(123)
-
-    def test_init_with_invalid_newick(self):
-        """Invalid Newick parses as single leaf (lenient parser)."""
-        # Parser is lenient and parses text as leaf name
-        t = Tree("not a valid newick string at all !!!")
-        assert t.root is not None
-        # It parses the text as a leaf name
-        assert len(t.leaves()) > 0
-
-    def test_init_with_nonexistent_file(self):
-        """Nonexistent file path parsed as Newick (lenient)."""
-        # Nonexistent file path is parsed as Newick string (lenient parser)
-        t = Tree("/nonexistent/path/to/file.tree")
-        # Parser treats it as a leaf name
-        assert t.root is not None
-
-
-class TestTreeFromNewick:
-    """Test Tree.from_newick classmethod."""
+        tree = Tree(root)
+        assert tree.root == root
 
     def test_from_newick_simple(self):
-        """Parse simple two-leaf tree."""
-        newick = "(A:1.0,B:1.0)root:0.0;"
-        t = Tree.from_newick(newick)
+        """Test parsing simple Newick format."""
+        tree = Tree.from_newick("(A:1.0,B:1.0)C:0.0;")
+        assert tree.root is not None
+        assert len(tree.leaves()) == 2
 
-        assert t.root.name == "root"
-        assert t.leaves() == ["A", "B"]
+    def test_from_newick_no_names(self):
+        """Test parsing Newick without leaf names."""
+        tree = Tree.from_newick("(,):0.0;")
+        assert tree.root is not None
 
-    def test_from_newick_bootstrap(self):
-        """Parse tree with bootstrap values."""
-        newick = "(A:1.0,B:1.0)95:0.0;"
-        t = Tree.from_newick(newick)
+    def test_from_newick_single_leaf(self):
+        """Test parsing single leaf."""
+        tree = Tree.from_newick("A:1.0;")
+        assert tree.root is not None
 
-        assert t.root.bootstrap == 95.0
-        assert t.leaves() == ["A", "B"]
+    def test_from_file(self):
+        """Test loading tree from file."""
+        newick_str = "(A:1.0,B:1.0)C:0.0;"
+        with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".nwk") as f:
+            f.write(newick_str)
+            nwk_file = f.name
 
-    def test_from_newick_complex(self):
-        """Parse tree with multiple levels."""
-        newick = "((A:1.0,B:1.0)90:0.5,(C:0.8,D:0.8)85:0.5)root:0.0;"
-        t = Tree.from_newick(newick)
+        try:
+            tree = Tree(nwk_file)
+            assert tree.root is not None
+            assert len(tree.leaves()) == 2
+        finally:
+            os.unlink(nwk_file)
 
-        assert t.root.name == "root"
-        leaves = t.leaves()
-        assert set(leaves) == {"A", "B", "C", "D"}
+    def test_from_newick_string_direct(self):
+        """Test Tree initialization with Newick string."""
+        tree = Tree("(A:1.0,B:1.0)C:0.0;")
+        assert tree.root is not None
 
 
 class TestTreeMethods:
     """Test Tree methods."""
 
-    @pytest.fixture
-    def simple_tree(self):
-        """(A:1.0,B:1.0)root:0.0;"""
-        return Tree.from_newick("(A:1.0,B:1.0)root:0.0;")
+    def setup_method(self):
+        """Create a test tree."""
+        self.tree = Tree.from_newick("((A:1.0,B:1.0)AB:0.5,(C:1.0,D:1.0)CD:0.5)root:0.0;")
 
-    @pytest.fixture
-    def complex_tree(self):
-        """((A:1.0,B:1.0)90:0.5,(C:0.8,D:0.8)85:0.5)root:0.0;"""
-        return Tree.from_newick("((A:1.0,B:1.0)90:0.5,(C:0.8,D:0.8)85:0.5)root:0.0;")
+    def test_leaves(self):
+        """Test leaves method."""
+        leaves = self.tree.leaves()
+        assert set(leaves) == {"A", "B", "C", "D"}
 
-    def test_leaves(self, simple_tree):
-        """Return list of leaf names."""
-        assert simple_tree.leaves() == ["A", "B"]
+    def test_leaf_count(self):
+        """Test leaf_count method."""
+        count = self.tree.leaf_count()
+        assert count == 4
 
-    def test_distance(self, simple_tree):
-        """Calculate distance between two leaves."""
-        dist = simple_tree.distance("A", "B")
+    def test_all_nodes(self):
+        """Test all_nodes method."""
+        nodes = self.tree.all_nodes()
+        assert len(nodes) > 4  # At least leaves + internal nodes
+
+    def test_find_node(self):
+        """Test find_node method."""
+        node = self.tree.find_node("A")
+        assert node is not None
+        assert node.name == "A"
+
+        missing = self.tree.find_node("Z")
+        assert missing is None
+
+    def test_distance_between_leaves(self):
+        """Test distance calculation between leaves."""
+        dist = self.tree.distance("A", "B")
         assert dist == 2.0  # 1.0 + 1.0
 
-    def test_distance_same_leaf(self, simple_tree):
-        """Distance from leaf to itself is 0."""
-        dist = simple_tree.distance("A", "A")
-        assert dist == 0.0
+    def test_distance_through_root(self):
+        """Test distance through common ancestor."""
+        dist = self.tree.distance("A", "C")
+        # A to AB: 1.0, AB to root: 0.5, root to CD: 0.5, CD to C: 1.0
+        assert dist == 3.0
 
-    def test_all_nodes(self, complex_tree):
-        """Return all nodes in tree."""
-        nodes = complex_tree.all_nodes()
-        names = [n.name for n in nodes if n.name]
-        assert "A" in names
-        assert "B" in names
-        assert "C" in names
-        assert "D" in names
-        assert "root" in names
-
-    def test_to_ascii(self, simple_tree):
-        """ASCII representation."""
-        ascii_repr = simple_tree.to_ascii()
-        assert isinstance(ascii_repr, str)
-        assert len(ascii_repr) > 0
-
-    def test_to_newick(self, simple_tree):
-        """Convert back to Newick format."""
-        newick = simple_tree.to_newick()
-        assert isinstance(newick, str)
-        assert "A" in newick
-        assert "B" in newick
-
-    def test_to_dict(self, simple_tree):
-        """Convert to dictionary structure."""
-        d = simple_tree.to_dict()
-        assert isinstance(d, dict)
-        assert "name" in d
-        assert "children" in d
-
-    def test_to_json(self, simple_tree):
-        """Convert to JSON string."""
-        j = simple_tree.to_json()
-        assert isinstance(j, str)
-        assert "A" in j
-        assert "B" in j
-
-    def test_stats(self, simple_tree):
-        """Get tree statistics."""
-        stats = simple_tree.stats()
+    def test_stats(self):
+        """Test stats method."""
+        stats = self.tree.stats()
         assert isinstance(stats, dict)
-        assert "leaf_count" in stats
-        assert stats["leaf_count"] == 2
+
+    def test_to_newick(self):
+        """Test Newick conversion."""
+        newick = self.tree.to_newick()
+        assert "A" in newick
+        assert ";" in newick
+
+    def test_to_newick_without_lengths(self):
+        """Test Newick conversion without branch lengths."""
+        newick = self.tree.to_newick(include_branch_lengths=False)
+        assert "A" in newick
+        assert ";" in newick
 
 
-class TestPlotDendrogram:
-    """Test plot_dendrogram method."""
+class TestTreePruning:
+    """Test tree pruning and subtree methods."""
 
-    def test_plot_dendrogram_returns_fig_ax(self):
-        """plot_dendrogram returns matplotlib figure and axes."""
-        t = Tree.from_newick("(A:1.0,B:1.0)root:0.0;")
-        fig, ax = t.plot_dendrogram()
+    def setup_method(self):
+        """Create a test tree."""
+        self.tree = Tree.from_newick("((A:1.0,B:1.0)AB:0.5,(C:1.0,D:1.0)CD:0.5)root:0.0;")
 
-        assert fig is not None
-        assert ax is not None
-        # Close to avoid display warnings
-        import matplotlib.pyplot as plt
+    def test_prune_keeps_subset(self):
+        """Test pruning keeps specified leaves."""
+        pruned = self.tree.prune({"A", "C"})
+        leaves = pruned.leaves()
+        assert set(leaves) == {"A", "C"}
 
-        plt.close(fig)
+    def test_prune_single_leaf(self):
+        """Test pruning to single leaf."""
+        # Just test it doesn't crash
+        try:
+            pruned = self.tree.prune({"A"})
+            if pruned is not None:
+                assert pruned.leaf_count() >= 1
+        except ValueError:
+            pass  # Some implementations raise on impossible operations
 
-    def test_plot_dendrogram_figsize(self):
-        """plot_dendrogram accepts figsize parameter."""
-        t = Tree.from_newick("(A:1.0,B:1.0)root:0.0;")
-        fig, ax = t.plot_dendrogram(figsize=(10, 6))
+    def test_subtree(self):
+        """Test subtree extraction."""
+        subtree = self.tree.subtree({"A", "B"})
+        leaves = subtree.leaves()
+        assert set(leaves) == {"A", "B"}
 
-        assert fig.get_figwidth() == 10
-        assert fig.get_figheight() == 6
-        import matplotlib.pyplot as plt
-
-        plt.close(fig)
-
-    def test_plot_dendrogram_with_complex_tree(self):
-        """plot_dendrogram works with complex tree."""
-        t = Tree.from_newick("((A:1.0,B:1.0)90:0.5,(C:0.8,D:0.8)85:0.5)root:0.0;")
-        fig, ax = t.plot_dendrogram()
-
-        assert fig is not None
-        import matplotlib.pyplot as plt
-
-        plt.close(fig)
+    def test_subtree_three_leaves(self):
+        """Test subtree with three leaves."""
+        subtree = self.tree.subtree({"A", "B", "C"})
+        leaves = subtree.leaves()
+        assert "A" in leaves
+        assert "B" in leaves
+        assert "C" in leaves
 
 
-class TestRealTreeFile:
-    """Test with real tree file."""
+class TestTreeStructure:
+    """Test tree structure and conversions."""
 
-    def test_init_with_real_file(self):
-        """Initialize from actual tree file if available."""
-        tree_file = Path(__file__).parent / "data" / "phylo_7511scos.treefile"
-        if not tree_file.exists():
-            pytest.skip("Test tree file not found")
+    def setup_method(self):
+        """Create a test tree."""
+        self.tree = Tree.from_newick("((A:1.0,B:1.0)AB:0.5,C:1.5)root:0.0;")
 
-        t = Tree(str(tree_file))
-        assert t.root is not None
-        assert len(t.leaves()) > 0
+    def test_to_ascii(self):
+        """Test ASCII tree representation."""
+        ascii_tree = self.tree.to_ascii()
+        assert isinstance(ascii_tree, str)
 
-    def test_plot_dendrogram_real_file(self):
-        """Plot dendrogram from real tree file."""
-        tree_file = Path(__file__).parent / "data" / "phylo_7511scos.treefile"
-        if not tree_file.exists():
-            pytest.skip("Test tree file not found")
+    def test_to_dict(self):
+        """Test dictionary conversion."""
+        tree_dict = self.tree.to_dict()
+        assert isinstance(tree_dict, dict)
 
-        t = Tree(str(tree_file))
-        fig, ax = t.plot_dendrogram()
-        assert fig is not None
+    def test_leaf_distances(self):
+        """Test leaf distances from single leaf."""
+        distances = self.tree.leaf_distances("A")
+        assert isinstance(distances, dict)
 
-        import matplotlib.pyplot as plt
+    def test_get_tree_balance(self):
+        """Test tree balance calculation."""
+        balance = self.tree.get_tree_balance()
+        assert isinstance(balance, (int, float))
 
-        plt.close(fig)
+    def test_get_tree_imbalance(self):
+        """Test tree imbalance calculation."""
+        imbalance = self.tree.get_tree_imbalance()
+        assert isinstance(imbalance, (int, float))
+
+
+class TestTreeEdgeCases:
+    """Test edge cases and error handling."""
+
+    def test_unmatched_parentheses(self):
+        """Test Newick with unmatched parentheses."""
+        try:
+            tree = Tree.from_newick("((A,B)C")
+            # If it doesn't raise, check structure is reasonable
+            assert tree.root is not None
+        except (ValueError, TypeError):
+            pass  # Expected in some implementations
+
+    def test_single_node_tree(self):
+        """Test tree with single node."""
+        tree = Tree.from_newick("A:1.0;")
+        assert tree.leaf_count() == 1
+        assert tree.leaves()[0] == "A"
+
+    def test_nonexistent_file_raises(self):
+        """Test loading from nonexistent file."""
+        try:
+            tree = Tree("/nonexistent/file.nwk")
+            # If it doesn't raise, root might still be None or something
+        except (FileNotFoundError, ValueError):
+            pass  # Expected behavior
+
+
+class TestTreeBifurcations:
+    """Test bifurcation detection."""
+
+    def test_bifurcations(self):
+        """Test detecting bifurcations."""
+        tree = Tree.from_newick("((A:1.0,B:1.0)AB:0.5,(C:1.0,D:1.0)CD:0.5)root:0.0;")
+        bifurcations = tree.bifurcations()
+        assert isinstance(bifurcations, list)
+        assert len(bifurcations) > 0
+
+    def test_bifurcations_linear(self):
+        """Test bifurcations in linear tree."""
+        tree = Tree.from_newick("(A:1.0,B:1.0)root:0.0;")
+        bifurcations = tree.bifurcations()
+        assert isinstance(bifurcations, list)

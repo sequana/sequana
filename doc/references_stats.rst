@@ -28,4 +28,3 @@ Statistical tools
 .. automodule:: sequana.vst
     :members:
     :undoc-members:
-

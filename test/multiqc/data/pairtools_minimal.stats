@@ -1,0 +1,10 @@
+total	1000
+total_unmapped	100
+total_single_sided_mapped	50
+total_mapped	850
+total_dups	200
+total_nodups	650
+cis	400
+trans	250
+pair_types/UU	600
+pair_types/NU	100

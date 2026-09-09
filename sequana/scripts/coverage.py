@@ -316,6 +316,12 @@ def download_genbank(ctx, param, value):
     help="exclude reads with any of the bits in FLAG set. to ignore, supp, use -F 3844",
     show_default=True,
 )
+@click.option(
+    "--force-models",
+    is_flag=True,
+    default=False,
+    help="skip EM mixture fitting, use fixed Gaussian parameters. ~100x faster but less accurate.",
+)
 def main(**kwargs):
     """Welcome to SEQUANA -- Coverage standalone
 
@@ -582,7 +588,12 @@ def run_analysis(chrom, options):
     logger.info("Using running median (w=%s)" % NW)
     logger.info("Number of mixture models %s " % options.k)
     results = chrom.run(
-        NW, options.k, circular=options.circular, binning=options.binning, cnv_delta=options.cnv_clustering
+        NW,
+        options.k,
+        circular=options.circular,
+        binning=options.binning,
+        cnv_delta=options.cnv_clustering,
+        force_models=options.force_models,
     )
     chrom.plot_coverage(f"{directory}/coverage.png")
 

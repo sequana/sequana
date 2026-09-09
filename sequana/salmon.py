@@ -50,7 +50,8 @@ class Salmon:
             self.trs2genes, self.genes2trs = self.gff.transcript_to_gene_mapping(attribute="transcript_id")
             # Filter to transcripts and genes only (exclude exons, CDS, etc., and nan values)
             self.trs2genes = {
-                k: v for k, v in self.trs2genes.items()
+                k: v
+                for k, v in self.trs2genes.items()
                 if isinstance(v, str) and (k.startswith("transcript:") or k.startswith("gene:"))
             }
             # Add transcript aliases (e.g., "TR1" → same gene as "transcript:TR1")

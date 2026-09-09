@@ -4,5 +4,3 @@ demultiplex
 ===========
 
 .. sequana_pipeline:: demultiplex
-
-

@@ -26,7 +26,7 @@ def test_wget():
         wget("https://github.com/sequana/sequana/raw/main/README.rst", fh.name)
 
 
-def test_multiple_downloads(tmpdir): 
+def test_multiple_downloads(tmpdir):
     file1 = tmpdir.join("file1.txt")
     file2 = tmpdir.join("file2.txt")
     data = [
@@ -35,4 +35,3 @@ def test_multiple_downloads(tmpdir):
     ]
     multiple_downloads(data)
     download(data[0][0], data[0][1])
-

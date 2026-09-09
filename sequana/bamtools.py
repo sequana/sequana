@@ -68,6 +68,7 @@ from functools import wraps
 
 def _reset(f):
     """Decorator that rewinds the BAM/SAM file to the beginning before calling *f*."""
+
     @wraps(f)
     def wrapper(*args, **kargs):
         """Wrapped function that resets the alignment file pointer before delegating."""

@@ -1,1 +1,1 @@
-gource --highlight-users --stop-at-end --background 000000 --font-size 22 --title 'Sequana development Feb 2016 -- Aug 2017' --output-ppm-stream - --output-framerate 25 -f -s 0.001 --file-idle-time 0 --max-files 0 | ffmpeg -y -r 25 -f image2pipe -vcodec ppm -i - -b 32768K movie.mp4 
+gource --highlight-users --stop-at-end --background 000000 --font-size 22 --title 'Sequana development Feb 2016 -- Aug 2017' --output-ppm-stream - --output-framerate 25 -f -s 0.001 --file-idle-time 0 --max-files 0 | ffmpeg -y -r 25 -f image2pipe -vcodec ppm -i - -b 32768K movie.mp4

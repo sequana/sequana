@@ -11,7 +11,7 @@ want to type::
 
     pytest test_FILE.py --cov=sequana.FILE
 
-but pytest looks for the setup.cfg and overwrite these options. So, we added 
+but pytest looks for the setup.cfg and overwrite these options. So, we added
 an empty pytest.ini that replaces the values in the setup.cfg in the root
 directory.
 

@@ -12,6 +12,7 @@
 ##############################################################################
 
 import colorlog
+
 logger = colorlog.getLogger(__name__)
 
 
@@ -36,6 +37,7 @@ class Checker:
 
 
     """
+
     def __init__(self):
 
         self.results = []

@@ -2,7 +2,7 @@ import math
 
 import pytest
 
-from sequana.criteria import AIC, AICc, BIC
+from sequana.criteria import AIC, BIC, AICc
 
 
 def test_AIC_with_likelihood():

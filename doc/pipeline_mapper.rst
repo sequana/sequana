@@ -5,5 +5,3 @@ Mapper
 
 
 .. sequana_pipeline:: mapper
-
-
