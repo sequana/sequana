@@ -1745,13 +1745,14 @@ class ChromosomeCov(object):
 
         for chrom in fasta:
             if chrom.name == self.chrom_name or chrom.name.split(".")[0] == self.chrom_name:
-                # Create gc_content array
-                gc_content = np.empty(len(chrom.sequence))
-                gc_content[:] = np.nan
                 if self.bed.circular:
                     chrom.sequence = chrom.sequence[-mid:] + chrom.sequence + chrom.sequence[:mid]
                     # Does not shift index of array
                     mid = 0
+
+                # Create gc_content array (after potential sequence extension)
+                gc_content = np.empty(len(chrom.sequence))
+                gc_content[:] = np.nan
 
                 # Count first window content
                 counter = Counter(chrom.sequence[0:gc_window_size])
