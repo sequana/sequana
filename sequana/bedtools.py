@@ -642,6 +642,25 @@ class ChromosomeCov(object):
     def run(self, W, k=2, circular=False, binning=None, cnv_delta=None):
 
         self.init()
+
+        # Check if contig is too small for the window size
+        contig_length = self.bed.positions[self.chrom_name]["N"]
+        if W * 2 > contig_length:
+            logger.warning(
+                f"Contig '{self.chrom_name}' (length {contig_length}) is too small "
+                f"for window size {W} (requires at least {W*2}). Skipping this contig."
+            )
+            # Return empty results
+            results = ChromosomeCovMultiChunk([])
+            self._rois = results.get_rois()
+            self.bed._basic_stats[self.chrom_name] = {
+                "DOC": 0,
+                "CV": 0,
+                "length": contig_length,
+            }
+            self.bed._rois[self.chrom_name] = results.get_rois()
+            return results
+
         # for the coverare snakemake pipeline
         if binning == -1:
             binning = None
@@ -2150,6 +2169,10 @@ class ChromosomeCovMultiChunk(object):
         # get all summaries
         summaries = [this[0].as_dict() for this in self.data]
 
+        # Handle empty data (contig skipped due to small size)
+        if not summaries:
+            return Summary("coverage", sample_name="", data={"length": 0, "BOC": 0, "DOC": 0}, caller=caller)
+
         # from the first one extract metadata
         data = summaries[0]
         sample_name = data["sample_name"]
@@ -2163,16 +2186,17 @@ class ChromosomeCovMultiChunk(object):
         # now, we need to update those values, which are means, so
         # we need to multiply back by the length to get the sum, and finally
         # divide by the total mean
-        for this in ["BOC", "DOC", "evenness"]:
-            summary.data[this] = sum([d["data"][this] * d["data"]["length"] for d in summaries]) / float(N)
+        if N > 0:
+            for this in ["BOC", "DOC", "evenness"]:
+                summary.data[this] = sum([d["data"][this] * d["data"]["length"] for d in summaries]) / float(N)
 
-        # For, CV, centralness, evenness, we simply takes the grand mean for now
-        for this in ["C3", "C4", "evenness"]:
-            summary.data[this] = np.mean([d["data"][this] for d in summaries])
+            # For, CV, centralness, evenness, we simply takes the grand mean for now
+            for this in ["C3", "C4", "evenness"]:
+                summary.data[this] = np.mean([d["data"][this] for d in summaries])
 
-        # For, ROI, just the sum
-        for this in ["ROI", "ROI(high)", "ROI(low)"]:
-            summary.data[this] = sum([d["data"][this] for d in summaries])
+            # For, ROI, just the sum
+            for this in ["ROI", "ROI(high)", "ROI(low)"]:
+                summary.data[this] = sum([d["data"][this] for d in summaries])
 
         return summary
 
@@ -2180,6 +2204,26 @@ class ChromosomeCovMultiChunk(object):
 
         # all individual ROIs
         data = [item[1] for item in self.data]
+
+        # Handle empty data (contig skipped due to small size)
+        if not data:
+            empty_rois = object.__new__(FilteredGenomeCov)
+            empty_rois.df = pd.DataFrame(
+                columns=[
+                    "chr",
+                    "start",
+                    "end",
+                    "size",
+                    "mean_cov",
+                    "mean_rm",
+                    "mean_zscore",
+                    "log2_ratio",
+                    "max_zscore",
+                    "max_cov",
+                ]
+            )
+            empty_rois.rawdf = empty_rois.df.copy()
+            return empty_rois
 
         # let us copy the first one
         rois = copy.deepcopy(data[0])

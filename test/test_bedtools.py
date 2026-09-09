@@ -222,3 +222,37 @@ def test_annotate_with_gff3():
         .reset_index(drop=True)
         .equals(rois_gff.df.reset_index(drop=True))
     )
+
+
+@pytest.mark.filterwarnings("ignore::RuntimeWarning")
+def test_small_contig(tmpdir):
+    import os
+    import tempfile
+
+    # Create a test BED file with a small contig and a normal contig
+    tmpfile = tmpdir.join("test_small.bed")
+    with open(str(tmpfile), "w") as f:
+        # Small contig (100 bp) - should be skipped
+        for pos in range(1, 101):
+            f.write(f"small_contig\t{pos}\t10\n")
+        # Normal contig (5000 bp) - should be analyzed
+        for pos in range(1, 5001):
+            f.write(f"normal_contig\t{pos}\t15\n")
+
+    gc = bedtools.SequanaCoverage(str(tmpfile))
+    assert len(gc) == 2
+
+    thresholds = bedtools.DoubleThresholds(-4, 4)
+
+    # Analyze small contig - should skip with warning
+    chrom = bedtools.ChromosomeCov(gc, "small_contig", thresholds, chunksize=5000000)
+    result = chrom.run(2001, k=2)
+    # Should have empty ROIs
+    assert len(result.get_rois().df) == 0
+    assert result.get_summary().data["length"] == 0
+
+    # Analyze normal contig - should work
+    chrom = bedtools.ChromosomeCov(gc, "normal_contig", thresholds, chunksize=5000000)
+    result = chrom.run(2001, k=2)
+    # Should have some data (exact content depends on coverage values)
+    assert result.get_summary().data["length"] > 0
