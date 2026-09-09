@@ -3,7 +3,7 @@ Notes
 
 The phiX174.fa file provided here is the one used within the Biomics platform and
 differs slightly from the ENA sequence: http://www.ebi.ac.uk/ena/data/view/J02482
-and http://www.ncbi.nlm.nih.gov/nuccore/9626372?report=fasta (NC_001422.1) with 
+and http://www.ncbi.nlm.nih.gov/nuccore/9626372?report=fasta (NC_001422.1) with
 5 different bases.
 
 Paired-end
@@ -33,9 +33,9 @@ RNAseq
 
 - data/KO_ATCACG_R1_test.fastq.gz : a small sample of 500 reads for testing
 
-SIRV 
+SIRV
 =======
 
 The SIRV.fa file is used for testing but can also be used for ISOSEQ analysis to
-identify spikes that were possibly injected. This file is made of 68 spikes (Lot 001603 ) 
+identify spikes that were possibly injected. This file is made of 68 spikes (Lot 001603 )
 from lexogen.

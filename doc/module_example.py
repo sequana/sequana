@@ -1,5 +1,5 @@
-from numpy import random
 import pandas as pd
+from numpy import random
 
 from sequana.modules_report.base_module import SequanaBaseModule
 from sequana.utils.datatables_js import DataTable
@@ -22,42 +22,37 @@ class MyModule(SequanaBaseModule):
 
     def add_table(self):
         df = self.summary.copy()
-        df.columns = ['data']
-        df['url'] = ['http://sequana.readthedocs.org'] * len(df)
+        df.columns = ["data"]
+        df["url"] = ["http://sequana.readthedocs.org"] * len(df)
 
         table = DataTable(df, "table", index=True)
         table.datatable.datatable_options = {
-            'scrollX': '300px',
-            'pageLength': 15,
-            'scrollCollapse': 'true',
-            'dom': 'tB',
+            "scrollX": "300px",
+            "pageLength": 15,
+            "scrollCollapse": "true",
+            "dom": "tB",
             "paging": "false",
-            'buttons': ['copy', 'csv']}
-        table.datatable.set_links_to_column('url', 'data')
+            "buttons": ["copy", "csv"],
+        }
+        table.datatable.set_links_to_column("url", "data")
 
         js = table.create_javascript_function()
-        html_tab = table.create_datatable(float_format='%.3g')
+        html_tab = table.create_datatable(float_format="%.3g")
         html = "{} {}".format(html_tab, js)
 
-        self.sections.append({
-          "name": "Table",
-          "anchor": "table",
-          "content": html
-        })
+        self.sections.append({"name": "Table", "anchor": "table", "content": html})
 
     def add_image(self):
         import pylab
+
         def plotter(filename):
             pylab.ioff()
             self.data.hist()
             pylab.savefig(filename)
-        html = self.create_embedded_png(plotter, "filename",
-                    style='width:65%')
-        self.sections.append({
-          "name": "Image",
-          "anchor": "table",
-          "content": html
-        })
+
+        html = self.create_embedded_png(plotter, "filename", style="width:65%")
+        self.sections.append({"name": "Image", "anchor": "table", "content": html})
+
 
 # Let us create some data.
 df = pd.Series(random.randn(10000))

@@ -639,9 +639,28 @@ class ChromosomeCov(object):
             logger.error(msg)
             raise Exception(msg)
 
-    def run(self, W, k=2, circular=False, binning=None, cnv_delta=None):
+    def run(self, W, k=2, circular=False, binning=None, cnv_delta=None, force_models=False):
 
         self.init()
+
+        # Check if contig is too small for the window size
+        contig_length = self.bed.positions[self.chrom_name]["N"]
+        if W * 2 > contig_length:
+            logger.warning(
+                f"Contig '{self.chrom_name}' (length {contig_length}) is too small "
+                f"for window size {W} (requires at least {W*2}). Skipping this contig."
+            )
+            # Return empty results
+            results = ChromosomeCovMultiChunk([])
+            self._rois = results.get_rois()
+            self.bed._basic_stats[self.chrom_name] = {
+                "DOC": 0,
+                "CV": 0,
+                "length": contig_length,
+            }
+            self.bed._rois[self.chrom_name] = results.get_rois()
+            return results
+
         # for the coverare snakemake pipeline
         if binning == -1:
             binning = None
@@ -681,7 +700,7 @@ class ChromosomeCov(object):
                 logger.debug("running median computation")
                 self.running_median(W, circular=circular)
                 logger.debug("zscore computation")
-                self.compute_zscore(k=k, verbose=False)  # avoid repetitive warning
+                self.compute_zscore(k=k, verbose=False, force_models=force_models)  # avoid repetitive warning
 
                 rois = self.get_rois()
                 if cnv_delta is not None and cnv_delta > 1:
@@ -753,7 +772,7 @@ class ChromosomeCov(object):
             self.binning = binning
 
             self.running_median(int(W / binning), circular=circular)
-            self.compute_zscore(k=k, verbose=False)  # avoid repetitive warning
+            self.compute_zscore(k=k, verbose=False, force_models=force_models)  # avoid repetitive warning
             # Only one ROIs, but we use the same logic as in the chunk case,
             # and store the rois/summary in the ChromosomeCovMultiChunk
             # structure
@@ -995,7 +1014,7 @@ class ChromosomeCov(object):
 
         if data.empty:  # pragma: no cover
             self._df["scale"] = np.ones(len(self.df), dtype=int)
-            self._df["zscore"] = np.zeros(len(self.df), dtype=int)
+            self._df["zscore"] = np.zeros(len(self.df), dtype=float)
             # define arbitrary values
             self.gaussians_params = [
                 {"mu": 0.5, "pi": 0.15, "sigma": 0.1},
@@ -1032,7 +1051,7 @@ class ChromosomeCov(object):
         # warning when sigma is equal to 0
         if self.best_gaussian["sigma"] == 0:
             logger.warning("A problem related to gaussian prediction is " "detected. Be careful, Sigma is equal to 0.")
-            self._df["zscore"] = np.zeros(len(self.df), dtype=int)
+            self._df["zscore"] = np.zeros(len(self.df), dtype=float)
         else:
             self._df["zscore"] = (self.df["scale"] - self.best_gaussian["mu"]) / self.best_gaussian["sigma"]
 
@@ -1726,28 +1745,31 @@ class ChromosomeCov(object):
 
         for chrom in fasta:
             if chrom.name == self.chrom_name or chrom.name.split(".")[0] == self.chrom_name:
-                # Create gc_content array
-                gc_content = np.empty(len(chrom.sequence))
-                gc_content[:] = np.nan
                 if self.bed.circular:
                     chrom.sequence = chrom.sequence[-mid:] + chrom.sequence + chrom.sequence[:mid]
                     # Does not shift index of array
                     mid = 0
 
-                # Count first window content
-                counter = Counter(chrom.sequence[0:gc_window_size])
-                gc_count = 0
-                for letter in "GCgc":
-                    gc_count += counter[letter]
+                # Create gc_content array (after potential sequence extension)
+                gc_content = np.empty(len(chrom.sequence))
+                gc_content[:] = np.nan
 
-                gc_content[mid] = gc_count
+                # Skip gc_content if window size >= sequence length
+                if gc_window_size < len(chrom.sequence):
+                    # Count first window content
+                    counter = Counter(chrom.sequence[0:gc_window_size])
+                    gc_count = 0
+                    for letter in "GCgc":
+                        gc_count += counter[letter]
 
-                for i in range(1, len(chrom.sequence) - gc_window_size + 1):
-                    if chrom.sequence[i - 1] in "GCgc":
-                        gc_count -= 1
-                    if chrom.sequence[i + gc_window_size - 1] in "GCgc":
-                        gc_count += 1
-                    gc_content[i + mid] = gc_count
+                    gc_content[mid] = gc_count
+
+                    for i in range(1, len(chrom.sequence) - gc_window_size + 1):
+                        if chrom.sequence[i - 1] in "GCgc":
+                            gc_count -= 1
+                        if chrom.sequence[i + gc_window_size - 1] in "GCgc":
+                            gc_count += 1
+                        gc_content[i + mid] = gc_count
                 chrom_gc_content[chrom.name] = gc_content / gc_window_size
 
         # if accession processed by snpeff, the trailing version may be missing
@@ -2150,6 +2172,10 @@ class ChromosomeCovMultiChunk(object):
         # get all summaries
         summaries = [this[0].as_dict() for this in self.data]
 
+        # Handle empty data (contig skipped due to small size)
+        if not summaries:
+            return Summary("coverage", sample_name="", data={"length": 0, "BOC": 0, "DOC": 0}, caller=caller)
+
         # from the first one extract metadata
         data = summaries[0]
         sample_name = data["sample_name"]
@@ -2163,16 +2189,17 @@ class ChromosomeCovMultiChunk(object):
         # now, we need to update those values, which are means, so
         # we need to multiply back by the length to get the sum, and finally
         # divide by the total mean
-        for this in ["BOC", "DOC", "evenness"]:
-            summary.data[this] = sum([d["data"][this] * d["data"]["length"] for d in summaries]) / float(N)
+        if N > 0:
+            for this in ["BOC", "DOC", "evenness"]:
+                summary.data[this] = sum([d["data"][this] * d["data"]["length"] for d in summaries]) / float(N)
 
-        # For, CV, centralness, evenness, we simply takes the grand mean for now
-        for this in ["C3", "C4", "evenness"]:
-            summary.data[this] = np.mean([d["data"][this] for d in summaries])
+            # For, CV, centralness, evenness, we simply takes the grand mean for now
+            for this in ["C3", "C4", "evenness"]:
+                summary.data[this] = np.mean([d["data"][this] for d in summaries])
 
-        # For, ROI, just the sum
-        for this in ["ROI", "ROI(high)", "ROI(low)"]:
-            summary.data[this] = sum([d["data"][this] for d in summaries])
+            # For, ROI, just the sum
+            for this in ["ROI", "ROI(high)", "ROI(low)"]:
+                summary.data[this] = sum([d["data"][this] for d in summaries])
 
         return summary
 
@@ -2180,6 +2207,30 @@ class ChromosomeCovMultiChunk(object):
 
         # all individual ROIs
         data = [item[1] for item in self.data]
+
+        # Handle empty data (contig skipped due to small size)
+        if not data:
+            empty_rois = object.__new__(FilteredGenomeCov)
+            empty_rois.df = pd.DataFrame(
+                columns=[
+                    "chr",
+                    "start",
+                    "end",
+                    "size",
+                    "mean_cov",
+                    "mean_rm",
+                    "mean_zscore",
+                    "log2_ratio",
+                    "max_zscore",
+                    "max_cov",
+                ]
+            )
+            empty_rois.rawdf = empty_rois.df.copy()
+            empty_rois.thresholds = None
+            empty_rois.feature_list = None
+            empty_rois.step = 1
+            empty_rois.apply_threshold_after_merging = True
+            return empty_rois
 
         # let us copy the first one
         rois = copy.deepcopy(data[0])

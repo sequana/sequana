@@ -5,5 +5,3 @@ RNA-seq
 
 
 .. sequana_pipeline:: rnaseq
-
-

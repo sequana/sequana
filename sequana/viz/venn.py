@@ -107,7 +107,12 @@ def get_layout(num_sets):
             angle_rad = math.radians(angle_deg)
             cx = 0.5 + 0.17 * math.cos(angle_rad)
             cy = 0.5 + 0.17 * math.sin(angle_rad)
-            shapes.append(("ellipse", {"xy": (round(cx, 3), round(cy, 3)), "width": 0.45, "height": 0.75, "angle": angle_deg - 90}))
+            shapes.append(
+                (
+                    "ellipse",
+                    {"xy": (round(cx, 3), round(cy, 3)), "width": 0.45, "height": 0.75, "angle": angle_deg - 90},
+                )
+            )
             nx = 0.5 + 0.52 * math.cos(angle_rad)
             ny = 0.5 + 0.52 * math.sin(angle_rad)
             names.append({"x": round(nx, 3), "y": round(ny, 3), "ha": "center", "va": "center"})
@@ -123,7 +128,12 @@ def get_layout(num_sets):
             angle_rad = math.radians(angle_deg)
             cx = 0.5 + 0.15 * math.cos(angle_rad)
             cy = 0.5 + 0.15 * math.sin(angle_rad)
-            shapes.append(("ellipse", {"xy": (round(cx, 3), round(cy, 3)), "width": 0.40, "height": 0.75, "angle": angle_deg - 90}))
+            shapes.append(
+                (
+                    "ellipse",
+                    {"xy": (round(cx, 3), round(cy, 3)), "width": 0.40, "height": 0.75, "angle": angle_deg - 90},
+                )
+            )
             nx = 0.5 + 0.50 * math.cos(angle_rad)
             ny = 0.5 + 0.50 * math.sin(angle_rad)
             names.append({"x": round(nx, 3), "y": round(ny, 3), "ha": "center", "va": "center"})

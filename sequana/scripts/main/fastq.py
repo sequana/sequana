@@ -34,6 +34,8 @@ logger = colorlog.getLogger(__name__)
 @click.option("--head", type=click.INT, help="number of reads to extract from the head")
 @click.option("--merge", is_flag=True, help="merge all compressed input fastq files into a single file")
 @click.option("--tail", type=click.INT, help="number of reads to extract from the tail")
+@click.option("--min-bp", type=click.INT, help="filter reads with length shorter than min-bp")
+@click.option("--max-bp", type=click.INT, help="filter reads with length above max-bp")
 def fastq(**kwargs):
     """Set of useful utilities for FastQ manipulation.
 
@@ -81,5 +83,14 @@ def fastq(**kwargs):
         p1 = subprocess.Popen(["zcat"] + list(filenames), stdout=subprocess.PIPE)
         fout = open(output_filename, "wb")
         subprocess.run(["pigz"], stdin=p1.stdout, stdout=fout)
+    elif kwargs["min_bp"] is not None or kwargs["max_bp"] is not None:
+        if len(filenames) != 1:
+            logger.error("Filter option only works with a single input file")
+            sys.exit(1)
+        if kwargs["output"] is None:
+            logger.error("Please use --output to specify output filename")
+            sys.exit(1)
+        f = FastQ(filenames[0])
+        f.filter(min_bp=kwargs["min_bp"], max_bp=kwargs["max_bp"], output_filename=kwargs["output"])
     else:  # pragma: no cover
         print("Use one of the commands")

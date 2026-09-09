@@ -4,5 +4,3 @@ Ribofinder
 =================
 
 .. sequana_pipeline:: ribofinder
-
-

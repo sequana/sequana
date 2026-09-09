@@ -770,50 +770,60 @@ class FastQ(object):
         :param int max_bp: ignore reads with length above max_bp
 
         """
-        # 7 seconds without identifiers to scan the file
-        # on a 750000 reads
-
         if min_bp is None:
             min_bp = 0
 
         if max_bp is None:
-            max_bp = 1e9
+            max_bp = int(1e9)
 
         # make sure we are at the beginning
         self.rewind()
 
         output_filename, tozip = self._istozip(output_filename)
 
-        with open(output_filename, "w") as fout:
-            buf = ""
+        identifiers_set = set(identifiers_list) if identifiers_list else set()
+        mode = "wb" if tozip else "wb"
+
+        with open(output_filename, mode) as fout:
+            buf = []
             filtered = 0
             saved = 0
+            buf_size = 0
+            max_buf = 10 * 1024 * 1024
 
             for count, lines in tqdm(
                 enumerate(grouper(self._fileobj)),
                 desc="sequana:fastq filter reads",
                 disable=not progress,
             ):
-                identifier = lines[0].split()[0]
-                if lines[0].split()[0].decode() in identifiers_list:
+                ident_bytes = lines[0]
+                ident_key = ident_bytes.split()[0].decode("utf-8")
+
+                if ident_key in identifiers_set:
                     filtered += 1
-                else:  # pragma: no cover
-                    N = len(lines[1])
-                    if N <= max_bp and N >= min_bp:
-                        buf += "{}{}+\n{}".format(
-                            lines[0].decode("utf-8"),
-                            lines[1].decode("utf-8"),
-                            lines[3].decode("utf-8"),
-                        )
+                else:
+                    seq_len = len(lines[1].rstrip(b"\n"))
+                    if min_bp <= seq_len <= max_bp:
+                        buf.append(ident_bytes)
+                        buf.append(lines[1])
+                        buf.append(b"+\n")
+                        buf.append(lines[3])
+                        buf_size += len(ident_bytes) + len(lines[1]) + len(lines[3]) + len(b"+\n")
                         saved += 1
                     else:
                         filtered += 1
-                    if count % 100000 == 0:
-                        fout.write(buf)
-                        buf = ""
-            fout.write(buf)
+
+                if buf_size > max_buf:
+                    fout.write(b"".join(buf))
+                    buf = []
+                    buf_size = 0
+
+            if buf:
+                fout.write(b"".join(buf))
+
             if filtered < len(identifiers_list):  # pragma: no cover
                 print("\nWARNING: not all identifiers were found in the fastq file to " + "be filtered.")
+
         logger.info("\n{} reads were filtered out and {} saved in {}".format(filtered, saved, output_filename))
 
         if tozip is True:  # pragma: no cover

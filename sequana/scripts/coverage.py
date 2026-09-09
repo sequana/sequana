@@ -18,6 +18,7 @@ import json
 import os
 import subprocess
 import sys
+import tempfile
 
 import colorlog
 import rich_click as click
@@ -315,6 +316,12 @@ def download_genbank(ctx, param, value):
     help="exclude reads with any of the bits in FLAG set. to ignore, supp, use -F 3844",
     show_default=True,
 )
+@click.option(
+    "--force-models",
+    is_flag=True,
+    default=False,
+    help="skip EM mixture fitting, use fixed Gaussian parameters. ~100x faster but less accurate.",
+)
 def main(**kwargs):
     """Welcome to SEQUANA -- Coverage standalone
 
@@ -442,22 +449,22 @@ def main(**kwargs):
         main_command = "mosdepth" if not options.chromosome else f"mosdepth -c {options.chromosome}"
         main_command += f" -F {options.flag}"
 
-        # -b1 for all bases
-        if options.second_mapq:
-            # decommposed because too complex for subprocess
-            shellcmd(f"{main_command} -Q {options.mapq} -b1 lenny1 {options.input}")
-            shellcmd(f"{main_command} -Q {options.second_mapq} -b1 lenny2 {options.input}")
-            shellcmd(
-                f"bash -c 'paste <(gunzip -c lenny1.regions.bed.gz | cut -f 1,3,4 ) <(gunzip -c lenny2.regions.bed.gz | cut -f 4 ) > {bedfile}'"
-            )
-            shellcmd(f"rm -f lenny?.mosdepth*")
-            shellcmd(f"rm -f lenny?.per-base*")
-            shellcmd(f"rm -f lenny?.regions*")
-        else:
-            # here somehow the commands works out of the box on one line
-            shellcmd(
-                f"{main_command} -Q {options.mapq} -b1 lenny {options.input} && gunzip -c lenny.regions.bed.gz | cut -f 1,3,4 > {bedfile} && rm -f lenny.mosdepth*"
-            )
+        # Use temp directory for mosdepth outputs
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # -b1 for all bases
+            if options.second_mapq:
+                tmp1 = os.path.join(tmpdir, "tmp1")
+                tmp2 = os.path.join(tmpdir, "tmp2")
+                shellcmd(f"{main_command} -Q {options.mapq} -b1 {tmp1} {options.input}")
+                shellcmd(f"{main_command} -Q {options.second_mapq} -b1 {tmp2} {options.input}")
+                shellcmd(
+                    f"bash -c 'paste <(gunzip -c {tmp1}.regions.bed.gz | cut -f 1,3,4 ) <(gunzip -c {tmp2}.regions.bed.gz | cut -f 4 ) > {bedfile}'"
+                )
+            else:
+                tmp = os.path.join(tmpdir, "tmp")
+                shellcmd(
+                    f"{main_command} -Q {options.mapq} -b1 {tmp} {options.input} && gunzip -c {tmp}.regions.bed.gz | cut -f 1,3,4 > {bedfile}"
+                )
 
     elif options.input.endswith(".bed"):
         bedfile = options.input
@@ -581,7 +588,12 @@ def run_analysis(chrom, options):
     logger.info("Using running median (w=%s)" % NW)
     logger.info("Number of mixture models %s " % options.k)
     results = chrom.run(
-        NW, options.k, circular=options.circular, binning=options.binning, cnv_delta=options.cnv_clustering
+        NW,
+        options.k,
+        circular=options.circular,
+        binning=options.binning,
+        cnv_delta=options.cnv_clustering,
+        force_models=options.force_models,
     )
     chrom.plot_coverage(f"{directory}/coverage.png")
 

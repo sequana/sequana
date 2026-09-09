@@ -77,6 +77,7 @@ def common_logger(func):
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
         from sequana import logger
+
         logger.setLevel(kwargs.get("logger", "INFO"))
         return func(*args, **kwargs)
 

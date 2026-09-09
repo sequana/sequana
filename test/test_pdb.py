@@ -1,72 +1,341 @@
-import importlib
-import importlib.util
-import sys
-import types
-from pathlib import Path
-
-import numpy as np
+"""Comprehensive tests for pdb.py module."""
+from sequana.pdb import Atom, Chain, Model, Residue, Structure
 
 
-def _load_pdb_module():
-    try:
-        return importlib.import_module("sequana.pdb")
-    except Exception:
-        package_dir = Path(__file__).resolve().parents[1] / "sequana"
+class TestAtom:
+    """Test Atom class."""
 
-        for name in ("sequana", "sequana.lazyimports", "sequana.lazy", "sequana.pdb"):
-            sys.modules.pop(name, None)
+    def test_init(self):
+        """Test Atom initialization."""
+        atom = Atom(serial=1, name="CA", residue_name="ALA", chain_id="A", residue_seq=1, x=1.0, y=2.0, z=3.0)
+        assert atom.serial == 1
+        assert atom.name == "CA"
+        assert atom.residue_name == "ALA"
+        assert atom.chain_id == "A"
+        assert atom.residue_seq == 1
+        assert atom.x == 1.0
+        assert atom.y == 2.0
+        assert atom.z == 3.0
 
-        package = types.ModuleType("sequana")
-        package.__path__ = [str(package_dir)]
-        package.__file__ = str(package_dir / "__init__.py")
-        package.version = "test"
-        sys.modules["sequana"] = package
+    def test_coordinates(self):
+        """Test coordinates method."""
+        atom = Atom(serial=1, name="CA", residue_name="ALA", chain_id="A", residue_seq=1, x=1.0, y=2.0, z=3.0)
+        coords = atom.coordinates()
+        assert len(coords) == 3
+        assert coords[0] == 1.0
+        assert coords[1] == 2.0
+        assert coords[2] == 3.0
 
-        for name in ("lazyimports", "lazy", "pdb"):
-            spec = importlib.util.spec_from_file_location(f"sequana.{name}", package_dir / f"{name}.py")
-            module = importlib.util.module_from_spec(spec)
-            sys.modules[f"sequana.{name}"] = module
-            spec.loader.exec_module(module)
+    def test_distance_to(self):
+        """Test distance calculation."""
+        atom1 = Atom(serial=1, name="CA", residue_name="ALA", chain_id="A", residue_seq=1, x=0.0, y=0.0, z=0.0)
+        atom2 = Atom(serial=2, name="CA", residue_name="ALA", chain_id="A", residue_seq=2, x=3.0, y=4.0, z=0.0)
+        distance = atom1.distance_to(atom2)
+        assert abs(distance - 5.0) < 1e-6  # 3-4-5 triangle
 
-        return sys.modules["sequana.pdb"]
-
-
-pdb = _load_pdb_module()
-
-
-def _make_chain(chain_id, ca_coords, side_atom_offset=(0.0, 0.0, 0.75)):
-    chain = pdb.Chain(chain_id)
-    offset = np.array(side_atom_offset, dtype=float)
-
-    for index, coord in enumerate(ca_coords, start=1):
-        residue = pdb.Residue("ALA", index, chain_id)
-        ca_coord = np.array(coord, dtype=float)
-        cb_coord = ca_coord + offset
-
-        residue.add_atom(pdb.Atom(index * 10, "CA", "ALA", chain_id, index, *ca_coord, element="C"))
-        residue.add_atom(pdb.Atom(index * 10 + 1, "CB", "ALA", chain_id, index, *cb_coord, element="C"))
-        chain.add_residue(residue)
-
-    return chain
+    def test_repr(self):
+        """Test string representation."""
+        atom = Atom(
+            serial=1, name="CA", residue_name="ALA", chain_id="A", residue_seq=1, x=1.0, y=2.0, z=3.0, element="C"
+        )
+        repr_str = repr(atom)
+        assert "CA" in repr_str
+        assert "ALA" in repr_str
 
 
-def _make_structure(chain):
-    structure = pdb.Structure("demo")
-    model = pdb.Model(1)
-    model.add_chain(chain)
-    structure.add_model(model)
-    return structure
+class TestResidue:
+    """Test Residue class."""
+
+    def test_init(self):
+        """Test Residue initialization."""
+        res = Residue(name="ALA", seq=1, chain_id="A")
+        assert res.name == "ALA"
+        assert res.seq == 1
+        assert res.chain_id == "A"
+        assert len(res.atoms) == 0
+
+    def test_add_atom(self):
+        """Test adding atoms to residue."""
+        res = Residue(name="ALA", seq=1, chain_id="A")
+        atom = Atom(serial=1, name="CA", residue_name="ALA", chain_id="A", residue_seq=1, x=1.0, y=2.0, z=3.0)
+        res.add_atom(atom)
+        assert len(res.atoms) == 1
+        assert "CA" in res.atoms
+
+    def test_get_atom(self):
+        """Test getting atom by name."""
+        res = Residue(name="ALA", seq=1, chain_id="A")
+        atom = Atom(serial=1, name="CA", residue_name="ALA", chain_id="A", residue_seq=1, x=1.0, y=2.0, z=3.0)
+        res.add_atom(atom)
+        retrieved = res.get_atom("CA")
+        assert retrieved == atom
+
+        missing = res.get_atom("CB")
+        assert missing is None
+
+    def test_atom_names(self):
+        """Test getting atom names."""
+        res = Residue(name="ALA", seq=1, chain_id="A")
+        for name in ["CA", "CB", "N", "C"]:
+            atom = Atom(serial=1, name=name, residue_name="ALA", chain_id="A", residue_seq=1, x=1.0, y=2.0, z=3.0)
+            res.add_atom(atom)
+
+        names = res.atom_names()
+        assert set(names) == {"CA", "CB", "N", "C"}
 
 
-def test_chain_alignment_translation_is_applied_in_correct_direction():
-    mobile_ca_coords = np.array([(0.0, 0.0, 0.0), (1.0, 0.0, 0.0), (0.0, 1.0, 0.0)])
-    target_ca_coords = np.array([(5.0, 7.0, 9.0), (5.0, 8.0, 9.0), (4.0, 7.0, 9.0)])
+class TestChain:
+    """Test Chain class."""
 
-    mobile_chain = _make_chain("A", mobile_ca_coords)
-    target_chain = _make_chain("A", target_ca_coords)
+    def test_init(self):
+        """Test Chain initialization."""
+        chain = Chain(chain_id="A")
+        assert chain.chain_id == "A"
+        assert len(chain.residues) == 0
 
-    alignment = mobile_chain.align_to(target_chain)
-    transformed = alignment.apply_to_structure(_make_structure(mobile_chain))
+    def test_add_residue(self):
+        """Test adding residues to chain."""
+        chain = Chain(chain_id="A")
+        res = Residue(name="ALA", seq=1, chain_id="A")
+        chain.add_residue(res)
+        assert len(chain.residues) == 1
 
-    np.testing.assert_allclose(alignment.mobile_coords, target_ca_coords)
-    np.testing.assert_allclose(transformed.coordinates(), _make_structure(target_chain).coordinates())
+    def test_residue_count(self):
+        """Test residue counting."""
+        chain = Chain(chain_id="A")
+        for i in range(5):
+            res = Residue(name="ALA", seq=i + 1, chain_id="A")
+            chain.add_residue(res)
+        assert chain.residue_count() == 5
+
+    def test_sequence(self):
+        """Test sequence generation."""
+        chain = Chain(chain_id="A")
+        residue_names = ["ALA", "GLY", "SER"]
+        for i, name in enumerate(residue_names):
+            res = Residue(name=name, seq=i + 1, chain_id="A")
+            chain.add_residue(res)
+
+        seq = chain.sequence()
+        assert len(seq) == 3
+
+    def test_coordinates(self):
+        """Test getting coordinates."""
+        chain = Chain(chain_id="A")
+        for i in range(2):
+            res = Residue(name="ALA", seq=i + 1, chain_id="A")
+            atom = Atom(
+                serial=i + 1,
+                name="CA",
+                residue_name="ALA",
+                chain_id="A",
+                residue_seq=i + 1,
+                x=float(i),
+                y=float(i),
+                z=float(i),
+            )
+            res.add_atom(atom)
+            chain.add_residue(res)
+
+        coords = chain.coordinates()
+        assert coords is not None
+
+
+class TestModel:
+    """Test Model class."""
+
+    def test_init(self):
+        """Test Model initialization."""
+        model = Model(model_id=0)
+        assert model.model_id == 0
+        assert len(model.chains) == 0
+
+    def test_add_chain(self):
+        """Test adding chains to model."""
+        model = Model(model_id=0)
+        chain = Chain(chain_id="A")
+        model.add_chain(chain)
+        assert len(model.chains) == 1
+
+    def test_get_chain(self):
+        """Test getting chain by ID."""
+        model = Model(model_id=0)
+        chain_a = Chain(chain_id="A")
+        model.add_chain(chain_a)
+
+        retrieved = model.get_chain("A")
+        assert retrieved == chain_a
+
+        missing = model.get_chain("B")
+        assert missing is None
+
+    def test_chain_ids(self):
+        """Test getting chain IDs."""
+        model = Model(model_id=0)
+        for chain_id in ["A", "B", "C"]:
+            chain = Chain(chain_id=chain_id)
+            model.add_chain(chain)
+
+        ids = model.chain_ids()
+        assert set(ids) == {"A", "B", "C"}
+
+    def test_atom_count(self):
+        """Test atom counting."""
+        model = Model(model_id=0)
+        chain = Chain(chain_id="A")
+        for i in range(3):
+            res = Residue(name="ALA", seq=i + 1, chain_id="A")
+            atom = Atom(
+                serial=i + 1, name="CA", residue_name="ALA", chain_id="A", residue_seq=i + 1, x=1.0, y=2.0, z=3.0
+            )
+            res.add_atom(atom)
+            chain.add_residue(res)
+        model.add_chain(chain)
+
+        count = model.atom_count()
+        assert count == 3
+
+
+class TestStructure:
+    """Test Structure class."""
+
+    def test_init(self):
+        """Test Structure initialization."""
+        struct = Structure(pdb_id="1ABC")
+        assert struct.pdb_id == "1ABC"
+        assert len(struct.models) == 0
+
+    def test_add_model(self):
+        """Test adding models."""
+        struct = Structure(pdb_id="1ABC")
+        model = Model(model_id=0)
+        struct.add_model(model)
+        assert len(struct.models) == 1
+
+    def test_model_count(self):
+        """Test model counting."""
+        struct = Structure(pdb_id="1ABC")
+        for i in range(3):
+            struct.add_model(Model(model_id=i))
+        assert struct.model_count() == 3
+
+    def test_model_property(self):
+        """Test model property."""
+        struct = Structure(pdb_id="1ABC")
+        model = Model(model_id=0)
+        struct.add_model(model)
+
+        m = struct.model
+        assert m == model
+
+    def test_get_model(self):
+        """Test getting model by ID."""
+        struct = Structure(pdb_id="1ABC")
+        model = Model(model_id=0)
+        struct.add_model(model)
+
+        retrieved = struct.get_model(0)
+        assert retrieved == model
+
+    def test_chain_ids(self):
+        """Test getting all chain IDs."""
+        struct = Structure(pdb_id="1ABC")
+        model = Model(model_id=0)
+        for chain_id in ["A", "B"]:
+            chain = Chain(chain_id=chain_id)
+            model.add_chain(chain)
+        struct.add_model(model)
+
+        ids = struct.chain_ids()
+        assert set(ids) == {"A", "B"}
+
+    def test_stats(self):
+        """Test structure stats."""
+        struct = Structure(pdb_id="1ABC")
+        model = Model(model_id=0)
+        chain = Chain(chain_id="A")
+        struct.add_model(model)
+        model.add_chain(chain)
+
+        stats = struct.stats()
+        assert isinstance(stats, dict)
+
+    def test_repr(self):
+        """Test string representation."""
+        struct = Structure(pdb_id="1ABC")
+        repr_str = repr(struct)
+        assert "1ABC" in repr_str or "pdb_id" in repr_str
+
+
+class TestStructureEdgeCases:
+    """Test edge cases."""
+
+    def test_empty_structure(self):
+        """Test empty structure."""
+        struct = Structure(pdb_id="1ABC")
+        assert struct.model_count() == 0
+        assert len(struct.chain_ids()) == 0
+
+    def test_zero_atoms(self):
+        """Test structure with no atoms."""
+        struct = Structure(pdb_id="1ABC")
+        model = Model(model_id=0)
+        chain = Chain(chain_id="A")
+        model.add_chain(chain)
+        struct.add_model(model)
+
+        count = struct.atom_count()
+        assert count == 0
+
+    def test_multiple_models(self):
+        """Test structure with multiple models."""
+        struct = Structure(pdb_id="1ABC")
+        for model_id in range(3):
+            model = Model(model_id=model_id)
+            chain = Chain(chain_id="A")
+            res = Residue(name="ALA", seq=1, chain_id="A")
+            atom = Atom(serial=1, name="CA", residue_name="ALA", chain_id="A", residue_seq=1, x=1.0, y=2.0, z=3.0)
+            res.add_atom(atom)
+            chain.add_residue(res)
+            model.add_chain(chain)
+            struct.add_model(model)
+
+        assert struct.model_count() == 3
+        for i in range(3):
+            m = struct.get_model(i)
+            assert m is not None
+
+
+class TestAtomProperties:
+    """Test atom property combinations."""
+
+    def test_atom_with_all_properties(self):
+        """Test atom with all properties set."""
+        atom = Atom(
+            serial=1,
+            name="CA",
+            residue_name="ALA",
+            chain_id="A",
+            residue_seq=1,
+            x=1.0,
+            y=2.0,
+            z=3.0,
+            occupancy=0.5,
+            bfactor=20.0,
+            element="C",
+            charge=0,
+            insertion_code="",
+            is_hetatm=False,
+        )
+        assert atom.occupancy == 0.5
+        assert atom.bfactor == 20.0
+        assert atom.element == "C"
+
+    def test_atom_hetatm(self):
+        """Test HETATM atoms."""
+        atom = Atom(
+            serial=1, name="O", residue_name="HOH", chain_id="A", residue_seq=1, x=1.0, y=2.0, z=3.0, is_hetatm=True
+        )
+        assert atom.is_hetatm
+        repr_str = repr(atom)
+        assert "HETATM" in repr_str

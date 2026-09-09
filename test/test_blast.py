@@ -32,9 +32,7 @@ def test_blast_to_gff_skip_comments(tmp_path):
     gff_output = tmp_path / "test.gff"
 
     blast_input.write_text(
-        "# this is a comment\n"
-        "\n"
-        "query1\tchrom1\t99.0\t100\t0\t0\t1\t100\t200\t300\t1e-50\t180\n"
+        "# this is a comment\n" "\n" "query1\tchrom1\t99.0\t100\t0\t0\t1\t100\t200\t300\t1e-50\t180\n"
     )
 
     blast_to_gff(str(blast_input), str(gff_output))

@@ -5,5 +5,3 @@ Variant Calling
 
 
 .. sequana_pipeline:: variant_calling
-
-

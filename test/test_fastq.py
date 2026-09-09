@@ -135,6 +135,40 @@ def test_filter():
         f.filter(output_filename=fh.name)
 
 
+def test_filter_boundary():
+    # Test boundary conditions: reads exactly at length thresholds
+    # This ensures length is calculated correctly (without trailing newline)
+    with TempFile() as temp_fastq:
+        # Create test file with reads of length 99-103
+        with open(temp_fastq.name, "w") as f:
+            for length in [99, 100, 101, 102, 103]:
+                f.write(f"@read_{length}\n")
+                f.write("A" * length + "\n")
+                f.write("+\n")
+                f.write("I" * length + "\n")
+
+        # Test min_bp=100: should keep 100, 101, 102, 103
+        fq = FastQ(temp_fastq.name)
+        with TempFile() as out:
+            fq.filter(min_bp=100, output_filename=out.name, progress=False)
+            result = FastQ(out.name)
+            assert len(result) == 4
+
+        # Test max_bp=102: should keep 99, 100, 101, 102
+        fq.rewind()
+        with TempFile() as out:
+            fq.filter(max_bp=102, output_filename=out.name, progress=False)
+            result = FastQ(out.name)
+            assert len(result) == 4
+
+        # Test min_bp=100, max_bp=102: should keep 100, 101, 102
+        fq.rewind()
+        with TempFile() as out:
+            fq.filter(min_bp=100, max_bp=102, output_filename=out.name, progress=False)
+            result = FastQ(out.name)
+            assert len(result) == 3
+
+
 def remove_files(filenames):
     for filename in filenames:
         os.remove(filename)

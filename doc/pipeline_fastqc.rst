@@ -5,5 +5,3 @@ fastqc
 
 
 .. sequana_pipeline:: fastqc
-
-

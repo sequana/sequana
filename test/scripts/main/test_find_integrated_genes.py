@@ -20,10 +20,9 @@ def test_sequana_app(tmpdir):
     results = runner.invoke(script.find_integrated_genes, ["--help"])
     assert results.exit_code == 0
 
-
-    results = runner.invoke(script.find_integrated_genes, ["--bam-file", infile, "--name", "ENA|K01711|K01711.1", "--save-reads", "--tag", str(tmpdir) ])
-
-    
+    results = runner.invoke(
+        script.find_integrated_genes,
+        ["--bam-file", infile, "--name", "ENA|K01711|K01711.1", "--save-reads", "--tag", str(tmpdir)],
+    )
 
     assert results.exit_code == 0
-

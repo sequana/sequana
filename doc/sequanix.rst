@@ -29,7 +29,7 @@ as Snakemake workflows).
 However, we extended the interface so that it can handle other Snakemake
 workflows, referred to as **Generic pipelines** in the GUI.
 
-A tutorial in form of a video is available in another repository: 
+A tutorial in form of a video is available in another repository:
 `video/tutorial <https://github.com/sequana/resources/blob/main/sequanix/videos/demo_sequana.webm?raw=true>`_
 
 
@@ -43,7 +43,7 @@ control pipeline). Second, we show how to run **Generic pipelines** that are not
 part of Sequana. For these two examples, the computation is done locally.
 However, one strength of Snakemake pipelines is that they can be executed on
 various cluster without changing the pipeline itself. This is also possible via
-**Sequanix** as explained in the :ref:`sequanix_cluster` section (SLURM and 
+**Sequanix** as explained in the :ref:`sequanix_cluster` section (SLURM and
 SGE frameworks).
 
 
@@ -94,15 +94,15 @@ Select the input data (directory or files)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Once the pipeline is selected, you need to give information about the location
-of the input data. Generally, the pipelines take fastq.gz files as input. 
+of the input data. Generally, the pipelines take fastq.gz files as input.
 
 In general we have many samples, so you need to select the **Input directory**
-tab. If you have only one or two files, you may use the other tab 
+tab. If you have only one or two files, you may use the other tab
 (**Input sample(s)**).
 
 Here, we consider the first case only (directory). First click on the
 red Browse button (figure below)
-to select the directory where is stored the data. 
+to select the directory where is stored the data.
 
 By default, we assume that there is a special tag in the filenames (_R1_ or _R2_)
 but one can change it to another pattern. Note also that we expect by default
@@ -117,13 +117,13 @@ selected.
 
 
 
-.. note:: The directory browser can create directories 
+.. note:: The directory browser can create directories
 
     .. figure:: _static/sequanix/sequanix_browser.png
         :width: 80%
 
         In the browser, you can either select an existing directory, or create a new
-        one by clickin on the **Create Folder** (red ellipse on top left corner). 
+        one by clickin on the **Create Folder** (red ellipse on top left corner).
         Note that depending on your system, the layout may be different
 
 
@@ -336,9 +336,9 @@ Once an analysis is finished, **Sequana** pipeline generally creates an HTML
 report. This is the reason why we added an **Open Report** button in the bottom.
 This opens a file browser where users can select an HTML file. The browser used
 by default is a home-made browser so that it can run on a cluster where no
-standard browser are installed. 
+standard browser are installed.
 
-The home-made browser, which can be used as a standalone (**sequana_fox**) is 
+The home-made browser, which can be used as a standalone (**sequana_fox**) is
 simple but should be enough for most HTML pages.
 There is a forward/backward capability, support for
 Javascript, ability to change the URL but that is pretty much all. This is
@@ -363,7 +363,7 @@ Brief description of the options:
 :overwrite files: if checked, when saving a project, the existing configuration
     and pipelines are overwritten
 :select the browser to be used: By default the home-made browser (pyqt5) is used but one
-    can select firefox, safari, chrome instead. 
+    can select firefox, safari, chrome instead.
 :logging verbosity: there are 5 level of verbosity. By default, we use INFO. It
     may be useful to set the option to DEBUG if there are errors and you wish to
     provide a complete bug report to Sequana developers.
@@ -375,7 +375,7 @@ Brief description of the options:
 
 
 
-From a local to cluster analysis 
+From a local to cluster analysis
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 One strength of Snakemake (and Sequanix) is that pipelines can be run locally
@@ -388,7 +388,7 @@ button in the main window as shown in the figure below:
 .. figure:: _static/sequanix/sequanix_local_vs_cluster.png
     :scale: 80%
 
-    If you are on a cluster, you should switch the **local** mode to **cluster** AND you 
+    If you are on a cluster, you should switch the **local** mode to **cluster** AND you
     have to provide the cluster commands in the Snakemake dialog (see above).
 
 
@@ -398,7 +398,7 @@ The Snakemake dialog contains 3 sub tab: the local, cluster and general tabs.
 Running analysis locally
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 If you run the analaysis locally, you do not need to change much. The only
-option to tune is the number of cores to be used locally. This happens in the 
+option to tune is the number of cores to be used locally. This happens in the
 **Local** tab. By default the cores parameter is set to the number of cores
 found on the computer. You may reduce this number if you wish.
 
@@ -424,7 +424,7 @@ used. This happens in the **Cluster** tab. Here, you can set the parameters
 may have N jobs running, set this parameter to N. For instance, if you have 48
 samples, and you perform 48 independent analysis, set *jobs* to 48.
 
-Second, you must set the *cluster* commands. We will not provide an exhaustive 
+Second, you must set the *cluster* commands. We will not provide an exhaustive
 documentation on this aspect, which is technical and pipeline and cluster
 dependent.
 
@@ -442,7 +442,7 @@ Then, you must add this line in the **cluster** field
 Second, let us assume the case where:
 
 - you are on a cluster with a SGE framework
-- your jobs require 4 threads each 
+- your jobs require 4 threads each
 
 Then, you must add this line in the **cluster** field
 
@@ -460,7 +460,7 @@ Other Snakemake options
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Snakemake itself has lots of options. In the snakemake dialog, in the
-**General** tab, one can set them. 
+**General** tab, one can set them.
 
 
 .. figure:: _static/sequanix/snakemake_general.png
@@ -509,60 +509,3 @@ commons ones are:
   the cluster option by increasing relevant resources such as memory requirements)
 
 By experience, the first 2 type of errors are the most common.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

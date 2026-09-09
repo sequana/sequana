@@ -342,7 +342,6 @@ class PantherEnrichment(Ontology, PlotGOTerms):
                 enrichment[ontology] = None
                 continue
 
-
             for i, k in enumerate(results["result"]):
 
                 if results["result"][i]["term"]["label"] == "UNCLASSIFIED":
@@ -488,7 +487,7 @@ class PantherEnrichment(Ontology, PlotGOTerms):
         return self.quick_go_graph._get_graph(df, ontologies=ontologies)
 
 
-def get_go_from_panther(name):#pragma: no cover
+def get_go_from_panther(name):  # pragma: no cover
     """
     Retrieves GO terms and associated genes from PantherDB.
 
@@ -503,11 +502,15 @@ def get_go_from_panther(name):#pragma: no cover
     The function connects to the PantherDB FTP server, retrieves the specified file, and parses the data to extract
     the GO terms and associated genes. It then prints the number of genes and GO terms found in the file.
     """
-    import requests
     from collections import defaultdict
-    url = "http://data.pantherdb.org/ftp/sequence_classifications/current_release/PANTHER_Sequence_Classification_files/"
+
+    import requests
+
+    url = (
+        "http://data.pantherdb.org/ftp/sequence_classifications/current_release/PANTHER_Sequence_Classification_files/"
+    )
     url += f"PTHR19.0_{name}"
-    
+
     req = requests.get(url)
 
     data = req.content.strip()
@@ -517,7 +520,7 @@ def get_go_from_panther(name):#pragma: no cover
 
     N = len(data)
     logger.info(f"Number of genes {N}")
-    # 7788 GO terms. About 121 genes per go term. 
+    # 7788 GO terms. About 121 genes per go term.
     for line in data:
         items = line.strip().split("#")
         name = items[0]
@@ -528,5 +531,3 @@ def get_go_from_panther(name):#pragma: no cover
     logger.info(f"Number of GO terms {len(gos)}")
 
     return gos, data
-
-
