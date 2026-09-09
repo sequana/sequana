@@ -1754,20 +1754,22 @@ class ChromosomeCov(object):
                 gc_content = np.empty(len(chrom.sequence))
                 gc_content[:] = np.nan
 
-                # Count first window content
-                counter = Counter(chrom.sequence[0:gc_window_size])
-                gc_count = 0
-                for letter in "GCgc":
-                    gc_count += counter[letter]
+                # Skip gc_content if window size >= sequence length
+                if gc_window_size < len(chrom.sequence):
+                    # Count first window content
+                    counter = Counter(chrom.sequence[0:gc_window_size])
+                    gc_count = 0
+                    for letter in "GCgc":
+                        gc_count += counter[letter]
 
-                gc_content[mid] = gc_count
+                    gc_content[mid] = gc_count
 
-                for i in range(1, len(chrom.sequence) - gc_window_size + 1):
-                    if chrom.sequence[i - 1] in "GCgc":
-                        gc_count -= 1
-                    if chrom.sequence[i + gc_window_size - 1] in "GCgc":
-                        gc_count += 1
-                    gc_content[i + mid] = gc_count
+                    for i in range(1, len(chrom.sequence) - gc_window_size + 1):
+                        if chrom.sequence[i - 1] in "GCgc":
+                            gc_count -= 1
+                        if chrom.sequence[i + gc_window_size - 1] in "GCgc":
+                            gc_count += 1
+                        gc_content[i + mid] = gc_count
                 chrom_gc_content[chrom.name] = gc_content / gc_window_size
 
         # if accession processed by snpeff, the trailing version may be missing
