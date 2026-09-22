@@ -21,6 +21,7 @@ from .enrichment_kegg import enrichment_kegg
 from .enrichment_panther import enrichment_panther
 from .enrichment_uniprot import enrichment_uniprot
 from .fasta import fasta
+from .fasta_compare import fasta_compare
 from .fastq import fastq
 from .fastq_split import fastq_split
 from .feature_count import feature_counts
@@ -103,6 +104,7 @@ main.add_command(enrichment_panther)
 main.add_command(enrichment_uniprot)
 main.add_command(fastq)
 main.add_command(fasta)
+main.add_command(fasta_compare)
 main.add_command(fastq_split)
 main.add_command(feature_counts)
 main.add_command(g4hunter)

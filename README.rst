@@ -255,6 +255,12 @@ Changelog :memo:
 ========= ==========================================================================
 Version   Description
 ========= ==========================================================================
+0.24.4    * NEW: ``FastAComparison`` class for comparing FASTA file contents via
+            MD5 checksums, enabling sequence matching across different identifiers.
+            Supports case-insensitive comparison, gap filtering, and reverse
+            complement awareness
+          * NEW: ``fasta-compare`` CLI command for comparing two FASTA files and
+            reporting matching sequences, unique sequences, and identity status
 0.24.3    * PERF: Kraken consensus building optimized for large sequences;
             kmer string processing now 50% faster (caching split operations)
           * PERF: PNG images now linked instead of embedded in HTML reports,

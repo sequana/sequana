@@ -22,7 +22,7 @@ Quick lookup by task
    * - Task
      - Command
    * - FASTQ/FASTA utilities
-     - ``sequana fastq``, ``sequana fasta``
+     - ``sequana fastq``, ``sequana fasta``, ``sequana fasta-compare``
    * - Genome annotation (GFF/GTF)
      - ``sequana gff3``, ``sequana gtf``
    * - Variant analysis

@@ -103,7 +103,7 @@ def _print_fasta_contigs_table(contigs):
 @click.option(
     "--module",
     required=False,
-    type=click.Choice(["bamqc", "bam", "fasta", "fastq", "gff", "vcf", "sam"]),
+    type=click.Choice(["bamqc", "bam", "fna", "fasta", "fastq", "gff", "vcf", "sam"]),
 )
 @click.option("--output-file", required=False, type=click.Path())
 @click.option("--output-json", required=False, type=click.Path(), help="Export stats to JSON file")
@@ -145,6 +145,8 @@ def summary(**kwargs):
         elif names[0].endswith("fasta.gz") or names[0].endswith(".fasta"):
             module = "fasta"
         elif names[0].endswith("fa.gz") or names[0].endswith(".fa"):
+            module = "fasta"
+        elif names[0].endswith("fna.gz") or names[0].endswith(".fna"):
             module = "fasta"
         elif names[0].endswith(".vcf") or names[0].endswith(".vcf.gz") or names[0].endswith(".bcf"):
             module = "vcf"
