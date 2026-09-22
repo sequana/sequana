@@ -255,6 +255,14 @@ Changelog :memo:
 ========= ==========================================================================
 Version   Description
 ========= ==========================================================================
+0.24.3    * PERF: Kraken consensus building optimized for large sequences;
+            kmer string processing now 50% faster (caching split operations)
+          * PERF: PNG images now linked instead of embedded in HTML reports,
+            reducing HTML file size by ~30% (15MB per report)
+          * PERF: Added timing instrumentation to consensus building and HTML
+            generation for better visibility into performance bottlenecks
+          * CLEANUP: Simplified log messages in taxonomy loading and report
+            generation
 0.24.2    * NEW: Phylogenetic analysis modules (phylo.py, alignment.py)
             Parse and manipulate Newick trees; MSA parsing (PHYLIP, Stockholm,
             Nexus, FASTA); consensus sequences and alignment statistics

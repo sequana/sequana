@@ -215,6 +215,21 @@ class SequanaBaseModule(object):
             html = '<img alt="{}" title="{}"'.format(alt, title)
         return '{0} src="data:image/png;base64,{1}">'.format(html, png)
 
+    def png_to_linked_png(self, png_path, style=None, alt="", title=""):
+        """Link to PNG file instead of embedding. Much faster for large files.
+
+        :param str png_path: Path to PNG file (relative or absolute)
+        :param str style: CSS style for image tag
+        :param str alt: Alt text for accessibility
+        :param str title: Hover title
+        :return: HTML img tag linking to PNG file
+        """
+        if style:
+            html = '<img style="{0}" alt="{1}" title="{2}"'.format(style, alt, title)
+        else:
+            html = '<img alt="{}" title="{}"'.format(alt, title)
+        return '{0} src="{1}">'.format(html, png_path)
+
     def create_embedded_png(self, plot_function, input_arg, style=None, **kwargs):
         """Take as a plot function as input and create a html embedded png
         image. You must set the arguments name for the output to connect
