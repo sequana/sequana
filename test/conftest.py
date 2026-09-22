@@ -31,7 +31,11 @@ def reset_config_output_dir():
     for dirname in ("css", "js", "images"):
         path = os.path.join(cwd, dirname)
         if os.path.isdir(path):
-            shutil.rmtree(path)
+            try:
+                shutil.rmtree(path)
+            except OSError:
+                # Handle case where directory is in use or contains locked files
+                pass
 
 
 def pytest_runtest_setup(item):
