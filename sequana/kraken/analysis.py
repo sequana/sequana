@@ -205,6 +205,10 @@ class KrakenResults:
                 for entry in this:
                     if entry[1] == "subkingdom":
                         default["kingdom"] = entry[0]
+            if default["kingdom"] == " ":
+                for entry in this:
+                    if entry[1] == "domain":
+                        default["kingdom"] = entry[0]
 
             # in theory, we have now populated all ranks;
             # Yet, there are several special cases (need examples):
