@@ -35,36 +35,44 @@ def sample_report_data():
 
 
 @pytest.fixture
-def mock_config(temp_report_dir):
-    """Mock the sequana config module."""
-    with patch("sequana.modules_report.summary.config") as mock_cfg:
-        mock_cfg.summary_sections = []
-        mock_cfg.pipeline_version = None
-        mock_cfg.pipeline_name = None
-        mock_cfg.sequana_wrappers = None
-        mock_cfg.output_dir = temp_report_dir
-        mock_cfg.css_list = []
-        mock_cfg.js_list = []
-        mock_cfg.logo = None
-        yield mock_cfg
+def temp_report_dir(worker_id):
+    """Create isolated temporary directory for each test/worker.
 
-
-@pytest.fixture
-def temp_report_dir():
-    """Create a temporary directory for report files."""
-    tmpdir = tempfile.mkdtemp()
+    With pytest-xdist, each worker gets its own temp dir to avoid
+    race conditions when creating report subdirectories.
+    """
+    tmpdir = tempfile.mkdtemp(suffix=f"_{worker_id}")
     yield tmpdir
     # Cleanup
     import shutil
 
     if os.path.exists(tmpdir):
-        shutil.rmtree(tmpdir)
+        shutil.rmtree(tmpdir, ignore_errors=True)
+
+
+@pytest.fixture
+def mock_config(temp_report_dir):
+    """Mock the sequana config module."""
+    # Patch at base_module level (used during __init__) and summary level
+    with patch("sequana.modules_report.base_module.config") as mock_base, patch(
+        "sequana.modules_report.summary.config"
+    ) as mock_summary:
+        for mock in (mock_base, mock_summary):
+            mock.summary_sections = []
+            mock.pipeline_version = None
+            mock.pipeline_name = None
+            mock.sequana_wrappers = None
+            mock.output_dir = temp_report_dir
+            mock.css_list = []
+            mock.js_list = []
+            mock.logo = None
+        yield mock_summary
 
 
 class TestSummaryBaseInit:
     """Test SummaryBase initialization."""
 
-    def test_summarybase_init_no_dir(self, mock_config):
+    def test_summarybase_init_no_dir(self, mock_config, temp_report_dir):
         """Test SummaryBase initialization without required_dir."""
         sb = SummaryBase()
         assert sb is not None
@@ -74,7 +82,7 @@ class TestSummaryBaseInit:
         sb = SummaryBase(required_dir=("css", "js"))
         assert sb is not None
 
-    def test_summarybase_is_initialized(self, mock_config):
+    def test_summarybase_is_initialized(self, mock_config, temp_report_dir):
         """Test that SummaryBase is properly initialized."""
         sb = SummaryBase()
         assert isinstance(sb, SummaryBase)

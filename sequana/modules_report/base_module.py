@@ -77,26 +77,26 @@ class SequanaBaseModule(object):
         # Copy css/js necessary files
         for filename in config.css_list:
             target = os.sep.join([self.output_dir, "css"])
-            if os.path.isfile(target) is False:
+            if os.path.isfile(filename):
                 try:
                     shutil.copy(filename, target)
-                except PermissionError:
+                except (PermissionError, FileNotFoundError):
                     pass
 
         for filename in config.js_list:
             target = os.sep.join([self.output_dir, "js"])
-            if os.path.isfile(target) is False:
+            if os.path.isfile(filename):
                 try:
                     shutil.copy(filename, target)
-                except PermissionError:
+                except (PermissionError, FileNotFoundError):
                     pass
 
         target = os.sep.join([self.output_dir, "images"])
         os.makedirs(target, exist_ok=True)
-        if os.path.isfile(target) is False:
+        if config.logo and os.path.isfile(config.logo):
             try:
                 shutil.copy(config.logo, target)
-            except PermissionError:
+            except (PermissionError, FileNotFoundError):
                 pass
 
     def create_html(self, output_filename):
