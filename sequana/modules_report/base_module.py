@@ -68,13 +68,11 @@ class SequanaBaseModule(object):
         # valid, in which case there is no need to copy the files.
 
         # Create report directory
-        if os.path.isdir(config.output_dir) is False:
-            os.mkdir(self.output_dir)
+        os.makedirs(self.output_dir, exist_ok=True)
 
         for directory in self.required_dir:
             complete_directory = os.sep.join([self.output_dir, directory])
-            if os.path.isdir(complete_directory) is False:
-                os.mkdir(complete_directory)
+            os.makedirs(complete_directory, exist_ok=True)
 
         # Copy css/js necessary files
         for filename in config.css_list:
