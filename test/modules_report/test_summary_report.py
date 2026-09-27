@@ -35,13 +35,17 @@ def sample_report_data():
 
 
 @pytest.fixture
-def mock_config():
+def mock_config(temp_report_dir):
     """Mock the sequana config module."""
     with patch("sequana.modules_report.summary.config") as mock_cfg:
         mock_cfg.summary_sections = []
         mock_cfg.pipeline_version = None
         mock_cfg.pipeline_name = None
         mock_cfg.sequana_wrappers = None
+        mock_cfg.output_dir = temp_report_dir
+        mock_cfg.css_list = []
+        mock_cfg.js_list = []
+        mock_cfg.logo = None
         yield mock_cfg
 
 
