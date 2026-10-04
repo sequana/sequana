@@ -141,8 +141,8 @@ Protein structures (3D)
     :members:
     :undoc-members:
 
-Phylogenetic analysis
-=====================
+Phylogenetic and comparative analysis
+=====================================
 
 .. automodule:: sequana.phylo
     :members:
@@ -153,5 +153,9 @@ Phylogenetic analysis
     :undoc-members:
 
 .. automodule:: sequana.alignment
+    :members:
+    :undoc-members:
+
+.. automodule:: sequana.orthofinder
     :members:
     :undoc-members:
