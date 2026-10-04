@@ -1,0 +1,17 @@
+##gff-version 3
+#!gff-spec-version 1.21
+#!processor NCBI annotwriter
+#!genome-build ASM1134v1
+#!genome-build-accession NCBI_Assembly:GCA_000011345.1
+##sequence-region BA000039.2 1 2593857
+BA000039.2	DDBJ	gene	2330963	2331083	.	-	.	ID=gene-rrn5S;Name=rrn5S;gbkey=Gene;gene=rrn5S;gene_biotype=rRNA
+BA000039.2	DDBJ	rRNA	2330963	2331083	.	-	.	ID=rna-rrn5S;Parent=gene-rrn5S;gbkey=rRNA;gene=rrn5S;product=5S ribosomal RNA
+BA000039.2	DDBJ	exon	2330963	2331083	.	-	.	ID=exon-rrn5S-1;Parent=rna-rrn5S;gbkey=rRNA;gene=rrn5S;product=5S ribosomal RNA
+BA000039.2	DDBJ	gene	2332258	2334822	.	-	.	ID=gene-rrn23S;Name=rrn23S;gbkey=Gene;gene=rrn23S;gene_biotype=rRNA;is_ordered=true
+BA000039.2	DDBJ	gene	2331207	2331512	.	-	.	ID=gene-rrn23S;Name=rrn23S;gbkey=Gene;gene=rrn23S;gene_biotype=rRNA;is_ordered=true
+BA000039.2	DDBJ	rRNA	2331207	2334822	.	-	.	ID=rna-rrn23S;Parent=gene-rrn23S;gbkey=rRNA;gene=rrn23S;product=23S ribosomal RNA
+BA000039.2	DDBJ	exon	2332258	2334822	.	-	.	ID=exon-rrn23S-1;Parent=rna-rrn23S;gbkey=rRNA;gene=rrn23S;product=23S ribosomal RNA
+BA000039.2	DDBJ	exon	2331207	2331512	.	-	.	ID=exon-rrn23S-2;Parent=rna-rrn23S;gbkey=rRNA;gene=rrn23S;product=23S ribosomal RNA
+BA000039.2	DDBJ	gene	2335243	2336733	.	-	.	ID=gene-rrn16S;Name=rrn16S;gbkey=Gene;gene=rrn16S;gene_biotype=rRNA
+BA000039.2	DDBJ	rRNA	2335243	2336733	.	-	.	ID=rna-rrn16S;Parent=gene-rrn16S;gbkey=rRNA;gene=rrn16S;product=16S ribosomal RNA
+BA000039.2	DDBJ	exon	2335243	2336733	.	-	.	ID=exon-rrn16S-1;Parent=rna-rrn16S;gbkey=rRNA;gene=rrn16S;product=16S ribosomal RNA

@@ -47,8 +47,10 @@ class CanuScanner:
         self.data["assembly"] = {}
 
     def getfile(self, filename):
-        filenames = glob.glob(self.path + os.sep + filename)
-        assert len(filenames) == 1
+        pattern = self.path + os.sep + filename
+        filenames = glob.glob(pattern)
+        if len(filenames) != 1:
+            raise FileNotFoundError(f"Expected exactly one file matching {pattern!r}, found {len(filenames)}")
         return filenames[0]
 
     ######################################################################""# CORRECTION
@@ -97,7 +99,7 @@ class CanuScanner:
         self.data["correction"]["largest mercount"] = list(df["kmer"])[-1]
         self.data["correction"]["unique mers"] = df["count"][0]
         self.data["correction"]["distinc mers"] = df["count"].sum()
-        self.data["correction"][""] = sum(df.kmer * df["count"])
+        self.data["correction"]["total mers"] = sum(df.kmer * df["count"])
 
         # X is just df['count'].cumsum() / df['count'].sum() (distinct kmer)
         # Y is (df['kmer']*df['count']).cumsum() / (df['kmer']*df['count()).sum()
@@ -122,6 +124,8 @@ class CanuScanner:
         self.data["correction"]["read correction"] = data
 
     def plot_correction_check1(self, alpha=0.5):
+        expected_errors = (FileNotFoundError, AssertionError, pd.errors.EmptyDataError, pd.errors.ParserError)
+
         try:
             tn = pd.read_csv(
                 self.getfile("correction/2-correction/*.estimate.tn.log"),
@@ -130,7 +134,7 @@ class CanuScanner:
                 usecols=[0, 1, 2, 3],
             )
             pylab.plot(tn[1], tn[3], "x", color="purple", label="TN", alpha=alpha)
-        except:
+        except expected_errors:
             pass
 
         try:
@@ -141,7 +145,7 @@ class CanuScanner:
                 usecols=[0, 1, 2, 3],
             )
             pylab.plot(fn[1], fn[3], "x", color="green", label="FN", alpha=alpha)
-        except:
+        except expected_errors:
             pass
 
         try:
@@ -152,7 +156,7 @@ class CanuScanner:
                 usecols=[0, 1, 2, 3],
             )
             pylab.plot(fp[1], fp[3], "x", color="cyan", label="FP", alpha=alpha)
-        except:
+        except expected_errors:
             pass
 
         try:
@@ -163,7 +167,7 @@ class CanuScanner:
                 usecols=[0, 1, 2, 3],
             )
             pylab.plot(tp[1], tp[3], "x", color="orange", label="TP", alpha=alpha)
-        except:
+        except expected_errors:
             pass
 
         pylab.xlabel("original read length")

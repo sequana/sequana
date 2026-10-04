@@ -1,0 +1,58 @@
+##gff-version 3
+##sequence-region   Chromosome 1 4641652
+#!genome-build Univ. Wisconsin ASM584v2
+#!genome-version ASM584v2
+#!genome-build-accession GCA_000005845.2
+#!genebuild-last-updated 2018-09
+Chromosome	ena	gene	51609	52430	.	-	.	ID=gene:b0051;Name=rsmA;biotype=protein_coding;description=16S rRNA m(6)2A1518%2Cm(6)2A1519 dimethyltransferase;gene_id=b0051;logic_name=ena
+Chromosome	ena	gene	59687	60346	.	-	.	ID=gene:b0058;Name=rluA;biotype=protein_coding;description=23S rRNA pseudouridine(746) and tRNA pseudouridine(32) synthase;gene_id=b0058;logic_name=ena
+Chromosome	ena	gene	90094	91035	.	+	.	ID=gene:b0082;Name=rsmH;biotype=protein_coding;description=16S rRNA m(4)C1402 methyltransferase;gene_id=b0082;logic_name=ena
+Chromosome	ena	ncRNA_gene	223771	225312	.	+	.	ID=gene:rrsH;biotype=rRNA;description=16S ribosomal RNA;gene_id=rrsH;logic_name=ena_rna
+Chromosome	ena	rRNA	223771	225312	.	+	.	ID=transcript:EBT00049907526;Parent=gene:rrsH;Name=rrsH;biotype=rRNA;tag=Ensembl_canonical;transcript_id=EBT00049907526
+Chromosome	ena	ncRNA_gene	225759	228662	.	+	.	ID=gene:rrlH;biotype=rRNA;description=23S ribosomal RNA;gene_id=rrlH;logic_name=ena_rna
+Chromosome	ena	rRNA	225759	228662	.	+	.	ID=transcript:EBT00049907569;Parent=gene:rrlH;Name=rrlH;biotype=rRNA;tag=Ensembl_canonical;transcript_id=EBT00049907569
+Chromosome	ena	ncRNA_gene	228756	228875	.	+	.	ID=gene:rrfH;biotype=rRNA;description=5S ribosomal RNA;gene_id=rrfH;logic_name=ena_rna
+Chromosome	ena	rRNA	228756	228875	.	+	.	ID=transcript:EBT00049907460;Parent=gene:rrfH;Name=rrfH;biotype=rRNA;tag=Ensembl_canonical;transcript_id=EBT00049907460
+Chromosome	ena	gene	668248	668715	.	-	.	ID=gene:b0636;Name=rlmH;biotype=protein_coding;description=23S rRNA m(3)psi1915 methyltransferase;gene_id=b0636;logic_name=ena
+Chromosome	ena	gene	842332	843258	.	+	.	ID=gene:b0807;Name=rlmF;biotype=protein_coding;description=23S rRNA m(6)A1618 methyltransferase;gene_id=b0807;logic_name=ena
+Chromosome	ena	gene	898518	899645	.	+	.	ID=gene:b0859;Name=rlmC;biotype=protein_coding;description=23S rRNA m(5)U747 methyltransferase;gene_id=b0859;logic_name=ena
+Chromosome	ena	gene	1007844	1009952	.	+	.	ID=gene:b0948;Name=rlmL;biotype=protein_coding;description=fused 23S rRNA m(2)G2445 methyltransferase and 23S rRNA m(7)G2069 methyltransferase;gene_id=b0948;logic_name=ena
+Chromosome	ena	gene	1028779	1029969	.	-	.	ID=gene:b0967;Name=rlmI;biotype=protein_coding;description=23S rRNA m(5)C1962 methyltransferase;gene_id=b0967;logic_name=ena
+Chromosome	ena	ncRNA_gene	2726069	2726188	.	-	.	ID=gene:rrfG;biotype=rRNA;description=5S ribosomal RNA;gene_id=rrfG;logic_name=ena_rna
+Chromosome	ena	rRNA	2726069	2726188	.	-	.	ID=transcript:EBT00049907197;Parent=gene:rrfG;Name=rrfG;biotype=rRNA;tag=Ensembl_canonical;transcript_id=EBT00049907197
+Chromosome	ena	ncRNA_gene	2726281	2729184	.	-	.	ID=gene:rrlG;biotype=rRNA;description=23S ribosomal RNA;gene_id=rrlG;logic_name=ena_rna
+Chromosome	ena	rRNA	2726281	2729184	.	-	.	ID=transcript:EBT00049907850;Parent=gene:rrlG;Name=rrlG;biotype=rRNA;tag=Ensembl_canonical;transcript_id=EBT00049907850
+Chromosome	ena	ncRNA_gene	2729616	2731157	.	-	.	ID=gene:rrsG;biotype=rRNA;description=16S ribosomal RNA;gene_id=rrsG;logic_name=ena_rna
+Chromosome	ena	rRNA	2729616	2731157	.	-	.	ID=transcript:EBT00049907353;Parent=gene:rrsG;Name=rrsG;biotype=rRNA;tag=Ensembl_canonical;transcript_id=EBT00049907353
+Chromosome	ena	ncRNA_gene	3423423	3423542	.	-	.	ID=gene:rrfF;biotype=rRNA;description=5S ribosomal RNA;gene_id=rrfF;logic_name=ena_rna
+Chromosome	ena	rRNA	3423423	3423542	.	-	.	ID=transcript:EBT00049907194;Parent=gene:rrfF;Name=rrfF;biotype=rRNA;tag=Ensembl_canonical;transcript_id=EBT00049907194
+Chromosome	ena	ncRNA_gene	3423668	3423787	.	-	.	ID=gene:rrfD;biotype=rRNA;description=5S ribosomal RNA;gene_id=rrfD;logic_name=ena_rna
+Chromosome	ena	rRNA	3423668	3423787	.	-	.	ID=transcript:EBT00049907955;Parent=gene:rrfD;Name=rrfD;biotype=rRNA;tag=Ensembl_canonical;transcript_id=EBT00049907955
+Chromosome	ena	ncRNA_gene	3423880	3426783	.	-	.	ID=gene:rrlD;biotype=rRNA;description=23S ribosomal RNA;gene_id=rrlD;logic_name=ena_rna
+Chromosome	ena	rRNA	3423880	3426783	.	-	.	ID=transcript:EBT00049907795;Parent=gene:rrlD;Name=rrlD;biotype=rRNA;tag=Ensembl_canonical;transcript_id=EBT00049907795
+Chromosome	ena	ncRNA_gene	3427221	3428762	.	-	.	ID=gene:rrsD;biotype=rRNA;description=16S ribosomal RNA;gene_id=rrsD;logic_name=ena_rna
+Chromosome	ena	rRNA	3427221	3428762	.	-	.	ID=transcript:EBT00049907726;Parent=gene:rrsD;Name=rrsD;biotype=rRNA;tag=Ensembl_canonical;transcript_id=EBT00049907726
+Chromosome	ena	ncRNA_gene	3941808	3943349	.	+	.	ID=gene:rrsC;biotype=rRNA;description=16S ribosomal RNA;gene_id=rrsC;logic_name=ena_rna
+Chromosome	ena	rRNA	3941808	3943349	.	+	.	ID=transcript:EBT00049907495;Parent=gene:rrsC;Name=rrsC;biotype=rRNA;tag=Ensembl_canonical;transcript_id=EBT00049907495
+Chromosome	ena	ncRNA_gene	3943704	3946607	.	+	.	ID=gene:rrlC;biotype=rRNA;description=23S ribosomal RNA;gene_id=rrlC;logic_name=ena_rna
+Chromosome	ena	rRNA	3943704	3946607	.	+	.	ID=transcript:EBT00049907335;Parent=gene:rrlC;Name=rrlC;biotype=rRNA;tag=Ensembl_canonical;transcript_id=EBT00049907335
+Chromosome	ena	ncRNA_gene	3946700	3946819	.	+	.	ID=gene:rrfC;biotype=rRNA;description=5S ribosomal RNA;gene_id=rrfC;logic_name=ena_rna
+Chromosome	ena	rRNA	3946700	3946819	.	+	.	ID=transcript:EBT00049907747;Parent=gene:rrfC;Name=rrfC;biotype=rRNA;tag=Ensembl_canonical;transcript_id=EBT00049907747
+Chromosome	ena	ncRNA_gene	4035531	4037072	.	+	.	ID=gene:rrsA;biotype=rRNA;description=16S ribosomal RNA;gene_id=rrsA;logic_name=ena_rna
+Chromosome	ena	rRNA	4035531	4037072	.	+	.	ID=transcript:EBT00049907555;Parent=gene:rrsA;Name=rrsA;biotype=rRNA;tag=Ensembl_canonical;transcript_id=EBT00049907555
+Chromosome	ena	ncRNA_gene	4037519	4040423	.	+	.	ID=gene:rrlA;biotype=rRNA;description=23S ribosomal RNA;gene_id=rrlA;logic_name=ena_rna
+Chromosome	ena	rRNA	4037519	4040423	.	+	.	ID=transcript:EBT00049907677;Parent=gene:rrlA;Name=rrlA;biotype=rRNA;tag=Ensembl_canonical;transcript_id=EBT00049907677
+Chromosome	ena	ncRNA_gene	4040517	4040636	.	+	.	ID=gene:rrfA;biotype=rRNA;description=5S ribosomal RNA;gene_id=rrfA;logic_name=ena_rna
+Chromosome	ena	rRNA	4040517	4040636	.	+	.	ID=transcript:EBT00049907922;Parent=gene:rrfA;Name=rrfA;biotype=rRNA;tag=Ensembl_canonical;transcript_id=EBT00049907922
+Chromosome	ena	ncRNA_gene	4166659	4168200	.	+	.	ID=gene:rrsB;biotype=rRNA;description=16S ribosomal RNA;gene_id=rrsB;logic_name=ena_rna
+Chromosome	ena	rRNA	4166659	4168200	.	+	.	ID=transcript:EBT00049907857;Parent=gene:rrsB;Name=rrsB;biotype=rRNA;tag=Ensembl_canonical;transcript_id=EBT00049907857
+Chromosome	ena	ncRNA_gene	4168641	4171544	.	+	.	ID=gene:rrlB;biotype=rRNA;description=23S ribosomal RNA;gene_id=rrlB;logic_name=ena_rna
+Chromosome	ena	rRNA	4168641	4171544	.	+	.	ID=transcript:EBT00049907439;Parent=gene:rrlB;Name=rrlB;biotype=rRNA;tag=Ensembl_canonical;transcript_id=EBT00049907439
+Chromosome	ena	ncRNA_gene	4171637	4171756	.	+	.	ID=gene:rrfB;biotype=rRNA;description=5S ribosomal RNA;gene_id=rrfB;logic_name=ena_rna
+Chromosome	ena	rRNA	4171637	4171756	.	+	.	ID=transcript:EBT00049907772;Parent=gene:rrfB;Name=rrfB;biotype=rRNA;tag=Ensembl_canonical;transcript_id=EBT00049907772
+Chromosome	ena	ncRNA_gene	4208147	4209688	.	+	.	ID=gene:rrsE;biotype=rRNA;description=16S ribosomal RNA;gene_id=rrsE;logic_name=ena_rna
+Chromosome	ena	rRNA	4208147	4209688	.	+	.	ID=transcript:EBT00049907407;Parent=gene:rrsE;Name=rrsE;biotype=rRNA;tag=Ensembl_canonical;transcript_id=EBT00049907407
+Chromosome	ena	ncRNA_gene	4210043	4212946	.	+	.	ID=gene:rrlE;biotype=rRNA;description=23S ribosomal RNA;gene_id=rrlE;logic_name=ena_rna
+Chromosome	ena	rRNA	4210043	4212946	.	+	.	ID=transcript:EBT00049907820;Parent=gene:rrlE;Name=rrlE;biotype=rRNA;tag=Ensembl_canonical;transcript_id=EBT00049907820
+Chromosome	ena	ncRNA_gene	4213040	4213159	.	+	.	ID=gene:rrfE;biotype=rRNA;description=5S ribosomal RNA;gene_id=rrfE;logic_name=ena_rna
+Chromosome	ena	rRNA	4213040	4213159	.	+	.	ID=transcript:EBT00049907735;Parent=gene:rrfE;Name=rrfE;biotype=rRNA;tag=Ensembl_canonical;transcript_id=EBT00049907735

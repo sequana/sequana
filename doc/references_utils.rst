@@ -29,6 +29,21 @@ General tools
     :members:
     :undoc-members:
 
+Assembly & analysis
+===================
+
+.. automodule:: sequana.canu_scanner
+    :members:
+    :undoc-members:
+
+.. automodule:: sequana.checkm
+    :members:
+    :undoc-members:
+
+.. automodule:: sequana.hmmtools
+    :members:
+    :undoc-members:
+
 Test data and discovery
 =======================
 
