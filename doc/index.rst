@@ -138,32 +138,42 @@ Not sure where to start? This table helps:
 
 
 .. toctree::
-    :caption: Pipeline users
+    :caption: Getting started
     :maxdepth: 2
 
     installation
-    pipeline_user_guide
-    pipelines
-    tutorial
-    tutorial_phylo
-    case_examples
-    faqs
 
 .. toctree::
-    :caption: Library users
+    :caption: Library user guide
     :maxdepth: 2
 
     userguide
     auto_examples/index
-    notebooks
+
+.. toctree::
+    :caption: Pipelines
+    :maxdepth: 2
+
+    pipeline_user_guide
+    pipelines
+    tutorial
+    tutorial_phylo
+
+.. toctree::
+    :caption: Standalone applications
+    :maxdepth: 2
+
+    applications
     cli_reference
 
 .. toctree::
-    :caption: Reference & developers
+    :caption: More
     :maxdepth: 2
 
+    case_examples
+    faqs
+    notebooks
     developers
-    applications
     sequanix
     wrappers
     references
