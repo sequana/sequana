@@ -29,6 +29,10 @@ Sequence basics
     :members:
     :undoc-members:
 
+.. automodule:: sequana.melting
+    :members:
+    :undoc-members:
+
 Regulatory / regulatory-adjacent
 ================================
 
@@ -141,6 +145,10 @@ Phylogenetic analysis
 =====================
 
 .. automodule:: sequana.phylo
+    :members:
+    :undoc-members:
+
+.. automodule:: sequana.phylo_construction
     :members:
     :undoc-members:
 
