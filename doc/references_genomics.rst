@@ -25,6 +25,10 @@ Sequence basics
     :members:
     :undoc-members:
 
+.. automodule:: sequana.substitution_matrices
+    :members:
+    :undoc-members:
+
 Regulatory / regulatory-adjacent
 ================================
 
