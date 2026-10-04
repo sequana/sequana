@@ -21,6 +21,10 @@ Sequence basics
     :members:
     :undoc-members:
 
+.. automodule:: sequana.pairwise
+    :members:
+    :undoc-members:
+
 Regulatory / regulatory-adjacent
 ================================
 
@@ -122,6 +126,10 @@ Protein structures (3D)
 ======================
 
 .. automodule:: sequana.pdb
+    :members:
+    :undoc-members:
+
+.. automodule:: sequana.mmcif
     :members:
     :undoc-members:
 
