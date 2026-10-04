@@ -255,25 +255,31 @@ Changelog :memo:
 ========= ==========================================================================
 Version   Description
 ========= ==========================================================================
-0.24.4    * NEW: ``FastAComparison`` class for comparing FASTA file contents via
+0.25.0    * NEW: ``mmcif.py`` Parse mmCIF protein structure files; download from
+            RCSB. ``pairwise.py`` Needleman-Wunsch/Smith-Waterman alignment
+            ``substitution_matrices.py`` BLOSUM45/62/80/90, PAM30/70/250 matrices
+            ``melting.py`` DNA/RNA duplex Tm calculation (nearest-neighbor model)
+            ``phylo_construction.py`` UPGMA, neighbor-joining, consensus trees
+            ``fasta2faa.py`` Nucleotide→protein codec (bioconvert-compatible)
+            ``canu_scanner.py`` Parse Canu assembly output
+            ``checkm.py`` CheckM quality report parser
+            ``hmmtools.py`` HMMER Pfam domtblout to GFF/annotation
+            ``orthofinder.py`` OrthoFinder results analyzer (orthogroups, trees)
+            ``variants.py`` VCF/BCF variant file reader & analysis
+          * NEW: ``FastAComparison`` class for comparing FASTA file contents via
             MD5 checksums, enabling sequence matching across different identifiers.
-            Supports case-insensitive comparison, gap filtering, and reverse
-            complement awareness
-          * NEW: ``fasta-compare`` CLI command for comparing two FASTA files and
-            reporting matching sequences, unique sequences, and identity status
-0.24.3    * PERF: Kraken consensus building optimized for large sequences;
+          * NEW: ``fasta-compare`` and ``fasta2faa`` CLI commands
+          * PERF: Kraken consensus building optimized for large sequences;
             kmer string processing now 50% faster (caching split operations)
           * PERF: PNG images now linked instead of embedded in HTML reports,
             reducing HTML file size by ~30% (15MB per report)
           * PERF: Added timing instrumentation to consensus building and HTML
             generation for better visibility into performance bottlenecks
-          * CLEANUP: Simplified log messages in taxonomy loading and report
-            generation
-0.24.2    * NEW: Phylogenetic analysis modules (phylo.py, alignment.py)
+          * NEW: Phylogenetic analysis modules (``phylo.py``, ``alignment.py``)
             Parse and manipulate Newick trees; MSA parsing (PHYLIP, Stockholm,
             Nexus, FASTA); consensus sequences and alignment statistics
           * NEW: UpSetPlot visualization library for set intersections
-          * NEW: Protein 3D structure analysis (pdb.py)
+          * NEW: Protein 3D structure analysis (``pdb.py``)
           * Pipeline catalogue expanded with 7 new pipelines
 0.24.1    * Fix bowtie2 plots being empty when built from the multiqc plot data
             files (mqc_bowtie2_{se,pe}_plot_1.txt), whose columns are named after
