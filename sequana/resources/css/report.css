@@ -107,6 +107,13 @@ th {
     text-align: center;
 }
 
+table thead th,
+table.table.dataTable thead th,
+table.dataTable thead th {
+    background-color: #3498db;
+    color: white;
+}
+
 /*
  * ┌──────────────────────────────────────────────────────────────────────────┐
  * │                                                                    Image │

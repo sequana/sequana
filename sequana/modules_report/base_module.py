@@ -68,37 +68,35 @@ class SequanaBaseModule(object):
         # valid, in which case there is no need to copy the files.
 
         # Create report directory
-        if os.path.isdir(config.output_dir) is False:
-            os.mkdir(self.output_dir)
+        os.makedirs(self.output_dir, exist_ok=True)
 
         for directory in self.required_dir:
             complete_directory = os.sep.join([self.output_dir, directory])
-            if os.path.isdir(complete_directory) is False:
-                os.mkdir(complete_directory)
+            os.makedirs(complete_directory, exist_ok=True)
 
         # Copy css/js necessary files
         for filename in config.css_list:
             target = os.sep.join([self.output_dir, "css"])
-            if os.path.isfile(target) is False:
+            if os.path.isfile(filename):
                 try:
                     shutil.copy(filename, target)
-                except PermissionError:
+                except (PermissionError, FileNotFoundError):
                     pass
 
         for filename in config.js_list:
             target = os.sep.join([self.output_dir, "js"])
-            if os.path.isfile(target) is False:
+            if os.path.isfile(filename):
                 try:
                     shutil.copy(filename, target)
-                except PermissionError:
+                except (PermissionError, FileNotFoundError):
                     pass
 
         target = os.sep.join([self.output_dir, "images"])
         os.makedirs(target, exist_ok=True)
-        if os.path.isfile(target) is False:
+        if config.logo and os.path.isfile(config.logo):
             try:
                 shutil.copy(config.logo, target)
-            except PermissionError:
+            except (PermissionError, FileNotFoundError):
                 pass
 
     def create_html(self, output_filename):
@@ -214,6 +212,21 @@ class SequanaBaseModule(object):
         else:
             html = '<img alt="{}" title="{}"'.format(alt, title)
         return '{0} src="data:image/png;base64,{1}">'.format(html, png)
+
+    def png_to_linked_png(self, png_path, style=None, alt="", title=""):
+        """Link to PNG file instead of embedding. Much faster for large files.
+
+        :param str png_path: Path to PNG file (relative or absolute)
+        :param str style: CSS style for image tag
+        :param str alt: Alt text for accessibility
+        :param str title: Hover title
+        :return: HTML img tag linking to PNG file
+        """
+        if style:
+            html = '<img style="{0}" alt="{1}" title="{2}"'.format(style, alt, title)
+        else:
+            html = '<img alt="{}" title="{}"'.format(alt, title)
+        return '{0} src="{1}">'.format(html, png_path)
 
     def create_embedded_png(self, plot_function, input_arg, style=None, **kwargs):
         """Take as a plot function as input and create a html embedded png

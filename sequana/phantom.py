@@ -225,7 +225,7 @@ class Phantom:
         peakidx = peakidx.astype(int).diff(periods=bw) == -1
 
         # the final bw points are NA and filled with False
-        peakidx = peakidx.shift(-bw).fillna(False)
+        peakidx = peakidx.shift(-bw).fillna(False).astype(bool)
 
         df_peaks = df[peakidx]
         # when searching for max, exclude peaks from the excluded region

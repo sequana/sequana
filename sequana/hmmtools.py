@@ -1,9 +1,12 @@
 from io import StringIO
 
+import colorlog
 import pandas as pd
 from tqdm import tqdm
 
 from sequana import GFF3
+
+logger = colorlog.getLogger(__name__)
 
 
 class PfamDomtblout:
@@ -64,6 +67,17 @@ class PfamDomtblout:
         self.df.columns = col_names
 
     def to_gff(self, output_file, augustus_gff=None, best_hit=True):
+        """Write Pfam domain hits as a GFF3 file.
+
+        :param augustus_gff: optional path to an Augustus GFF whose ``ID``
+            attribute matches this object's ``query_name`` values (typically
+            the transcript id, e.g. ``geneX.t1``). When given, coordinates are
+            translated from domain-relative to genome-absolute positions.
+            Query names with no matching Augustus record are skipped (with a
+            warning) rather than raising, since a hmmscan hit for a gene not
+            present in the reference annotation is a data-quality issue to
+            report, not a hard failure.
+        """
         if self.df is None:
             raise ValueError("Call read() before to_gff()")
 
@@ -78,7 +92,6 @@ class PfamDomtblout:
         with open(output_file, "w") as gff:
             gff.write("##gff-version 3\n")
             for _, row in tqdm(df.iterrows()):
-
                 gff_fields = {
                     "seqid": row["target_name"],
                     "source": "Pfam",
@@ -95,6 +108,9 @@ class PfamDomtblout:
                 ID = row["query_name"]
                 if augustus_gff:
                     subdf = gff_aug.df.query("ID==@ID")
+                    if subdf.empty:
+                        logger.warning(f"No Augustus GFF record found for {ID}; skipping this domain hit")
+                        continue
                     seqid = subdf.seqid.values[0]
                     start = subdf.start.values[0] + int(row["ali_start"])
                     stop = subdf.start.values[0] + int(row["ali_end"])

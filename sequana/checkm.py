@@ -65,7 +65,6 @@ class CheckM:
 
 class MultiCheckM:
     def __init__(self, filenames):
-
         dfs = []
 
         for filename in filenames:
@@ -74,4 +73,8 @@ class MultiCheckM:
             except Exception:
                 logger.warning(f"Skipped {filename}")
 
-        self.df = pd.concat(dfs, axis=1)
+        if dfs:
+            self.df = pd.concat(dfs, axis=1)
+        else:
+            logger.warning("No valid CheckM report could be parsed; returning an empty DataFrame")
+            self.df = pd.DataFrame()

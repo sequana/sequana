@@ -16,7 +16,7 @@ stats = get_pipeline_statistics()
 # Note that pacbio_qc is self-content
 from pylab import tight_layout, title
 
-stats[0].sum().plot(kind="barh")
+stats[0].sum(axis=0).plot(kind="barh")
 title("Number of rules per pipeline")
 tight_layout()
 

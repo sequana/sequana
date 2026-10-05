@@ -22,7 +22,18 @@ from sequana.lazy import numpy as np
 
 logger = colorlog.getLogger(__name__)
 
-__all__ = ["Structure", "Model", "Chain", "Residue", "Atom", "Alignment", "rmsd", "superpose", "parse_pdb"]
+__all__ = [
+    "Structure",
+    "Model",
+    "Chain",
+    "Residue",
+    "Atom",
+    "Alignment",
+    "rmsd",
+    "superpose",
+    "parse_pdb",
+    "parse_pdb_pdb_id",
+]
 
 
 @dataclass
@@ -250,48 +261,113 @@ class Chain:
                 bfactor_dict[res.seq] = float(np.mean(bfactors))
         return bfactor_dict
 
-    def secondary_structure_ramachandran(self) -> Dict[int, str]:
-        """Predict secondary structure from phi/psi angles (simplified).
+    def _dihedral(self, p0: np.ndarray, p1: np.ndarray, p2: np.ndarray, p3: np.ndarray) -> float:
+        """Return the dihedral angle (degrees) defined by 4 points p0-p1-p2-p3.
 
-        Uses rough Ramachandran regions:
-        - Alpha helix: phi ~-60°, psi ~-45°
-        - Beta sheet: phi ~-120°, psi ~+120°
-        - Coil: other
+        Standard praxeolitic formula (matches ``Bio.PDB.vectors.calc_dihedral``
+        to floating point precision). Positive/negative sign follows the
+        usual biochemistry convention (right-handed rotation looking from
+        p1 to p2).
+        """
+        b0 = p0 - p1
+        b1 = p2 - p1
+        b2 = p3 - p2
+
+        b1_norm = np.linalg.norm(b1)
+        if b1_norm == 0:
+            return 0.0
+        b1 = b1 / b1_norm
+
+        v = b0 - np.dot(b0, b1) * b1
+        w = b2 - np.dot(b2, b1) * b1
+
+        x = np.dot(v, w)
+        y = np.dot(np.cross(b1, v), w)
+        return float(np.degrees(np.arctan2(y, x)))
+
+    def phi_psi_angles(self) -> Dict[int, Tuple[Optional[float], Optional[float]]]:
+        """Compute real backbone phi/psi dihedral angles per residue.
+
+        phi(i) = dihedral(C(i-1), N(i), CA(i), C(i))
+        psi(i) = dihedral(N(i), CA(i), C(i), N(i+1))
+
+        Both require the backbone N/CA/C atoms of the residue and its
+        neighbour(s); phi is undefined for the first residue (no preceding
+        C) and psi is undefined for the last residue (no following N).
 
         Returns:
-            dict mapping residue seq -> ss ('H'=helix, 'E'=sheet, 'C'=coil)
-
-        Note: Requires 3 consecutive CA atoms for angle calculation.
+            dict mapping residue seq -> (phi, psi) in degrees, either value
+            being None where undefined or backbone atoms are missing.
         """
-        ss_dict = {}
+        angles: Dict[int, Tuple[Optional[float], Optional[float]]] = {}
 
         for i, res in enumerate(self.residues):
-            if i < 1 or i >= len(self.residues) - 1:
-                ss_dict[res.seq] = "C"  # Coil at termini
-                continue
+            n_curr = res.get_atom("N")
+            ca_curr = res.get_atom("CA")
+            c_curr = res.get_atom("C")
 
-            # Get CA atoms for phi/psi calculation
-            ca_prev = self.residues[i - 1].get_atom("CA")
-            ca_curr = self.residues[i].get_atom("CA")
-            ca_next = self.residues[i + 1].get_atom("CA")
+            phi = None
+            psi = None
 
-            if not (ca_prev and ca_curr and ca_next):
+            if n_curr and ca_curr and c_curr:
+                if i > 0:
+                    c_prev = self.residues[i - 1].get_atom("C")
+                    if c_prev:
+                        phi = self._dihedral(
+                            c_prev.coordinates(), n_curr.coordinates(), ca_curr.coordinates(), c_curr.coordinates()
+                        )
+
+                if i < len(self.residues) - 1:
+                    n_next = self.residues[i + 1].get_atom("N")
+                    if n_next:
+                        psi = self._dihedral(
+                            n_curr.coordinates(), ca_curr.coordinates(), c_curr.coordinates(), n_next.coordinates()
+                        )
+
+            angles[res.seq] = (phi, psi)
+
+        return angles
+
+    def secondary_structure_ramachandran(self) -> Dict[int, str]:
+        """Classify residues into helix/sheet/coil from real backbone phi/psi angles.
+
+        Computes true phi/psi dihedral angles from the N/CA/C backbone atoms
+        (see :meth:`phi_psi_angles`) and assigns each residue to a broad
+        Ramachandran region:
+
+        - Alpha helix (right-handed): phi in [-100, -30], psi in [-77, 0]
+        - Beta sheet / extended: phi in [-180, -45], psi in [45, 225] (mod 360)
+        - Coil: everything else, termini, or missing backbone atoms
+
+        Caveats (important -- read before trusting the output):
+            This is a **geometric, single-residue** phi/psi classifier. It is
+            NOT equivalent to DSSP, which additionally uses backbone hydrogen
+            bonding patterns and multi-residue context to assign secondary
+            structure and is the field standard. Expect disagreement with
+            DSSP especially at helix/sheet boundaries and for short or
+            distorted secondary structure elements. Use this for a quick,
+            dependency-free estimate; use a DSSP wrapper (e.g. via
+            ``mkdssp``) for publication-grade secondary structure assignment.
+
+        Returns:
+            dict mapping residue seq -> 'H' (helix), 'E' (sheet), or 'C' (coil)
+        """
+        ss_dict: Dict[int, str] = {}
+        angles = self.phi_psi_angles()
+
+        for res in self.residues:
+            phi, psi = angles[res.seq]
+
+            if phi is None or psi is None:
                 ss_dict[res.seq] = "C"
                 continue
 
-            # Calculate dihedral angles (simplified: use CA positions)
-            v1 = ca_curr.coordinates() - ca_prev.coordinates()
-            v2 = ca_next.coordinates() - ca_curr.coordinates()
-            angle = np.arccos(np.clip(np.dot(v1, v2) / (np.linalg.norm(v1) * np.linalg.norm(v2)), -1, 1))
-            angle_deg = np.degrees(angle)
-
-            # Rough classification
-            if 100 < angle_deg < 140:
-                ss_dict[res.seq] = "H"  # Alpha helix region
-            elif 20 < angle_deg < 80:
-                ss_dict[res.seq] = "E"  # Beta sheet region
+            if -100 <= phi <= -30 and -77 <= psi <= 0:
+                ss_dict[res.seq] = "H"
+            elif -180 <= phi <= -45 and (45 <= psi <= 225 or -180 <= psi <= -135):
+                ss_dict[res.seq] = "E"
             else:
-                ss_dict[res.seq] = "C"  # Coil
+                ss_dict[res.seq] = "C"
 
         return ss_dict
 
@@ -320,7 +396,6 @@ class Chain:
         if not query_ca:
             return []
 
-        query_coord = query_ca.coordinates()
         neighbors = []
 
         for res in self.residues:
@@ -561,7 +636,10 @@ class PDBParser:
         resolution = "unknown"
         method = "unknown"
 
-        structure = None
+        # Create the Structure eagerly (not lazily after the loop) so that
+        # ENDMDL can append each finished model as it is encountered. Header
+        # fields discovered later (HEADER/TITLE) are backfilled below.
+        structure = Structure(pdb_id, title)
         current_model = None
         current_chain = None
         current_residue = None
@@ -569,9 +647,11 @@ class PDBParser:
         for line in lines:
             if line.startswith("HEADER"):
                 pdb_id = line[62:66].strip().upper()
+                structure.pdb_id = pdb_id
 
             elif line.startswith("TITLE"):
                 title += line[10:70].rstrip()
+                structure.title = title
 
             elif line.startswith("REMARK") and "RESOLUTION" in line:
                 match = re.search(r"(\d+\.\d+)", line)
@@ -600,7 +680,6 @@ class PDBParser:
                     current_residue = None
 
                 # Create residue if needed
-                residue_key = (atom.residue_seq, atom.insertion_code)
                 if (
                     current_residue is None
                     or current_residue.seq != atom.residue_seq
@@ -612,7 +691,7 @@ class PDBParser:
                 current_residue.add_atom(atom)
 
             elif line.startswith("ENDMDL"):
-                if current_model and structure is not None:
+                if current_model is not None:
                     structure.add_model(current_model)
                     current_model = None
                     current_chain = None
@@ -621,14 +700,10 @@ class PDBParser:
             elif line.startswith("END"):
                 break
 
-        # Handle single-model PDBs (no ENDMDL)
+        # Handle single-model PDBs (no ENDMDL) -- current_model is still the
+        # in-progress model, not yet appended to structure.
         if current_model is not None:
-            if structure is None:
-                structure = Structure(pdb_id, title)
             structure.add_model(current_model)
-
-        if structure is None:
-            structure = Structure(pdb_id, title)
 
         structure.header = {
             "resolution": resolution,
@@ -683,6 +758,43 @@ def parse_pdb(filename: str) -> Structure:
     """
     parser = PDBParser()
     return parser.parse(filename)
+
+
+def parse_pdb_pdb_id(pdb_id: str) -> Structure:
+    """Download PDB from RCSB and parse it.
+
+    Downloads from RCSB's public HTTP endpoint.
+
+    Args:
+        pdb_id: RCSB PDB ID (e.g., "1CRN").
+
+    Returns:
+        Structure object.
+
+    Raises:
+        Exception: if download or parsing fails.
+
+    Example::
+
+        from sequana.pdb import parse_pdb_pdb_id
+        structure = parse_pdb_pdb_id("1CRN")
+        structure.stats()
+    """
+    import os
+    import tempfile
+    import urllib.request
+
+    pdb_id = pdb_id.upper()
+    url = f"https://files.rcsb.org/download/{pdb_id}.pdb"
+
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".pdb", delete=False) as f:
+        temp_path = f.name
+
+    try:
+        urllib.request.urlretrieve(url, temp_path)
+        return PDBParser().parse(temp_path)
+    finally:
+        os.unlink(temp_path)
 
 
 # Phase 2: RMSD, transformation, alignment

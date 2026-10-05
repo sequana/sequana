@@ -329,7 +329,12 @@ def main(**kwargs):
 
     # output_directory first argument: the directory where to find the data
     # output_filename is relative to the config.output_dir defined above
+    import time
+
+    t0 = time.time()
     kk = KrakenModule(output_directory, output_filename="summary.html")
+    t1 = time.time()
+    logger.info(f"Generated HTML report in {t1-t0:.2f}s")
 
     logger.info(f"Open ./{options.directory}/summary.html")
     logger.info(f"or ./{options.directory}/kraken/kraken.html")

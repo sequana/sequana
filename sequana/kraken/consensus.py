@@ -258,16 +258,12 @@ from easydev import do_profile
 
 # @lru_cache(maxsize=32)
 def searchLCA(taxids, taxonomy_file, buffer={}):
-
+    """Find Lowest Common Ancestor for multiple taxids. Uses buffer to cache results."""
     if taxids in buffer:
         return buffer[taxids]
 
-    obsolets = {1513193: 2748961, 35306: 3052441}
-    # taxonomy_file.update(obsolets)
     IDs = taxids
-
     taxids = [int(x) for x in taxids]
-    # TODO. handle unknown IDs
     try:
         parents = taxonomy_file.loc[taxids].parent.values
     except:
@@ -292,7 +288,6 @@ def searchLCA(taxids, taxonomy_file, buffer={}):
                 parents = taxonomy_file.loc[parents].parent.values
 
         if taxid == 1:
-            # print("no LCA found for these taxids:", taxids)
             buffer[IDs] = 1
             return 1
         else:
@@ -303,10 +298,13 @@ def searchLCA(taxids, taxonomy_file, buffer={}):
 def build_consensus(inputs, output):
 
     import glob
+    import time
     from collections import defaultdict
 
     from sequana.taxonomy import Taxonomy
 
+    t0_consensus = time.time()
+    logger.info("Building consensus from multiple Kraken outputs...")
     tax = Taxonomy(verbose=True)
     tax.load_records()
 
@@ -341,11 +339,14 @@ def build_consensus(inputs, output):
 
         streams = [open(x, "r") for x in files]
         count = 0
+        t_start_read = time.time()
         while True:
             try:
                 count += 1
-                if count % 10000 == 0:
-                    logger.info(f"Processed {count} reads")
+                if count % 50000 == 0:
+                    elapsed = time.time() - t_start_read
+                    rate = count / elapsed if elapsed > 0 else 0
+                    logger.info(f"Processed {count} reads ({rate:.0f} reads/sec)")
                 lines = [stream.readline() for stream in streams]
 
                 kmer_totals = defaultdict(int)
@@ -400,11 +401,12 @@ def build_consensus(inputs, output):
                 # if count>10:
                 #    break
 
-                # kmers = " ".join([f"{k}:{v}" for k,v in kmer_totals.items()])
-                kmer_left = " ".join([x.split("|:|")[0] for x in kmers])
+                # Optimize: cache split results to avoid splitting 10k-100k times per record
+                kmers_split = [x.split("|:|", 1) for x in kmers]  # split only once, limit to 2 parts
+                kmer_left = " ".join([k[0] for k in kmers_split])
                 try:
-                    kmer_right = " ".join([x.split("|:|")[1] for x in kmers])
-                    kmers = kmer_left + " |:| " + kmer_right
+                    kmer_right = " ".join([k[1] if len(k) > 1 else "" for k in kmers_split])
+                    kmers = kmer_left + " |:| " + kmer_right if kmer_right else kmer_left
                 except:
                     kmers = kmer_left
 
@@ -420,3 +422,5 @@ def build_consensus(inputs, output):
 
     # Get the aggregated k-mer information
     kmer_totals = scanner(inputs, output)
+    t1_consensus = time.time()
+    logger.info(f"Consensus built in {t1_consensus-t0_consensus:.1f}s")

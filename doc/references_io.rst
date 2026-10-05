@@ -89,6 +89,17 @@ VCF
     :members:
     :undoc-members:
 
+Protein structures (PDB/mmCIF)
+==============================
+
+.. automodule:: sequana.pdb
+    :members:
+    :undoc-members:
+
+.. automodule:: sequana.mmcif
+    :members:
+    :undoc-members:
+
 Other formats
 =============
 

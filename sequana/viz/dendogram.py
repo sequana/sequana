@@ -181,8 +181,7 @@ class Dendogram(Linkage):
         # scaling min/max range
 
         # Scale the figure window size #
-        fig = pylab.figure(num=num, figsize=figsize, layout="tight")
-        fig.clf()
+        fig = pylab.figure(num=num, figsize=figsize, layout="tight", clear=True)
 
         Y = self.linkage(self.frame, self.method, self.metric)
 

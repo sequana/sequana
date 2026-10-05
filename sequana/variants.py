@@ -21,7 +21,6 @@ from sequana.vcftools import (
     compute_fisher_strand_filter,
     compute_frequency,
     compute_strand_balance,
-    strand_ratio,
 )
 
 logger = colorlog.getLogger(__name__)
@@ -66,7 +65,6 @@ class VariantFile:
     """
 
     def __init__(self, filename, progress=False, keep_polymorphic=True):
-
         self._iterator_index = 0
         self.filename = filename
 
@@ -244,11 +242,9 @@ class VariantFile:
         pylab.pie(data, labels=labels)
 
     def manhattan_plot(self, chrom_name=None, bins=200, types=["ins", "del", "mnp", "snp", "complex", "INS", "DEL"]):
-
         positions = defaultdict(list)
 
         for variant in pysam.VariantFile(self.filename):
-
             # keeps only the requested type of variants
             if "TYPE" in variant.info:
                 for vkind in variant.info["TYPE"]:
@@ -292,11 +288,6 @@ class VariantFile:
         variants = self.variants
         pylab.hist([x.qual for x in variants if x.qual >= min_score], bins=bins)
 
-    def plot_frequency(self):
-        sorted_contigs = dict(sorted(self.contigs.items(), key=lambda item: item[1]))
-        for chrom in sorted_contigs.keys():
-            pass
-
     def _variant_to_dict(self, variant):
         alt_freq = compute_frequency(variant)
         strand_bal = compute_strand_balance(variant)
@@ -322,7 +313,6 @@ class VariantFile:
         if len(self.samples) == 1:
             variant_dict["frequency"] = "; ".join("{0:.3f}".format(x) for x in alt_freq)
         else:
-
             # AO is the Alternate allele observation count. It indicates the number of reads
             #    supporting the alternate (variant) allele. I
             # DP is the depth of coverage on the variant position
@@ -466,7 +456,13 @@ class FilteredVariantFile:
 
 
 def apply_variants(fasta_path, vcf_path, output_fasta):
-    logger.info("TO BE CHECKED /  TESTED")
+    """Apply VCF variants to a reference FASTA to produce a consensus sequence.
+
+    .. warning:: experimental / not covered by tests. Only the first
+        alternate allele of each variant is applied; overlapping variants are
+        not handled. Verify results before relying on this for anything
+        beyond exploratory use.
+    """
     # Load reference sequence
     fasta = pysam.FastaFile(fasta_path)
 
@@ -478,7 +474,6 @@ def apply_variants(fasta_path, vcf_path, output_fasta):
 
     # Store modifications
     sequences = {seq: list(fasta.fetch(seq)) for seq in fasta.references}
-    print(sequences.keys())
 
     # Apply variants
     for record in tqdm(vcf):
@@ -491,13 +486,11 @@ def apply_variants(fasta_path, vcf_path, output_fasta):
             continue
 
         seq = sequences[chrom]
-        seq1 = sequences[chrom][:]
 
         # Assume first ALT is the desired one (modify if needed)
         alt = alts[0] if alts else ref
 
         if len(ref) == len(alt):  # SNP
-            print(pos, ref, alt, len(ref))
             seq[pos : pos + len(ref)] = list(alt)
         elif len(ref) > len(alt):  # Deletion
             seq[pos : pos + len(ref)] = list(alt)  # alt is usually empty

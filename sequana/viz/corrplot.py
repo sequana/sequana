@@ -236,11 +236,11 @@ class Corrplot(Linkage):
 
         # figure can be a number or an instance; otherwise creates it
         if isinstance(fig, int):
-            fig = plt.figure(num=fig, facecolor=facecolor)
+            fig = plt.figure(num=fig, facecolor=facecolor, clear=True)
         elif fig is not None:
-            fig = plt.figure(num=fig.number, facecolor=facecolor)
+            fig = plt.figure(num=fig.number, facecolor=facecolor, clear=True)
         else:
-            fig = plt.figure(num=None, facecolor=facecolor)
+            fig = plt.figure(num=None, facecolor=facecolor, clear=True)
 
         # do we have an axes to plot the data in ?
         if ax is None:
@@ -386,8 +386,9 @@ class Corrplot(Linkage):
             # between -0.5 and let us say +1, the colors do not start at -0.5
             # but -1 indeed.
             self.collection.set_clim(0, 1)
-            cb = plt.gcf().colorbar(
+            cb = fig.colorbar(
                 self.collection,
+                ax=ax,
                 orientation=self.params["colorbar.orientation"],
                 shrink=self.params["colorbar.shrink"],
                 boundaries=np.linspace(0, 1, N),

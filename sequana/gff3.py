@@ -11,7 +11,6 @@
 #
 ##############################################################################
 import os
-import sys
 from collections import defaultdict
 
 import colorlog
@@ -506,7 +505,6 @@ class GFF3:
                             fout.write(regions[region])
                             current_region = region
                     else:  # next regions
-
                         region = line.split("\t")[0]
                         if region in regions.keys() and region != current_region:
                             fout.write(regions[region])
@@ -666,8 +664,9 @@ class GFF3:
                 break
 
         if sep is None:
-            logger.error(f"Your GFF/GTF does not seem to be correct ({text}). Expected a = or space as separator")
-            sys.exit(1)
+            raise BadFileFormat(
+                f"Your GFF/GTF does not seem to be correct ({text}). Expected a = or space as separator"
+            )
 
         # ugly but fast replacement of special characters.
         text = text.replace("%09", "\t").replace("%0A", "\n").replace("%0D", "\r")
@@ -797,9 +796,11 @@ class GFF3:
         logger.info(f"{count} regions were extracted from '{ref_fasta}' to '{fasta_out}'")
 
     def to_pep(self, ref_fasta, fasta_out):
-        """Extract CDS, convert to proteines and save in file"""
+        """Extract CDS, convert to proteins and save in file.
+
+        .. warning:: not implemented yet.
+        """
         raise NotImplementedError
-        df = self.df.query("genetic_type=='CDS'")
 
     def to_bed(self, output_filename, attribute_name, features=["gene"]):
         """Experimental export to BED format to be used with rseqc scripts
@@ -1198,17 +1199,13 @@ class GFF3:
     def add_directon_index(self):
         """Assign each gene its positional index within its directon.
 
-        For each gene, sets its ordinal position inside the directon it belongs
-        to (assuming the GFF is sorted by chromosome and start coordinate).
-
-        .. note::
-            Not yet implemented; this method is a stub reserved for a future
-            feature.
+        .. warning:: not implemented yet.
         """
-        # For each gene, set its position on the directon it belongs to
-        # assuming GFF is sorted by chromosome and start
-        pass
+        raise NotImplementedError
 
     def cluster_names_to_bed(self):
-        """Identify cluster and output results in BED file"""
-        pass
+        """Identify cluster and output results in BED file.
+
+        .. warning:: not implemented yet.
+        """
+        raise NotImplementedError

@@ -107,6 +107,8 @@ class KrakenModule(SequanaBaseModule):
         if len(df) == 1 and df.iloc[0]["taxon"] == -1:
             pngimage = sequana_data("no_data.jpg")
             extra = "<p> no reads could be identified with the given the database(s)."
+            # Use embedded for bundled resources
+            png_html = self.png_to_embedded_png(pngimage)
         else:
             pngimage = self.directory / "kraken.png"
             extra = """<p>The following <b>clickable image</b> is a simplified
@@ -114,6 +116,11 @@ version (only genus are shown) of an interactive and more detailled version
 based on Krona. Finally, note that the unclassified species in the pie plot
 may correspond to species not present in the data base or adapters (if not
 removed).</p>"""
+            # Use linked PNG (much faster than embedding base64)
+            # PNG is in kraken/ subdir, HTML is in parent, so use relative path
+            rel_dir = str(self.directory).split(os.sep, 1)[1]  # e.g., "TEST/kraken"
+            png_path = rel_dir.split(os.sep)[-1] + "/kraken.png"  # "kraken/kraken.png"
+            png_html = self.png_to_linked_png(png_path)
 
         html = """
     <p>Overview of the Taxonomic content of the filtered reads. </p>
@@ -135,7 +142,7 @@ Besides, be aware that closely related species may not be classified precisely.
 """.format(
             extra,
             str(self.directory).split(os.sep, 1)[1],
-            self.png_to_embedded_png(pngimage),
+            png_html,
         )
 
         return html
@@ -217,13 +224,17 @@ are not covering the diversity of the sequencing runs, or because reads are of
 poor quality. For instance, they may be too short. Here below are information
 concerning the read length of unclassified reads. Here below C stands for
 classified and U for unclassified reads.</p><div>"""
+        # Calculate relative path to kraken subdir (same for all PNGs)
+        rel_dir = str(self.directory).split(os.sep, 1)[1]  # e.g., "TEST/kraken"
+        subdir = rel_dir.split(os.sep)[-1]  # "kraken"
+
         pngimage = self.directory / "boxplot_read_length.png"
         if os.path.exists(pngimage):
-            html += self.png_to_embedded_png(pngimage)
+            html += self.png_to_linked_png(f"{subdir}/boxplot_read_length.png")
 
         pngimage = self.directory / "hist_read_length.png"
         if os.path.exists(pngimage):
-            html += self.png_to_embedded_png(pngimage)
+            html += self.png_to_linked_png(f"{subdir}/hist_read_length.png")
         html += "</div>"
         self.sections.append(
             {

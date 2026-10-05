@@ -21,6 +21,18 @@ Sequence basics
     :members:
     :undoc-members:
 
+.. automodule:: sequana.pairwise
+    :members:
+    :undoc-members:
+
+.. automodule:: sequana.substitution_matrices
+    :members:
+    :undoc-members:
+
+.. automodule:: sequana.melting
+    :members:
+    :undoc-members:
+
 Regulatory / regulatory-adjacent
 ================================
 
@@ -125,13 +137,25 @@ Protein structures (3D)
     :members:
     :undoc-members:
 
-Phylogenetic analysis
-=====================
+.. automodule:: sequana.mmcif
+    :members:
+    :undoc-members:
+
+Phylogenetic and comparative analysis
+=====================================
 
 .. automodule:: sequana.phylo
     :members:
     :undoc-members:
 
+.. automodule:: sequana.phylo_construction
+    :members:
+    :undoc-members:
+
 .. automodule:: sequana.alignment
+    :members:
+    :undoc-members:
+
+.. automodule:: sequana.orthofinder
     :members:
     :undoc-members:

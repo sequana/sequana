@@ -2234,5 +2234,6 @@ class ChromosomeCovMultiChunk(object):
 
         # let us copy the first one
         rois = copy.deepcopy(data[0])
-        rois.df = pd.concat([this.df for this in data], ignore_index=True)
+        dfs = [this.df for this in data if not this.df.empty]
+        rois.df = pd.concat(dfs, ignore_index=True) if dfs else data[0].df.iloc[:0]
         return rois

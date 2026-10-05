@@ -178,3 +178,74 @@ def test_explode(tmpdir):
     ff = FastA(filename)
     with TempFile(suffix=".fasta") as fh:
         ff.explode(outdir=path)
+
+
+def test_fasta_comparison(tmp_path):
+    from sequana.fasta import FastAComparison
+
+    seq1 = "ACGTACGTTTGACCATGCA" * 5
+    seq2 = "GGGTTTCCCAAA" * 4
+
+    f1 = tmp_path / "f1.fa"
+    f1.write_text(f">1\n{seq1}\n>2\n{seq2}\n")
+    f2 = tmp_path / "f2.fa"
+    f2.write_text(f">NC_0001.1\n{seq1}\n>NC_0002.1\n{seq2}\n")
+
+    c = FastAComparison(f1, f2)
+    assert c.identical is True
+    assert c.orphans1 == []
+    assert c.orphans2 == []
+    assert c.matches == [(["1"], ["NC_0001.1"], len(seq1), False), (["2"], ["NC_0002.1"], len(seq2), False)]
+
+    # a missing checksum must not be added to the internal dictionaries
+    assert len(c.data1) == 2
+    assert len(c.data2) == 2
+
+
+def test_fasta_comparison_orphans_and_duplicates(tmp_path):
+    from sequana.fasta import FastAComparison
+
+    seq1 = "ACGTACGTTTGACCATGCA" * 5
+    seq2 = "GGGTTTCCCAAA" * 4
+
+    f1 = tmp_path / "f1.fa"
+    f1.write_text(f">1\n{seq1}\n>1_bis\n{seq1}\n")
+    f2 = tmp_path / "f2.fa"
+    f2.write_text(f">NC_0001.1\n{seq1}\n>NC_0002.1\n{seq2}\n")
+
+    c = FastAComparison(f1, f2)
+    assert c.identical is False
+    assert c.orphans1 == []
+    assert c.orphans2 == [("NC_0002.1", len(seq2))]
+    assert c.duplicates1 == [["1", "1_bis"]]
+    assert c.duplicates2 == []
+    names1, names2, length, rc = c.matches[0]
+    assert names1 == ["1", "1_bis"]
+    assert names2 == ["NC_0001.1"]
+    assert rc is False
+
+
+def test_fasta_comparison_case_gaps_and_rc(tmp_path):
+    from sequana.fasta import FastAComparison
+    from sequana.tools import reverse_complement
+
+    seq = "ACGTACGTTTGACCATGCA" * 5
+
+    f1 = tmp_path / "f1.fa"
+    f1.write_text(f">1\n{seq}\n")
+    f2 = tmp_path / "f2.fa"
+    f2.write_text(f">NC_0001.1\n{seq.lower()}\n")
+    assert FastAComparison(f1, f2).identical is True
+    assert FastAComparison(f1, f2, ignore_case=False).identical is False
+
+    f3 = tmp_path / "f3.fa"
+    f3.write_text(f">NC_0001.1\n{seq[:10]}--{seq[10:]}\n")
+    assert FastAComparison(f1, f3).identical is False
+    assert FastAComparison(f1, f3, ignore_gaps=True).identical is True
+
+    f4 = tmp_path / "f4.fa"
+    f4.write_text(f">NC_0001.1\n{reverse_complement(seq)}\n")
+    assert FastAComparison(f1, f4).identical is False
+    c = FastAComparison(f1, f4, rc_aware=True)
+    assert c.identical is True
+    assert c.matches[0][3] is True

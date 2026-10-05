@@ -228,7 +228,6 @@ class Taxonomy(metaclass=Singleton):
         """
 
         if os.path.exists(self.database) and overwrite is False:
-            logger.info(f"Found {self.database} file in sequana your path {sequana_config_path}")
             return
 
         if self.source == "ena":
@@ -278,7 +277,13 @@ class Taxonomy(metaclass=Singleton):
 
         # for usecols=range(4) cause last column may contain extra commas
         try:
+            import time
+
+            t0 = time.time()
+            logger.info(f"Loading taxonomy records from {self.database}...")
             self.records = pd.read_csv(self.database, index_col=0, compression="gzip", usecols=range(4))
+            t1 = time.time()
+            logger.info(f"Taxonomy loaded in {t1-t0:.1f}s ({len(self.records):,} records)")
         except gzip.BadGzipFile:
             logger.error(f"input file {self.database} should be gzipped")
             raise gzip.BadGzipFile

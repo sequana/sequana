@@ -11,6 +11,7 @@
 #
 ##############################################################################
 """Utilities to manipulate FastA files"""
+import hashlib
 import os
 import textwrap
 from collections import defaultdict
@@ -24,7 +25,7 @@ from sequana.stats import L50, N50
 logger = colorlog.getLogger(__name__)
 
 
-__all__ = ["FastA"]
+__all__ = ["FastA", "FastAComparison"]
 
 
 class _LazySequences:
@@ -594,3 +595,124 @@ class FastA:
             L = len(self.sequences[self.names.index(name)])
             # the 2 # are important e.g. for snpeff
             print(f"##sequence-region\t{name}\t{1}\t{L}")
+
+
+def _md5(sequence):
+    return hashlib.md5(sequence.encode("utf-8")).hexdigest()
+
+
+class FastAComparison:
+    """Compare the content of two FastA files irrespective of the sequence names
+
+    Sequences are compared through their MD5 checksum so that identical
+    sequences are paired even when their identifiers differ (e.g. *1* in one
+    file versus *NC_045512.2* in the other one)::
+
+        from sequana.fasta import FastAComparison
+
+        c = FastAComparison("ref.fa", "asm.fa")
+        c.matches       # [(["1"], ["NC_045512.2"], 29903, False), ...]
+        c.orphans1      # sequences found in the first file only
+        c.orphans2      # sequences found in the second file only
+        c.identical     # True if both files have the same sequence content
+
+    Sequences are upper-cased before being hashed. Set *ignore_case* to False to
+    make the comparison case-sensitive (soft-masked genomes then differ from
+    their unmasked version). Set *ignore_gaps* to True to drop the '-' and '.'
+    alignment characters. With *rc_aware* set to True, a sequence and its
+    reverse complement are considered identical, which is useful when contigs
+    are stored in opposite orientations.
+
+    """
+
+    # N and other ambiguous characters are left unchanged
+    _complement = str.maketrans("ACGTUacgtu", "TGCAAtgcaa")
+
+    def __init__(self, filename1, filename2, ignore_case=True, ignore_gaps=False, rc_aware=False):
+        self.filename1 = filename1
+        self.filename2 = filename2
+        self.ignore_case = ignore_case
+        self.ignore_gaps = ignore_gaps
+        self.rc_aware = rc_aware
+        self.data1 = self._scan(filename1)
+        self.data2 = self._scan(filename2)
+
+    def _normalise(self, sequence):
+        if self.ignore_case:
+            sequence = sequence.upper()
+        if self.ignore_gaps:
+            sequence = sequence.replace("-", "").replace(".", "")
+        return sequence
+
+    def _scan(self, filename):
+        # a single pass on the file. Contrary to FastA.sequences, the iterator
+        # does not require a .fai index and does not keep the sequences in memory
+        data = defaultdict(list)
+        for record in FastA(filename):
+            sequence = self._normalise(record.sequence)
+            md5 = _md5(sequence)
+            if self.rc_aware:
+                # a canonical key shared by a sequence and its reverse complement
+                key = min(md5, _md5(sequence.translate(self._complement)[::-1]))
+            else:
+                key = md5
+            data[key].append({"name": record.name, "length": len(sequence), "md5": md5})
+        # a plain dict so that a lookup of a missing checksum does not create an entry
+        return dict(data)
+
+    @property
+    def matches(self):
+        """List of (names1, names2, length, reverse_complement) sorted by decreasing length
+
+        Several names may be reported on each side when a file contains
+        duplicated sequences.
+        """
+        results = []
+        for key, entries1 in self.data1.items():
+            try:
+                entries2 = self.data2[key]
+            except KeyError:
+                continue
+            # with --rc-aware, the two sides may share the canonical key while
+            # having different forward checksums, that is one is reversed
+            rc = {x["md5"] for x in entries1} != {x["md5"] for x in entries2}
+            names1 = [x["name"] for x in entries1]
+            names2 = [x["name"] for x in entries2]
+            results.append((names1, names2, entries1[0]["length"], rc))
+        return sorted(results, key=lambda x: -x[2])
+
+    @staticmethod
+    def _get_orphans(data, other):
+        orphans = [(x["name"], x["length"]) for key, entries in data.items() if key not in other for x in entries]
+        return sorted(orphans, key=lambda x: -x[1])
+
+    @property
+    def orphans1(self):
+        """Sequences of the first file that have no counterpart in the second one"""
+        return self._get_orphans(self.data1, self.data2)
+
+    @property
+    def orphans2(self):
+        """Sequences of the second file that have no counterpart in the first one"""
+        return self._get_orphans(self.data2, self.data1)
+
+    @staticmethod
+    def _get_duplicates(data):
+        return sorted(([x["name"] for x in entries] for entries in data.values() if len(entries) > 1), key=len)
+
+    @property
+    def duplicates1(self):
+        """Groups of names sharing the same sequence within the first file"""
+        return self._get_duplicates(self.data1)
+
+    @property
+    def duplicates2(self):
+        """Groups of names sharing the same sequence within the second file"""
+        return self._get_duplicates(self.data2)
+
+    @property
+    def identical(self):
+        """True if both files contain the same sequences with the same multiplicity"""
+        if self.orphans1 or self.orphans2:
+            return False
+        return all(len(entries) == len(self.data2[key]) for key, entries in self.data1.items())
