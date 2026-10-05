@@ -85,6 +85,7 @@ dependencies = [
     "tqdm >=4.66.1",
     "upsetplot (>=0.9.0)",
     "xlrd (>=2.0)",
+    "openpyxl (>=3.0)",
     "vcfpy (>=0.13.8)",
     "multiqc (>=1.18,<=1.27)",
     "kaleido (>=0.1)",
