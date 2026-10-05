@@ -119,8 +119,8 @@ class Salmon:
         S = 0
 
         logger.info("Grouping")
-        TPMgroup = df.groupby("Gene").apply(lambda group: group["TPM"].sum())
-        efflength_null = df.groupby("Gene").apply(lambda group: group["EffectiveLength"].mean())
+        TPMgroup = df.groupby("Gene", include_groups=False).apply(lambda group: group["TPM"].sum())
+        efflength_null = df.groupby("Gene", include_groups=False).apply(lambda group: group["EffectiveLength"].mean())
 
         groups = df.groupby("Gene")
         for i, name in tqdm.tqdm(enumerate(counts_on_genes.index)):

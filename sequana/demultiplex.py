@@ -244,4 +244,5 @@ class StatsFile(object):
             pylab.gcf().set_layout_engine("tight")
         except Exception as err:
             print(err)
+        pylab.close()
         return data
