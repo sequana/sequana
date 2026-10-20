@@ -1,0 +1,2 @@
+uPlot v1.6.31 (https://github.com/leeoniya/uPlot), MIT License, Copyright (c) Leon Sorokin.
+Vendored unmodified (uPlot.iife.min.js, uPlot.min.css) so that the generated HTML is self-contained.

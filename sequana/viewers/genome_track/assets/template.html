@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>__TITLE__</title>
+<style>__UPLOT_CSS__</style>
+<style>__VIEWER_CSS__</style>
+</head>
+<body>
+<header>
+  <h1>__TITLE__</h1>
+  <div class="stats">__STATS__</div>
+</header>
+<main>
+  <p class="hint">Scroll the mouse wheel to zoom in and out around the pointer; drag with the right mouse button (or Shift + left button) to move along the sequence. Drag a rectangle on the main plot to zoom on both axes (a flat drag zooms on x only; on the GC panel it selects a window), double-click (or "Reset") to see the whole sequence. Click a region in the table to zoom to it.
+  <span class="legend-roi" style="background:rgba(0,114,178,.45)"></span>__ROI_LOW__
+  <span class="legend-roi" style="background:rgba(213,94,0,.45)"></span>__ROI_HIGH__</p>
+  <div class="toolbar">
+    <button id="reset" type="button">Reset</button>
+    <label class="gcopt"><input type="checkbox" id="gcline" checked> GC content (right axis)</label>
+    <label class="gcopt"><input type="checkbox" id="gcpanel"> separate GC panel</label>
+    <label><input type="checkbox" id="fity" checked> fit the y-axis to the visible data when zoomed</label>
+    <label><input type="checkbox" id="clip" checked> clip the y-axis to the normal range</label>
+  </div>
+  <div id="legend"></div>
+  <div id="plot"></div>
+  <div id="gcplot"></div>
+  <div id="annplot"></div>
+  <div id="tip"></div>
+  <div id="status">loading...</div>
+
+  <h2>Regions of interest <span id="count" style="font-weight:normal;color:var(--muted)"></span></h2>
+  <div class="toolbar">
+    <label>type <select id="type"><option value="all">all</option><option value="low">__ROI_LOW__</option><option value="high">__ROI_HIGH__</option></select></label>
+    <label class="annopt">search gene / product <input id="search" type="search" placeholder="e.g. kinase" style="width:170px"></label>
+    <label>minimum size (bp) <input id="minsize" type="number" min="0" value="0" style="width:90px"></label>
+  </div>
+  <div class="tablewrap"><table id="roitable"></table></div>
+
+  __COMMAND_SECTION__
+</main>
+<script id="meta" type="application/json">__META__</script>
+<script>__UPLOT_JS__</script>
+<script>__VIEWER_JS__</script>
+</body>
+</html>

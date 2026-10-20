@@ -1,0 +1,35 @@
+:root { --ink:#1f2933; --muted:#616e7c; --line:#d9dee3; --low:#0072b2; --high:#d55e00; }
+* { box-sizing:border-box; }
+body { font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; color:var(--ink); margin:0; background:#fff; }
+header { padding:16px 24px 8px; border-bottom:1px solid var(--line); }
+h1 { font-size:20px; margin:0 0 4px; }
+.stats { display:flex; flex-wrap:wrap; gap:4px 20px; color:var(--muted); }
+.stats b { color:var(--ink); font-weight:600; }
+main { padding:12px 24px 32px; max-width:1500px; }
+.hint { color:var(--muted); margin:6px 0 10px; }
+.toolbar { display:flex; gap:16px; align-items:center; margin:6px 0; flex-wrap:wrap; }
+.toolbar label { color:var(--muted); }
+.legend-roi { display:inline-block; width:12px; height:12px; vertical-align:-1px; margin:0 4px 0 12px; border-radius:2px; }
+h2 { font-size:16px; margin:22px 0 8px; }
+.tablewrap { max-height:420px; overflow:auto; border:1px solid var(--line); border-radius:4px; }
+table { border-collapse:collapse; width:100%; font-variant-numeric:tabular-nums; }
+th, td { padding:4px 10px; text-align:right; white-space:nowrap; }
+th { position:sticky; top:0; background:#f5f7fa; cursor:pointer; border-bottom:1px solid var(--line); user-select:none; }
+th.sorted::after { content:" \25BE"; }
+th.sorted.asc::after { content:" \25B4"; }
+td:nth-child(4), th:nth-child(4) { text-align:center; }
+tbody tr { cursor:pointer; }
+tbody tr:hover { background:#eef6fd; }
+tbody tr.sel { background:#fff3cd; }
+.tag { padding:1px 8px; border-radius:10px; color:#fff; font-size:12px; }
+.tag.low { background:var(--low); } .tag.high { background:var(--high); }
+#status { color:var(--muted); font-size:12px; margin-top:6px; }
+#status.err { color:#b42318; font-weight:600; }
+.uplot .u-legend { font-size:12px; }
+.uplot .u-legend .u-series:nth-child(3), .uplot .u-legend .u-series:nth-child(4) { display:none; }
+.u-over.panning { cursor:grabbing !important; }
+#tip { display:none; position:absolute; z-index:10; max-width:320px; padding:6px 9px; background:#1f2933; color:#fff; border-radius:4px; font-size:12px; line-height:1.4; pointer-events:none; }
+td.txt, th.txt { text-align:left; }
+td.txt { white-space:normal; max-width:420px; }
+#legend .u-legend { margin:0; }
+#legend .u-legend .u-series:nth-child(3), #legend .u-legend .u-series:nth-child(4) { display:none; }
