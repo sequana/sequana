@@ -534,3 +534,157 @@ def test_short_sequences_are_covered_to_the_end(tmp_path, length):
     plus = df[df.strand == "+"]
     assert plus.start.min() == 0 and plus.stop.max() == length
     assert (plus.stop - plus.start == probe_len).all() and not plus.sequence.duplicated().any()
+
+
+def test_u_letters_are_converted_to_t(tmp_path):
+    # RNA letters in the input: same probes as with T, no U left, antisense probes are true reverse complements
+    dna = "".join("ACGT"[(i * 7 + i // 3) % 4] for i in range(300))
+    fasta_t, fasta_u = tmp_path / "t.fas", tmp_path / "u.fas"
+    fasta_t.write_text(f">rrna\n{dna}\n")
+    fasta_u.write_text(f">rrna\n{dna.replace('T', 'U')}\n")
+    assert "U" in fasta_u.read_text()
+    results = {}
+    for name, fasta in [("t", fasta_t), ("u", fasta_u)]:
+        rd = RiboDesigner(fasta=fasta, output_directory=tmp_path / name, force=True, max_n_probes=1000)
+        rd.run(method="greedy")
+        results[name] = rd
+    assert results["t"].json["u_converted"] == 0 and results["u"].json["u_converted"] == dna.count("T")
+    df_t, df_u = results["t"].probes_df, results["u"].probes_df
+    assert not df_u.sequence.str.contains("U").any()
+    assert list(df_u.sequence) == list(df_t.sequence)
+    minus = df_u[df_u.strand == "-"]
+    assert len(minus) and all(reverse_complement(s) in dna for s in minus.sequence)
+
+
+@pytest.mark.parametrize("method", ["original", "greedy", "simple"])
+def test_antisense_only_is_the_default(tmp_path, method):
+    # antisense probes only (the default): reverse complement of the rRNA, on the intervals of the both-strand design
+    both = RiboDesigner(
+        fasta=resources_dir / "sample.fas",
+        gff=resources_dir / "sample.gff",
+        output_directory=tmp_path / "both",
+        force=True,
+        antisense_only=False,
+    )
+    both.run(method=method)
+    anti = RiboDesigner(
+        fasta=resources_dir / "sample.fas",
+        gff=resources_dir / "sample.gff",
+        output_directory=tmp_path / "anti",
+        force=True,
+    )
+    anti.run(method=method)
+    df = anti.probes_df
+    assert anti.antisense_only is True and anti.json["antisense_only"] is True and both.json["antisense_only"] is False
+    assert {"+", "-"} == set(both.probes_df.strand)
+    # same intervals as the both-strand design, all antisense
+    assert set(df.strand) == {"-"} and len(df) == len(both.probes_df)
+    assert sorted(zip(df.name, df.start, df.stop)) == sorted(
+        zip(both.probes_df.name, both.probes_df.start, both.probes_df.stop)
+    )
+    with pysam.FastxFile(str(anti.ribo_sequences_fasta)) as fas:
+        seqs = {s.name: s.sequence for s in fas}
+    for row in df.itertuples():
+        assert row.sequence == reverse_complement(seqs[row.name][row.start : row.stop])
+        assert len(row.sequence) == row.stop - row.start
+    assert anti.json["coverage"]["n_gaps"] == both.json["coverage"]["n_gaps"]
+    assert anti.json["coverage"]["covered_plus_pct"] == 0
+
+
+def test_reverse_complement_handles_iupac_codes():
+    from sequana.ribodesigner import reverse_complement as rc
+
+    assert rc("ACGT") == "ACGT" and rc("AAAC") == "GTTT"
+    assert rc("ARYK") == "MRYT"  # reversed KYRA, then K->M, Y->R, R->Y, A->T
+    assert rc("acgtry") == "ryacgt"
+    assert rc("WSN") == "NSW"
+    assert rc(rc("ACGTRYKMSWBDHVN")) == "ACGTRYKMSWBDHVN"
+
+
+def test_ambiguous_bases_are_complemented_and_flagged(tmp_path):
+    # a W, an R and a Y in the rRNA: antisense probes are exact reverse complements, probes with a code are flagged
+    from sequana.ribodesigner import reverse_complement as rc
+
+    dna = "".join("ACGT"[(i * 7 + i // 3) % 4] for i in range(300))
+    amb = dna[:100] + "R" + dna[101:150] + "W" + dna[151:200] + "Y" + dna[201:]
+    fasta = tmp_path / "amb.fas"
+    fasta.write_text(f">rrna\n{amb}\n")
+    rd = RiboDesigner(fasta=fasta, output_directory=tmp_path / "out", force=True, max_n_probes=1000)
+    rd.run(method="greedy")
+    df = rd.probes_df
+    for row in df[df.strand == "-"].itertuples():
+        assert rc(row.sequence) in amb
+    has_code = df.sequence.str.contains("[^ACGT]")
+    assert has_code.any()
+    assert (
+        df[has_code].qc_flags.str.contains("ambiguous").all()
+        and not df[~has_code].qc_flags.str.contains("ambiguous").any()
+    )
+
+
+def _flank_genome(tmp_path):
+    import random
+
+    random.seed(3)
+    seq = "".join(random.choice("ACGT") for _ in range(3000))
+    fasta, gff = tmp_path / "g.fa", tmp_path / "g.gff"
+    fasta.write_text(">chr\n" + "\n".join(seq[i : i + 80] for i in range(0, len(seq), 80)) + "\n")
+    rows = [
+        ("chr", "t", "gene", 100, 200, ".", "+", ".", "ID=g1"),
+        ("chr", "t", "rRNA", 1000, 1500, ".", "+", ".", "ID=r1;product=16S ribosomal RNA"),
+        ("chr", "t", "gene", 1700, 1800, ".", "+", ".", "ID=g2"),
+        ("chr", "t", "rRNA", 2000, 2300, ".", "-", ".", "ID=r2;product=23S ribosomal RNA"),
+    ]
+    gff.write_text("##gff-version 3\n" + "\n".join("\t".join(map(str, r)) for r in rows) + "\n")
+    return seq, fasta, gff
+
+
+def test_flank_extends_the_rrna_and_stops_at_the_neighbours(tmp_path):
+    seq, fasta, gff = _flank_genome(tmp_path)
+    rd = RiboDesigner(fasta=fasta, gff=gff, output_directory=tmp_path / "out", force=True, flank=300)
+    rd.get_rna_pos_from_gff()
+    with pysam.FastxFile(str(rd.ribo_sequences_fasta)) as fas:
+        recs = {r.name: r.sequence for r in fas}
+    # plus feature 1000-1500: 300 upstream (700-999), downstream stopped before the gene at 1700; minus feature 2000-2300:
+    # downstream (low side) stopped after the gene at 1800, upstream (high side) 300 more
+    assert set(recs) == {"chr:700-1699", "chr:1801-2600"}
+    assert recs["chr:700-1699"] == seq[699:1699]
+    assert recs["chr:1801-2600"] == reverse_complement(seq[1800:2600])
+    assert rd.json["flank"] == {
+        "upstream": 300,
+        "downstream": 300,
+        "n_extended": 2,
+        "added_upstream": 300 + 300,
+        "added_downstream": 199 + 199,
+    }
+    # same with a different downstream flank, and the default leaves the features alone
+    rd2 = RiboDesigner(
+        fasta=fasta, gff=gff, output_directory=tmp_path / "out2", force=True, flank=50, flank_downstream=0
+    )
+    rd2.get_rna_pos_from_gff()
+    with pysam.FastxFile(str(rd2.ribo_sequences_fasta)) as fas:
+        assert {r.name for r in fas} == {"chr:950-1500", "chr:2000-2350"}
+    rd0 = RiboDesigner(fasta=fasta, gff=gff, output_directory=tmp_path / "out0", force=True)
+    rd0.get_rna_pos_from_gff()
+    with pysam.FastxFile(str(rd0.ribo_sequences_fasta)) as fas:
+        assert {r.name for r in fas} == {"chr:1000-1500", "chr:2000-2300"}
+    assert rd0.json["flank"] == {
+        "upstream": 0,
+        "downstream": 0,
+        "n_extended": 0,
+        "added_upstream": 0,
+        "added_downstream": 0,
+    }
+
+
+def test_flank_designs_probes_on_the_leader(tmp_path):
+    seq, fasta, gff = _flank_genome(tmp_path)
+    plain = RiboDesigner(fasta=fasta, gff=gff, output_directory=tmp_path / "plain", force=True)
+    plain.run()
+    flanked = RiboDesigner(fasta=fasta, gff=gff, output_directory=tmp_path / "flanked", force=True, flank=300)
+    flanked.run()
+    assert flanked.json["input_total_length"] > plain.json["input_total_length"]
+    assert len(flanked.probes_df) > len(plain.probes_df)
+    assert flanked.json["coverage"]["covered_designed_pct"] == 100.0
+    with pytest.raises(ValueError):
+        RiboDesigner(fasta=fasta, gff=gff, output_directory=tmp_path / "bad", force=True, flank=-1)

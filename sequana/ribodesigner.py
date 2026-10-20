@@ -27,9 +27,17 @@ from sequana.lazy import numpy as np
 from sequana.lazy import pandas as pd
 from sequana.lazy import pylab, pysam
 from sequana.melting import tm_probe_rna_dna
-from sequana.tools import reverse_complement
 
 logger.setLevel("INFO")
+
+# complement of each IUPAC code, in upper and lower case: R/Y and K/M swap, W, S and N stand for themselves
+_COMPLEMENT = str.maketrans("ACGTRYKMSWBDHVNacgtrykmswbdhvn", "TGCAYRMKSWVHDBNtgcayrmkswvhdbn")
+
+
+def reverse_complement(sequence):
+    """Reverse complement of a DNA sequence; the ambiguity codes of IUPAC are complemented too (R with Y, K with M)."""
+    return str(sequence).translate(_COMPLEMENT)[::-1]
+
 
 GFF_COLUMNS = ["seqid", "source", "seq_type", "start", "end", "score", "strand", "phase", "attributes"]
 
@@ -228,6 +236,15 @@ class RiboDesigner(object):
     :param threads: Number of threads to use in cd-hit clustering.
     :param float identity_step: step to scan the sequence identity (between 0 and 1) defaults to 0.01.
     :param force_clustering:
+    :param flank: number of bases added upstream of each rRNA feature (in the direction of transcription) to target the
+        leader of the precursor (pre-rRNA) as well; 0 by default. The extension stops at the nearest other feature
+        (gene, CDS, tRNA, another rRNA) and at the ends of the sequence. Only used with a GFF file.
+    :param flank_downstream: same downstream of each feature (the trailer); defaults to ``flank``.
+    :param antisense_only: design only antisense probes (reverse complement of the rRNA, the strand that pairs with
+        the rRNA); this is the default. With ``antisense_only=False`` the probes are designed on both strands: the +
+        strand probes have the sequence of the rRNA and do not pair with it, and the - strand probes are centred on the
+        spaces between them. The antisense probes of the default keep the positions of the both-strand design (the +
+        strand probes are replaced by their reverse complement), so both modes give the same number of probes.
     :param offtarget_fasta: FASTA file (e.g. the whole genome or transcriptome) used to search for probe
         off-target hits with blastn. Defaults to ``fasta`` when a ``gff`` is provided (hits overlapping the
         selected rRNA features are then ignored). With no GFF, off-target search is only possible when a
@@ -246,6 +263,9 @@ class RiboDesigner(object):
         identity_step=0.01,
         force_clustering=False,
         offtarget_fasta=None,
+        antisense_only=True,
+        flank=0,
+        flank_downstream=None,
         **kwargs,
     ):
         # Input
@@ -257,6 +277,11 @@ class RiboDesigner(object):
         self.outdir = Path(output_directory)
         self.identity_step = identity_step
         self.force_clustering = force_clustering
+        self.antisense_only = antisense_only
+        self.flank = int(flank)
+        self.flank_downstream = self.flank if flank_downstream is None else int(flank_downstream)
+        if self.flank < 0 or self.flank_downstream < 0:
+            raise ValueError("flank and flank_downstream must be positive or zero.")
         self.offtarget_fasta = offtarget_fasta if offtarget_fasta else (fasta if gff else None)
 
         if force:
@@ -290,8 +315,81 @@ class RiboDesigner(object):
             "identity_step": identity_step,
             "feature": seq_type,
             "method": "greedy",
+            "antisense_only": antisense_only,
+            "flank": {
+                "upstream": self.flank,
+                "downstream": self.flank_downstream,
+                "n_extended": 0,
+                "added_upstream": 0,
+                "added_downstream": 0,
+            },
             "sequana_version": version,
         }
+
+    def _convert_rna_letters(self):
+        """Rewrite the rRNA FASTA with T instead of U if it contains U (RNA letters).
+
+        Probes are DNA oligos and the reverse complement only knows A, C, G, T: with U in the input every probe would
+        keep its U and the antisense probes would not be reverse complements. The conversion is logged and stored in
+        ``self.json["u_converted"]``.
+        """
+        with open(self.ribo_sequences_fasta) as fas_in:
+            lines = fas_in.read().splitlines()
+        n_u = sum(line.count("U") + line.count("u") for line in lines if not line.startswith(">"))
+        self.json["u_converted"] = n_u
+        if n_u == 0:
+            return
+        logger.warning(f"The sequences contain {n_u} U (RNA letters): converted to T, the letters of DNA probes.")
+        with open(self.ribo_sequences_fasta, "w") as fas_out:
+            for line in lines:
+                fas_out.write(line if line.startswith(">") else line.replace("U", "T").replace("u", "t"))
+                fas_out.write("\n")
+
+    # feature types that stop the extension of an rRNA into its flanks
+    _FLANK_BLOCKERS = (
+        "gene",
+        "CDS",
+        "pseudogene",
+        "tRNA",
+        "tmRNA",
+        "ncRNA",
+        "ncRNA_gene",
+        "SRP_RNA",
+        "RNase_P_RNA",
+        "riboswitch",
+    )
+
+    def _flank_regions(self, gff, selected, lengths):
+        """Region (start, end, upstream, downstream) of each selected feature once extended into its flanks.
+
+        The extension is ``flank`` bases upstream and ``flank_downstream`` downstream, in the direction of
+        transcription (the minus strand is read the other way), and stops one base before the nearest other
+        feature of ``_FLANK_BLOCKERS`` or another selected feature, and at the ends of the sequence.
+        """
+        out = []
+        selected = selected.sort_values(["seqid", "start"])
+        others = gff[gff.seq_type.isin(self._FLANK_BLOCKERS)]
+        for row in selected.itertuples():
+            same = others[others.seqid == row.seqid]
+            # features overlapping this one (its own gene, exon...) never block it
+            same = same[(same.end < row.start) | (same.start > row.end)]
+            below = same[same.end < row.start].end.max() if (same.end < row.start).any() else 0
+            above = same[same.start > row.end].start.min() if (same.start > row.end).any() else lengths[row.seqid] + 1
+            for other in selected[selected.seqid == row.seqid].itertuples():
+                if other.end < row.start:
+                    below = max(below, other.end)
+                elif other.start > row.end:
+                    above = min(above, other.start)
+            # extensions on the low / high coordinate side: upstream is the low side on the plus strand only
+            if row.strand == "-":
+                low_ext, high_ext = self.flank_downstream, self.flank
+            else:
+                low_ext, high_ext = self.flank, self.flank_downstream
+            start = max(row.start - low_ext, below + 1, 1)
+            end = min(row.end + high_ext, above - 1, lengths[row.seqid])
+            start, end = min(start, row.start), max(end, row.end)
+            out.append((row.Index, start, end, row.start - start, end - row.end))
+        return out
 
     def get_rna_pos_from_gff(self):
         """Convert a GFF file into a pandas DataFrame filtered according to the
@@ -318,9 +416,33 @@ class RiboDesigner(object):
         self.json["feature_types_used"] = filtered_gff.seq_type.value_counts().to_dict()
 
         with pysam.Fastafile(self.fasta) as fas:
+            lengths = dict(zip(fas.references, fas.lengths))
+            ext = (
+                {i: (a, b, lo, hi) for i, a, b, lo, hi in self._flank_regions(gff, filtered_gff, lengths)}
+                if (self.flank or self.flank_downstream)
+                else {}
+            )
+            if ext:
+                added = [
+                    (lo, hi) if r.strand != "-" else (hi, lo)
+                    for r in filtered_gff.itertuples()
+                    for (a, b, lo, hi) in [ext[r.Index]]
+                ]
+                self.json["flank"] = {
+                    "upstream": self.flank,
+                    "downstream": self.flank_downstream,
+                    "n_extended": int(sum(1 for u, d in added if u or d)),
+                    "added_upstream": int(sum(u for u, d in added)),
+                    "added_downstream": int(sum(d for u, d in added)),
+                }
+                logger.info(
+                    f"Flanks: {self.json['flank']['added_upstream']} bases added upstream and {self.json['flank']['added_downstream']} "
+                    f"downstream of {len(filtered_gff)} rRNA feature(s) (at most {self.flank} / {self.flank_downstream}; the extension stops at the neighbouring features)."
+                )
             with open(self.ribo_sequences_fasta, "w") as fas_out:
                 for row in filtered_gff.itertuples():
-                    region = f"{row.seqid}:{row.start}-{row.end}"
+                    a, b = (ext[row.Index][0], ext[row.Index][1]) if ext else (row.start, row.end)
+                    region = f"{row.seqid}:{a}-{b}"
                     sequence = fas.fetch(region=region)
                     # features on the minus strand must be read as transcribed (RNA orientation)
                     if row.strand == "-":
@@ -503,7 +625,7 @@ class RiboDesigner(object):
                 starts.append(min(length - probe_len, max(starts) + probe_len))
         return starts
 
-    def _get_probes_df(self, seq, probe_len, step_len, mode="generic", offset=0, ref_len=None):
+    def _get_probes_df(self, seq, probe_len, step_len, mode="generic", offset=0, ref_len=None, antisense_only=False):
         """Generate the Dataframe with probes information.
 
         Design probes to have end-to-end coverage on the + strand and fill the inter_probe_space present on the + strand with probes designed on the - strand.
@@ -516,6 +638,8 @@ class RiboDesigner(object):
             an offset map when the copy has indels), see
             :meth:`_tiling_references`. The probes of the reference grid that do not fit in ``seq`` are dropped.
         :param ref_len: length of the reference copy (default: the length of ``seq``).
+        :param antisense_only: only antisense probes (strand "-"): the probes of the + grid are replaced by their
+            reverse complement, so the positions, the overlaps and the number of probes are those of the default design.
         """
         length = len(seq.sequence)
         ref_len = length if ref_len is None else ref_len
@@ -582,6 +706,14 @@ class RiboDesigner(object):
         df_rev["stop"] = len(sequence) - df_rev["stop"]
         df_rev.rename(columns={"start": "stop", "stop": "start"}, inplace=True)
 
+        if antisense_only:
+            # the + probes become their reverse complement on the same interval; seq_id numbers them from the other end
+            df["sequence"] = [reverse_complement(s) for s in df.sequence]
+            df["strand"] = "-"
+            df["seq_id"] = (
+                df["name"] + "_-_" + (length - df["stop"]).astype(str) + "_" + (length - df["start"]).astype(str)
+            )
+
         return pd.concat([df, df_rev])
 
     def get_all_probes(self, method="greedy"):
@@ -594,6 +726,7 @@ class RiboDesigner(object):
             raise ValueError(f"Unknown method '{method}'. Choose from {sorted(TILING_METHODS)}.")
         probes_mode = TILING_METHODS[method].probes_mode
 
+        self._convert_rna_letters()
         with pysam.FastxFile(self.ribo_sequences_fasta) as fas:
             seqs = list(fas)
         references = self._tiling_references(seqs)
@@ -602,7 +735,13 @@ class RiboDesigner(object):
             probe_len, step_len = self._get_probe_and_step_len(ref, method)
             probes_dfs.append(
                 self._get_probes_df(
-                    seq, probe_len, step_len, mode=probes_mode, offset=offset, ref_len=len(ref.sequence)
+                    seq,
+                    probe_len,
+                    step_len,
+                    mode=probes_mode,
+                    offset=offset,
+                    ref_len=len(ref.sequence),
+                    antisense_only=self.antisense_only,
                 )
             )
 
@@ -927,7 +1066,8 @@ class RiboDesigner(object):
 
         Columns added: ``length``, ``gc``, ``tm``, ``max_homopolymer``, ``hairpin_stem``, ``selfdimer_stem`` and
         ``qc_flags`` (comma-separated list of ``low_gc``, ``high_gc``, ``homopolymer``, ``hairpin``,
-        ``selfdimer``; empty when the probe passes).
+        ``selfdimer``, ``ambiguous``; empty when the probe passes). ``ambiguous`` marks a probe that contains a base
+        other than A, C, G, T (an IUPAC code of the genome sequence): ordered as such, it would be a mixture of oligos.
 
         ``tm`` is the RNA:DNA nearest-neighbour Tm (see :meth:`_tm_nn`). For a probe with ambiguous bases, for
         which the model is not defined, a salt-adjusted GC estimate is used instead (see :meth:`_tm`); the number
@@ -964,6 +1104,8 @@ class RiboDesigner(object):
                 out.append("hairpin")
             if row.selfdimer_stem > max_selfdimer:
                 out.append("selfdimer")
+            if re.search("[^ACGT]", row.sequence.upper()):
+                out.append("ambiguous")
             return ",".join(out)
 
         df["qc_flags"] = df.apply(flags, axis=1)
