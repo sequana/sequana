@@ -14,6 +14,24 @@ from . import criteria
 
 half_log_two_pi = 0.5 * np.log(2 * np.pi)
 
+_SQRT_2PI = np.sqrt(2 * np.pi)
+
+
+def norm_pdf(x, loc=0.0, scale=1.0):
+    """Normal probability density, same values as ``scipy.stats.norm.pdf``.
+
+    Importing ``scipy.stats`` takes about a second, which is a lot for a
+    function that is one line of numpy.
+    """
+    x, loc, scale = np.asarray(x, dtype=float), np.asarray(loc, dtype=float), np.asarray(scale, dtype=float)
+    with np.errstate(all="ignore"):
+        z = (x - loc) / scale
+        out = np.exp(-(z**2) / 2.0) / _SQRT_2PI / scale
+    # scipy returns nan for a null, negative or nan scale
+    if np.ndim(scale) == 0 and not scale > 0:
+        return np.full_like(out, np.nan) if np.ndim(out) else np.float64("nan")
+    return out
+
 
 __all__ = ["Fitting", "GaussianMixtureModel", "GaussianMixtureFitting", "EM"]
 
@@ -55,14 +73,12 @@ class GaussianMixtureModel(object):
         if normalise is True:
             pis /= pis.sum()
         # !!! sum pi must equal 1 otherwise may diverge badly
-        import scipy.stats as ss
-
         data = 0
         for i in range(0, int(k)):
             mu, sigma, pi_ = params[i * 3 : (i + 1) * 3]
             pi_ = pis[i]
             if sigma != 0:
-                data += pi_ * ss.norm.pdf(x, mu, sigma)
+                data += pi_ * norm_pdf(x, mu, sigma)
         return data
 
     def log_likelihood(self, params, sample):
@@ -149,37 +165,19 @@ class Fitting(object):
             Xmax = self.data.max()
         X = pylab.linspace(Xmin, Xmax, N)
 
-        if ax:
-            ax.plot(X, [self.model.pdf(x, self.results.x) for x in X], color=color, lw=lw)
-        else:
-            pylab.plot(X, [self.model.pdf(x, self.results.x) for x in X], color=color, lw=lw)
+        # vectorised evaluation (the model pdf returns 0 when a pi is negative)
+        total = np.broadcast_to(np.asarray(self.model.pdf(X, self.results.x), dtype=float), X.shape)
+        plotter = ax if ax else pylab
+        plotter.plot(X, total, color=color, lw=lw)
 
-        K = len(self.results.x)
         # The PIs must be normalised
-        import scipy.stats as ss
-
         for i in range(self.k):
             mu, sigma, pi_ = (
                 self.results.mus[i],
                 self.results.sigmas[i],
                 self.results.pis[i],
             )
-            if ax:
-                ax.plot(
-                    X,
-                    [pi_ * ss.norm.pdf(x, mu, sigma) for x in X],
-                    "k--",
-                    alpha=0.7,
-                    lw=2,
-                )
-            else:
-                pylab.plot(
-                    X,
-                    [pi_ * ss.norm.pdf(x, mu, sigma) for x in X],
-                    "k--",
-                    alpha=0.7,
-                    lw=2,
-                )
+            plotter.plot(X, pi_ * norm_pdf(X, mu, sigma), "k--", alpha=0.7, lw=2)
 
 
 class GaussianMixtureFitting(Fitting):
@@ -349,15 +347,13 @@ class EM(Fitting):
 
         self.mus = []
 
-        import scipy.stats as ss
-
         while not converged:
             # Compute the responsibility func. and new parameters
             for k in range(0, self.k):
                 # unstable if eslf.model.pdf is made of zeros
 
                 # self.model.pdf(self.data, p_new,normalise=False).sum()!=0:
-                gamma[k, :] = pi_[k] * ss.norm.pdf(self.data, mu[k], sig[k])
+                gamma[k, :] = pi_[k] * norm_pdf(self.data, mu[k], sig[k])
                 with warnings.catch_warnings():
                     warnings.simplefilter("ignore")
                     gamma[k, :] /= self.model.pdf(self.data, p_new, normalise=False)

@@ -13,13 +13,14 @@
 """Utilities for the genome coverage"""
 import copy
 import gc
+import itertools
 import os
 import random
 import sys
 from collections import Counter
 
 import colorlog
-from easydev import Progress, TempFile
+from easydev import Progress
 from tqdm import tqdm
 
 from sequana.errors import BadFileFormat
@@ -180,6 +181,9 @@ class SequanaCoverage(object):
 
     """
 
+    #: class used for each chromosome (default :class:`ChromosomeCov`)
+    _chromosome_class = None
+
     def __init__(
         self,
         input_filename,
@@ -277,11 +281,11 @@ class SequanaCoverage(object):
 
     def __getitem__(self, index):
         chrom = self.chrom_names[index]
-        return ChromosomeCov(self, chrom, self.thresholds, self.chunksize)
+        return (self._chromosome_class or ChromosomeCov)(self, chrom, self.thresholds, self.chunksize)
 
     def __iter__(self):
         for chrom in self.chrom_names:
-            yield ChromosomeCov(self, chrom, self.thresholds, self.chunksize)
+            yield (self._chromosome_class or ChromosomeCov)(self, chrom, self.thresholds, self.chunksize)
 
     def __len__(self):
         return len(self.chrom_names)
@@ -391,16 +395,17 @@ class SequanaCoverage(object):
         positions = {}
         self.chrom_names = []
 
-        # rough estimate of the number of rows for the progress bar
+        # rough estimate of the number of chunks for the progress bar: use the
+        # average line length of the first lines of the file
         logger.info("Estimating number of chunks to read")
         fullsize = os.path.getsize(self.input_filename)
-        data = pd.read_table(self.input_filename, header=None, sep="\t", nrows=self.chunksize)
-        with TempFile() as fh:
-            data.to_csv(fh.name, index=None, sep="\t")
-            smallsize = os.path.getsize(fh.name)
-        del data
-
-        Nchunk = int(fullsize / smallsize)
+        nbytes = nlines = 0
+        with open(self.input_filename, "rb") as fin:
+            for line in itertools.islice(fin, 10000):
+                nbytes += len(line)
+                nlines += 1
+        bytes_per_row = nbytes / nlines if nlines else 1
+        Nchunk = max(1, int(fullsize / bytes_per_row / self.chunksize))
         i = 0
         for chunk in tqdm(
             pd.read_table(
@@ -458,7 +463,7 @@ class SequanaCoverage(object):
             if chrom_name in self._stats:
                 stats[chrom_name] = self._stats[chrom_name]
             else:
-                chrom = ChromosomeCov(self, chrom_name, self.thresholds, self.chunksize)
+                chrom = (self._chromosome_class or ChromosomeCov)(self, chrom_name, self.thresholds, self.chunksize)
                 stats[chrom.chrom_name] = chrom.get_stats()
                 self._stats[chrom_name] = stats[chrom_name].copy()
         return stats
@@ -495,6 +500,12 @@ class ChromosomeCov(object):
 
     .. seealso:: sequana_coverage standalone application
     """
+
+    #: class used by :meth:`get_rois` (default: :class:`FilteredGenomeCov`).
+    #: Subclasses (e.g. the Rust-accelerated one) override it.
+    _filtered_class = None
+    #: class used to fit the mixture in :meth:`compute_zscore` (default: :class:`sequana.mixture.EM`)
+    _em_class = None
 
     def __init__(self, genomecov, chrom_name, thresholds=None, chunksize=5000000):
         """.. rubric:: constructor
@@ -608,6 +619,10 @@ class ChromosomeCov(object):
         assert set(chunk["chr"].unique()) == set([self.chrom_name])
         chunk = chunk.set_index("chr", drop=True)
         chunk = chunk.set_index("pos", drop=False)
+        self._finish_chunk(chunk)
+
+    def _finish_chunk(self, chunk):
+        """Store a chunk indexed by position (columns pos, cov[, mapq0])."""
         self._df = chunk
         self._reset_metrics()
 
@@ -620,7 +635,7 @@ class ChromosomeCov(object):
 
             try:
                 self._df["gc"] = self._gc_content[i1:i2]
-            except TYpeError:
+            except TypeError:
                 logger.warning(
                     f"Could not access to GC content of {self.chrom_name}. Check that your reference is the one used to build the BAM/BED file"
                 )
@@ -1027,7 +1042,7 @@ class ChromosomeCov(object):
         # if len data > 100,000 select 100,000 data points randomly
         if len(data) > 100000:
             indices = random.sample(range(len(data)), 100000)
-            data = [data.iloc[i] for i in indices]
+            data = data.to_numpy()[indices].tolist()
 
         if force_models:
             self.gaussians_params = [{"mu": 1, "sigma": 0.2, "pi": 0.9}, {"mu": 2, "sigma": 0.2, "pi": 0.1}]
@@ -1036,7 +1051,7 @@ class ChromosomeCov(object):
             self.gaussians = {"sigmas": [0.2, 0.2], "mus": [1, 2], "pis": [0.9, 0.1]}
         else:
             if use_em:
-                self.mixture_fitting = mixture.EM(data)
+                self.mixture_fitting = (self._em_class or mixture.EM)(data)
                 self.mixture_fitting.estimate(k=k)
             else:
                 self.mixture_fitting = mixture.GaussianMixtureFitting(data, k=k)
@@ -1170,28 +1185,30 @@ class ChromosomeCov(object):
                         for this in features.keys():
                             msg += f"\n                        - {this}"
                         logger.warning(msg % self.chrom_name)
+                        # no annotation for this chromosome: carry on without
+                        features = None
 
             data = self.df.query(query)
             data.insert(0, "chr", self.chrom_name)
 
+            filtered_class = self._filtered_class or FilteredGenomeCov
             if features:
                 if alternative:
-                    return FilteredGenomeCov(data, self.thresholds, features[alternative], step=self.binning)
+                    return filtered_class(data, self.thresholds, features[alternative], step=self.binning)
                 else:
-                    return FilteredGenomeCov(
+                    return filtered_class(
                         data,
                         self.thresholds,
                         features[self.chrom_name],
                         step=self.binning,
                     )
             else:
-                return FilteredGenomeCov(data, self.thresholds, step=self.binning)
+                return filtered_class(data, self.thresholds, step=self.binning)
         except KeyError:  # pragma: no cover
             logger.error(
                 "Column zscore is missing in data frame.\n"
                 "You must run compute_zscore before get low coverage."
-                "\n\n",
-                self.__doc__,
+                "\n\n"
             )
             sys.exit(1)
 
@@ -1228,6 +1245,26 @@ class ChromosomeCov(object):
             pylab.plot([start, end], [cov, cov], lw=2, color=color_low, marker="o")
         pylab.xlim([x1, x2])
 
+    @staticmethod
+    def _minmax_decimate(series, nbins):
+        """Reduce a series to (at most) two points per bin: its min and max.
+
+        Peaks and drops (what matters in a coverage plot) are preserved,
+        unlike with a regular step. NaN values are ignored within a bin.
+        """
+        values = series.to_numpy(dtype=float)
+        index = series.index.to_numpy()
+        edges = np.linspace(0, len(values), nbins + 1).astype(np.int64)[:-1]
+        edges = np.unique(edges)
+        lo = np.fmin.reduceat(values, edges)
+        hi = np.fmax.reduceat(values, edges)
+        last = np.append(edges[1:], len(values)) - 1
+        x = np.empty(2 * len(edges), dtype=index.dtype)
+        y = np.empty(2 * len(edges), dtype=float)
+        x[0::2], x[1::2] = index[edges], index[last]
+        y[0::2], y[1::2] = lo, hi
+        return x, y
+
     def plot_coverage(
         self,
         filename=None,
@@ -1246,6 +1283,7 @@ class ChromosomeCov(object):
         x1=None,
         x2=None,
         clf=True,
+        max_points=200000,
     ):
         """Plot coverage as a function of base position.
 
@@ -1257,9 +1295,12 @@ class ChromosomeCov(object):
         :param th_color: line color of the thresholds
         :param main_color: line color of the coverage
         :param main_lw: line width of the coverage
-        :param sample: if there are more than 1 000 000 points, we
-            use an integer step to skip data points. We can still plot
+        :param sample: if there are more than *max_points* points, the
+            coverage is reduced to the minimum and maximum of consecutive
+            bins (so that peaks and gaps remain visible) and the smooth curves
+            (running median, thresholds) use an integer step. We can still plot
             all points at your own risk by setting this option to False
+        :param max_points: number of points above which data are reduced
 
         :param set_ylimits: we want to focus on the "normal" coverage ignoring
             unsual excess. To do so, we set the yaxis range between 0 and a
@@ -1270,8 +1311,9 @@ class ChromosomeCov(object):
         :param x1: restrict lower x value to x1
         :param x2: restrict lower x value to x2 (x2 must be greater than x1)
 
-        .. note:: if there are more than 1,000,000 points, we show only
-            1,000,000 by points. For instance for 5,000,000 points,
+        .. note:: if there are more than *max_points* points, the plot is
+            reduced as described in *sample*; this makes the figure much
+            faster to draw and the image looks the same.
 
         In addition to the coverage, the running median and coverage confidence
         corresponding to the lower and upper  zscore thresholds are shown.
@@ -1302,17 +1344,21 @@ class ChromosomeCov(object):
         axes = []
         labels = []
 
-        # 1,000,000 points is already a lot for matplotlib. Let us restrict
-        # the number of points to a million for now.
-        if len(df) > 1000000 and sample is True:
+        # matplotlib is slow with millions of points while the figure is only
+        # a few thousand pixels wide. Keep min/max of each bin for the coverage
+        # and a regular step for the smooth curves.
+        if sample is True and len(df) > max_points:
             logger.info("sub sample data for plotting the coverage")
-            NN = int(len(df) / 1000000)
-        else:  # pragma: no cover
+            NN = int(np.ceil(len(df) / max_points))
+            x_cov, y_cov = self._minmax_decimate(df["cov"], max_points // 2)
+        else:
             NN = 1
+            x_cov, y_cov = df["cov"].index, df["cov"].to_numpy()
 
         # the main coverage plot
         (p1,) = pylab.plot(
-            df["cov"][::NN],
+            x_cov,
+            y_cov,
             color=main_color,
             label="Coverage",
             linewidth=main_lw,
@@ -1378,8 +1424,15 @@ class ChromosomeCov(object):
             pylab.savefig(filename)
 
     def _set_bins(self, df, binwidth):
+        # the builtin min/max iterate in Python (slow on millions of values);
+        # numpy gives the same result unless NaN are present
+        values = np.asarray(df, dtype=float)
+        if np.isnan(values).any():
+            lo, hi = min(df), max(df)
+        else:
+            lo, hi = values.min(), values.max()
         try:
-            bins = np.arange(min(df), max(df) + binwidth, binwidth)
+            bins = np.arange(lo, hi + binwidth, binwidth)
         except ValueError:
             return 100
         if bins.any():
@@ -1775,9 +1828,13 @@ class ChromosomeCov(object):
         # if accession processed by snpeff, the trailing version may be missing
         try:
             self._gc_content = chrom_gc_content[self.chrom_name]
-        except:
+        except KeyError:
+            found = list(chrom_gc_content) or "none"
             logger.warning(
-                f"chromosome name {chrom.name} from the reference does not match the chromosome names in the BAM/BED"
+                f"chromosome '{self.chrom_name}' of the BAM/BED was not found in the reference "
+                f"{self.bed.reference_file} (sequences with a matching name: {found}). "
+                "The reference must be a FASTA file (not a GFF/GenBank annotation: use --annotation-file for "
+                "those) whose sequence names match the chromosome names; no GC content is computed."
             )
 
 

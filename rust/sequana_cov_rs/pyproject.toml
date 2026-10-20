@@ -1,0 +1,13 @@
+[build-system]
+requires = ["maturin>=1.5,<2"]
+build-backend = "maturin"
+
+[project]
+name = "sequana_cov_rs"
+version = "0.1.0"
+description = "Rust accelerators for sequana_coverage"
+requires-python = ">=3.10"
+dependencies = ["numpy"]
+
+[tool.maturin]
+module-name = "sequana_cov_rs"
