@@ -61,6 +61,9 @@
         {%- for section in module.sections %}
           {%- if section["name"] %}
           <a href="#{{ section["anchor"] }}">{{ section["name"] }}</a>
+            {%- for sub in section["subsections"] or [] %}
+          <a class="sub" href="#{{ sub[1] }}">{{ sub[0] }}</a>
+            {%- endfor %}
          {%- endif %}
         {%- endfor %}
         </nav>
@@ -79,9 +82,12 @@
   <footer class="footer">
     <div class="container">
     This pipeline is part of the  <a href="http://sequana.readthedocs.io"
-target="_blank">Sequana project</a>. Please consider citing us (<a href="http://sequana.readthedocs.io">How to cite
-?</a>).
-<br>
+target="_blank">Sequana project</a>. Please consider citing us:
+<ul class="citations">
+{%- for text, doi in (module.citations or []) %}
+  <li>{{ text }} <a href="https://doi.org/{{ doi }}" target="_blank">doi:{{ doi }}</a></li>
+{%- endfor %}
+</ul>
 
 <p>You may also star us: <a class="github-button" href="https://github.com/sequana/{{config.pipeline_name}}"
     data-color-scheme="no-preference: dark; light: light; dark: dark;" data-icon="octicon-star" data-size="large"

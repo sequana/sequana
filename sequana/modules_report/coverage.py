@@ -16,6 +16,7 @@
 #
 ##############################################################################
 """Module to write coverage report"""
+import base64
 import glob
 import json
 import os
@@ -25,7 +26,7 @@ import pandas as pd
 from plotly import offline
 
 from sequana import bedtools
-from sequana.modules_report.base_module import SequanaBaseModule
+from sequana.modules_report.base_module import COVERAGE_CITATION, SequanaBaseModule
 from sequana.plots.canvasjs_linegraph import CanvasJSLineGraph
 from sequana.utils import config
 from sequana.utils.datatables_js import DataTable, DataTableFunction
@@ -49,6 +50,7 @@ class CoverageModule(SequanaBaseModule):
         :param region_window:
         """
         super().__init__()
+        self.citations.append(COVERAGE_CITATION)
         self.region_window = region_window
 
         if isinstance(data, bedtools.SequanaCoverage):
@@ -204,6 +206,7 @@ class ChromosomeCoverageModule(SequanaBaseModule):
 
         """
         super().__init__()
+        self.citations.append(COVERAGE_CITATION)
         self.region_window = region_window
 
         directory = chromosome.chrom_name
@@ -261,6 +264,8 @@ class ChromosomeCoverageModule(SequanaBaseModule):
         else:
             links = None
         self.basic_stats()
+        if links:
+            self._merge_coverage_sections()
 
         if self.chromosome.DOC:
             self.regions_of_interest(rois, links)
@@ -269,7 +274,32 @@ class ChromosomeCoverageModule(SequanaBaseModule):
                 self.gc_vs_coverage()
             self.normalized_coverage()
             self.zscore_distribution()
+            self._group_diagnostics()
         self.add_command()
+
+    DIAGNOSTICS = ("cov_barplot", "cov_vs_gc", "normalised_coverage", "zscore_distribution")
+
+    def _group_diagnostics(self):
+        """Gather the diagnostic plots as subsections of a "Detailed diagnostics" section."""
+        parts = [section for section in self.sections if section["anchor"] in self.DIAGNOSTICS]
+        if not parts:
+            return
+        content = "".join(
+            f'<div id="{part["anchor"]}" style="clear:both"><h3>{part["name"]}</h3>{part["content"]}</div>'
+            for part in parts
+        )
+        first = self.sections.index(parts[0])
+        for part in parts:
+            self.sections.remove(part)
+        self.sections.insert(
+            first,
+            {
+                "name": "Detailed diagnostics",
+                "anchor": "diagnostics",
+                "content": content,
+                "subsections": [(part["name"], part["anchor"]) for part in parts],
+            },
+        )
 
     def add_command(self):
         self.sections.append(
@@ -295,7 +325,11 @@ class ChromosomeCoverageModule(SequanaBaseModule):
             self._add_large_data_section("Coverage", "coverage")
             return
 
-        image = self.create_embedded_png(self.chromosome.plot_coverage, input_arg="filename")
+        png = getattr(self.chromosome, "_coverage_png", None)
+        if png:  # already drawn by the standalone: embed it rather than plotting again
+            image = '<img src="data:image/png;base64,{0}"/>'.format(base64.b64encode(png).decode("utf-8"))
+        else:
+            image = self.create_embedded_png(self.chromosome.plot_coverage, input_arg="filename")
 
         self.sections.append(
             {
@@ -390,6 +424,51 @@ class ChromosomeCoverageModule(SequanaBaseModule):
 
         self.sections.append({"name": "Subcoverage", "anchor": "subcoverage", "content": combobox})
         return links
+
+    VIEWER_ICON = (
+        '<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" '
+        'stroke="#1a6fb3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'
+        '<polyline points="3 17 8 11 12 14 17 7 21 10"/>'
+        '<circle cx="16" cy="16" r="4" fill="#fff"/><line x1="19" y1="19" x2="22" y2="22"/></svg>'
+    )
+
+    def _merge_coverage_sections(self):
+        """One "Coverage" section with two columns: the figure on the left; the interactive
+        viewer (if any), the classic sub-coverage reports and the basic statistics on the right."""
+        by_anchor = {section["anchor"]: section for section in self.sections}
+        coverage, sub = by_anchor.get("coverage"), by_anchor.get("subcoverage")
+        if coverage is None or sub is None:
+            return
+        viewer_page = getattr(self.chromosome, "_viewer_page", None)
+        viewer = ""
+        if viewer_page:
+            viewer = (
+                '<div style="border:2px solid #1a6fb3;border-radius:8px;padding:12px;margin-bottom:16px;'
+                'background:#f2f8fd">'
+                f'<a href="{viewer_page}" style="text-decoration:none;display:flex;align-items:center;gap:12px">'
+                f"{self.VIEWER_ICON}"
+                '<span><b style="font-size:1.2em">Interactive viewer</b><br>'
+                "Zoom, pan, GC content, genes and regions of interest</span></a></div>"
+            )
+        right = (
+            viewer + '<div style="border:1px solid #ccc;border-radius:8px;padding:12px">'
+            "<b>Classic report</b><br>Static plots of the chromosome, split in sub-chromosomes:<br>"
+            f"{sub['content']}</div>"
+        )
+        stats = by_anchor.get("basic_stats")
+        if stats is not None:
+            right += (
+                '<div style="border:1px solid #ccc;border-radius:8px;padding:12px;margin-top:16px">'
+                f"<b>Basic stats</b>{stats['content']}</div>"
+            )
+            self.sections.remove(stats)
+        content = (
+            '<div style="display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap">'
+            f'<div style="flex:3 1 480px;min-width:0">{coverage["content"]}</div>'
+            f'<div style="flex:1 1 260px">{right}</div></div>'
+        )
+        coverage["content"] = content
+        self.sections.remove(sub)
 
     def _init_datatable_function(self, rois):
         """Initiate :class:`DataTableFunction` to create table to link each
@@ -575,6 +654,7 @@ class SubCoverageModule(SequanaBaseModule):
 
     def __init__(self, chromosome, rois, combobox, datatable, start, stop, directory):
         super().__init__()
+        self.citations.append(COVERAGE_CITATION)
 
         if directory == ".":
             self.path = "../"
@@ -592,9 +672,10 @@ class SubCoverageModule(SequanaBaseModule):
             self.chromosome.chrom_name, start, stop
         )
         self.create_report_content()
-        # Ensure subplot directory exists before creating HTML
-        subplot_dir = os.path.join(directory, "subplots")
-        os.makedirs(subplot_dir, exist_ok=True)
+        # Ensure subplot directory exists before creating HTML. create_html() writes
+        # under config.output_dir, so the directory must be created there too (not
+        # relative to the current working directory).
+        os.makedirs(os.path.join(config.output_dir, directory, "subplots"), exist_ok=True)
         self.create_html(
             "{0}{4}subplots{4}{1}_{2}_{3}.html".format(directory, self.chromosome.chrom_name, start, stop, os.sep)
         )
