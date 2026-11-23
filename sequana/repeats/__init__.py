@@ -1,4 +1,4 @@
-"""Repeat and non-B DNA motif detection.
+"""Repeat and non B-DNA motif detection.
 
 This subpackage groups the detectors that reproduce the non-B gfa / nBMST motif
 families, plus the shustring-based exact-repeat finder:

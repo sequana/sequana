@@ -552,6 +552,8 @@ def main(**kwargs):
         gc_window_size=options.w_gc,
         # force=True
     )
+    # the GC sliding window must wrap around the origin too (used when the GC content is computed)
+    gc.circular = bool(options.circular)
 
     # some information fo end-users,
     logger.info("There are %s chromosomes/contigs." % len(gc))
