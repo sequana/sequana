@@ -40,6 +40,24 @@ logger = colorlog.getLogger(__name__)
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 
 
+def _engine_classes(engine):
+    """Classes used to scan the BED file and to analyse each chromosome."""
+    if engine == "rust":
+        from sequana.bedtools_rs import (
+            ChromosomeCovRS,
+            SequanaCoverageRS,
+            rust_available,
+        )
+
+        if not rust_available():
+            raise click.ClickException(
+                "The rust engine needs the sequana_cov_rs extension. Install it with: "
+                "cd rust/sequana_cov_rs && maturin develop --release"
+            )
+        return SequanaCoverageRS, ChromosomeCovRS
+    return SequanaCoverage, ChromosomeCov
+
+
 click.rich_click.OPTION_GROUPS = {
     "sequana_coverage": [
         {
@@ -62,7 +80,14 @@ click.rich_click.OPTION_GROUPS = {
         },
         {
             "name": "Modifiers",
-            "options": ["--annotation-file", "--reference-file", "--chromosome", "--chunk-size", "--binning"],
+            "options": [
+                "--annotation-file",
+                "--reference-file",
+                "--chromosome",
+                "--chunk-size",
+                "--binning",
+                "--engine",
+            ],
         },
         {
             "name": "Download utilities",
@@ -70,7 +95,7 @@ click.rich_click.OPTION_GROUPS = {
         },
         {
             "name": "Output files",
-            "options": ["--no-multiqc", "--output-directory"],
+            "options": ["--no-multiqc", "--viewer/--no-viewer", "--output-directory"],
         },
         {
             "name": "Input files",
@@ -211,6 +236,14 @@ def download_genbank(ctx, param, value):
     show_default=True,
     help="Do not create any multiqc HTML page.",
 )
+@click.option(
+    "--viewer/--no-viewer",
+    "viewer",
+    default=True,
+    show_default=True,
+    help="Create an interactive viewer page per chromosome (zoomable coverage, GC, genes and "
+    "regions of interest), in addition to the classic report. Not available for chromosomes read by chunks.",
+)
 @click.option("--output-directory", "output_directory", default="report", help="name of the output (report) directory.")
 @click.option(
     "-r",
@@ -317,6 +350,14 @@ def download_genbank(ctx, param, value):
     show_default=True,
 )
 @click.option(
+    "--engine",
+    type=click.Choice(["python", "rust"]),
+    default="python",
+    show_default=True,
+    help="Computation engine. 'rust' is faster (ROI merging, mixture fitting, BED reading and CSV output) "
+    "and needs the optional sequana_cov_rs extension.",
+)
+@click.option(
     "--force-models",
     is_flag=True,
     default=False,
@@ -420,6 +461,8 @@ def main(**kwargs):
 
     logger.setLevel(options.logging_level)
 
+    sequana_coverage_class, chromosome_class = _engine_classes(options.engine)
+
     if options.annotation:
         assert os.path.exists(options.annotation), "%s does not exists" % options.annotation
 
@@ -446,25 +489,33 @@ def main(**kwargs):
         else:
             shellcmd(f"{main_command} depth -aa {options.input} > {bedfile}")
     elif options.input.endswith(".bam") and options.bam2cov_method == "mosdepth":
-        main_command = "mosdepth" if not options.chromosome else f"mosdepth -c {options.chromosome}"
-        main_command += f" -F {options.flag}"
+        # mosdepth -c accepts a single chromosome: run it once per requested chromosome
+        # (or once on everything) and concatenate the outputs
+        chromosomes = [x for x in options.chromosome.split(",") if x] or [None]
+        flag = f"-F {options.flag}"
+
+        def mosdepth(chromosome, mapq, prefix):
+            selection = f"-c {chromosome} " if chromosome else ""
+            return f"mosdepth {selection}{flag} -Q {mapq} -b1 {prefix} {options.input}"
 
         # Use temp directory for mosdepth outputs
         with tempfile.TemporaryDirectory() as tmpdir:
             # -b1 for all bases
-            if options.second_mapq:
-                tmp1 = os.path.join(tmpdir, "tmp1")
-                tmp2 = os.path.join(tmpdir, "tmp2")
-                shellcmd(f"{main_command} -Q {options.mapq} -b1 {tmp1} {options.input}")
-                shellcmd(f"{main_command} -Q {options.second_mapq} -b1 {tmp2} {options.input}")
-                shellcmd(
-                    f"bash -c 'paste <(gunzip -c {tmp1}.regions.bed.gz | cut -f 1,3,4 ) <(gunzip -c {tmp2}.regions.bed.gz | cut -f 4 ) > {bedfile}'"
-                )
-            else:
-                tmp = os.path.join(tmpdir, "tmp")
-                shellcmd(
-                    f"{main_command} -Q {options.mapq} -b1 {tmp} {options.input} && gunzip -c {tmp}.regions.bed.gz | cut -f 1,3,4 > {bedfile}"
-                )
+            shellcmd(f": > {bedfile}")
+            for i, chromosome in enumerate(chromosomes):
+                if options.second_mapq:
+                    tmp1 = os.path.join(tmpdir, f"tmp1_{i}")
+                    tmp2 = os.path.join(tmpdir, f"tmp2_{i}")
+                    shellcmd(mosdepth(chromosome, options.mapq, tmp1))
+                    shellcmd(mosdepth(chromosome, options.second_mapq, tmp2))
+                    shellcmd(
+                        f"bash -c 'paste <(gunzip -c {tmp1}.regions.bed.gz | cut -f 1,3,4 ) "
+                        f"<(gunzip -c {tmp2}.regions.bed.gz | cut -f 4 ) >> {bedfile}'"
+                    )
+                else:
+                    tmp = os.path.join(tmpdir, f"tmp_{i}")
+                    shellcmd(mosdepth(chromosome, options.mapq, tmp))
+                    shellcmd(f"gunzip -c {tmp}.regions.bed.gz | cut -f 1,3,4 >> {bedfile}")
 
     elif options.input.endswith(".bed"):
         bedfile = options.input
@@ -488,7 +539,7 @@ def main(**kwargs):
         chrom_list = []
 
     # initialisation (reading BED to get positions of chromosomes and chromosome names
-    gc = SequanaCoverage(
+    gc = sequana_coverage_class(
         bedfile,
         options.annotation,
         options.low_threshold,
@@ -501,6 +552,8 @@ def main(**kwargs):
         gc_window_size=options.w_gc,
         # force=True
     )
+    # the GC sliding window must wrap around the origin too (used when the GC content is computed)
+    gc.circular = bool(options.circular)
 
     # some information fo end-users,
     logger.info("There are %s chromosomes/contigs." % len(gc))
@@ -520,7 +573,7 @@ def main(**kwargs):
         # Performs the computation and reporting for a given chromosome
         # This call performs the analysis, and creates the HTML page
         # if HTML is created, it fills the gc._html_list variable
-        chrom_data = ChromosomeCov(gc, chrom, gc.thresholds, gc.chunksize)
+        chrom_data = chromosome_class(gc, chrom, gc.thresholds, gc.chunksize)
         run_analysis(chrom_data, options)
 
         del chrom_data  # free memory for sure
@@ -596,6 +649,9 @@ def run_analysis(chrom, options):
         force_models=options.force_models,
     )
     chrom.plot_coverage(f"{directory}/coverage.png")
+    # the report embeds this very image instead of drawing the plot a second time
+    with open(f"{directory}/coverage.png", "rb") as fin:
+        chrom._coverage_png = fin.read()
 
     if chrom.DOC < 8:
         logger.warning(
@@ -633,6 +689,19 @@ def run_analysis(chrom, options):
     ROIs.df.to_csv(f"{directory}/rois.csv")
 
     logger.info(f"Creating report in {options.output_directory}. Please wait")
+
+    if options.viewer:
+        from sequana.viewers.coverage import write_coverage_viewer
+
+        viewer_page = write_coverage_viewer(
+            chrom,
+            results,
+            directory,
+            NW,
+            annotation_file=options.annotation,
+            command=" ".join(["sequana_coverage"] + sys.argv[1:]),
+        )
+        chrom._viewer_page = viewer_page  # linked from the chromosome report
 
     if chrom._mode == "chunks":
         logger.warning("This chromosome is large. Plots in the HTML reports are skipped")

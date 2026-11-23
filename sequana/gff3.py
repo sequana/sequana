@@ -11,6 +11,7 @@
 #
 ##############################################################################
 import os
+import re
 from collections import defaultdict
 
 import colorlog
@@ -23,6 +24,20 @@ from sequana.lazy import pysam
 logger = colorlog.getLogger(__name__)
 
 __all__ = ["GFF3"]
+
+# Names that denote a tRNA or an rRNA gene (used when the GFF has no explicit biotype).
+# tRNA: the bare word or "tRNA-" followed by an amino-acid-like code of 3 to 5 letters
+# ("tRNA-Lys", "tRNA-Lys (AAA)", "tRNA-iMet"). Longer words such as "tRNA-splicing ligase" or
+# "tRNA-methyl transferase" are proteins and must not match.
+_TRNA_NAME = re.compile(r"^tRNA(?:-[A-Za-z]{3,5}(?![A-Za-z]).*)?$")
+# rRNA: eukaryotic subunit prefixes ("28S", "18S", "5.8S", "5S") or a name that *ends* with
+# "rRNA" / "ribosomal RNA" ("12S large subunit ribosomal RNA"); "rRNA methyltransferase" is a protein.
+_RRNA_NAME = re.compile(r"^(?:28S|18S|5\.8S|5S)(?![A-Za-z0-9])|(?:ribosomal RNA|rRNA)$", re.IGNORECASE)
+# columns that may hold an explicit biotype (first match wins is not needed: all are checked)
+_BIOTYPE_COLUMNS = ("gene_biotype", "biotype", "type")
+# columns that may hold a gene name / product description
+_NAME_COLUMNS = ("combinedAnnotation", "product", "Name")
+_POL_I_III_TYPES = {"tRNA", "rRNA"}
 
 TEMPLATE = {
     "seqid": None,
@@ -959,21 +974,18 @@ class GFF3:
     def _is_tRNA_or_rRNA(self, name):
         """Return ``True`` if *name* denotes a tRNA or ribosomal RNA gene.
 
-        Matches the tRNA prefix/exact name and the rRNA subunit prefixes
-        (``28S``, ``18S``, ``5.8S``, ``5S``). Non-string inputs (e.g. NaN)
-        return ``False``.
+        Matches ``tRNA`` or ``tRNA-<amino acid>`` (3 to 5 letters, e.g. ``tRNA-Lys``),
+        the rRNA subunit prefixes (``28S``, ``18S``, ``5.8S``, ``5S``) and any name
+        ending with ``rRNA`` or ``ribosomal RNA`` (e.g. ``12S large subunit ribosomal
+        RNA``). Proteins such as ``tRNA-splicing ligase`` or ``rRNA methyltransferase``
+        are not matched. Non-string inputs (e.g. NaN) return ``False``.
 
         :param name: gene name or annotation string to test.
         :rtype: bool
         """
         if not isinstance(name, str):
             return False
-        if name == "tRNA" or name.startswith("tRNA-"):
-            return True
-        for subunit in ("28S", "18S", "5.8S", "5S"):
-            if name.startswith(subunit):
-                return True
-        return False
+        return bool(_TRNA_NAME.match(name) or _RRNA_NAME.search(name))
 
     def is_tRNA_or_ribosomal(self, x):
         """Deprecated *keep* predicate: ``True`` for genes to **retain**.
@@ -984,40 +996,57 @@ class GFF3:
         """
         return not self._is_tRNA_or_rRNA(x)
 
+    def _tRNA_rRNA_gene_mask(self, genes, df):
+        """Boolean mask (aligned on *genes*) of the tRNA/rRNA genes.
+
+        A gene is a tRNA/rRNA gene if any of the following holds:
+
+        * one of its biotype attributes (``gene_biotype``, ``biotype`` or ``type``)
+          is ``tRNA`` or ``rRNA``;
+        * it has a child feature (``Parent`` equal to its ``ID`` or ``gene_id``) whose
+          feature type (column 3) is ``tRNA`` or ``rRNA``;
+        * a name column (``combinedAnnotation``, ``product`` or ``Name``) looks like a tRNA
+          or rRNA name (see :meth:`_is_tRNA_or_rRNA`).
+
+        Missing columns are ignored, so this works for annotations with or without
+        biotype attributes.
+
+        :param genes: gene rows (subset of *df*).
+        :param df: complete annotation, used to find child features.
+        """
+        mask = pd.Series(False, index=genes.index)
+
+        for col in _BIOTYPE_COLUMNS:
+            if col in genes.columns:
+                mask |= genes[col].isin(_POL_I_III_TYPES)
+
+        if "Parent" in df.columns:
+            children = df.loc[df["genetic_type"].isin(_POL_I_III_TYPES), "Parent"].dropna()
+            parents = set(children)
+            for col in ("ID", "gene_id"):
+                if col in genes.columns:
+                    mask |= genes[col].isin(parents)
+
+        for col in _NAME_COLUMNS:
+            if col in genes.columns:
+                mask |= genes[col].map(self._is_tRNA_or_rRNA).astype(bool)
+
+        return mask
+
     def _filter_coding_genes(self, df=None):
-        """Return a copy of the annotation with tRNA and rRNA genes removed.
+        """Return a copy of the ``gene`` rows with tRNA and rRNA genes removed.
 
-        Non-destructive: the internal dataframe is left unchanged. The
-        strategy depends on the available columns:
-
-        * ``combinedAnnotation`` present (*L. donovani* style): filter by name
-          pattern via :meth:`_is_tRNA_or_rRNA`, remove all child features,
-          and keep only ``gene`` rows (since PTUs are based on genes, not mRNA/CDS).
-        * otherwise (*L. infantum* style): tRNA/rRNA carry dedicated
-          ``gene_biotype`` values (and are duplicated as CDS/gene/tRNA/exon),
-          so keep only ``region``/``gene`` rows whose biotype is not tRNA/rRNA.
+        Non-destructive: the internal dataframe is left unchanged. Only ``gene``
+        features are kept (PTUs are based on genes, not on mRNA/CDS/exon/region rows).
+        tRNA/rRNA genes are identified by :meth:`_tRNA_rRNA_gene_mask`.
 
         :param df: dataframe to filter; defaults to ``self.df``.
         :rtype: pandas.DataFrame
         """
         if df is None:
             df = self.df
-        if "combinedAnnotation" in df.columns:
-            # Identify tRNA/rRNA gene IDs (from gene rows only)
-            gene_rows = df[df["genetic_type"] == "gene"]
-            trna_rrna_mask = gene_rows["combinedAnnotation"].map(self._is_tRNA_or_rRNA)
-            trna_rrna_ids = gene_rows[trna_rrna_mask]["ID"].values
-            trna_rrna_gene_ids = gene_rows[trna_rrna_mask]["gene_id"].values
-            # Remove all rows: gene IDs, Parent chain (ID or gene_id), and rows with matching gene_id
-            mask = ~(
-                df["ID"].isin(trna_rrna_ids)
-                | df["Parent"].isin(trna_rrna_ids)
-                | df["Parent"].isin(trna_rrna_gene_ids)
-                | df["gene_id"].isin(trna_rrna_gene_ids)
-            )
-            # Keep only gene rows (not mRNA/CDS) for PTU computation
-            return df[mask & (df["genetic_type"] == "gene")].copy()
-        return df.query("genetic_type in ['region', 'gene'] and gene_biotype not in ['tRNA', 'rRNA']").copy()
+        genes = df[df["genetic_type"] == "gene"]
+        return genes[~self._tRNA_rRNA_gene_mask(genes, df)].copy()
 
     def get_PTU(self):
         """Compute Polycistronic Transcription Units (PTUs).
@@ -1107,6 +1136,8 @@ class GFF3:
         """Compute directons from *df* (pure: no caching, no mutation of self).
 
         A *directon* is a maximal run of adjacent genes on the same strand.
+        Genes are first ordered by position (``seqid``, ``start``, ``stop``), so the
+        result does not depend on the order of the lines in the GFF file.
 
         :param df: annotation dataframe to group.
         :return: directon dataframe with columns ``seqid``, ``strand``,
@@ -1114,6 +1145,7 @@ class GFF3:
             ``directon_name``.
         :rtype: pandas.DataFrame
         """
+        df = df.sort_values(["seqid", "start", "stop"], kind="stable")
 
         def assign_directon_groups(group):
             """Label each gene in *group* with the directon it belongs to."""
@@ -1175,26 +1207,55 @@ class GFF3:
         :param dict colors: mapping from strand symbol to RGB colour string.
             Defaults to ``{"+": "255,0,0", "-": "0,0,255"}``.
         """
+        d = self.directons
+        self._write_bed9(output, d["seqid"], d["start"], d["stop"], d["directon_name"], 1, d["strand"], colors)
 
-        df = self.df
+    def ptu_to_bed(self, output="PTU.bed", colors={"+": "255,0,0", "-": "0,0,255"}, min_genes=1, chrom_order=None):
+        """Write the polycistronic transcription units (see :meth:`get_PTU`) to a BED9 file.
 
-        directons = self.directons
+        The name column is ``PTU_<chromosome>_<start>_<strand>`` and the score column
+        is the number of genes in the PTU. Units are sorted by chromosome and start.
 
-        # Add other BED fields
-        strand_colors = {"+": "255,0,0", "-": "0,0,255"}
-        directons["name"] = "."
-        directons["score"] = 1
-        directons["thickStart"] = directons["start"]
-        directons["thickEnd"] = directons["stop"]
-        directons["itemRgb"] = directons["strand"].map(strand_colors)
+        :param str output: path for the output BED file. Defaults to ``"PTU.bed"``.
+        :param dict colors: mapping from strand symbol to RGB colour string.
+        :param int min_genes: keep only PTUs with at least this number of genes.
+        :param list chrom_order: optional list of chromosome names giving the order of
+            the output (e.g. the order of a FASTA index). Chromosomes not in the list
+            come last. By default chromosomes are sorted in natural order (1, 2, 10, ...).
+        """
+        ptu = self.get_PTU()
+        ptu = ptu[ptu["length"] >= min_genes].copy()
+        if chrom_order is None:
+            rank = {name: i for i, name in enumerate(natsort.natsorted(ptu["chromosome"].unique()))}
+        else:
+            rank = {name: i for i, name in enumerate(chrom_order)}
+        ptu["_rank"] = ptu["chromosome"].map(lambda c: rank.get(c, len(rank)))
+        ptu = ptu.sort_values(["_rank", "start"], kind="stable")
+        names = [f"PTU_{c}_{s}_{st}" for c, s, st in zip(ptu["chromosome"], ptu["start"], ptu["strand"])]
+        self._write_bed9(
+            output, ptu["chromosome"], ptu["start"], ptu["stop"], names, ptu["length"], ptu["strand"], colors
+        )
+        return len(ptu)
 
-        # Reorder columns to BED format
-        bed_df = directons[
-            ["seqid", "start", "stop", "directon_name", "score", "strand", "thickStart", "thickEnd", "itemRgb"]
-        ]
-
-        # Write to BED file
-        bed_df.to_csv(output, sep="\t", header=False, index=False)
+    @staticmethod
+    def _write_bed9(output, chrom, start, stop, name, score, strand, colors):
+        """Write a BED9 file (thickStart/thickEnd = start/stop, colour from the strand)."""
+        chrom = list(chrom)
+        scores = list(score) if hasattr(score, "__iter__") else [score] * len(chrom)
+        bed = pd.DataFrame(
+            {
+                "chrom": chrom,
+                "start": list(start),
+                "stop": list(stop),
+                "name": list(name),
+                "score": scores,
+                "strand": list(strand),
+            }
+        )
+        bed["thickStart"] = bed["start"]
+        bed["thickEnd"] = bed["stop"]
+        bed["itemRgb"] = bed["strand"].map(colors)
+        bed.to_csv(output, sep="\t", header=False, index=False)
 
     def add_directon_index(self):
         """Assign each gene its positional index within its directon.

@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [project]
 name = "sequana"
-version = "0.25.0"
+version = "0.26.0"
 description = "A set of standalone application and pipelines dedicated to NGS analysis"
 authors = [{name="Thomas Cokelaer", email="<thomas.cokelaer@pasteur.fr>"}]
 license = { file = "LICENSE" }
@@ -36,6 +36,7 @@ packages = [
     { include = "sequana/multiqc"},
     { include = "sequana/plots"},
     { include = "sequana/repeats"},
+    { include = "sequana/viewers"},
     { include = "sequana/scripts"},
     { include = "sequana/scripts/main"},
     { include = "sequana/utils"},

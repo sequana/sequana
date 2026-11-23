@@ -30,7 +30,19 @@ from sequana.utils import config
 logger = colorlog.getLogger(__name__)
 
 
-__all__ = ["SequanaBaseModule"]
+__all__ = ["SequanaBaseModule", "SEQUANA_CITATION", "COVERAGE_CITATION"]
+
+#: (text, DOI) shown in the footer of the reports
+SEQUANA_CITATION = (
+    "Cokelaer et al. (2017) 'Sequana': a Set of Snakemake NGS pipelines. "
+    "Journal of Open Source Software, 2(16), 352.",
+    "10.21105/joss.00352",
+)
+COVERAGE_CITATION = (
+    "Desvillechabrol et al. (2018) Sequana coverage: detection and characterization of genomic variations "
+    "using running median and mixture models. GigaScience, 7(12).",
+    "10.1093/gigascience/giy110",
+)
 
 
 class SequanaBaseModule(object):
@@ -54,6 +66,7 @@ class SequanaBaseModule(object):
 
         self.output_dir = config.output_dir
         self.path = "./"
+        self.citations = [SEQUANA_CITATION]
         # Initiate jinja template
         env = Environment(loader=PackageLoader("sequana", "resources/templates/"))
         self.template = env.get_template(template_fn)

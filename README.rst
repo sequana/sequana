@@ -255,6 +255,21 @@ Changelog :memo:
 ========= ==========================================================================
 Version   Description
 ========= ==========================================================================
+0.26.0    * NEW: ``sequana/viewers``: interactive, self-contained HTML genome-track viewer
+            (multi-resolution zoom, GC, gene track). ``sequana_coverage`` creates one
+            page per chromosome by default (``--no-viewer`` to skip); the old
+            sub-coverage report is kept.
+          * NEW: ``sequana_coverage --engine rust`` uses the optional ``sequana_cov_rs``
+            extension (``rust/sequana_cov_rs``, build with ``maturin develop --release``)
+            for ROI merging, mixture fitting, BED reading and CSV output.
+          * ``sequana_coverage``: about 2x faster in pure Python (plot once and embed it,
+            decimated plots, numpy normal pdf instead of scipy, faster BED scan).
+          * ``sequana_coverage`` HTML reports: coverage and sub-coverage in two columns,
+            "Detailed diagnostics" section, citations (JOSS and GigaScience) with DOI links.
+          * FIX: ``sequana_coverage`` stray ``subplots`` directories, crash with a GFF
+            given as ``--reference-file``, crash when the chromosome is missing in the
+            annotation, and ``-c chr1,chr2`` with BAM input and mosdepth.
+          * FIX/NEW: add directon and PTU bed track generation in gff3
 0.25.0    * NEW: ``mmcif.py`` Parse mmCIF protein structure files; download from
             RCSB. ``pairwise.py`` Needleman-Wunsch/Smith-Waterman alignment
             ``substitution_matrices.py`` BLOSUM45/62/80/90, PAM30/70/250 matrices

@@ -1,3 +1,4 @@
+import pytest
 from easydev import TempFile
 
 from sequana.gff3 import GFF3
@@ -332,3 +333,80 @@ def test_is_tRNA_or_rRNA():
     # deprecated inverted-semantics wrapper
     assert gff.is_tRNA_or_ribosomal("tRNA") is False
     assert gff.is_tRNA_or_ribosomal("thrA") is True
+
+
+# ---------------------------------------------------------------------------
+# directons / PTU on a small synthetic annotation
+# ---------------------------------------------------------------------------
+_SYNTHETIC_GFF = """##gff-version 3
+A\tsrc\tgene\t100\t200\t.\t+\t.\tID=g1;gene_id=g1;type=gene;product=hypothetical protein
+A\tsrc\tgene\t600\t700\t.\t-\t.\tID=g4;gene_id=g4;type=gene;product=hypothetical protein
+A\tsrc\tgene\t300\t400\t.\t+\t.\tID=g2;gene_id=g2;type=gene;product=tRNA-splicing ligase RtcB, putative
+A\tsrc\tgene\t500\t550\t.\t+\t.\tID=g3;gene_id=g3;type=gene;product=rRNA methyltransferase
+A\tsrc\tgene\t800\t860\t.\t-\t.\tID=t1;gene_id=t1;type=tRNA
+A\tsrc\tgene\t900\t950\t.\t-\t.\tID=t2;gene_id=t2;type=gene;product=tRNA-Lys (AAA)
+A\tsrc\tgene\t1000\t1100\t.\t-\t.\tID=r1;gene_id=r1;type=gene;product=12S large subunit ribosomal RNA
+A\tsrc\tgene\t1200\t1300\t.\t+\t.\tID=g5;gene_id=g5;type=gene;product=hypothetical protein
+B\tsrc\tgene\t10\t90\t.\t+\t.\tID=g6;gene_id=g6;type=gene;product=hypothetical protein
+"""
+
+
+@pytest.fixture
+def synthetic_gff(tmpdir):
+    path = tmpdir.join("synthetic.gff3")
+    path.write(_SYNTHETIC_GFF)
+    return GFF3(str(path))
+
+
+def test_is_tRNA_or_rRNA_proteins_not_matched():
+    gff = GFF3(f"{test_dir}/data/gff/ecoli_MG1655.gff")
+    assert gff._is_tRNA_or_rRNA("tRNA-Lys (AAA)") is True
+    assert gff._is_tRNA_or_rRNA("tRNA-iMet") is True
+    assert gff._is_tRNA_or_rRNA("5S rRNA") is True
+    assert gff._is_tRNA_or_rRNA("12S large subunit ribosomal RNA") is True
+    assert gff._is_tRNA_or_rRNA("tRNA-splicing ligase RtcB, putative") is False
+    assert gff._is_tRNA_or_rRNA("tRNA-methyl transferase, putative") is False
+    assert gff._is_tRNA_or_rRNA("rRNA methyltransferase") is False
+
+
+def test_directons_independent_of_line_order(synthetic_gff):
+    # genes are not in position order in the file; sorted by position they give
+    # + (g1 g2 g3) | - (g4) | - ... | + for chromosome A
+    d = synthetic_gff.directons
+    a = d[d["seqid"] == "A"].sort_values("start")
+    assert list(a["strand"]) == ["+", "-", "+"]
+    assert list(a["start"]) == [100, 600, 1200]
+    assert list(a["stop"]) == [550, 1100, 1300]
+
+
+def test_ptu_excludes_trna_rrna_but_keeps_proteins(synthetic_gff):
+    coding = synthetic_gff._filter_coding_genes()
+    # tRNA (type), tRNA-Lys (name), 12S rRNA (name) removed; the two look-alike proteins kept
+    assert sorted(coding["ID"]) == ["g1", "g2", "g3", "g4", "g5", "g6"]
+    ptu = synthetic_gff.get_PTU()
+    a = ptu[ptu["chromosome"] == "A"].sort_values("start")
+    assert list(a["length"]) == [3, 1, 1]
+    assert list(a["strand"]) == ["+", "-", "+"]
+
+
+def test_ptu_to_bed_and_directon_to_bed(synthetic_gff, tmpdir):
+    before = set(synthetic_gff.directons.columns)
+    dbed = str(tmpdir.join("directon.bed"))
+    synthetic_gff.directon_to_bed(dbed)
+    # writing the BED must not modify the cached directons dataframe
+    assert set(synthetic_gff.directons.columns) == before
+
+    pbed = str(tmpdir.join("PTU.bed"))
+    n = synthetic_gff.ptu_to_bed(pbed)
+    rows = [line.split("\t") for line in open(pbed).read().splitlines()]
+    assert n == len(rows) == 4
+    assert rows[0] == ["A", "100", "550", "PTU_A_100_+", "3", "+", "100", "550", "255,0,0"]
+    assert rows[1][5] == "-" and rows[1][8] == "0,0,255"
+    assert rows[-1][0] == "B"
+
+    # min_genes keeps only multi-gene PTUs; chrom_order controls the output order
+    pbed2 = str(tmpdir.join("PTU2.bed"))
+    assert synthetic_gff.ptu_to_bed(pbed2, min_genes=2, chrom_order=["B", "A"]) == 1
+    pbed3 = str(tmpdir.join("PTU3.bed"))
+    synthetic_gff.ptu_to_bed(pbed3, chrom_order=["B", "A"])
+    assert open(pbed3).read().splitlines()[0].startswith("B\t")
