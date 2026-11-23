@@ -269,6 +269,7 @@ Version   Description
           * FIX: ``sequana_coverage`` stray ``subplots`` directories, crash with a GFF
             given as ``--reference-file``, crash when the chromosome is missing in the
             annotation, and ``-c chr1,chr2`` with BAM input and mosdepth.
+          * FIX/NEW: add directon and PTU bed track generation in gff3
 0.25.0    * NEW: ``mmcif.py`` Parse mmCIF protein structure files; download from
             RCSB. ``pairwise.py`` Needleman-Wunsch/Smith-Waterman alignment
             ``substitution_matrices.py`` BLOSUM45/62/80/90, PAM30/70/250 matrices

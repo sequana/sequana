@@ -98,6 +98,9 @@ def build_pyramid(signal, baseline, gc=None, factor=FACTOR, min_bins=MIN_BINS, g
         if gc is not None and size >= gc_min_bin:
             arrays["gc"] = _quantise_gc(np.add.reduceat(gc, edges, dtype=np.float64) / counts)
         levels.append({"bin": size, "n": len(edges), "arrays": {k: encode_array(v) for k, v in arrays.items()}})
+    if gc is not None and not any("gc" in level["arrays"] for level in levels):
+        # short sequence: no coarse level was built, keep the GC at base resolution
+        levels[0]["arrays"]["gc"] = encode_array(_quantise_gc(gc))
     return levels
 
 

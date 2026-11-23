@@ -253,3 +253,25 @@ def test_small_contig(tmpdir):
     result = chrom.run(2001, k=2)
     # Should have some data (exact content depends on coverage values)
     assert result.get_summary().data["length"] > 0
+
+
+def test_mostly_zero_coverage_contig(tmpdir):
+    """A contig covered by few reads (e.g. the maxicircle in a nuclear-DNA library) must not crash.
+
+    The data file is the coverage of a 36.7 kb maxicircle contig where ~70 % of the positions have no read.
+    The mixture fit is then degenerate (sigma == 0) and the zscore of the zero-coverage positions is floored.
+    With pandas >= 3 this raised ``TypeError: Invalid value ... for dtype 'int64'`` when the zscore column was
+    created as integers.
+    """
+    import gzip
+    import shutil
+
+    bedfile = str(tmpdir.join("maxi_sparse_coverage.bed"))
+    with gzip.open(f"{test_dir}/data/bed/maxi_sparse_coverage.bed.gz", "rb") as fin, open(bedfile, "wb") as fout:
+        shutil.copyfileobj(fin, fout)
+
+    gc = bedtools.SequanaCoverage(bedfile)
+    thresholds = bedtools.DoubleThresholds(-4, 4)
+    chrom = bedtools.ChromosomeCov(gc, "maxi", thresholds, chunksize=5000000)
+    result = chrom.run(9179, k=2, circular=True)
+    assert result.get_summary().data["length"] > 0

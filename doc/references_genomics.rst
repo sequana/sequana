@@ -56,7 +56,7 @@ Regulatory / regulatory-adjacent
     :members:
     :undoc-members:
 
-Non-B DNA / motif detection
+Non B-DNA / motif detection
 ===========================
 
 .. automodule:: sequana.repeats.G4hunter
